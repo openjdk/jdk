@@ -669,7 +669,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != nullptr, "Sanity check");
-  MemTracker::NmtVirtualMemoryLocker ml;
+  ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != nullptr) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();

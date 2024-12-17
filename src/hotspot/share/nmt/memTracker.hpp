@@ -132,7 +132,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      MemTracker::NmtVirtualMemoryLocker ml;
+      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
@@ -158,7 +158,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      MemTracker::NmtVirtualMemoryLocker ml;
+      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -169,7 +169,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      MemTracker::NmtVirtualMemoryLocker ml;
+      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -177,7 +177,7 @@ class MemTracker : AllStatic {
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
-    MemTracker::NmtVirtualMemoryLocker ml;
+    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
     return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
@@ -185,7 +185,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    MemTracker::NmtVirtualMemoryLocker ml;
+    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
     MemoryFileTracker::Instance::free_file(file);
   }
 
@@ -194,7 +194,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    MemTracker::NmtVirtualMemoryLocker ml;
+    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
     MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, mem_tag);
   }
 
@@ -203,7 +203,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    MemTracker::NmtVirtualMemoryLocker ml;
+    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
     MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
@@ -217,7 +217,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      MemTracker::NmtVirtualMemoryLocker ml;
+      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
@@ -226,7 +226,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      MemTracker::NmtVirtualMemoryLocker ml;
+      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
       VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
     }
   }
