@@ -91,12 +91,14 @@ public class SigTestDriver {
                             .subList(1, args.length);
         cmd.addAll(argList);
 
+        String failureMessage = null;
         boolean passed = true;
 
         for (String mode : new String[] {"sigset", "sigaction"}) {
-            for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre", "postpost"}) {
+            for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre#libjsig", "postpost#libjsig",
+                    "nojvm#libjsig", "prepre#libjsig", "prepost#libjsig", }) {
                 cmd.set(modeIdx, mode);
-                cmd.set(scenarioIdx, scenario);
+                cmd.set(scenarioIdx, scenario.replace("#libjsig", ""));
                 System.out.printf("START TESTING: SIGNAL = %s, MODE = %s, SCENARIO=%s%n", signame, mode, scenario);
                 System.out.printf("Do execute: %s%n", cmd.toString());
 
@@ -105,12 +107,10 @@ public class SigTestDriver {
                         (x, y) -> y + File.pathSeparator + x);
                 pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
 
-                switch (scenario) {
-                    case "postpre":
-                    case "postpost": {
-                        pb.environment().merge("LD_PRELOAD", libjsig().toString(),
-                                (x, y) -> y + File.pathSeparator + x);
-                    }
+                boolean useLibjsig = scenario.endsWith("#libjsig");
+                if (useLibjsig) {
+                    pb.environment().merge("LD_PRELOAD", libjsig().toString(),
+                            (x, y) -> y + File.pathSeparator + x);
                 }
 
                 try {
@@ -118,10 +118,34 @@ public class SigTestDriver {
                     oa.reportDiagnosticSummary();
                     int exitCode = oa.getExitValue();
                     if (exitCode == 0) {
-                        System.out.println("PASSED with exit code 0");
+                        // Skip deprecation warning check on MacOSX (see JDK-8346381)
+                        if (useLibjsig && !Platform.isOSX()) {
+                            // verify that deprecation warning for sigset/signal is printed
+                            // only in the correct scenarios
+                            boolean deprecatedSigFunctionUsed = mode.equals("sigset");
+                            boolean jvmInvolved = !scenario.contains("nojvm");
+                            boolean warningPrinted = oa.contains("VM warning");
+                            boolean sigUsedByJVM = sigIsUsedByJVM(signame);
+                            if (deprecatedSigFunctionUsed && jvmInvolved && sigUsedByJVM) {
+                                if (!warningPrinted) {
+                                    failureMessage = "FAILED Missing deprecation warning for mode " + mode +
+                                                     ", scenario: "+ scenario + ", signal " + signame;
+                                    passed = false;
+                                }
+                            } else if (warningPrinted) {
+                                failureMessage = "FAILED Deprecation warning shouldn't be printed for mode " + mode +
+                                                 ", scenario: "+ scenario + ", signal " + signame;
+                                passed = false;
+                            }
+                        } else {
+                            System.out.println("PASSED with exit code 0");
+                        }
                     } else {
-                        System.out.println("FAILED with exit code " + exitCode);
+                        failureMessage = "FAILED with exit code " + exitCode;
                         passed = false;
+                    }
+                    if (!passed) {
+                        System.out.println(failureMessage);
                     }
                 } catch (Exception e) {
                     throw new Error("execution failed", e);
@@ -130,7 +154,7 @@ public class SigTestDriver {
         }
 
         if (!passed) {
-            throw new Error("test failed");
+            throw new Error(failureMessage != null ? failureMessage : "test failed");
         }
     }
 
@@ -145,5 +169,28 @@ public class SigTestDriver {
 
     private static Path libjsig() {
         return Platform.jvmLibDir().resolve(Platform.buildSharedLibraryName("jsig"));
+    }
+
+    /**
+     * Return true for all signals used by the JVM. This only covers the
+     * case where the JVM is started normally, and not with -Xrs.
+     * See src/hotspot/os/posix/signals_posix.cpp
+     * @param signame
+     * @return true if signal is used by JVM, false otherwise
+     */
+    private static boolean sigIsUsedByJVM(String signame) {
+        switch(signame) {
+            case "SIGSEGV":
+            case "SIGPIPE":
+            case "SIGBUS":
+            case "SIGILL":
+            case "SIGFPE":
+            case "SIGXFSZ":
+                return true;
+            case "SIGTRAP":
+                return Platform.isPPC();
+            default:
+                return false;
+        }
     }
 }
