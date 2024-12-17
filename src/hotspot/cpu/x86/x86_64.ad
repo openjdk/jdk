@@ -10316,7 +10316,7 @@ instruct andL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
 instruct andL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
 %{
   predicate(UseAPX);
-  match(Set dst (AndL src1 (LoadL src2)));
+  match(Set dst (AndL (LoadL src1) src2));
 
   format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
   ins_encode %{

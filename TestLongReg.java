@@ -71,6 +71,14 @@ public class TestLongReg {
         return a | b;
     }
 
+    public static long testAndImm1(long a, long b) {
+        return a & 9;
+    }
+
+    public static long testAndImm2(long x, long b) {
+        return 11 & b;
+    }
+
     public static long testAnd(long a, long b) {
         return a & b;
     }
