@@ -28,8 +28,6 @@
 #include "logging/logHandle.hpp"
 #include "logging/logStream.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
-#include "utilities/macros.hpp"
 
 #if TASKQUEUE_STATS
 
