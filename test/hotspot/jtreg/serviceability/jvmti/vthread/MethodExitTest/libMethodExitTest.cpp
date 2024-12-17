@@ -500,6 +500,9 @@ VirtualThreadUnmount(jvmtiEnv *jvmti, ...) {
   LOG("\nHit #%d: VirtualThreadUnmount #%d: enabling FramePop for method: %s::%s on virtual thread: %p\n",
          brkptBreakpointHit, ++vthread_unmounted_count, cname, mname, (void*)thread);
 
+  err = jvmti->NotifyFramePop(thread, 0);
+  check_jvmti_status(jni, err, "VirtualThreadUnmount: error in JVMTI NotifyFramePop");
+
   print_frame_event_info(jvmti, jni, thread, method, "VirtualThreadUnmount", vthread_unmounted_count);
 
   deallocate(jvmti, jni, (void*)mname);

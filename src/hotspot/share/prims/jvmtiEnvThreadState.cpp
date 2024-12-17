@@ -248,10 +248,7 @@ void JvmtiEnvThreadState::set_frame_pop(int frame_number) {
 
 
 void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::clear_frame_pop(this, fpop);
