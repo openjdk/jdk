@@ -363,17 +363,6 @@ void ShenandoahConcurrentGC::entry_reset() {
                                 msg);
     op_reset();
   }
-
-  if (_do_old_gc_bootstrap) {
-    static const char* msg = "Concurrent reset (Old)";
-    ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_old);
-    ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
-                                ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
-                                msg);
-    EventMark em("%s", msg);
-
-    heap->old_generation()->prepare_gc();
-  }
 }
 
 void ShenandoahConcurrentGC::entry_scan_remembered_set() {
@@ -598,7 +587,11 @@ void ShenandoahConcurrentGC::op_reset() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_reset();
   }
-  _generation->prepare_gc();
+  if (_do_old_gc_bootstrap) {
+    heap->global_generation()->prepare_gc();
+  } else {
+    _generation->prepare_gc();
+  }
 }
 
 class ShenandoahInitMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
