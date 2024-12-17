@@ -1345,6 +1345,10 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
     jvm = vm;
     callback = cbTablePtr;
 
+    if (dbgsysPlatformInit() != 0) {
+      return JNI_ERR;
+    }
+
     /* initialize interface table */
     interface.GetCapabilities = &socketTransport_getCapabilities;
     interface.Attach = &socketTransport_attach;
