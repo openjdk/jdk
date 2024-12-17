@@ -82,7 +82,6 @@ public:
         region->set_need_bitmap_reset();
       }
     } else {
-      assert(region->need_bitmap_reset(), "The flag must be set to true in concurrent reset phase when current cycle starts");
       if (_heap->is_bitmap_slice_committed(region)) {
         _ctx->clear_bitmap(region);
         region->unset_need_bitmap_reset();
