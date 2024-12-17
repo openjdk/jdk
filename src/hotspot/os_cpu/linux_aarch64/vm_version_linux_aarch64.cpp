@@ -181,7 +181,7 @@ void VM_Version::get_os_cpu_info() {
 }
 
 static bool read_fully(const char *fname, char *buf, size_t buflen) {
-  assert(buf != nullptr, "buf should not be nullptr");
+  assert(buf != nullptr, "invalid argument");
   assert(buflen >= 1, "invalid argument");
   int fd = os::open(fname, O_RDONLY, 0);
   if (fd != -1) {
