@@ -112,9 +112,11 @@ public class TestMinMaxIdentities {
 
     // Longs
 
-    // As Math.min/max(LL) is not intrinsified, it first needs to be transformed into CMoveL and then MinL/MaxL before
+    // As Math.min/max(LL) is not intrinsified in the backend, it first needs to be transformed into CMoveL and then MinL/MaxL before
     // the identity can be matched. However, the outer min/max is not transformed into CMove because of the CMove cost model.
-    // As JDK-8307513 adds intrinsics for the methods, the tests will be updated then.
+    // JDK-8307513 adds intrinsics for the methods such that MinL/MaxL replace the ternary operations,
+    // and this enables identities to be matched.
+    // Note that before JDK-8307513 MinL/MaxL nodes were already present before macro expansion.
 
     @Test
     @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
@@ -123,13 +125,13 @@ public class TestMinMaxIdentities {
     }
 
     @Test
-    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
+    @IR(failOn = { IRNode.MIN_L, IRNode.MAX_L })
     public long longMinMax(long a, long b) {
         return Math.min(a, Math.max(a, b));
     }
 
     @Test
-    @IR(applyIfPlatform = { "riscv64", "false" }, phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MAX_L, "1" })
+    @IR(failOn = { IRNode.MIN_L, IRNode.MAX_L })
     public long longMaxMin(long a, long b) {
         return Math.max(a, Math.min(a, b));
     }
