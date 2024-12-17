@@ -31,18 +31,9 @@
 #include "utilities/macros.hpp"
 
 // AccessFlags is an abstraction over Java access flags.
+// See generated file classfile_constants.h for shared JVM_ACC_XXX access flags
 
 class outputStream;
-
-enum {
-  // See jvm.h for shared JVM_ACC_XXX access flags
-
-  // flags actually put in .class file
-  JVM_ACC_WRITTEN_FLAGS           = 0x00007FFF,
-
-  // Do not add new ACC flags here.
-};
-
 
 class AccessFlags {
   friend class VMStructs;
@@ -71,14 +62,14 @@ class AccessFlags {
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }
 
   // get .class file flags
-  u2 get_flags                () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
+  u2 as_int           () const         { return _flags; }
 
   // Initialization
   void set_field_flags(u2 flags)      {
     assert((flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == flags, "only recognized flags");
     _flags = (flags & JVM_RECOGNIZED_FIELD_MODIFIERS);
   }
-  void set_flags(u2 flags)            { _flags = (flags & JVM_ACC_WRITTEN_FLAGS); }
+  void set_flags(u2 flags)            { _flags = flags; }
 
  private:
   friend class Klass;
@@ -90,9 +81,6 @@ class AccessFlags {
   void set_is_synthetic()              { _flags |= JVM_ACC_SYNTHETIC; }
 
  public:
-  // Conversion
-  u2   as_int() const                  { return _flags; }
-
   inline friend AccessFlags accessFlags_from(u2 flags);
 
   // Printing/debugging

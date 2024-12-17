@@ -488,7 +488,6 @@
   declare_constant(InvocationEntryBci)                                    \
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
-  declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
   declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \

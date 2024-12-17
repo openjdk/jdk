@@ -78,6 +78,6 @@ public class AccessFlags implements /* imports */ ClassConstants {
 
   // get flags written to .class files
   public int getStandardFlags() {
-    return (int) (flags & JVM_ACC_WRITTEN_FLAGS);
+    return (int)flags;
   }
 }

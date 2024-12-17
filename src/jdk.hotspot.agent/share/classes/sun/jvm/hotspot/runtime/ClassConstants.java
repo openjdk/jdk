@@ -98,16 +98,7 @@ public interface ClassConstants
     public static final long JVM_ACC_ENUM         = 0x4000; /* field is declared as element of enum */
 
 
-    // from accessFlags.hpp - hotspot internal flags
-
-    // flags actually put in .class file
-    public static final long JVM_ACC_WRITTEN_FLAGS = 0x00007FFF;
-
-    // flags accepted by set_field_flags
-    public static final long JVM_ACC_FIELD_FLAGS = 0x00008000 | JVM_ACC_WRITTEN_FLAGS;
-
     // from jvm.h
-
     public static final long JVM_RECOGNIZED_CLASS_MODIFIERS   = (JVM_ACC_PUBLIC |
                                                                  JVM_ACC_FINAL |
                                                                  JVM_ACC_SUPER |

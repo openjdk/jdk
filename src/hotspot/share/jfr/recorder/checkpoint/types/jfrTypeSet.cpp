@@ -229,7 +229,7 @@ static traceid method_id(KlassPtr klass, MethodPtr method) {
 template <typename T>
 static s4 get_flags(const T* ptr) {
   assert(ptr != nullptr, "invariant");
-  return ptr->access_flags().get_flags();
+  return ptr->access_flags().as_int();
 }
 
 // Same as JVM_GetClassModifiers

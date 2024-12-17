@@ -1005,8 +1005,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   }
 
   // Check whether class modifiers are the same.
-  jushort old_flags = (jushort) the_class->access_flags().get_flags();
-  jushort new_flags = (jushort) scratch_class->access_flags().get_flags();
+  jushort old_flags = (jushort) the_class->access_flags().as_int();
+  jushort new_flags = (jushort) scratch_class->access_flags().as_int();
   if (old_flags != new_flags) {
     log_info(redefine, class, normalize)
         ("redefined class %s modifiers change error: modifiers changed from %d to %d.",
