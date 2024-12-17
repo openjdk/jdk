@@ -36,6 +36,7 @@
 
 void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName);
 
+#undef dprintf // GNU, POSIX.1-2008
 #ifdef SECMOD_DEBUG
 #define dprintf(s) printf(s)
 #define dprintf1(s, p1) printf(s, p1)

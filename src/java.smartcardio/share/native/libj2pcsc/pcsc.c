@@ -39,6 +39,7 @@
 
 // #define J2PCSC_DEBUG
 
+#undef dprintf // GNU, POSIX.1-2008
 #ifdef J2PCSC_DEBUG
 #define dprintf(s) printf(s)
 #define dprintf1(s, p1) printf(s, p1)
