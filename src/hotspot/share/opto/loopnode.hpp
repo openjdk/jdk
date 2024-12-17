@@ -1367,6 +1367,12 @@ public:
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
+  // Replace the control input of 'node' with 'new_control' and set the dom depth to the one of 'new_control'.
+  void replace_control(Node* node, Node* new_control) {
+    _igvn.replace_input_of(node, 0, new_control);
+    set_idom(node, new_control, dom_depth(new_control));
+  }
+
   void replace_loop_entry(LoopNode* loop_head, Node* new_entry) {
     _igvn.replace_input_of(loop_head, LoopNode::EntryControl, new_entry);
     set_idom(loop_head, new_entry, dom_depth(new_entry));

@@ -1027,7 +1027,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     srli(ch2, ch2, XLEN - 8); // pattern[m-2], 0x0000000b
     slli(ch1, tmp6, XLEN - 16);
     srli(ch1, ch1, XLEN - 8); // pattern[m-3], 0x0000000c
-    andi(tmp6, tmp6, 0xff); // pattern[m-4], 0x0000000d
+    zext(tmp6, tmp6, 8); // pattern[m-4], 0x0000000d
     slli(ch2, ch2, 16);
     orr(ch2, ch2, ch1); // 0x00000b0c
     slli(result, tmp3, 48); // use result as temp register
@@ -1540,11 +1540,11 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
     if (isLL) {
-      andi(tmp1, tmp1, 0xFF);
-      andi(tmp2, tmp2, 0xFF);
+      zext(tmp1, tmp1, 8);
+      zext(tmp2, tmp2, 8);
     } else {
-      andi(tmp1, tmp1, 0xFFFF);
-      andi(tmp2, tmp2, 0xFFFF);
+      zext(tmp1, tmp1, 16);
+      zext(tmp2, tmp2, 16);
     }
     sub(result, tmp1, tmp2);
     j(DONE);

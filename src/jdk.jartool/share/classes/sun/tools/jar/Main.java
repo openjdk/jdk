@@ -152,7 +152,6 @@ public class Main {
      * flag0: no zip compression (store only)
      * Mflag: DO NOT generate a manifest file (just ZIP)
      * iflag: generate jar index
-     * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
      * kflag: keep existing file
@@ -210,18 +209,8 @@ public class Main {
         }
     }
 
-    static String formatMsg(String key, String arg) {
+    static String formatMsg(String key, String... args) {
         String msg = getMsg(key);
-        String[] args = new String[1];
-        args[0] = arg;
-        return MessageFormat.format(msg, (Object[]) args);
-    }
-
-    static String formatMsg2(String key, String arg, String arg1) {
-        String msg = getMsg(key);
-        String[] args = new String[2];
-        args[0] = arg;
-        args[1] = arg1;
         return MessageFormat.format(msg, (Object[]) args);
     }
 
@@ -459,7 +448,7 @@ public class Main {
         try (ZipFile zf = new ZipFile(file)) {
             return Validator.validate(this, zf);
         } catch (IOException e) {
-            error(formatMsg2("error.validator.jarfile.exception", fname, e.getMessage()));
+            error(formatMsg("error.validator.jarfile.exception", fname, e.getMessage()));
             return true;
         }
     }
@@ -840,7 +829,7 @@ public class Main {
                     // the entry starts with VERSIONS_DIR and version != BASE_VERSION,
                     // which means the "[dirs|files]" in --release v [dirs|files]
                     // includes VERSIONS_DIR-ed entries --> warning and skip (?)
-                    error(formatMsg2("error.release.unexpected.versioned.entry",
+                    error(formatMsg("error.release.unexpected.versioned.entry",
                                      name, String.valueOf(version)));
                     ok = false;
                     return;
@@ -1264,8 +1253,7 @@ public class Main {
         if (vflag) {
             size = e.getSize();
             long csize = e.getCompressedSize();
-            out.print(formatMsg2("out.size", String.valueOf(size),
-                        String.valueOf(csize)));
+            out.print(formatMsg("out.size", String.valueOf(size), String.valueOf(csize)));
             if (e.getMethod() == ZipEntry.DEFLATED) {
                 long ratio = 0;
                 if (size != 0) {

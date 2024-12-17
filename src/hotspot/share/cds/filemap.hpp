@@ -64,6 +64,7 @@ class SharedClassPathEntry : public MetaspaceObj {
   u1     _type;
   bool   _is_module_path;
   bool   _from_class_path_attr;
+  bool   _is_multi_release;
   time_t _timestamp;          // jar timestamp,  0 if is directory, modules image or other
   int64_t      _filesize;     // jar/jimage file size, -1 if is directory, -2 if other
   Array<char>* _name;
@@ -71,7 +72,7 @@ class SharedClassPathEntry : public MetaspaceObj {
 
 public:
   SharedClassPathEntry() : _type(0), _is_module_path(false),
-                           _from_class_path_attr(false), _timestamp(0),
+                           _from_class_path_attr(false), _is_multi_release(false), _timestamp(0),
                            _filesize(0), _name(nullptr), _manifest(nullptr) {}
   static int size() {
     static_assert(is_aligned(sizeof(SharedClassPathEntry), wordSize), "must be");
@@ -92,6 +93,7 @@ public:
   bool is_jar()           const { return _type == jar_entry; }
   bool is_non_existent()  const { return _type == non_existent_entry; }
   bool from_class_path_attr() { return _from_class_path_attr; }
+  bool is_multi_release()     { return _is_multi_release; }
   time_t timestamp() const { return _timestamp; }
   const char* name() const;
   const char* manifest() const {
