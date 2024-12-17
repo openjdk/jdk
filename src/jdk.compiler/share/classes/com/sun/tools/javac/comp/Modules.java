@@ -1023,7 +1023,7 @@ public class Modules extends JCTree.Visitor {
             this.env = env;
         }
 
-        @Override @SuppressWarnings("unchecked")
+        @Override
         public void visitModuleDef(JCModuleDecl tree) {
             msym.directives = List.nil();
             msym.provides = List.nil();

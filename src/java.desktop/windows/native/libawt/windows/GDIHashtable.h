@@ -162,7 +162,7 @@ class GDIHashtable : public Hashtable {
     GDIHashtable(const char* name, void (*deleteProc)(void*) = NULL,
                    int initialCapacity = 29, float loadFactor = 0.75) :
         Hashtable(name, deleteProc, initialCapacity, loadFactor) {
-        manager.add(this);
+        manager().add(this);
     }
 
     ~GDIHashtable() {
@@ -174,7 +174,7 @@ class GDIHashtable : public Hashtable {
         DMem_DisableMutex();
 #endif
 
-        manager.remove(this);
+        manager().remove(this);
     }
 
     /**
@@ -200,14 +200,17 @@ class GDIHashtable : public Hashtable {
     /**
      * Flushes all existing GDIHashtable instances.
      */
-    INLINE static void flushAll() { manager.flushAll(); }
+    INLINE static void flushAll() { manager().flushAll(); }
 
-    INLINE CriticalSection& getManagerLock() { return manager.getLock(); }
+    INLINE CriticalSection& getManagerLock() { return manager().getLock(); }
 
  private:
 
-    static BatchDestructionManager manager;
+    static BatchDestructionManager& manager() {
+        static BatchDestructionManager manager;
 
+        return manager;
+    }
 };
 
 #endif // GDIHASHTABLE_H

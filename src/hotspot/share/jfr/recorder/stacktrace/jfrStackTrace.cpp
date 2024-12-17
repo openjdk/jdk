@@ -163,10 +163,10 @@ static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
 }
 
 JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
-  vframeStreamCommon(RegisterMap(jt,
-                                 RegisterMap::UpdateMap::skip,
-                                 RegisterMap::ProcessFrames::skip,
-                                 walk_continuation(jt))),
+  vframeStreamCommon(jt,
+                     RegisterMap::UpdateMap::skip,
+                     RegisterMap::ProcessFrames::skip,
+                     walk_continuation(jt)),
     _vthread(JfrThreadLocal::is_vthread(jt)),
     _cont_entry(_vthread ? jt->last_continuation() : nullptr),
     _async_mode(async_mode) {
