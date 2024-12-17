@@ -652,7 +652,6 @@ public class RichDiagnosticFormatter extends
         /** set of enabled rich formatter's features */
         protected java.util.EnumSet<RichFormatterFeature> features;
 
-        @SuppressWarnings("fallthrough")
         public RichConfiguration(Options options, AbstractDiagnosticFormatter formatter) {
             super(formatter.getConfiguration());
             features = formatter.isRaw() ? EnumSet.noneOf(RichFormatterFeature.class) :

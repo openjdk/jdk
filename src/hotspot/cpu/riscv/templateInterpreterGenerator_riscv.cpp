@@ -361,7 +361,7 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   // setup parameters
 
   // convention: expect aberrant index in register x11
-  __ zero_extend(c_rarg2, x11, 32);
+  __ zext(c_rarg2, x11, 32);
   // convention: expect array in register x13
   __ mv(c_rarg1, x13);
   __ call_VM(noreg,
