@@ -114,6 +114,7 @@ public class Robot {
     private boolean isAutoWaitForIdle = false;
     private int autoDelay = 0;
     private static int LEGAL_BUTTON_MASK = 0;
+    private static Rectangle screenBounds;
 
     private DirectColorModel screenCapCM = null;
 
@@ -167,6 +168,7 @@ public class Robot {
             peer = ((ComponentFactory)toolkit).createRobot(screen);
         }
         initLegalButtonMask();
+        screenBounds = screen.getDefaultConfiguration().getBounds();
     }
 
     @SuppressWarnings("deprecation")
@@ -218,7 +220,9 @@ public class Robot {
      * @param y         Y position
      */
     public synchronized void mouseMove(int x, int y) {
-        peer.mouseMove(x, y);
+//        peer.mouseMove(x, y);
+        peer.mouseMove(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width),
+                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height));
         afterEvent();
     }
 
