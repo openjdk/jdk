@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,6 +40,7 @@ import jdk.internal.platform.CgroupInfo;
 import jdk.internal.platform.CgroupMetrics;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
+import jdk.internal.platform.CgroupUtil;
 
 public class CgroupV2Subsystem implements CgroupSubsystem {
 
