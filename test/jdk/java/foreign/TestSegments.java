@@ -234,14 +234,33 @@ public class TestSegments {
         assertTrue(s.contains("byteSize: "));
         if (segment.heapBase().isPresent()) {
             assertTrue(s.contains("heapBase: ["));
+            assertFalse(s.contains("native"));
         } else {
             assertFalse(s.contains("heapBase: "));
+            assertTrue(s.contains("native"));
         }
         assertFalse(s.contains("Optional"));
 
-        assertTrue(s.contains(", rw-"));
+        assertFalse(s.contains(", mapped"));
+        assertFalse(s.contains(", not alive"));
         var readOnlySegment = segment.asReadOnly();
-        assertTrue(readOnlySegment.toString().contains(", r--"));
+        assertTrue(readOnlySegment.toString().contains(", read-only"));
+    }
+
+    @Test
+    public void testToString2() {
+        MemorySegment segment;
+        try (var arena = Arena.ofConfined()) {
+            segment = arena.allocate(8);
+            assertTrue(segment.toString().contains(", confined"));
+            assertFalse(segment.toString().contains(", not alive"));
+        }
+        assertTrue(segment.toString().contains(", not alive"));
+        try (var arena = Arena.ofShared()) {
+            segment = arena.allocate(8);
+            assertFalse(segment.toString().contains(", confined"));
+            assertFalse(segment.toString().contains(", not alive"));
+        }
     }
 
     @DataProvider(name = "segmentFactories")

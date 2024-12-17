@@ -487,10 +487,13 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public String toString() {
         return "MemorySegment{ " +
-                heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
-                "address: " + Utils.toHexString(address()) +
+                heapBase().map(hb -> "heapBase: " + hb).orElse("native") +
+                ", address: " + Utils.toHexString(address()) +
                 ", byteSize: " + length +
-                ", r" + (isReadOnly() ? "-" : "w") + (isMapped() ? "m" : "-") + 
+                (sessionImpl() instanceof ConfinedSession ? ", confined" : "") +
+                (!sessionImpl().isAlive() ? ", not alive" : "") +
+                (isReadOnly() ? ", read-only" : "") +
+                (isMapped() ? ", mapped" : "") +
                 " }";
     }
 
