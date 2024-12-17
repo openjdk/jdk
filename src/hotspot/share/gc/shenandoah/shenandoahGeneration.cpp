@@ -85,6 +85,8 @@ public:
       if (_heap->is_bitmap_slice_committed(region)) {
         _ctx->clear_bitmap(region);
         region->unset_need_bitmap_reset();
+      } else {
+        region->set_need_bitmap_reset();
       }
     }
 
