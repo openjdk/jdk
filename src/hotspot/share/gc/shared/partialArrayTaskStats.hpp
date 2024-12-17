@@ -87,25 +87,20 @@ public:
   //
   // title: A string title for the table.
   template<typename StatsAccess>
-  static void log_set(uint num_stats, StatsAccess access, const char* title);
-};
-
-template<typename StatsAccess>
-void PartialArrayTaskStats::log_set(uint num_stats,
-                                    StatsAccess access,
-                                    const char* title) {
-  if (is_log_enabled()) {
-    LogStream ls(log_target());
-    PartialArrayTaskStats total;
-    print_header(&ls, title);
-    for (uint i = 0; i < num_stats; ++i) {
-      const PartialArrayTaskStats* stats = access(i);
-      stats->print_values(&ls, i);
-      total.accumulate(*stats);
+  static void log_set(uint num_stats, StatsAccess access, const char* title) {
+    if (is_log_enabled()) {
+      LogStream ls(log_target());
+      PartialArrayTaskStats total;
+      print_header(&ls, title);
+      for (uint i = 0; i < num_stats; ++i) {
+        const PartialArrayTaskStats* stats = access(i);
+        stats->print_values(&ls, i);
+        total.accumulate(*stats);
+      }
+      total.print_total(&ls);
     }
-    total.print_total(&ls);
   }
-}
+};
 
 #endif // TASKQUEUE_STATS
 
