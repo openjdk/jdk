@@ -51,6 +51,7 @@ public class TestFloat16ScalarOperations {
     private static final Float16 NEGATIVE_MAX_VALUE = valueOf(-0x1.ffcP+15f);
     private static final Float16 LT_MAX_HALF_ULP = Float16.valueOf(14.0f);
     private static final Float16 MAX_HALF_ULP = Float16.valueOf(16.0f);
+    private static final Float16 SIGNALING_NAN = shortBitsToFloat16((short)31807);
 
     public static void main(String args[]) {
         TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
@@ -449,6 +450,7 @@ public class TestFloat16ScalarOperations {
     public void testSqrtConstantFolding() {
         // If the argument is NaN or less than zero, then the result is NaN.
         assertResult(sqrt(Float16.NaN).floatValue(), Float.NaN, "testSqrtConstantFolding");
+        assertResult(sqrt(SIGNALING_NAN).floatValue(), Float.NaN, "testSqrtConstantFolding");
 
         // If the argument is positive infinity, then the result is positive infinity.
         assertResult(sqrt(Float16.POSITIVE_INFINITY).floatValue(), Float.POSITIVE_INFINITY, "testSqrtConstantFolding");
@@ -467,8 +469,12 @@ public class TestFloat16ScalarOperations {
     public void testFMAConstantFolding() {
         // If any argument is NaN, the result is NaN.
         assertResult(fma(Float16.NaN, valueOf(2.0f), valueOf(3.0f)).floatValue(), Float.NaN, "testFMAConstantFolding");
+        assertResult(fma(SIGNALING_NAN, valueOf(2.0f), valueOf(3.0f)).floatValue(), Float.NaN, "testFMAConstantFolding");
         assertResult(fma(valueOf(2.0f), Float16.NaN, valueOf(3.0f)).floatValue(), Float.NaN, "testFMAConstantFolding");
-        assertResult(fma(valueOf(2.0f), valueOf(3.0f), Float16.NaN).floatValue(), Float.NaN, "testFMAConstantFolding");
+
+        assertResult(fma(shortBitsToFloat16(Float.floatToFloat16(2.0f)),
+                         shortBitsToFloat16(Float.floatToFloat16(3.0f)),
+                         Float16.NaN).floatValue(), Float.NaN, "testFMAConstantFolding");
 
         // If one of the first two arguments is infinite and the other is zero, the result is NaN.
         assertResult(fma(Float16.POSITIVE_INFINITY, POSITIVE_ZERO, valueOf(2.0f)).floatValue(), Float.NaN, "testFMAConstantFolding");

@@ -541,8 +541,8 @@ public:
 public:
   const short _f;               // Half Float constant
 
-  static const TypeH *make(float f);
-  static const TypeH *make(short f);
+  static const TypeH* make(float f);
+  static const TypeH* make(short f);
 
   virtual bool        is_finite() const;  // Has a finite value
   virtual bool        is_nan()    const;  // Is not a number (NaN)
@@ -551,12 +551,12 @@ public:
   virtual const Type *xmeet(const Type *t) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   // Convenience common pre-built types.
-  static const TypeH *MAX;
-  static const TypeH *MIN;
-  static const TypeH *ZERO; // positive zero only
-  static const TypeH *ONE;
-  static const TypeH *POS_INF;
-  static const TypeH *NEG_INF;
+  static const TypeH* MAX;
+  static const TypeH* MIN;
+  static const TypeH* ZERO; // positive zero only
+  static const TypeH* ONE;
+  static const TypeH* POS_INF;
+  static const TypeH* NEG_INF;
 #ifndef PRODUCT
   virtual void dump2(Dict &d, uint depth, outputStream *st) const;
 #endif
@@ -2020,18 +2020,18 @@ inline const TypeLong *Type::isa_long() const {
   return ( _base == Long ? (TypeLong*)this : nullptr);
 }
 
-inline const TypeH *Type::isa_half_float() const {
+inline const TypeH* Type::isa_half_float() const {
   return ((_base == HalfFloatTop ||
            _base == HalfFloatCon ||
            _base == HalfFloatBot) ? (TypeH*)this : nullptr);
 }
 
-inline const TypeH *Type::is_half_float_constant() const {
+inline const TypeH* Type::is_half_float_constant() const {
   assert( _base == HalfFloatCon, "Not a Float" );
   return (TypeH*)this;
 }
 
-inline const TypeH *Type::isa_half_float_constant() const {
+inline const TypeH* Type::isa_half_float_constant() const {
   return ( _base == HalfFloatCon ? (TypeH*)this : nullptr);
 }
 

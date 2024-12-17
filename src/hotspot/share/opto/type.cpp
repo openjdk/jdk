@@ -1441,20 +1441,20 @@ bool TypeF::empty(void) const {
 
 //=============================================================================
 // Convenience common pre-built types.
-const TypeH *TypeH::MAX;        // Half float max
-const TypeH *TypeH::MIN;        // Half float min
-const TypeH *TypeH::ZERO;       // Half float zero
-const TypeH *TypeH::ONE;        // Half float one
-const TypeH *TypeH::POS_INF;    // Half float positive infinity
-const TypeH *TypeH::NEG_INF;    // Half float negative infinity
+const TypeH* TypeH::MAX;        // Half float max
+const TypeH* TypeH::MIN;        // Half float min
+const TypeH* TypeH::ZERO;       // Half float zero
+const TypeH* TypeH::ONE;        // Half float one
+const TypeH* TypeH::POS_INF;    // Half float positive infinity
+const TypeH* TypeH::NEG_INF;    // Half float negative infinity
 
 //------------------------------make-------------------------------------------
 // Create a halffloat constant
-const TypeH *TypeH::make(short f) {
+const TypeH* TypeH::make(short f) {
   return (TypeH*)(new TypeH(f))->hashcons();
 }
 
-const TypeH *TypeH::make(float f) {
+const TypeH* TypeH::make(float f) {
   assert(StubRoutines::f2hf_adr() != nullptr, "");
   short hf = StubRoutines::f2hf(f);
   return (TypeH*)(new TypeH(hf))->hashcons();

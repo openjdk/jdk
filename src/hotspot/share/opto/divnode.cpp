@@ -818,12 +818,12 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
     return t1;
   }
 
-  // If divisor is a constant and not zero, divide them numbers
+  // If divisor is a constant and not zero, divide the numbers
   if (t1->base() == Type::HalfFloatCon &&
       t2->base() == Type::HalfFloatCon &&
       t2->getf() != 0.0)  {
     // could be negative zero
-    return TypeH::make(t1->getf()/t2->getf());
+    return TypeH::make(t1->getf() / t2->getf());
   }
 
   // If the dividend is a constant zero
