@@ -41,7 +41,6 @@ import java.nio.file.Path;
 import java.nio.channels.spi.*;
 import java.security.SecureRandom;
 import java.util.Random;
-import jdk.internal.misc.InnocuousThread;
 
 import static java.net.StandardProtocolFamily.UNIX;
 
@@ -79,7 +78,10 @@ class PipeImpl
             connector.run();
             if (ioe instanceof ClosedByInterruptException) {
                 ioe = null;
-                Thread connThread = InnocuousThread.newUninterruptibleThread(connector);
+                Thread connThread = new Thread(connector, "LoopbackConnector") {
+                    @Override
+                    public void interrupt() {}
+                };
                 connThread.start();
                 for (;;) {
                     try {
