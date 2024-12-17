@@ -82,7 +82,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 #endif
   // compiler left unloaded_class_index in j_rarg0 move to where the
   // runtime expects it.
-  __ sign_extend(c_rarg1, j_rarg0, 32);
+  __ sext(c_rarg1, j_rarg0, 32);
 
   // we need to set the past SP to the stack pointer of the stub frame
   // and the pc to the address where this runtime call will return

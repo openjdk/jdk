@@ -380,8 +380,14 @@ public class Lint {
             map.put(option, this);
         }
 
-        public static LintCategory get(String option) {
-            return map.get(option);
+        /**
+         * Get the {@link LintCategory} having the given command line option.
+         *
+         * @param option lint category option string
+         * @return corresponding {@link LintCategory}, or empty if none exists
+         */
+        public static Optional<LintCategory> get(String option) {
+            return Optional.ofNullable(map.get(option));
         }
 
         public static EnumSet<LintCategory> newEmptySet() {
@@ -468,7 +474,7 @@ public class Lint {
         Attribute.Array values = (Attribute.Array)suppressWarnings.member(names.value);
         for (Attribute value : values.values) {
             Optional.of((String)((Attribute.Constant)value).value)
-              .map(LintCategory::get)
+              .flatMap(LintCategory::get)
               .ifPresent(result::add);
         }
         return result;
