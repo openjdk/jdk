@@ -73,6 +73,10 @@ public class TestMinMaxInlining {
         }
     }
 
+    // JDK-8307513 does not changes the way MinL/MaxL nodes intrinsified in backend.
+    // So they are still transformed into CmpL + CMoveL nodes after macro expansion.
+    // This is the reason for the different before/after macro expansion assertions below.
+
     @Test
     @Arguments(values = { Argument.NUMBER_MINUS_42, Argument.NUMBER_42 })
     @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, counts = { IRNode.MIN_L, "1" })
