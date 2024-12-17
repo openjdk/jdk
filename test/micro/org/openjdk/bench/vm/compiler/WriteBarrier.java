@@ -41,8 +41,8 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3, jvmArgs = {"-XX:LoopUnrollLimit=1"})
-public class WriteBarrier {
+@Fork(value = 3)
+public abstract class WriteBarrier {
 
     // For array references
     public static final int NUM_REFERENCES_SMALL = 32;
@@ -155,4 +155,15 @@ public class WriteBarrier {
         this.head.append(this.tail);
         this.tail.clear();
     }
+
+    // This run is useful to compare different GC barrier models without being
+    // affected by C2 unrolling the main loop differently for each model.
+    @Fork(value = 3, jvmArgs = {"-XX:LoopUnrollLimit=1"})
+    public static class WithoutUnrolling extends WriteBarrier {}
+
+    // This run is useful to study the interaction of GC barriers and loop
+    // unrolling. Check that the main loop in the testArray benchmarks is
+    // unrolled (or not) as expected for the studied GC barrier model.
+    @Fork(value = 3)
+    public static class WithDefaultUnrolling extends WriteBarrier {}
 }
