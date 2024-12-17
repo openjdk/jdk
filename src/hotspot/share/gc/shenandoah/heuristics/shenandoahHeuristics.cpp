@@ -291,6 +291,10 @@ void ShenandoahHeuristics::initialize() {
   // Nothing to do by default.
 }
 
+void ShenandoahHeuristics::post_initialize() {
+  // Nothing to do by default.
+}
+
 double ShenandoahHeuristics::elapsed_cycle_time() const {
   return os::elapsedTime() - _cycle_start;
 }

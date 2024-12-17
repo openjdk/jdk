@@ -80,6 +80,8 @@ public:
 
   virtual void initialize();
 
+  virtual void post_initialize();
+
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                      RegionData* data, size_t size,
                                                      size_t actual_free);

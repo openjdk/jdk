@@ -123,17 +123,6 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
 #else
   _most_recent_headroom_at_start_of_idle(0) {
     _freeset = ShenandoahHeap::heap()->free_set();
-    if (_is_generational) {
-      recalculate_trigger_threshold(ShenandoahGenerationalHeap::heap()->young_generation()->available());
-      _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
-    } else {
-      recalculate_trigger_threshold(ShenandoahHeap::heap()->global_generation()->available());
-      _control_thread = ShenandoahHeap::heap()->control_thread();
-#define KELVIN_VISIBLE
-#ifdef KELVIN_VISIBLE
-      log_info(gc)("ShenandoahAdaptiveHeuristics::initialize() set control thread to " PTR_FORMAT, p2i(_control_thread));
-#endif
-    }
   }
 #endif
 
@@ -148,6 +137,25 @@ ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {
 
 void ShenandoahAdaptiveHeuristics::initialize() {
   ShenandoahHeuristics::initialize();
+}
+
+void ShenandoahAdaptiveHeuristics::post_initialize() {
+  ShenandoahHeuristics::post_initialize();
+  if (_is_generational) {
+    _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
+#define KELVIN_VISIBLE
+#ifdef KELVIN_VISIBLE
+    log_info(gc)("ShenandoahAdaptiveHeuristics::post_initialize() set regulator thread to " PTR_FORMAT, p2i(_regulator_thread));
+#endif
+    recalculate_trigger_threshold(ShenandoahGenerationalHeap::heap()->young_generation()->available());
+  } else {
+    _control_thread = ShenandoahHeap::heap()->control_thread();
+#define KELVIN_VISIBLE
+#ifdef KELVIN_VISIBLE
+    log_info(gc)("ShenandoahAdaptiveHeuristics::post_initialize() set control thread to " PTR_FORMAT, p2i(_control_thread));
+#endif
+    recalculate_trigger_threshold(ShenandoahHeap::heap()->global_generation()->available());
+  }
 }
 
 double ShenandoahAdaptiveHeuristics::get_most_recent_wake_time() const {
@@ -166,13 +174,16 @@ double ShenandoahAdaptiveHeuristics::get_planned_sleep_interval() const {
   return (_is_generational)? _regulator_thread->get_planned_sleep_interval(): _control_thread->get_planned_sleep_interval();
 }
 
-
-
 void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_available) {
   // The trigger threshold represents mutator available - "head room".  
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
-  // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned safety
-  // buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying our trigger.
+  // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
+  // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
+  // our trigger.
+#ifdef KELVIN_VISIBLE
+  log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT "), _space_info: " PTR_FORMAT,
+               mutator_available, p2i(_space_info));
+#endif
   size_t capacity       = _space_info->soft_max_capacity();
   size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
   size_t penalties      = capacity / 100 * _gc_time_penalties;
@@ -180,8 +191,8 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   // make headroom adjustments
   size_t headroom_adjustments = spike_headroom + penalties;
 #ifdef KELVIN_VISIBLE
-  log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT "), spike_headroom: " SIZE_FORMAT ", penalties: " SIZE_FORMAT,
-               mutator_available, spike_headroom, penalties);
+  log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT "), spike_headroom: " SIZE_FORMAT
+               ", penalties: " SIZE_FORMAT, mutator_available, spike_headroom, penalties);
 #endif
   if (mutator_available >= headroom_adjustments) {
     mutator_available -= headroom_adjustments;;
@@ -189,7 +200,8 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
     mutator_available = 0;
   }
 
-  assert(!_is_generational || !strcmp(_space_info->name(), "YOUNG"), "Assumed young space, but got: %s", _space_info->name());
+  assert(!_is_generational || !strcmp(_space_info->name(), "Young") || !strcmp(_space_info->name(), "Global"),
+         "Assumed young or global space, but got: %s", _space_info->name());
   assert(_is_generational || !strcmp(_space_info->name(), ""), "Assumed global (unnamed) space, but got: %s", _space_info->name());
   log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: " SIZE_FORMAT "%s"
                " after adjusting for spike_headroom: " SIZE_FORMAT "%s"
@@ -204,10 +216,16 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
 
 void ShenandoahAdaptiveHeuristics::start_idle_span() {
   size_t mutator_available = ShenandoahHeap::heap()->get_mutator_free_after_updaterefs();
+#ifdef KELVIN_VISIBLE
+  log_info(gc)("start_idle_span() is recalculating trigger threshold with available: " SIZE_FORMAT, mutator_available);
+#endif
   recalculate_trigger_threshold(mutator_available);
 }
 
 void ShenandoahAdaptiveHeuristics::resume_idle_span(size_t mutator_available) {
+#ifdef KELVIN_VISIBLE
+  log_info(gc)("resume_idle_span() is recalculating trigger threshold with available: " SIZE_FORMAT, mutator_available);
+#endif
   recalculate_trigger_threshold(mutator_available);
 }
 

@@ -172,6 +172,10 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
   return _heuristics;
 }
 
+void ShenandoahGeneration::post_initialize_heuristics() {
+  _heuristics->post_initialize();
+}
+
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
   return Atomic::load(&_bytes_allocated_since_gc_start);
 }

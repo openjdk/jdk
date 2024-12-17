@@ -212,6 +212,7 @@ public:
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
   virtual void initialize();
+  virtual void post_initialize();
 
   double elapsed_cycle_time() const;
   double elapsed_degenerated_cycle_time() const;

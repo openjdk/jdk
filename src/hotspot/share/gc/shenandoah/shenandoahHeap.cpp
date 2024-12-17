@@ -402,12 +402,6 @@ jint ShenandoahHeap::initialize() {
 
     // Initialize to complete
     _marking_context->mark_complete();
-    size_t young_cset_regions, old_cset_regions;
-
-    // We are initializing free set.  We ignore cset region tallies.
-    size_t first_old, last_old, num_old;
-    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
-    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
 
   if (AlwaysPreTouch) {
@@ -456,10 +450,23 @@ jint ShenandoahHeap::initialize() {
     _pacer->setup_for_idle();
   }
 
-  initialize_controller();
-
   // Now we know the number of regions and heap sizes and have initialized controller, initialize the heuristics.
   initialize_heuristics();
+
+  // Initialization of controller markes use of varaibles esstablished by initialize_heuristics.
+  initialize_controller();
+
+  // Certain initialization of heuristics must be deferred until after controller is initialized.
+  post_initialize_heuristics();
+
+  {
+    ShenandoahHeapLocker locker(lock());
+    // We are initializing free set.  We ignore cset region tallies.
+    size_t young_cset_regions, old_cset_regions;
+    size_t first_old, last_old, num_old;
+    _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+  }
 
   if (ShenandoahUncommit) {
     _uncommit_thread = new ShenandoahUncommitThread(this);
@@ -515,6 +522,11 @@ void ShenandoahHeap::initialize_heuristics() {
   _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
   _global_generation->initialize_heuristics(mode());
 }
+
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize_heuristics();
+}
+
 
 #ifdef _MSC_VER
 #pragma warning( push )

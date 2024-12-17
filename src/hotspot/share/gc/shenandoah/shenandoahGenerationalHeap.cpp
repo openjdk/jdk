@@ -148,6 +148,12 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _old_generation->initialize_heuristics(mode());
 }
 
+void ShenandoahGenerationalHeap::post_initialize_heuristics() {
+  ShenandoahHeap::post_initialize_heuristics();
+  _young_generation->post_initialize_heuristics();
+  _old_generation->post_initialize_heuristics();
+}
+
 void ShenandoahGenerationalHeap::initialize_serviceability() {
   assert(mode()->is_generational(), "Only for the generational mode");
   _young_gen_memory_pool = new ShenandoahYoungGenMemoryPool(this);
