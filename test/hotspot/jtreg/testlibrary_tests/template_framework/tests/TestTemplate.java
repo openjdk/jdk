@@ -44,6 +44,8 @@ public class TestTemplate {
         test3();
         test4();
         test5();
+        test6();
+        // TODO dispatch, variables, choose, con, fields, etc
     }
 
     public static void test1() {
@@ -160,6 +162,17 @@ public class TestTemplate {
                     .where("param2", Arrays.asList("xxx", "yyy"))
                     .add(staticsTemplate, mainTemplate, testTemplate);
 
+        Template test2Template = new Template("my_example_test2",
+            """
+            test2 #{param1} #{param2}
+            """
+        );
+
+        instantiator.where("param1", "alice")
+                    .where("param2", "bob")
+                    .repeat(3)
+                    .add(null, null, test2Template);
+
         String code = instantiator.instantiate();
         String expected =
             """
@@ -195,7 +208,54 @@ public class TestTemplate {
 
                 test bbb yyy
 
+                test2 alice bob
+
+                test2 alice bob
+
+                test2 alice bob
+
             }""";
+        checkEQ(code, expected);
+    }
+
+    public static void test6() {
+        HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
+
+        codeGenerators.add(new Template("my_generator_1",
+            """
+            test1 #{param1} #{param2}
+            """
+        ));
+
+        CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
+
+        Template template = new Template("my_template",
+            """
+            #{:repeat(call=my_generator_1,repeat=5,param1=alpha,param2=beta)}
+            {
+                #{:repeat(call=my_generator_1,repeat=5,param1=gamma,param2=delta)}
+            }
+            """
+        );
+
+        String code = template.with(library).instantiate();
+        String expected =
+            """
+            test1 alpha beta
+            test1 alpha beta
+            test1 alpha beta
+            test1 alpha beta
+            test1 alpha beta
+
+            {
+                test1 gamma delta
+                test1 gamma delta
+                test1 gamma delta
+                test1 gamma delta
+                test1 gamma delta
+
+            }
+            """;
         checkEQ(code, expected);
     }
 
