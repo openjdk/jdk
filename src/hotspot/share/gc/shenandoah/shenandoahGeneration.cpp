@@ -68,14 +68,10 @@ class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahHeap*           _heap;
   ShenandoahMarkingContext* _ctx;
-  ShenandoahGeneration*     _generation;
 
 public:
-  explicit ShenandoahResetBitmapClosure(ShenandoahGeneration* generation) :
-    ShenandoahHeapRegionClosure(),
-    _heap(ShenandoahHeap::heap()),
-    _ctx(_heap->marking_context()),
-    _generation(generation) {}
+  explicit ShenandoahResetBitmapClosure() :
+    ShenandoahHeapRegionClosure(), _heap(ShenandoahHeap::heap()), _ctx(_heap->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* region) override {
     assert(!_heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
@@ -246,7 +242,7 @@ void ShenandoahGeneration::reset_mark_bitmap() {
 
   set_mark_incomplete();
 
-  ShenandoahResetBitmapClosure<FOR_CURRENT_CYCLE, UPDATE_REGION_STATE> closure(this);
+  ShenandoahResetBitmapClosure<FOR_CURRENT_CYCLE, UPDATE_REGION_STATE> closure;
   parallel_heap_region_iterate_free(&closure);
 }
 // Explicit specializations
