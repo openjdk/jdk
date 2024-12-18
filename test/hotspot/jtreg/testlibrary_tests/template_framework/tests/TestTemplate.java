@@ -39,22 +39,25 @@ import compiler.lib.template_framework.*;
 public class TestTemplate {
 
     public static void main(String[] args) {
-        test1();
-        test2();
-        test3();
-        test4();
-        test5();
-        test6();
+        testSingleLine();
+        testMultiLine();
+        testMultiLineWithParameters();
+        testClassInstantiatorWithCustomLibrary();
+        testClassInstantiatorWithCustomLibrary2();
+        testRepeat();
+        testDispatch();
+        test8();
+        test9();
         // TODO dispatch, variables, choose, con, fields, etc
     }
 
-    public static void test1() {
+    public static void testSingleLine() {
         Template template = new Template("my_template","Hello World!");
         String code = template.instantiate();
         checkEQ(code, "Hello World!");
     }
 
-    public static void test2() {
+    public static void testMultiLine() {
         Template template = new Template("my_template",
             """
             Code on more
@@ -70,14 +73,14 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void test3() {
+    public static void testMultiLineWithParameters() {
         Template template = new Template("my_template","start #{p1} #{p2} end");
         checkEQ(template.where("p1", "x").where("p2", "y").instantiate(), "start x y end");
         checkEQ(template.where("p1", "a").where("p2", "b").instantiate(), "start a b end");
         checkEQ(template.where("p1", "").where("p2", "").instantiate(), "start   end");
     }
 
-    public static void test4() {
+    public static void testClassInstantiatorWithCustomLibrary() {
         HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
         codeGenerators.add(new Template("my_generator_1", "proton"));
@@ -135,7 +138,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void test5() {
+    public static void testClassInstantiatorWithCustomLibrary2() {
         TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest");
 
         Template staticsTemplate = new Template("my_example_statics",
@@ -218,7 +221,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void test6() {
+    public static void testRepeat() {
         HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
         codeGenerators.add(new Template("my_generator_1",
@@ -257,6 +260,222 @@ public class TestTemplate {
             }
             """;
         checkEQ(code, expected);
+    }
+
+    public static void testDispatch() {
+        HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
+
+        codeGenerators.add(new Template("my_generator",
+            """
+            test1a #{param1}
+            test1b #{param2}
+            """
+        ));
+
+        CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
+
+        Template template = new Template("my_template",
+            """
+            alpha
+            {
+                #open(class)
+                beta
+                gamma
+                {
+                    eins
+                    #open(method)
+                    zwei
+                    x#{:dispatch(scope=class,call=my_generator,param1=abc,param2=bcd)}x
+                    y#{:dispatch(scope=class,call=my_generator,param1=cde,param2=def)}y
+                    z#{:dispatch(scope=method,call=my_generator,param1=efg,param2=gfh)}z
+                    w#{:dispatch(scope=method,call=my_generator,param1=fhi,param2=hij)}w
+                    drei
+                    #close(method)
+                }
+                delta
+                {
+                    un
+                    #open(method)
+                    deux
+                    x#{:dispatch(scope=class,call=my_generator,param1=123,param2=234)}x
+                    y#{:dispatch(scope=class,call=my_generator,param1=345,param2=456)}y
+                    z#{:dispatch(scope=method,call=my_generator,param1=567,param2=678)}z
+                    w#{:dispatch(scope=method,call=my_generator,param1=789,param2=890)}w
+                    troi
+                    #close(method)
+                }
+                epsilon
+                x#{:dispatch(scope=class,call=my_generator,param1=xxx,param2=yyy)}x
+                y#{:dispatch(scope=class,call=my_generator,param1=zzz,param2=www)}y
+                {
+                    monday
+                    #open(class)
+                    tuesday
+                    x#{:dispatch(scope=class,call=my_generator,param1=bar,param2=foo)}x
+                    y#{:dispatch(scope=class,call=my_generator,param1=alice,param2=bob)}y
+                    {
+                        uno
+                        #open(method)
+                        due
+                        x#{:dispatch(scope=class,call=my_generator,param1=alef,param2=bet)}x
+                        y#{:dispatch(scope=class,call=my_generator,param1=vet,param2=gimel)}y
+                        z#{:dispatch(scope=method,call=my_generator,param1=dalet,param2=he)}z
+                        w#{:dispatch(scope=method,call=my_generator,param1=vav,param2=zayin)}w
+                        tre
+                        #close(method)
+                        quatro
+                    }
+                    wednesday
+                    #close(class)
+                    thursday
+                    x#{:dispatch(scope=class,call=my_generator,param1=aaa,param2=sss)}x
+                    y#{:dispatch(scope=class,call=my_generator,param1=ddd,param2=fff)}y
+                    friday
+                }
+                zeta
+                eta
+                x#{:dispatch(scope=class,call=my_generator,param1=up,param2=down)}x
+                y#{:dispatch(scope=class,call=my_generator,param1=left,param2=right)}y
+                theta
+                #close(class)
+            }
+            """
+        );
+
+        String code = template.with(library).instantiate();
+        String expected =
+            """
+            alpha
+            {
+                test1a abc
+                test1b bcd
+
+                test1a cde
+                test1b def
+
+                test1a 123
+                test1b 234
+
+                test1a 345
+                test1b 456
+
+                test1a xxx
+                test1b yyy
+
+                test1a zzz
+                test1b www
+
+                test1a aaa
+                test1b sss
+
+                test1a ddd
+                test1b fff
+
+                test1a up
+                test1b down
+
+                test1a left
+                test1b right
+
+
+                beta
+                gamma
+                {
+                    eins
+                    test1a efg
+                    test1b gfh
+
+                    test1a fhi
+                    test1b hij
+
+
+                    zwei
+                    xx
+                    yy
+                    zz
+                    ww
+                    drei
+
+                }
+                delta
+                {
+                    un
+                    test1a 567
+                    test1b 678
+
+                    test1a 789
+                    test1b 890
+
+
+                    deux
+                    xx
+                    yy
+                    zz
+                    ww
+                    troi
+
+                }
+                epsilon
+                xx
+                yy
+                {
+                    monday
+                    test1a bar
+                    test1b foo
+
+                    test1a alice
+                    test1b bob
+
+                    test1a alef
+                    test1b bet
+
+                    test1a vet
+                    test1b gimel
+
+
+                    tuesday
+                    xx
+                    yy
+                    {
+                        uno
+                        test1a dalet
+                        test1b he
+
+                        test1a vav
+                        test1b zayin
+
+
+                        due
+                        xx
+                        yy
+                        zz
+                        ww
+                        tre
+
+                        quatro
+                    }
+                    wednesday
+
+                    thursday
+                    xx
+                    yy
+                    friday
+                }
+                zeta
+                eta
+                xx
+                yy
+                theta
+
+            }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void test8() {
+    }
+
+    public static void test9() {
     }
 
     public static void checkEQ(String code, String expected) {
