@@ -36,6 +36,10 @@ import java.util.Objects;
  * can be called after the stream has been closed without generating an
  * {@code IOException}.
  *
+ * @apiNote
+ * {@link Writer#of(Appendable)} provides a method to write into any
+ * {@link Appendable} that may be more efficient than {@code StringWriter}.
+ *
  * @author      Mark Reinhold
  * @since       1.1
  */
@@ -43,6 +47,7 @@ import java.util.Objects;
 public class StringWriter extends Writer {
 
     private final StringBuffer buf;
+    private final Writer w;
 
     /**
      * Create a new string writer using the default initial string-buffer
@@ -51,6 +56,7 @@ public class StringWriter extends Writer {
     public StringWriter() {
         buf = new StringBuffer();
         lock = buf;
+        w = Writer.of(buf);
     }
 
     /**
@@ -70,13 +76,18 @@ public class StringWriter extends Writer {
         }
         buf = new StringBuffer(initialSize);
         lock = buf;
+        w = Writer.of(buf);
     }
 
     /**
      * Write a single character.
      */
     public void write(int c) {
-        buf.append((char) c);
+        try {
+            w.write(c);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -92,18 +103,22 @@ public class StringWriter extends Writer {
      *          of the given array
      */
     public void write(char[] cbuf, int off, int len) {
-        Objects.checkFromIndexSize(off, len, cbuf.length);
-        if (len == 0) {
-            return;
+        try {
+            w.write(cbuf, off, len);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        buf.append(cbuf, off, len);
     }
 
     /**
      * Write a string.
      */
     public void write(String str) {
-        buf.append(str);
+        try {
+            w.write(str);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -119,7 +134,11 @@ public class StringWriter extends Writer {
      *          of the given string
      */
     public void write(String str, int off, int len)  {
-        buf.append(str, off, off + len);
+        try {
+            w.write(str, off, len);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -149,7 +168,11 @@ public class StringWriter extends Writer {
      * @since  1.5
      */
     public StringWriter append(CharSequence csq) {
-        write(String.valueOf(csq));
+        try {
+            w.append(csq);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return this;
     }
 
@@ -188,8 +211,12 @@ public class StringWriter extends Writer {
      * @since  1.5
      */
     public StringWriter append(CharSequence csq, int start, int end) {
-        if (csq == null) csq = "null";
-        return append(csq.subSequence(start, end));
+        try {
+            w.append(csq, start, end);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return this;
     }
 
     /**
@@ -210,7 +237,11 @@ public class StringWriter extends Writer {
      * @since 1.5
      */
     public StringWriter append(char c) {
-        write(c);
+        try {
+            w.append(c);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return this;
     }
 
