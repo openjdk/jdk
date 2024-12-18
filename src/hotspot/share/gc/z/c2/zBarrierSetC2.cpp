@@ -612,32 +612,6 @@ static bool is_array_allocation(const Node* phi) {
   ShouldNotReachHere();
 }
 
-// Match the phi node that connects a TLAB allocation fast path with its slowpath
-static bool is_allocation(const Node* node) {
-  if (node->req() != 3) {
-    return false;
-  }
-  const Node* const fast_node = node->in(2);
-  if (!fast_node->is_Mach()) {
-    return false;
-  }
-  const MachNode* const fast_mach = fast_node->as_Mach();
-  if (fast_mach->ideal_Opcode() != Op_LoadP) {
-    return false;
-  }
-  const TypePtr* const adr_type = nullptr;
-  intptr_t offset;
-  const Node* const base = get_base_and_offset(fast_mach, offset);
-  if (base == nullptr || !base->is_Mach() || !is_concrete(offset)) {
-    return false;
-  }
-  const MachNode* const base_mach = base->as_Mach();
-  if (base_mach->ideal_Opcode() != Op_ThreadLocal) {
-    return false;
-  }
-  return offset == in_bytes(Thread::tlab_top_offset());
-}
-
 static void elide_mach_barrier(MachNode* mach) {
   mach->set_barrier_data(ZBarrierElided);
 }
