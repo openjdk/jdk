@@ -34,6 +34,7 @@
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/deferred.hpp"
 
 /*
  * Virtual memory counter
@@ -91,11 +92,12 @@ class VirtualMemorySummary;
 
 // This class represents a snapshot of virtual memory at a given time.
 // The latest snapshot is saved in a static area.
-class VirtualMemorySnapshot : public ResourceObj {
+class VirtualMemorySnapshot {
   friend class VirtualMemorySummary;
 
  private:
-  VirtualMemory  _virtual_memory[mt_number_of_tags];
+  using VirtualMemoryArray =  NMTStaticArray<VirtualMemory, std::underlying_type_t<MemTag>>;
+  VirtualMemoryArray  _virtual_memory;
 
  public:
   inline VirtualMemory* by_tag(MemTag mem_tag) {
@@ -133,7 +135,6 @@ class VirtualMemorySnapshot : public ResourceObj {
 
 class VirtualMemorySummary : AllStatic {
  public:
-
   static inline void record_reserved_memory(size_t size, MemTag mem_tag) {
     as_snapshot()->by_tag(mem_tag)->reserve_memory(size);
   }
@@ -167,11 +168,16 @@ class VirtualMemorySummary : AllStatic {
   static void snapshot(VirtualMemorySnapshot* s);
 
   static VirtualMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
+  }
+
+  static bool initialize() {
+    new (as_snapshot()) VirtualMemorySnapshot();
+    return true;
   }
 
  private:
-  static VirtualMemorySnapshot _snapshot;
+  static Deferred<VirtualMemorySnapshot> _snapshot;
 };
 
 
