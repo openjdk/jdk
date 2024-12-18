@@ -48,7 +48,7 @@ public class TestTemplate {
         testDispatch();
         testClassInstantiatorAndDispatch();
         test9();
-        // TODO dispatch, variables, choose, con, fields, etc
+        // variables, choose, con, fields, etc
     }
 
     public static void testSingleLine() {

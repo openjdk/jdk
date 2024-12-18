@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary All sorts of random things.
+ * @summary Generate random code with the library.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestWIP
+ * @run driver template_framework.examples.TestRandomCode
  */
 
 package template_framework.examples;
@@ -34,7 +34,7 @@ package template_framework.examples;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
 
-public class TestWIP {
+public class TestRandomCode {
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -46,54 +46,29 @@ public class TestWIP {
         // Compile the source file.
         comp.compile();
 
-        // Object ret = XYZ.test(5);
-        Object ret = comp.invoke("p.xyz.InnerTest", "test", new Object[] {});
-        System.out.println("res: " + ret);
-
-        // // Extract return value of invocation, verify its value.
-        // int i = (int) ret;
-        // System.out.println("Result of call: " + i);
-        // if (i != 10) {
-        //     throw new RuntimeException("wrong value: " + i);
-        // }
+        // InnerTest.main();
+        comp.invoke("p.xyz.InnerTest", "main", new Object[] {});
     }
 
     // Generate a source Java file as String
     public static String generate() {
+        // Template with a main method that calls the CodeGenerator "code", which
+	// generates random code.
         Template template = new Template("my_example",
             """
             package p.xyz;
 
             public class InnerTest {
                 #open(class)
-                public static int test() {
+                public static void main() {
                     #open(method)
-                    int ${con1:int} = #{conx:int_con};
-                    int ${con2:int} = #{cony:int_con};
-                    int $con3 = #{:int_con};
-                    int ${con4} = 123;
-                    final int ${con5:int:final} = ${con4};
-                    $con2 = #{conz:int_con(lo=3,hi=11):$con2,$con2};
-                    #{:code:$con1,$con2,$con5}
-                    int ${xxx:int} = 0;
-                    #{:code(var=$xxx):$xxx,$con5};
-                    return $con1 + $con2 + #{param1} + #{param2};
-                    #close(method)
-                }
-
-                public static int test2() {
-                    #open(method)
-                    ${fieldI:int} += #{:int_con};
-                    #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI,final=false)}
-                    ${varI:int} += #{:int_con};
-                    #{:dispatch(scope=method,call=new_var_in_method,name=$varI,final=false)}
-                    return $fieldI + $varI;
+                    #{:code}
                     #close(method)
                 }
                 #close(class)
             }
             """
         );
-        return template.where("param1", "1").where("param2", "2").instantiate();
+        return template.instantiate();
     }
 }

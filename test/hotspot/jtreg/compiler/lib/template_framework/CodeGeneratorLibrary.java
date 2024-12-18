@@ -270,12 +270,15 @@ public final class CodeGeneratorLibrary {
                 scope.stream.addCodeToLine(elements[r]);
         }, 0));
 
+        // Dispatch generator call to a ClassScope or MethodScope
+        codeGenerators.add(factoryDispatch());
+
+        // Control flow.
+        codeGenerators.add(factoryRepeat());
+
         // Variable load/store.
         codeGenerators.add(factoryLoadStore(false));
         codeGenerators.add(factoryLoadStore(true));
-
-        // Dispatch generator call to a ClassScope or MethodScope
-        codeGenerators.add(factoryDispatch());
 
         // Add variable to ClassScope or MethodScope.
         codeGenerators.add(factoryAddVariable());
@@ -300,66 +303,61 @@ public final class CodeGeneratorLibrary {
             """
         ));
 
-        // Control flow.
-        codeGenerators.add(factoryRepeat());
+        addRandomCode(codeGenerators);
+        return new CodeGeneratorLibrary(null, codeGenerators);
+    }
 
-        // Code blocks.
-        codeGenerators.add(new Template("empty",
+    private static void addRandomCode(HashSet<CodeGenerator> codeGenerators) {
+        // empty: as default and generally last generator in recursive generation.
+        codeGenerators.add(new Template("empty","/* empty */", 0));
+
+        codeGenerators.add(new Template("code_split",
             """
-            // $empty
-            """
-        ));
-        codeGenerators.add(new Template("split",
-            """
-            // start $split
-                #{:code}
-            // mid   $split
-                #{:code}
-            // end   $split
+            #{:code}
+            #{:code}
             """
         ));
-        codeGenerators.add(new Template("prefix",
-            """
-            // start $prefix
-            // ... prefix code ...
-                #{:code}
-            // end   $prefix
-            """
-        ));
-        codeGenerators.add(new Template("foo",
-            """
-            // start $foo
-            {
-                #{v1:store(type=int)} = #{v11:load(type=int)};
-                #{v2:store(type=int)} = #{v12:load(type=int)};
-                #{v3:store(type=int)} = #{v13:load(type=int)};
-                #{v4:store(type=int)} = #{v14:load(type=int)};
-                #{v5:store(type=int)} = #{v15:load(type=int)};
-            }
-            // end   $foo
-            """
-        ));
-        codeGenerators.add(new Template("bar",
-            """
-            // start $bar
-            {
-                ${fieldI} += 42;
-                #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI,final=false)}
-                ${varI} += 42;
-                #{:dispatch(scope=method,call=new_var_in_method,name=$varI,final=false)}
-            }
-            // end   $bar
-            """
-        ));
+        // codeGenerators.add(new Template("prefix",
+        //     """
+        //     // start $prefix
+        //     // ... prefix code ...
+        //         #{:code}
+        //     // end   $prefix
+        //     """
+        // ));
+        // codeGenerators.add(new Template("foo",
+        //     """
+        //     // start $foo
+        //     {
+        //         #{v1:store(type=int)} = #{v11:load(type=int)};
+        //         #{v2:store(type=int)} = #{v12:load(type=int)};
+        //         #{v3:store(type=int)} = #{v13:load(type=int)};
+        //         #{v4:store(type=int)} = #{v14:load(type=int)};
+        //         #{v5:store(type=int)} = #{v15:load(type=int)};
+        //     }
+        //     // end   $foo
+        //     """
+        // ));
+        // codeGenerators.add(new Template("bar",
+        //     """
+        //     // start $bar
+        //     {
+        //         ${fieldI} += 42;
+        //         #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI,final=false)}
+        //         ${varI} += 42;
+        //         #{:dispatch(scope=method,call=new_var_in_method,name=$varI,final=false)}
+        //     }
+        //     // end   $bar
+        //     """
+        // ));
 
         // Selector for code blocks.
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("code", "empty");
-        selectorForCode.add("split",  100);
-        selectorForCode.add("prefix", 100);
-        selectorForCode.add("foo", 100);
-        selectorForCode.add("bar", 100);
+        selectorForCode.add("code_split",  100);
+        //selectorForCode.add("prefix", 100);
+        //selectorForCode.add("foo", 100);
+        //selectorForCode.add("bar", 100);
         codeGenerators.add(selectorForCode);
 
-        return new CodeGeneratorLibrary(null, codeGenerators);
     }
 }
