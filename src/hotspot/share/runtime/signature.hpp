@@ -28,7 +28,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
-#include "sanitizers/ub.hpp"
+
 
 
 // Static routines and parsing loops for processing field and method
@@ -318,6 +318,7 @@ class Fingerprinter: public SignatureIterator {
  private:
   fingerprint_t _accumulator;
   int _param_size;
+  int _param_count;
   int _stack_arg_slots;
   int _shift_count;
   const Method* _method;
@@ -329,6 +330,7 @@ class Fingerprinter: public SignatureIterator {
     _accumulator = 0;
     _shift_count = fp_result_feature_size + fp_static_feature_size;
     _param_size = 0;
+    _param_count = 0;
     _stack_arg_slots = 0;
   }
 
@@ -339,10 +341,13 @@ class Fingerprinter: public SignatureIterator {
   void do_type_calling_convention(BasicType type);
 
   friend class SignatureIterator;  // so do_parameters_on can call do_type
-  ATTRIBUTE_NO_UBSAN
+
   void do_type(BasicType type) {
     assert(fp_is_valid_type(type), "bad parameter type");
-    _accumulator |= ((fingerprint_t)type << _shift_count);
+    if (_param_count <= fp_max_size_of_parameters) {
+      _accumulator |= ((fingerprint_t)type << _shift_count);
+    }
+    _param_count++;
     _shift_count += fp_parameter_feature_size;
     _param_size += (is_double_word_type(type) ? 2 : 1);
     do_type_calling_convention(type);

@@ -188,7 +188,7 @@ void Fingerprinter::compute_fingerprint_and_return_type(bool static_flag) {
 #endif
 
   // Detect overflow.  (We counted _param_size correctly.)
-  if (_method == nullptr && _param_size > fp_max_size_of_parameters) {
+  if (_method == nullptr && _param_count > fp_max_size_of_parameters) {
     // We did a one-pass computation of argument size, return type,
     // and fingerprint.
     _fingerprint = overflow_fingerprint();
