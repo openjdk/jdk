@@ -541,11 +541,6 @@ void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
 }
 
 void G1BarrierSetC2::analyze_dominating_barriers() const {
-
-  if (!UseNewCode) {
-    return;
-  }
-
   ResourceMark rm;
   PhaseCFG* const cfg = Compile::current()->cfg();
 
@@ -580,7 +575,7 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
   }
 
   // Find dominating allocations for each store and elide barriers if there is
-  // no safepoint in between.
+  // no safepoint poll in between.
   elide_dominated_barriers(stores, allocations);
 }
 
