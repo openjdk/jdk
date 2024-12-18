@@ -14,6 +14,22 @@ public class TestLongReg {
         return ans;
     }
 
+    public static long testCmovMin(long a, long b) {
+        return Math.min(a, b);
+    }
+
+    public static long testCmovMax(long a, long b) {
+        return Math.max(a, b);
+    }
+
+    public static long testCmov(long a, long b) {
+        return a < 5 ? b : a;
+    }
+
+    public static long testCmovU(long a, long b) {
+        return Long.compareUnsigned(a, b) < 0 ? b : a;
+    }
+
     public static long testTzcnt(long a, long b) {
         return  Long.numberOfTrailingZeros(a);
     }

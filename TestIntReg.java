@@ -14,6 +14,23 @@ public class TestIntReg {
         return ans;
     }
 
+    public static int testCmovMin(int a, int b) {
+        return Math.min(a, b);
+    }
+
+    public static int testCmovMax(int a, int b) {
+        return Math.max(a, b);
+    }
+
+    public static int testCmov(int a, int b) {
+        return a > 5 ? b : a;
+    }
+
+    public static int testCmovU(int a, int b) {
+        return Integer.compareUnsigned(a, b) > 0 ? b : a;
+    }
+
+
     public static int testTzcnt(int a, int b) {
         return  Integer.numberOfTrailingZeros(a);
     }
