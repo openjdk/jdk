@@ -56,7 +56,9 @@ public class bug4865918 {
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
-            mousePressLatch.await(2, TimeUnit.SECONDS);
+            if (!mousePressLatch.await(2, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Timed out waiting for mouse press");
+            }
 
             robot.waitForIdle();
             robot.delay(200);
