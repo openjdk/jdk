@@ -283,7 +283,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  heap->global_generation()->reset_mark_bitmap<true, true>();
+  heap->global_generation()->reset_mark_bitmap<true>();
   assert(heap->marking_context()->is_bitmap_clear(), "sanity");
   assert(!heap->global_generation()->is_mark_complete(), "sanity");
 
