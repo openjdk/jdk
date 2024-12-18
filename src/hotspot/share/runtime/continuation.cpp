@@ -162,9 +162,10 @@ freeze_result Continuation::try_preempt(JavaThread* current, oop continuation) {
   JVMTI_ONLY(jubm.set_result(res);)
 
   if (current->has_pending_exception()) {
-    assert(res == freeze_exception, "");
+    assert(res == freeze_exception, "expecting an exception result from freeze");
     // We don't want to throw exceptions, especially when returning
-    // from monitorenter since the compiler does not expect one.
+    // from monitorenter since the compiler does not expect one. We
+    // just ignore the exception and pin the vthread to the carrier.
     current->clear_pending_exception();
   }
   return res;
