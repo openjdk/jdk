@@ -49,6 +49,8 @@
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jdk.test.lib.thread.VThreadRunner;
+
 public class MonitorEnterWaitOOME {
     static volatile Object data;
     static Thread.State dummyState = Thread.State.RUNNABLE; // load java.lang.Thread$State
@@ -56,6 +58,8 @@ public class MonitorEnterWaitOOME {
     public static void main(String[] args) throws Throwable {
         final boolean testWait = args.length >= 1 ? Boolean.parseBoolean(args[0]) : false;
         final long timeout = testWait && args.length == 2 ? Long.parseLong(args[1]) : 0L;
+
+        VThreadRunner.ensureParallelism(2);
 
         Thread vthread;
         var lock = new Object();
@@ -118,12 +122,16 @@ public class MonitorEnterWaitOOME {
 
     private static void awaitTrue(AtomicBoolean ready) {
         // Don't call anything that might allocate from the Java heap.
-        while (!ready.get()) {}
+        while (!ready.get()) {
+            Thread.onSpinWait();
+        }
     }
 
     private static void awaitState(Thread thread, Thread.State expectedState) {
         // Don't call anything that might allocate from the Java heap.
-        while (thread.getState() != expectedState) {}
+        while (thread.getState() != expectedState) {
+            Thread.onSpinWait();
+        }
     }
 
     private static void joinVThread(Thread vthread, AtomicBoolean ready, AtomicReference<Throwable> exRef) throws Throwable {
@@ -133,6 +141,7 @@ public class MonitorEnterWaitOOME {
             if (ex != null) {
                 throw ex;
             }
+            Thread.onSpinWait();
         }
         vthread.join();
     }
