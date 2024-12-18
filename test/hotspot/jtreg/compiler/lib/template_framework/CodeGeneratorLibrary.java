@@ -276,6 +276,12 @@ public final class CodeGeneratorLibrary {
         // Control flow.
         codeGenerators.add(factoryRepeat());
 
+        addVariableCodeGenerators(codeGenerators);
+        addRandomCode(codeGenerators);
+        return new CodeGeneratorLibrary(null, codeGenerators);
+    }
+
+    private static void addVariableCodeGenerators(HashSet<CodeGenerator> codeGenerators) {
         // Variable load/store.
         codeGenerators.add(factoryLoadStore(false));
         codeGenerators.add(factoryLoadStore(true));
@@ -302,9 +308,6 @@ public final class CodeGeneratorLibrary {
             // end   $new_var_in_method
             """
         ));
-
-        addRandomCode(codeGenerators);
-        return new CodeGeneratorLibrary(null, codeGenerators);
     }
 
     private static void addRandomCode(HashSet<CodeGenerator> codeGenerators) {
