@@ -1438,24 +1438,6 @@ LRESULT CALLBACK AwtToolkit::MouseLowLevelHook(int code,
             }
 
             tk.m_lastWindowUnderMouse = hwnd;
-
-            if (fw) {
-                fw->UpdateSecurityWarningVisibility();
-            }
-            // ... however, because we use GA_ROOT, we may find the warningIcon
-            // which is not a Java windows.
-            if (AwtWindow::IsWarningWindow(hwnd)) {
-                hwnd = ::GetParent(hwnd);
-                if (hwnd) {
-                    tw = (AwtWindow*)AwtComponent::GetComponent(hwnd);
-                }
-                tk.m_lastWindowUnderMouse = hwnd;
-            }
-            if (tw) {
-                tw->UpdateSecurityWarningVisibility();
-            }
-
-
         }
     }
 
@@ -1907,48 +1889,6 @@ HICON AwtToolkit::GetAwtIconSm()
         prevSmy = smy;
     }
     return defaultIconSm;
-}
-
-// The icon at index 0 must be gray. See AwtWindow::GetSecurityWarningIcon()
-HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
-{
-    //Note: should not exceed 10 because of the current implementation.
-    static const int securityWarningIconCounter = 3;
-
-    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};
-    static UINT securityWarningIconWidth[securityWarningIconCounter]  = {0, 0, 0};
-    static UINT securityWarningIconHeight[securityWarningIconCounter] = {0, 0, 0};
-
-    index = AwtToolkit::CalculateWave(index, securityWarningIconCounter);
-
-    if (securityWarningIcon[index] == NULL ||
-            w != securityWarningIconWidth[index] ||
-            h != securityWarningIconHeight[index])
-    {
-        if (securityWarningIcon[index] != NULL)
-        {
-            ::DestroyIcon(securityWarningIcon[index]);
-        }
-
-        static const wchar_t securityWarningIconName[] = L"SECURITY_WARNING_";
-        wchar_t iconResourceName[sizeof(securityWarningIconName) + 2];
-        ::ZeroMemory(iconResourceName, sizeof(iconResourceName));
-        wcscpy(iconResourceName, securityWarningIconName);
-
-        wchar_t strIndex[2];
-        ::ZeroMemory(strIndex, sizeof(strIndex));
-        strIndex[0] = L'0' + index;
-
-        wcscat(iconResourceName, strIndex);
-
-        securityWarningIcon[index] = (HICON)::LoadImage(GetModuleHandle(),
-                iconResourceName,
-                IMAGE_ICON, w, h, LR_DEFAULTCOLOR);
-        securityWarningIconWidth[index] = w;
-        securityWarningIconHeight[index] = h;
-    }
-
-    return securityWarningIcon[index];
 }
 
 void throw_if_shutdown(void)

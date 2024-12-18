@@ -444,7 +444,7 @@ public class Depend implements Plugin {
         }
 
         @Override
-        public Void visitRecordComponent(@SuppressWarnings("preview")RecordComponentElement e, Void p) {
+        public Void visitRecordComponent(RecordComponentElement e, Void p) {
             update(e.getSimpleName());
             visit(e.asType());
             return null;

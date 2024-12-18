@@ -47,6 +47,9 @@ public final class Message {
     public MessageInfo getMessageInfo() {
         if (messageInfo == null) {
             MessageLine l = firstLine.prev;
+            if (l != null && l.isLint()) {
+                l = l.prev;
+            }
             if (l != null && l.isInfo())
                 messageInfo = new MessageInfo(l.text);
             else
@@ -69,7 +72,7 @@ public final class Message {
             while (l.text.isEmpty())
                 l = l.next;
         } else {
-            if (l.prev != null && l.prev.isInfo())
+            if (l.prev != null && (l.prev.isInfo() || l.prev.isLint()))
                 l = l.prev;
         }
 

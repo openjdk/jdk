@@ -26,8 +26,6 @@
 package java.awt;
 
 import java.awt.image.BufferedImage;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Locale;
 
 import sun.awt.PlatformGraphicsInfo;
@@ -137,20 +135,16 @@ public abstract class GraphicsEnvironment {
      * @return the value of the property "java.awt.headless"
      * @since 1.4
      */
-    @SuppressWarnings("removal")
     private static boolean getHeadlessProperty() {
         if (headless == null) {
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                String nm = System.getProperty("java.awt.headless");
+            String nm = System.getProperty("java.awt.headless");
 
-                if (nm == null) {
-                    headless = defaultHeadless =
-                        PlatformGraphicsInfo.getDefaultHeadlessProperty();
-                } else {
-                    headless = Boolean.valueOf(nm);
-                }
-                return null;
-            });
+            if (nm == null) {
+                headless = defaultHeadless =
+                    PlatformGraphicsInfo.getDefaultHeadlessProperty();
+            } else {
+                headless = Boolean.valueOf(nm);
+            }
         }
         return headless;
     }

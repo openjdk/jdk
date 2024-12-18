@@ -348,8 +348,6 @@ PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfTrueNode* templ
                                                                ParsePredicateNode* unswitched_loop_parse_predicate) {
   TemplateAssertionPredicate template_assertion_predicate(template_assertion_predicate_success_proj);
   IfTrueNode* template_success_proj = template_assertion_predicate.clone(unswitched_loop_parse_predicate->in(0), this);
-  assert(assertion_predicate_has_loop_opaque_node(template_success_proj->in(0)->as_If()),
-         "must find Assertion Predicate for fast loop");
   _igvn.replace_input_of(unswitched_loop_parse_predicate, 0, template_success_proj);
   set_idom(unswitched_loop_parse_predicate, template_success_proj, dom_depth(template_success_proj));
   return template_success_proj;
@@ -768,8 +766,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
     if ((stride > 0 && (java_subtract(limit_lo, stride) < limit_lo)) ||
         (stride < 0 && (java_subtract(limit_hi, stride) > limit_hi))) {
       // No overflow possible
-      ConINode* con_stride = _igvn.intcon(stride);
-      set_ctrl(con_stride, C->root());
+      ConINode* con_stride = intcon(stride);
       max_idx_expr = new SubINode(limit, con_stride);
       idx_type = TypeInt::make(limit_lo - stride, limit_hi - stride, limit_type->_widen);
     } else {
@@ -777,8 +774,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
       overflow = true;
       limit = new ConvI2LNode(limit);
       register_new_node(limit, ctrl);
-      ConLNode* con_stride = _igvn.longcon(stride);
-      set_ctrl(con_stride, C->root());
+      ConLNode* con_stride = longcon(stride);
       max_idx_expr = new SubLNode(limit, con_stride);
     }
     register_new_node(max_idx_expr, ctrl);
@@ -795,8 +791,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
   }
 
   if (scale != 1) {
-    ConNode* con_scale = _igvn.intcon(scale);
-    set_ctrl(con_scale, C->root());
+    ConNode* con_scale = intcon(scale);
     if (TraceLoopPredicate) {
       predString->print("* %d ", scale);
     }
@@ -813,8 +808,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
         register_new_node(max_idx_expr, ctrl);
       }
       overflow = true;
-      con_scale = _igvn.longcon(scale);
-      set_ctrl(con_scale, C->root());
+      con_scale = longcon(scale);
       max_idx_expr = new MulLNode(max_idx_expr, con_scale);
     } else {
       // No overflow possible
@@ -1344,8 +1338,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 #endif
     return false;
   }
-  ConNode* zero = _igvn.intcon(0);
-  set_ctrl(zero, C->root());
+  ConNode* zero = intcon(0);
 
   ResourceArea* area = Thread::current()->resource_area();
   Invariance invar(area, loop);

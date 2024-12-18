@@ -25,8 +25,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include JavaCompilation.gmk
 include Modules.gmk
+include ZipArchive.gmk
 
 SRC_ZIP_WORK_DIR := $(SUPPORT_OUTPUTDIR)/src
 $(if $(filter $(TOPDIR)/%, $(SUPPORT_OUTPUTDIR)), $(eval SRC_ZIP_BASE := $(TOPDIR)), $(eval SRC_ZIP_BASE := $(SUPPORT_OUTPUTDIR)))

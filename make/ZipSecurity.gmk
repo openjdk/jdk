@@ -25,7 +25,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include JavaCompilation.gmk
+include ZipArchive.gmk
 
 ################################################################################
 #

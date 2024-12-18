@@ -185,7 +185,6 @@ class ClassFileParser {
   u2 _java_fields_count;
 
   bool _need_verify;
-  bool _relax_verify;
 
   bool _has_nonstatic_concrete_methods;
   bool _declares_nonstatic_concrete_methods;
@@ -366,6 +365,10 @@ class ClassFileParser {
 
   void classfile_icce_error(const char* msg,
                             const Klass* k,
+                            TRAPS) const;
+
+  // Uses msg directly in the ICCE, with no additional content
+  void classfile_icce_error(const char* msg,
                             TRAPS) const;
 
   void classfile_ucve_error(const char* msg,
