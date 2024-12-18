@@ -213,7 +213,7 @@ public class AllModulePath {
      * --add-modules ALL-MODULE-PATH with an existing module path and module
      * limits applied. This case tests a module limit on a dependency, jdk.jfr,
      * and *doesn't* list the module explicitly in --add-modules. Therefore,
-     * expects for the module - on the module path - to be not be present.
+     * expects for the module - on the module path - to not be present.
      */
     @Test
     public void modulePathWithLimitMods() throws Exception {
