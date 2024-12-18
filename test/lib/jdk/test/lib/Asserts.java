@@ -234,7 +234,7 @@ public class Asserts {
     }
 
     /**
-     * Asserts that {@code actual} is the same byte array as {@code expected}.
+     * Asserts that {@code actual} has the same content as {@code expected}.
      *
      * @param expected The expected value
      * @param actual The actual value
@@ -246,7 +246,7 @@ public class Asserts {
     }
 
     /**
-     * Asserts that {@code actual} is not the same byte array as {@code unexpected}.
+     * Asserts that {@code actual} does not have the same content as {@code unexpected}.
      *
      * @param unexpected The unexpected value
      * @param actual The actual value
