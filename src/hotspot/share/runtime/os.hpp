@@ -171,6 +171,7 @@ class os: AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class MallocTracker;
+  friend class NMTContiguousAllocator;
 
 #ifdef ASSERT
  private:

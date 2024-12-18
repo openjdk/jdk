@@ -95,6 +95,7 @@ void MallocMemorySnapshot::make_adjustment() {
 void MallocMemorySummary::initialize() {
   _snapshot.initialize();
   MallocLimitHandler::initialize(MallocLimit);
+  return true;
 }
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
@@ -153,7 +154,10 @@ bool MallocMemorySummary::category_limit_reached(MemTag mem_tag, size_t s, size_
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
-    MallocMemorySummary::initialize();
+    bool success = MallocMemorySummary::initialize();
+    if (!success) {
+      return false;
+    }
   }
   if (level == NMT_detail) {
     return MallocSiteTable::initialize();
