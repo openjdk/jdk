@@ -6985,7 +6985,7 @@ instruct addI_mem_imm(memory dst, immI src, rFlagsReg cr)
 
 instruct incI_rReg(rRegI dst, immI_1 src, rFlagsReg cr)
 %{
-  predicate(UseIncDec && !UseAPX);
+  predicate(!UseAPX && UseIncDec);
   match(Set dst (AddI dst src));
   effect(KILL cr);
 
@@ -6998,12 +6998,24 @@ instruct incI_rReg(rRegI dst, immI_1 src, rFlagsReg cr)
 
 instruct incI_rReg_ndd(rRegI dst, rRegI src, immI_1 val)
 %{
-  predicate(UseIncDec && UseAPX);
+  predicate(UseAPX && UseIncDec);
   match(Set dst (AddI src val));
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
     __ eincrementl($dst$$Register, $src$$Register, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct incI_rReg_mem_ndd(rRegI dst, memory src, immI_1 val)
+%{
+  predicate(UseAPX && UseIncDec);
+  match(Set dst (AddI (LoadI src) val));
+
+  format %{ "eincl    $dst, $src\t# int ndd" %}
+  ins_encode %{
+    __ eincrementl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7255,6 +7267,18 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val)
   format %{ "eincq    $dst, $src\t# long" %}
   ins_encode %{
     __ eincrementq($dst$$Register, $src$$Register, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val)
+%{
+  predicate(UseIncDec && UseAPX);
+  match(Set dst (AddL (LoadL src) val));
+
+  format %{ "eincq    $dst, $src\t# long" %}
+  ins_encode %{
+    __ eincrementq($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
