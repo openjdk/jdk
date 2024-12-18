@@ -138,10 +138,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   Register reg = next_gpr();
   if (reg == c_rarg1) {
     assert(offset() == 0, "argument register 1 can only be (non-null) receiver");
-    __ addi(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ add(c_rarg1, from(), Interpreter::local_offset_in_bytes(offset()));
   } else if (reg != noreg) {
       // c_rarg2-c_rarg7
-      __ addi(x10, from(), Interpreter::local_offset_in_bytes(offset()));
+      __ add(x10, from(), Interpreter::local_offset_in_bytes(offset()));
       __ mv(reg, zr); //_num_reg_int_args:c_rarg -> 1:c_rarg2,  2:c_rarg3...
       __ ld(temp(), x10);
       Label L;
@@ -150,7 +150,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
       __ bind(L);
   } else {
     //to stack
-    __ addi(x10, from(), Interpreter::local_offset_in_bytes(offset()));
+    __ add(x10, from(), Interpreter::local_offset_in_bytes(offset()));
     __ ld(temp(), x10);
     Label L;
     __ bnez(temp(), L);

@@ -245,7 +245,7 @@ void MacroAssembler::inc_held_monitor_count(Register tmp) {
 void MacroAssembler::dec_held_monitor_count(Register tmp) {
   Address dst(xthread, JavaThread::held_monitor_count_offset());
   ld(tmp, dst);
-  addi(tmp, tmp, -1);
+  subi(tmp, tmp, 1);
   sd(tmp, dst);
 #ifdef ASSERT
   Label ok;
@@ -1430,7 +1430,7 @@ void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp) {
 
 void MacroAssembler::push_reg(Register Rs)
 {
-  addi(esp, esp, 0 - wordSize);
+  subi(esp, esp, wordSize);
   sd(Rs, Address(esp, 0));
 }
 
@@ -1462,7 +1462,7 @@ int MacroAssembler::push_reg(unsigned int bitset, Register stack) {
   int offset = is_even(count) ? 0 : wordSize;
 
   if (count) {
-    addi(stack, stack, -count * wordSize - offset);
+    sub(stack, stack, count * wordSize + offset);
   }
   for (int i = count - 1; i >= 0; i--) {
     sd(as_Register(regs[i]), Address(stack, (count - 1 - i) * wordSize + offset));
@@ -1487,7 +1487,7 @@ int MacroAssembler::pop_reg(unsigned int bitset, Register stack) {
   }
 
   if (count) {
-    addi(stack, stack, count * wordSize + offset);
+    add(stack, stack, count * wordSize + offset);
   }
   assert(words_popped == count, "oops, popped != count");
 
@@ -1503,7 +1503,7 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
   int push_slots = count + (count & 1);
 
   if (count) {
-    addi(stack, stack, -push_slots * wordSize);
+    subi(stack, stack, push_slots * wordSize);
   }
 
   for (int i = count - 1; i >= 0; i--) {
@@ -1632,7 +1632,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     Label VectorLoop;
     Label LastBlock;
 
-    add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
+    add(tableN16, table3, 1 * single_table_size * sizeof(juint), tmp1);
     mv(tmp5, 0xff);
 
     if (MaxVectorSize == 16) {
@@ -1651,7 +1651,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     srli(blks, len, 6);
     slli(t1, blks, 6);
     sub(len, len, t1);
-    sub(blks, blks, 1);
+    subi(blks, blks, 1);
     blez(blks, LastBlock);
 
     bind(VectorLoop);
@@ -1683,7 +1683,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
         addi(tmp1, tmp1, 1);
       }
 
-      sub(blks, blks, 1);
+      subi(blks, blks, 1);
       bgtz(blks, VectorLoop);
     }
 
@@ -2046,7 +2046,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold(Register crc, Register buf, Regist
   Register vclmul_table = tmp3;
 
   la(vclmul_table, table_addr);
-  add(vclmul_table, vclmul_table, table_num*single_table_size*sizeof(juint), tmp1);
+  add(vclmul_table, vclmul_table, table_num * single_table_size * sizeof(juint), tmp1);
   la(table0, table_addr);
 
   if (MaxVectorSize == 16) {
@@ -2092,25 +2092,25 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
-  add(table1, table0, 1*single_table_size*sizeof(juint), tmp1);
-  add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
-  add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
+  add(table1, table0, 1 * single_table_size * sizeof(juint), tmp1);
+  add(table2, table0, 2 * single_table_size * sizeof(juint), tmp1);
+  add(table3, table2, 1 * single_table_size * sizeof(juint), tmp1);
 
   // Ensure basic 4-byte alignment of input byte buffer
   mv(tmp1, 4);
   blt(len, tmp1, L_by1_loop);
   test_bit(tmp1, buf, 0);
   beqz(tmp1, L_skip1);
-    subw(len, len, 1);
+    subiw(len, len, 1);
     lbu(tmp1, Address(buf));
-    add(buf, buf, 1);
+    addi(buf, buf, 1);
     update_byte_crc32(crc, tmp1, table0);
   bind(L_skip1);
     test_bit(tmp1, buf, 1);
     beqz(tmp1, L_skip2);
-    subw(len, len, 2);
+    subiw(len, len, 2);
     lhu(tmp1, Address(buf));
-    add(buf, buf, 2);
+    addi(buf, buf, 2);
     zext(tmp2, tmp1, 8);
     update_byte_crc32(crc, tmp2, table0);
     srli(tmp2, tmp1, 8);
@@ -2134,8 +2134,8 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   align(CodeEntryAlignment);
   // Entry for L_unroll_loop
-    add(loop_buf_end, buf, len);    // loop_buf_end will be used as endpoint for loop below
-    andi(len, len, unroll_words-1); // len = (len % unroll_words)
+    add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
+    andi(len, len, unroll_words - 1); // len = (len % unroll_words)
     sub(loop_buf_end, loop_buf_end, len);
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
@@ -2162,17 +2162,17 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   bind(L_by1_loop);
     beqz(len, L_exit);
 
-    subw(len, len, 1);
+    subiw(len, len, 1);
     lbu(tmp1, Address(buf));
     update_byte_crc32(crc, tmp1, table0);
     beqz(len, L_exit);
 
-    subw(len, len, 1);
+    subiw(len, len, 1);
     lbu(tmp1, Address(buf, 1));
     update_byte_crc32(crc, tmp1, table0);
     beqz(len, L_exit);
 
-    subw(len, len, 1);
+    subiw(len, len, 1);
     lbu(tmp1, Address(buf, 2));
     update_byte_crc32(crc, tmp1, table0);
 
@@ -2238,7 +2238,7 @@ void MacroAssembler::push_call_clobbered_registers_except(RegSet exclude) {
   push_reg(RegSet::of(x7) + RegSet::range(x10, x17) + RegSet::range(x28, x31) - exclude, sp);
 
   // Push float registers f0-f7, f10-f17, f28-f31.
-  addi(sp, sp, - wordSize * 20);
+  subi(sp, sp, wordSize * 20);
   int offset = 0;
   for (int i = 0; i < 32; i++) {
     if (i <= f7->encoding() || i >= f28->encoding() || (i >= f10->encoding() && i <= f17->encoding())) {
@@ -2264,7 +2264,7 @@ void MacroAssembler::push_CPU_state(bool save_vectors, int vector_size_in_bytes)
   push_reg(RegSet::range(x5, x31), sp);
 
   // float registers
-  addi(sp, sp, - 32 * wordSize);
+  subi(sp, sp, 32 * wordSize);
   for (int i = 0; i < 32; i++) {
     fsd(as_FloatRegister(i), Address(sp, i * wordSize));
   }
@@ -2605,32 +2605,32 @@ void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Regist
   offset = lower12;
 }
 
-void MacroAssembler::add(Register Rd, Register Rn, int64_t increment, Register temp) {
+void MacroAssembler::add(Register Rd, Register Rn, int64_t increment, Register tmp) {
   if (is_simm12(increment)) {
     addi(Rd, Rn, increment);
   } else {
-    assert_different_registers(Rn, temp);
-    li(temp, increment);
-    add(Rd, Rn, temp);
+    assert_different_registers(Rn, tmp);
+    mv(tmp, increment);
+    add(Rd, Rn, tmp);
   }
 }
 
-void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register temp) {
+void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register tmp) {
+  add(Rd, Rn, -decrement, tmp);
+}
+
+void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register tmp) {
   if (is_simm12(increment)) {
     addiw(Rd, Rn, increment);
   } else {
-    assert_different_registers(Rn, temp);
-    li(temp, increment);
-    addw(Rd, Rn, temp);
+    assert_different_registers(Rn, tmp);
+    mv(tmp, increment);
+    addw(Rd, Rn, tmp);
   }
 }
 
-void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
-  add(Rd, Rn, -decrement, temp);
-}
-
-void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
-  addw(Rd, Rn, -decrement, temp);
+void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register tmp) {
+  addw(Rd, Rn, -decrement, tmp);
 }
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
@@ -4153,8 +4153,8 @@ void MacroAssembler::repne_scan(Register addr, Register value, Register count,
   bind(Lloop);
   ld(tmp, addr);
   beq(value, tmp, Lexit);
-  add(addr, addr, wordSize);
-  sub(count, count, 1);
+  addi(addr, addr, wordSize);
+  subi(count, count, 1);
   bnez(count, Lloop);
   bind(Lexit);
 }
@@ -4222,7 +4222,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // Load the array length.
   lwu(x12, Address(x15, Array<Klass*>::length_offset_in_bytes()));
   // Skip to start of data.
-  add(x15, x15, Array<Klass*>::base_offset_in_bytes());
+  addi(x15, x15, Array<Klass*>::base_offset_in_bytes());
 
   // Set t0 to an obvious invalid value, falling through by default
   mv(t0, -1);
@@ -4914,11 +4914,11 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   blt(len, tmp, L_tail_loop);
   bind(L_unroll);
   for (int i = 0; i < unroll; i++) {
-    sub(in, in, BytesPerInt);
+    subi(in, in, BytesPerInt);
     lwu(t0, Address(in, 0));
     mul(t1, t0, k);
     add(t0, t1, out);
-    sub(offset, offset, BytesPerInt);
+    subi(offset, offset, BytesPerInt);
     lwu(t1, Address(offset, 0));
     add(t0, t0, t1);
     sw(t0, Address(offset, 0));
@@ -4929,16 +4929,16 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
 
   bind(L_tail_loop);
   blez(len, L_end);
-  sub(in, in, BytesPerInt);
+  subi(in, in, BytesPerInt);
   lwu(t0, Address(in, 0));
   mul(t1, t0, k);
   add(t0, t1, out);
-  sub(offset, offset, BytesPerInt);
+  subi(offset, offset, BytesPerInt);
   lwu(t1, Address(offset, 0));
   add(t0, t0, t1);
   sw(t0, Address(offset, 0));
   srli(out, t0, 32);
-  subw(len, len, 1);
+  subiw(len, len, 1);
   j(L_tail_loop);
 
   bind(L_end);
@@ -5015,13 +5015,13 @@ void MacroAssembler::multiply_32_x_32_loop(Register x, Register xstart, Register
   lwu(x_xstart, Address(t0, 0));
 
   bind(L_first_loop);
-  subw(idx, idx, 1);
+  subiw(idx, idx, 1);
   shadd(t0, idx, y, t0, LogBytesPerInt);
   lwu(y_idx, Address(t0, 0));
   mul(product, x_xstart, y_idx);
   add(product, product, carry);
   srli(carry, product, 32);
-  subw(kdx, kdx, 1);
+  subiw(kdx, kdx, 1);
   shadd(t0, kdx, z, t0, LogBytesPerInt);
   sw(product, Address(t0, 0));
   bgtz(idx, L_first_loop);
@@ -5049,7 +5049,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   Label L_first_loop, L_first_loop_exit;
   Label L_one_x, L_one_y, L_multiply;
 
-  subw(xstart, xstart, 1);
+  subiw(xstart, xstart, 1);
   bltz(xstart, L_one_x);
 
   shadd(t0, xstart, x, t0, LogBytesPerInt);
@@ -5057,9 +5057,9 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   ror_imm(x_xstart, x_xstart, 32); // convert big-endian to little-endian
 
   bind(L_first_loop);
-  subw(idx, idx, 1);
+  subiw(idx, idx, 1);
   bltz(idx, L_first_loop_exit);
-  subw(idx, idx, 1);
+  subiw(idx, idx, 1);
   bltz(idx, L_one_y);
 
   shadd(t0, idx, y, t0, LogBytesPerInt);
@@ -5072,7 +5072,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   cad(product, product, carry, t1);
   adc(carry, t0, zr, t1);
 
-  subw(kdx, kdx, 2);
+  subiw(kdx, kdx, 2);
   ror_imm(product, product, 32); // back to big-endian
   shadd(t0, kdx, z, t0, LogBytesPerInt);
   sd(product, Address(t0, 0));
@@ -5170,7 +5170,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   beqz(idx, L_post_third_loop_done);
 
   Label L_check_1;
-  subw(idx, idx, 2);
+  subiw(idx, idx, 2);
   bltz(idx, L_check_1);
 
   shadd(t0, idx, y, t0, LogBytesPerInt);
@@ -5192,7 +5192,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   bind(L_check_1);
 
   andi(idx, idx, 0x1);
-  subw(idx, idx, 1);
+  subiw(idx, idx, 1);
   bltz(idx, L_post_third_loop_done);
   shadd(t0, idx, y, t0, LogBytesPerInt);
   lwu(tmp4, Address(t0, 0));
@@ -5252,7 +5252,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 
   Label L_multiply_64_x_64_loop, L_done;
 
-  subw(xstart, xlen, 1);
+  subiw(xstart, xlen, 1);
   bltz(xstart, L_done);
 
   const Register jdx = tmp1;
@@ -5271,9 +5271,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
     bind(L_second_loop_unaligned);
     mv(carry, zr);
     mv(jdx, ylen);
-    subw(xstart, xstart, 1);
+    subiw(xstart, xstart, 1);
     bltz(xstart, L_done);
-    sub(sp, sp, 2 * wordSize);
+    subi(sp, sp, 2 * wordSize);
     sd(z, Address(sp, 0));
     sd(zr, Address(sp, wordSize));
     shadd(t0, xstart, z, t0, LogBytesPerInt);
@@ -5285,7 +5285,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
     blez(jdx, L_third_loop_exit);
 
     bind(L_third_loop);
-    subw(jdx, jdx, 1);
+    subiw(jdx, jdx, 1);
     shadd(t0, jdx, y, t0, LogBytesPerInt);
     lwu(t0, Address(t0, 0));
     mul(t1, t0, product);
@@ -5313,13 +5313,13 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   beqz(kdx, L_second_loop_aligned);
 
   Label L_carry;
-  subw(kdx, kdx, 1);
+  subiw(kdx, kdx, 1);
   beqz(kdx, L_carry);
 
   shadd(t0, kdx, z, t0, LogBytesPerInt);
   sw(carry, Address(t0, 0));
   srli(carry, carry, 32);
-  subw(kdx, kdx, 1);
+  subiw(kdx, kdx, 1);
 
   bind(L_carry);
   shadd(t0, kdx, z, t0, LogBytesPerInt);
@@ -5344,16 +5344,16 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   mv(carry, zr); // carry = 0;
   mv(jdx, ylen); // j = ystart+1
 
-  subw(xstart, xstart, 1); // i = xstart-1;
+  subiw(xstart, xstart, 1); // i = xstart-1;
   bltz(xstart, L_done);
 
-  sub(sp, sp, 4 * wordSize);
+  subi(sp, sp, 4 * wordSize);
   sd(z, Address(sp, 0));
 
   Label L_last_x;
   shadd(t0, xstart, z, t0, LogBytesPerInt);
   addi(z, t0, 4);
-  subw(xstart, xstart, 1); // i = xstart-1;
+  subiw(xstart, xstart, 1); // i = xstart-1;
   bltz(xstart, L_last_x);
 
   shadd(t0, xstart, x, t0, LogBytesPerInt);
@@ -5378,7 +5378,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   shadd(t0, tmp3, z, t0, LogBytesPerInt);
   sw(carry, Address(t0, 0));
 
-  subw(tmp3, tmp3, 1);
+  subiw(tmp3, tmp3, 1);
   bltz(tmp3, L_done);
 
   srli(carry, carry, 32);
@@ -5538,13 +5538,13 @@ void MacroAssembler::zero_words(Register base, uint64_t cnt) {
     Register loop_base = t1;
     cnt = cnt - remainder;
     mv(cnt_reg, cnt);
-    add(loop_base, base, remainder * wordSize);
+    addi(loop_base, base, remainder * wordSize);
     bind(loop);
     sub(cnt_reg, cnt_reg, unroll);
     for (int i = 0; i < unroll; i++) {
       sd(zr, Address(loop_base, i * wordSize));
     }
-    add(loop_base, loop_base, unroll * wordSize);
+    addi(loop_base, loop_base, unroll * wordSize);
     bnez(cnt_reg, loop);
   }
 
@@ -5595,12 +5595,12 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
   jr(t1);
 
   bind(loop);
-  add(base, base, unroll * 8);
+  addi(base, base, unroll * wordSize);
   for (int i = -unroll; i < 0; i++) {
     sd(value, Address(base, i * 8));
   }
   bind(entry);
-  sub(cnt, cnt, unroll);
+  subi(cnt, cnt, unroll);
   bgez(cnt, loop);
 
   bind(fini);
@@ -5639,7 +5639,7 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   bind(loop);
   cbo_zero(base);
   sub(cnt, cnt, tmp1);
-  add(base, base, CacheLineSize);
+  addi(base, base, CacheLineSize);
   bge(cnt, tmp1, loop);
 }
 
@@ -5725,7 +5725,7 @@ void MacroAssembler::FLOATTYPE##_compare(Register result, FloatRegister Rs1,    
     /* Rs1 > Rs2, install 1 */                                                          \
     bgtz(result, Ldone);                                                                \
     feq_##FLOATSIG(result, Rs1, Rs2);                                                   \
-    addi(result, result, -1);                                                           \
+    subi(result, result, 1);                                                            \
     /* Rs1 = Rs2, install 0 */                                                          \
     /* NaN or Rs1 < Rs2, install -1 */                                                  \
     bind(Ldone);                                                                        \
@@ -5736,7 +5736,7 @@ void MacroAssembler::FLOATTYPE##_compare(Register result, FloatRegister Rs1,    
     /* Rs1 < Rs2, install -1 */                                                         \
     bgtz(result, Ldone);                                                                \
     feq_##FLOATSIG(result, Rs1, Rs2);                                                   \
-    addi(result, result, -1);                                                           \
+    subi(result, result, 1);                                                            \
     /* Rs1 = Rs2, install 0 */                                                          \
     /* NaN or Rs1 > Rs2, install 1 */                                                   \
     bind(Ldone);                                                                        \
@@ -6144,10 +6144,10 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
   }
   int64_t imm = (int64_t)(1UL << bit_pos);
   if (is_simm12(imm)) {
-    and_imm12(Rd, Rs, imm);
+    andi(Rd, Rs, imm);
   } else {
     srli(Rd, Rs, bit_pos);
-    and_imm12(Rd, Rd, 1);
+    andi(Rd, Rd, 1);
   }
 }
 
@@ -6200,7 +6200,7 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   // After successful lock, push object on lock-stack.
   add(t, xthread, top);
   sd(obj, Address(t));
-  addw(top, top, oopSize);
+  addiw(top, top, oopSize);
   sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
 }
 
@@ -6232,7 +6232,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tm
 
   // Check if obj is top of lock-stack.
   lwu(top, Address(xthread, JavaThread::lock_stack_top_offset()));
-  subw(top, top, oopSize);
+  subiw(top, top, oopSize);
   add(t, xthread, top);
   ld(t, Address(t));
   bne(obj, t, slow, /* is_far */ true);
@@ -6272,7 +6272,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tm
   // Restore lock-stack and handle the unlock in runtime.
   DEBUG_ONLY(add(t, xthread, top);)
   DEBUG_ONLY(sd(obj, Address(t));)
-  addw(top, top, oopSize);
+  addiw(top, top, oopSize);
   sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
   j(slow);
 

@@ -60,14 +60,14 @@ class MacroAssembler: public Assembler {
   // Note that SP must be updated to the right place before saving/restoring RA and FP
   // because signal based thread suspend/resume could happen asynchronously.
   void enter() {
-    addi(sp, sp, - 2 * wordSize);
+    subi(sp, sp, 2 * wordSize);
     sd(ra, Address(sp, wordSize));
     sd(fp, Address(sp));
     addi(fp, sp, 2 * wordSize);
   }
 
   void leave() {
-    addi(sp, fp, - 2 * wordSize);
+    subi(sp, fp, 2 * wordSize);
     ld(fp, Address(sp));
     ld(ra, Address(sp, wordSize));
     addi(sp, sp, 2 * wordSize);
@@ -886,10 +886,20 @@ public:
  public:
 
   // arith
-  void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
-  void sub (Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
+  void add(Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void sub(Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
+  void addw(Register Rd, Register Rn, int32_t increment, Register tmp = t0);
+  void subw(Register Rd, Register Rn, int32_t decrement, Register tmp = t0);
+
+  void subi(Register Rd, Register Rn, int32_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addi(Rd, Rn, -decrement);
+  }
+
+  void subiw(Register Rd, Register Rn, int32_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addiw(Rd, Rn, -decrement);
+  }
 
 #define INSN(NAME)                                               \
   inline void NAME(Register Rd, Register Rs1, Register Rs2) {    \
