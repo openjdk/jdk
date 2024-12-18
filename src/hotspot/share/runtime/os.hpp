@@ -27,9 +27,11 @@
 
 #include "jvm_md.h"
 #include "runtime/osInfo.hpp"
+#include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/ostream.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #ifdef __APPLE__
 # include <mach/mach_time.h>
 #endif
@@ -404,6 +406,9 @@ class os: AllStatic {
   // Return the default page size.
   static size_t vm_page_size() { return OSInfo::vm_page_size(); }
 
+  static size_t align_up_vm_page_size(size_t size)   { return align_up  (size, os::vm_page_size()); }
+  static size_t align_down_vm_page_size(size_t size) { return align_down(size, os::vm_page_size()); }
+
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
   static const PageSizes& page_sizes() { return _page_sizes; }
@@ -443,6 +448,8 @@ class os: AllStatic {
                                                   const size_t page_size);
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
+
+  static size_t align_up_vm_allocation_granularity(size_t size) { return align_up(size, os::vm_allocation_granularity()); }
 
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();
@@ -763,6 +770,9 @@ class os: AllStatic {
   // Unload library
   static void  dll_unload(void *lib);
 
+  // Lookup the named function. This is used by the static JDK.
+  static void* lookup_function(const char* name);
+
   // Callback for loaded module information
   // Input parameters:
   //    char*     module_file_name,
@@ -803,6 +813,7 @@ class os: AllStatic {
   static void print_summary_info(outputStream* st, char* buf, size_t buflen);
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
+  static void print_jvmti_agent_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
   static void print_tos_pc(outputStream* st, const void* context);
@@ -1022,14 +1033,6 @@ class os: AllStatic {
   // Ditto - Posix-specific API. Ideally should be moved to something like ::PosixUtils.
 #ifndef _WINDOWS
   class Posix;
-#endif
-
-  // FIXME - some random stuff that was in os_windows.hpp
-#ifdef _WINDOWS
-  // strtok_s is the Windows thread-safe equivalent of POSIX strtok_r
-# define strtok_r strtok_s
-# define S_ISCHR(mode)   (((mode) & _S_IFCHR) == _S_IFCHR)
-# define S_ISFIFO(mode)  (((mode) & _S_IFIFO) == _S_IFIFO)
 #endif
 
 #ifndef OS_NATIVE_THREAD_CREATION_FAILED_MSG

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+  <xs:annotation>
+    <xs:documentation>
+      This is XHTML, a reformulation of HTML as a modular XML application
+      The Extensible HyperText Markup Language (XHTML)
+      Copyright &#169;1998-2005 World Wide Web Consortium
+      (Massachusetts Institute of Technology, European Research Consortium
+       for Informatics and Mathematics, Keio University).
+      All Rights Reserved.
+    
+      Permission to use, copy, modify and distribute the XHTML Schema
+      modules and their accompanying xs:documentation for any purpose
+      and without fee is hereby granted in perpetuity, provided that the above
+      copyright notice and this paragraph appear in all copies.  
+      The copyright holders make no representation about the suitability of
+      these XML Schema modules for any purpose.
+    
+      They are provided "as is" without expressed or implied warranty.
+    </xs:documentation>
+  </xs:annotation>
+
+</xs:schema>

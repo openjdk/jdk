@@ -26,7 +26,6 @@
 package sun.security.jgss.wrapper;
 
 import java.io.Serial;
-import java.util.HashMap;
 import java.security.Provider;
 
 import jdk.internal.util.OperatingSystem;
@@ -64,10 +63,10 @@ public final class SunNativeProvider extends Provider {
         System.err.println(NAME + ": " + message);
     }
 
-    private static final HashMap<String, String> MECH_MAP = constructMechMap();
+    private static final Oid[] MECH_OIDS = getMechOIDs();
 
     @SuppressWarnings("restricted")
-    private static HashMap<String, String> constructMechMap() {
+    private static Oid[] getMechOIDs() {
         try {
             // Ensure the InetAddress class is loaded before
             // loading j2gss. The library will access this class
@@ -112,28 +111,29 @@ public final class SunNativeProvider extends Provider {
                      debug("Loaded GSS library: " + libName);
                  }
                  Oid[] mechs = GSSLibStub.indicateMechs();
-                 HashMap<String, String> map = new HashMap<>();
-                 for (int i = 0; i < mechs.length; i++) {
-                     if (DEBUG) {
-                         debug("Native MF for " + mechs[i]);
+                 if (DEBUG) {
+                     for (Oid mech : mechs) {
+                         debug("Native MF for " + mech);
                      }
-                     map.put("GssApiMechanism." + mechs[i], MF_CLASS);
                  }
-                 return map;
+                 return mechs;
              }
          }
          return null;
      }
 
-    // initialize INSTANCE after MECH_MAP is constructed
+    // initialize INSTANCE after MECH_OIDS is constructed
     static final Provider INSTANCE = new SunNativeProvider();
 
     public SunNativeProvider() {
         /* We are the Sun NativeGSS provider */
         super(NAME, PROVIDER_VER, INFO);
 
-        if (MECH_MAP != null) {
-            putAll(MECH_MAP);
+        if (MECH_OIDS != null) {
+            for (Oid mech : MECH_OIDS) {
+                putService(new Service(this, "GssApiMechanism",
+                        mech.toString(), MF_CLASS, null, null));
+            }
         }
     }
 }

@@ -116,10 +116,10 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  // Try to CAS owner (no owner => current thread's _lock_id).
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
   Register tid = tmp4Reg;
-  ld(tid, Address(xthread, JavaThread::lock_id_offset()));
+  ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
   cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/tid, Assembler::int64,
           Assembler::aq, Assembler::rl, /*result*/tmp3Reg); // cas succeeds if tmp3Reg == zr(expected)
 
@@ -400,9 +400,9 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
     // Compute owner address.
     la(tmp2_owner_addr, owner_address);
 
-    // Try to CAS owner (no owner => current thread's _lock_id).
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     Register tid = tmp4;
-    ld(tid, Address(xthread, JavaThread::lock_id_offset()));
+    ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
     cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
@@ -1027,7 +1027,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     srli(ch2, ch2, XLEN - 8); // pattern[m-2], 0x0000000b
     slli(ch1, tmp6, XLEN - 16);
     srli(ch1, ch1, XLEN - 8); // pattern[m-3], 0x0000000c
-    andi(tmp6, tmp6, 0xff); // pattern[m-4], 0x0000000d
+    zext(tmp6, tmp6, 8); // pattern[m-4], 0x0000000d
     slli(ch2, ch2, 16);
     orr(ch2, ch2, ch1); // 0x00000b0c
     slli(result, tmp3, 48); // use result as temp register
@@ -1540,11 +1540,11 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
     if (isLL) {
-      andi(tmp1, tmp1, 0xFF);
-      andi(tmp2, tmp2, 0xFF);
+      zext(tmp1, tmp1, 8);
+      zext(tmp2, tmp2, 8);
     } else {
-      andi(tmp1, tmp1, 0xFFFF);
-      andi(tmp2, tmp2, 0xFFFF);
+      zext(tmp1, tmp1, 16);
+      zext(tmp2, tmp2, 16);
     }
     sub(result, tmp1, tmp2);
     j(DONE);

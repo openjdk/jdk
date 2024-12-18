@@ -28,8 +28,6 @@
 #include "code/codeBlob.hpp"
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
-#include "opto/type.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/stubDeclarations.hpp"
 #include "runtime/vframe.hpp"
 

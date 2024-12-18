@@ -797,7 +797,7 @@ public sealed interface Linker permits AbstractLinker {
          *     arguments</li>
          * <li>{@code N}, none of the arguments passed to the function are passed as
          *     variadic arguments</li>
-         * <li>{@code n}, where {@code 0 < m < N}, the arguments {@code m..N} are passed
+         * <li>{@code m}, where {@code 0 < m < N}, the arguments {@code m..N-1} are passed
          *     as variadic arguments</li>
          * </ul>
          * It is important to always use this linker option when linking a
@@ -852,8 +852,6 @@ public sealed interface Linker permits AbstractLinker {
          *     // use errno
          * }
          * }
-         * <p>
-         * This linker option can not be combined with {@link #critical}.
          *
          * @param capturedState the names of the values to save
          * @throws IllegalArgumentException if at least one of the provided

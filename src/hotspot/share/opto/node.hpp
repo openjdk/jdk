@@ -1126,7 +1126,6 @@ public:
   // Check if 'this' node dominates or equal to 'sub'.
   DomResult dominates(Node* sub, Node_List &nlist);
 
-protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:
 
@@ -1998,6 +1997,10 @@ Compile::locate_node_notes(GrowableArray<Node_Notes*>* arr,
   if (arr == nullptr) return nullptr;
   // (Every element of arr is a sub-array of length _node_notes_block_size.)
   return arr->at(block_idx) + (idx & (_node_notes_block_size-1));
+}
+
+inline Node_Notes* Compile::node_notes_at(int idx) {
+  return locate_node_notes(_node_note_array, idx, false);
 }
 
 inline bool

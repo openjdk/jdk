@@ -23,6 +23,7 @@
 import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
 import jdk.test.lib.security.FixedSecureRandom;
+import sun.security.provider.ML_DSA_Impls;
 
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
@@ -34,6 +35,11 @@ import static jdk.test.lib.Utils.toByteArray;
 public class ML_DSA_Test {
 
     public static void run(JSONValue kat, Provider provider) throws Exception {
+
+        // We only have ML-DSA test for internal functions, which
+        // is equivalent to the FIP 204 draft.
+        ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
+
         var mode = kat.get("mode").asString();
         switch (mode) {
             case "keyGen" -> keyGenTest(kat, provider);
