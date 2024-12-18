@@ -1080,10 +1080,6 @@ public final class SunPKCS11 extends AuthProvider {
         d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_MAC));
 
-        d(KDF, "HKDF-SHA1", P11KDF, m(CKM_SHA_1_HMAC),
-                m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
-        d(KDF, "HKDF-SHA224", P11KDF, m(CKM_SHA224_HMAC),
-                m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
         d(KDF, "HKDF-SHA256", P11KDF, m(CKM_SHA256_HMAC),
                 m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
         d(KDF, "HKDF-SHA384", P11KDF, m(CKM_SHA384_HMAC),
