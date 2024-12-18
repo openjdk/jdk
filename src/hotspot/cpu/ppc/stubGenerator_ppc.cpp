@@ -675,13 +675,13 @@ address generate_ghash_processBlocks() {
   Label L_end, L_aligned;
 
   static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+  
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
   // Load the vector from memory into vConstC2
   __ vxor(vConstC2, vConstC2, vConstC2);
   __ mtvrd(vConstC2, temp1);
   __ vxor(vZero, vZero, vZero);
-  // Checking if address is 16 byte aligned and load accordingly.
   __ lxvd2x(vHS, subkeyH);
   __ lxvd2x(vZero_StoredS, state);
   // Operations to obtain lower and higher bytes of subkey H.
