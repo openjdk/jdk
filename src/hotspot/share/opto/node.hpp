@@ -586,8 +586,7 @@ public:
 
   // Set this node's index, used by cisc_version to replace current node
   void set_idx(uint new_idx) {
-    const node_idx_t* ref = &_idx;
-    *(node_idx_t*)ref = new_idx;
+    _idx = new_idx;
   }
   // Swap input edge order.  (Edge indexes i1 and i2 are usually 1 and 2.)
   void swap_edges(uint i1, uint i2) {
