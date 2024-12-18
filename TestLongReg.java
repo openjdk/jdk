@@ -63,6 +63,18 @@ public class TestLongReg {
         return  -b;
     }
 
+    public static long testXorImm1(long a, long b) {
+        return a ^ 9;
+    }
+
+    public static long testXorImm2(long a, long b) {
+        return 11 ^ b;
+    }
+
+    public static long testXorM1(long a, long b) {
+        return -1 ^ b ;
+    }
+
     public static long testXor(long a, long b) {
         return a ^ b;
     }

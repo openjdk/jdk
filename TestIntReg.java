@@ -63,6 +63,18 @@ public class TestIntReg {
         return  -b;
     }
 
+    public static int testXorImm1(int a, int b) {
+        return a ^ 7;
+    }
+
+    public static int testXorImm2(int a, int b) {
+        return 5 ^ b;
+    }
+
+    public static int testXorM1(int a, int b) {
+        return a ^ -1;
+    }
+
     public static int testXor(int a, int b) {
         return a ^ b;
     }

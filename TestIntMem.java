@@ -67,8 +67,20 @@ public class TestIntMem {
         return  -b;
     }
 
-    public static int testXor(int a, int b) {
-        return a ^ b;
+    public static int testXorImm1(int x, int i) {
+        return b[i] ^ 9;
+    }
+
+    public static int testXorImm2(int x, int i) {
+        return 11 ^ a[i];
+    }
+
+    public static int testXor1(int x, int i) {
+        return b[i] ^ x;
+    }
+
+    public static int testXor2(int x, int i) {
+        return x ^ b[i];
     }
 
     public static int testOrImm1(int x, int i) {

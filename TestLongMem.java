@@ -67,8 +67,20 @@ public class TestLongMem {
         return  -b;
     }
 
-    public static long testXor(int a, int b) {
-        return a ^ b;
+    public static long testXorImm1(long x, int i) {
+        return b[i] ^ 9;
+    }
+
+    public static long testXorImm2(long x, int i) {
+        return 11 ^ a[i];
+    }
+
+    public static long testXor2(long x, int i) {
+        return b[i] ^ x;
+    }
+
+    public static long testXor1(long x, int i) {
+        return x ^ b[i];
     }
 
     public static long testOrImm1(long x, int i) {

@@ -10195,12 +10195,26 @@ instruct xorI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 
 
 // Xor Register with Immediate -1
-instruct xorI_rReg_im1(rRegI dst, immI_M1 imm) %{
+instruct xorI_rReg_im1(rRegI dst, immI_M1 imm)
+%{
+  predicate(!UseAPX);
   match(Set dst (XorI dst imm));
 
-  format %{ "not    $dst" %}
+  format %{ "notl    $dst" %}
   ins_encode %{
      __ notl($dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct xorI_rReg_im1_ndd(rRegI dst, rRegI src, immI_M1 imm)
+%{
+  match(Set dst (XorI src imm));
+  predicate(UseAPX);
+
+  format %{ "enotl    $dst, $src" %}
+  ins_encode %{
+     __ enotl($dst$$Register, $src$$Register);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -10208,6 +10222,7 @@ instruct xorI_rReg_im1(rRegI dst, immI_M1 imm) %{
 // Xor Register with Immediate
 instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (XorI dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10219,9 +10234,35 @@ instruct xorI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct xorI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorI src1 src2));
+
+  format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ exorl($dst$$Register, $src1$$Register, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Xor Memory with Immediate
+instruct xorI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorI (LoadI src1) src2));
+
+  format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ exorl($dst$$Register, $src1$$Address, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Xor Register with Memory
 instruct xorI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (XorI dst (LoadI src)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10230,6 +10271,32 @@ instruct xorI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   format %{ "xorl    $dst, $src\t# int" %}
   ins_encode %{
     __ xorl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct xorI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorI src1 (LoadI src2)));
+
+  ins_cost(150);
+  format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ exorl($dst$$Register, $src1$$Register, $src2$$Address, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct xorI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorI (LoadI src1) src2));
+
+  ins_cost(150);
+  format %{ "exorl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ exorl($dst$$Register, $src1$$Address, $src2$$Register, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -10791,7 +10858,9 @@ instruct xorL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
 %}
 
 // Xor Register with Immediate -1
-instruct xorL_rReg_im1(rRegL dst, immL_M1 imm) %{
+instruct xorL_rReg_im1(rRegL dst, immL_M1 imm)
+%{
+  predicate(!UseAPX);
   match(Set dst (XorL dst imm));
 
   format %{ "notq   $dst" %}
@@ -10801,9 +10870,22 @@ instruct xorL_rReg_im1(rRegL dst, immL_M1 imm) %{
   ins_pipe(ialu_reg);
 %}
 
+instruct xorL_rReg_im1_ndd(rRegL dst,rRegL src, immL_M1 imm)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorL src imm));
+
+  format %{ "enotq   $dst, $src" %}
+  ins_encode %{
+     __ enotq($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Xor Register with Immediate
 instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (XorL dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10815,9 +10897,35 @@ instruct xorL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct xorL_rReg_rReg_imm(rRegL dst, rRegL src1, immL32 src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorL src1 src2));
+
+  format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ exorq($dst$$Register, $src1$$Register, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Xor Memory with Immediate
+instruct xorL_rReg_mem_imm(rRegL dst, memory src1, immL32 src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorL (LoadL src1) src2));
+
+  format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ exorq($dst$$Register, $src1$$Address, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Xor Register with Memory
 instruct xorL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (XorL dst (LoadL src)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10826,6 +10934,32 @@ instruct xorL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   format %{ "xorq    $dst, $src\t# long" %}
   ins_encode %{
     __ xorq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct xorL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorL src1 (LoadL src2)));
+
+  ins_cost(150);
+  format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ exorq($dst$$Register, $src1$$Register, $src2$$Address, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct xorL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (XorL (LoadL src1) src2));
+
+  ins_cost(150);
+  format %{ "exorq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ exorq($dst$$Register, $src1$$Address, $src1$$Register, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
