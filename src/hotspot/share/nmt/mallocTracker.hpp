@@ -30,7 +30,11 @@
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
+
+#include <limits>
+#include <cstdint>
 
 class outputStream;
 struct malloclimit;
@@ -144,24 +148,39 @@ class MallocMemory {
 class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
-// usage by tags and memory used by tracking itself.
-class MallocMemorySnapshot {
+// usage by types and memory used by tracking itself.
+class MallocMemorySnapshot : public CHeapObj<mtNMT> {
   friend class MallocMemorySummary;
 
- private:
-  MallocMemory      _malloc[mt_number_of_tags];
-  MemoryCounter     _all_mallocs;
+  using IndexType = std::underlying_type_t<MemTag>;
+  static constexpr int length() {
+    return std::numeric_limits<IndexType>::max();
+  }
 
+  MallocMemory _malloc[std::numeric_limits<IndexType>::max()];
+  MemoryCounter _all_mallocs;
 
- public:
+public:
+  MallocMemorySnapshot()
+  : _malloc(), _all_mallocs() {
+    for (int i = 0; i < length(); i++) {
+      _malloc[i] = MallocMemory();
+    }
+  }
+
+  MallocMemorySnapshot(MallocMemorySnapshot& snap)
+  : _malloc(), _all_mallocs(snap._all_mallocs) {
+    for (size_t i = 0; i < length(); i++) {
+      _malloc[i] = snap._malloc[i];
+    }
+  }
+
   inline MallocMemory* by_tag(MemTag mem_tag) {
-    int index = NMTUtil::tag_to_index(mem_tag);
-    return &_malloc[index];
+    return &_malloc[static_cast<IndexType>(mem_tag)];
   }
 
   inline const MallocMemory* by_tag(MemTag mem_tag) const {
-    int index = NMTUtil::tag_to_index(mem_tag);
-    return &_malloc[index];
+    return &_malloc[static_cast<IndexType>(mem_tag)];
   }
 
   inline size_t malloc_overhead() const {
@@ -204,7 +223,7 @@ class MallocMemorySnapshot {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static MallocMemorySnapshot _snapshot;
+  static DeferredStatic<MallocMemorySnapshot> _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -240,9 +259,10 @@ class MallocMemorySummary : AllStatic {
      as_snapshot()->by_tag(mem_tag)->record_arena_size_change(size);
    }
 
-   static void snapshot(MallocMemorySnapshot* s) {
-     as_snapshot()->copy_to(s);
-     s->make_adjustment();
+   static void snapshot(MallocMemorySnapshot** s) {
+     *s = new MallocMemorySnapshot(*as_snapshot());
+     as_snapshot()->copy_to(*s);
+     (*s)->make_adjustment();
    }
 
    // The memory used by malloc tracking headers
@@ -251,7 +271,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger
