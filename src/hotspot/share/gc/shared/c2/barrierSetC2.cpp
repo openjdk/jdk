@@ -1076,7 +1076,7 @@ void BarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_Li
     for (uint j = 0; j < access_dominators.size(); j++) {
      const  Node* const mem = access_dominators.at(j);
       if (mem->is_Phi()) {
-        // Allocation node
+        assert(is_allocation(mem), "expected allocation phi node");
         if (mem != access_obj) {
           continue;
         }

@@ -547,20 +547,18 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
   }
 
   ResourceMark rm;
-  Compile* const C = Compile::current();
-  PhaseCFG* const cfg = C->cfg();
+  PhaseCFG* const cfg = Compile::current()->cfg();
 
+  // Find stores and allocations, and track them in lists.
   Node_List stores;
-  Node_List store_dominators;
-
-  // Step 1 - Find accesses and allocations, and track them in lists
+  Node_List allocations;
   for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
     const Block* const block = cfg->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); ++j) {
       Node* const node = block->get_node(j);
       if (node->is_Phi()) {
         if (BarrierSetC2::is_allocation(node)) {
-          store_dominators.push(node);
+          allocations.push(node);
         }
         continue;
       } else if (!node->is_Mach()) {
@@ -581,8 +579,9 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
     }
   }
 
-  // Step 2 - Find dominating accesses or allocations for each access
-  analyze_dominating_barriers_impl(stores, store_dominators);
+  // Find dominating allocations for each store and elide barriers if there is
+  // no safepoint in between.
+  analyze_dominating_barriers_impl(stores, allocations);
 }
 
 void G1BarrierSetC2::late_barrier_analysis() const {
