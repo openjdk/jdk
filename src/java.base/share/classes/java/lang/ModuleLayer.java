@@ -324,10 +324,9 @@ public final class ModuleLayer {
         }
 
         /**
-         * Updates module {@code source} in the layer to provide a service.
+         * Updates the module layer to locate a service of the given type using
+         * the given implementation class.
          *
-         * @param  source
-         *         The source module
          * @param  service
          *         The service class
          * @param  impl
@@ -335,14 +334,12 @@ public final class ModuleLayer {
          *
          * @return This controller
          *
-         * @throws IllegalArgumentException
-         *         If {@code source} is not in the module layer
-         *
          * @since 25
          */
-        public Controller addProvides(Module source, Class<?> service, Class<?> impl) {
-            ensureInLayer(source);
-            Modules.addProvides(source, service, impl);
+        public Controller addProvider(Class<?> service, Class<?> impl) {
+            // the implementation module for the service may be named or unnamed
+            Module implModule = impl.getModule();
+            Modules.addProvider(layer, service, impl);
             return this;
         }
 

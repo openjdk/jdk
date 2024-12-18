@@ -173,6 +173,18 @@ public class Modules {
     }
 
     /**
+     * Add a provider to a module layer.
+     *
+     * @param layer the layer ot add the provider to (must not be {@code null})
+     * @param service the service class (must not be {@code null})
+     * @param impl the service implementation class (must not be {@code null})
+     */
+    public static void addProvider(ModuleLayer layer, Class<?> service, Class<?> impl) {
+        // throws NPE if the layer is null
+        JLA.getServicesCatalog(layer).addProvider(impl.getModule(), service, impl);
+    }
+
+    /**
      * Resolves a collection of root modules, with service binding and the empty
      * Configuration as the parent to create a Configuration for the boot layer.
      *
