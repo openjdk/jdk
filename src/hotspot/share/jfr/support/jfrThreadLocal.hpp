@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ class JfrThreadLocal {
   friend class Jfr;
   friend class JfrIntrinsicSupport;
   friend class JfrJavaSupport;
-  friend class JfrRecorder;
   friend class JVMCIVMStructs;
  private:
   jobject _java_event_writer;
@@ -65,7 +64,6 @@ class JfrThreadLocal {
   jlong _wallclock_time;
   mutable u4 _stackdepth;
   volatile jint _entering_suspend_flag;
-  mutable volatile int _critical_section;
   u2 _vthread_epoch;
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
@@ -78,11 +76,13 @@ class JfrThreadLocal {
   JfrStackFrame* install_stackframes() const;
   void release(Thread* t);
   static void release(JfrThreadLocal* tl, Thread* t);
+  static void initialize_main_thread(JavaThread* jt);
 
   static void set(bool* excluded_field, bool state);
   static traceid assign_thread_id(const Thread* t, JfrThreadLocal* tl);
   static traceid vthread_id(const Thread* t);
   static void set_vthread_epoch(const JavaThread* jt, traceid id, u2 epoch);
+  static traceid jvm_thread_id(const JfrThreadLocal* tl);
   bool is_vthread_excluded() const;
   static void exclude_vthread(const JavaThread* jt);
   static void include_vthread(const JavaThread* jt);
@@ -175,7 +175,6 @@ class JfrThreadLocal {
 
   // Non-volatile thread id, for Java carrier threads and non-java threads.
   static traceid jvm_thread_id(const Thread* t);
-  static traceid jvm_thread_id(const Thread* t, JfrThreadLocal* tl);
 
   // To impersonate is to temporarily masquerade as another thread.
   // For example, when writing an event that should be attributed to some other thread.

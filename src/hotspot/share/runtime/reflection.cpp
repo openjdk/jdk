@@ -448,12 +448,6 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       is_same_class_package(current_class, new_class)) {
     return ACCESS_OK;
   }
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (vmClasses::reflect_SerializationConstructorAccessorImpl_klass_is_loaded() &&
-      current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return ACCESS_OK;
-  }
 
   // module boundaries
   if (new_class->is_public()) {
@@ -658,12 +652,6 @@ bool Reflection::verify_member_access(const Klass* current_class,
     }
   }
 
-  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
-  // succeed trivially.
-  if (current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
-    return true;
-  }
-
   // Check for special relaxations
   return can_relax_access_check_for(current_class, member_class, classloader_only);
 }
@@ -709,6 +697,7 @@ void Reflection::check_for_inner_class(const InstanceKlass* outer, const Instanc
 
   // 'inner' not declared as an inner klass in outer
   ResourceMark rm(THREAD);
+  // Names are all known to be < 64k so we know this formatted message is not excessively large.
   Exceptions::fthrow(
     THREAD_AND_LOCATION,
     vmSymbols::java_lang_IncompatibleClassChangeError(),

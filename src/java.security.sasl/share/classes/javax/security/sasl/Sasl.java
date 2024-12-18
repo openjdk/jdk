@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 package javax.security.sasl;
 
 import javax.security.auth.callback.CallbackHandler;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -74,10 +72,7 @@ public class Sasl {
     private static List<String> disabledMechanisms = new ArrayList<>();
 
     static {
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-                (PrivilegedAction<String>)
-                () -> Security.getProperty("jdk.sasl.disabledMechanisms"));
+        String prop = Security.getProperty("jdk.sasl.disabledMechanisms");
 
         if (prop != null) {
             for (String s : prop.split("\\s*,\\s*")) {
@@ -452,9 +447,7 @@ public class Sasl {
              * that was used to load the provider.
              * In order to get the class loader of a class, the
              * caller's class loader must be the same as or an ancestor of
-             * the class loader being returned. Otherwise, the caller must
-             * have "getClassLoader" permission, or a SecurityException
-             * will be thrown.
+             * the class loader being returned.
              */
             return service.newInstance(null);
         } catch (InvalidParameterException | NoSuchAlgorithmException e) {

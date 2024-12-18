@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
@@ -98,22 +96,6 @@ public class DriverManager {
     /* Prevent the DriverManager class from being instantiated. */
     private DriverManager(){}
 
-    /**
-     * The {@code SQLPermission} constant that allows the
-     * setting of the logging stream.
-     * @since 1.3
-     */
-    static final SQLPermission SET_LOG_PERMISSION =
-        new SQLPermission("setLog");
-
-    /**
-     * The {@code SQLPermission} constant that allows the
-     * un-register a registered JDBC driver.
-     * @since 1.8
-     */
-    static final SQLPermission DEREGISTER_DRIVER_PERMISSION =
-        new SQLPermission("deregisterDriver");
-
     //--------------------------JDBC 2.0-----------------------------
 
     /**
@@ -133,28 +115,15 @@ public class DriverManager {
     /**
      * Sets the logging/tracing {@code PrintWriter} object
      * that is used by the {@code DriverManager} and all drivers.
-     *<P>
-     * If a security manager exists, its {@code checkPermission}
-     * method is first called with a {@code SQLPermission("setLog")}
-     * permission to check that the caller is allowed to call {@code setLogWriter}.
      *
      * @param out the new logging/tracing {@code PrintStream} object;
      *      {@code null} to disable logging and tracing
-     * @throws SecurityException if a security manager exists and its
-     * {@code checkPermission} method denies permission to set the log writer.
-     * @see SecurityManager#checkPermission
      * @see #getLogWriter
      * @since 1.2
      */
     public static void setLogWriter(java.io.PrintWriter out) {
-
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(SET_LOG_PERMISSION);
-        }
-            logStream = null;
-            logWriter = out;
+        logStream = null;
+        logWriter = out;
     }
 
 
@@ -357,10 +326,6 @@ public class DriverManager {
      * If a {@code null} value is specified for the driver to be removed, then no
      * action is taken.
      * <p>
-     * If a security manager exists, its {@code checkPermission}
-     * method is first called with a {@code SQLPermission("deregisterDriver")}
-     * permission to check that the caller is allowed to deregister a JDBC Driver.
-     * <p>
      * If the specified driver is not found in the list of registered drivers,
      * then no action is taken.  If the driver was found, it will be removed
      * from the list of registered drivers.
@@ -371,21 +336,11 @@ public class DriverManager {
      *
      * @param driver the JDBC Driver to remove
      * @throws SQLException if a database access error occurs
-     * @throws SecurityException if a security manager exists and its
-     * {@code checkPermission} method denies permission to deregister a driver.
-     *
-     * @see SecurityManager#checkPermission
      */
     @CallerSensitive
     public static void deregisterDriver(Driver driver) throws SQLException {
         if (driver == null) {
             return;
-        }
-
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(DEREGISTER_DRIVER_PERMISSION);
         }
 
         println("DriverManager.deregisterDriver: " + driver);
@@ -485,27 +440,13 @@ public class DriverManager {
      * Sets the logging/tracing PrintStream that is used
      * by the {@code DriverManager}
      * and all drivers.
-     *<P>
-     * If a security manager exists, its {@code checkPermission}
-     * method is first called with a {@code SQLPermission("setLog")}
-     * permission to check that the caller is allowed to call {@code setLogStream}.
      *
      * @param out the new logging/tracing PrintStream; to disable, set to {@code null}
      * @deprecated Use {@code setLogWriter}
-     * @throws SecurityException if a security manager exists and its
-     * {@code checkPermission} method denies permission to set the log stream.
-     * @see SecurityManager#checkPermission
      * @see #getLogStream
      */
     @Deprecated(since="1.2")
     public static void setLogStream(java.io.PrintStream out) {
-
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(SET_LOG_PERMISSION);
-        }
-
         logStream = out;
         if ( out != null )
             logWriter = new java.io.PrintWriter(out);
@@ -571,7 +512,6 @@ public class DriverManager {
      * Load the initial JDBC drivers by checking the System property
      * jdbc.drivers and then use the {@code ServiceLoader} mechanism
      */
-    @SuppressWarnings("removal")
     private static void ensureDriversInitialized() {
         if (driversInitialized) {
             return;
@@ -583,11 +523,7 @@ public class DriverManager {
             }
             String drivers;
             try {
-                drivers = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty(JDBC_DRIVERS_PROPERTY);
-                    }
-                });
+                drivers = System.getProperty(JDBC_DRIVERS_PROPERTY);
             } catch (Exception ex) {
                 drivers = null;
             }
@@ -596,34 +532,29 @@ public class DriverManager {
             // exposed as a java.sql.Driver.class service.
             // ServiceLoader.load() replaces the sun.misc.Providers()
 
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
 
-                    ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
-                    Iterator<Driver> driversIterator = loadedDrivers.iterator();
+            ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
+            Iterator<Driver> driversIterator = loadedDrivers.iterator();
 
-                    /* Load these drivers, so that they can be instantiated.
-                     * It may be the case that the driver class may not be there
-                     * i.e. there may be a packaged driver with the service class
-                     * as implementation of java.sql.Driver but the actual class
-                     * may be missing. In that case a java.util.ServiceConfigurationError
-                     * will be thrown at runtime by the VM trying to locate
-                     * and load the service.
-                     *
-                     * Adding a try catch block to catch those runtime errors
-                     * if driver not available in classpath but it's
-                     * packaged as service and that service is there in classpath.
-                     */
-                    try {
-                        while (driversIterator.hasNext()) {
-                            driversIterator.next();
-                        }
-                    } catch (Throwable t) {
-                        // Do nothing
-                    }
-                    return null;
+            /* Load these drivers, so that they can be instantiated.
+             * It may be the case that the driver class may not be there
+             * i.e. there may be a packaged driver with the service class
+             * as implementation of java.sql.Driver but the actual class
+             * may be missing. In that case a java.util.ServiceConfigurationError
+             * will be thrown at runtime by the VM trying to locate
+             * and load the service.
+             *
+             * Adding a try catch block to catch those runtime errors
+             * if driver not available in classpath but it's
+             * packaged as service and that service is there in classpath.
+             */
+            try {
+                while (driversIterator.hasNext()) {
+                    driversIterator.next();
                 }
-            });
+            } catch (Throwable t) {
+                // Do nothing
+            }
 
             println("DriverManager.initialize: jdbc.drivers = " + drivers);
 

@@ -1376,9 +1376,9 @@ static volatile int _trap_stress_counter = 0;
 
 void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
-  counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, MemNode::unordered);
   counter = _gvn.transform(new AddINode(counter, intcon(1)));
-  incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  incr_store = store_to_memory(control(), counter_addr, counter, T_INT, MemNode::unordered);
 }
 
 //----------------------------------do_ifnull----------------------------------
@@ -1958,26 +1958,13 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w: {
+    // ciTypeFlow should trap if the ldc is in error state or if the constant is not loaded
+    assert(!iter().is_in_error(), "ldc is in error state");
     ciConstant constant = iter().get_constant();
-    if (constant.is_loaded()) {
-      const Type* con_type = Type::make_from_constant(constant);
-      if (con_type != nullptr) {
-        push_node(con_type->basic_type(), makecon(con_type));
-      }
-    } else {
-      // If the constant is unresolved or in error state, run this BC in the interpreter.
-      if (iter().is_in_error()) {
-        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
-                                                        Deoptimization::Action_none),
-                      nullptr, "constant in error state", true /* must_throw */);
-
-      } else {
-        int index = iter().get_constant_pool_index();
-        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
-                                                        Deoptimization::Action_reinterpret,
-                                                        index),
-                      nullptr, "unresolved constant", false /* must_throw */);
-      }
+    assert(constant.is_loaded(), "constant is not loaded");
+    const Type* con_type = Type::make_from_constant(constant);
+    if (con_type != nullptr) {
+      push_node(con_type->basic_type(), makecon(con_type));
     }
     break;
   }
@@ -2849,7 +2836,7 @@ void Parse::do_one_bytecode() {
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(buffer, perBytecode);
+    printer->print_graph(buffer);
     printer->set_traverse_outs(old);
   }
 #endif

@@ -300,9 +300,9 @@ void CgroupV1MemoryController::print_version_specific_info(outputStream* st, jul
   jlong kmem_limit = kernel_memory_limit_in_bytes(phys_mem);
   jlong kmem_max_usage = kernel_memory_max_usage_in_bytes();
 
+  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit_in_bytes");
   OSContainer::print_container_helper(st, kmem_usage, "kernel_memory_usage_in_bytes");
-  OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_max_usage_in_bytes");
-  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_limit_in_bytes");
+  OSContainer::print_container_helper(st, kmem_max_usage, "kernel_memory_max_usage_in_bytes");
 }
 
 char* CgroupV1Subsystem::cpu_cpuset_cpus() {

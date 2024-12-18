@@ -55,7 +55,3 @@ vmTestbase/nsk/stress/thread/thread006.java 8321476 linux-all
 compiler/cha/TypeProfileFinalMethod.java 8341039 generic-all
 
 gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
-
-runtime/cds/appcds/DumpRuntimeClassesTest.java 8341452 generic-all
-
-runtime/condy/escapeAnalysis/TestEscapeCondy.java 8339694 generic-all

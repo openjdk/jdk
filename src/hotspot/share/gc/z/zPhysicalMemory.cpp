@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,20 +46,24 @@ ZPhysicalMemory::ZPhysicalMemory()
 
 ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemorySegment& segment)
   : _segments() {
-  add_segment(segment);
+  _segments.append(segment);
 }
 
 ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemory& pmem)
-  : _segments() {
-  add_segments(pmem);
+  : _segments(pmem.nsegments()) {
+  _segments.appendAll(&pmem._segments);
 }
 
 const ZPhysicalMemory& ZPhysicalMemory::operator=(const ZPhysicalMemory& pmem) {
-  // Free segments
-  _segments.clear_and_deallocate();
+  // Check for self-assignment
+  if (this == &pmem) {
+    return *this;
+  }
 
-  // Copy segments
-  add_segments(pmem);
+  // Free and copy segments
+  _segments.clear_and_deallocate();
+  _segments.reserve(pmem.nsegments());
+  _segments.appendAll(&pmem._segments);
 
   return *this;
 }
@@ -351,12 +355,6 @@ bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
 
   // Success
   return true;
-}
-
-void ZPhysicalMemoryManager::pretouch(zoffset offset, size_t size) const {
-  const uintptr_t addr = untype(ZOffset::address(offset));
-  const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
-  os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
 }
 
 // Map virtual memory to physcial memory

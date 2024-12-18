@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,7 @@
  */
 package sun.awt.X11;
 
-import java.security.AccessController;
 import sun.awt.SunToolkit;
-import sun.security.action.GetBooleanAction;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -59,9 +57,7 @@ public final class XErrorHandlerUtil {
     /**
      * Value of sun.awt.noisyerrorhandler system property.
      */
-    @SuppressWarnings("removal")
-    private static boolean noisyAwtHandler = AccessController.doPrivileged(
-        new GetBooleanAction("sun.awt.noisyerrorhandler"));
+    private static boolean noisyAwtHandler = Boolean.getBoolean("sun.awt.noisyerrorhandler");
 
     /**
      * The flag indicating that {@code init} was called already.
