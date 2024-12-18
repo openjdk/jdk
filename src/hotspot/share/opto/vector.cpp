@@ -36,13 +36,8 @@ static bool is_vector_mask(ciKlass* klass) {
   return klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
 }
 
-static bool is_vector_shuffle(ciKlass* klass) {
-  return klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
-}
-
-
 void PhaseVector::optimize_vector_boxes() {
-  Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
+  Compile::TracePhase tp(_t_vector_elimination);
 
   // Signal GraphKit it's post-parse phase.
   assert(C->inlining_incrementally() == false, "sanity");
@@ -66,13 +61,13 @@ void PhaseVector::optimize_vector_boxes() {
 void PhaseVector::do_cleanup() {
   if (C->failing())  return;
   {
-    Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
+    Compile::TracePhase tp(_t_vector_pru);
     ResourceMark rm;
     PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
   {
-    Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
+    Compile::TracePhase tp(_t_vector_igvn);
     _igvn.reset_from_gvn(C->initial_gvn());
     _igvn.optimize();
     if (C->failing())  return;
@@ -460,8 +455,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       bt = T_BOOLEAN;
-    } else if (is_vector_shuffle(from_kls)) {
-      bt = T_BYTE;
     }
 
     ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
@@ -506,9 +499,6 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
 
     if (is_vector_mask(from_kls)) {
       vec_val_load = gvn.transform(new VectorLoadMaskNode(vec_val_load, TypeVect::makemask(masktype, num_elem)));
-    } else if (is_vector_shuffle(from_kls) && !vec_unbox->is_shuffle_to_vector()) {
-      assert(vec_unbox->bottom_type()->is_vect()->element_basic_type() == masktype, "expect shuffle type consistency");
-      vec_val_load = gvn.transform(new VectorLoadShuffleNode(vec_val_load, TypeVect::make(masktype, num_elem)));
     }
 
     gvn.hash_delete(vec_unbox);

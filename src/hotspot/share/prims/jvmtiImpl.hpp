@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,239 +36,101 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 
-//
-// Forward Declarations
-//
-
-class JvmtiBreakpoint;
-class JvmtiBreakpoints;
-
-
-///////////////////////////////////////////////////////////////
-//
-// class GrowableCache, GrowableElement
-// Used by              : JvmtiBreakpointCache
-// Used by JVMTI methods: none directly.
-//
-// GrowableCache is a permanent CHeap growable array of <GrowableElement *>
-//
-// In addition, the GrowableCache maintains a null terminated cache array of type address
-// that's created from the element array using the function:
-//     address GrowableElement::getCacheValue().
-//
-// Whenever the GrowableArray changes size, the cache array gets recomputed into a new C_HEAP allocated
-// block of memory. Additionally, every time the cache changes its position in memory, the
-//    void (*_listener_fun)(void *this_obj, address* cache)
-// gets called with the cache's new address. This gives the user of the GrowableCache a callback
-// to update its pointer to the address cache.
-//
-
-class GrowableElement : public CHeapObj<mtInternal> {
-public:
-  virtual ~GrowableElement() {}
-  virtual address getCacheValue()                     =0;
-  virtual bool equals(const GrowableElement* e) const =0;
-  virtual GrowableElement* clone()                    =0;
-};
-
-class GrowableCache {
-
-private:
-  // Object pointer passed into cache & listener functions.
-  void *_this_obj;
-
-  // Array of elements in the collection
-  GrowableArray<GrowableElement *> *_elements;
-
-  // Parallel array of cached values
-  address *_cache;
-
-  // Listener for changes to the _cache field.
-  // Called whenever the _cache field has it's value changed
-  // (but NOT when cached elements are recomputed).
-  void (*_listener_fun)(void *, address*);
-
-  // recache all elements after size change, notify listener
-  void recache();
-
-public:
-   GrowableCache();
-   ~GrowableCache();
-
-  void initialize(void *this_obj, void listener_fun(void *, address*) );
-
-  // number of elements in the collection
-  int length();
-  // get the value of the index element in the collection
-  GrowableElement* at(int index);
-  // find the index of the element, -1 if it doesn't exist
-  int find(const GrowableElement* e) const;
-  // append a copy of the element to the end of the collection, notify listener
-  void append(GrowableElement* e);
-  // remove the element at index, notify listener
-  void remove (int index);
-  // clear out all elements and release all heap space, notify listener
-  void clear();
-};
-
-
-///////////////////////////////////////////////////////////////
-//
-// class JvmtiBreakpointCache
-// Used by              : JvmtiBreakpoints
-// Used by JVMTI methods: none directly.
-// Note   : typesafe wrapper for GrowableCache of JvmtiBreakpoint
-//
-
-class JvmtiBreakpointCache : public CHeapObj<mtInternal> {
-
-private:
-  GrowableCache _cache;
-
-public:
-  JvmtiBreakpointCache()  {}
-  ~JvmtiBreakpointCache() {}
-
-  void initialize(void *this_obj, void listener_fun(void *, address*) ) {
-    _cache.initialize(this_obj, listener_fun);
-  }
-
-  int length()                          { return _cache.length(); }
-  JvmtiBreakpoint& at(int index)        { return (JvmtiBreakpoint&) *(_cache.at(index)); }
-  int find(JvmtiBreakpoint& e)          { return _cache.find((GrowableElement *) &e); }
-  void append(JvmtiBreakpoint& e)       { _cache.append((GrowableElement *) &e); }
-  void remove (int index)               { _cache.remove(index); }
-};
-
 
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiBreakpoint
-// Used by              : JvmtiBreakpoints
-// Used by JVMTI methods: SetBreakpoint, ClearBreakpoint, ClearAllBreakpoints
-// Note: Extends GrowableElement for use in a GrowableCache
 //
 // A JvmtiBreakpoint describes a location (class, method, bci) to break at.
 //
 
 typedef void (Method::*method_action)(int _bci);
 
-class JvmtiBreakpoint : public GrowableElement {
+class JvmtiBreakpoint : public CHeapObj<mtInternal> {
 private:
   Method*               _method;
   int                   _bci;
   OopHandle             _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint() : _method(nullptr), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
+  JvmtiBreakpoint(const JvmtiBreakpoint& bp);
   virtual ~JvmtiBreakpoint();
   bool equals(const JvmtiBreakpoint& bp) const;
-  void copy(JvmtiBreakpoint& bp);
   address getBcp() const;
   void each_method_version_do(method_action meth_act);
   void set();
   void clear();
   void print_on(outputStream* out) const;
 
-  Method* method() { return _method; }
-
-  // GrowableElement implementation
-  address getCacheValue()         { return getBcp(); }
-  bool equals(const GrowableElement* e) const { return equals((const JvmtiBreakpoint&) *e); }
-
-  GrowableElement *clone()        {
-    JvmtiBreakpoint *bp = new JvmtiBreakpoint();
-    bp->copy(*this);
-    return bp;
-  }
+  Method* method() const { return _method; }
 };
-
 
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiBreakpoints
-// Used by              : JvmtiCurrentBreakpoints
-// Used by JVMTI methods: none directly
-// Note: A Helper class
 //
-// JvmtiBreakpoints is a GrowableCache of JvmtiBreakpoint.
-// All changes to the GrowableCache occur at a safepoint using VM_ChangeBreakpoints.
-//
-// Because _bps is only modified at safepoints, its possible to always use the
-// cached byte code pointers from _bps without doing any synchronization (see JvmtiCurrentBreakpoints).
-//
-// It would be possible to make JvmtiBreakpoints a static class, but I've made it
-// CHeap allocated to emphasize its similarity to JvmtiFramePops.
+// Contains growable array of JvmtiBreakpoint.
+// All changes to the array occur at a safepoint.
 //
 
 class JvmtiBreakpoints : public CHeapObj<mtInternal> {
 private:
+  GrowableArray<JvmtiBreakpoint*> _elements;
 
-  JvmtiBreakpointCache _bps;
+  int length() { return _elements.length(); }
+  JvmtiBreakpoint& at(int index) { return *_elements.at(index); }
+  int find(JvmtiBreakpoint& e) {
+    return _elements.find_if([&](const JvmtiBreakpoint * other_e) { return e.equals(*other_e); });
+  }
+  void append(JvmtiBreakpoint& e) {
+    JvmtiBreakpoint* new_e = new JvmtiBreakpoint(e);
+    _elements.append(new_e);
+  }
+  void remove(int index) {
+    JvmtiBreakpoint* e = _elements.at(index);
+    assert(e != nullptr, "e != nullptr");
+    _elements.remove_at(index);
+    delete e;
+  }
 
-  // These should only be used by VM_ChangeBreakpoints
-  // to insure they only occur at safepoints.
-  // Todo: add checks for safepoint
-  friend class VM_ChangeBreakpoints;
-  void set_at_safepoint(JvmtiBreakpoint& bp);
-  void clear_at_safepoint(JvmtiBreakpoint& bp);
+  friend class JvmtiCurrentBreakpoints;
+  JvmtiBreakpoints(); // accessible only for JvmtiCurrentBreakpoints
 
 public:
-  JvmtiBreakpoints(void listener_fun(void *, address *));
   ~JvmtiBreakpoints();
 
-  int length();
   void print();
 
   int  set(JvmtiBreakpoint& bp);
   int  clear(JvmtiBreakpoint& bp);
+
+  // used by VM_ChangeBreakpoints
+  void set_at_safepoint(JvmtiBreakpoint& bp);
+  void clear_at_safepoint(JvmtiBreakpoint& bp);
+  // used by VM_RedefineClasses
   void clearall_in_class_at_safepoint(Klass* klass);
 };
-
 
 ///////////////////////////////////////////////////////////////
 //
 // class JvmtiCurrentBreakpoints
 //
-// A static wrapper class for the JvmtiBreakpoints that provides:
-// 1. a fast inlined function to check if a byte code pointer is a breakpoint (is_breakpoint).
-// 2. a function for lazily creating the JvmtiBreakpoints class (this is not strictly necessary,
-//    but I'm copying the code from JvmtiThreadState which needs to lazily initialize
-//    JvmtiFramePops).
-// 3. An oops_do entry point for GC'ing the breakpoint array.
+// A static wrapper class for the JvmtiBreakpoints that provides
+// a function for lazily creating the JvmtiBreakpoints class.
 //
 
 class JvmtiCurrentBreakpoints : public AllStatic {
-
 private:
-
   // Current breakpoints, lazily initialized by get_jvmti_breakpoints();
   static JvmtiBreakpoints *_jvmti_breakpoints;
 
-  // null terminated cache of byte-code pointers corresponding to current breakpoints.
-  // Updated only at safepoints (with listener_fun) when the cache is moved.
-  // It exists only to make is_breakpoint fast.
-  static address          *_breakpoint_list;
-  static inline void set_breakpoint_list(address *breakpoint_list) { _breakpoint_list = breakpoint_list; }
-
-  // Listener for the GrowableCache in _jvmti_breakpoints, updates _breakpoint_list.
-  static void listener_fun(void *this_obj, address *cache);
-
 public:
-  static void initialize();
-  static void destroy();
-
-  // lazily create _jvmti_breakpoints and _breakpoint_list
+  // lazily create _jvmti_breakpoints
   static JvmtiBreakpoints& get_jvmti_breakpoints();
 };
 
 ///////////////////////////////////////////////////////////////
-//
-// class VM_ChangeBreakpoints
-// Used by              : JvmtiBreakpoints
-// Used by JVMTI methods: none directly.
-// Note: A Helper class.
 //
 // VM_ChangeBreakpoints implements a VM_Operation for ALL modifications to the JvmtiBreakpoints class.
 //

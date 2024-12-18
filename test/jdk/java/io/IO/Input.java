@@ -28,9 +28,11 @@ import static java.io.IO.readln;
 public class Input {
 
     public static void main(String[] args) throws IOException {
-        if (args[0].equals("0"))
-            System.out.print(readln(null));
-        else
-            System.out.print(readln(args[1]));
+        switch (args[0]) {
+            case "0" -> System.out.print(readln(null));
+            case "1" -> System.out.print(readln(args[1]));
+            case "2" -> System.out.print(readln());
+            default -> throw new AssertionError("Unknown command: " + args[0]);
+        }
     }
 }

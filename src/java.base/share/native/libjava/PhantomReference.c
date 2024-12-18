@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,4 +30,10 @@ JNIEXPORT jboolean JNICALL
 Java_java_lang_ref_PhantomReference_refersTo0(JNIEnv *env, jobject ref, jobject o)
 {
     return JVM_PhantomReferenceRefersTo(env, ref, o);
+}
+
+JNIEXPORT void JNICALL
+Java_java_lang_ref_PhantomReference_clear0(JNIEnv *env, jobject ref)
+{
+    JVM_ReferenceClear(env, ref);
 }

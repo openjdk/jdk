@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ AppLauncher::AppLauncher() {
     setInitJvmFromCmdlineOnly(false);
     launcherPath = SysInfo::getProcessModulePath();
     args = SysInfo::getCommandArgs();
+    externalCfgFile = nullptr;
 }
 
 
@@ -110,22 +111,18 @@ bool AppLauncher::libEnvVariableContainsAppDir() const {
 }
 
 Jvm* AppLauncher::createJvmLauncher() const {
-    const tstring cfgFilePath = getCfgFilePath();
-
-    LOG_TRACE(tstrings::any() << "Launcher config file path: \""
-            << cfgFilePath << "\"");
-
-    CfgFile::Macros macros;
-    macros[_T("$APPDIR")] = appDirPath;
-    macros[_T("$BINDIR")] = FileUtils::dirname(launcherPath);
-    macros[_T("$ROOTDIR")] = imageRoot;
-
-    CfgFile cfgFile = CfgFile::load(cfgFilePath).expandMacros(macros);
+    CfgFile cfgFile;
+    if (externalCfgFile) {
+        cfgFile = *externalCfgFile;
+    } else {
+        std::unique_ptr<CfgFile> createdCfgFile(createCfgFile());
+        cfgFile.swap(*createdCfgFile);
+    }
 
     if (!args.empty()) {
         // Override default launcher arguments.
         cfgFile.setPropertyValue(SectionName::ArgOptions,
-            PropertyName::arguments, args);
+                PropertyName::arguments, args);
     }
 
     std::unique_ptr<Jvm> jvm(new Jvm());
@@ -157,6 +154,22 @@ Jvm* AppLauncher::createJvmLauncher() const {
 
 void AppLauncher::launch() const {
     std::unique_ptr<Jvm>(createJvmLauncher())->launch();
+}
+
+
+CfgFile* AppLauncher::createCfgFile() const {
+    const tstring cfgFilePath = getCfgFilePath();
+
+    LOG_TRACE(tstrings::any() << "Launcher config file path: \""
+                                << cfgFilePath << "\"");
+
+    CfgFile::Macros macros;
+    macros[_T("$APPDIR")] = appDirPath;
+    macros[_T("$BINDIR")] = FileUtils::dirname(launcherPath);
+    macros[_T("$ROOTDIR")] = imageRoot;
+    std::unique_ptr<CfgFile> dummy(new CfgFile());
+    CfgFile::load(cfgFilePath).expandMacros(macros).swap(*dummy);
+    return dummy.release();
 }
 
 

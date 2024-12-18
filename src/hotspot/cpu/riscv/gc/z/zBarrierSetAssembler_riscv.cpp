@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -286,7 +286,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ relocate(barrier_Relocation::spec(), [&] {
       __ li16u(rtmp1, barrier_Relocation::unpatched);
     }, ZBarrierRelocationFormatStoreGoodBits);
-    __ cmpxchg_weak(rtmp2, zr, rtmp1,
+    __ weak_cmpxchg(rtmp2, zr, rtmp1,
                     Assembler::int64,
                     Assembler::relaxed /* acquire */, Assembler::relaxed /* release */,
                     rtmp3);
@@ -724,8 +724,8 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   {
     SaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
-    __ mv(t0, stub->slow_path());
-    __ jalr(t0);
+    __ mv(t1, stub->slow_path());
+    __ jalr(t1);
   }
 
   // Stub exit
@@ -758,13 +758,14 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
     __ la(c_rarg0, stub->ref_addr());
 
     if (stub->is_native()) {
-      __ la(t0, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr());
     } else if (stub->is_atomic()) {
-      __ la(t0, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr());
+    } else if (stub->is_nokeepalive()) {
+      __ rt_call(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr());
     } else {
-      __ la(t0, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
+      __ rt_call(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr());
     }
-    __ jalr(t0);
   }
 
   // Stub exit

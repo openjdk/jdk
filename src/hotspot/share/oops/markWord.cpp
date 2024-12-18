@@ -29,6 +29,12 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "utilities/ostream.hpp"
 
+#ifdef _LP64
+STATIC_ASSERT(markWord::klass_shift + markWord::klass_bits == 64);
+// The hash (preceding klass bits) shall be a direct neighbor but not interleave
+STATIC_ASSERT(markWord::klass_shift == markWord::hash_bits + markWord::hash_shift);
+#endif
+
 markWord markWord::displaced_mark_helper() const {
   assert(has_displaced_mark_helper(), "check");
   if (has_monitor()) {

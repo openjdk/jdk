@@ -239,21 +239,23 @@ void ZLoadBarrierStubC2::emit_code(MacroAssembler& masm) {
   ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, static_cast<ZLoadBarrierStubC2*>(this));
 }
 
-ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
+ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive) {
   AARCH64_ONLY(fatal("Should use ZStoreBarrierStubC2Aarch64::create"));
-  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
+  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic, is_nokeepalive);
   register_stub(stub);
 
   return stub;
 }
 
-ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic)
+ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer,
+                                         bool is_native, bool is_atomic, bool is_nokeepalive)
   : ZBarrierStubC2(node),
     _ref_addr(ref_addr),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
     _is_native(is_native),
-    _is_atomic(is_atomic) {}
+    _is_atomic(is_atomic),
+    _is_nokeepalive(is_nokeepalive) {}
 
 Address ZStoreBarrierStubC2::ref_addr() const {
   return _ref_addr;
@@ -273,6 +275,10 @@ bool ZStoreBarrierStubC2::is_native() const {
 
 bool ZStoreBarrierStubC2::is_atomic() const {
   return _is_atomic;
+}
+
+bool ZStoreBarrierStubC2::is_nokeepalive() const {
+  return _is_nokeepalive;
 }
 
 void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {
@@ -439,7 +445,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       assert(src_offset == dest_offset, "should be equal");
       const jlong offset = src_offset->get_long();
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
-        assert(!UseCompressedClassPointers, "should only happen without compressed class pointers");
+        assert(!UseCompressedClassPointers || UseCompactObjectHeaders, "should only happen without compressed class pointers");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
         length = phase->transform_later(new SubLNode(length, phase->longcon(1))); // Size is in longs
         src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));

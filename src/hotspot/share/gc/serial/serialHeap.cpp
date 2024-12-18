@@ -40,6 +40,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -62,6 +63,7 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -185,10 +187,10 @@ jint SerialHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
-  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
-  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
+  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, GenAlignment);
+  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, GenAlignment);
 
-  _rem_set = new CardTableRS(heap_rs.region());
+  _rem_set = new CardTableRS(_reserved);
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
@@ -199,6 +201,8 @@ jint SerialHeap::initialize() {
   _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
 
   GCInitLogger::print();
+
+  FullGCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }
