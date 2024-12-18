@@ -37,6 +37,7 @@
 #include <cstdint>
 
 class outputStream;
+class VirtualMemoryTracker;
 struct malloclimit;
 
 /*
@@ -235,7 +236,7 @@ class MallocMemorySummary : AllStatic {
   static bool category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit);
 
  public:
-   static void initialize();
+   static bool initialize();
 
    static inline void record_malloc(size_t size, MemTag mem_tag) {
      as_snapshot()->by_tag(mem_tag)->record_malloc(size);
