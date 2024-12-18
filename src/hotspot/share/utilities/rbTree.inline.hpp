@@ -229,7 +229,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::fix_insert_violations(RBNode* n
     RBNode* grandparent = parent->_parent;
     if (grandparent == nullptr) { // Parent is the tree root
       assert(parent == _root, "parent must be root");
-      parent->color_black(); // Color parent black to eliminate the red-violation
+      parent->set_black(); // Color parent black to eliminate the red-violation
       return;
     }
 
@@ -253,8 +253,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::fix_insert_violations(RBNode* n
       }
 
       // Swap parent and grandparent colors to eliminate the red-violation
-      parent->color_black();
-      grandparent->color_red();
+      parent->set_black();
+      grandparent->set_red();
 
       if (_root == grandparent) {
         _root = parent;
@@ -265,9 +265,9 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::fix_insert_violations(RBNode* n
 
     // Parent and uncle are both red
     // Paint both black, paint grandparent red to not create a black-violation
-    parent->color_black();
-    uncle->color_black();
-    grandparent->color_red();
+    parent->set_black();
+    uncle->set_black();
+    grandparent->set_red();
 
     // Move up two levels to check for new potential red-violation
     node = grandparent;
@@ -288,8 +288,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node)
       assert(is_black(sibling->_left), "nephew must be black");
       assert(is_black(sibling->_right), "nephew must be black");
       // Swap parent and sibling colors
-      parent->color_red();
-      sibling->color_black();
+      parent->set_red();
+      sibling->set_black();
 
       // Rotate parent down and sibling up
       if (node->is_left_child()) {
@@ -320,8 +320,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node)
         distant_nephew = sibling;
         sibling = close_nephew;
 
-        distant_nephew->color_red();
-        sibling->color_black();
+        distant_nephew->set_red();
+        sibling->set_black();
       }
 
       // Distant nephew red
@@ -337,29 +337,27 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node)
 
       // Swap parent and sibling colors
       if (parent->is_black()) {
-        sibling->color_black();
+        sibling->set_black();
       } else {
-        sibling->color_red();
+        sibling->set_red();
       }
-      parent->color_black();
-      if (sibling->is_black()) {
-      }
+      parent->set_black();
 
       // Color distant nephew black to restore black balance
-      distant_nephew->color_black();
+      distant_nephew->set_black();
       return;
     }
 
     if (is_red(parent)) { // parent red, sibling and nephews black
       // Swap parent and sibling colors to restore black balance
-      sibling->color_red();
-      parent->color_black();
+      sibling->set_red();
+      parent->set_black();
       return;
     }
 
     // Parent, sibling, and both nephews black
     // Color sibling red and move up one level
-    sibling->color_red();
+    sibling->set_red();
     node = parent;
     parent = node->_parent;
   }
@@ -376,7 +374,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) 
     assert(right == nullptr, "right must be nullptr");
     assert(is_black(node), "node must be black");
     assert(is_red(left), "child must be red");
-    left->color_black();
+    left->set_black();
     left->_parent = parent;
     if (parent == nullptr) {
       assert(node == _root, "node must be root");
@@ -390,7 +388,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) 
     assert(left == nullptr, "left must be nullptr");
     assert(is_black(node), "node must be black");
     assert(is_red(right), "child must be red");
-    right->color_black();
+    right->set_black();
     right->_parent = parent;
     if (parent == nullptr) {
       assert(node == _root, "node must be root");

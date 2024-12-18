@@ -67,8 +67,8 @@ public:
     bool is_black() const { return _color == BLACK; }
     bool is_red() const { return _color == RED; }
 
-    void color_black() { _color = BLACK; }
-    void color_red() { _color = RED; }
+    void set_black() { _color = BLACK; }
+    void set_red() { _color = RED; }
 
     RBNode(const K& k, const V& v)
         : _parent(nullptr), _left(nullptr), _right(nullptr),
@@ -229,7 +229,7 @@ public:
   }
 
   // Finds the value associated with the key
-  V* find(K& key) {
+  V* find(const K& key) {
     RBNode* node = find_node(_root, key);
     if (node == nullptr) {
       return nullptr;
