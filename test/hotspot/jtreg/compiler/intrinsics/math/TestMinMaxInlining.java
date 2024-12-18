@@ -109,7 +109,8 @@ public class TestMinMaxInlining {
 
     @Test
     @Arguments(values = { Argument.NUMBER_MINUS_42, Argument.NUMBER_42 })
-    @IR(counts = { IRNode.MIN_F, "1" }, applyIfCPUFeatureOr = {"avx", "true"})
+    @IR(counts = { IRNode.MIN_F, "1" },
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     private static float testFloatMin(float a, float b) {
         return Math.min(a, b);
     }
@@ -123,7 +124,8 @@ public class TestMinMaxInlining {
 
     @Test
     @Arguments(values = { Argument.NUMBER_MINUS_42, Argument.NUMBER_42 })
-    @IR(counts = { IRNode.MAX_F, "1" }, applyIfCPUFeatureOr = {"avx", "true"})
+    @IR(counts = { IRNode.MAX_F, "1" },
+       applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     private static float testFloatMax(float a, float b) {
         return Math.max(a, b);
     }
@@ -137,7 +139,8 @@ public class TestMinMaxInlining {
 
     @Test
     @Arguments(values = { Argument.NUMBER_MINUS_42, Argument.NUMBER_42 })
-    @IR(counts = { IRNode.MIN_D, "1" }, applyIfCPUFeatureOr = {"avx", "true"})
+    @IR(counts = { IRNode.MIN_D, "1" },
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     private static double testDoubleMin(double a, double b) {
         return Math.min(a, b);
     }
@@ -151,7 +154,8 @@ public class TestMinMaxInlining {
 
     @Test
     @Arguments(values = { Argument.NUMBER_MINUS_42, Argument.NUMBER_42 })
-    @IR(counts = { IRNode.MAX_D, "1" }, applyIfCPUFeatureOr = {"avx", "true"})
+    @IR(counts = { IRNode.MAX_D, "1" },
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     private static double testDoubleMax(double a, double b) {
         return Math.max(a, b);
     }
