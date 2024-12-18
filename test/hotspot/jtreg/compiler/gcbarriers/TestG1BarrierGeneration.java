@@ -47,6 +47,7 @@ public class TestG1BarrierGeneration {
     static final String POST_ONLY_NOT_NULL = "post notnull";
     static final String PRE_AND_POST = "pre post";
     static final String PRE_AND_POST_NOT_NULL = "pre post notnull";
+    static final String ANY = ".*";
 
     static class Outer {
         Object f;
@@ -89,6 +90,9 @@ public class TestG1BarrierGeneration {
             throw new Error(e);
         }
     }
+
+    @DontInline
+    static void nonInlinedMethod() {}
 
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
@@ -194,10 +198,11 @@ public class TestG1BarrierGeneration {
         counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_P},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N},
+        failOn = {IRNode.G1_STORE_N_WITH_BARRIER_FLAG, ANY,
+                  IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     public static Outer testStoreOnNewObject(Object o1) {
         Outer o = new Outer();
@@ -222,10 +227,11 @@ public class TestG1BarrierGeneration {
         counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY_NOT_NULL, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_P},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N},
+        failOn = {IRNode.G1_STORE_N_WITH_BARRIER_FLAG, ANY,
+                  IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     public static Outer testStoreNotNullOnNewObject(Object o1) {
         if (o1.hashCode() == 42) {
@@ -244,10 +250,11 @@ public class TestG1BarrierGeneration {
         counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "2"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_P},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N},
+        failOn = {IRNode.G1_STORE_N_WITH_BARRIER_FLAG, ANY,
+                  IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     public static Outer testStoreOnNewObjectInTwoPaths(Object o1, boolean c) {
         Outer o;
@@ -261,6 +268,41 @@ public class TestG1BarrierGeneration {
         return o;
     }
 
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    public static Outer testStoreConditionallyOnNewObject(Object o1, boolean c) {
+        Outer o = new Outer();
+        if (c) {
+            o.f = o1;
+        }
+        return o;
+    }
+
+    @Test
+    @IR(applyIf = {"UseCompressedOops", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIf = {"UseCompressedOops", "true"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    public static Outer testStoreOnNewObjectAfterCall(Object o1) {
+        Outer o = new Outer();
+        nonInlinedMethod();
+        o.f = o1;
+        return o;
+    }
+
     @Run(test = {"testStore",
                  "testStoreNull",
                  "testStoreObfuscatedNull",
@@ -270,7 +312,9 @@ public class TestG1BarrierGeneration {
                  "testStoreOnNewObject",
                  "testStoreNullOnNewObject",
                  "testStoreNotNullOnNewObject",
-                 "testStoreOnNewObjectInTwoPaths"})
+                 "testStoreOnNewObjectInTwoPaths",
+                 "testStoreConditionallyOnNewObject",
+                 "testStoreOnNewObjectAfterCall"})
     public void runStoreTests() {
         {
             Outer o = new Outer();
@@ -328,6 +372,17 @@ public class TestG1BarrierGeneration {
             Outer o = testStoreOnNewObjectInTwoPaths(o1, ThreadLocalRandom.current().nextBoolean());
             Asserts.assertEquals(o1, o.f);
         }
+        {
+            Object o1 = new Object();
+            boolean c = ThreadLocalRandom.current().nextBoolean();
+            Outer o = testStoreConditionallyOnNewObject(o1, c);
+            Asserts.assertTrue(o.f == (c ? o1 : null));
+        }
+        {
+            Object o1 = new Object();
+            Outer o = testStoreOnNewObjectAfterCall(o1);
+            Asserts.assertEquals(o1, o.f);
+        }
     }
 
     @Test
@@ -379,17 +434,80 @@ public class TestG1BarrierGeneration {
     }
 
     @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_P},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N},
+        failOn = {IRNode.G1_STORE_N_WITH_BARRIER_FLAG, ANY,
+                  IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
-    public static Object[] testStoreOnNewArray(Object o1) {
+    public static Object[] testStoreOnNewArrayAtKnownIndex(Object o1) {
         Object[] a = new Object[10];
-        // The index needs to be concrete for C2 to detect that it is safe to
-        // remove the pre-barrier.
         a[4] = o1;
+        return a;
+    }
+
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_N_WITH_BARRIER_FLAG, ANY,
+                  IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    public static Object[] testStoreOnNewArrayAtUnknownIndex(Object o1, int index) {
+        Object[] a = new Object[10];
+        a[index] = o1;
+        return a;
+    }
+
+    @Test
+    @IR(failOn = IRNode.SAFEPOINT)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    public static Object[] testStoreAllOnNewSmallArray(Object o1) {
+        Object[] a = new Object[64];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = o1;
+        }
+        return a;
+    }
+
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "1"})
+    @IR(applyIf = {"UseCompressedOops", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIf = {"UseCompressedOops", "true"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    public static Object[] testStoreAllOnNewLargeArray(Object o1) {
+        Object[] a = new Object[1024];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = o1;
+        }
         return a;
     }
 
@@ -397,7 +515,10 @@ public class TestG1BarrierGeneration {
                  "testArrayStoreNull",
                  "testArrayStoreNotNull",
                  "testArrayStoreTwice",
-                 "testStoreOnNewArray"})
+                 "testStoreOnNewArrayAtKnownIndex",
+                 "testStoreOnNewArrayAtUnknownIndex",
+                 "testStoreAllOnNewSmallArray",
+                 "testStoreAllOnNewLargeArray"})
     public void runArrayStoreTests() {
         {
             Object[] a = new Object[10];
@@ -426,8 +547,27 @@ public class TestG1BarrierGeneration {
         }
         {
             Object o1 = new Object();
-            Object[] a = testStoreOnNewArray(o1);
+            Object[] a = testStoreOnNewArrayAtKnownIndex(o1);
             Asserts.assertEquals(o1, a[4]);
+        }
+        {
+            Object o1 = new Object();
+            Object[] a = testStoreOnNewArrayAtUnknownIndex(o1, 5);
+            Asserts.assertEquals(o1, a[5]);
+        }
+        {
+            Object o1 = new Object();
+            Object[] a = testStoreAllOnNewSmallArray(o1);
+            for (int i = 0; i < a.length; i++) {
+                Asserts.assertEquals(o1, a[i]);
+            }
+        }
+        {
+            Object o1 = new Object();
+            Object[] a = testStoreAllOnNewLargeArray(o1);
+            for (int i = 0; i < a.length; i++) {
+                Asserts.assertEquals(o1, a[i]);
+            }
         }
     }
 
@@ -442,7 +582,9 @@ public class TestG1BarrierGeneration {
 
     @Test
     @IR(applyIf = {"ReduceInitialCardMarks", "true"},
-        failOn = {IRNode.G1_STORE_P, IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY,
+                  IRNode.G1_STORE_N_WITH_BARRIER_FLAG, ANY,
+                  IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIfAnd = {"ReduceInitialCardMarks", "false", "UseCompressedOops", "false"},
         counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "2"},
