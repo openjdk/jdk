@@ -43,9 +43,6 @@
 #include "runtime/vframe_hp.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }
 

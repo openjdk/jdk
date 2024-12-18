@@ -1536,9 +1536,6 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
   return count;
 }
 
-static const int64_t right_32_bits = right_n_bits(32);
-static const int64_t right_8_bits = right_n_bits(8);
-
 /**
  * Emits code to update CRC-32 with a byte value according to constants in table
  *
@@ -1555,7 +1552,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
   assert_different_registers(crc, val, table);
 
   xorr(val, val, crc);
-  andi(val, val, right_8_bits);
+  zext(val, val, 8);
   shadd(val, val, table, val, 2);
   lwu(val, Address(val));
   srli(crc, crc, 8);
@@ -1585,7 +1582,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
     srli(v, v, 32);
   xorr(v, v, crc);
 
-  andi(tmp1, v, right_8_bits);
+  zext(tmp1, v, 8);
   shadd(tmp1, tmp1, table3, tmp2, 2);
   lwu(crc, Address(tmp1));
 
@@ -2086,7 +2083,11 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   const int64_t single_table_size = 256;
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
-  mv(tmp5, right_32_bits);
+
+  // tmp5 = 0xffffffff
+  notr(tmp5, zr);
+  srli(tmp5, tmp5, 32);
+
   andn(crc, tmp5, crc);
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
@@ -2110,7 +2111,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     subw(len, len, 2);
     lhu(tmp1, Address(buf));
     add(buf, buf, 2);
-    andi(tmp2, tmp1, right_8_bits);
+    zext(tmp2, tmp1, 8);
     update_byte_crc32(crc, tmp2, table0);
     srli(tmp2, tmp1, 8);
     update_byte_crc32(crc, tmp2, table0);
@@ -2634,17 +2635,17 @@ void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register 
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
   andr(Rd, Rs1, Rs2);
-  sign_extend(Rd, Rd, 32);
+  sext(Rd, Rd, 32);
 }
 
 void MacroAssembler::orrw(Register Rd, Register Rs1, Register Rs2) {
   orr(Rd, Rs1, Rs2);
-  sign_extend(Rd, Rd, 32);
+  sext(Rd, Rd, 32);
 }
 
 void MacroAssembler::xorrw(Register Rd, Register Rs1, Register Rs2) {
   xorr(Rd, Rs1, Rs2);
-  sign_extend(Rd, Rd, 32);
+  sext(Rd, Rd, 32);
 }
 
 // Rd = Rs1 & (~Rd2)
@@ -2832,18 +2833,18 @@ void MacroAssembler::revbw(Register Rd, Register Rs, Register tmp1, Register tmp
   }
   assert_different_registers(Rs, tmp1, tmp2);
   assert_different_registers(Rd, tmp1, tmp2);
-  andi(tmp1, Rs, 0xFF);
+  zext(tmp1, Rs, 8);
   slli(tmp1, tmp1, 8);
   for (int step = 8; step < 24; step += 8) {
     srli(tmp2, Rs, step);
-    andi(tmp2, tmp2, 0xFF);
+    zext(tmp2, tmp2, 8);
     orr(tmp1, tmp1, tmp2);
     slli(tmp1, tmp1, 8);
   }
   srli(Rd, Rs, 24);
-  andi(Rd, Rd, 0xFF);
+  zext(Rd, Rd, 8);
   orr(Rd, tmp1, Rd);
-  sign_extend(Rd, Rd, 32);
+  sext(Rd, Rd, 32);
 }
 
 // reverse bytes in doubleword
@@ -2855,16 +2856,16 @@ void MacroAssembler::revb(Register Rd, Register Rs, Register tmp1, Register tmp2
   }
   assert_different_registers(Rs, tmp1, tmp2);
   assert_different_registers(Rd, tmp1, tmp2);
-  andi(tmp1, Rs, 0xFF);
+  zext(tmp1, Rs, 8);
   slli(tmp1, tmp1, 8);
   for (int step = 8; step < 56; step += 8) {
     srli(tmp2, Rs, step);
-    andi(tmp2, tmp2, 0xFF);
+    zext(tmp2, tmp2, 8);
     orr(tmp1, tmp1, tmp2);
     slli(tmp1, tmp1, 8);
   }
   srli(Rd, Rs, 56);
-  andi(Rd, Rd, 0xFF);
+  zext(Rd, Rd, 8);
   orr(Rd, tmp1, Rd);
 }
 
@@ -3237,7 +3238,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
 
   if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0 &&
       CompressedKlassPointers::shift() == 0) {
-    zero_extend(dst, src, 32);
+    zext(dst, src, 32);
     return;
   }
 
@@ -3690,7 +3691,7 @@ void MacroAssembler::load_reserved(Register dst,
       break;
     case uint32:
       lr_w(dst, addr, acquire);
-      zero_extend(dst, dst, 32);
+      zext(dst, dst, 32);
       break;
     default:
       ShouldNotReachHere();
@@ -3731,7 +3732,7 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
   } else {
     // size == int16 case
     mv(mask, -1);
-    zero_extend(mask, mask, 16);
+    zext(mask, mask, 16);
   }
   sll(mask, mask, shift);
 
@@ -3808,10 +3809,10 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     srl(result, scratch0, shift);
 
     if (size == int8) {
-      sign_extend(result, result, 8);
+      sext(result, result, 8);
     } else {
       // size == int16 case
-      sign_extend(result, result, 16);
+      sext(result, result, 16);
     }
   }
 }
@@ -4005,7 +4006,7 @@ ATOMIC_XCHG(xchgalw, amoswap_w, Assembler::aq, Assembler::rl)
 #define ATOMIC_XCHGU(OP1, OP2)                                                       \
 void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
   atomic_##OP2(prev, newv, addr);                                                    \
-  zero_extend(prev, prev, 32);                                                       \
+  zext(prev, prev, 32);                                                       \
   return;                                                                            \
 }
 
@@ -4025,7 +4026,7 @@ void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
       break;
     case uint32:
       amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
-      zero_extend(prev, prev, 32);
+      zext(prev, prev, 32);
       break;
     default:
       ShouldNotReachHere();
@@ -4614,7 +4615,7 @@ void MacroAssembler::set_narrow_oop(Register dst, jobject obj) {
   relocate(oop_Relocation::spec(oop_index), [&] {
     li32(dst, 0xDEADBEEF);
   });
-  zero_extend(dst, dst, 32);
+  zext(dst, dst, 32);
 }
 
 void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
@@ -4627,7 +4628,7 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   relocate(metadata_Relocation::spec(index), [&] {
     li32(dst, nk);
   });
-  zero_extend(dst, dst, 32);
+  zext(dst, dst, 32);
 }
 
 address MacroAssembler::reloc_call(Address entry, Register tmp) {
@@ -4902,7 +4903,7 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   mv(tmp, out);
   mv(out, zr);
   blez(len, L_end);
-  zero_extend(k, k, 32);
+  zext(k, k, 32);
   slliw(t0, offset, LogBytesPerInt);
   add(offset, tmp, t0);
   slliw(t0, len, LogBytesPerInt);
@@ -5436,7 +5437,7 @@ void MacroAssembler::inflate_lo32(Register Rd, Register Rs, Register tmp1, Regis
     orr(Rd, Rd, tmp2);
   }
   slli(Rd, Rd, wordSize);
-  andi(tmp2, Rs, 0xFF); // last byte mask at lower word
+  zext(tmp2, Rs, 8); // last byte mask at lower word
   orr(Rd, Rd, tmp2);
 }
 
@@ -5838,7 +5839,7 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
   }
 }
 
-void MacroAssembler::zero_extend(Register dst, Register src, int bits) {
+void MacroAssembler::zext(Register dst, Register src, int bits) {
   switch (bits) {
     case 32:
       if (UseZba) {
@@ -5853,19 +5854,17 @@ void MacroAssembler::zero_extend(Register dst, Register src, int bits) {
       }
       break;
     case 8:
-      if (UseZbb) {
-        zext_b(dst, src);
-        return;
-      }
-      break;
+      zext_b(dst, src);
+      return;
     default:
       break;
   }
+
   slli(dst, src, XLEN - bits);
   srli(dst, dst, XLEN - bits);
 }
 
-void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
+void MacroAssembler::sext(Register dst, Register src, int bits) {
   switch (bits) {
     case 32:
       sext_w(dst, src);
@@ -5885,6 +5884,7 @@ void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
     default:
       break;
   }
+
   slli(dst, src, XLEN - bits);
   srai(dst, dst, XLEN - bits);
 }
@@ -5977,7 +5977,7 @@ void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
     sd(src.first()->as_Register(), Address(sp, reg2offset_out(dst.first())));
   } else {
     if (dst.first() != src.first()) {
-      sign_extend(dst.first()->as_Register(), src.first()->as_Register(), 32);
+      sext(dst.first()->as_Register(), src.first()->as_Register(), 32);
     }
   }
 }

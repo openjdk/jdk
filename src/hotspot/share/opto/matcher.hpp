@@ -341,6 +341,8 @@ public:
 
   static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
+  static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes

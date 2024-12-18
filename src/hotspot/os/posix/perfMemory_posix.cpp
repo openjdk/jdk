@@ -1053,7 +1053,7 @@ static char* mmap_create_shared(size_t size) {
     return nullptr;
   }
 
-  mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+  mapAddress = (char*)::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
   result = ::close(fd);
   assert(result != OS_ERR, "could not close file");
@@ -1208,7 +1208,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   assert(size > 0, "unexpected size <= 0");
 
-  char* mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
+  char* mapAddress = (char*)::mmap(nullptr, size, mmap_prot, MAP_SHARED, fd, 0);
 
   int result = ::close(fd);
   assert(result != OS_ERR, "could not close file");

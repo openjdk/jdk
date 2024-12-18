@@ -31,8 +31,7 @@
 //  jtreg-controlled gtests (see test/hotspot/jtreg/gtest/NMTGtests.java)
 
 #include "precompiled.hpp"
-
-#include "memory/virtualspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -93,8 +92,8 @@ public:
   static void test_add_committed_region_adjacent() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size, mtTest);
 
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
 
     address addr = (address)rs.base();
@@ -170,8 +169,8 @@ public:
   static void test_add_committed_region_adjacent_overlapping() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size, mtTest);
 
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
 
     address addr = (address)rs.base();
@@ -260,8 +259,8 @@ public:
   static void test_add_committed_region_overlapping() {
 
     size_t size  = 0x01000000;
-    ReservedSpace rs(size, mtTest);
 
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
 
     address addr = (address)rs.base();
@@ -433,8 +432,8 @@ public:
 
   static void test_remove_uncommitted_region() {
     size_t size  = 0x01000000;
-    ReservedSpace rs(size, mtTest);
 
+    ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
 
     address addr = (address)rs.base();

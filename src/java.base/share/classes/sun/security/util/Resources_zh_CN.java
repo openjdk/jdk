@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
 
         // javax.security.auth.Subject
         {"NEWLINE", "\n"},
-        {"invalid.null.AccessControlContext.provided",
-                "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A AccessControlContext"},
         {"invalid.null.action.provided", "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A\u64CD\u4F5C"},
         {"invalid.null.Class.provided", "\u63D0\u4F9B\u4E86\u65E0\u6548\u7684\u7A7A\u7C7B"},
         {"Subject.", "\u4E3B\u4F53: \n"},
@@ -90,40 +88,9 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Login.Failure.all.modules.ignored",
                 "\u767B\u5F55\u5931\u8D25: \u5FFD\u7565\u6240\u6709\u6A21\u5757"},
 
-        // sun.security.provider.PolicyFile
-
-        {"java.security.policy.error.parsing.policy.message",
-                "java.security.policy: \u89E3\u6790{0}\u65F6\u51FA\u9519:\n\t{1}"},
-        {"java.security.policy.error.adding.Permission.perm.message",
-                "java.security.policy: \u6DFB\u52A0\u6743\u9650{0}\u65F6\u51FA\u9519:\n\t{1}"},
-        {"java.security.policy.error.adding.Entry.message",
-                "java.security.policy: \u6DFB\u52A0\u6761\u76EE\u65F6\u51FA\u9519:\n\t{0}"},
-        {"alias.name.not.provided.pe.name.", "\u672A\u63D0\u4F9B\u522B\u540D ({0})"},
-        {"unable.to.perform.substitution.on.alias.suffix",
-                "\u65E0\u6CD5\u5728\u522B\u540D {0} \u4E0A\u6267\u884C\u66FF\u4EE3"},
-        {"substitution.value.prefix.unsupported",
-                "\u66FF\u4EE3\u503C{0}\u4E0D\u53D7\u652F\u6301"},
-        {"SPACE", " "},
-        {"LPARAM", "("},
-        {"RPARAM", ")"},
-        {"type.can.t.be.null","\u7C7B\u578B\u4E0D\u80FD\u4E3A\u7A7A\u503C"},
-
         // sun.security.provider.PolicyParser
-        {"keystorePasswordURL.can.not.be.specified.without.also.specifying.keystore",
-                "\u4E0D\u6307\u5B9A\u5BC6\u94A5\u5E93\u65F6\u65E0\u6CD5\u6307\u5B9A keystorePasswordURL"},
-        {"expected.keystore.type", "\u5E94\u4E3A\u5BC6\u94A5\u5E93\u7C7B\u578B"},
-        {"expected.keystore.provider", "\u5E94\u4E3A\u5BC6\u94A5\u5E93\u63D0\u4F9B\u65B9"},
-        {"multiple.Codebase.expressions",
-                "\u591A\u4E2A\u4EE3\u7801\u5E93\u8868\u8FBE\u5F0F"},
-        {"multiple.SignedBy.expressions","\u591A\u4E2A SignedBy \u8868\u8FBE\u5F0F"},
         {"duplicate.keystore.domain.name","\u5BC6\u94A5\u5E93\u57DF\u540D\u91CD\u590D: {0}"},
         {"duplicate.keystore.name","\u5BC6\u94A5\u5E93\u540D\u79F0\u91CD\u590D: {0}"},
-        {"SignedBy.has.empty.alias","SignedBy \u6709\u7A7A\u522B\u540D"},
-        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
-                "\u6CA1\u6709\u901A\u914D\u7B26\u540D\u79F0, \u65E0\u6CD5\u4F7F\u7528\u901A\u914D\u7B26\u7C7B\u6307\u5B9A\u4E3B\u7528\u6237"},
-        {"expected.codeBase.or.SignedBy.or.Principal",
-                "\u5E94\u4E3A codeBase, SignedBy \u6216\u4E3B\u7528\u6237"},
-        {"expected.permission.entry", "\u5E94\u4E3A\u6743\u9650\u6761\u76EE"},
         {"number.", "\u7F16\u53F7 "},
         {"expected.expect.read.end.of.file.",
                 "\u5E94\u4E3A [{0}], \u8BFB\u53D6\u7684\u662F [\u6587\u4EF6\u7ED3\u5C3E]"},
@@ -132,8 +99,6 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"line.number.msg", "\u5217{0}: {1}"},
         {"line.number.expected.expect.found.actual.",
                 "\u884C\u53F7 {0}: \u5E94\u4E3A [{1}], \u627E\u5230 [{2}]"},
-        {"null.principalClass.or.principalName",
-                "principalClass \u6216 principalName \u4E3A\u7A7A\u503C"},
 
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",

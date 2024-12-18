@@ -185,6 +185,10 @@ public:
   static ModuleEntry* create_boot_unnamed_module(ClassLoaderData* cld);
   static ModuleEntry* new_unnamed_module_entry(Handle module_handle, ClassLoaderData* cld);
 
+  // Note caller requires ResourceMark
+  const char* name_as_C_string() {
+    return is_named() ? name()->as_C_string() : UNNAMED_MODULE;
+  }
   void print(outputStream* st = tty);
   void verify();
 
