@@ -629,12 +629,20 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+
+// Generate stub for ghash process  blocks.
+//
+// Arguments for generated stub:
+//      state:  R3_ARG1
+//      subkeyH:    R4_ARG2
+//      data: R5_ARG3
+//
 address generate_ghash_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "ghash");
   address start = __ function_entry();
 
   // Registers for parameters
-  Register state = R3_ARG1;                     // long[] st0
+  Register state = R3_ARG1;                     // long[] state
   Register subkeyH = R4_ARG2;                   // long[] subH
   Register data = R5_ARG3;                      // byte[] data
   Register blocks = R6_ARG4;
@@ -691,12 +699,12 @@ address generate_ghash_processBlocks() {
   __ vor(vTmp4, vConstC2, vTmp4);               // 0xC2...1
   __ vsplt(vMSB, 0, vH);                        // MSB of H
   __ vxor(vH_shift, vH_shift, vH_shift);
-  __ vsl(vH_shift, vH, vConst1);                // Carry= H<<7
+  __ vsl(vH_shift, vH, vConst1);                // Carry = H<<7
   __ vsrab(vMSB, vMSB, vConst7);
   __ vand(vMSB, vMSB, vTmp4);                   // Carry
-  __ vxor(vTmp2, vH_shift, vMSB);               // shift H<<<1
+  __ vxor(vTmp2, vH_shift, vMSB);               
   __ vsldoi(vConstC2, vZero, vConstC2, 8);
-  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);        // swap L,H
+  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);        // swap Lower and Higher Halves of subkey H
   __ vsldoi(vLowerH, vZero, vSwappedH, 8);      // H.L
   __ vsldoi(vHigherH, vSwappedH, vZero, 8);     // H.H
   __ vxor(vTmp1, vTmp1, vTmp1);
