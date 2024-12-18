@@ -240,7 +240,9 @@ void ShenandoahGeneration::reset_mark_bitmap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
-  set_mark_incomplete();
+  if (PREPARE_FOR_CURRENT_CYCLE) {
+    set_mark_incomplete();
+  }
 
   ShenandoahResetBitmapClosure<PREPARE_FOR_CURRENT_CYCLE> closure;
   parallel_heap_region_iterate_free(&closure);
