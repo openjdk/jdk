@@ -1057,17 +1057,6 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   return offset == in_bytes(Thread::tlab_top_offset());
 }
 
-// TODO: G1-specific, make virtual.
-static void elide_mach_barrier(MachNode* mach) {
-  uint8_t barrier_data = mach->barrier_data();
-  barrier_data &= ~G1C2BarrierPre;
-  if (CardTableBarrierSetC2::use_ReduceInitialCardMarks()) {
-    barrier_data &= ~G1C2BarrierPost;
-    barrier_data &= ~G1C2BarrierPostNotNull;
-  }
-  mach->set_barrier_data(barrier_data);
-}
-
 void BarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const {
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();

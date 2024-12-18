@@ -364,6 +364,7 @@ public:
   virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
 
+  virtual void elide_mach_barrier(MachNode* mach) const { }
   static bool is_allocation(const Node* node);
   void analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const;
   virtual void late_barrier_analysis() const { }

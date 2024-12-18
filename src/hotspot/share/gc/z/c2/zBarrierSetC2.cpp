@@ -612,7 +612,7 @@ static bool is_array_allocation(const Node* phi) {
   ShouldNotReachHere();
 }
 
-static void elide_mach_barrier(MachNode* mach) {
+void ZBarrierSetC2::elide_mach_barrier(MachNode* mach) const {
   mach->set_barrier_data(ZBarrierElided);
 }
 
