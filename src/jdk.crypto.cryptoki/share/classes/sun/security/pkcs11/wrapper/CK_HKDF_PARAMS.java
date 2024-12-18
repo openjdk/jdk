@@ -25,8 +25,6 @@
 
 package sun.security.pkcs11.wrapper;
 
-import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
-
 /**
  * class CK_HKDF_PARAMS provides the parameters to the CKM_HKDF_DERIVE,
  * CKM_HKDF_DATA and CKM_HKDF_KEY_GEN mechanisms.<p>
