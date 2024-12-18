@@ -29,43 +29,33 @@ import java.util.HashSet;
 /**
  * Provides a distribution over values close to the powers of 2.
  */
-public final class SpecialLongGenerator extends LongGenerator {
+public final class SpecialIntegralGenerator<T> implements Generator<T> {
 
     /*
      * Pre-generated values we can chose from.
      */
-    private final long[] values;
+    private final T[] values;
 
     /*
      * Fall-back generator if values does not contain any value in the
      * expected range.
      */
-    private final UniformLongGenerator uniform = new UniformLongGenerator();
+    private final UniformIntegralGenerator<T> uniform;
 
     /**
-     * Creates a new {@link SpecialLongGenerator}. Generates only powers of 2, and
+     * Creates a new {@link SpecialIntegralGenerator}. Generates only powers of 2, and
      * values that are not more than {@code range} away from powers of 2.
-     *
-     * @param range How far away from the powers of 2 the values should be generated.
      */
-    public SpecialLongGenerator(int range) {
-        HashSet<Long> set = new HashSet<Long>();
-        for (int i = 0; i < 64; i++) {
-            long pow2 = 1L << i;
-            for (int j = -range; j <= range; j++) {
-                set.add(+pow2 + j);
-                set.add(-pow2 + j);
-            }
-        }
-        this.values = set.stream().mapToLong(Number::longValue).toArray();
-        Arrays.sort(this.values);
+    public SpecialIntegralGenerator(T[] values, UniformIntegralGenerator<T> uniform) {
+        this.values = values;
+        this.uniform = uniform;
     }
 
     @Override
-    public long nextLong(long lo, long hi) {
+    public T next() {
         // Find indices in values.
-        int loIndex = Arrays.binarySearch(values, lo);
-        int hiIndex = Arrays.binarySearch(values, hi);
+        int loIndex = Arrays.binarySearch(values, uniform.lo());
+        int hiIndex = Arrays.binarySearch(values, uniform.hi());
         if (loIndex < 0) {
             // Not found, but we know that any values higher than lo
             // must be at loIndex or higher.
@@ -85,6 +75,6 @@ public final class SpecialLongGenerator extends LongGenerator {
 
         // No element in values is in the required range.
         // Fall-back to uniform.
-        return uniform.nextLong(lo, hi);
+        return uniform.next();
     }
 }

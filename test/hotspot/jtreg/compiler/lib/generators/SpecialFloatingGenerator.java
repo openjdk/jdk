@@ -26,27 +26,13 @@ package compiler.lib.generators;
 /**
  * Provides a double distribution picked from a list of special values, including NaN, zero, int, etc.
  */
-public final class SpecialDoubleGenerator extends DoubleGenerator {
-
-    /*
-     * Pre-generated values we can chose from.
-     */
-    private static final double[] VALUES = new double[] {
-        0,
-        1,
-        -1,
-        Double.POSITIVE_INFINITY,
-        Double.NEGATIVE_INFINITY,
-        Double.NaN,
-        Double.MAX_VALUE,
-        Double.MIN_NORMAL,
-        Double.MIN_VALUE,
-    };
+public final class SpecialFloatingGenerator<T> implements Generator<T> {
+    private final T[] values;
 
     /*
      * We also mix in other values at a certain percentage.
      */
-    private final DoubleGenerator backgroundGenerator;
+    private final Generator<T> backgroundGenerator;
 
     /*
      * {@link specialCountDown} detemines in how many iterations we generate the next special value.
@@ -56,7 +42,7 @@ public final class SpecialDoubleGenerator extends DoubleGenerator {
     private int specialCountDown;
 
     /**
-     * Creates a new {@link SpecialDoubleGenerator}. It periodically generates a special value (NaN, zero, infinity, etc).
+     * Creates a new {@link SpecialFloatingGenerator}. It periodically generates a special value (NaN, zero, infinity, etc).
      * The distance between two special values is chosen randomly between {@code specialMinDistance} and
      * {@code specialMaxDistance}. All other values in between are chosen from a {@code backgroundGenerator}.
      *
@@ -64,7 +50,8 @@ public final class SpecialDoubleGenerator extends DoubleGenerator {
      * @param specialMinDistance Minimum distance between special values.
      * @param specialMaxDistance Maximum distance between special values.
      */
-    public SpecialDoubleGenerator(DoubleGenerator backgroundGenerator, int specialMinDistance, int specialMaxDistance) {
+    public SpecialFloatingGenerator(Generator<T> backgroundGenerator, T[] values, int specialMinDistance, int specialMaxDistance) {
+        this.values = values;
         this.backgroundGenerator = backgroundGenerator;
         this.specialMinDistance = specialMinDistance;
         this.specialMaxDistance = specialMaxDistance;
@@ -72,14 +59,14 @@ public final class SpecialDoubleGenerator extends DoubleGenerator {
     }
 
     @Override
-    public double nextDouble() {
+    public T next() {
         specialCountDown--;
         if (specialCountDown <= 0) {
             specialCountDown = Generators.RANDOM.nextInt(specialMinDistance, specialMaxDistance);
-            int r = Generators.RANDOM.nextInt(VALUES.length);
-            return VALUES[r];
+            int r = Generators.RANDOM.nextInt(values.length);
+            return values[r];
         } else {
-            return backgroundGenerator.nextDouble();
+            return backgroundGenerator.next();
         }
     }
 }

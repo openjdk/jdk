@@ -26,7 +26,7 @@ package compiler.lib.generators;
 /**
  * Provides a uniform double distribution random generator, in the provided range [lo, hi).
  */
-public final class UniformDoubleGenerator extends DoubleGenerator {
+public final class UniformDoubleGenerator implements Generator<Double> {
     private final double lo;
     private final double hi;
 
@@ -42,7 +42,7 @@ public final class UniformDoubleGenerator extends DoubleGenerator {
     }
 
     @Override
-    public double nextDouble() {
+    public Double next() {
         return Generators.RANDOM.nextDouble(lo, hi);
     }
 }

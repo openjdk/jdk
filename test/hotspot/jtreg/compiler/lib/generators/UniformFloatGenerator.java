@@ -26,7 +26,7 @@ package compiler.lib.generators;
 /**
  * Provides a uniform float distribution random generator, in the provided range [lo, hi).
  */
-public final class UniformFloatGenerator extends FloatGenerator {
+public final class UniformFloatGenerator implements Generator<Float> {
     private final float lo;
     private final float hi;
 
@@ -42,7 +42,7 @@ public final class UniformFloatGenerator extends FloatGenerator {
     }
 
     @Override
-    public float nextFloat() {
+    public Float next() {
         return Generators.RANDOM.nextFloat(lo, hi);
     }
 }

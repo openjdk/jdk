@@ -26,21 +26,19 @@ package compiler.lib.generators;
 /**
  * Provides a uniform long distribution random generator.
  */
-public final class UniformLongGenerator extends LongGenerator {
-
-    /**
-     * Creates a new {@link UniformLongGenerator}.
-     */
-    public UniformLongGenerator() {}
+public final class UniformLongGenerator extends UniformIntegralGenerator<Long> {
+    public UniformLongGenerator(Long lo, Long hi) {
+        super(lo, hi);
+    }
 
     @Override
-    public long nextLong(long lo, long hi) {
-        if (hi == Long.MAX_VALUE) {
-            if (lo == Long.MIN_VALUE) {
+    public Long next() {
+        if (hi() == Long.MAX_VALUE) {
+            if (lo() == Long.MIN_VALUE) {
                 return Generators.RANDOM.nextLong();
             }
-            return Generators.RANDOM.nextLong(lo - 1, hi) + 1;
+            return Generators.RANDOM.nextLong(lo() - 1, hi()) + 1;
         }
-        return Generators.RANDOM.nextLong(lo, hi + 1);
+        return Generators.RANDOM.nextLong(lo(), hi() + 1);
     }
 }
