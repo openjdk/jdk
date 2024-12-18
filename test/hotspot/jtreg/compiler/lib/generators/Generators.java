@@ -34,7 +34,7 @@ import jdk.test.lib.Utils;
  * optimizations.
  */
 public final class Generators {
-    private static final Random RANDOM = Utils.getRandomInstance();
+    static final Random RANDOM = Utils.getRandomInstance();
 
     private Generators() {
         throw new AssertionError();

@@ -23,14 +23,10 @@
 
 package compiler.lib.generators;
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /**
  * Provides a double distribution picked from a list of special values, including NaN, zero, int, etc.
  */
 public final class SpecialDoubleGenerator extends DoubleGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
 
     /*
      * Pre-generated values we can chose from.
@@ -72,15 +68,15 @@ public final class SpecialDoubleGenerator extends DoubleGenerator {
         this.backgroundGenerator = backgroundGenerator;
         this.specialMinDistance = specialMinDistance;
         this.specialMaxDistance = specialMaxDistance;
-        this.specialCountDown = RANDOM.nextInt(specialMaxDistance);
+        this.specialCountDown = Generators.RANDOM.nextInt(specialMaxDistance);
     }
 
     @Override
     public double nextDouble() {
         specialCountDown--;
         if (specialCountDown <= 0) {
-            specialCountDown = RANDOM.nextInt(specialMinDistance, specialMaxDistance);
-            int r = RANDOM.nextInt(VALUES.length);
+            specialCountDown = Generators.RANDOM.nextInt(specialMinDistance, specialMaxDistance);
+            int r = Generators.RANDOM.nextInt(VALUES.length);
             return VALUES[r];
         } else {
             return backgroundGenerator.nextDouble();

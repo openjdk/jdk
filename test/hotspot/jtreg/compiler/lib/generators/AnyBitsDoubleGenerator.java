@@ -23,15 +23,11 @@
 
 package compiler.lib.generators;
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /**
  * Provides an any-bits double distribution random generator, i.e. the bits are uniformly sampled,
  * thus creating any possible double value, including the multiple different NaN representations.
  */
 public final class AnyBitsDoubleGenerator extends DoubleGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
      * Create a new {@link AnyBitsDoubleGenerator}.
@@ -40,6 +36,6 @@ public final class AnyBitsDoubleGenerator extends DoubleGenerator {
 
     @Override
     public double nextDouble() {
-        return Double.longBitsToDouble(RANDOM.nextLong());
+        return Double.longBitsToDouble(Generators.RANDOM.nextLong());
     }
 }

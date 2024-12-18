@@ -24,15 +24,12 @@
 package compiler.lib.generators;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-import jdk.test.lib.Utils;
 
 /**
  * Provides a distribution over values close to the powers of 2.
  */
 public final class SpecialLongGenerator extends LongGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
 
     /*
      * Pre-generated values we can chose from.
@@ -82,7 +79,7 @@ public final class SpecialLongGenerator extends LongGenerator {
             hiIndex++;
         }
         if (loIndex < hiIndex) {
-            int r = RANDOM.nextInt(hiIndex - loIndex);
+            int r = Generators.RANDOM.nextInt(hiIndex - loIndex);
             return values[loIndex + r];
         }
 

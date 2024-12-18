@@ -23,15 +23,11 @@
 
 package compiler.lib.generators;
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /**
  * Provides an any-bits float distribution random generator, i.e. the bits are uniformly sampled,
  * thus creating any possible float value, including the multiple different NaN representations.
  */
 public final class AnyBitsFloatGenerator extends FloatGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
      * Creates a new {@link AnyBitsFloatGenerator}.
@@ -40,6 +36,6 @@ public final class AnyBitsFloatGenerator extends FloatGenerator {
 
     @Override
     public float nextFloat() {
-        return Float.intBitsToFloat(RANDOM.nextInt());
+        return Float.intBitsToFloat(Generators.RANDOM.nextInt());
     }
 }

@@ -23,14 +23,10 @@
 
 package compiler.lib.generators;
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /**
  * Provides a uniform long distribution random generator.
  */
 public final class UniformLongGenerator extends LongGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
      * Creates a new {@link UniformLongGenerator}.
@@ -41,10 +37,10 @@ public final class UniformLongGenerator extends LongGenerator {
     public long nextLong(long lo, long hi) {
         if (hi == Long.MAX_VALUE) {
             if (lo == Long.MIN_VALUE) {
-                return RANDOM.nextLong();
+                return Generators.RANDOM.nextLong();
             }
-            return RANDOM.nextLong(lo - 1, hi) + 1;
+            return Generators.RANDOM.nextLong(lo - 1, hi) + 1;
         }
-        return RANDOM.nextLong(lo, hi + 1);
+        return Generators.RANDOM.nextLong(lo, hi + 1);
     }
 }

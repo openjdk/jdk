@@ -23,15 +23,10 @@
 
 package compiler.lib.generators;
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /**
  * Provides a uniform double distribution random generator, in the provided range [lo, hi).
  */
 public final class UniformDoubleGenerator extends DoubleGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
-
     private final double lo;
     private final double hi;
 
@@ -48,6 +43,6 @@ public final class UniformDoubleGenerator extends DoubleGenerator {
 
     @Override
     public double nextDouble() {
-        return RANDOM.nextDouble(lo, hi);
+        return Generators.RANDOM.nextDouble(lo, hi);
     }
 }

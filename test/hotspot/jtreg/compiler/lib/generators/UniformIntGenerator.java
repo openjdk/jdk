@@ -23,14 +23,10 @@
 
 package compiler.lib.generators;
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /**
  * Provides a uniform int distribution random generator.
  */
 public final class UniformIntGenerator extends IntGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
      * Creates a new {@link UniformIntGenerator}.
@@ -41,10 +37,10 @@ public final class UniformIntGenerator extends IntGenerator {
     public int nextInt(int lo, int hi) {
         if (hi == Integer.MAX_VALUE) {
             if (lo == Integer.MIN_VALUE) {
-                return RANDOM.nextInt();
+                return Generators.RANDOM.nextInt();
             }
-            return RANDOM.nextInt(lo - 1, hi) + 1;
+            return Generators.RANDOM.nextInt(lo - 1, hi) + 1;
         }
-        return RANDOM.nextInt(lo, hi + 1);
+        return Generators.RANDOM.nextInt(lo, hi + 1);
     }
 }

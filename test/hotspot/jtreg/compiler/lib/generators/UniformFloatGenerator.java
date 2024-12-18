@@ -23,15 +23,10 @@
 
 package compiler.lib.generators;
 
-import java.util.Random;
-import jdk.test.lib.Utils;
-
 /**
  * Provides a uniform float distribution random generator, in the provided range [lo, hi).
  */
 public final class UniformFloatGenerator extends FloatGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
-
     private final float lo;
     private final float hi;
 
@@ -48,6 +43,6 @@ public final class UniformFloatGenerator extends FloatGenerator {
 
     @Override
     public float nextFloat() {
-        return RANDOM.nextFloat(lo, hi);
+        return Generators.RANDOM.nextFloat(lo, hi);
     }
 }

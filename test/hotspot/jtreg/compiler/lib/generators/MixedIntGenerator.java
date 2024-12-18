@@ -24,16 +24,12 @@
 package compiler.lib.generators;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-import jdk.test.lib.Utils;
 
 /**
  * Mixed results between {@link UniformIntGenerator} and {@link SpecialIntGenerator}.
  */
 public final class MixedIntGenerator extends IntGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
-
     private final UniformIntGenerator uniform;
     private final SpecialIntGenerator special;
     private final int weightUniform;
@@ -56,7 +52,7 @@ public final class MixedIntGenerator extends IntGenerator {
 
     @Override
     public int nextInt(int lo, int hi) {
-        int r = RANDOM.nextInt(weightUniform + weightSpecial);
+        int r = Generators.RANDOM.nextInt(weightUniform + weightSpecial);
         if (r < weightUniform) {
             return uniform.nextInt(lo, hi);
         } else {

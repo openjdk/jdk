@@ -24,16 +24,12 @@
 package compiler.lib.generators;
 
 import java.util.Arrays;
-import java.util.Random;
 import java.util.HashSet;
-import jdk.test.lib.Utils;
 
 /**
  * Mixed results between {@link UniformLongGenerator} and {@link SpecialLongGenerator}.
  */
 public final class MixedLongGenerator extends LongGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
-
     private final UniformLongGenerator uniform;
     private final SpecialLongGenerator special;
     private final int weightUniform;
@@ -56,7 +52,7 @@ public final class MixedLongGenerator extends LongGenerator {
 
     @Override
     public long nextLong(long lo, long hi) {
-        int r = RANDOM.nextInt(weightUniform + weightSpecial);
+        int r = Generators.RANDOM.nextInt(weightUniform + weightSpecial);
         if (r < weightUniform) {
             return uniform.nextLong(lo, hi);
         } else {

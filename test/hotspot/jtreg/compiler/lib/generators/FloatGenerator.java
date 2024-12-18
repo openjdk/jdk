@@ -24,14 +24,11 @@
 package compiler.lib.generators;
 
 import java.lang.foreign.*;
-import java.util.Random;
-import jdk.test.lib.Utils;
 
 /**
  * Base class of float generators.
  */
 public abstract class FloatGenerator {
-    private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
      * Creates a new {@link FloatGenerator}.
