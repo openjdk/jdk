@@ -683,7 +683,7 @@ address generate_ghash_processBlocks() {
   Label L_end, L_aligned;
 
   static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-  
+
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
   // Load the vector from memory into vConstC2
@@ -702,7 +702,7 @@ address generate_ghash_processBlocks() {
   __ vsl(vH_shift, vH, vConst1);                // Carry = H<<7
   __ vsrab(vMSB, vMSB, vConst7);
   __ vand(vMSB, vMSB, vTmp4);                   // Carry
-  __ vxor(vTmp2, vH_shift, vMSB);               
+  __ vxor(vTmp2, vH_shift, vMSB);
   __ vsldoi(vConstC2, vZero, vConstC2, 8);
   __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);        // swap Lower and Higher Halves of subkey H
   __ vsldoi(vLowerH, vZero, vSwappedH, 8);      // H.L
@@ -713,7 +713,7 @@ address generate_ghash_processBlocks() {
   __ li(temp1, 0);
   __ load_const_optimized(temp2, (uintptr_t)&perm_pattern);
   __ lvx(loadOrder, temp2);
-  // Performing Karatsuba multiplication  in Galois fields 
+  // Performing Karatsuba multiplication  in Galois fields
   Label loop;
   __ bind(loop);
     // Load immediate value 0 into temp
@@ -750,11 +750,11 @@ address generate_ghash_processBlocks() {
     __ vsldoi(vTmp7, vTmp1, vTmp1, 8);          // swap
     __ vpmsumd(vTmp1, vTmp1, vConstC2);         // reduction using the reduction constant
     __ vxor(vTmp7, vTmp7, vTmp3);               // Combine the reduced Low and High products
-    __ vxor(vZero, vTmp1, vTmp7);               
+    __ vxor(vZero, vTmp1, vTmp7);
     __ vmr(vZero_Stored, vZero);
     __ addi(data, data, 16);
     __ bdnz(loop);
-  __ stxvd2x(vZero->to_vsr(),state);
+  __ stxvd2x(vZero->to_vsr(), state);
   __ blr();                                     // Return from function
 
   return start;
