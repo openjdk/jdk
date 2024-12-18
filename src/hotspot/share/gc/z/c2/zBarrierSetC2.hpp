@@ -127,7 +127,7 @@ public:
   virtual void clone_at_expansion(PhaseMacroExpand* phase,
                                   ArrayCopyNode* ac) const;
 
-  virtual void elide_mach_barrier(MachNode* mach) const;
+  virtual void elide_dominated_barrier(MachNode* mach) const;
   virtual void late_barrier_analysis() const;
   virtual int estimate_stub_size() const;
   virtual void emit_stubs(CodeBuffer& cb) const;

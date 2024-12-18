@@ -476,7 +476,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
 
 #undef XTOP
 
-void ZBarrierSetC2::elide_mach_barrier(MachNode* mach) const {
+void ZBarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
   mach->set_barrier_data(ZBarrierElided);
 }
 
@@ -549,9 +549,9 @@ void ZBarrierSetC2::analyze_dominating_barriers() const {
   }
 
   // Step 2 - Find dominating accesses or allocations for each access
-  analyze_dominating_barriers_impl(loads, load_dominators);
-  analyze_dominating_barriers_impl(stores, store_dominators);
-  analyze_dominating_barriers_impl(atomics, atomic_dominators);
+  elide_dominated_barriers(loads, load_dominators);
+  elide_dominated_barriers(stores, store_dominators);
+  elide_dominated_barriers(atomics, atomic_dominators);
 }
 
 void ZBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {

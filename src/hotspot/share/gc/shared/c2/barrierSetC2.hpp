@@ -364,9 +364,14 @@ public:
   virtual bool matcher_find_shared_post_visit(Matcher* matcher, Node* n, uint opcode) const { return false; };
   virtual bool matcher_is_store_load_barrier(Node* x, uint xop) const { return false; }
 
-  virtual void elide_mach_barrier(MachNode* mach) const { }
+  // Whether the given phi node joins OOPs from fast and slow allocation paths.
   static bool is_allocation(const Node* node);
-  void analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const;
+  // Elide GC barriers from a Mach node according to elide_dominated_barriers().
+  virtual void elide_dominated_barrier(MachNode* mach) const { }
+  // Elide GC barriers from instructions in 'accesses' if they are dominated by
+  // instructions in 'access_dominators' (according to elide_mach_barrier()) and
+  // there is no safepoint poll in between.
+  void elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const;
   virtual void late_barrier_analysis() const { }
   virtual void compute_liveness_at_stubs() const;
   virtual int estimate_stub_size() const { return 0; }

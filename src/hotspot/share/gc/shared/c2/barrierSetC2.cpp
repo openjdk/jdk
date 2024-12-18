@@ -1031,8 +1031,8 @@ static bool is_array_allocation(const Node* phi) {
   ShouldNotReachHere();
 }
 
-// Match the phi node that connects a TLAB allocation fast path with its slowpath
 bool BarrierSetC2::is_allocation(const Node* node) {
+  assert(node->is_Phi(), "expected phi node");
   if (node->req() != 3) {
     return false;
   }
@@ -1057,7 +1057,7 @@ bool BarrierSetC2::is_allocation(const Node* node) {
   return offset == in_bytes(Thread::tlab_top_offset());
 }
 
-void BarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_List& access_dominators) const {
+void BarrierSetC2::elide_dominated_barriers(Node_List& accesses, Node_List& access_dominators) const {
   Compile* const C = Compile::current();
   PhaseCFG* const cfg = C->cfg();
 
@@ -1115,7 +1115,7 @@ void BarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_Li
       if (access_block == mem_block) {
         // Earlier accesses in the same block
         if (mem_index < access_index && !block_has_safepoint(mem_block, mem_index + 1, access_index)) {
-          elide_mach_barrier(access);
+          elide_dominated_barrier(access);
         }
       } else if (mem_block->dominates(access_block)) {
         // Dominating block? Look around for safepoints
@@ -1145,7 +1145,7 @@ void BarrierSetC2::analyze_dominating_barriers_impl(Node_List& accesses, Node_Li
         }
 
         if (!safepoint_found) {
-          elide_mach_barrier(access);
+          elide_dominated_barrier(access);
         }
       }
     }

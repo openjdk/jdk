@@ -530,7 +530,7 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   return barriers;
 }
 
-void G1BarrierSetC2::elide_mach_barrier(MachNode* mach) const {
+void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
   uint8_t barrier_data = mach->barrier_data();
   barrier_data &= ~G1C2BarrierPre;
   if (CardTableBarrierSetC2::use_ReduceInitialCardMarks()) {
@@ -581,7 +581,7 @@ void G1BarrierSetC2::analyze_dominating_barriers() const {
 
   // Find dominating allocations for each store and elide barriers if there is
   // no safepoint in between.
-  analyze_dominating_barriers_impl(stores, allocations);
+  elide_dominated_barriers(stores, allocations);
 }
 
 void G1BarrierSetC2::late_barrier_analysis() const {
