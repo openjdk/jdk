@@ -3143,8 +3143,8 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
   // Replace them with a fused divmod if supported
   if (Matcher::has_match_rule(Op_DivModIL(bt, is_unsigned))) {
     DivModNode* divmod = DivModNode::make(n, bt, is_unsigned);
-    // If the divisor input for a Div (or Mod etc.) is not null, then the control input of the Div is set to null.
-    // It could be that the divisor input is found not null because its type is narrowed down by a CastII in the
+    // If the divisor input for a Div (or Mod etc.) is not zero, then the control input of the Div is set to zero.
+    // It could be that the divisor input is found not zero because its type is narrowed down by a CastII in the
     // subgraph for that input. Range check CastIIs are removed during final graph reshape. To preserve the dependency
     // carried by a CastII, precedence edges are added to the Div node. We need to transfer the precedence edges to the
     // DivMod node so the dependency is not lost.
@@ -3437,8 +3437,8 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
   }
   case Op_CastII: {
     n->as_CastII()->remove_range_check_cast(this);
+    break;
   }
-  break;
 #ifdef _LP64
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
