@@ -42,6 +42,7 @@ public final class TestClassInstantiator {
     private final ClassScope classScope;
     private final Scope staticsScope;
     private final Scope mainScope;
+    private final MethodScope mainMethodScope;
 
     /**
      * Create a new {@link TestClassInstantiator} for a specific class, using the {@link CodeGeneratorLibrary#standard}.
@@ -92,6 +93,9 @@ public final class TestClassInstantiator {
             """
         ).instantiate(mainScope);
         mainScope.stream.indent();
+
+        mainMethodScope = new MethodScope(mainScope, mainScope.fuel);
+        mainMethodScope.setDebugContext("inside main for TestClassInstantiator", null);
     }
 
     /**
@@ -172,10 +176,10 @@ public final class TestClassInstantiator {
             }
 
             if (mainTemplate != null) {
-                Scope mainSubScope = new Scope(mainScope, mainScope.fuel);
+                Scope mainSubScope = new Scope(mainMethodScope, mainMethodScope.fuel);
                 mainTemplate.instantiate(mainSubScope, parameters, replacementState);
                 mainSubScope.close();
-                mainScope.stream.addCodeStream(mainSubScope.stream);
+                mainMethodScope.stream.addCodeStream(mainSubScope.stream);
             }
 
             if (testTemplate != null) {
@@ -294,6 +298,9 @@ public final class TestClassInstantiator {
         if (isUsed) {
             throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
         }
+
+        mainMethodScope.close();
+        mainScope.stream.addCodeStream(mainMethodScope.stream);
 
         mainScope.stream.outdent();
         mainScope.stream.addNewline();

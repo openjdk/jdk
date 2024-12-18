@@ -42,11 +42,11 @@ public class TestTemplate {
         testSingleLine();
         testMultiLine();
         testMultiLineWithParameters();
-        testClassInstantiatorWithCustomLibrary();
-        testClassInstantiatorWithCustomLibrary2();
+        testCustomLibrary();
+        testClassInstantiator();
         testRepeat();
         testDispatch();
-        test8();
+        testClassInstantiatorAndDispatch();
         test9();
         // TODO dispatch, variables, choose, con, fields, etc
     }
@@ -80,7 +80,7 @@ public class TestTemplate {
         checkEQ(template.where("p1", "").where("p2", "").instantiate(), "start   end");
     }
 
-    public static void testClassInstantiatorWithCustomLibrary() {
+    public static void testCustomLibrary() {
         HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
         codeGenerators.add(new Template("my_generator_1", "proton"));
@@ -138,7 +138,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testClassInstantiatorWithCustomLibrary2() {
+    public static void testClassInstantiator() {
         TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest");
 
         Template staticsTemplate = new Template("my_example_statics",
@@ -472,7 +472,98 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void test8() {
+    public static void testClassInstantiatorAndDispatch() {
+        HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
+
+        codeGenerators.add(new Template("my_generator",
+            """
+            gen1 #{param1}
+            gen2 #{param2}
+            """
+        ));
+        CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
+
+        TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest", library);
+
+        Template staticsTemplate = new Template("my_example_statics",
+            """
+            static #{param1} #{param2}
+            x#{:dispatch(scope=class,call=my_generator,param1=#param1,param2=123)}x
+            """
+        );
+        Template mainTemplate = new Template("my_example_main",
+            """
+            main #{param1} #{param2}
+            x#{:dispatch(scope=class,call=my_generator,param1=234,param2=#param2)}x
+            y#{:dispatch(scope=method,call=my_generator,param1=foo,param2=bar)}y
+            """
+        );
+        Template testTemplate = new Template("my_example_test",
+            """
+            test #{param1} #{param2}
+            x#{:dispatch(scope=class,call=my_generator,param1=uno,param2=#param1)}x
+            {
+                #open(method)
+                hello
+                x#{:dispatch(scope=class,call=my_generator,param1=due,param2=tre)}x
+                y#{:dispatch(scope=method,call=my_generator,param1=quatro,param2=chinque)}y
+                world
+                #close(method)
+            }
+            """
+        );
+
+        instantiator.where("param1", "abc")
+                    .where("param2", "xyz")
+                    .add(staticsTemplate, mainTemplate, testTemplate);
+
+        String code = instantiator.instantiate();
+        String expected =
+            """
+            package p.xyz;
+
+            public class InnerTest {
+                gen1 abc
+                gen2 123
+
+                gen1 234
+                gen2 xyz
+
+                gen1 uno
+                gen2 abc
+
+                gen1 due
+                gen2 tre
+
+                static abc xyz
+                xx
+
+                public static void main(String[] args) {
+                    gen1 foo
+                    gen2 bar
+
+                    main abc xyz
+                    xx
+                    yy
+
+                }
+
+                test abc xyz
+                xx
+                {
+                    gen1 quatro
+                    gen2 chinque
+
+
+                    hello
+                    xx
+                    yy
+                    world
+
+                }
+
+            }""";
+        checkEQ(code, expected);
     }
 
     public static void test9() {
