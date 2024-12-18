@@ -26,23 +26,38 @@ package compiler.lib.generators;
 import java.lang.foreign.*;
 
 /**
- * Define interface of long generators.
+ * Base class for long generators.
  */
 public abstract class LongGenerator {
+
     /**
-     * Generate a random long from [lo, hi], where the bounds are inclusive.
+     * Creates a new {@link LongGenerator}.
+     */
+    public LongGenerator() {}
+
+    /**
+     * Generates a random long from [lo, hi], where the bounds are inclusive.
+     *
+     * @param lo Lower bound of the sampling range (inclusive).
+     * @param hi Higher bound of the sampling range (inclusive).
+     * @return Value sampled between [lo, hi].
      */
     public abstract long nextLong(long lo, long hi);
 
     /**
-     * Generate a random long from the whole long range.
+     * Generates a random long from the whole long range.
+     *
+     * @return Value sampled from the whole long range.
      */
     public final long nextLong() {
         return nextLong(Long.MIN_VALUE, Long.MAX_VALUE);
     }
 
     /**
-     * Generate a random long in the range [0, hi], where the bounds are inclusive.
+     * Generates a random long in the range [0, hi], where the bounds are inclusive.
+     *
+     * @param hi Higher bound of the sampling range (inclusive).
+     * @return Value sampled from {0, hi}.
      */
     public final long nextLong(long hi) {
         return nextLong(0, hi);
@@ -51,9 +66,13 @@ public abstract class LongGenerator {
     /**
      * Fill the memory segments with longs in range [lo, hi], where the bounds are inclusive,
      * Fill it with longs from the generators distribution.
+     *
+     * @param ms Memory segment to be filled.
+     * @param hi Higher bound of the sampling range (inclusive).
+     * @param lo Lower bound of the sampling range (inclusive).
      */
-    public void fill(MemorySegment ms, long lo, long hi) {
-        for (long i = 0; i < ms.byteSize() / 8; i++ ) {
+    public final void fill(MemorySegment ms, long lo, long hi) {
+        for (long i = 0; i < ms.byteSize() / 8; i++) {
             ms.set(ValueLayout.JAVA_LONG_UNALIGNED, 8L * i, nextLong(lo, hi));
         }
     }
@@ -61,8 +80,12 @@ public abstract class LongGenerator {
     /**
      * Fill the array with longs in range [lo, hi], where the bounds are inclusive,
      * Fill it with longs from the generators distribution.
+     *
+     * @param a Array to be filled.
+     * @param hi Higher bound of the sampling range (inclusive).
+     * @param lo Lower bound of the sampling range (inclusive).
      */
-    public void fill(long[] a, long lo, long hi) {
+    public final void fill(long[] a, long lo, long hi) {
         fill(MemorySegment.ofArray(a), lo, hi);
     }
 }

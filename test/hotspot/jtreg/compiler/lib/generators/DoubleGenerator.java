@@ -28,27 +28,38 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Define interface of double generators.
+ * Base class of double generators.
  */
 public abstract class DoubleGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
+     * Creates a new {@link DoubleGenerator}.
+     */
+    public DoubleGenerator() {}
+
+    /**
      * Generate a random double, the distribution can be arbitrarily defined by the generator.
+     *
+     * @return Random double value.
      */
     public abstract double nextDouble();
 
     /**
      * Fill the memory segments with doubles using the distribution of nextDouble.
+     *
+     * @param ms Memory segment to be filled with random values.
      */
     public final void fill(MemorySegment ms) {
-        for (long i = 0; i < ms.byteSize() / 8; i++ ) {
+        for (long i = 0; i < ms.byteSize() / 8; i++) {
             ms.set(ValueLayout.JAVA_DOUBLE_UNALIGNED, 8L * i, nextDouble());
         }
     }
 
     /**
      * Fill the array with doubles using the distribution of nextDouble.
+     *
+     * @param a Array to be filled with random values.
      */
     public final void fill(double[] a) {
         fill(MemorySegment.ofArray(a));

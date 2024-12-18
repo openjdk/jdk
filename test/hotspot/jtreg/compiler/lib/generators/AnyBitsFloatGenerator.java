@@ -27,12 +27,15 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a any-bits float distribution random generator, i.e. the bits are uniformly sampled,
+ * Provides an any-bits float distribution random generator, i.e. the bits are uniformly sampled,
  * thus creating any possible float value, including the multiple different NaN representations.
  */
 public final class AnyBitsFloatGenerator extends FloatGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    /**
+     * Creates a new {@link AnyBitsFloatGenerator}.
+     */
     public AnyBitsFloatGenerator() {}
 
     @Override

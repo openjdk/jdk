@@ -29,18 +29,29 @@ import java.util.HashSet;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a distribution over values close to the powers of 2.
+ * Provides a distribution over values close to the powers of 2.
  */
 public final class SpecialIntGenerator extends IntGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    // Pre-generated values we can chose from.
+    /*
+     * Pre-generated values we can chose from.
+     */
     private final int[] values;
 
-    // Fall-back generator if values does not contain any value in the
-    // expected range.
+
+    /*
+     * Fall-back generator if values does not contain any value in the
+     * expected range.
+     */
     private final UniformIntGenerator uniform = new UniformIntGenerator();
 
+    /**
+     * Creates a new {@link SpecialIntGenerator}. Generates only powers of 2, and
+     * values that are not more than {@code range} away from powers of 2.
+     *
+     * @param range How far away from the powers of 2 the values should be generated.
+     */
     public SpecialIntGenerator(int range) {
         HashSet<Integer> set = new HashSet<Integer>();
         for (int i = 0; i < 32; i++) {

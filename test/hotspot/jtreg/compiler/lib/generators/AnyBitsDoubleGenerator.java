@@ -27,12 +27,15 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a any-bits double distribution random generator, i.e. the bits are uniformly sampled,
+ * Provides an any-bits double distribution random generator, i.e. the bits are uniformly sampled,
  * thus creating any possible double value, including the multiple different NaN representations.
  */
 public final class AnyBitsDoubleGenerator extends DoubleGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    /**
+     * Create a new {@link AnyBitsDoubleGenerator}.
+     */
     public AnyBitsDoubleGenerator() {}
 
     @Override

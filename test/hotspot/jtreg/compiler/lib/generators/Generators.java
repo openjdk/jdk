@@ -36,8 +36,14 @@ import jdk.test.lib.Utils;
 public final class Generators {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    private Generators() {
+        throw new AssertionError();
+    }
+
     /**
      * Randomly pick an int generator.
+     *
+     * @return Random int generator.
      */
     public static IntGenerator ints() {
         switch(RANDOM.nextInt(6)) {
@@ -53,6 +59,8 @@ public final class Generators {
 
     /**
      * Randomly pick a long generator.
+     *
+     * @return Random long generator.
      */
     public static LongGenerator longs() {
         switch(RANDOM.nextInt(6)) {
@@ -68,6 +76,8 @@ public final class Generators {
 
     /**
      * Randomly pick a float generator.
+     *
+     * @return Random float generator.
      */
     public static FloatGenerator floats() {
         switch(RANDOM.nextInt(5)) {
@@ -85,6 +95,8 @@ public final class Generators {
 
     /**
      * Randomly pick a double generator.
+     *
+     * @return Random double generator.
      */
     public static DoubleGenerator doubles() {
         switch(RANDOM.nextInt(5)) {

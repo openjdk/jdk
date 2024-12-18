@@ -27,11 +27,14 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a uniform int distribution random generator.
+ * Provides a uniform int distribution random generator.
  */
 public final class UniformIntGenerator extends IntGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    /**
+     * Creates a new {@link UniformIntGenerator}.
+     */
     public UniformIntGenerator() {}
 
     @Override

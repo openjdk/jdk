@@ -28,27 +28,38 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Define interface of float generators.
+ * Base class of float generators.
  */
 public abstract class FloatGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
+     * Creates a new {@link FloatGenerator}.
+     */
+    public FloatGenerator() {}
+
+    /**
      * Generate a random float, the distribution can be arbitrarily defined by the generator.
+     *
+     * @return Random float value.
      */
     public abstract float nextFloat();
 
     /**
      * Fill the memory segments with floats using the distribution of nextFloat.
+     *
+     * @param ms Memory segment to be filled with random values.
      */
     public final void fill(MemorySegment ms) {
-        for (long i = 0; i < ms.byteSize() / 4; i++ ) {
+        for (long i = 0; i < ms.byteSize() / 4; i++) {
             ms.set(ValueLayout.JAVA_FLOAT_UNALIGNED, 4L * i, nextFloat());
         }
     }
 
     /**
      * Fill the array with floats using the distribution of nextFloat.
+     *
+     * @param a Array to be filled with random values.
      */
     public final void fill(float[] a) {
         fill(MemorySegment.ofArray(a));

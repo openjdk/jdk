@@ -29,7 +29,7 @@ import java.util.HashSet;
 import jdk.test.lib.Utils;
 
 /**
- * Mixed results between UniformLongGenerator and SpecialLongGenerator.
+ * Mixed results between {@link UniformLongGenerator} and {@link SpecialLongGenerator}.
  */
 public final class MixedLongGenerator extends LongGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -39,6 +39,14 @@ public final class MixedLongGenerator extends LongGenerator {
     private final int weightUniform;
     private final int weightSpecial;
 
+    /**
+     * Creates a new {@link MixedLongGenerator}, which samples from {@link UniformLongGenerator} and {@link SpecialLongGenerator},
+     * according to specified weights.
+     *
+     * @param weightUniform Weight for the uniform distribution.
+     * @param weightSpecial Weight for the special distribution.
+     * @param rangeSpecial Range for the special distribution.
+     */
     public MixedLongGenerator(int weightUniform, int weightSpecial, int rangeSpecial) {
         this.weightUniform = weightUniform;
         this.weightSpecial = weightSpecial;

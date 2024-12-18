@@ -27,7 +27,7 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a uniform float distribution random generator, in the provided range [lo, hi).
+ * Provides a uniform float distribution random generator, in the provided range [lo, hi).
  */
 public final class UniformFloatGenerator extends FloatGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -35,6 +35,12 @@ public final class UniformFloatGenerator extends FloatGenerator {
     private final float lo;
     private final float hi;
 
+    /**
+     * Creates a new {@link UniformFloatGenerator}.
+     *
+     * @param lo Lower bound of the range (inclusive).
+     * @param hi Higher bound of the range (exclusive).
+     */
     public UniformFloatGenerator(float lo, float hi) {
         this.lo = lo;
         this.hi = hi;

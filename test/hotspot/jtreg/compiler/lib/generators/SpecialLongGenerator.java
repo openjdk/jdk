@@ -29,18 +29,28 @@ import java.util.HashSet;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a distribution over values close to the powers of 2.
+ * Provides a distribution over values close to the powers of 2.
  */
 public final class SpecialLongGenerator extends LongGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    // Pre-generated values we can chose from.
+    /*
+     * Pre-generated values we can chose from.
+     */
     private final long[] values;
 
-    // Fall-back generator if values does not contain any value in the
-    // expected range.
+    /*
+     * Fall-back generator if values does not contain any value in the
+     * expected range.
+     */
     private final UniformLongGenerator uniform = new UniformLongGenerator();
 
+    /**
+     * Creates a new {@link SpecialLongGenerator}. Generates only powers of 2, and
+     * values that are not more than {@code range} away from powers of 2.
+     *
+     * @param range How far away from the powers of 2 the values should be generated.
+     */
     public SpecialLongGenerator(int range) {
         HashSet<Long> set = new HashSet<Long>();
         for (int i = 0; i < 64; i++) {

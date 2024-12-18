@@ -27,12 +27,14 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a double distribution picked from a list of special values, including NaN, zero, int, etc.
+ * Provides a double distribution picked from a list of special values, including NaN, zero, int, etc.
  */
 public final class SpecialDoubleGenerator extends DoubleGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    // Pre-generated values we can chose from.
+    /*
+     * Pre-generated values we can chose from.
+     */
     private static final double[] VALUES = new double[] {
         0,
         1,
@@ -45,26 +47,39 @@ public final class SpecialDoubleGenerator extends DoubleGenerator {
         Double.MIN_VALUE,
     };
 
-    // We also mix in other values at a certain percentage.
+    /*
+     * We also mix in other values at a certain percentage.
+     */
     private final DoubleGenerator backgroundGenerator;
 
-    // specialCountDown detemines in how many iterations we generate the next special value.
-    private final int specialMinFrequency;
-    private final int specialMaxFrequency;
+    /*
+     * {@link specialCountDown} detemines in how many iterations we generate the next special value.
+     */
+    private final int specialMinDistance;
+    private final int specialMaxDistance;
     private int specialCountDown;
 
-    public SpecialDoubleGenerator(DoubleGenerator backgroundGenerator, int specialMinFrequency, int specialMaxFrequency) {
+    /**
+     * Creates a new {@link SpecialDoubleGenerator}. It periodically generates a special value (NaN, zero, infinity, etc).
+     * The distance between two special values is chosen randomly between {@code specialMinDistance} and
+     * {@code specialMaxDistance}. All other values in between are chosen from a {@code backgroundGenerator}.
+     *
+     * @param backgroundGenerator Provides the random values between the special values.
+     * @param specialMinDistance Minimum distance between special values.
+     * @param specialMaxDistance Maximum distance between special values.
+     */
+    public SpecialDoubleGenerator(DoubleGenerator backgroundGenerator, int specialMinDistance, int specialMaxDistance) {
         this.backgroundGenerator = backgroundGenerator;
-        this.specialMinFrequency = specialMinFrequency;
-        this.specialMaxFrequency = specialMaxFrequency;
-        this.specialCountDown = RANDOM.nextInt(specialMaxFrequency);
+        this.specialMinDistance = specialMinDistance;
+        this.specialMaxDistance = specialMaxDistance;
+        this.specialCountDown = RANDOM.nextInt(specialMaxDistance);
     }
 
     @Override
     public double nextDouble() {
         specialCountDown--;
         if (specialCountDown <= 0) {
-            specialCountDown = RANDOM.nextInt(specialMinFrequency, specialMaxFrequency);
+            specialCountDown = RANDOM.nextInt(specialMinDistance, specialMaxDistance);
             int r = RANDOM.nextInt(VALUES.length);
             return VALUES[r];
         } else {

@@ -27,7 +27,7 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a uniform double distribution random generator, in the provided range [lo, hi).
+ * Provides a uniform double distribution random generator, in the provided range [lo, hi).
  */
 public final class UniformDoubleGenerator extends DoubleGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -35,6 +35,12 @@ public final class UniformDoubleGenerator extends DoubleGenerator {
     private final double lo;
     private final double hi;
 
+    /**
+     * Creates a new {@link UniformFloatGenerator}.
+     *
+     * @param lo Lower bound of the range (inclusive).
+     * @param hi Higher bound of the range (exclusive).
+     */
     public UniformDoubleGenerator(double lo, double hi) {
         this.lo = lo;
         this.hi = hi;
