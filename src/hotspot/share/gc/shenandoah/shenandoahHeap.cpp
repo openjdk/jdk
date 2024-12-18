@@ -28,7 +28,6 @@
 
 #include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
 
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -86,9 +85,10 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-
+#include "memory/allocation.hpp"
 #include "memory/allocation.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/universe.hpp"
 #include "nmt/mallocTracker.hpp"
@@ -155,6 +155,19 @@ public:
     }
   }
 };
+
+static ReservedSpace reserve(size_t size, size_t preferred_page_size) {
+  // When a page size is given we don't want to mix large
+  // and normal pages. If the size is not a multiple of the
+  // page size it will be aligned up to achieve this.
+  size_t alignment = os::vm_allocation_granularity();
+  if (preferred_page_size != os::vm_page_size()) {
+    alignment = MAX2(preferred_page_size, alignment);
+    size = align_up(size, alignment);
+  }
+
+  return MemoryReserver::reserve(size, alignment, preferred_page_size);
+}
 
 jint ShenandoahHeap::initialize() {
   //
@@ -281,7 +294,7 @@ jint ShenandoahHeap::initialize() {
             "Bitmap slices should be page-granular: bps = " SIZE_FORMAT ", page size = " SIZE_FORMAT,
             _bitmap_bytes_per_slice, bitmap_page_size);
 
-  ReservedSpace bitmap(_bitmap_size, bitmap_page_size);
+  ReservedSpace bitmap = reserve(_bitmap_size, bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Mark Bitmap",
                                           bitmap_size_orig, bitmap_page_size,
                                           bitmap.base(),
@@ -301,7 +314,7 @@ jint ShenandoahHeap::initialize() {
   _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions);
 
   if (ShenandoahVerify) {
-    ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);
+    ReservedSpace verify_bitmap = reserve(_bitmap_size, bitmap_page_size);
     os::trace_page_sizes_for_requested_size("Verify Bitmap",
                                             bitmap_size_orig, bitmap_page_size,
                                             verify_bitmap.base(),
@@ -319,7 +332,7 @@ jint ShenandoahHeap::initialize() {
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
   size_t aux_bitmap_page_size = bitmap_page_size;
 
-  ReservedSpace aux_bitmap(_bitmap_size, aux_bitmap_page_size);
+  ReservedSpace aux_bitmap = reserve(_bitmap_size, aux_bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Aux Bitmap",
                                           bitmap_size_orig, aux_bitmap_page_size,
                                           aux_bitmap.base(),
@@ -337,7 +350,7 @@ jint ShenandoahHeap::initialize() {
   size_t region_storage_size = align_up(region_storage_size_orig,
                                         MAX2(region_page_size, os::vm_allocation_granularity()));
 
-  ReservedSpace region_storage(region_storage_size, region_page_size);
+  ReservedSpace region_storage = reserve(region_storage_size, region_page_size);
   os::trace_page_sizes_for_requested_size("Region Storage",
                                           region_storage_size_orig, region_page_size,
                                           region_storage.base(),
@@ -363,7 +376,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      cset_rs = ReservedSpace(cset_size, cset_align, cset_page_size, req_addr);
+      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -372,7 +385,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == nullptr) {
-      cset_rs = ReservedSpace(cset_size, cset_align, os::vm_page_size());
+      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size());
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
     os::trace_page_sizes_for_requested_size("Collection Set",
@@ -2738,4 +2751,3 @@ void ShenandoahHeap::log_heap_status(const char* msg) const {
     global_generation()->log_status(msg);
   }
 }
-
