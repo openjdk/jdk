@@ -31,7 +31,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.jar.JarFile;
-import java.security.Permission;
 
 import jdk.internal.util.OperatingSystem;
 import sun.net.util.URLUtil;
@@ -219,52 +218,12 @@ class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 
     private JarFile getCachedJarFile(URL url) {
         assert Thread.holdsLock(instance);
-        JarFile result = fileCache.get(urlKey(url));
-
-        /* if the JAR file is cached, the permission will always be there */
-        if (result != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                Permission perm = getPermission(result);
-                if (perm != null) {
-                    try {
-                        sm.checkPermission(perm);
-                    } catch (SecurityException se) {
-                        // fallback to checkRead/checkConnect for pre 1.2
-                        // security managers
-                        if ((perm instanceof java.io.FilePermission) &&
-                            perm.getActions().contains("read")) {
-                            sm.checkRead(perm.getName());
-                        } else if ((perm instanceof
-                            java.net.SocketPermission) &&
-                            perm.getActions().contains("connect")) {
-                            sm.checkConnect(url.getHost(), url.getPort());
-                        } else {
-                            throw se;
-                        }
-                    }
-                }
-            }
-        }
-        return result;
+        return fileCache.get(urlKey(url));
     }
 
     private String urlKey(URL url) {
         String urlstr =  URLUtil.urlNoFragString(url);
         if ("runtime".equals(url.getRef())) urlstr += "#runtime";
         return urlstr;
-    }
-
-    private Permission getPermission(JarFile jarFile) {
-        try {
-            URLConnection uc = getConnection(jarFile);
-            if (uc != null)
-                return uc.getPermission();
-        } catch (IOException ioe) {
-            // gulp
-        }
-
-        return null;
     }
 }

@@ -201,12 +201,10 @@ public class TagletWriter {
     }
 
     /**
-     * Returns the main type element of the current page or null for pages that don't have one.
-     *
-     * @return the type element of the current page or null.
+     * {@return the type element documented by the current {@code HtmlDocletWriter} (may be null)}
      */
-    public TypeElement getCurrentPageElement() {
-        return htmlWriter.getCurrentPageElement();
+    public TypeElement getCurrentTypeElement() {
+        return htmlWriter.getCurrentTypeElement();
     }
 
     /**
@@ -411,7 +409,7 @@ public class TagletWriter {
             public String visitExecutable(ExecutableElement e, Void p) {
                 return utils.getFullyQualifiedName(utils.getEnclosingTypeElement(e))
                         + "." + utils.getSimpleName(e)
-                        + utils.flatSignature(e, htmlWriter.getCurrentPageElement());
+                        + utils.flatSignature(e, htmlWriter.getCurrentTypeElement());
             }
 
             @Override
@@ -476,11 +474,11 @@ public class TagletWriter {
     // Test if element is the same as or belongs to the current page element
     private boolean isDifferentTypeElement(Element element) {
         if (element.getKind().isDeclaredType()) {
-            return element != getCurrentPageElement();
+            return element != getCurrentTypeElement();
         } else if (element.getKind() == ElementKind.OTHER) {
             return false;
         } else {
-            return utils.getEnclosingTypeElement(element) != getCurrentPageElement();
+            return utils.getEnclosingTypeElement(element) != getCurrentTypeElement();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
@@ -62,7 +59,6 @@ import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Modules;
-import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.model.JavacElements;
@@ -70,6 +66,7 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformDescription.PluginInfo;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -167,7 +164,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private ClassLoader processorClassLoader;
     private ServiceLoader<Processor> serviceLoader;
-    private SecurityException processorLoaderException;
 
     private final JavaFileManager fileManager;
 
@@ -268,28 +264,24 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private void initProcessorLoader() {
-        try {
-            if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
-                try {
-                    serviceLoader = fileManager.getServiceLoader(ANNOTATION_PROCESSOR_MODULE_PATH, Processor.class);
-                } catch (IOException e) {
-                    throw new Abort(e);
-                }
-            } else {
-                // If processorpath is not explicitly set, use the classpath.
-                processorClassLoader = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
-                    ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
-                    : fileManager.getClassLoader(CLASS_PATH);
-
-                if (options.isSet("accessInternalAPI"))
-                    ModuleHelper.addExports(getClass().getModule(), processorClassLoader.getUnnamedModule());
-
-                if (processorClassLoader != null && processorClassLoader instanceof Closeable closeable) {
-                    compiler.closeables = compiler.closeables.prepend(closeable);
-                }
+        if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
+            try {
+                serviceLoader = fileManager.getServiceLoader(ANNOTATION_PROCESSOR_MODULE_PATH, Processor.class);
+            } catch (IOException e) {
+                throw new Abort(e);
             }
-        } catch (SecurityException e) {
-            processorLoaderException = e;
+        } else {
+            // If processorpath is not explicitly set, use the classpath.
+            processorClassLoader = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
+                ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
+                : fileManager.getClassLoader(CLASS_PATH);
+
+            if (options.isSet("accessInternalAPI"))
+                ModuleHelper.addExports(getClass().getModule(), processorClassLoader.getUnnamedModule());
+
+            if (processorClassLoader != null && processorClassLoader instanceof Closeable closeable) {
+                compiler.closeables = compiler.closeables.prepend(closeable);
+            }
         }
     }
 
@@ -305,35 +297,24 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         } else if (processors != null) {
             processorIterator = processors.iterator();
         } else {
-            if (processorLoaderException == null) {
-                /*
-                 * If the "-processor" option is used, search the appropriate
-                 * path for the named class.  Otherwise, use a service
-                 * provider mechanism to create the processor iterator.
-                 *
-                 * Note: if an explicit processor path is not set,
-                 * only the class path and _not_ the module path are
-                 * searched for processors.
-                 */
-                String processorNames = options.get(Option.PROCESSOR);
-                if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
-                    processorIterator = (processorNames == null) ?
-                            new ServiceIterator(serviceLoader, log) :
-                            new NameServiceIterator(serviceLoader, log, processorNames);
-                } else if (processorNames != null) {
-                    processorIterator = new NameProcessIterator(processorNames, processorClassLoader, log);
-                } else {
-                    processorIterator = new ServiceIterator(processorClassLoader, log);
-                }
+            /*
+             * If the "-processor" option is used, search the appropriate
+             * path for the named class.  Otherwise, use a service
+             * provider mechanism to create the processor iterator.
+             *
+             * Note: if an explicit processor path is not set,
+             * only the class path and _not_ the module path are
+             * searched for processors.
+             */
+            String processorNames = options.get(Option.PROCESSOR);
+            if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
+                processorIterator = (processorNames == null) ?
+                        new ServiceIterator(serviceLoader, log) :
+                        new NameServiceIterator(serviceLoader, log, processorNames);
+            } else if (processorNames != null) {
+                processorIterator = new NameProcessIterator(processorNames, processorClassLoader, log);
             } else {
-                /*
-                 * A security exception will occur if we can't create a classloader.
-                 * Ignore the exception if, with hindsight, we didn't need it anyway
-                 * (i.e. no processor was specified either explicitly, or implicitly,
-                 * in service configuration file.) Otherwise, we cannot continue.
-                 */
-                processorIterator = handleServiceLoaderUnavailability("proc.cant.create.loader",
-                        processorLoaderException);
+                processorIterator = new ServiceIterator(processorClassLoader, log);
             }
         }
         PlatformDescription platformProvider = context.get(PlatformDescription.class);
@@ -364,47 +345,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     /**
-     * Returns an empty processor iterator if no processors are on the
-     * relevant path, otherwise if processors are present, logs an
-     * error.  Called when a service loader is unavailable for some
-     * reason, either because a service loader class cannot be found
-     * or because a security policy prevents class loaders from being
-     * created.
-     *
-     * @param key The resource key to use to log an error message
-     * @param e   If non-null, pass this exception to Abort
-     */
-    private Iterator<Processor> handleServiceLoaderUnavailability(String key, Exception e) {
-        if (fileManager instanceof JavacFileManager standardFileManager) {
-            Iterable<? extends Path> workingPath = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
-                ? standardFileManager.getLocationAsPaths(ANNOTATION_PROCESSOR_PATH)
-                : standardFileManager.getLocationAsPaths(CLASS_PATH);
-
-            if (needClassLoader(options.get(Option.PROCESSOR), workingPath) )
-                handleException(key, e);
-
-        } else {
-            handleException(key, e);
-        }
-
-        return Collections.emptyIterator();
-    }
-
-    /**
-     * Handle a security exception thrown during initializing the
-     * Processor iterator.
-     */
-    private void handleException(String key, Exception e) {
-        if (e != null) {
-            log.error(key, e.getLocalizedMessage());
-            throw new Abort(e);
-        } else {
-            log.error(key);
-            throw new Abort();
-        }
-    }
-
-    /**
      * Use a service loader appropriate for the platform to provide an
      * iterator over annotations processors; fails if a loader is
      * needed but unavailable.
@@ -417,13 +357,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         ServiceIterator(ClassLoader classLoader, Log log) {
             this.log = log;
             try {
-                try {
-                    loader = ServiceLoader.load(Processor.class, classLoader);
-                    this.iterator = loader.iterator();
-                } catch (Exception e) {
-                    // Fail softly if a loader is not actually needed.
-                    this.iterator = handleServiceLoaderUnavailability("proc.no.service", null);
-                }
+                loader = ServiceLoader.load(Processor.class, classLoader);
+                this.iterator = loader.iterator();
             } catch (Throwable t) {
                 log.error(Errors.ProcServiceProblem);
                 throw new Abort(t);
@@ -714,7 +649,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         add(importStringToPattern(allowModules, annotationPattern,
                                                   processor, log, lint));
                     if (lint && !patternAdded) {
-                        log.warning(Warnings.ProcDuplicateSupportedAnnotation(annotationPattern,
+                        log.warning(LintWarnings.ProcDuplicateSupportedAnnotation(annotationPattern,
                                                                               p.getClass().getName()));
                     }
                 }
@@ -728,7 +663,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 if (lint &&
                     supportedAnnotationPatterns.contains(MatchingUtils.validImportStringToPattern("*")) &&
                     supportedAnnotationPatterns.size() > 1) {
-                    log.warning(Warnings.ProcRedundantTypesWithWildcard(p.getClass().getName()));
+                    log.warning(LintWarnings.ProcRedundantTypesWithWildcard(p.getClass().getName()));
                 }
 
                 supportedOptionNames = new LinkedHashSet<>();
@@ -736,7 +671,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     if (checkOptionName(optionName, log)) {
                         boolean optionAdded = supportedOptionNames.add(optionName);
                         if (lint && !optionAdded) {
-                            log.warning(Warnings.ProcDuplicateOptionName(optionName,
+                            log.warning(LintWarnings.ProcDuplicateOptionName(optionName,
                                                                          p.getClass().getName()));
                         }
                     }
@@ -957,7 +892,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             // Remove annotations processed by javac
             unmatchedAnnotations.keySet().removeAll(platformAnnotations);
             if (unmatchedAnnotations.size() > 0) {
-                log.warning(Warnings.ProcAnnotationsWithoutProcessors(unmatchedAnnotations.keySet()));
+                log.warning(LintWarnings.ProcAnnotationsWithoutProcessors(unmatchedAnnotations.keySet()));
             }
         }
 
@@ -1548,32 +1483,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         return fo.isNameCompatible("module-info", kind);
     }
 
-    /*
-     * Called retroactively to determine if a class loader was required,
-     * after we have failed to create one.
-     */
-    private boolean needClassLoader(String procNames, Iterable<? extends Path> workingpath) {
-        if (procNames != null)
-            return true;
-
-        URL[] urls = new URL[1];
-        for(Path pathElement : workingpath) {
-            try {
-                urls[0] = pathElement.toUri().toURL();
-                if (ServiceProxy.hasService(Processor.class, urls))
-                    return true;
-            } catch (MalformedURLException ex) {
-                throw new AssertionError(ex);
-            }
-            catch (ServiceProxy.ServiceConfigurationError e) {
-                log.error(Errors.ProcBadConfigFile(e.getLocalizedMessage()));
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     class ImplicitCompleter implements Completer {
 
         private final JCCompilationUnit topLevel;
@@ -1780,7 +1689,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private static Pattern warnAndNoMatches(String s, Processor p, Log log, boolean lint) {
         if (lint) {
-            log.warning(Warnings.ProcMalformedSupportedString(s, p.getClass().getName()));
+            log.warning(LintWarnings.ProcMalformedSupportedString(s, p.getClass().getName()));
         }
         return noMatches; // won't match any valid identifier
     }

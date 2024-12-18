@@ -38,18 +38,14 @@ import java.awt.desktop.QuitStrategy;
 import java.awt.desktop.SystemEventListener;
 import java.awt.peer.DesktopPeer;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 
 import javax.swing.JMenuBar;
 
 import sun.awt.SunToolkit;
-import sun.security.util.SecurityConstants;
 
 /**
  * The {@code Desktop} class allows interact with various desktop capabilities.
@@ -276,15 +272,6 @@ public class Desktop {
         }
     }
 
-    private void checkEventsProcessingPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission(
-                    "canProcessApplicationEvents"));
-        }
-    }
-
     /**
      * Returns the {@code Desktop} instance of the current
      * desktop context. On some platforms the Desktop API may not be
@@ -380,22 +367,6 @@ public class Desktop {
         }
     }
 
-
-    /**
-     * Calls to the security manager's {@code checkPermission} method with an
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission. This
-     * permission is needed, because we cannot add a security warning icon to
-     * the windows of the external native application.
-     */
-    private void checkAWTPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new AWTPermission(
-                    "showWindowWithoutWarningBanner"));
-        }
-    }
-
     /**
      * Launches the associated application to open the file.
      *
@@ -413,8 +384,6 @@ public class Desktop {
      */
     public void open(File file) throws IOException {
         file = new File(file.getPath());
-        checkAWTPermission();
-        checkExec();
         checkActionSupport(Action.OPEN);
         checkFileValidation(file);
 
@@ -436,8 +405,6 @@ public class Desktop {
      */
     public void edit(File file) throws IOException {
         file = new File(file.getPath());
-        checkAWTPermission();
-        checkExec();
         checkActionSupport(Action.EDIT);
         file.canWrite();
         checkFileValidation(file);
@@ -463,12 +430,6 @@ public class Desktop {
      */
     public void print(File file) throws IOException {
         file = new File(file.getPath());
-        checkExec();
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPrintJobAccess();
-        }
         checkActionSupport(Action.PRINT);
         checkFileValidation(file);
         if (file.isDirectory()) {
@@ -495,8 +456,6 @@ public class Desktop {
      * @see java.net.URI
      */
     public void browse(URI uri) throws IOException {
-        checkAWTPermission();
-        checkExec();
         checkActionSupport(Action.BROWSE);
         Objects.requireNonNull(uri);
         peer.browse(uri);
@@ -512,8 +471,6 @@ public class Desktop {
      * found, or it fails to be launched
      */
     public void mail() throws IOException {
-        checkAWTPermission();
-        checkExec();
         checkActionSupport(Action.MAIL);
         URI mailtoURI = null;
         try{
@@ -550,8 +507,6 @@ public class Desktop {
      * @see java.net.URI
      */
     public  void mail(URI mailtoURI) throws IOException {
-        checkAWTPermission();
-        checkExec();
         checkActionSupport(Action.MAIL);
         if (mailtoURI == null) throw new NullPointerException();
 
@@ -560,32 +515,6 @@ public class Desktop {
         }
 
         peer.mail(mailtoURI);
-    }
-
-    private void checkExec() throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new FilePermission("<<ALL FILES>>",
-                    SecurityConstants.FILE_EXECUTE_ACTION));
-        }
-    }
-
-    private void checkRead() throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new FilePermission("<<ALL FILES>>",
-                    SecurityConstants.FILE_READ_ACTION));
-        }
-    }
-
-    private void checkQuitPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkExit(0);
-        }
     }
 
     /**
@@ -606,7 +535,6 @@ public class Desktop {
      * @since 9
      */
     public void addAppEventListener(final SystemEventListener listener) {
-        checkEventsProcessingPermission();
         peer.addAppEventListener(listener);
     }
 
@@ -628,7 +556,6 @@ public class Desktop {
      * @since 9
      */
     public void removeAppEventListener(final SystemEventListener listener) {
-        checkEventsProcessingPermission();
         peer.removeAppEventListener(listener);
     }
 
@@ -647,7 +574,6 @@ public class Desktop {
      * @since 9
      */
     public void setAboutHandler(final AboutHandler aboutHandler) {
-        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_ABOUT);
         peer.setAboutHandler(aboutHandler);
     }
@@ -667,7 +593,6 @@ public class Desktop {
      * @since 9
      */
     public void setPreferencesHandler(final PreferencesHandler preferencesHandler) {
-        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_PREFERENCES);
         peer.setPreferencesHandler(preferencesHandler);
     }
@@ -691,9 +616,6 @@ public class Desktop {
      * @since 9
      */
     public void setOpenFileHandler(final OpenFilesHandler openFileHandler) {
-        checkEventsProcessingPermission();
-        checkExec();
-        checkRead();
         checkActionSupport(Action.APP_OPEN_FILE);
         peer.setOpenFileHandler(openFileHandler);
     }
@@ -716,12 +638,6 @@ public class Desktop {
      * @since 9
      */
     public void setPrintFileHandler(final PrintFilesHandler printFileHandler) {
-        checkEventsProcessingPermission();
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPrintJobAccess();
-        }
         checkActionSupport(Action.APP_PRINT_FILE);
         peer.setPrintFileHandler(printFileHandler);
     }
@@ -749,8 +665,6 @@ public class Desktop {
      * @since 9
      */
     public void setOpenURIHandler(final OpenURIHandler openURIHandler) {
-        checkEventsProcessingPermission();
-        checkExec();
         checkActionSupport(Action.APP_OPEN_URI);
         peer.setOpenURIHandler(openURIHandler);
     }
@@ -769,8 +683,6 @@ public class Desktop {
      * @since 9
      */
     public void setQuitHandler(final QuitHandler quitHandler) {
-        checkEventsProcessingPermission();
-        checkQuitPermission();
         checkActionSupport(Action.APP_QUIT_HANDLER);
         peer.setQuitHandler(quitHandler);
     }
@@ -785,8 +697,6 @@ public class Desktop {
      * @since 9
      */
     public void setQuitStrategy(final QuitStrategy strategy) {
-        checkEventsProcessingPermission();
-        checkQuitPermission();
         checkActionSupport(Action.APP_QUIT_STRATEGY);
         peer.setQuitStrategy(strategy);
     }
@@ -811,8 +721,6 @@ public class Desktop {
      * @since 9
      */
     public void enableSuddenTermination() {
-        checkEventsProcessingPermission();
-        checkQuitPermission();
         checkActionSupport(Action.APP_SUDDEN_TERMINATION);
         peer.enableSuddenTermination();
     }
@@ -829,8 +737,6 @@ public class Desktop {
      * @since 9
      */
     public void disableSuddenTermination() {
-        checkEventsProcessingPermission();
-        checkQuitPermission();
         checkActionSupport(Action.APP_SUDDEN_TERMINATION);
         peer.disableSuddenTermination();
     }
@@ -845,7 +751,6 @@ public class Desktop {
      * @since 9
      */
     public void requestForeground(final boolean allWindows) {
-        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_REQUEST_FOREGROUND);
         peer.requestForeground(allWindows);
     }
@@ -862,9 +767,6 @@ public class Desktop {
      * @since 9
      */
     public void openHelpViewer() {
-        checkAWTPermission();
-        checkExec();
-        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_HELP_VIEWER);
         peer.openHelpViewer();
     }
@@ -878,7 +780,6 @@ public class Desktop {
      * @since 9
      */
     public void setDefaultMenuBar(final JMenuBar menuBar) {
-        checkEventsProcessingPermission();
         checkActionSupport(Action.APP_MENU_BAR);
 
         if (menuBar != null) {
@@ -905,8 +806,6 @@ public class Desktop {
      */
     public void browseFileDirectory(File file) {
         file = new File(file.getPath());
-        checkAWTPermission();
-        checkExec();
         checkActionSupport(Action.BROWSE_FILE_DIR);
         checkFileValidation(file);
         File parentFile = file.getParentFile();
@@ -928,19 +827,10 @@ public class Desktop {
      *
      * @since 9
      */
-    @SuppressWarnings("removal")
     public boolean moveToTrash(File file) {
         file = new File(file.getPath());
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkDelete(file.getPath());
-        }
         checkActionSupport(Action.MOVE_TO_TRASH);
-        final File finalFile = file;
-        AccessController.doPrivileged((PrivilegedAction<?>) () -> {
-            checkFileValidation(finalFile);
-            return null;
-        });
+        checkFileValidation(file);
         return peer.moveToTrash(file);
     }
 }

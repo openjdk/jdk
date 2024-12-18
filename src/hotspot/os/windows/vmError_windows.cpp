@@ -28,6 +28,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
 
 LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -67,10 +68,23 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 void VMError::reporting_started() {}
 void VMError::interrupt_reporting_thread() {}
 
-void VMError::raise_fail_fast(void* exrecord, void* context) {
+void VMError::raise_fail_fast(const void* exrecord, const void* context) {
   DWORD flags = (exrecord == nullptr) ? FAIL_FAST_GENERATE_EXCEPTION_ADDRESS : 0;
-  RaiseFailFastException(static_cast<PEXCEPTION_RECORD>(exrecord),
-                         static_cast<PCONTEXT>(context),
-                         flags);
+  PEXCEPTION_RECORD exception_record = static_cast<PEXCEPTION_RECORD>(const_cast<void*>(exrecord));
+  PCONTEXT ctx = static_cast<PCONTEXT>(const_cast<void*>(context));
+  RaiseFailFastException(exception_record, ctx, flags);
   ::abort();
+}
+
+bool VMError::was_assert_poison_crash(const void* siginfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (siginfo == nullptr) {
+    return false;
+  }
+  const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
+  if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION && er->NumberParameters >= 2) {
+    return (void*)er->ExceptionInformation[1] == g_assert_poison_read_only;
+  }
+#endif
+  return false;
 }

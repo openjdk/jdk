@@ -58,6 +58,7 @@ import static com.sun.tools.javac.resources.CompilerProperties.Fragments.Diamond
 
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -1938,8 +1939,8 @@ public class Attr extends JCTree.Visitor {
 
     public void visitSynchronized(JCSynchronized tree) {
         chk.checkRefType(tree.pos(), attribExpr(tree.lock, env));
-        if (env.info.lint.isEnabled(LintCategory.SYNCHRONIZATION) && isValueBased(tree.lock.type)) {
-            log.warning(LintCategory.SYNCHRONIZATION, tree.pos(), Warnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
+        if (isValueBased(tree.lock.type)) {
+            env.info.lint.logIfEnabled(log, tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
         }
         attribStat(tree.body, env);
         result = null;
@@ -2045,9 +2046,8 @@ public class Attr extends JCTree.Visitor {
             }
             if (close.kind == MTH &&
                     close.overrides(syms.autoCloseableClose, resource.tsym, types, true) &&
-                    chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes()) &&
-                    env.info.lint.isEnabled(LintCategory.TRY)) {
-                log.warning(LintCategory.TRY, pos, Warnings.TryResourceThrowsInterruptedExc(resource));
+                    chk.isHandled(syms.interruptedExceptionType, types.memberType(resource, close).getThrownTypes())) {
+                env.info.lint.logIfEnabled(log, pos, LintWarnings.TryResourceThrowsInterruptedExc(resource));
             }
         }
     }
@@ -2587,16 +2587,20 @@ public class Attr extends JCTree.Visitor {
                         chk.checkRefType(qualifier.pos(),
                                          attribExpr(qualifier, localEnv,
                                                     encl));
-                    } else if (methName == names._super) {
-                        // qualifier omitted; check for existence
-                        // of an appropriate implicit qualifier.
-                        rs.resolveImplicitThis(tree.meth.pos(),
-                                               localEnv, site, true);
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
                               Errors.IllegalQualNotIcls(site.tsym));
                     attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
+                }
+
+                if (tree.meth.hasTag(IDENT)) {
+                    // non-qualified super(...) call; check whether explicit constructor
+                    // invocation is well-formed. If the super class is an inner class,
+                    // make sure that an appropriate implicit qualifier exists. If the super
+                    // class is a local class, make sure that the current class is defined
+                    // in the same context as the local class.
+                    checkNewInnerClass(tree.meth.pos(), localEnv, site, true);
                 }
 
                 // if we're calling a java.lang.Enum constructor,
@@ -2798,11 +2802,9 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.encl.pos(), Errors.QualifiedNewOfStaticClass(clazztype.tsym));
                 }
             }
-        } else if (!clazztype.tsym.isInterface() &&
-                   (clazztype.tsym.flags_field & NOOUTERTHIS) == 0 &&
-                   clazztype.getEnclosingType().hasTag(CLASS)) {
+        } else {
             // Check for the existence of an apropos outer instance
-            rs.resolveImplicitThis(tree.pos(), env, clazztype);
+            checkNewInnerClass(tree.pos(), env, clazztype, false);
         }
 
         // Attribute constructor arguments.
@@ -3065,6 +3067,24 @@ public class Attr extends JCTree.Visitor {
                             diags.fragment(Fragments.CantApplyDiamond1(Fragments.Diamond(tsym), details)));
                 }
             };
+        }
+
+        void checkNewInnerClass(DiagnosticPosition pos, Env<AttrContext> env, Type type, boolean isSuper) {
+            boolean isLocal = type.tsym.owner.kind == VAR || type.tsym.owner.kind == MTH;
+            if ((type.tsym.flags() & (INTERFACE | ENUM | RECORD)) != 0 ||
+                    (!isLocal && !type.tsym.isInner()) ||
+                    (isSuper && env.enclClass.sym.isAnonymous())) {
+                // nothing to check
+                return;
+            }
+            Symbol res = isLocal ?
+                    rs.findLocalClassOwner(env, type.tsym) :
+                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, isSuper);
+            if (res.exists()) {
+                rs.accessBase(res, pos, env.enclClass.sym.type, names._this, true);
+            } else {
+                log.error(pos, Errors.EnclClassRequired(type.tsym));
+            }
         }
 
     /** Make an attributed null check tree.
@@ -3639,7 +3659,6 @@ public class Attr extends JCTree.Visitor {
                 boolean targetError;
                 switch (refSym.kind) {
                     case ABSENT_MTH:
-                    case MISSING_ENCL:
                         targetError = false;
                         break;
                     case WRONG_MTH:
@@ -3690,11 +3709,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
-                Type enclosingType = exprType.getEnclosingType();
-                if (enclosingType != null && enclosingType.hasTag(CLASS)) {
-                    // Check for the existence of an appropriate outer instance
-                    rs.resolveImplicitThis(that.pos(), env, exprType);
-                }
+                checkNewInnerClass(that.pos(), env, exprType, false);
             }
 
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
@@ -4188,6 +4203,7 @@ public class Attr extends JCTree.Visitor {
         if (chk.checkUnique(tree.var.pos(), v, env.info.scope)) {
             chk.checkTransparentVar(tree.var.pos(), v, env.info.scope);
         }
+        chk.validate(tree.var.vartype, env, true);
         if (tree.var.isImplicitlyTyped()) {
             setSyntheticVariableType(tree.var, type == Type.noType ? syms.errType
                                                                    : type);
@@ -4197,7 +4213,6 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
         }
         annotate.flush();
-        chk.validate(tree.var.vartype, env, true);
         result = tree.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
@@ -4431,9 +4446,8 @@ public class Attr extends JCTree.Visitor {
                 ((VarSymbol)sitesym).isResourceVariable() &&
                 sym.kind == MTH &&
                 sym.name.equals(names.close) &&
-                sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true) &&
-                env.info.lint.isEnabled(LintCategory.TRY)) {
-            log.warning(LintCategory.TRY, tree, Warnings.TryExplicitCloseCall);
+                sym.overrides(syms.autoCloseableClose, sitesym.type.tsym, types, true)) {
+            env.info.lint.logIfEnabled(log, tree, LintWarnings.TryExplicitCloseCall);
         }
 
         // Disallow selecting a type from an expression
@@ -4460,9 +4474,9 @@ public class Attr extends JCTree.Visitor {
             // If the qualified item is not a type and the selected item is static, report
             // a warning. Make allowance for the class of an array type e.g. Object[].class)
             if (!sym.owner.isAnonymous()) {
-                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
+                chk.lint.logIfEnabled(log, tree, LintWarnings.StaticNotQualifiedByType(sym.kind.kindName(), sym.owner));
             } else {
-                chk.warnStatic(tree, Warnings.StaticNotQualifiedByType2(sym.kind.kindName()));
+                chk.lint.logIfEnabled(log, tree, LintWarnings.StaticNotQualifiedByType2(sym.kind.kindName()));
             }
         }
 
@@ -4675,7 +4689,7 @@ public class Attr extends JCTree.Visitor {
                     if (s != null &&
                         s.isRaw() &&
                         !types.isSameType(v.type, v.erasure(types))) {
-                        chk.warnUnchecked(tree.pos(), Warnings.UncheckedAssignToVar(v, s));
+                        chk.warnUnchecked(tree.pos(), LintWarnings.UncheckedAssignToVar(v, s));
                     }
                 }
                 // The computed type of a variable is the type of the
@@ -4718,7 +4732,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
-                chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
+                chk.checkPreview(tree.pos(), env.info.scope.owner, site, sym);
             }
 
             if (pt.isErroneous()) {
@@ -4873,7 +4887,7 @@ public class Attr extends JCTree.Visitor {
             if (s != null && s.isRaw() &&
                 !types.isSameTypes(sym.type.getParameterTypes(),
                                    sym.erasure(types).getParameterTypes())) {
-                chk.warnUnchecked(env.tree.pos(), Warnings.UncheckedCallMbrOfRawType(sym, s));
+                chk.warnUnchecked(env.tree.pos(), LintWarnings.UncheckedCallMbrOfRawType(sym, s));
             }
         }
 
@@ -4923,7 +4937,7 @@ public class Attr extends JCTree.Visitor {
             argtypes = argtypes.map(checkDeferredMap);
 
             if (noteWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
-                chk.warnUnchecked(env.tree.pos(), Warnings.UncheckedMethInvocationApplied(kindName(sym),
+                chk.warnUnchecked(env.tree.pos(), LintWarnings.UncheckedMethInvocationApplied(kindName(sym),
                         sym.name,
                         rs.methodArguments(sym.type.getParameterTypes()),
                         rs.methodArguments(argtypes.map(checkDeferredMap)),

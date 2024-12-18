@@ -39,7 +39,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -48,8 +47,6 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
@@ -1341,13 +1338,8 @@ public sealed class ICC_Profile implements Serializable
      * fileName. If there is no built-in profile with such name, then the method
      * returns {@code null}.
      */
-    @SuppressWarnings("removal")
     private static InputStream getStandardProfileInputStream(String fileName) {
-        return AccessController.doPrivileged(
-            (PrivilegedAction<InputStream>) () -> {
-                return PCMM.class.getResourceAsStream("profiles/" + fileName);
-            }, null, new FilePermission("<<ALL FILES>>", "read"),
-                     new RuntimePermission("accessSystemModules"));
+        return PCMM.class.getResourceAsStream("profiles/" + fileName);
     }
 
     /**

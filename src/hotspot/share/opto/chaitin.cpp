@@ -424,6 +424,9 @@ void PhaseChaitin::Register_Allocate() {
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
   }
+
+  C->print_method(PHASE_INITIAL_LIVENESS, 4);
+
   // Create the interference graph using virtual copies
   build_ifg_virtual();  // Include stack slots this time
 
@@ -463,6 +466,8 @@ void PhaseChaitin::Register_Allocate() {
     live.compute(_lrg_map.max_lrg_id());
     _live = &live;
   }
+
+  C->print_method(PHASE_AGGRESSIVE_COALESCING, 4);
 
   // Build physical interference graph
   uint must_spill = 0;
@@ -504,6 +509,9 @@ void PhaseChaitin::Register_Allocate() {
       live.compute(_lrg_map.max_lrg_id()); // Compute LIVE
       _live = &live;
     }
+
+    C->print_method(PHASE_INITIAL_SPILLING, 4);
+
     build_ifg_physical(&live_arena);
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
@@ -517,6 +525,10 @@ void PhaseChaitin::Register_Allocate() {
       coalesce.coalesce_driver();
     }
     _lrg_map.compress_uf_map_for_nodes();
+
+    if (OptoCoalesce) {
+      C->print_method(PHASE_CONSERVATIVE_COALESCING, 4);
+    }
 
 #ifdef ASSERT
     verify(&live_arena, true);
@@ -580,6 +592,9 @@ void PhaseChaitin::Register_Allocate() {
       live.compute(_lrg_map.max_lrg_id());
       _live = &live;
     }
+
+    C->print_method(PHASE_ITERATIVE_SPILLING, 4);
+
     must_spill = build_ifg_physical(&live_arena);
     _ifg->SquareUp();
     _ifg->Compute_Effective_Degree();
@@ -593,6 +608,11 @@ void PhaseChaitin::Register_Allocate() {
       coalesce.coalesce_driver();
     }
     _lrg_map.compress_uf_map_for_nodes();
+
+    if (OptoCoalesce) {
+      C->print_method(PHASE_CONSERVATIVE_COALESCING, 4);
+    }
+
 #ifdef ASSERT
     verify(&live_arena, true);
 #endif
@@ -607,6 +627,8 @@ void PhaseChaitin::Register_Allocate() {
     spills = Select();
   }
 
+  C->print_method(PHASE_AFTER_ITERATIVE_SPILLING, 4);
+
   // Count number of Simplify-Select trips per coloring success.
   _allocator_attempts += _trip_cnt + 1;
   _allocator_successes += 1;
@@ -614,8 +636,12 @@ void PhaseChaitin::Register_Allocate() {
   // Peephole remove copies
   post_allocate_copy_removal();
 
+  C->print_method(PHASE_POST_ALLOCATION_COPY_REMOVAL, 4);
+
   // Merge multidefs if multiple defs representing the same value are used in a single block.
   merge_multidefs();
+
+  C->print_method(PHASE_MERGE_MULTI_DEFS, 4);
 
 #ifdef ASSERT
   // Verify the graph after RA.
@@ -644,6 +670,8 @@ void PhaseChaitin::Register_Allocate() {
 
   // Convert CISC spills
   fixup_spills();
+
+  C->print_method(PHASE_FIX_UP_SPILLS, 4);
 
   // Log regalloc results
   CompileLog* log = Compile::current()->log();
@@ -928,7 +956,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // Each entry is reg_pressure_per_value,number_of_regs
           //         RegL  RegI  RegFlags   RegF RegD    INTPRESSURE  FLOATPRESSURE
           // IA32     2     1     1          1    1          6           6
-          // IA64     1     1     1          1    1         50          41
           // SPARC    2     2     2          2    2         48 (24)     52 (26)
           // SPARCV9  2     2     2          2    2         48 (24)     52 (26)
           // AMD64    1     1     1          1    1         14          15
@@ -2536,6 +2563,9 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
 void PhaseChaitin::verify(ResourceArea* a, bool verify_ifg) const {
   if (VerifyRegisterAllocator) {
     _cfg.verify();
+    if (C->failing()) {
+      return;
+    }
     verify_base_ptrs(a);
     if (verify_ifg) {
       _ifg->verify(this);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
-import java.util.List;
 import org.netbeans.api.visual.widget.Widget;
 
 /**
@@ -45,8 +44,8 @@ public class InputSlotWidget extends SlotWidget {
     private InputSlot inputSlot;
     private DiagramScene scene;
 
-    public InputSlotWidget(InputSlot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
-        super(slot, scene, parent, fw);
+    public InputSlotWidget(InputSlot slot, DiagramScene scene, FigureWidget fw) {
+        super(slot, scene, fw);
         inputSlot = slot;
         this.scene = scene;
     }
@@ -56,16 +55,9 @@ public class InputSlotWidget extends SlotWidget {
     }
 
     @Override
-    protected int calculateSlotWidth() {
-        List<InputSlot> slots = getSlot().getFigure().getInputSlots();
-        assert slots.contains(getSlot());
-        return calculateWidth(slots.size());
-    }
-
-    @Override
     protected int yOffset() {
         return getFigureWidget().getFigure().getDiagram().isCFG() ?
-            calculateClientArea().height - 1 : Figure.SLOT_START;
+            calculateClientArea().height / 2 : 0;
     }
 
     @Override

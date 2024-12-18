@@ -244,10 +244,7 @@ void G1Arguments::initialize() {
   if (max_parallel_refinement_threads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
-}
 
-void G1Arguments::initialize_heap_flags_and_sizes() {
-  GCArguments::initialize_heap_flags_and_sizes();
   FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 

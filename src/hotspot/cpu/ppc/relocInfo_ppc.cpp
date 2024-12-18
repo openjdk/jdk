@@ -94,7 +94,6 @@ void Relocation::pd_set_call_destination(address x) {
 
 address* Relocation::pd_address_in_code() {
   ShouldNotReachHere();
-  return 0;
 }
 
 address Relocation::pd_get_address_from_code() {

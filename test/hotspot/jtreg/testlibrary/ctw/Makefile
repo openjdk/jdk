@@ -42,8 +42,8 @@ JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
 SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
-# Exclude files that need '--enable-preview' to compile.
-LIB_FILES = $(filter-out %ModuleInfoWriter.java, $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
+# Must exclude files that need '--enable-preview' to compile, if there is any.
+LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/process \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
     $(TESTLIBRARY_DIR)/jtreg \
