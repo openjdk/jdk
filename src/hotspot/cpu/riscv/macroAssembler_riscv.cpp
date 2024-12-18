@@ -5402,7 +5402,6 @@ void MacroAssembler::ctzc_bits(Register Rd, Register Rs, bool isLL,
                                Register tmp1, Register tmp2) {
   int step = isLL ? 8 : 16;
   if (UseZbb) {
-    assert_different_registers(Rd, tmp1);
     ctz(Rd, Rs);
     andi(Rd, Rd, -step);
     return;
