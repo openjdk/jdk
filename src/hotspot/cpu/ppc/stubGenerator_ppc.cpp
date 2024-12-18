@@ -713,7 +713,7 @@ address generate_ghash_processBlocks() {
   __ li(temp1, 0);
   __ load_const_optimized(temp2, (uintptr_t)&perm_pattern);
   __ lvx(loadOrder, temp2);
-  // Performing Karatsuba multiplication  in Galois fields
+  // Performing Karatsuba multiplication in Galois fields
   Label loop;
   __ bind(loop);
     // Load immediate value 0 into temp
