@@ -55,16 +55,16 @@ public class TestLongMem {
         return  b >> 4 ;
     }
 
-    public static long testDec(int a, int b) {
-        return  b - 1 ;
+    public static long testDec(long x, int i) {
+        return  b[i] - 1 ;
     }
 
-    public static long testInc(int a, int b) {
-        return  a + 1 ;
+    public static long testInc(long x, int i) {
+        return  a[i] + 1 ;
     }
 
-    public static long testNeg(int a, int b) {
-        return  -b;
+    public static long testNeg(long x, int i) {
+        return  -b[i];
     }
 
     public static long testXorImm1(long x, int i) {

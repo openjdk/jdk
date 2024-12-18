@@ -55,16 +55,16 @@ public class TestIntMem {
         return  b >> 4 ;
     }
 
-    public static int testDec(int a, int b) {
-        return  b - 1 ;
+    public static int testDec(int x, int i) {
+        return  b[i] - 1 ;
     }
 
-    public static int testInc(int a, int b) {
-        return  a + 1 ;
+    public static int testInc(int x, int i) {
+        return  a[i] + 1 ;
     }
 
-    public static int testNeg(int a, int b) {
-        return  -b;
+    public static int testNeg(int x, int i) {
+        return  -b[i];
     }
 
     public static int testXorImm1(int x, int i) {

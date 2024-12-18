@@ -7025,7 +7025,7 @@ instruct incI_mem(memory dst, immI_1 src, rFlagsReg cr)
 // XXX why does that use AddI
 instruct decI_rReg(rRegI dst, immI_M1 src, rFlagsReg cr)
 %{
-  predicate(UseIncDec && !UseAPX);
+  predicate(!UseAPX && UseIncDec);
   match(Set dst (AddI dst src));
   effect(KILL cr);
 
@@ -7038,12 +7038,24 @@ instruct decI_rReg(rRegI dst, immI_M1 src, rFlagsReg cr)
 
 instruct decI_rReg_ndd(rRegI dst, rRegI src, immI_M1 val)
 %{
-  predicate(UseIncDec && UseAPX);
+  predicate(UseAPX && UseIncDec);
   match(Set dst (AddI src val));
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
     __ edecrementl($dst$$Register, $src$$Register, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct decI_rReg_mem_ndd(rRegI dst, memory src, immI_M1 val)
+%{
+  predicate(UseAPX && UseIncDec);
+  match(Set dst (AddI (LoadI src) val));
+
+  format %{ "edecl    $dst, $src\t# int ndd" %}
+  ins_encode %{
+    __ edecrementl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7264,7 +7276,7 @@ instruct incL_mem(memory dst, immL1 src, rFlagsReg cr)
 // XXX why does that use AddL
 instruct decL_rReg(rRegL dst, immL_M1 src, rFlagsReg cr)
 %{
-  predicate(UseIncDec && !UseAPX);
+  predicate(!UseAPX && UseIncDec);
   match(Set dst (AddL dst src));
   effect(KILL cr);
 
@@ -7277,12 +7289,24 @@ instruct decL_rReg(rRegL dst, immL_M1 src, rFlagsReg cr)
 
 instruct decL_rReg_ndd(rRegL dst, rRegL src, immL_M1 val)
 %{
-  predicate(UseIncDec && UseAPX);
+  predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
     __ edecrementq($dst$$Register, $src$$Register, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct decL_rReg_mem_ndd(rRegL dst, memory src, immL_M1 val)
+%{
+  predicate(UseAPX && UseIncDec);
+  match(Set dst (AddL (LoadL src) val));
+
+  format %{ "edecq    $dst, $src\t# long ndd" %}
+  ins_encode %{
+    __ edecrementq($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}

@@ -604,6 +604,14 @@ void MacroAssembler::edecrementq(Register dst, Register src, bool no_flags, int 
   /* else */      { esubq(dst, src, value, no_flags)       ; return; }
 }
 
+void MacroAssembler::edecrementq(Register dst, Address src, bool no_flags, int value) {
+  if (value == min_jint) {esubq(dst, src, value, no_flags) ; return; }
+  if (value <  0) { eincrementq(dst, src, no_flags, -value); return; }
+  if (value == 0) {                        ; return; }
+  if (value == 1 && UseIncDec) { edecq(dst, src, no_flags) ; return; }
+  /* else */      { esubq(dst, src, value, no_flags)       ; return; }
+}
+
 void MacroAssembler::incrementq(AddressLiteral dst, Register rscratch) {
   assert(rscratch != noreg || always_reachable(dst), "missing");
 
@@ -636,7 +644,15 @@ void MacroAssembler::eincrementq(Register dst, Register src, bool no_flags, int 
   if (value <  0) { edecrementq(dst, src, no_flags, -value); return; }
   if (value == 0) {                        ; return; }
   if (value == 1 && UseIncDec) { eincq(dst, src, no_flags) ; return; }
-  /* else */      { eaddq(src, dst, value, no_flags)       ; return; }
+  /* else */      { eaddq(dst, src, value, no_flags)       ; return; }
+}
+
+void MacroAssembler::eincrementq(Register dst, Address src, bool no_flags, int value) {
+  if (value == min_jint) {eaddq(dst, src, value, no_flags) ; return; }
+  if (value <  0) { edecrementq(dst, src, no_flags, -value); return; }
+  if (value == 0) {                        ; return; }
+  if (value == 1 && UseIncDec) { eincq(dst, src, no_flags) ; return; }
+  /* else */      { eaddq(dst, src, value, no_flags)       ; return; }
 }
 
 // 32bit can do a case table jump in one instruction but we no longer allow the base
@@ -2025,6 +2041,14 @@ void MacroAssembler::decrementl(Register reg, int value) {
   /* else */      { subl(reg, value)       ; return; }
 }
 
+void MacroAssembler::decrementl(Address dst, int value) {
+  if (value == min_jint) {subl(dst, value) ; return; }
+  if (value <  0) { incrementl(dst, -value); return; }
+  if (value == 0) {                        ; return; }
+  if (value == 1 && UseIncDec) { decl(dst) ; return; }
+  /* else */      { subl(dst, value)       ; return; }
+}
+
 void MacroAssembler::edecrementl(Register dst, Register src, bool no_flags, int value) {
   if (value == min_jint) {esubl(dst, src, value, no_flags) ; return; }
   if (value <  0) { eincrementl(dst, src, no_flags, -value); return; }
@@ -2033,12 +2057,12 @@ void MacroAssembler::edecrementl(Register dst, Register src, bool no_flags, int 
   /* else */      { esubl(dst, src, value, no_flags)       ; return; }
 }
 
-void MacroAssembler::decrementl(Address dst, int value) {
-  if (value == min_jint) {subl(dst, value) ; return; }
-  if (value <  0) { incrementl(dst, -value); return; }
+void MacroAssembler::edecrementl(Register dst, Address src, bool no_flags, int value) {
+  if (value == min_jint) {esubl(dst, src, value, no_flags) ; return; }
+  if (value <  0) { eincrementl(dst, src, no_flags, -value); return; }
   if (value == 0) {                        ; return; }
-  if (value == 1 && UseIncDec) { decl(dst) ; return; }
-  /* else */      { subl(dst, value)       ; return; }
+  if (value == 1 && UseIncDec) { edecl(dst, src, no_flags) ; return; }
+  /* else */      { esubl(dst, src, value, no_flags)       ; return; }
 }
 
 void MacroAssembler::division_with_shift (Register reg, int shift_value) {
@@ -2363,7 +2387,15 @@ void MacroAssembler::eincrementl(Register dst, Register src, bool no_flags, int 
   if (value <  0) { edecrementl(dst, src, no_flags, -value); return; }
   if (value == 0) {                        ; return; }
   if (value == 1 && UseIncDec) { eincl(dst, src, no_flags) ; return; }
-  /* else */      { eaddl(src, dst, value, no_flags)       ; return; }
+  /* else */      { eaddl(dst, src, value, no_flags)       ; return; }
+}
+
+void MacroAssembler::eincrementl(Register dst, Address src, bool no_flags, int value) {
+  if (value == min_jint) {eaddl(dst, src, value, no_flags) ; return; }
+  if (value <  0) { edecrementl(dst, src, no_flags, -value); return; }
+  if (value == 0) {                        ; return; }
+  if (value == 1 && UseIncDec) { eincl(dst, src, no_flags) ; return; }
+  /* else */      { eaddl(dst, src, value, no_flags)       ; return; }
 }
 
 
