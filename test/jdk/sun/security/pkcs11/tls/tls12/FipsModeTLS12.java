@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +64,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManagerFactory;
 
+import jdk.test.lib.security.SecurityUtils;
 import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
@@ -80,6 +82,9 @@ public final class FipsModeTLS12 extends SecmodTest {
     private static PublicKey publicKey;
 
     public static void main(String[] args) throws Exception {
+        // Re-enable TLS_RSA_* since test depends on it.
+        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
+
         try {
             initialize();
         } catch (Exception e) {

@@ -1113,12 +1113,6 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   assert(k != nullptr, "Use create_basic_type_mirror for primitive types");
   assert(k->java_mirror() == nullptr, "should only assign mirror once");
 
-  // Use this moment of initialization to cache modifier_flags also,
-  // to support Class.getModifiers().  Instance classes recalculate
-  // the cached flags after the class file is parsed, but before the
-  // class is put into the system dictionary.
-  int computed_modifiers = k->compute_modifier_flags();
-  k->set_modifier_flags(computed_modifiers);
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
   if (vmClasses::Class_klass_loaded()) {
@@ -2052,6 +2046,7 @@ int java_lang_VirtualThread::_next_offset;
 int java_lang_VirtualThread::_onWaitingList_offset;
 int java_lang_VirtualThread::_notified_offset;
 int java_lang_VirtualThread::_timeout_offset;
+int java_lang_VirtualThread::_objectWaiter_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
@@ -2067,6 +2062,7 @@ int java_lang_VirtualThread::_timeout_offset;
 void java_lang_VirtualThread::compute_offsets() {
   InstanceKlass* k = vmClasses::VirtualThread_klass();
   VTHREAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  VTHREAD_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 bool java_lang_VirtualThread::is_instance(oop obj) {
@@ -2182,6 +2178,22 @@ JavaThreadStatus java_lang_VirtualThread::map_state_to_thread_status(int state) 
   return status;
 }
 
+ObjectMonitor* java_lang_VirtualThread::current_pending_monitor(oop vthread) {
+  ObjectWaiter* waiter = objectWaiter(vthread);
+  if (waiter != nullptr && waiter->at_monitorenter()) {
+    return waiter->monitor();
+  }
+  return nullptr;
+}
+
+ObjectMonitor* java_lang_VirtualThread::current_waiting_monitor(oop vthread) {
+  ObjectWaiter* waiter = objectWaiter(vthread);
+  if (waiter != nullptr && waiter->is_wait()) {
+    return waiter->monitor();
+  }
+  return nullptr;
+}
+
 bool java_lang_VirtualThread::is_preempted(oop vthread) {
   oop continuation = java_lang_VirtualThread::continuation(vthread);
   assert(continuation != nullptr, "vthread with no continuation");
@@ -2192,6 +2204,7 @@ bool java_lang_VirtualThread::is_preempted(oop vthread) {
 #if INCLUDE_CDS
 void java_lang_VirtualThread::serialize_offsets(SerializeClosure* f) {
    VTHREAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+   VTHREAD_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 

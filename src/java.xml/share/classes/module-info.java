@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,11 +417,97 @@
  * </ul>
  *
  * <h2 id="JDKCATALOG">JDK built-in Catalog</h2>
- * The JDK has a built-in catalog that hosts the following DTDs defined by the Java Platform:
- * <ul>
- * <li>DTD for {@link java.util.prefs.Preferences java.util.prefs.Preferences}, preferences.dtd</li>
- * <li>DTD for {@link java.util.Properties java.util.Properties}, properties.dtd</li>
- * </ul>
+ * The JDK has a built-in catalog that hosts DTDs and XSDs list in the following table.
+ * <table class="plain" id="JDKCatalog">
+ * <caption>DTDs and XSDs in JDK built-in Catalog</caption>
+ * <thead>
+ * <tr>
+ * <th scope="col">Source</th>
+ * <th scope="col">Files</th>
+ * </tr>
+ * </thead>
+ *
+ * <tbody>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="util_preferences">
+ * {@link java.util.prefs.Preferences java.util.prefs.Preferences}</th>
+ * <td style="text-align:center">
+ * preferences.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="util_properties">
+ * {@link java.util.Properties java.util.Properties}</th>
+ * <td style="text-align:center">
+ * properties.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XMLSchema">
+ * XML Schema Part 1: Structures Second Edition<br>
+ * XML Schema Part 2: Datatypes Second Edition
+ * </th>
+ * <td style="text-align:center">
+ * XMLSchema.dtd<br>
+ * datatypes.dtd<br>
+ * XMLSchema.xsd<br>
+ * datatypes.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML10">
+ * XHTML&trade; 1.0 The Extensible HyperText Markup Language
+ * </th>
+ * <td style="text-align:center">
+ * xhtml1-frameset.dtd<br>
+ * xhtml1-strict.dtd<br>
+ * xhtml1-transitional.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML10Schema">
+ * XHTML&trade; 1.0 in XML Schema
+ * </th>
+ * <td style="text-align:center">
+ * xhtml1-frameset.xsd<br>
+ * xhtml1-strict.xsd<br>
+ * xhtml1-transitional.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML11">
+ * XHTML&trade; 1.1 - Module-based XHTML - Second Edition
+ * </th>
+ * <td style="text-align:center">
+ * xhtml11.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML11Schema">
+ * XHTML 1.1 XML Schema Definition
+ * </th>
+ * <td style="text-align:center">
+ * xhtml11.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XMLSPEC">
+ * XML DTD for W3C specifications
+ * </th>
+ * <td style="text-align:center">
+ * xmlspec.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="Namespace">
+ * The "xml:" Namespace
+ * </th>
+ * <td style="text-align:center">
+ * xml.xsd
+ * </td>
+ * </tr>
+ * </tbody>
+ * </table>
  * <p>
  * The catalog is loaded once when the first JAXP processor factory is created.
  *
@@ -602,8 +688,8 @@
  * A positive integer. A value less than or equal to 0 indicates no limit.
  * If the value is not an integer, a NumberFormatException is thrown.
  * </td>
- * <td style="text-align:center">64000</td>
- * <td style="text-align:center">64000</td>
+ * <td style="text-align:center">2500</td>
+ * <td style="text-align:center">2500</td>
  * <td style="text-align:center" rowspan="9">Yes</td>
  * <td style="text-align:center" rowspan="9">
  *     <a href="#DOM">DOM</a><br>
@@ -619,8 +705,8 @@
  * <td id="EALimit">{@systemProperty jdk.xml.elementAttributeLimit}</td>
  * <td>Limits the number of attributes an element can have.
  * </td>
- * <td style="text-align:center">10000</td>
- * <td style="text-align:center">10000</td>
+ * <td style="text-align:center">200</td>
+ * <td style="text-align:center">200</td>
  * </tr>
  * <tr>
  * <td id="OccurLimit">{@systemProperty jdk.xml.maxOccurLimit}</td>
@@ -636,37 +722,37 @@
  * <td>Limits the total size of all entities that include general and parameter
  * entities. The size is calculated as an aggregation of all entities.
  * </td>
- * <td style="text-align:center">5x10^7</td>
- * <td style="text-align:center">5x10^7</td>
+ * <td style="text-align:center">100000</td>
+ * <td style="text-align:center">100000</td>
  * </tr>
  * <tr>
  * <td id="GELimit">{@systemProperty jdk.xml.maxGeneralEntitySizeLimit}</td>
  * <td>Limits the maximum size of any general entities.
  * </td>
- * <td style="text-align:center">0</td>
- * <td style="text-align:center">0</td>
+ * <td style="text-align:center">100000</td>
+ * <td style="text-align:center">100000</td>
  * </tr>
  * <tr>
  * <td id="PELimit">{@systemProperty jdk.xml.maxParameterEntitySizeLimit}</td>
  * <td>Limits the maximum size of any parameter entities, including the result
  * of nesting multiple parameter entities.
  * </td>
- * <td style="text-align:center">10^6</td>
- * <td style="text-align:center">10^6</td>
+ * <td style="text-align:center">15000</td>
+ * <td style="text-align:center">15000</td>
  * </tr>
  * <tr>
  * <td id="ERLimit">{@systemProperty jdk.xml.entityReplacementLimit}</td>
  * <td>Limits the total number of nodes in all entity references.
  * </td>
- * <td style="text-align:center">3x10^6</td>
- * <td style="text-align:center">3x10^6</td>
+ * <td style="text-align:center">100000</td>
+ * <td style="text-align:center">100000</td>
  * </tr>
  * <tr>
  * <td id="ElementDepth">{@systemProperty jdk.xml.maxElementDepth}</td>
  * <td>Limits the maximum element depth.
  * </td>
- * <td style="text-align:center">0</td>
- * <td style="text-align:center">0</td>
+ * <td style="text-align:center">100</td>
+ * <td style="text-align:center">100</td>
  * </tr>
  * <tr>
  * <td id="NameLimit">{@systemProperty jdk.xml.maxXMLNameLimit}</td>

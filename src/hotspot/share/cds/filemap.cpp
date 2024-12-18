@@ -53,15 +53,18 @@
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
+#include "oops/access.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -344,6 +347,7 @@ void SharedClassPathEntry::init(bool is_modules_image,
         _type = jar_entry;
         _timestamp = st.st_mtime;
         _from_class_path_attr = cpe->from_class_path_attr();
+        _is_multi_release = cpe->is_multi_release_jar();
       }
       _filesize = st.st_size;
       _is_module_path = is_module_path;
@@ -1972,6 +1976,32 @@ char* FileMapInfo::map_bitmap_region() {
   return bitmap_base;
 }
 
+class SharedDataRelocationTask : public ArchiveWorkerTask {
+private:
+  BitMapView* const _rw_bm;
+  BitMapView* const _ro_bm;
+  SharedDataRelocator* const _rw_reloc;
+  SharedDataRelocator* const _ro_reloc;
+
+public:
+  SharedDataRelocationTask(BitMapView* rw_bm, BitMapView* ro_bm, SharedDataRelocator* rw_reloc, SharedDataRelocator* ro_reloc) :
+                           ArchiveWorkerTask("Shared Data Relocation"),
+                           _rw_bm(rw_bm), _ro_bm(ro_bm), _rw_reloc(rw_reloc), _ro_reloc(ro_reloc) {}
+
+  void work(int chunk, int max_chunks) override {
+    work_on(chunk, max_chunks, _rw_bm, _rw_reloc);
+    work_on(chunk, max_chunks, _ro_bm, _ro_reloc);
+  }
+
+  void work_on(int chunk, int max_chunks, BitMapView* bm, SharedDataRelocator* reloc) {
+    BitMap::idx_t size  = bm->size();
+    BitMap::idx_t start = MIN2(size, size * chunk / max_chunks);
+    BitMap::idx_t end   = MIN2(size, size * (chunk + 1) / max_chunks);
+    assert(end > start, "Sanity: no empty slices");
+    bm->iterate(reloc, start, end);
+  }
+};
+
 // This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
 // We relocate all pointers in the 2 core regions (ro, rw).
 bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
@@ -2010,8 +2040,15 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
                                 valid_new_base, valid_new_end, addr_delta);
     SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    rw_ptrmap.iterate(&rw_patcher);
-    ro_ptrmap.iterate(&ro_patcher);
+
+    if (AOTCacheParallelRelocation) {
+      ArchiveWorkers workers;
+      SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
+      workers.run_task(&task);
+    } else {
+      rw_ptrmap.iterate(&rw_patcher);
+      ro_ptrmap.iterate(&ro_patcher);
+    }
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
 
@@ -2183,7 +2220,7 @@ address FileMapInfo::heap_region_dumptime_address() {
   assert(CDSConfig::is_using_archive(), "runtime only");
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   if (UseCompressedOops) {
-    return /*dumptime*/ narrow_oop_base() + r->mapping_offset();
+    return /*dumptime*/ (address)((uintptr_t)narrow_oop_base() + r->mapping_offset());
   } else {
     return heap_region_requested_address();
   }
@@ -2209,7 +2246,7 @@ address FileMapInfo::heap_region_requested_address() {
     // Runtime base = 0x4000 and shift is also 0. If we map this region at 0x5000, then
     // the value P can remain 0x1200. The decoded address = (0x4000 + (0x1200 << 0)) = 0x5200,
     // which is the runtime location of the referenced object.
-    return /*runtime*/ CompressedOops::base() + r->mapping_offset();
+    return /*runtime*/ (address)((uintptr_t)CompressedOops::base() + r->mapping_offset());
   } else {
     // This was the hard-coded requested base address used at dump time. With uncompressed oops,
     // the heap range is assigned by the OS so we will most likely have to relocate anyway, no matter
@@ -2644,7 +2681,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
       jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
       THROW_MSG_(vmSymbols::java_io_IOException(), msg, nullptr);
     } else {
-      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
+      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false, scpe->is_multi_release());
       if (ent == nullptr) {
         char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
         jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
@@ -2678,11 +2715,44 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  ClassFileStream* cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  ClassFileStream* cfs;
+  if (class_loader() != nullptr && !cpe->is_modules_image() && cpe->is_multi_release_jar()) {
+    cfs = get_stream_from_class_loader(class_loader, cpe, file_name, CHECK_NULL);
+  } else {
+    cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  }
   assert(cfs != nullptr, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;
 }
 
+ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
+                                                           ClassPathEntry* cpe,
+                                                           const char* file_name,
+                                                           TRAPS) {
+  JavaValue result(T_OBJECT);
+  oop class_name = java_lang_String::create_oop_from_str(file_name, THREAD);
+  Handle h_class_name = Handle(THREAD, class_name);
+
+  // byte[] ClassLoader.getResourceAsByteArray(String name)
+  JavaCalls::call_virtual(&result,
+                          class_loader,
+                          vmClasses::ClassLoader_klass(),
+                          vmSymbols::getResourceAsByteArray_name(),
+                          vmSymbols::getResourceAsByteArray_signature(),
+                          h_class_name,
+                          CHECK_NULL);
+  assert(result.get_type() == T_OBJECT, "just checking");
+  oop obj = result.get_oop();
+  assert(obj != nullptr, "ClassLoader.getResourceAsByteArray should not return null");
+
+  // copy from byte[] to a buffer
+  typeArrayOop ba = typeArrayOop(obj);
+  jint len = ba->length();
+  u1* buffer = NEW_RESOURCE_ARRAY(u1, len);
+  ArrayAccess<>::arraycopy_to_native<>(ba, typeArrayOopDesc::element_offset<jbyte>(0), buffer, len);
+
+  return new ClassFileStream(buffer, len, cpe->name());
+}
 #endif

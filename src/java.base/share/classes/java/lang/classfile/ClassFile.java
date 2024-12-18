@@ -32,6 +32,8 @@ import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.AccessFlag;
@@ -230,17 +232,35 @@ public sealed interface ClassFile
     /**
      * Option describing whether to automatically rewrite short jumps to
      * long when necessary.
-     * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
+     * Default is {@link #FIX_SHORT_JUMPS} to automatically rewrite jump
      * instructions.
+     * <p>
+     * Due to physical restrictions, some types of instructions cannot encode
+     * certain jump targets with bci offsets less than -32768 or greater than
+     * 32767, as they use a {@code s2} to encode such an offset.  (The maximum
+     * length of the {@code code} array is 65535.)  These types of instructions
+     * are called "short jumps".
      *
+     * @see BranchInstruction
+     * @see DiscontinuedInstruction.JsrInstruction
      * @since 24
      */
     enum ShortJumpsOption implements Option {
 
-        /** Automatically convert short jumps to long when necessary */
+        /**
+         * Automatically convert short jumps to long when necessary.
+         * <p>
+         * For an invalid instruction model, a {@link CodeBuilder} may generate
+         * another or a few other instructions to accomplish the same effect.
+         */
         FIX_SHORT_JUMPS,
 
-        /** Fail if short jump overflows */
+        /**
+         * Fail with an {@link IllegalArgumentException} if short jump overflows.
+         * <p>
+         * This is useful to ensure the physical accuracy of a generated {@code
+         * class} file.
+         */
         FAIL_ON_SHORT_JUMPS
     }
 
@@ -642,6 +662,12 @@ public sealed interface ClassFile
     int JAVA_24_VERSION = 68;
 
     /**
+     * The class major version of JAVA_25.
+     * @since 25
+     */
+    int JAVA_25_VERSION = 69;
+
+    /**
      * A minor version number indicating a class uses preview features
      * of a Java SE version since 12, for major versions {@value
      * #JAVA_12_VERSION} and above.
@@ -652,7 +678,7 @@ public sealed interface ClassFile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_24_VERSION;
+        return JAVA_25_VERSION;
     }
 
     /**
