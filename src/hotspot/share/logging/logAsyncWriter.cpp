@@ -86,13 +86,14 @@ void AsyncLogWriter::Buffer::push_flush_token() {
   assert(result, "fail to enqueue the flush token.");
 }
 
-void AsyncLogWriter::enqueue_locked(ConsumerLocker& clocker, LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
+void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
   // To save space and streamline execution, we just ignore null message.
   // client should use "" instead.
   assert(msg != nullptr, "enqueuing a null message!");
 
   size_t msg_len = strlen(msg);
 
+  ConsumerLocker clocker;
   if (_buffer->push_back(output, decorations, msg, msg_len)) {
     _data_available = true;
     clocker.notify();
@@ -122,17 +123,15 @@ void AsyncLogWriter::enqueue_locked(ConsumerLocker& clocker, LogFileStreamOutput
 
 void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
   ProducerLocker plocker;
-  ConsumerLocker clocker;
-  enqueue_locked(clocker, &output, decorations, msg);
+  enqueue_locked(&output, decorations, msg);
 }
 
 // LogMessageBuffer consists of a multiple-part/multiple-line message.
 // The lock here guarantees its integrity.
 void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
   ProducerLocker plocker;
-  ConsumerLocker clocker;
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    enqueue_locked(clocker, &output, msg_iterator.decorations(), msg_iterator.message());
+    enqueue_locked(&output, msg_iterator.decorations(), msg_iterator.message());
   }
 }
 
