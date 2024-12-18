@@ -140,7 +140,7 @@ public class TestDoubleGenerators {
     }
 
     public static void checkRange(MemorySegment ms, double lo, double hi) {
-        for (long i = 0; i < ms.byteSize() / 8; i++ ) {
+        for (long i = 0; i < ms.byteSize() / 8; i++) {
             double v = ms.get(ValueLayout.JAVA_DOUBLE_UNALIGNED, 8L * i);
             checkRange(v, lo, hi);
         }

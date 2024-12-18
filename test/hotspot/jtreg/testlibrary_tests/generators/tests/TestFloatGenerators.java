@@ -140,7 +140,7 @@ public class TestFloatGenerators {
     }
 
     public static void checkRange(MemorySegment ms, float lo, float hi) {
-        for (long i = 0; i < ms.byteSize() / 4; i++ ) {
+        for (long i = 0; i < ms.byteSize() / 4; i++) {
             float v = ms.get(ValueLayout.JAVA_FLOAT_UNALIGNED, 4L * i);
             checkRange(v, lo, hi);
         }

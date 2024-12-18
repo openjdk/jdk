@@ -124,7 +124,7 @@ public class TestLongGenerators {
     }
 
     public static void checkRange(MemorySegment ms, long lo, long hi) {
-        for (long i = 0; i < ms.byteSize() / 8; i++ ) {
+        for (long i = 0; i < ms.byteSize() / 8; i++) {
             long v = ms.get(ValueLayout.JAVA_LONG_UNALIGNED, 8L * i);
             checkRange(v, lo, hi);
         }

@@ -124,7 +124,7 @@ public class TestIntGenerators {
     }
 
     public static void checkRange(MemorySegment ms, int lo, int hi) {
-        for (long i = 0; i < ms.byteSize() / 4; i++ ) {
+        for (long i = 0; i < ms.byteSize() / 4; i++) {
             int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i);
             checkRange(v, lo, hi);
         }
