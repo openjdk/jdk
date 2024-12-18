@@ -665,7 +665,10 @@ public class KeyAgreement {
      *      the output will be used as the input keying material of a
      *      {@link javax.crypto.KDF}.
      *
-     * @return the shared secret key
+     * @return the shared secret key. The length of the key material
+     *      may be adjusted to be compatible with the specified algorithm,
+     *      regardless of whether the key is extractable. If {@code algorithm}
+     *      is specified as "Generic", the full shared secret will be returned.
      *
      * @exception IllegalStateException if this key agreement has not been
      * initialized or if {@code doPhase} has not been called to supply the
