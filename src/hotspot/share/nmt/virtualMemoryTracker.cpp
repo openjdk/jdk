@@ -22,16 +22,14 @@
  *
  */
 #include "logging/log.hpp"
-#include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nativeCallStackPrinter.hpp"
-#include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
-VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
+Deferred<VirtualMemorySnapshot> VirtualMemorySummary::_snapshot;
 
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
