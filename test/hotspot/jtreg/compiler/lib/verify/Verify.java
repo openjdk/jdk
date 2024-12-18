@@ -66,7 +66,7 @@ public final class Verify {
             System.err.println("       " + ca.getName() + " vs " + cb.getName());
             print(a, "a " + context);
             print(b, "b " + context);
-            throw new VerifyException("Object array class mismatch.");
+            throw new VerifyException("Object class mismatch.");
         }
 
         switch (a) {
