@@ -1889,7 +1889,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
   char *requested_addr = mapped_base_address + r->mapping_offset();
-  assert(r->mapped_base() == nullptr, "must be not mapped yet");
+  assert(!is_mapped(), "must be not mapped yet");
   assert(requested_addr != nullptr, "must be specified");
 
   r->set_mapped_from_file(false);
@@ -2359,7 +2359,7 @@ bool FileMapInfo::map_heap_region_impl() {
     if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
-      unmap_region(MetaspaceShared::hp);
+      unmap_non_reserved_region(MetaspaceShared::hp);
       _heap_pointers_need_patching = false;
       return false;
     }
@@ -2415,12 +2415,18 @@ void FileMapInfo::unmap_regions(int regions[], int num_regions, ReservedSpace rs
     int idx = regions[r];
 
     // If the region is inside an active ReservedSpace, its memory and address space will be
-    // freed when the ReservedSpace is released.
+    // freed when the ReservedSpace is released. Skip unmap here to avoid a double release
     if (rs.is_reserved()) {
-      // Treat this region as if it has been unmapped
-      region_at(idx)->set_mapped_base(nullptr);
+      FileMapRegion* r = region_at(idx);
+      char* mapped_base = r->mapped_base();
+      size_t size = r->used_aligned();
+
+      assert(rs.is_reserved(), "must be");
+      assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
+            PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
+            p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
     } else {
-      unmap_region(idx);
+      unmap_non_reserved_region(idx);
     }
   }
 }
@@ -2442,6 +2448,12 @@ void FileMapInfo::unmap_region(int i) {
     }
     r->set_mapped_base(nullptr);
   }
+}
+
+// The mapped region is not within a reserved space so it can be
+// released directly
+void FileMapInfo::unmap_non_reserved_region(int i) {
+  unmap_region(i);
 }
 
 void FileMapInfo::assert_mark(bool check) {

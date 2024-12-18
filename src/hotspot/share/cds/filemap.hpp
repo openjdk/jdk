@@ -367,6 +367,7 @@ private:
   static bool _heap_pointers_need_patching;
   static bool _memory_mapping_failed;
   static GrowableArray<const char*>* _non_existent_class_paths;
+  void  unmap_region(int i);
 
 public:
   FileMapHeader *header() const       { return _header; }
@@ -478,7 +479,7 @@ public:
   MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
-  void  unmap_region(int i);
+  void unmap_non_reserved_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
   ReservedSpace reserve_shared_memory();
