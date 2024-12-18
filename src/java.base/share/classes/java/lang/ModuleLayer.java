@@ -324,7 +324,7 @@ public final class ModuleLayer {
         }
 
         /**
-         * Updates the module layer to locate a service of the given type using
+         * Updates the layer to locate a service of the given type using
          * the given implementation class.
          *
          * @param  service
@@ -334,13 +334,32 @@ public final class ModuleLayer {
          *
          * @return This controller
          *
+         * @throws IllegalArgumentException
+         *         If {@code impl} is not an appropriate service provider for
+         *         {@code service}
+         *
          * @since 25
          */
         public Controller addProvider(Class<?> service, Class<?> impl) {
-            // the implementation module for the service may be named or unnamed
             Module implModule = impl.getModule();
-            Modules.addProvider(layer, service, impl);
+            Class<?> providerType;
+            if (implModule.isNamed()
+                && (providerType = getProviderMethodType(impl)) != null
+                && ! service.isAssignableFrom(providerType)
+                || ! service.isAssignableFrom(impl)) {
+                throw new IllegalArgumentException("Implementation " + impl + " does not implment or provide " + service);
+            } else {
+                Modules.addProvider(layer, service, impl);
+            }
             return this;
+        }
+
+        private static Class<?> getProviderMethodType(Class<?> implClass) {
+            try {
+                return implClass.getMethod("provider").getReturnType();
+            } catch (NoSuchMethodException e) {
+                return null;
+            }
         }
 
         /**

@@ -180,7 +180,6 @@ public class Modules {
      * @param impl the service implementation class (must not be {@code null})
      */
     public static void addProvider(ModuleLayer layer, Class<?> service, Class<?> impl) {
-        // throws NPE if the layer is null
         JLA.getServicesCatalog(layer).addProvider(impl.getModule(), service, impl);
     }
 
