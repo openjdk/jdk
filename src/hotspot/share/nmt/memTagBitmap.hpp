@@ -27,30 +27,34 @@
 #define SHARE_NMT_MEMTAGBITMAP_HPP
 
 #include "nmt/memTag.hpp"
+#include "utilities/bitMap.hpp"
+#include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class MemTagBitmap {
-  uint32_t _v;
-  STATIC_ASSERT(sizeof(_v) * BitsPerByte >= mt_number_of_tags);
-
+  CHeapBitMap _bitmap;
 public:
-  MemTagBitmap(uint32_t v = 0) : _v(v) {}
-  MemTagBitmap(const MemTagBitmap& o) : _v(o._v) {}
-
-  uint32_t raw_value() const { return _v; }
+  MemTagBitmap() : _bitmap(mtNMT) {}
+  NONCOPYABLE(MemTagBitmap);
 
   void set_tag(MemTag mem_tag) {
-    const int bitno = (int)mem_tag;
-    _v |= nth_bit(bitno);
+    const BitMap::idx_t bitno = (BitMap::idx_t)mem_tag;
+    if (_bitmap.size() <= bitno) {
+      _bitmap.resize(bitno + 1);
+    }
+    _bitmap.set_bit(bitno);
   }
 
   bool has_tag(MemTag mem_tag) const {
-    const int bitno = (int)mem_tag;
-    return _v & nth_bit(bitno);
+    const BitMap::idx_t bitno = (BitMap::idx_t)mem_tag;
+    if (_bitmap.size() <= bitno) {
+      return false;
+    }
+    return _bitmap.at(bitno);
   }
 
-  bool has_any() const { return _v > 0; }
+  bool has_any() const { return !_bitmap.is_empty(); }
 };
 
 #endif // SHARE_NMT_MEMTAGBITMAP_HPP

@@ -221,13 +221,13 @@ public:
     EXPECT_EQ(n1.val().out.committed_stack(), upd.new_st.committed_stack()) << failed_case;
 
     if (from == to) {
-      EXPECT_EQ(diff.tag[from].reserve, upd.reserve[0] + upd.reserve[1]) << failed_case;
-      EXPECT_EQ(diff.tag[from].commit, upd.commit[0] + upd.commit[1]) << failed_case;
+      EXPECT_EQ(diff[from].reserve, upd.reserve[0] + upd.reserve[1]) << failed_case;
+      EXPECT_EQ(diff[from].commit, upd.commit[0] + upd.commit[1]) << failed_case;
     } else {
-      EXPECT_EQ(diff.tag[from].reserve, upd.reserve[0]) << failed_case;
-      EXPECT_EQ(diff.tag[from].commit, upd.commit[0]) << failed_case;
-      EXPECT_EQ(diff.tag[to].reserve, upd.reserve[1]) << failed_case;
-      EXPECT_EQ(diff.tag[to].commit, upd.commit[1]) << failed_case;
+      EXPECT_EQ(diff[from].reserve, upd.reserve[0]) << failed_case;
+      EXPECT_EQ(diff[from].commit, upd.commit[0]) << failed_case;
+      EXPECT_EQ(diff[to].reserve, upd.reserve[1]) << failed_case;
+      EXPECT_EQ(diff[to].commit, upd.commit[1]) << failed_case;
     }
   }
 
@@ -696,7 +696,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  A - Test (reserved)
 //  . - free
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     tree.reserve_mapping(50, 25, rd_NMT_cs0, all_diff);
 //              1         2         3         4         5         6         7         8         9         10         11
@@ -707,8 +707,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //     B - Native Memory Tracking (reserved)
 //     C - Test (reserved)
 //     . - free
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
-    VMATree::SingleDiff diff2 = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
+    diff = all_diff[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff2 = all_diff[NMTUtil::tag_to_index(mtNMT)];
     EXPECT_EQ(-25, diff.reserve);
     EXPECT_EQ(25, diff2.reserve);
   }
@@ -723,14 +723,14 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  A - Test (reserved)
 //  . - free
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     tree.release_mapping(0, 100, all_diff);
 //            1         2         3         4         5         6         7         8         9         10        11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  ..............................................................................................................
 //  Legend:
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(-100, diff.reserve);
   }
   { // Convert some of a released mapping to a committed one
@@ -744,7 +744,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  A - Test (reserved)
 //  . - free
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     tree.commit_mapping(0, 100, rd_Test_cs0, all_diff);
 //            1         2         3         4         5         6         7         8         9         10         11
@@ -753,7 +753,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  a - Test (committed)
 //  . - free
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     EXPECT_EQ(100, diff.commit);
   }
@@ -768,7 +768,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  A - Test (reserved)
 //  . - free
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 10);
     tree.reserve_mapping(10, 10, rd_Test_cs0, all_diff);
 //            1         2         3
@@ -777,7 +777,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  A - Test (reserved)
 //  . - free
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(10, diff.reserve);
   }
   { // Adjacent reserved mappings with different tags
@@ -792,7 +792,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  A - Test (reserved)
 //  . - free
-    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 10);
     tree.reserve_mapping(10, 10, rd_NMT_cs0, all_diff);
 //            1         2         3
@@ -802,9 +802,9 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  A - Test (reserved)
 //  B - Native Memory Tracking (reserved)
 //  . - free
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
-    diff = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
+    diff = all_diff[NMTUtil::tag_to_index(mtNMT)];
     EXPECT_EQ(10, diff.reserve);
   }
 
@@ -834,8 +834,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  Legend:
 //  a - Test (committed)
 //  . - free
-    EXPECT_EQ(16, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
-    EXPECT_EQ(16, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(16, diff[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(16, diff[NMTUtil::tag_to_index(mtTest)].reserve);
   }
 }
 
@@ -845,11 +845,11 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingReserveAsUncommit) {
   VMATree::SummaryDiff diff1, diff2, diff3;
   tree.reserve_mapping(1200, 100, rd, diff1);
   tree.commit_mapping(1210, 50, rd, diff2);
-  EXPECT_EQ(100, diff1.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(50, diff2.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(100, diff1[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff2[NMTUtil::tag_to_index(mtTest)].commit);
   tree.reserve_mapping(1220, 20, rd, diff3);
-  EXPECT_EQ(-20, diff3.tag[NMTUtil::tag_to_index(mtTest)].commit);
-  EXPECT_EQ(0, diff3.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(-20, diff3[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff3[NMTUtil::tag_to_index(mtTest)].reserve);
 }
 
 // Exceedingly simple tracker for page-granular allocations
@@ -896,17 +896,17 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingReserveAsUncommit) {
 
       // Register diff
       if (old_info.kind == Reserved) {
-        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
+        diff[(int)old_info.mem_tag].reserve -= page_size;
       } else if (old_info.kind == Committed) {
-        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
-        diff.tag[(int)old_info.mem_tag].commit -= page_size;
+        diff[(int)old_info.mem_tag].reserve -= page_size;
+        diff[(int)old_info.mem_tag].commit -= page_size;
       }
 
       if (kind == Reserved) {
-        diff.tag[(int)new_info.mem_tag].reserve += page_size;
+        diff[(int)new_info.mem_tag].reserve += page_size;
       } else if (kind == Committed) {
-        diff.tag[(int)new_info.mem_tag].reserve += page_size;
-        diff.tag[(int)new_info.mem_tag].commit += page_size;
+        diff[(int)new_info.mem_tag].reserve += page_size;
+        diff[(int)new_info.mem_tag].commit += page_size;
       }
       // Overwrite old one with new
       pages[i] = new_info;
@@ -989,9 +989,9 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
       tree.release_mapping(start, size, tree_diff);
     }
 
-    for (int j = 0; j < mt_number_of_tags; j++) {
-      VMATree::SingleDiff td = tree_diff.tag[j];
-      VMATree::SingleDiff sd = simple_diff.tag[j];
+    for (int j = 0; j < MemTagFactory::number_of_tags(); j++) {
+      VMATree::SingleDiff td = tree_diff[j];
+      VMATree::SingleDiff sd = simple_diff[j];
       ASSERT_EQ(td.reserve, sd.reserve);
       ASSERT_EQ(td.commit, sd.commit);
     }
@@ -1067,22 +1067,22 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseTagInplace) {
   //            1         2         3         4         5
   //  012345678901234567890123456789012345678901234567890
   //  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrr
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(25, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(25, diff[NMTUtil::tag_to_index(mtTest)].commit);
 
   tree.commit_mapping(30, 5, rd_None_cs1, diff, true);
   //            1         2         3         4         5
   //  012345678901234567890123456789012345678901234567890
   //  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrCCCCCrrrrrrrrrrrrrrr
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(5, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(5, diff[NMTUtil::tag_to_index(mtTest)].commit);
 
   tree.uncommit_mapping(0, 25, rd_None_cs1, diff);
   //            1         2         3         4         5
   //  012345678901234567890123456789012345678901234567890
   //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrCCCCCrrrrrrrrrrrrrrr
-  EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-  EXPECT_EQ(-25, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(-25, diff[NMTUtil::tag_to_index(mtTest)].commit);
 }
 
 // How the memory regions are visualized:
@@ -1328,8 +1328,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC..........................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 10);
     ExpectedTree<6> et = {{     5,     10,     12,     14,     16,     25        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    },
@@ -1356,8 +1356,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCC...............................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 5);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 5);
     ExpectedTree<6> et = {{   5,      10,     12,     14,     16,      20        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    },
@@ -1402,8 +1402,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrr..........CCCCCCCCCCCCCCCCCCCC...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 20);
     ExpectedTree<4> et = {{     0,     10,     20,     40        },
                           {mtNone, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , Rl    , C     , Rl    },
@@ -1430,8 +1430,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....rrrrrCCCCCCCCCC...............................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 10);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 15);
     ExpectedTree<4> et = {{     5,     10,     15,     20        },
                           {mtNone, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , C     , C     , Rl    },
@@ -1458,8 +1458,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCCCCCCCCC........................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 10);
     ExpectedTree<8> et = {{     0,      5,      7,    10,      12,     14,     16,     27        },
                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    },
@@ -1486,8 +1486,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCC...............................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 13);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 3);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 13);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 3);
     ExpectedTree<8> et = {{     0,      5,      7,     10,     12,     14,     16,     20        },
                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    },
@@ -1539,8 +1539,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrCCCCCCCCCCCCCCCCCCCC.....................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 20);
     ExpectedTree<3> et = {{     0,     10,     30        },
                           {mtNone, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , C     , Rl    },
@@ -1567,8 +1567,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  CCCCCCCCCCCCCCCCCCCC...............................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 10);
     ExpectedTree<3> et = {{     0,     10,     20        },
                           {mtNone, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , Rl    },
@@ -1595,8 +1595,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC..........................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 25 - 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 25 - 20);
     ExpectedTree<6> et = {{     5,     10,     12,     14,     16,     25        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    },
@@ -1623,8 +1623,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCC...............................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 0);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 0);
     ExpectedTree<6> et = {{     5,     10,     12,     14,     16,     20        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    },
@@ -1670,8 +1670,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 20);
     ExpectedTree<4> et = {{     5,     25,     30,     40        },
                           {mtNone, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , C     , Rl    , Rs    , Rl    },
@@ -1698,8 +1698,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCCrrrrr.....................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 30 - 25);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 30 - 25);
     ExpectedTree<4> et = {{     5,     10,     25,     30        },
                           {mtNone, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , C     , C     , Rs    , Rl    },
@@ -1726,8 +1726,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 5) + ( 25 - 20));
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 5) + ( 25 - 20));
     ExpectedTree<8> et = {{     5,     10,     12,     14,     16,     25,     30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
@@ -1754,8 +1754,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCC..........rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 5);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 5);
     ExpectedTree<8> et = {{     5,     10,     12,     14,     16,     20,     30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
@@ -1800,8 +1800,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrr.....CCCCCCCCCC.....rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 10);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 10);
     ExpectedTree<6> et = {{     0,     10,     15,     25,     30,     40        },
                           {mtNone, mtTest, mtNone, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , Rl    , C     , Rl    , Rs    , Rl    },
@@ -1828,8 +1828,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrr.....CCCCCCCCCCrrrrr.....................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 10);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 15);
     ExpectedTree<6> et = {{     0,     10,     15,     20,     25,     30        },
                           {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , Rl    , C     , C     , Rs    , Rl    },
@@ -1856,8 +1856,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCCCCCCCCC...rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 7) + (27 - 20));
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 7) + (27 - 20));
     ExpectedTree<10> et = {{     0,      5,      7,     12,     14,     16,     20,     27,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
@@ -1884,8 +1884,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCC..........rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 13);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 7);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 13);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 7);
     ExpectedTree<10> et = {{     0,      5,      7,     10,     12,     14,     16,     20,     30,     40        },
                            {mtNone, mtTest, mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                            {Rl    , Rs    , Rl    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
@@ -1931,8 +1931,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 15);
     ExpectedTree<5> et = {{     0,     10,     25,     30,     40        },
                           {mtNone, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , C     , Rl    , Rs    , Rl    },
@@ -1959,8 +1959,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrCCCCCCCCCCCCCCCrrrrr.....................
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 10);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 20 - 10);
     ExpectedTree<5> et = {{     0,     10,     20,     25,     30        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtNone},
                           {Rl    , Rs    , C     , C     , Rs    , Rl    },
@@ -1987,8 +1987,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrCCCCCCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 20);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 5) + (25 - 20));
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 20);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, (10 - 5) + (25 - 20));
     ExpectedTree<9> et = {{     0,      5,     12,     14,     16,     20,    25,      30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },
@@ -2015,8 +2015,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrCCCCCCCCCCCCCCC..........rrrrrrrrrr...........
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].commit, 15);
-    EXPECT_EQ(diff.tag[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 5);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].commit, 15);
+    EXPECT_EQ(diff[NMTUtil::tag_to_index(mtTest)].reserve, 10 - 5);
     ExpectedTree<9> et = {{     0,      5,     10,     12,     14,     16,     20,     30,     40        },
                           {mtNone, mtTest, mtTest, mtTest, mtTest, mtTest, mtTest, mtNone, mtTest, mtNone},
                           {Rl    , Rs    , C     , C     , C     , C     , C     , Rl    , Rs    , Rl    },

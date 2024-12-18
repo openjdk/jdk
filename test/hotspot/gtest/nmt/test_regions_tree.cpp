@@ -44,30 +44,30 @@ TEST_VM_F(NMTRegionsTreeTest, ReserveCommitTwice) {
   {
     VMATree::SummaryDiff diff;
     rt.reserve_mapping(0, 100, rd, diff);
-    EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(100, diff[NMTUtil::tag_to_index(mtTest)].reserve);
   }
   {
     VMATree::SummaryDiff diff, not_used;
     rt.commit_region(0, 50, ncs, not_used);
     rt.reserve_mapping(0, 100, rd, diff);
-    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-    EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(-50, diff[NMTUtil::tag_to_index(mtTest)].commit);
   }
   {
     VMATree::SummaryDiff diff;
     rt.reserve_mapping(0, 100, rd2, diff);
-    EXPECT_EQ(-100, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-    EXPECT_EQ(100, diff.tag[NMTUtil::tag_to_index(mtGC)].reserve);
+    EXPECT_EQ(-100, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(100, diff[NMTUtil::tag_to_index(mtGC)].reserve);
   }
 
   {
     VMATree::SummaryDiff diff1, diff2;
     rt.commit_region(0, 50, ncs, diff1);
-    EXPECT_EQ(0, diff1.tag[NMTUtil::tag_to_index(mtGC)].reserve);
-    EXPECT_EQ(50, diff1.tag[NMTUtil::tag_to_index(mtGC)].commit);
+    EXPECT_EQ(0, diff1[NMTUtil::tag_to_index(mtGC)].reserve);
+    EXPECT_EQ(50, diff1[NMTUtil::tag_to_index(mtGC)].commit);
     rt.commit_region(0, 50, ncs, diff2);
-    EXPECT_EQ(0, diff2.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-    EXPECT_EQ(0, diff2.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff2[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(0, diff2[NMTUtil::tag_to_index(mtTest)].commit);
   }
 }
 
@@ -79,20 +79,20 @@ TEST_VM_F(NMTRegionsTreeTest, CommitUncommitRegion) {
   {
     VMATree::SummaryDiff diff;
     rt.commit_region(0, 50, ncs, diff);
-    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-    EXPECT_EQ(50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(50, diff[NMTUtil::tag_to_index(mtTest)].commit);
   }
   {
     VMATree::SummaryDiff diff;
     rt.commit_region((address)60, 10, ncs, diff);
-    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-    EXPECT_EQ(10, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(10, diff[NMTUtil::tag_to_index(mtTest)].commit);
   }
   {
     VMATree::SummaryDiff diff;
     rt.uncommit_region(0, 50, diff);
-    EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
-    EXPECT_EQ(-50, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(0, diff[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(-50, diff[NMTUtil::tag_to_index(mtTest)].commit);
   }
 }
 

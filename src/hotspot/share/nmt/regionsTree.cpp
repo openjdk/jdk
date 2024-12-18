@@ -43,9 +43,9 @@ void RegionsTree::NodeHelper::print_on(outputStream* st) {
                 "%s, %s <|> %s, %s",
                 p2i((address)position()),
                 st_str(in_state()),
-                NMTUtil::tag_to_name(in_tag()),
+                MemTagFactory::name_of(in_tag()),
                 st_str(out_state()),
-                NMTUtil::tag_to_name(out_tag())
+                MemTagFactory::name_of(out_tag())
                 );
 }
 

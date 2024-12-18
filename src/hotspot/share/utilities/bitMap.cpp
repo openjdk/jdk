@@ -181,6 +181,12 @@ CHeapBitMap::~CHeapBitMap() {
   free(map(), size_in_words());
 }
 
+CHeapBitMap::CHeapBitMap(const CHeapBitMap& other) : GrowableBitMap(nullptr, other.size()), _mem_tag(other._mem_tag) {
+  const size_t num_words = calc_size_in_words(size());
+  _map = MallocArrayAllocator<bm_word_t>::allocate(num_words, _mem_tag);
+  ::memcpy(_map, other._map, MallocArrayAllocator<bm_word_t>::size_for(num_words));
+}
+
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {
   return MallocArrayAllocator<bm_word_t>::allocate(size_in_words, _mem_tag);
 }

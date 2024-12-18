@@ -82,7 +82,7 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
 
   if (mem_tag != mtNone) {
     out->print("(%s%zu%s tag=%s", alloc_type,
-      amount_in_current_scale(amount), scale, NMTUtil::tag_to_name(mem_tag));
+      amount_in_current_scale(amount), scale, MemTagFactory::human_readable_name_of(mem_tag));
   } else {
     out->print("(%s%zu%s", alloc_type,
       amount_in_current_scale(amount), scale);
@@ -179,7 +179,7 @@ void MemSummaryReporter::report() {
   out->cr();
 
   // Summary by memory tag
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
@@ -221,7 +221,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
   outputStream* out   = output();
   const char*   scale = current_scale();
   constexpr int indent = 28;
-  out->print("-%*s (", indent - 2, NMTUtil::tag_to_name(mem_tag));
+  out->print("-%*s (", indent - 2, MemTagFactory::human_readable_name_of(mem_tag));
   print_total(reserved_amount, committed_amount);
 #if INCLUDE_CDS
   if (mem_tag == mtClassShared) {
@@ -382,7 +382,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
       print_total(virtual_memory_site->reserved(), virtual_memory_site->committed());
       const MemTag mem_tag = virtual_memory_site->mem_tag();
       if (mem_tag != mtNone) {
-        out->print(" Tag=%s", NMTUtil::tag_to_name(mem_tag));
+        out->print(" Tag=%s", MemTagFactory::human_readable_name_of(mem_tag));
       }
       out->print_cr(")");
     )
@@ -423,7 +423,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->cr();
   print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
-  out->print(" for %s", NMTUtil::tag_to_name(reserved_rgn->mem_tag()));
+  out->print(" for %s", MemTagFactory::human_readable_name_of(reserved_rgn->mem_tag()));
   if (stack->is_empty()) {
     out->cr();
   } else {
@@ -476,7 +476,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 void MemDetailReporter::report_memory_file_allocations() {
   stringStream st;
   {
-    MemTracker::NmtVirtualMemoryLocker nvml;
+    NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
   }
   output()->print_raw(st.freeze());
@@ -531,7 +531,7 @@ void MemSummaryDiffReporter::report_diff() {
   out->cr();
 
   // Summary diff by memory tag
-  for (int index = 0; index < mt_number_of_tags; index ++) {
+  for (int index = 0; index < MemTagFactory::number_of_tags(); index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
     if (mem_tag == mtThreadStack) continue;
@@ -554,7 +554,7 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
   out->print("%s%zu%s", alloc_tag, amount_in_current_scale(current_amount), scale);
   // Report type only if it is valid and not under "thread" category
   if (mem_tag != mtNone && mem_tag != mtThread) {
-    out->print(" type=%s", NMTUtil::tag_to_name(mem_tag));
+    out->print(" type=%s", MemTagFactory::human_readable_name_of(mem_tag));
   }
 
   int64_t amount_diff = diff_in_current_scale(current_amount, early_amount);
@@ -647,7 +647,7 @@ void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
       diff_in_current_scale(current_reserved_amount, early_reserved_amount) != 0) {
 
     // print summary line
-    out->print("-%*s (", indent - 2, NMTUtil::tag_to_name(mem_tag));
+    out->print("-%*s (", indent - 2, MemTagFactory::human_readable_name_of(mem_tag));
     print_virtual_memory_diff(current_reserved_amount, current_committed_amount,
       early_reserved_amount, early_committed_amount);
     out->print_cr(")");
@@ -948,7 +948,7 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
     out->print("(mmap: ");
     print_virtual_memory_diff(current_reserved, current_committed, early_reserved, early_committed);
     if (mem_tag != mtNone) {
-      out->print(" Type=%s", NMTUtil::tag_to_name(mem_tag));
+      out->print(" Type=%s", MemTagFactory::human_readable_name_of(mem_tag));
     }
     out->print_cr(")");
   )
