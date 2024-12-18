@@ -31,6 +31,7 @@
 #include "runtime/atomic.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/deferredStatic.hpp"
 
 // VirtualMemoryTracker (VMT) is an internal class of the MemTracker.
 // All the Hotspot code use only the MemTracker interface to register the memory operations in NMT.
@@ -104,11 +105,12 @@ class VirtualMemorySummary;
 
 // This class represents a snapshot of virtual memory at a given time.
 // The latest snapshot is saved in a static area.
-class VirtualMemorySnapshot : public ResourceObj {
+class VirtualMemorySnapshot {
   friend class VirtualMemorySummary;
 
- private:
-  VirtualMemory  _virtual_memory[mt_number_of_tags];
+private:
+  using IndexType = std::underlying_type_t<MemTag>;
+  VirtualMemory  _virtual_memory[static_cast<size_t>(std::numeric_limits<IndexType>::max())];
 
  public:
   inline VirtualMemory* by_tag(MemTag mem_tag) {
@@ -146,7 +148,6 @@ class VirtualMemorySnapshot : public ResourceObj {
 
 class VirtualMemorySummary : AllStatic {
  public:
-
   static inline void record_reserved_memory(size_t size, MemTag mem_tag) {
     as_snapshot()->by_tag(mem_tag)->reserve_memory(size);
   }
@@ -180,11 +181,15 @@ class VirtualMemorySummary : AllStatic {
   static void snapshot(VirtualMemorySnapshot* s);
 
   static VirtualMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
+  }
+
+  static void initialize() {
+    _snapshot.initialize();
   }
 
  private:
-  static VirtualMemorySnapshot _snapshot;
+  static DeferredStatic<VirtualMemorySnapshot> _snapshot;
 };
 
 
