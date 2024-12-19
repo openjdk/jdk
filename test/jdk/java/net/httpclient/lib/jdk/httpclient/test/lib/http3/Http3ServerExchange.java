@@ -57,6 +57,7 @@ import jdk.internal.net.http.http3.frames.DataFrame;
 import jdk.internal.net.http.http3.frames.HeadersFrame;
 import jdk.internal.net.http.http3.frames.PushPromiseFrame;
 import jdk.internal.net.http.http3.streams.Http3Streams;
+import jdk.internal.net.http.qpack.Encoder;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
 import jdk.internal.net.http.quic.streams.QuicSenderStream;
@@ -394,6 +395,11 @@ public final class Http3ServerExchange implements Http2TestExchange {
     @Override
     public long waitForMaxPushId(long pushId) throws InterruptedException {
         return serverConn.waitForMaxPushId(pushId);
+    }
+
+    @Override
+    public Encoder qpackEncoder() {
+        return serverConn.qpackEncoder();
     }
 
     private long sendPushPromiseFrame(long pushId, URI uri, HttpHeaders headers)

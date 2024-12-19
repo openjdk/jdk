@@ -260,7 +260,7 @@ public class EncoderInstructionsWriterTest {
 
         // Read out an instruction and return the callback instance
         for (var bb : buffers) {
-            encoderInstructionReader.read(bb);
+            encoderInstructionReader.read(bb, -1);
         }
         return writtenBytes;
     }

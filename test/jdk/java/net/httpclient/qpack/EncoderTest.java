@@ -300,9 +300,6 @@ public class EncoderTest {
         encoder.setTableCapacity(256);
     }
 
-    // TODO: Add test for encoding entries from the dynamic table
-    //       Might require MH/VH to modify dynamic table
-
     /* Test Methods */
     private class TestQuicStreamWriter extends QuicStreamWriter {
         volatile ByteBuffer b = null;

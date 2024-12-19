@@ -36,7 +36,7 @@ public sealed abstract class FieldLineReader permits FieldLineIndexedPostBaseRea
         FieldLineIndexedReader, FieldLineLiteralsReader, FieldLineNameRefPostBaseReader,
         FieldLineNameReferenceReader {
 
-    private final long maxSectionSize;
+    final long maxSectionSize;
     private final AtomicLong sectionSizeTracker;
     FieldLineReader(long maxSectionSize, AtomicLong sectionSizeTracker) {
         this.maxSectionSize = maxSectionSize;
@@ -50,10 +50,34 @@ public sealed abstract class FieldLineReader permits FieldLineIndexedPostBaseRea
 
     final void checkSectionSize(long fieldSize) {
         long sectionSize = sectionSizeTracker.addAndGet(fieldSize);
-        if (maxSectionSize > 0 &&  sectionSize > maxSectionSize) {
-            throw QPackException.decompressionFailed(
-                    new ProtocolException("Size exceeds MAX_FIELD_SECTION_SIZE: %s > %s"
-                            .formatted(sectionSize, maxSectionSize)), false);
+        if (maxSectionSize > 0 && sectionSize > maxSectionSize) {
+            throw maxFieldSectionExceeded(sectionSize, maxSectionSize);
         }
+    }
+
+    final void checkPartialSize(long partialFieldSize) {
+        long sectionSize = sectionSizeTracker.get() + partialFieldSize;
+        if (maxSectionSize > 0 && sectionSize  > maxSectionSize) {
+            throw maxFieldSectionExceeded(sectionSize, maxSectionSize);
+        }
+    }
+
+    final int getMaxFieldLineLimit(int partiallyRead) {
+        int maxLimit = -1;
+        if (maxSectionSize > 0) {
+            maxLimit = Math.clamp(maxSectionSize - partiallyRead - 32 -
+                                  sectionSizeTracker.get(), 0, Integer.MAX_VALUE);
+        }
+        return maxLimit;
+    }
+
+    final int getMaxFieldLineLimit() {
+        return getMaxFieldLineLimit(0);
+    }
+
+    private static QPackException maxFieldSectionExceeded(long sectionSize, long maxSize) {
+        throw QPackException.decompressionFailed(
+                new ProtocolException("Size exceeds MAX_FIELD_SECTION_SIZE: %s > %s"
+                        .formatted(sectionSize, maxSize)), false);
     }
 }

@@ -198,6 +198,10 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         return connection;
     }
 
+    void recordError(Throwable closeCause) {
+        errorRef.compareAndSet(null, closeCause);
+    }
+
     private sealed class HeadersConsumer extends StreamHeadersConsumer permits PushHeadersConsumer {
 
         private HeadersConsumer(Context context) {

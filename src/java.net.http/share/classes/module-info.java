@@ -155,10 +155,10 @@
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxLiteralWithIndexing}</b> (default: 512)<br>
  * The maximum number of header field lines (header name and value pairs) that a
- * client is willing to add to the HPack Decoder dynamic table during the decoding
+ * client is willing to add to the HPack or QPACK Decoder dynamic table during the decoding
  * of an entire header field section.
  * This is purely an implementation limit.
- * If a peer sends a field section with encoding that
+ * If a peer sends a field section or a set of QPACK instructions with encoding that
  * exceeds this limit a {@link java.net.ProtocolException ProtocolException} will be raised.
  * A value of zero or a negative value means no limit.
  * </li>

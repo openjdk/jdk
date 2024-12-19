@@ -25,6 +25,7 @@
 package jdk.internal.net.http.qpack.readers;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -41,7 +42,7 @@ import jdk.internal.net.http.http3.Http3Error;
 //        |  String Data (Length octets)  |
 //        +-------------------------------+
 //
-final class StringReader {
+public final class StringReader {
 
     private static final int NEW             = 0;
     private static final int FIRST_BYTE_READ = 1;
@@ -54,7 +55,6 @@ final class StringReader {
     private final ISO_8859_1.Reader plainReader = new ISO_8859_1.Reader();
 
     private int state = NEW;
-
     private boolean huffman;
     private int remainingLength;
 
@@ -67,11 +67,11 @@ final class StringReader {
         this.intReader = new IntegerReader(readError);
     }
 
-    boolean read(ByteBuffer input, Appendable output) {
-        return read(7, input, output);
+    public boolean read(ByteBuffer input, Appendable output, int maxLength) {
+        return read(7, input, output, maxLength);
     }
 
-    boolean read(int N, ByteBuffer input, Appendable output) {
+    boolean read(int N, ByteBuffer input, Appendable output, int maxLength) {
         if (state == DONE) {
             return true;
         }
@@ -96,9 +96,13 @@ final class StringReader {
                 return false;
             }
             long remainingLengthLong = intReader.get();
-            if (remainingLengthLong > Integer.MAX_VALUE) {
-                throw readError.toQPackException(new IOException(
-                        "String length exceeds Integer.MAX_VALUE"));
+            if (maxLength >= 0) {
+                long huffmanEstimate = huffman ?
+                        remainingLengthLong / 4 : remainingLengthLong;
+                if (huffmanEstimate > maxLength) {
+                    throw readError.toQPackException(new ProtocolException(
+                            "Size exceeds MAX_FIELD_SECTION_SIZE or dynamic table capacity."));
+                }
             }
             remainingLength = (int) remainingLengthLong;
             state = LENGTH_READ;
@@ -129,14 +133,14 @@ final class StringReader {
                 new Object[]{state, huffman, remainingLength}));
     }
 
-    boolean isHuffmanEncoded() {
+    public boolean isHuffmanEncoded() {
         if (state < FIRST_BYTE_READ) {
             throw new IllegalStateException("Has not been fully read yet");
         }
         return huffman;
     }
 
-    void reset() {
+    public void reset() {
         if (huffman) {
             huffmanReader.reset();
         } else {

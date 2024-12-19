@@ -54,7 +54,6 @@ import static org.testng.Assert.*;
  *          java.net.http/jdk.internal.net.http.http3
  * @run testng/othervm DecoderTest
  */
-//TODO: move common test methods into single class
 public class DecoderTest {
 
     private final Random random = new Random();

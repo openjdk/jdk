@@ -36,6 +36,7 @@ import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.qpack.Encoder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -401,6 +402,9 @@ public interface HttpServerAdapters {
         public boolean serverPushAllowed() {
             return false;
         }
+        public Encoder qpackEncoder() {
+            throw new UnsupportedOperationException("qpackEncoder with " + getExchangeVersion());
+        }
         public static HttpTestExchange of(HttpExchange exchange) {
             return new Http1TestExchange(exchange);
         }
@@ -547,6 +551,10 @@ public interface HttpServerAdapters {
             @Override
             public long waitForHttp3MaxPushId(long pushId) throws InterruptedException {
                 return exchange.waitForMaxPushId(pushId);
+            }
+            @Override
+            public Encoder qpackEncoder() {
+                return exchange.qpackEncoder();
             }
             @Override
             void doFilter(Filter.Chain filter) throws IOException {

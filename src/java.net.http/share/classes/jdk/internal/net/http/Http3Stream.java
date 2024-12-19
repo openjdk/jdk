@@ -172,8 +172,8 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
             // RFC-9204 2.2.2.1: After the decoder finishes decoding a field
             // section encoded using representations containing dynamic table
             // references, it MUST emit a Section Acknowledgment instruction
-            // qpackDecoder.ackSection(streamId());
             qpackDecoder().ackSection(streamId(), headerFrameReader());
+            qpackDecoder().resetInsertionsCounter();
             headersCompleted();
         }
 
@@ -182,6 +182,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
         @Override
         public void onStreamError(Throwable throwable, Http3Error http3Error) {
             hasError = true;
+            qpackDecoder().resetInsertionsCounter();
             // Stream error
             cancelImpl(throwable, http3Error);
         }

@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static jdk.internal.net.http.http3.Http3Error.QPACK_DECOMPRESSION_FAILED;
+import static jdk.internal.net.http.qpack.DynamicTable.ENTRY_SIZE;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
 public final class FieldLineLiteralsReader extends FieldLineReader {
@@ -71,8 +72,11 @@ public final class FieldLineLiteralsReader extends FieldLineReader {
     //
     public boolean read(ByteBuffer input, FieldSectionPrefix prefix,
                         DecodingCallback action) {
-        if (!completeReading(input))
+        if (!completeReading(input)) {
+            long readPart = ENTRY_SIZE + name.length() + value.length();
+            checkPartialSize(readPart);
             return false;
+        }
         String n = name.toString();
         String v = value.toString();
         if (logger.isLoggable(NORMAL)) {
@@ -88,16 +92,16 @@ public final class FieldLineLiteralsReader extends FieldLineReader {
 
     private boolean completeReading(ByteBuffer input) {
         if (!firstValueRead) {
-            if (!stringReader.read(3, input, name)) {
+            if (!stringReader.read(3, input, name, getMaxFieldLineLimit(name.length()))) {
                 return false;
             }
             huffmanName = stringReader.isHuffmanEncoded();
             stringReader.reset();
-
             firstValueRead = true;
             return false;
         } else {
-            if (!stringReader.read(input, value)) {
+            int maxLength = getMaxFieldLineLimit(name.length() + value.length());
+            if (!stringReader.read(input, value, maxLength)) {
                 return false;
             }
         }

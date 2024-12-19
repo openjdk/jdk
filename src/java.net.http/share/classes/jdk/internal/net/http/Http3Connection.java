@@ -678,6 +678,7 @@ public final class Http3Connection implements AutoCloseable {
             debug.log("Closing HTTP/3 connection: %s %s %s", error, logMsg == null ? "" : logMsg,
                     closeCause == null ? "" : closeCause.toString());
         }
+        exchanges.values().forEach(e -> e.recordError(closeCause));
         // close the underlying QUIC connection
         connection.close(error.code(), logMsg, closeCause);
         final TerminationCause tc = connection.quicConnection.terminationCause();

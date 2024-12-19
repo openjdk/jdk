@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.qpack;
 
+import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.http3.ConnectionSettings;
 import jdk.internal.net.http.http3.streams.QueuingStreamPair;
 import jdk.internal.net.http.http3.streams.UniStreamPair;
@@ -35,6 +36,7 @@ import jdk.internal.net.http.qpack.writers.DecoderInstructionsWriter;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
 import java.io.IOException;
+import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -42,6 +44,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.lang.String.format;
 import static jdk.internal.net.http.http3.Http3Error.H3_CLOSED_CRITICAL_STREAM;
 import static jdk.internal.net.http.http3.frames.SettingsFrame.DEFAULT_SETTINGS_MAX_FIELD_SECTION_SIZE;
+import static jdk.internal.net.http.qpack.DynamicTable.ENTRY_SIZE;
+import static jdk.internal.net.http.qpack.QPACK.Logger.Level.EXTRA;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
 /**
@@ -80,7 +84,10 @@ public final class Decoder {
     private final QPACKErrorHandler qpackErrorHandler;
     private final AtomicLong maxFieldSectionSize =
             new AtomicLong(DEFAULT_SETTINGS_MAX_FIELD_SECTION_SIZE);
-
+    private final AtomicLong concurrentDynamicTableInsertions =
+            new AtomicLong();
+    private static final long MAX_LITERAL_WITH_INDEXING =
+            Utils.getIntegerNetProperty("jdk.httpclient.maxLiteralWithIndexing", 512);
 
     /**
      * Constructs a {@code Decoder} with zero initial capacity of the dynamic table.
@@ -192,7 +199,13 @@ public final class Decoder {
         long maxCapacity = ourSettings.qpackMaxTableCapacity();
         dynamicTable.setMaxTableCapacity(maxCapacity);
         maxBlockedStreams.set(ourSettings.qpackBlockedStreams());
-        maxFieldSectionSize.set(ourSettings.maxFieldSectionSize());
+        long maxFieldSS = ourSettings.maxFieldSectionSize();
+        if (maxFieldSS > 0) {
+            maxFieldSectionSize.set(maxFieldSS);
+        } else {
+            // Unlimited field section size
+            maxFieldSectionSize.set(-1);
+        }
     }
 
     /**
@@ -267,7 +280,9 @@ public final class Decoder {
             return;
         }
         try {
-            encoderInstructionsReader.read(buffer);
+            int stringLengthLimit = Math.clamp(dynamicTable.capacity() - ENTRY_SIZE,
+                    0, Integer.MAX_VALUE - (int) ENTRY_SIZE);
+            encoderInstructionsReader.read(buffer, stringLengthLimit);
         } catch (QPackException qPackException) {
             qpackErrorHandler.closeOnError(qPackException.getCause(), qPackException.http3Error());
         }
@@ -290,6 +305,26 @@ public final class Decoder {
         assert done;
         buffer.flip();
         decoderStreamPair.submitData(buffer);
+    }
+
+    void incrementAndCheckDynamicTableInsertsCount() {
+        if (MAX_LITERAL_WITH_INDEXING > 0) {
+            long concurrentNumberOfInserts = concurrentDynamicTableInsertions.incrementAndGet();
+            if (concurrentNumberOfInserts > MAX_LITERAL_WITH_INDEXING) {
+                String exceptionMessage = "Too many literal with indexing: %s > %s"
+                        .formatted(concurrentNumberOfInserts, MAX_LITERAL_WITH_INDEXING);
+                if (logger.isLoggable(EXTRA)) {
+                    logger.log(EXTRA, () -> exceptionMessage);
+                }
+                throw QPackException.encoderStreamError(new ProtocolException(exceptionMessage));
+            }
+        }
+    }
+
+    public void resetInsertionsCounter() {
+        if (MAX_LITERAL_WITH_INDEXING > 0) {
+            concurrentDynamicTableInsertions.set(0);
+        }
     }
 
     private class DecoderTableCallback implements EncoderInstructionsReader.Callback {
@@ -318,6 +353,7 @@ public final class Decoder {
         @Override
         public void onInsert(String name, String value) {
             ensureInstructionsAllowed();
+            incrementAndCheckDynamicTableInsertsCount();
             try {
                 if (dynamicTable.insert(name, value) != DynamicTable.ENTRY_NOT_INSERTED) {
                     ackTableInsertions();
@@ -338,6 +374,7 @@ public final class Decoder {
             // treated as a stream error of type QPACK_DECOMPRESSION_FAILED if on a request stream or
             // a connection error of the appropriate type if on the encoder or decoder stream."
             ensureInstructionsAllowed();
+            incrementAndCheckDynamicTableInsertsCount();
             try {
                 if (dynamicTable.insert(nameIndex, indexInStaticTable, valueString) !=
                         DynamicTable.ENTRY_NOT_INSERTED) {
@@ -358,6 +395,7 @@ public final class Decoder {
             // "If an implementation encounters a value larger than it is able to decode, this
             //  MUST be treated as a stream error of type QPACK_DECOMPRESSION_FAILED"
             ensureInstructionsAllowed();
+            incrementAndCheckDynamicTableInsertsCount();
             try {
                 if (logger.isLoggable(NORMAL)) {
                     logger.log(NORMAL,

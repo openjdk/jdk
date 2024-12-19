@@ -111,7 +111,7 @@ public class EncoderInstructionsReader {
         this.stringReader = new StringReader(errorToReport);
     }
 
-    public void read(ByteBuffer buffer) {
+    public void read(ByteBuffer buffer, int maxStringLength) {
         requireNonNull(buffer, "buffer");
         while (buffer.hasRemaining()) {
             switch (state) {
@@ -130,7 +130,7 @@ public class EncoderInstructionsReader {
                     }
                     break;
                 case INSERT_NAME_LIT:
-                    if (stringReader.read(5, buffer, nameString)) {
+                    if (stringReader.read(5, buffer, nameString, maxStringLength)) {
                         huffmanName = stringReader.isHuffmanEncoded();
                         stringReader.reset();
                         state = State.INSERT_NAME_LIT_NAME_READ;
@@ -139,18 +139,20 @@ public class EncoderInstructionsReader {
                     }
                     break;
                 case INSERT_NAME_LIT_FIRST_BYTE_READ:
-                    if (stringReader.read(buffer, nameString)) {
+                    if (stringReader.read(buffer, nameString, maxStringLength)) {
                         huffmanName = stringReader.isHuffmanEncoded();
                         stringReader.reset();
                         state = State.INSERT_NAME_LIT_NAME_READ;
                     }
                     break;
                 case INSERT_NAME_LIT_NAME_READ:
-                    if (stringReader.read(buffer, valueString)) {
+                    int stringReaderLimit = maxStringLength > 0 ?
+                            Math.max(maxStringLength - nameString.length(), 0) : -1;
+                    if (stringReader.read(buffer, valueString, stringReaderLimit)) {
                         huffmanValue = stringReader.isHuffmanEncoded();
-                        // Insert with name reference instruction completely parsed
+                        // Insert with literal name instruction completely parsed
                         if (logger.isLoggable(TRACE)) {
-                            logger.log(TRACE, () -> format("Insert with Literal ('%s','%s'," +
+                            logger.log(TRACE, () -> format("Insert with Literal Name ('%s','%s'," +
                                                      " huffmanName='%s', huffmanValue='%s')", nameString,
                                     valueString, huffmanName, huffmanValue));
                         }
@@ -165,7 +167,7 @@ public class EncoderInstructionsReader {
                     }
                     break;
                 case INSERT_NAME_REF_VALUE:
-                    if (stringReader.read(buffer, valueString)) {
+                    if (stringReader.read(buffer, valueString, maxStringLength)) {
                         // Insert with name reference instruction completely parsed
                         if (logger.isLoggable(TRACE)) {
                             logger.log(TRACE, () -> format("Insert With Name Reference (T=%d, nameIdx=%d," +

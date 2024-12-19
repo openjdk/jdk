@@ -77,8 +77,13 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
     //            +-------------------------------+
     public boolean read(ByteBuffer input, FieldSectionPrefix prefix,
                         DecodingCallback action) {
-        if (!completeReading(input))
+        if (!completeReading(input)) {
+            if (firstValueRead) {
+                long readPart = DynamicTable.ENTRY_SIZE + value.length();
+                checkPartialSize(readPart);
+            }
             return false;
+        }
 
         long absoluteIndex = prefix.base() + intValue;
         if (logger.isLoggable(NORMAL)) {
@@ -106,7 +111,7 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
             firstValueRead = true;
             return false;
         } else {
-            if (!stringReader.read(input, value)) {
+            if (!stringReader.read(input, value, getMaxFieldLineLimit())) {
                 return false;
             }
         }

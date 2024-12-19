@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public final class IntegerWriter {
         }
     }
 
-    static int requiredBufferSize(int N, long value) {
+    public static int requiredBufferSize(int N, long value) {
         checkPrefix(N);
         int size = 1;
         int max = (2 << (N - 1)) - 1;

@@ -82,7 +82,7 @@ public class EncoderInstructionsReaderTest {
 
         // use EncoderInstructionReader and check it successfully reads the input
         encoderInstructionsReader = new EncoderInstructionsReader(callback, logger);
-        encoderInstructionsReader.read(byteBuffer);
+        encoderInstructionsReader.read(byteBuffer, -1);
 
         long actualCapacity = callback.capacity.get();
         assertEquals(expectedCapacity, actualCapacity, "expected capacity differed from actual result");
@@ -164,7 +164,7 @@ public class EncoderInstructionsReaderTest {
 
         encoderInstructionsReader = new EncoderInstructionsReader(callback, logger);
         for (var byteBuffer : byteBufferList) {
-            encoderInstructionsReader.read(byteBuffer);
+            encoderInstructionsReader.read(byteBuffer, -1);
         }
 
         assertEquals(index, callback.indexInsert.nameIndex);
@@ -252,7 +252,7 @@ public class EncoderInstructionsReaderTest {
         encoderInstructionsReader = new EncoderInstructionsReader(callback, logger);
 
         for (var byteBuffer : byteBuffers) {
-            encoderInstructionsReader.read(byteBuffer);
+            encoderInstructionsReader.read(byteBuffer, -1);
         }
 
         assertEquals(name, callback.lastInsert.name);
@@ -285,7 +285,7 @@ public class EncoderInstructionsReaderTest {
         byteBuffer.flip();
 
         encoderInstructionsReader = new EncoderInstructionsReader(callback, logger);
-        encoderInstructionsReader.read(byteBuffer);
+        encoderInstructionsReader.read(byteBuffer, -1);
 
         assertEquals(index, callback.duplicate.get());
     }

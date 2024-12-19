@@ -772,4 +772,8 @@ public class Http3ServerConnection {
             }
         } while (true);
     }
+
+    public Encoder qpackEncoder() {
+        return qpackEncoder;
+    }
 }

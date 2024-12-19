@@ -64,10 +64,6 @@ import static org.testng.Assert.fail;
  * @run testng/othervm EncoderDecoderTest
  */
 public class EncoderDecoderTest {
-    // TODO: Add tests for encoding/decoding entries in the
-    //       dynamic table by generating different types of
-    //       field line representations (including post-base
-    //       representations)
     private final Random random = new Random();
 
     private static final int TEST_STR_MAX_LENGTH = 10;

@@ -36,6 +36,7 @@ import java.util.function.BiPredicate;
 import javax.net.ssl.SSLSession;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.qpack.Encoder;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
 import jdk.internal.net.http.frame.Http2Frame;
 
@@ -208,6 +209,10 @@ public interface Http2TestExchange {
      */
     default long waitForMaxPushId(long pushId) throws InterruptedException {
         return VariableLengthEncoder.MAX_ENCODED_INTEGER;
+    }
+
+    default Encoder qpackEncoder() {
+        throw new UnsupportedOperationException("QPack encoder not supported: " + getExchangeVersion());
     }
 
     /**
