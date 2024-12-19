@@ -29,6 +29,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -320,6 +321,78 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
   return array;
 }
 
+// arr = new int[size1][size2]
+// -->
+// arr = new[size1][]; for (int i=0; i<size1; i++) { arr[i] = new int[size2]; }
+Node* Parse::expand_multianewarray2(ciArrayKlass* array_klass, Node* *lengths, int nargs) {
+  Node* length1 = lengths[0];
+  Node* length2 = lengths[1];
+  assert(length1 != nullptr && length2 != nullptr, "");
+
+  Node* array = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, nargs);
+
+  // for (int index = 0; index < length1; i++) {
+  //   array[index] = new int[length2];
+  // }
+
+  //add_parse_predicates(); //must have enough JVMS stack to execute multianewarray: sp=0, inputs=2
+  C->set_has_loops(true);
+
+  RegionNode* loop = new RegionNode(3);
+  _gvn.set_type(loop, Type::CONTROL);
+  Node* index = new PhiNode(loop, TypeInt::INT);
+  _gvn.set_type(index, TypeInt::INT);
+
+  loop->init_req(1, control());
+  index->init_req(1, _gvn.intcon(0));
+  set_control(loop);
+
+  // loop body:
+  {
+    ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
+    Node* klass_node = makecon(TypeKlassPtr::make(array_klass_1, Type::trust_interfaces));
+    Node* elem = new_array(klass_node, length2, nargs);
+
+    Node* offset = _gvn.transform(new AddLNode(
+      _gvn.longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
+      _gvn.transform(new ConvI2LNode(
+        _gvn.transform(new MulINode(index, _gvn.intcon(4)))
+      ))));
+    Node* eaddr = basic_plus_adr(array, offset);
+
+    const TypePtr* adr_type = TypeAryPtr::OOPS;
+    const TypeOopPtr* elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
+    Node *store = access_store_at(array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
+
+    // issue. ^^access_store_at slips out of the loop. why? workaround is to add something after that:
+    new_array(klass_node, length2, nargs);
+  }
+
+  Node* limit = _gvn.transform(new CmpINode(index,
+    // Workaround. in fact we have post-check loop: { .. } while (++i < limit)
+    _gvn.transform(new AddINode(length1, _gvn.intcon(-1)))
+  ));
+
+  Node* limitb = _gvn.transform(new BoolNode(limit, BoolTest::lt));
+  IfNode* iff2 = create_and_map_if(control(), limitb, PROB_MIN, COUNT_UNKNOWN);
+  Node* limit_less = _gvn.transform(new IfTrueNode(iff2));
+  set_control(limit_less);
+
+  loop->init_req(2, control());
+  index->init_req(2, _gvn.transform(new AddINode(index, _gvn.intcon(1))));
+
+  RegionNode* final_merge = new RegionNode(3);
+  _gvn.set_type(final_merge, Type::CONTROL);
+  final_merge->init_req(1, _gvn.transform(new IfFalseNode(iff2)));
+  set_control(final_merge);
+
+  C->record_for_igvn(final_merge);
+  C->record_for_igvn(loop);
+  C->record_for_igvn(index);
+
+  return array;
+}
+
 void Parse::do_multianewarray() {
   int ndimensions = iter().get_dimensions();
 
@@ -373,6 +446,13 @@ void Parse::do_multianewarray() {
       // Pass 0 as nargs since uncommon trap code does not need to restore stack.
       obj = expand_multianewarray(array_klass, &length[0], ndimensions, 0);
     } //original reexecute and sp are set back here
+    push(obj);
+    return;
+  }
+
+  if (ndimensions == 2) {
+    // PreserveReexecuteState?
+    Node* obj = expand_multianewarray2(array_klass, &length[0], 0);
     push(obj);
     return;
   }
@@ -436,6 +516,5 @@ void Parse::do_multianewarray() {
   push(cast);
 
   // Possible improvements:
-  // - Make a fast path for small multi-arrays.  (W/ implicit init. loops.)
   // - Issue CastII against length[*] values, to TypeInt::POS.
 }
