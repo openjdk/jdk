@@ -821,4 +821,22 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertCompletion("ints.le|", "length");
         assertCompletion("String[].|", "class");
     }
+
+    public void testAnnotation() {
+        assertCompletion("@Deprec|", "Deprecated");
+        assertCompletion("@Deprecated(|", "forRemoval = ", "since = ");
+        assertCompletion("@Deprecated(forRemoval = |", true, "false", "true");
+        assertCompletion("@Deprecated(forRemoval = true, |", "since = ");
+        assertEval("import java.lang.constant.ConstantDescs;");
+        assertEval("import static java.lang.constant.ConstantDescs.*;");
+        assertEval("@interface Ann1 { public String test(); }");
+        assertCompletionIncludesExcludes("@Ann1(test = |", Set.of("java.", "ConstantDescs", "INIT_NAME"), Set.of("CD_char", "byte"));
+        assertEval("@interface Ann2 { public String[] test(); }");
+        assertCompletionIncludesExcludes("@Ann2(test = {|", Set.of("java.", "ConstantDescs", "INIT_NAME"), Set.of("CD_char", "byte"));
+        assertCompletionIncludesExcludes("@Ann2(test = {|", true, Set.of("INIT_NAME"), Set.of("java.", "ConstantDescs", "CD_char", "byte"));
+        assertEval("@interface Ann3 { public String value(); }");
+        assertCompletionIncludesExcludes("@Ann3(|", Set.of("java.", "ConstantDescs", "INIT_NAME", "value = "), Set.of("CD_char", "byte"));
+        assertCompletionIncludesExcludes("@Ann3(|", true, Set.of("INIT_NAME", "value = "), Set.of("java.", "ConstantDescs", "CD_char", "byte"));
+        assertSignature("@Deprecated(|", "boolean Deprecated.forRemoval()", "String Deprecated.since()");
+    }
 }
