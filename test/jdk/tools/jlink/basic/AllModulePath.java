@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,26 +125,27 @@ public class AllModulePath {
     }
 
     /*
-     * Since ALL-MODULE-PATH does not allow --limit-modules. Add a test that
-     * includes just a single module from the module path. This is just for
-     * completeness and shows the intended replacement.
+     * --add-modules ALL-MODULE-PATH with --limit-modules is an error
      */
     @Test
-    public void testSubsetModules() throws Throwable {
+    public void testLimitModules() throws Throwable {
         if (isExplodedJDKImage()) {
             return;
         }
-
-        // create custom image
-        Path image = HELPER.createNewImageDir("image1");
-        // Instead of --add-modules ALL-MODULE-PATH [...] --limit-modules m1 do:
-        List<String> opts = List.of("--module-path", MODS.toString(),
-                                    "--output", image.toString(),
-                                    "--add-modules", "m1");
-        createImage(image, opts, true /* success */);
-
-        checkModules(image, Set.of("m1", "java.base"));
+        Path targetPath = HELPER.createNewImageDir("all-mods-limit-mods");
+        String moduleName = "com.baz.runtime";
+        Result result = HELPER.generateDefaultJModule(moduleName, "jdk.jfr");
+        Path customModulePath = result.getFile().getParent();
+        List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
+                                       "--limit-modules", "jdk.jfr",
+                                       "--module-path", customModulePath.toString(),
+                                       "--output", targetPath.toString());
+        JlinkOutput allOut = createImage(targetPath, allArgs, false /* success */);
+        String actual = allOut.stdout.trim();
+        String expected = "Error: --limit-modules not allowed with --add-modules ALL-MODULE-PATH";
+        assertEquals(actual, expected);
     }
+
 
     /*
      * --add-modules *includes* ALL-MODULE-PATH with an existing module path
@@ -159,7 +160,7 @@ public class AllModulePath {
         Path image = HELPER.createNewImageDir("image2");
         List<String> opts = List.of("--module-path", MODS.toString(),
                                     "--output", image.toString(),
-                                    "--add-modules", "m1,test",
+                                    "--add-modules", "m1",
                                     "--add-modules", "ALL-MODULE-PATH");
         createImage(image, opts, true /* success */);
 
@@ -204,28 +205,6 @@ public class AllModulePath {
         String actual = allOut.stdout.trim();
         assertTrue(actual.startsWith("Error: No module found in module path"));
         assertTrue(actual.contains(strNotExists));
-    }
-
-    /*
-     * --add-modules ALL-MODULE-PATH with --limit-modules is an error
-     */
-    @Test
-    public void testLimitModules() throws Exception {
-        if (isExplodedJDKImage()) {
-            return;
-        }
-        Path targetPath = HELPER.createNewImageDir("all-mods-limit-mods");
-        String moduleName = "com.baz.runtime";
-        Result result = HELPER.generateDefaultJModule(moduleName, "jdk.jfr");
-        Path customModulePath = result.getFile().getParent();
-        List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
-                                       "--limit-modules", "jdk.jfr",
-                                       "--module-path", customModulePath.toString(),
-                                       "--output", targetPath.toString());
-        JlinkOutput allOut = createImage(targetPath, allArgs, false /* success */);
-        String actual = allOut.stdout.trim();
-        String expected = "Error: --limit-modules not allowed with --add-modules ALL-MODULE-PATH";
-        assertEquals(actual, expected);
     }
 
     /*
