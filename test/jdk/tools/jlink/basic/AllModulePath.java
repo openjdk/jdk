@@ -41,7 +41,6 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import tests.Helper;
@@ -126,21 +125,22 @@ public class AllModulePath {
     }
 
     /*
-     * --add-modules ALL-MODULE-PATH with an existing module path and module
-     * limits applied. Module limit on module from module path.
+     * Since ALL-MODULE-PATH does not allow --limit-modules. Add a test that
+     * includes just a single module from the module path. This is just for
+     * completeness and shows the intended replacement.
      */
     @Test
-    public void testLimitModules() throws Throwable {
+    public void testSubsetModules() throws Throwable {
         if (isExplodedJDKImage()) {
             return;
         }
 
         // create custom image
         Path image = HELPER.createNewImageDir("image1");
+        // Instead of --add-modules ALL-MODULE-PATH [...] --limit-modules m1 do:
         List<String> opts = List.of("--module-path", MODS.toString(),
                                     "--output", image.toString(),
-                                    "--add-modules", "ALL-MODULE-PATH",
-                                    "--limit-modules", "m1");
+                                    "--add-modules", "m1");
         createImage(image, opts, true /* success */);
 
         checkModules(image, Set.of("m1", "java.base"));
@@ -148,8 +148,6 @@ public class AllModulePath {
 
     /*
      * --add-modules *includes* ALL-MODULE-PATH with an existing module path
-     * and module limits applied. Module limit on a dependency, but custom
-     * modules explicitly listed (therefore, expect inclusion of them).
      */
     @Test
     public void testAddModules() throws Throwable {
@@ -162,8 +160,7 @@ public class AllModulePath {
         List<String> opts = List.of("--module-path", MODS.toString(),
                                     "--output", image.toString(),
                                     "--add-modules", "m1,test",
-                                    "--add-modules", "ALL-MODULE-PATH",
-                                    "--limit-modules", "java.base");
+                                    "--add-modules", "ALL-MODULE-PATH");
         createImage(image, opts, true /* success */);
 
         checkModules(image, Set.of("m1", "test", "java.base"));
@@ -197,7 +194,7 @@ public class AllModulePath {
         String strNotExists = "not-exist";
         Path notExists = Path.of(strNotExists);
         if (Files.exists(notExists)) {
-            throw new RuntimeException("Test setup error, path must not exist!");
+            throw new AssertionError("Test setup error, path must not exist!");
         }
         List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
                                        "--module-path", notExists.toString(),
@@ -210,13 +207,10 @@ public class AllModulePath {
     }
 
     /*
-     * --add-modules ALL-MODULE-PATH with an existing module path and module
-     * limits applied. This case tests a module limit on a dependency, jdk.jfr,
-     * and *doesn't* list the module explicitly in --add-modules. Therefore,
-     * expects for the module - on the module path - to not be present.
+     * --add-modules ALL-MODULE-PATH with --limit-modules is an error
      */
     @Test
-    public void modulePathWithLimitMods() throws Exception {
+    public void testLimitModules() throws Exception {
         if (isExplodedJDKImage()) {
             return;
         }
@@ -225,14 +219,13 @@ public class AllModulePath {
         Result result = HELPER.generateDefaultJModule(moduleName, "jdk.jfr");
         Path customModulePath = result.getFile().getParent();
         List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
-                                       "--limit-modules", "jdk.jfr", // A dependency of com.baz.runtime
+                                       "--limit-modules", "jdk.jfr",
                                        "--module-path", customModulePath.toString(),
                                        "--output", targetPath.toString());
-        JlinkOutput allOut = createImage(targetPath, allArgs, true /* success */);
-        assertTrue(allOut.stdout.isEmpty());
-        assertTrue(allOut.stderr.isEmpty());
-        Set<String> expected = Set.of("java.base", "jdk.jfr");
-        verifyListModules(targetPath, expected);
+        JlinkOutput allOut = createImage(targetPath, allArgs, false /* success */);
+        String actual = allOut.stdout.trim();
+        String expected = "Error: --limit-modules not allowed with --add-modules ALL-MODULE-PATH";
+        assertEquals(actual, expected);
     }
 
     /*
@@ -250,20 +243,6 @@ public class AllModulePath {
         ProcessBuilder pb = new ProcessBuilder(options);
         ProcessTools.executeCommand(pb)
                     .shouldHaveExitValue(0);
-    }
-
-    /*
-     * Verify linked modules using java --list-modules
-     */
-    private void verifyListModules(Path targetPath, Set<String> expected) throws Exception {
-        Path java = findTool(targetPath, "java");
-        List<String> listMods = List.of(java.toString(), "--list-modules");
-        OutputAnalyzer out = ProcessTools.executeCommand(listMods.toArray(new String[] {}))
-                                         .shouldHaveExitValue(0);
-        Set<String> actual = out.asLines().stream()
-                                 .map(s -> { return s.split("@")[0]; })
-                                 .collect(Collectors.toSet());
-        assertEquals(actual, expected);
     }
 
     private Path findTool(Path image, String tool)  {

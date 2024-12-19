@@ -417,6 +417,10 @@ public class JlinkTask {
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
+                // Using --limit-modules with ALL-MODULE-PATH is an error
+                if (!options.limitMods.isEmpty()) {
+                    throw taskHelper.newBadArgs("err.limit.modules");
+                }
                 // all observable modules in the app module path are roots
                 Set<String> initialRoots = appModuleFinder.findAll()
                         .stream()
@@ -436,11 +440,8 @@ public class JlinkTask {
                 // by initialRoots, to find the observable modules from the
                 // application module path (--module-path option) only. We must
                 // not include JDK modules from the default module path or the
-                // run-time image. Only do this if no --limit-modules has been
-                // specified to begin with.
-                ModuleFinder mf = limitFinder(finder,
-                                              options.limitMods.isEmpty() ? initialRoots : options.limitMods,
-                                              Set.of());
+                // run-time image.
+                ModuleFinder mf = limitFinder(finder, initialRoots, Set.of());
                 mf.findAll()
                   .stream()
                   .map(ModuleReference::descriptor)
