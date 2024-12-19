@@ -248,6 +248,13 @@ final class P11KDF extends KDFSpi {
         protected final P11Key.P11SecretKey p11Merge(
                 P11Key.P11SecretKey baseKey, CK_MECHANISM ckMech,
                 int derivedKeyLen) {
+            if (!token.provider.config.isEnabled(ckMech.mechanism)) {
+                throw new ProviderException("Mechanism " +
+                        Functions.getMechanismName(ckMech.mechanism) +
+                        " is either not supported in the token or " +
+                        "disabled through 'disabledMechanisms' in " +
+                        token.provider.getName() + " configuration.");
+            }
             Session session = null;
             long baseKeyID = baseKey.getKeyID();
             try {
