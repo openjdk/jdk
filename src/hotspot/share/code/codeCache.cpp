@@ -44,6 +44,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.inline.hpp"
@@ -318,7 +319,7 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled.size);
   FLAG_SET_ERGO(ReservedCodeCacheSize, cache_size);
 
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
+  ReservedSpace rs = reserve_heap_memory(cache_size, ps);
 
   // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
   LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
@@ -348,11 +349,12 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
                    os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
+ReservedSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
+
+  ReservedSpace rs = CodeMemoryReserver::reserve(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
                                           rs_size/K));
@@ -1130,7 +1132,7 @@ void CodeCache::initialize() {
     // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
     // users want to use the largest available page.
     const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
+    ReservedSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
