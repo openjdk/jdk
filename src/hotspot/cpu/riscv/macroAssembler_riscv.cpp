@@ -5395,28 +5395,26 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 }
 #endif
 
-// Count bits of trailing zero chars from lsb to msb until first non-zero element.
-// For LL case, one byte for one element, so shift 8 bits once, and for other case,
-// shift 16 bits once.
-void MacroAssembler::ctzc_bit(Register Rd, Register Rs, bool isLL, Register tmp1, Register tmp2) {
+// Count bits of trailing zero chars from lsb to msb until first non-zero
+// char seen. For the LL case, shift 8 bits once as there is only one byte
+// per each char. For other cases, shift 16 bits once.
+void MacroAssembler::ctzc_bits(Register Rd, Register Rs, bool isLL,
+                               Register tmp1, Register tmp2) {
+  int step = isLL ? 8 : 16;
   if (UseZbb) {
-    assert_different_registers(Rd, Rs, tmp1);
-    int step = isLL ? 8 : 16;
     ctz(Rd, Rs);
-    andi(tmp1, Rd, step - 1);
-    sub(Rd, Rd, tmp1);
+    andi(Rd, Rd, -step);
     return;
   }
 
-  assert_different_registers(Rd, Rs, tmp1, tmp2);
+  assert_different_registers(Rd, tmp1, tmp2);
   Label Loop;
-  int step = isLL ? 8 : 16;
-  mv(Rd, -step);
   mv(tmp2, Rs);
+  mv(Rd, -step);
 
   bind(Loop);
   addi(Rd, Rd, step);
-  andi(tmp1, tmp2, ((1 << step) - 1));
+  zext(tmp1, tmp2, step);
   srli(tmp2, tmp2, step);
   beqz(tmp1, Loop);
 }

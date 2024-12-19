@@ -1362,7 +1362,8 @@ public:
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
 
-  void ctzc_bit(Register Rd, Register Rs, bool isLL = false, Register tmp1 = t0, Register tmp2 = t1);
+  void ctzc_bits(Register Rd, Register Rs, bool isLL = false,
+                 Register tmp1 = t0, Register tmp2 = t1);
 
   void zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);

@@ -1013,6 +1013,12 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   allocator()->release_gc_alloc_regions(evacuation_info);
 
+#if TASKQUEUE_STATS
+  // Logging uses thread states, which are deleted by cleanup, so this must
+  // be done before cleanup.
+  per_thread_states->print_partial_array_task_stats();
+#endif // TASKQUEUE_STATS
+
   post_evacuate_cleanup_1(per_thread_states);
 
   post_evacuate_cleanup_2(per_thread_states, evacuation_info);
