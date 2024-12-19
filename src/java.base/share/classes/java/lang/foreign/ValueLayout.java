@@ -25,9 +25,10 @@
 
 package java.lang.foreign;
 
+import jdk.internal.foreign.layout.ValueLayouts;
+
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-import jdk.internal.foreign.layout.ValueLayouts;
 
 /**
  * A layout that models values of basic data types. Examples of values modeled by

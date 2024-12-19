@@ -25,12 +25,8 @@
 
 package jdk.internal.foreign;
 
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.nio.ch.DirectBuffer;
 
-import java.nio.Buffer;
 import java.util.Objects;
 
 /**

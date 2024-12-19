@@ -25,9 +25,10 @@
 
 package jdk.internal.foreign;
 
-import java.nio.ByteBuffer;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
+
+import java.nio.ByteBuffer;
 
 /**
  * Implementation for a mapped memory segments. A mapped memory segment is a native memory segment, which

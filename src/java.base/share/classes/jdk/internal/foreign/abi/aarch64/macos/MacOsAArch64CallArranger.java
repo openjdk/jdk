@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,8 @@
  */
 package jdk.internal.foreign.abi.aarch64.macos;
 
-import jdk.internal.foreign.abi.aarch64.CallArranger;
 import jdk.internal.foreign.abi.ABIDescriptor;
+import jdk.internal.foreign.abi.aarch64.CallArranger;
 
 /**
  * AArch64 CallArranger specialized for macOS ABI.

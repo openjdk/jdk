@@ -38,9 +38,7 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import static java.lang.invoke.MethodHandles.exactInvoker;
-import static java.lang.invoke.MethodHandles.insertArguments;
-import static java.lang.invoke.MethodHandles.lookup;
+import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 
 public class UpcallLinker {

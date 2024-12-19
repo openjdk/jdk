@@ -35,7 +35,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.nio.ByteOrder;
 import java.util.Map;
 
 public final class LinuxPPC64leLinker extends AbstractLinker {

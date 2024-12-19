@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,8 +50,9 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.*;
 import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
+import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.StorageType;
+import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.abiFor;
 
 /**
  * For the PPC64 C ABI specifically, this class uses CallingSequenceBuilder

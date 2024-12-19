@@ -24,11 +24,11 @@
  */
 package jdk.internal.foreign.abi;
 
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.Arena;
-
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 
 public final class UpcallStubs {
 

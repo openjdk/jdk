@@ -26,14 +26,14 @@
 
 package jdk.internal.foreign;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
-
-import jdk.internal.access.JavaNioAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Implementation for heap memory segments. A heap memory segment is composed by an offset and

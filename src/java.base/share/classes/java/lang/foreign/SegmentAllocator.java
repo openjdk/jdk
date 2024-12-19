@@ -25,16 +25,15 @@
 
 package java.lang.foreign;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
-
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
-import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}.

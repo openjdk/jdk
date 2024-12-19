@@ -25,7 +25,6 @@
 package jdk.internal.foreign.abi;
 
 import java.lang.foreign.FunctionDescriptor;
-
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.stream.Stream;

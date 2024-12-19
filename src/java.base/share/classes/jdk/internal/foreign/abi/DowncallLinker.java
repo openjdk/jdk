@@ -27,6 +27,8 @@ package jdk.internal.foreign.abi;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.invoke.MhUtil;
 
 import java.lang.foreign.AddressLayout;
@@ -41,13 +43,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-
-import static java.lang.invoke.MethodHandles.collectArguments;
-import static java.lang.invoke.MethodHandles.foldArguments;
-import static java.lang.invoke.MethodHandles.identity;
-import static java.lang.invoke.MethodHandles.insertArguments;
+import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
 
 public class DowncallLinker {

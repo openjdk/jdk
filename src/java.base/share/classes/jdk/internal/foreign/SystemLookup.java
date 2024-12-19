@@ -25,17 +25,21 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.*;
+import jdk.internal.loader.NativeLibrary;
+import jdk.internal.loader.RawNativeLibraries;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.StaticProperty;
+
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.internal.loader.NativeLibrary;
-import jdk.internal.loader.RawNativeLibraries;
-import jdk.internal.util.OperatingSystem;
-import jdk.internal.util.StaticProperty;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 

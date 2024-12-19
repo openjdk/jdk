@@ -39,7 +39,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;

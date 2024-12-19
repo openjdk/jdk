@@ -26,8 +26,8 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.abi.AbstractLinker;
-import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.CapturableState;
+import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;

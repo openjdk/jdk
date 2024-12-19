@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,9 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.x64.X86_64Architecture.*;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.INSTANCE;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
+import static jdk.internal.foreign.abi.x64.X86_64Architecture.StorageType;
 
 /**
  * For the Windowx x64 C ABI specifically, this class uses CallingSequenceBuilder

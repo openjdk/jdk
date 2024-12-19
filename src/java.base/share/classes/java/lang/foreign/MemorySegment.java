@@ -25,6 +25,14 @@
 
 package java.lang.foreign;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.javac.Restricted;
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.vm.annotation.ForceInline;
+
 import java.io.UncheckedIOException;
 import java.lang.foreign.ValueLayout.OfInt;
 import java.nio.Buffer;
@@ -41,13 +49,6 @@ import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.foreign.SegmentBulkOperations;
-import jdk.internal.foreign.SegmentFactories;
-import jdk.internal.javac.Restricted;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * A memory segment provides access to a contiguous region of memory.

@@ -26,7 +26,7 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.Utils;
-import jdk.internal.foreign.abi.Binding.*;
+import jdk.internal.foreign.abi.Binding.Allocate;
 import jdk.internal.foreign.abi.Binding.BoxAddress;
 import jdk.internal.foreign.abi.Binding.BufferLoad;
 import jdk.internal.foreign.abi.Binding.BufferStore;

@@ -26,11 +26,11 @@
 
 package jdk.internal.foreign;
 
-import java.nio.ByteBuffer;
-import java.util.Optional;
-
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.nio.ByteBuffer;
+import java.util.Optional;
 
 /**
  * Implementation for native memory segments. A native memory segment is essentially a wrapper around
