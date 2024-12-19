@@ -2278,6 +2278,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     final
     <S extends VectorShuffle<Long>>
     LongVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, long.class, length(),
             this, shuffle, null,
@@ -2303,7 +2304,7 @@ public abstract class LongVector extends AbstractVector<Long> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, long.class, length(),

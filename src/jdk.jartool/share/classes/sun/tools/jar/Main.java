@@ -420,8 +420,9 @@ public class Main {
                     file = new File(fname);
                 } else {
                     file = createTemporaryFile("tmpJar", ".jar");
-                    try (InputStream in = new FileInputStream(FileDescriptor.in)) {
-                        Files.copy(in, file.toPath());
+                    try (InputStream in = new FileInputStream(FileDescriptor.in);
+                         OutputStream os = Files.newOutputStream(file.toPath())) {
+                        in.transferTo(os);
                     }
                 }
                 ok = validateJar(file);
