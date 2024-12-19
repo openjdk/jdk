@@ -117,6 +117,9 @@ public class ConsoleImpl {
 
         private char[] readChars() throws IOException {
             int actualLen = readInt();
+            if (actualLen == (-1)) {
+                return null;
+            }
             char[] result = new char[actualLen];
             for (int i = 0; i < actualLen; i++) {
                 result[i] = (char) ((remoteOutput.read() <<  8) |
@@ -235,6 +238,16 @@ public class ConsoleImpl {
 
         /**
          * {@inheritDoc}
+         *
+         * @throws IOError {@inheritDoc}
+         */
+        @Override
+        public String readln() {
+            return readLine();
+        }
+
+        /**
+         * {@inheritDoc}
          */
         @Override
         public JdkConsole format(Locale locale, String format, Object... args) {
@@ -257,6 +270,9 @@ public class ConsoleImpl {
                     remoteInput.write(Task.READ_LINE.ordinal());
                     sendChars(chars, 0, chars.length);
                     char[] line = readChars();
+                    if (line == null) {
+                        return null;
+                    }
                     return new String(line);
                 });
             } catch (IOException ex) {
@@ -269,7 +285,15 @@ public class ConsoleImpl {
          */
         @Override
         public String readLine() {
-            return readLine(Locale.getDefault(Locale.Category.FORMAT), "");
+            try {
+                return sendAndReceive(() -> {
+                    remoteInput.write(Task.READ_LINE_NO_PROMPT.ordinal());
+                    char[] line = readChars();
+                    return new String(line);
+                });
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
         }
 
         /**
@@ -399,16 +423,30 @@ public class ConsoleImpl {
                     char[] data = readCharsOrNull(1);
                     if (data != null) {
                         String line = console.readLine(new String(data));
-                        char[] chars = line.toCharArray();
-                        sendChars(sinkOutput, chars, 0, chars.length);
+                        if (line == null) {
+                            sendInt(sinkOutput, -1);
+                        } else {
+                            char[] chars = line.toCharArray();
+                            sendChars(sinkOutput, chars, 0, chars.length);
+                        }
                         bp = 0;
                     }
+                }
+                case READ_LINE_NO_PROMPT -> {
+                    String line = console.readLine();
+                    char[] chars = line.toCharArray();
+                    sendChars(sinkOutput, chars, 0, chars.length);
+                    bp = 0;
                 }
                 case READ_PASSWORD -> {
                     char[] data = readCharsOrNull(1);
                     if (data != null) {
                         char[] chars = console.readPassword(new String(data));
-                        sendChars(sinkOutput, chars, 0, chars.length);
+                        if (chars == null) {
+                            sendInt(sinkOutput, -1);
+                        } else {
+                            sendChars(sinkOutput, chars, 0, chars.length);
+                        }
                         bp = 0;
                     }
                 }
@@ -478,6 +516,7 @@ public class ConsoleImpl {
         FLUSH_OUTPUT,
         READ_CHARS,
         READ_LINE,
+        READ_LINE_NO_PROMPT,
         READ_PASSWORD,
         FLUSH_CONSOLE,
         CHARSET,

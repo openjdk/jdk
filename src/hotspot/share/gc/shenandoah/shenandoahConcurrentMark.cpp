@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +31,16 @@
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
@@ -58,8 +60,13 @@ public:
   void work(uint worker_id) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
     ShenandoahSuspendibleThreadSetJoiner stsj;
-    ShenandoahReferenceProcessor* rp = heap->ref_processor();
+    // Do not use active_generation() : we must use the gc_generation() set by
+    // ShenandoahGCScope on the ControllerThread's stack; no safepoint may
+    // intervene to update active_generation, so we can't
+    // shenandoah_assert_generations_reconciled() here.
+    ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
     assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
     _cm->mark_loop(worker_id, _terminator, rp, GENERATION, true /*cancellable*/,
@@ -71,22 +78,14 @@ public:
 class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
-  OopClosure* const _cl;
 
 public:
-  ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
-    _satb_qset(satb_qset),
-    _cl(cl)  {}
+  explicit ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset) :
+    _satb_qset(satb_qset) {}
 
-  void do_thread(Thread* thread) {
+  void do_thread(Thread* thread) override {
     // Transfer any partial buffer to the qset for completed buffer processing.
     _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-    if (thread->is_Java_thread()) {
-      if (_cl != nullptr) {
-        ResourceMark rm;
-        thread->oops_do(_cl, nullptr);
-      }
-    }
   }
 };
 
@@ -106,21 +105,21 @@ public:
     ShenandoahHeap* heap = ShenandoahHeap::heap();
 
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahReferenceProcessor* rp = heap->ref_processor();
     StringDedup::Requests requests;
+    ShenandoahReferenceProcessor* rp = heap->gc_generation()->ref_processor();
+    shenandoah_assert_generations_reconciled();
 
     // First drain remaining SATB buffers.
     {
       ShenandoahObjToScanQueue* q = _cm->get_queue(worker_id);
+      ShenandoahObjToScanQueue* old_q = _cm->get_old_queue(worker_id);
 
-      ShenandoahSATBBufferClosure<GENERATION> cl(q);
+      ShenandoahSATBBufferClosure<GENERATION> cl(q, old_q);
       SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      ShenandoahMarkRefsClosure<GENERATION> mark_cl(q, rp);
-      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
-                                               ShenandoahIUBarrier ? &mark_cl : nullptr);
+      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(worker_id, _terminator, rp, GENERATION, false /*not cancellable*/,
@@ -130,8 +129,8 @@ public:
   }
 };
 
-ShenandoahConcurrentMark::ShenandoahConcurrentMark() :
-  ShenandoahMark() {}
+ShenandoahConcurrentMark::ShenandoahConcurrentMark(ShenandoahGeneration* generation) :
+  ShenandoahMark(generation) {}
 
 // Mark concurrent roots during concurrent phases
 template <ShenandoahGenerationType GENERATION>
@@ -140,10 +139,12 @@ private:
   SuspendibleThreadSetJoiner          _sts_joiner;
   ShenandoahConcurrentRootScanner     _root_scanner;
   ShenandoahObjToScanQueueSet* const  _queue_set;
+  ShenandoahObjToScanQueueSet* const  _old_queue_set;
   ShenandoahReferenceProcessor* const _rp;
 
 public:
   ShenandoahMarkConcurrentRootsTask(ShenandoahObjToScanQueueSet* qs,
+                                    ShenandoahObjToScanQueueSet* old,
                                     ShenandoahReferenceProcessor* rp,
                                     ShenandoahPhaseTimings::Phase phase,
                                     uint nworkers);
@@ -152,12 +153,14 @@ public:
 
 template <ShenandoahGenerationType GENERATION>
 ShenandoahMarkConcurrentRootsTask<GENERATION>::ShenandoahMarkConcurrentRootsTask(ShenandoahObjToScanQueueSet* qs,
-                                                                     ShenandoahReferenceProcessor* rp,
-                                                                     ShenandoahPhaseTimings::Phase phase,
-                                                                     uint nworkers) :
+                                                                                 ShenandoahObjToScanQueueSet* old,
+                                                                                 ShenandoahReferenceProcessor* rp,
+                                                                                 ShenandoahPhaseTimings::Phase phase,
+                                                                                 uint nworkers) :
   WorkerTask("Shenandoah Concurrent Mark Roots"),
   _root_scanner(nworkers, phase),
   _queue_set(qs),
+  _old_queue_set(old),
   _rp(rp) {
   assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
 }
@@ -166,7 +169,9 @@ template <ShenandoahGenerationType GENERATION>
 void ShenandoahMarkConcurrentRootsTask<GENERATION>::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp);
+  ShenandoahObjToScanQueue* old_q = (_old_queue_set == nullptr) ?
+          nullptr : _old_queue_set->queue(worker_id);
+  ShenandoahMarkRefsClosure<GENERATION> cl(q, _rp, old_q);
   _root_scanner.roots_do(&cl, worker_id);
 }
 
@@ -174,14 +179,38 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(!heap->has_forwarded_objects(), "Not expected");
 
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
-
   WorkerThreads* workers = heap->workers();
-  ShenandoahReferenceProcessor* rp = heap->ref_processor();
-  task_queues()->reserve(workers->active_workers());
-  ShenandoahMarkConcurrentRootsTask<NON_GEN> task(task_queues(), rp, ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
-
-  workers->run_task(&task);
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
+  _generation->reserve_task_queues(workers->active_workers());
+  switch (_generation->type()) {
+    case YOUNG: {
+      ShenandoahMarkConcurrentRootsTask<YOUNG> task(task_queues(), old_task_queues(), rp,
+                                                    ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      workers->run_task(&task);
+      break;
+    }
+    case GLOBAL: {
+      assert(old_task_queues() == nullptr, "Global mark should not have old gen mark queues");
+      ShenandoahMarkConcurrentRootsTask<GLOBAL> task(task_queues(), nullptr, rp,
+                                                     ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      workers->run_task(&task);
+      break;
+    }
+    case NON_GEN: {
+      assert(old_task_queues() == nullptr, "Non-generational mark should not have old gen mark queues");
+      ShenandoahMarkConcurrentRootsTask<NON_GEN> task(task_queues(), nullptr, rp,
+                                                      ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      workers->run_task(&task);
+      break;
+    }
+    case OLD: {
+      // We use a YOUNG generation cycle to bootstrap concurrent old marking.
+      ShouldNotReachHere();
+      break;
+    }
+    default:
+      ShouldNotReachHere();
+  }
 }
 
 class ShenandoahFlushSATBHandshakeClosure : public HandshakeClosure {
@@ -189,7 +218,7 @@ private:
   SATBMarkQueueSet& _qset;
 public:
   ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
-    HandshakeClosure("Shenandoah Flush SATB Handshake"),
+    HandshakeClosure("Shenandoah Flush SATB"),
     _qset(qset) {}
 
   void do_thread(Thread* thread) {
@@ -203,12 +232,38 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   uint nworkers = workers->active_workers();
   task_queues()->reserve(nworkers);
 
+  ShenandoahGenerationType gen_type = _generation->type();
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
   for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
-    TaskTerminator terminator(nworkers, task_queues());
-    ShenandoahConcurrentMarkingTask<NON_GEN> task(this, &terminator);
-    workers->run_task(&task);
+    switch (gen_type) {
+      case YOUNG: {
+        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahConcurrentMarkingTask<YOUNG> task(this, &terminator);
+        workers->run_task(&task);
+        break;
+      }
+      case OLD: {
+        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahConcurrentMarkingTask<OLD> task(this, &terminator);
+        workers->run_task(&task);
+        break;
+      }
+      case GLOBAL: {
+        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahConcurrentMarkingTask<GLOBAL> task(this, &terminator);
+        workers->run_task(&task);
+        break;
+      }
+      case NON_GEN: {
+        TaskTerminator terminator(nworkers, task_queues());
+        ShenandoahConcurrentMarkingTask<NON_GEN> task(this, &terminator);
+        workers->run_task(&task);
+        break;
+      }
+      default:
+        ShouldNotReachHere();
+    }
 
     if (heap->cancelled_gc()) {
       // GC is cancelled, break out.
@@ -216,7 +271,10 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     }
 
     size_t before = qset.completed_buffers_num();
-    Handshake::execute(&flush_satb);
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_satb_flush, true);
+      Handshake::execute(&flush_satb);
+    }
     size_t after = qset.completed_buffers_num();
 
     if (before == after) {
@@ -232,12 +290,10 @@ void ShenandoahConcurrentMark::finish_mark() {
   assert(Thread::current()->is_VM_thread(), "Must by VM Thread");
   finish_mark_work();
   assert(task_queues()->is_empty(), "Should be empty");
-  TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));
 
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->set_concurrent_mark_in_progress(false);
-  heap->mark_complete_marking_context();
+  _generation->set_concurrent_mark_in_progress(false);
+  _generation->set_mark_complete();
 
   end_mark();
 }
@@ -257,15 +313,32 @@ void ShenandoahConcurrentMark::finish_mark_work() {
 
   StrongRootsScope scope(nworkers);
   TaskTerminator terminator(nworkers, task_queues());
-  ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
-  heap->workers()->run_task(&task);
+
+  switch (_generation->type()) {
+    case YOUNG:{
+      ShenandoahFinalMarkingTask<YOUNG> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      heap->workers()->run_task(&task);
+      break;
+    }
+    case OLD:{
+      ShenandoahFinalMarkingTask<OLD> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      heap->workers()->run_task(&task);
+      break;
+    }
+    case GLOBAL:{
+      ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      heap->workers()->run_task(&task);
+      break;
+    }
+    case NON_GEN:{
+      ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+      heap->workers()->run_task(&task);
+      break;
+    }
+    default:
+      ShouldNotReachHere();
+  }
+
 
   assert(task_queues()->is_empty(), "Should be empty");
-}
-
-
-void ShenandoahConcurrentMark::cancel() {
-  clear();
-  ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
-  rp->abandon_partial_discovery();
 }

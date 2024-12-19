@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ static void generate_random_map(G1CommittedRegionMap* map) {
 static void random_deactivate(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
-    HeapRegionRange current = map->next_active_range(current_offset);
+    G1HeapRegionRange current = map->next_active_range(current_offset);
     if (mutate()) {
       if (current.length() < 5) {
         // For short ranges, deactivate whole.
@@ -79,7 +79,7 @@ static void random_deactivate(G1CommittedRegionMap* map) {
 static void random_uncommit_or_reactive(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
-    HeapRegionRange current = map->next_inactive_range(current_offset);
+    G1HeapRegionRange current = map->next_inactive_range(current_offset);
     // Randomly either reactivate or uncommit
     if (mutate()) {
       map->reactivate(current.start(), current.end());
@@ -94,7 +94,7 @@ static void random_uncommit_or_reactive(G1CommittedRegionMap* map) {
 static void random_activate_free(G1CommittedRegionMap* map) {
   uint current_offset = 0;
   do {
-    HeapRegionRange current = map->next_committable_range(current_offset);
+    G1HeapRegionRange current = map->next_committable_range(current_offset);
     // Randomly either reactivate or uncommit
     if (mutate()) {
       if (current.length() < 5) {

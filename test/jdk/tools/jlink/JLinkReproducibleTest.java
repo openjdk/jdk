@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@ import jdk.test.lib.process.ProcessTools;
  * @run driver JLinkReproducibleTest
  */
 public class JLinkReproducibleTest {
+
+    private static final String TOOL_VM_OPTIONS = System.getProperty("test.tool.vm.opts", "");
+
     private static void run(List<String> cmd) throws Exception {
         var pb = new ProcessBuilder(cmd.toArray(new String[0]));
         var res = ProcessTools.executeProcess(pb);
@@ -46,6 +49,9 @@ public class JLinkReproducibleTest {
     private static void jlink(Path image, boolean with_default_trace_file) throws Exception {
         var cmd = new ArrayList<String>();
         cmd.add(JDKToolFinder.getJDKTool("jlink"));
+        if (!TOOL_VM_OPTIONS.isEmpty()) {
+            cmd.addAll(Arrays.asList(TOOL_VM_OPTIONS.split("\\s+", -1)));
+        }
         cmd.addAll(List.of(
             "--module-path", JMODS_DIR.toString() + File.pathSeparator + CLASS_DIR.toString(),
             "--add-modules", "main",

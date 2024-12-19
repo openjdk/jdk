@@ -228,7 +228,6 @@ public class CreateSymbols {
     /**Create sig files for ct.sym reading the classes description from the directory that contains
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
      */
-    @SuppressWarnings("unchecked")
     public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation,
                               long timestamp, String currentVersion, String preReleaseTag, String moduleClasses,
                               String includedModulesFile) throws IOException {
@@ -340,6 +339,10 @@ public class CreateSymbols {
             "Ljdk/internal/javac/PreviewFeature;";
     private static final String PREVIEW_FEATURE_ANNOTATION_INTERNAL =
             "Ljdk/internal/PreviewFeature+Annotation;";
+    private static final String RESTRICTED_ANNOTATION =
+            "Ljdk/internal/javac/Restricted;";
+    private static final String RESTRICTED_ANNOTATION_INTERNAL =
+            "Ljdk/internal/javac/Restricted+Annotation;";
     private static final String VALUE_BASED_ANNOTATION =
             "Ljdk/internal/ValueBased;";
     private static final String VALUE_BASED_ANNOTATION_INTERNAL =
@@ -349,7 +352,8 @@ public class CreateSymbols {
                     "Lsun/Proprietary+Annotation;",
                     PREVIEW_FEATURE_ANNOTATION_OLD,
                     PREVIEW_FEATURE_ANNOTATION_NEW,
-                    VALUE_BASED_ANNOTATION));
+                    VALUE_BASED_ANNOTATION,
+                    RESTRICTED_ANNOTATION));
 
     private void stripNonExistentAnnotations(LoadDescriptions data) {
         Set<String> allClasses = data.classes.name2Class.keySet();
@@ -1247,6 +1251,12 @@ public class CreateSymbols {
             annotationType = VALUE_BASED_ANNOTATION_INTERNAL;
         }
 
+        if (RESTRICTED_ANNOTATION.equals(annotationType)) {
+            //the non-public Restricted annotation will not be available in ct.sym,
+            //replace with purely synthetic javac-internal annotation:
+            annotationType = RESTRICTED_ANNOTATION_INTERNAL;
+        }
+
         return new Annotation(null,
                               addString(constantPool, annotationType),
                               createElementPairs(constantPool, values));
@@ -1882,6 +1892,11 @@ public class CreateSymbols {
                 ExportsDescription ed = it.next();
 
                 if (!ed.isQualified()) {
+                    continue;
+                }
+
+                if (ed.packageName.equals("jdk/internal/javac")) {
+                    //keep jdk/internal/javac untouched. It is used to determine participates in preview:
                     continue;
                 }
 
@@ -4618,7 +4633,6 @@ public class CreateSymbols {
     /**Create sig files for ct.sym reading the classes description from the directory that contains
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
      */
-    @SuppressWarnings("unchecked")
     public void createJavadocData(String ctDescriptionFileExtra, String ctDescriptionFile,
                                   String targetDir, int startVersion) throws IOException {
         LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)

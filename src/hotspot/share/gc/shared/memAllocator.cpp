@@ -361,18 +361,23 @@ void MemAllocator::mem_clear(HeapWord* mem) const {
   assert(mem != nullptr, "cannot initialize null object");
   const size_t hs = oopDesc::header_size();
   assert(_word_size >= hs, "unexpected object size");
-  oopDesc::set_klass_gap(mem, 0);
+  if (oopDesc::has_klass_gap()) {
+    oopDesc::set_klass_gap(mem, 0);
+  }
   Copy::fill_to_aligned_words(mem + hs, _word_size - hs);
 }
 
 oop MemAllocator::finish(HeapWord* mem) const {
   assert(mem != nullptr, "null object pointer");
-  // May be bootstrapping
-  oopDesc::set_mark(mem, markWord::prototype());
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-null, for
   // concurrent collectors.
-  oopDesc::release_set_klass(mem, _klass);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, _klass->prototype_header());
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    oopDesc::release_set_klass(mem, _klass);
+  }
   return cast_to_oop(mem);
 }
 
@@ -388,6 +393,7 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     mem_clear(mem);
+    mem_zap_start_padding(mem);
     mem_zap_end_padding(mem);
   }
   arrayOopDesc::set_length(mem, _length);
@@ -395,6 +401,20 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
 }
 
 #ifndef PRODUCT
+void ObjArrayAllocator::mem_zap_start_padding(HeapWord* mem) const {
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
+  const size_t header_size_in_bytes = arrayOopDesc::header_size_in_bytes();
+
+  const address base = reinterpret_cast<address>(mem) + base_offset_in_bytes;
+  const address header_end = reinterpret_cast<address>(mem) + header_size_in_bytes;
+
+  if (header_end < base) {
+    const size_t padding_in_bytes = base - header_end;
+    Copy::fill_to_bytes(header_end, padding_in_bytes, heapPaddingByteVal);
+  }
+}
+
 void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
   const size_t length_in_bytes = static_cast<size_t>(_length) << ArrayKlass::cast(_klass)->log2_element_size();
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();

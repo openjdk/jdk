@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -81,7 +82,7 @@ void vmSymbols::initialize() {
   assert(SID_LIMIT*5 > (1<<log2_SID_LIMIT), "make the bitfield smaller, please");
   assert(vmIntrinsics::FLAG_LIMIT <= (1 << vmIntrinsics::log2_FLAG_LIMIT), "must fit in this bitfield");
 
-  if (!UseSharedSpaces) {
+  if (!CDSConfig::is_using_archive()) {
     const char* string = &vm_symbol_bodies[0];
     for (auto index : EnumRange<vmSymbolID>{}) {
       Symbol* sym = SymbolTable::new_permanent_symbol(string);

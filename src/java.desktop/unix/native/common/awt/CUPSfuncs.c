@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,6 @@ Java_sun_print_CUPSPrinter_getCupsDefaultPrinter(JNIEnv *env,
     cups_dest_t *dests;
     char *defaultPrinter = NULL;
     int num_dests = j2d_cupsGetDests(&dests);
-    int i = 0;
     cups_dest_t *dest = j2d_cupsGetDest(NULL, NULL, num_dests, dests);
     if (dest != NULL) {
         defaultPrinter = dest->name;

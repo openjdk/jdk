@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,6 +549,10 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             throw new BadArgs("err.incompatible.options", sb);
         }
 
+        if (!options.showDisassembled && !options.verbose && options.showLineAndLocalVariableTables) {
+            reportWarning("err.incompatible.options", "-l without -c, line number and local variable tables will not be printed");
+        }
+
         if ((classes == null || classes.size() == 0) &&
                 !(noArgs || options.help || options.version || options.fullVersion)) {
             throw new BadArgs("err.no.classes.specified");
@@ -867,7 +871,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             if (moduleLocation != null) {
                 fo = fileManager.getJavaFileForInput(moduleLocation, className, JavaFileObject.Kind.CLASS);
             } else {
-                if (className.indexOf('.') > 0) {
+                if (className.indexOf('.') > 0 || className.indexOf('/') > 0) {
                     //search for classes with a named package in the JDK modules specifed by --system option first
                     try {
                         for (Set<Location> locations: fileManager.listLocationsForModules(StandardLocation.SYSTEM_MODULES)) {

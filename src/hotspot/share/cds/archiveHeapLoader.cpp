@@ -34,6 +34,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 
@@ -61,6 +62,7 @@ ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
 
 // Every mapped region is offset by _mapped_heap_delta from its requested address.
 // See FileMapInfo::heap_region_requested_address().
+ATTRIBUTE_NO_UBSAN
 void ArchiveHeapLoader::init_mapped_heap_info(address mapped_heap_bottom, ptrdiff_t delta, int dumptime_oop_shift) {
   assert(!_mapped_heap_relocation_initialized, "only once");
   if (!UseCompressedOops) {
@@ -140,15 +142,22 @@ class PatchCompressedEmbeddedPointersQuick: public BitMapClosure {
 
 class PatchUncompressedEmbeddedPointers: public BitMapClosure {
   oop* _start;
+  intptr_t _delta;
 
  public:
-  PatchUncompressedEmbeddedPointers(oop* start) : _start(start) {}
+  PatchUncompressedEmbeddedPointers(oop* start, intx runtime_offset) :
+    _start(start),
+    _delta(runtime_offset) {}
+
+  PatchUncompressedEmbeddedPointers(oop* start) :
+    _start(start),
+    _delta(ArchiveHeapLoader::mapped_heap_delta()) {}
 
   bool do_bit(size_t offset) {
     oop* p = _start + offset;
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
-    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
+    intptr_t runtime_oop = dumptime_oop + _delta;
     RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
@@ -219,10 +228,6 @@ void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loa
 }
 
 bool ArchiveHeapLoader::can_load() {
-  if (!UseCompressedOops) {
-    // Pointer relocation for uncompressed oops is unimplemented.
-    return false;
-  }
   return Universe::heap()->can_load_archived_objects();
 }
 
@@ -310,13 +315,18 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   uintptr_t oopmap = bitmap_base + r->oopmap_offset();
   BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
 
-  PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
-  bm.iterate(&patcher);
+  if (UseCompressedOops) {
+    PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
+    bm.iterate(&patcher);
+  } else {
+    PatchUncompressedEmbeddedPointers patcher((oop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region->_runtime_offset);
+    bm.iterate(&patcher);
+  }
   return true;
 }
 
 bool ArchiveHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
-  assert(UseCompressedOops, "loaded heap for !UseCompressedOops is unimplemented");
+  assert(can_load(), "loaded heap for must be supported");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 
   LoadedArchiveHeapRegion loaded_region;
@@ -356,8 +366,12 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
     }
   }
   virtual void do_oop(oop* p) {
-    // Uncompressed oops are not supported by loaded heaps.
-    Unimplemented();
+    oop v = *p;
+    if(v != nullptr) {
+      uintptr_t u = cast_from_oop<uintptr_t>(v);
+      ArchiveHeapLoader::assert_in_loaded_heap(u);
+      guarantee(_table->contains(u), "must point to beginning of object in loaded archived region");
+    }
   }
 };
 
@@ -372,8 +386,17 @@ void ArchiveHeapLoader::finish_initialization() {
   if (is_in_use()) {
     patch_native_pointers();
     intptr_t bottom = is_loaded() ? _loaded_heap_bottom : _mapped_heap_bottom;
-    intptr_t roots_oop = bottom + FileMapInfo::current_info()->heap_roots_offset();
-    HeapShared::init_roots(cast_to_oop(roots_oop));
+
+    // The heap roots are stored in one or more segments that are laid out consecutively.
+    // The size of each segment (except for the last one) is max_size_in_{elems,bytes}.
+    HeapRootSegments segments = FileMapInfo::current_info()->heap_root_segments();
+    HeapShared::init_root_segment_sizes(segments.max_size_in_elems());
+    intptr_t first_segment_addr = bottom + segments.base_offset();
+    for (size_t c = 0; c < segments.count(); c++) {
+      oop segment_oop = cast_to_oop(first_segment_addr + (c * segments.max_size_in_bytes()));
+      assert(segment_oop->is_objArray(), "Must be");
+      HeapShared::add_root_segment((objArrayOop)segment_oop);
+    }
   }
 }
 
@@ -426,10 +449,6 @@ class PatchNativePointers: public BitMapClosure {
   bool do_bit(size_t offset) {
     Metadata** p = _start + offset;
     *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
-    // Currently we have only Klass pointers in heap objects.
-    // This needs to be relaxed when we support other types of native
-    // pointers such as Method.
-    assert(((Klass*)(*p))->is_klass(), "must be");
     return true;
   }
 };

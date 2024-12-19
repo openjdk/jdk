@@ -48,21 +48,9 @@ static bool compare_arrays(int* actual, int* expected, size_t length) {
 }
 
 template <class C>
-static bool sort_and_compare(int* arrayToSort, int* expectedResult, size_t length, C comparator, bool idempotent = false) {
-  QuickSort::sort(arrayToSort, length, comparator, idempotent);
+static bool sort_and_compare(int* arrayToSort, int* expectedResult, size_t length, C comparator) {
+  QuickSort::sort(arrayToSort, length, comparator);
   return compare_arrays(arrayToSort, expectedResult, length);
-}
-
-static int test_even_odd_comparator(int a, int b) {
-  bool a_is_odd = ((a % 2) == 1);
-  bool b_is_odd = ((b % 2) == 1);
-  if (a_is_odd == b_is_odd) {
-    return 0;
-  }
-  if (a_is_odd) {
-    return -1;
-  }
-  return 1;
 }
 
 extern "C" {
@@ -126,50 +114,6 @@ TEST(QuickSort, quicksort) {
     int expected_array[] = {6,7,8,8,9,9,11,11,13,21,22,24,24,25,27,27,28,31,32,39,40,40,40,41,44,46,51,55,56,59,64,64,65,69,71,74,75,75,76,78,81,82};
     EXPECT_TRUE(sort_and_compare(test_array, expected_array, 42, test_comparator));
   }
-  {
-    int test_array[] = {2,8,1,4};
-    int expected_array[] = {1,4,2,8};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 4, test_even_odd_comparator));
-  }
-}
-
-TEST(QuickSort, idempotent) {
-  {
-    // An array of lenght 3 is only sorted by find_pivot. Make sure that it is idempotent.
-    int test_array[] = {1, 4, 8};
-    int expected_array[] = {1, 4, 8};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 3, test_even_odd_comparator, true));
-  }
-  {
-    int test_array[] = {1, 7, 9, 4, 8, 2};
-    int expected_array[] = {1, 7, 9, 4, 8, 2};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 6, test_even_odd_comparator, true));
-  }
-  {
-    int test_array[] = {1, 9, 7, 4, 2, 8};
-    int expected_array[] = {1, 9, 7, 4, 2, 8};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 6, test_even_odd_comparator, true));
-  }
-  {
-    int test_array[] = {7, 9, 1, 2, 8, 4};
-    int expected_array[] = {7, 9, 1, 2, 8, 4};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 6, test_even_odd_comparator, true));
-  }
-  {
-    int test_array[] = {7, 1, 9, 2, 4, 8};
-    int expected_array[] = {7, 1, 9, 2, 4, 8};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 6, test_even_odd_comparator, true));
-  }
-  {
-    int test_array[] = {9, 1, 7, 4, 8, 2};
-    int expected_array[] = {9, 1, 7, 4, 8, 2};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 6, test_even_odd_comparator, true));
-  }
-  {
-    int test_array[] = {9, 7, 1, 4, 2, 8};
-    int expected_array[] = {9, 7, 1, 4, 2, 8};
-    EXPECT_TRUE(sort_and_compare(test_array, expected_array, 6, test_even_odd_comparator, true));
-  }
 }
 
 TEST(QuickSort, random) {
@@ -186,18 +130,6 @@ TEST(QuickSort, random) {
     // Compare sorting to stdlib::qsort()
     qsort(expected_array, length, sizeof(int), test_stdlib_comparator);
     EXPECT_TRUE(sort_and_compare(test_array, expected_array, length, test_comparator));
-
-    // Make sure sorting is idempotent.
-    // Both test_array and expected_array are sorted by the test_comparator.
-    // Now sort them once with the test_even_odd_comparator. Then sort the
-    // test_array one more time with test_even_odd_comparator and verify that
-    // it is idempotent.
-    QuickSort::sort(expected_array, length, test_even_odd_comparator, true);
-    QuickSort::sort(test_array, length, test_even_odd_comparator, true);
-    EXPECT_TRUE(compare_arrays(test_array, expected_array, length));
-    QuickSort::sort(test_array, length, test_even_odd_comparator, true);
-    EXPECT_TRUE(compare_arrays(test_array, expected_array, length));
-
     FREE_C_HEAP_ARRAY(int, test_array);
     FREE_C_HEAP_ARRAY(int, expected_array);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,23 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.util.Optional;
 
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedFieldBuilder;
 import jdk.internal.classfile.impl.FieldImpl;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a field.  The contents of the field can be traversed via
- * a streaming view (e.g., {@link #elements()}), or via random access (e.g.,
+ * a streaming view, or via random access (e.g.,
  * {@link #flags()}), or by freely mixing the two.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldModel
-        extends WritableElement<FieldModel>, CompoundElement<FieldElement>, AttributedElement, ClassElement
+        extends CompoundElement<FieldElement>, AttributedElement, ClassElement
         permits BufferedFieldBuilder.Model, FieldImpl {
 
     /** {@return the access flags} */
@@ -59,6 +58,6 @@ public sealed interface FieldModel
 
     /** {@return the field descriptor of this field, as a symbolic descriptor} */
     default ClassDesc fieldTypeSymbol() {
-        return ClassDesc.ofDescriptor(fieldType().stringValue());
+        return Util.fieldTypeSymbol(fieldType());
     }
 }

@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_BITMAP_HPP
 #define SHARE_UTILITIES_BITMAP_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -67,16 +67,16 @@ class BitMap {
  protected:
   // The maximum allowable size of a bitmap, in words or bits.
   // Limit max_size_in_bits so aligning up to a word boundary never overflows.
-  static idx_t max_size_in_words() { return raw_to_words_align_down(~idx_t(0)); }
-  static idx_t max_size_in_bits() { return max_size_in_words() * BitsPerWord; }
+  constexpr static idx_t max_size_in_words() { return raw_to_words_align_down(~idx_t(0)); }
+  constexpr static idx_t max_size_in_bits() { return max_size_in_words() * BitsPerWord; }
 
   // Assumes relevant validity checking for bit has already been done.
-  static idx_t raw_to_words_align_up(idx_t bit) {
+  constexpr static idx_t raw_to_words_align_up(idx_t bit) {
     return raw_to_words_align_down(bit + (BitsPerWord - 1));
   }
 
   // Assumes relevant validity checking for bit has already been done.
-  static idx_t raw_to_words_align_down(idx_t bit) {
+  constexpr static idx_t raw_to_words_align_down(idx_t bit) {
     return bit >> LogBitsPerWord;
   }
 
@@ -195,7 +195,7 @@ class BitMap {
   void pretouch();
 
   // Accessing
-  static idx_t calc_size_in_words(size_t size_in_bits) {
+  constexpr static idx_t calc_size_in_words(size_t size_in_bits) {
     verify_size(size_in_bits);
     return raw_to_words_align_up(size_in_bits);
   }
@@ -257,7 +257,13 @@ class BitMap {
   // Verification.
 
   // Verify size_in_bits does not exceed max_size_in_bits().
-  static void verify_size(idx_t size_in_bits) NOT_DEBUG_RETURN;
+  constexpr static void verify_size(idx_t size_in_bits) {
+#ifdef ASSERT
+    assert(size_in_bits <= max_size_in_bits(),
+           "out of bounds: " SIZE_FORMAT, size_in_bits);
+#endif
+  }
+
   // Verify bit is less than size().
   void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
   // Verify bit is not greater than size().
@@ -385,13 +391,10 @@ class BitMap {
   bool is_empty() const;
 
   void write_to(bm_word_t* buffer, size_t buffer_size_in_bytes) const;
-  void print_on_error(outputStream* st, const char* prefix) const;
 
-#ifndef PRODUCT
- public:
   // Printing
+  void print_on_error(outputStream* st, const char* prefix) const;
   void print_on(outputStream* st) const;
-#endif
 };
 
 // Implementation support for bitmap iteration.  While it could be used to
@@ -635,16 +638,16 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 
 // A BitMap with storage in the CHeap.
 class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
-  // NMT memory type
-  const MEMFLAGS _flags;
+  // NMT memory tag
+  const MemTag _mem_tag;
 
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(), _flags(flags) {}
-  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
+  explicit CHeapBitMap(MemTag mem_tag) : GrowableBitMap(), _mem_tag(mem_tag) {}
+  CHeapBitMap(idx_t size_in_bits, MemTag mem_tag, bool clear = true);
   ~CHeapBitMap();
 
   bm_word_t* allocate(idx_t size_in_words) const;

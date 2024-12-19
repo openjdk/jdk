@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,9 @@
 package javax.management.monitor;
 
 import static com.sun.jmx.defaults.JmxProperties.MONITOR_LOGGER;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Introspector;
 import java.io.IOException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -60,6 +56,7 @@ import javax.management.MBeanServerConnection;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import javax.security.auth.Subject;
 import static javax.management.monitor.MonitorNotification.*;
 
 /**
@@ -169,14 +166,9 @@ public abstract class Monitor
         new CopyOnWriteArrayList<>();
 
     /**
-     * AccessControlContext of the Monitor.start() caller.
+     * Subject of the Monitor.start() caller.
      */
-    @SuppressWarnings("removal")
-    private static final AccessControlContext noPermissionsACC =
-            new AccessControlContext(
-            new ProtectionDomain[] {new ProtectionDomain(null, null)});
-    @SuppressWarnings("removal")
-    private volatile AccessControlContext acc = noPermissionsACC;
+    private volatile Subject subject;
 
     /**
      * Scheduler Service.
@@ -202,9 +194,7 @@ public abstract class Monitor
     private static final int maximumPoolSize;
     static {
         final String maximumPoolSizeSysProp = "jmx.x.monitor.maximum.pool.size";
-        @SuppressWarnings("removal")
-        final String maximumPoolSizeStr = AccessController.doPrivileged(
-            new GetPropertyAction(maximumPoolSizeSysProp));
+        final String maximumPoolSizeStr = System.getProperty(maximumPoolSizeSysProp);
         if (maximumPoolSizeStr == null ||
             maximumPoolSizeStr.trim().length() == 0) {
             maximumPoolSize = 10;
@@ -713,10 +703,10 @@ public abstract class Monitor
             //
             cleanupIsComplexTypeAttribute();
 
-            // Cache the AccessControlContext of the Monitor.start() caller.
+            // Cache the Subject of the Monitor.start() caller.
             // The monitor tasks will be executed within this context.
             //
-            acc = AccessController.getContext();
+            subject = Subject.current();
 
             // Start the scheduler.
             //
@@ -747,9 +737,9 @@ public abstract class Monitor
             //
             cleanupFutures();
 
-            // Reset the AccessControlContext.
+            // Reset the Subject.
             //
-            acc = noPermissionsACC;
+            subject = null;
 
             // Reset the complex type attribute information
             // such that it is recalculated again.
@@ -1466,14 +1456,10 @@ public abstract class Monitor
         public MonitorTask() {
             // Find out if there's already an existing executor for the calling
             // thread and reuse it. Otherwise, create a new one and store it in
-            // the executors map. If there is a SecurityManager, the group of
-            // System.getSecurityManager() is used, else the group of the thread
+            // the executors map.  Use the Thread group of the thread
             // instantiating this MonitorTask, i.e. the group of the thread that
             // calls "Monitor.start()".
-            @SuppressWarnings("removal")
-            SecurityManager s = System.getSecurityManager();
-            ThreadGroup group = (s != null) ? s.getThreadGroup() :
-                Thread.currentThread().getThreadGroup();
+            ThreadGroup group = Thread.currentThread().getThreadGroup();
             synchronized (executorsLock) {
                 for (ThreadPoolExecutor e : executors.keySet()) {
                     DaemonThreadFactory tf =
@@ -1512,10 +1498,10 @@ public abstract class Monitor
         @SuppressWarnings("removal")
         public void run() {
             final ScheduledFuture<?> sf;
-            final AccessControlContext ac;
+            final Subject s;
             synchronized (Monitor.this) {
                 sf = Monitor.this.schedulerFuture;
-                ac = Monitor.this.acc;
+                s  = Monitor.this.subject;
             }
             PrivilegedAction<Void> action = new PrivilegedAction<>() {
                 public Void run() {
@@ -1531,10 +1517,11 @@ public abstract class Monitor
                     return null;
                 }
             };
-            if (ac == null) {
-                throw new SecurityException("AccessControlContext cannot be null");
+            if (s == null) {
+                action.run();
+            } else {
+                Subject.doAs(s, action);
             }
-            AccessController.doPrivileged(action, ac);
             synchronized (Monitor.this) {
                 if (Monitor.this.isActive() &&
                     Monitor.this.schedulerFuture == sf) {
@@ -1552,8 +1539,7 @@ public abstract class Monitor
      * Daemon thread factory used by the monitor executors.
      * <P>
      * This factory creates all new threads used by an Executor in
-     * the same ThreadGroup. If there is a SecurityManager, it uses
-     * the group of System.getSecurityManager(), else the group of
+     * the same ThreadGroup.  Use the Thread group of
      * the thread instantiating this DaemonThreadFactory. Each new
      * thread is created as a daemon thread with priority
      * Thread.NORM_PRIORITY. New threads have names accessible via
@@ -1568,10 +1554,7 @@ public abstract class Monitor
         static final String nameSuffix = "]";
 
         public DaemonThreadFactory(String poolName) {
-            @SuppressWarnings("removal")
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null) ? s.getThreadGroup() :
-                                  Thread.currentThread().getThreadGroup();
+            group = Thread.currentThread().getThreadGroup();
             namePrefix = "JMX Monitor " + poolName + " Pool [Thread-";
         }
 

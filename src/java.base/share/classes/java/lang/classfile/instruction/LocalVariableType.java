@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,33 +24,55 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Label;
-import java.lang.classfile.PseudoInstruction;
-import java.lang.classfile.Signature;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
+
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariableType;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction which models a single entry in the {@link
- * LocalVariableTypeTableAttribute}.  Delivered as a {@link CodeElement} during
- * traversal of the elements of a {@link CodeModel}, according to the setting of
- * the {@link ClassFile.DebugElementsOption} option.
+ * LocalVariableTypeTableAttribute LocalVariableTypeTable} attribute.  Delivered
+ * as a {@link CodeElement} during traversal of the elements of a {@link CodeModel},
+ * according to the setting of the {@link ClassFile.DebugElementsOption} option.
+ * <p>
+ * A local variable type entry is composite:
+ * {@snippet lang=text :
+ * // @link substring="LocalVariableType" target="#of(int, String, Signature, Label, Label)" :
+ * LocalVariableType(
+ *     int slot, // @link substring="slot" target="#slot"
+ *     String name, // @link substring="name" target="#name"
+ *     Signature signature, // @link substring="signature" target="#signatureSymbol"
+ *     Label startScope, // @link substring="startScope" target="#startScope"
+ *     Label endScope // @link substring="endScope" target="#endScope"
+ * )
+ * }
+ * Where {@code slot} is within {@code [0, 65535]}.
+ * <p>
+ * Another model, {@link LocalVariableTypeInfo}, also models a local variable
+ * type entry; it has no dependency on a {@code CodeModel} and represents of bci
+ * values as {@code int}s instead of {@code Label}s, and is used as components
+ * of a {@link LocalVariableTypeTableAttribute}.
  *
- * @since 22
+ * @apiNote
+ * {@code LocalVariableType} is used if a local variable has a parameterized
+ * type, a type argument, or an array type of one of the previous types as its
+ * type.  A {@link LocalVariable} with the erased type should still be created
+ * for that local variable.
+ *
+ * @see LocalVariableTypeInfo
+ * @see CodeBuilder#localVariableType CodeBuilder::localVariableType
+ * @see ClassFile.DebugElementsOption
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LocalVariableType extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {
     /**
      * {@return the local variable slot}
+     * The value is within {@code [0, 65535]}.
      */
     int slot();
 
@@ -60,12 +82,16 @@ public sealed interface LocalVariableType extends PseudoInstruction
     Utf8Entry name();
 
     /**
-     * {@return the local variable signature}
+     * {@return the local variable generic signature string}
+     *
+     * @apiNote
+     * A symbolic generic signature of the local variable is available
+     * through {@link #signatureSymbol() signatureSymbol()}.
      */
     Utf8Entry signature();
 
     /**
-     * {@return the local variable signature}
+     * {@return the local variable generic signature}
      */
     default Signature signatureSymbol() {
         return Signature.parseFrom(signature().stringValue());
@@ -82,21 +108,15 @@ public sealed interface LocalVariableType extends PseudoInstruction
     Label endScope();
 
     /**
-     * Writes the local variable to the specified writer
-     *
-     * @param buf the writer
-     * @return true if the variable has been written
-     */
-    boolean writeTo(BufWriter buf);
-
-    /**
      * {@return a local variable type pseudo-instruction}
+     * {@code slot} must be within {@code [0, 65535]}.
      *
      * @param slot the local variable slot
      * @param nameEntry the local variable name
      * @param signatureEntry the local variable signature
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariableType of(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
         return new AbstractPseudoInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
@@ -105,12 +125,14 @@ public sealed interface LocalVariableType extends PseudoInstruction
 
     /**
      * {@return a local variable type pseudo-instruction}
+     * {@code slot} must be within {@code [0, 65535]}.
      *
      * @param slot the local variable slot
      * @param name the local variable name
      * @param signature the local variable signature
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariableType of(int slot, String name, Signature signature, Label startScope, Label endScope) {
         return of(slot,

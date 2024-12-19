@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class TestPhaseIRMatching {
         List<String> noAdditionalFlags = new ArrayList<>();
         FlagVMProcess flagVMProcess = new FlagVMProcess(testClass, noAdditionalFlags);
         List<String> testVMFlags = flagVMProcess.getTestVMFlags();
-        TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1);
+        TestVMProcess testVMProcess = new TestVMProcess(testVMFlags, testClass, null, -1, false);
         TestClassParser testClassParser = new TestClassParser(testClass);
         Matchable testClassMatchable = testClassParser.parse(testVMProcess.getHotspotPidFileName(),
                                                              testVMProcess.getIrEncoding());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,14 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_MethodHandle_info} constant in the constant pool of a
  * classfile.
  * @jvms 4.4.8 The CONSTANT_MethodHandle_info Structure
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodHandleEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.MethodHandleEntryImpl {
@@ -48,7 +46,7 @@ public sealed interface MethodHandleEntry
     }
 
     /**
-     * {@return the reference kind of this method handle {@jvms 4.4.8}}
+     * {@return the reference kind of this method handle (JVMS {@jvms 4.4.8})}
      * @see java.lang.invoke.MethodHandleInfo
      */
     int kind();

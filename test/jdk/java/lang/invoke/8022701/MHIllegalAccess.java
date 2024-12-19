@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8022701
  * @summary Illegal access exceptions via methodhandle invocations threw wrong error.
- * @enablePreview
  * @compile -XDignore.symbol.file BogoLoader.java InvokeSeveralWays.java MHIllegalAccess.java MethodSupplier.java
  * @run main/othervm MHIllegalAccess
  */
@@ -63,7 +62,7 @@ public class MHIllegalAccess {
        */
      ClassTransform changeName = (cb, ce) -> {
          if (ce instanceof MethodModel mm && mm.methodName().equalsString("m")) {
-             cb.withMethod("nemo", mm.methodTypeSymbol(), mm.flags().flagsMask(), mm::forEachElement);
+             cb.withMethod("nemo", mm.methodTypeSymbol(), mm.flags().flagsMask(), mm::forEach);
          } else {
              cb.accept(ce);
          }

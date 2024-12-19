@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,6 +343,7 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(CodeSection* section
   int index = _oop_recorder->find_index(klass);
   section->relocate(dest, metadata_Relocation::spec(index));
   JVMCI_event_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
+  guarantee(CompressedKlassPointers::is_encodable(klass), "klass cannot be compressed: %s", klass->external_name());
   return CompressedKlassPointers::encode(klass);
 }
 #endif
@@ -664,7 +665,7 @@ JVMCI::CodeInstallResult CodeInstaller::install_runtime_stub(CodeBlob*& cb,
   GrowableArray<RuntimeStub*> *stubs_to_free = nullptr;
 #ifdef ASSERT
   const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceRuntimeStubAllocFail");
-  if (val != nullptr && strstr(name , val) != 0) {
+  if (val != nullptr && strstr(name , val) != nullptr) {
     stubs_to_free = new GrowableArray<RuntimeStub*>();
     JVMCI_event_1("forcing allocation of %s in code cache to fail", name);
   }
@@ -722,6 +723,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   jint entry_bci = -1;
   JVMCICompileState* compile_state = nullptr;
   bool has_unsafe_access = false;
+  bool has_scoped_access = false;
   jint id = -1;
 
   if (is_nmethod) {
@@ -729,6 +731,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     entry_bci = is_nmethod ? stream->read_s4("entryBCI") : -1;
     compile_state = (JVMCICompileState*) stream->read_u8("compileState");
     has_unsafe_access = stream->read_bool("hasUnsafeAccess");
+    has_scoped_access = stream->read_bool("hasScopedAccess");
     id = stream->read_s4("id");
   }
   stream->set_code_desc(name, method);
@@ -795,6 +798,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         id,
                                         _has_monitors,
                                         has_unsafe_access,
+                                        has_scoped_access,
                                         _has_wide_vector,
                                         compiled_code,
                                         mirror,
@@ -1297,6 +1301,10 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
   u1 id = stream->read_u1("mark:id");
   address pc = _instructions->start() + pc_offset;
 
+  if (pd_relocate(pc, id)) {
+    return;
+  }
+
   switch (id) {
     case UNVERIFIED_ENTRY:
       _offsets.set_value(CodeOffsets::Entry, pc_offset);
@@ -1330,12 +1338,6 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       _next_call_type = (MarkId) id;
       _invoke_mark_pc = pc;
       break;
-    case POLL_NEAR:
-    case POLL_FAR:
-    case POLL_RETURN_NEAR:
-    case POLL_RETURN_FAR:
-      pd_relocate_poll(pc, id, JVMCI_CHECK);
-      break;
     case CARD_TABLE_SHIFT:
     case CARD_TABLE_ADDRESS:
     case HEAP_TOP_ADDRESS:
@@ -1350,6 +1352,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case VERIFY_OOP_MASK:
     case VERIFY_OOP_COUNT_ADDRESS:
       break;
+
     default:
       JVMCI_ERROR("invalid mark id: %d%s", id, stream->context());
       break;

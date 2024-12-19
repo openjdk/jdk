@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.internal.loader;
 import java.io.EOFException;
 import java.net.URL;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.InputStream;
 import java.security.CodeSigner;
 import java.util.jar.Manifest;
@@ -87,25 +86,8 @@ public abstract class Resource {
         // Get stream before content length so that a FileNotFoundException
         // can propagate upwards without being caught too early
         InputStream in = cachedInputStream();
-
-        // This code has been uglified to protect against interrupts.
-        // Even if a thread has been interrupted when loading resources,
-        // the IO should not abort, so must carefully retry, failing only
-        // if the retry leads to some other IO exception.
-
-        boolean isInterrupted = Thread.interrupted();
-        int len;
-        for (;;) {
-            try {
-                len = getContentLength();
-                break;
-            } catch (InterruptedIOException iioe) {
-                Thread.interrupted();
-                isInterrupted = true;
-            }
-        }
-
         try {
+            int len = getContentLength();
             b = new byte[0];
             if (len == -1) len = Integer.MAX_VALUE;
             int pos = 0;
@@ -121,13 +103,7 @@ public abstract class Resource {
                 } else {
                     bytesToRead = b.length - pos;
                 }
-                int cc = 0;
-                try {
-                    cc = in.read(b, pos, bytesToRead);
-                } catch (InterruptedIOException iioe) {
-                    Thread.interrupted();
-                    isInterrupted = true;
-                }
+                int cc = in.read(b, pos, bytesToRead);
                 if (cc < 0) {
                     if (len != Integer.MAX_VALUE) {
                         throw new EOFException("Detect premature EOF");
@@ -143,13 +119,7 @@ public abstract class Resource {
         } finally {
             try {
                 in.close();
-            } catch (InterruptedIOException iioe) {
-                isInterrupted = true;
             } catch (IOException ignore) {}
-
-            if (isInterrupted) {
-                Thread.currentThread().interrupt();
-            }
         }
         return b;
     }

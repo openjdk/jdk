@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,10 +198,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.LSHIFT_VI, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.LSHIFT_VI, ">0"})
     public int[] vectorShiftLeft() {
         int[] res = new int[SIZE];
@@ -212,10 +209,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_VI, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.RSHIFT_VI, ">0"})
     public int[] vectorSignedShiftRight() {
         int[] res = new int[SIZE];
@@ -226,10 +220,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_VI, ">0"})
-    @IR(applyIfPlatform = {"riscv64", "true"},
-        applyIfCPUFeature = {"v", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.URSHIFT_VI, ">0"})
     public int[] vectorUnsignedShiftRight() {
         int[] res = new int[SIZE];

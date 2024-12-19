@@ -340,7 +340,9 @@ static inline void add_one_req(Node* dstphi, Node* src) {
 // having a control input of its exception map, rather than null.  Such
 // regions do not appear except in this function, and in use_exception_state.
 void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* phi_map) {
-  if (failing())  return;  // dying anyway...
+  if (failing_internal()) {
+    return;  // dying anyway...
+  }
   JVMState* ex_jvms = ex_map->_jvms;
   assert(ex_jvms->same_calls_as(phi_map->_jvms), "consistent call chains");
   assert(ex_jvms->stkoff() == phi_map->_jvms->stkoff(), "matching locals");
@@ -446,7 +448,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
 
 //--------------------------use_exception_state--------------------------------
 Node* GraphKit::use_exception_state(SafePointNode* phi_map) {
-  if (failing()) { stop(); return top(); }
+  if (failing_internal()) { stop(); return top(); }
   Node* region = phi_map->control();
   Node* hidden_merge_mark = root();
   assert(phi_map->jvms()->map() == phi_map, "sanity: 1-1 relation");
@@ -508,7 +510,7 @@ void GraphKit::uncommon_trap_if_should_post_on_exceptions(Deoptimization::DeoptR
     // first must access the should_post_on_exceptions_flag in this thread's JavaThread
     Node* jthread = _gvn.transform(new ThreadLocalNode());
     Node* adr = basic_plus_adr(top(), jthread, in_bytes(JavaThread::should_post_on_exceptions_flag_offset()));
-    Node* should_post_flag = make_load(control(), adr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+    Node* should_post_flag = make_load(control(), adr, TypeInt::INT, T_INT, MemNode::unordered);
 
     // Test the should_post_on_exceptions_flag vs. 0
     Node* chk = _gvn.transform( new CmpINode(should_post_flag, intcon(0)) );
@@ -1209,7 +1211,7 @@ Node* GraphKit::load_array_length(Node* array) {
   Node *alen;
   if (alloc == nullptr) {
     Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
-    alen = _gvn.transform( new LoadRangeNode(0, immutable_memory(), r_adr, TypeInt::POS));
+    alen = _gvn.transform( new LoadRangeNode(nullptr, immutable_memory(), r_adr, TypeInt::POS));
   } else {
     alen = array_ideal_length(alloc, _gvn.type(array)->is_oopptr(), false);
   }
@@ -1456,7 +1458,7 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
 // In that case that data path will die and we need the control path
 // to become dead as well to keep the graph consistent. So we have to
 // add a check for null for which one branch can't be taken. It uses
-// an Opaque4 node that will cause the check to be removed after loop
+// an OpaqueNotNull node that will cause the check to be removed after loop
 // opts so the test goes away and the compiled code doesn't execute a
 // useless check.
 Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
@@ -1464,9 +1466,9 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
     return value;
   }
   Node* chk = _gvn.transform(new CmpPNode(value, null()));
-  Node *tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
-  Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));
-  IfNode *iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
+  Node* tst = _gvn.transform(new BoolNode(chk, BoolTest::ne));
+  Node* opaq = _gvn.transform(new OpaqueNotNullNode(C, tst));
+  IfNode* iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
   _gvn.set_type(iff, iff->Value(&_gvn));
   if (!tst->is_Con()) {
     record_for_igvn(iff);
@@ -1548,7 +1550,6 @@ void GraphKit::set_all_memory_call(Node* call, bool separate_io_proj) {
 
 // factory methods in "int adr_idx"
 Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
-                          int adr_idx,
                           MemNode::MemOrd mo,
                           LoadNode::ControlDependency control_dependency,
                           bool require_atomic_access,
@@ -1556,6 +1557,7 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                           bool mismatched,
                           bool unsafe,
                           uint8_t barrier_data) {
+  int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = nullptr; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1577,13 +1579,13 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
 }
 
 Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
-                                int adr_idx,
                                 MemNode::MemOrd mo,
                                 bool require_atomic_access,
                                 bool unaligned,
                                 bool mismatched,
                                 bool unsafe,
                                 int barrier_data) {
+  int adr_idx = C->get_alias_index(_gvn.type(adr)->isa_ptr());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = nullptr;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1926,7 +1928,7 @@ static void add_mergemem_users_to_worklist(Unique_Node_List& wl, Node* mem) {
 }
 
 // Replace the call with the current state of the kit.
-void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes) {
+void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes, bool do_asserts) {
   JVMState* ejvms = nullptr;
   if (has_exceptions()) {
     ejvms = transfer_exceptions_into_jvms();
@@ -1940,7 +1942,7 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
 
   // Find all the needed outputs of this call
   CallProjections callprojs;
-  call->extract_projections(&callprojs, true);
+  call->extract_projections(&callprojs, true, do_asserts);
 
   Unique_Node_List wl;
   Node* init_mem = call->in(TypeFunc::Memory);
@@ -2040,11 +2042,10 @@ void GraphKit::increment_counter(address counter_addr) {
 }
 
 void GraphKit::increment_counter(Node* counter_addr) {
-  int adr_type = Compile::AliasIdxRaw;
   Node* ctrl = control();
-  Node* cnt  = make_load(ctrl, counter_addr, TypeLong::LONG, T_LONG, adr_type, MemNode::unordered);
+  Node* cnt  = make_load(ctrl, counter_addr, TypeLong::LONG, T_LONG, MemNode::unordered);
   Node* incr = _gvn.transform(new AddLNode(cnt, _gvn.longcon(1)));
-  store_to_memory(ctrl, counter_addr, incr, T_LONG, adr_type, MemNode::unordered);
+  store_to_memory(ctrl, counter_addr, incr, T_LONG, MemNode::unordered);
 }
 
 
@@ -2056,7 +2057,9 @@ Node* GraphKit::uncommon_trap(int trap_request,
                              ciKlass* klass, const char* comment,
                              bool must_throw,
                              bool keep_exact_action) {
-  if (failing())  stop();
+  if (failing_internal()) {
+    stop();
+  }
   if (stopped())  return nullptr; // trap reachable?
 
   // Note:  If ProfileTraps is true, and if a deopt. actually
@@ -2151,7 +2154,7 @@ Node* GraphKit::uncommon_trap(int trap_request,
   kill_dead_locals();
 
   // Now insert the uncommon trap subroutine call
-  address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+  address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
   const TypePtr* no_memory_effects = nullptr;
   // Pass the index of the class to be loaded
   Node* call = make_runtime_call(RC_NO_LEAF | RC_UNCOMMON |
@@ -2385,7 +2388,7 @@ Node* GraphKit::precision_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
     if (UseSSE == 0) {
-      return _gvn.transform(new RoundFloatNode(0, n));
+      return _gvn.transform(new RoundFloatNode(nullptr, n));
     }
 #else
     Unimplemented();
@@ -2399,7 +2402,7 @@ Node* GraphKit::dprecision_rounding(Node *n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
     if (UseSSE < 2) {
-      return _gvn.transform(new RoundDoubleNode(0, n));
+      return _gvn.transform(new RoundDoubleNode(nullptr, n));
     }
 #else
     Unimplemented();
@@ -3008,7 +3011,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
   Node* adr = basic_plus_adr(top(), klass, init_state_off);
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     adr->bottom_type()->is_ptr(), TypeInt::BYTE,
-                                    T_BYTE, MemNode::unordered);
+                                    T_BYTE, MemNode::acquire);
   init_state = _gvn.transform(init_state);
 
   Node* being_initialized_state = makecon(TypeInt::make(InstanceKlass::being_initialized));
@@ -3489,10 +3492,7 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   box = _gvn.transform(box);
   Node* mem = reset_memory();
 
-  FastLockNode * flock = _gvn.transform(new FastLockNode(0, obj, box) )->as_FastLock();
-
-  // Create the rtm counters for this fast lock if needed.
-  flock->create_rtm_lock_counter(sync_jvms()); // sync_jvms used to get current bci
+  FastLockNode * flock = _gvn.transform(new FastLockNode(nullptr, obj, box) )->as_FastLock();
 
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
@@ -4237,8 +4237,8 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
   set_memory(mem, TypeAryPtr::BYTES);
   Node* ch = load_array_element(src, i_byte, TypeAryPtr::BYTES, /* set_ctrl */ true);
   Node* st = store_to_memory(control(), array_element_address(dst, i_char, T_BYTE),
-                             AndI(ch, intcon(0xff)), T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
-                             false, false, true /* mismatched */);
+                             AndI(ch, intcon(0xff)), T_CHAR, MemNode::unordered, false,
+                             false, true /* mismatched */);
 
   IfNode* iff = create_and_map_if(head, Bool(CmpI(i_byte, count), BoolTest::lt), PROB_FAIR, COUNT_UNKNOWN);
   head->init_req(2, IfTrue(iff));

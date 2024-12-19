@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,13 @@
 jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
 jshort ClassLoaderExt::_app_module_paths_start_index = ClassLoaderExt::max_classpath_index;
 jshort ClassLoaderExt::_max_used_path_index = 0;
+int ClassLoaderExt::_num_module_paths = 0;
 bool ClassLoaderExt::_has_app_classes = false;
 bool ClassLoaderExt::_has_platform_classes = false;
 bool ClassLoaderExt::_has_non_jar_in_classpath = false;
 
 void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
     FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
     if (DynamicArchive::is_mapped()) {
@@ -89,23 +90,25 @@ void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
   os::free(app_class_path);
 }
 
+int ClassLoaderExt::compare_module_names(const char** p1, const char** p2) {
+  return strcmp(*p1, *p2);
+}
+
 void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable* met) {
   ResourceMark rm(current);
-  GrowableArray<char*>* module_paths = new GrowableArray<char*>(5);
+  GrowableArray<const char*>* module_paths = new GrowableArray<const char*>(5);
 
   class ModulePathsGatherer : public ModuleClosure {
     JavaThread* _current;
-    GrowableArray<char*>* _module_paths;
+    GrowableArray<const char*>* _module_paths;
    public:
-    ModulePathsGatherer(JavaThread* current, GrowableArray<char*>* module_paths) :
+    ModulePathsGatherer(JavaThread* current, GrowableArray<const char*>* module_paths) :
       _current(current), _module_paths(module_paths) {}
     void do_module(ModuleEntry* m) {
-      char* path = m->location()->as_C_string();
-      if (strncmp(path, "file:", 5) == 0) {
-        path = ClassLoader::skip_uri_protocol(path);
-        char* path_copy = NEW_RESOURCE_ARRAY(char, strlen(path) + 1);
-        strcpy(path_copy, path);
-        _module_paths->append(path_copy);
+      char* uri = m->location()->as_C_string();
+      if (strncmp(uri, "file:", 5) == 0) {
+        char* path = ClassLoader::uri_to_path(uri);
+        extract_jar_files_from_path(path, _module_paths);
       }
     }
   };
@@ -115,6 +118,10 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
     MutexLocker ml(Module_lock);
     met->modules_do(&gatherer);
   }
+
+  // Sort the module paths before storing into CDS archive for simpler
+  // checking at runtime.
+  module_paths->sort(compare_module_names);
 
   for (int i = 0; i < module_paths->length(); i++) {
     ClassLoader::setup_module_search_path(current, module_paths->at(i));
@@ -129,6 +136,38 @@ void ClassLoaderExt::setup_module_paths(JavaThread* current) {
   Handle system_class_loader (current, SystemDictionary::java_system_loader());
   ModuleEntryTable* met = Modules::get_module_entry_table(system_class_loader);
   process_module_table(current, met);
+}
+
+bool ClassLoaderExt::has_jar_suffix(const char* filename) {
+  // In jdk.internal.module.ModulePath.readModule(), it checks for the ".jar" suffix.
+  // Performing the same check here.
+  const char* dot = strrchr(filename, '.');
+  if (dot != nullptr && strcmp(dot + 1, "jar") == 0) {
+    return true;
+  }
+  return false;
+}
+
+void ClassLoaderExt::extract_jar_files_from_path(const char* path, GrowableArray<const char*>* module_paths) {
+  DIR* dirp = os::opendir(path);
+  if (dirp == nullptr && errno == ENOTDIR && has_jar_suffix(path)) {
+    module_paths->append(path);
+  } else {
+    if (dirp != nullptr) {
+      struct dirent* dentry;
+      while ((dentry = os::readdir(dirp)) != nullptr) {
+        const char* file_name = dentry->d_name;
+        if (has_jar_suffix(file_name)) {
+          size_t full_name_len = strlen(path) + strlen(file_name) + strlen(os::file_separator()) + 1;
+          char* full_name = NEW_RESOURCE_ARRAY(char, full_name_len);
+          int n = os::snprintf(full_name, full_name_len, "%s%s%s", path, os::file_separator(), file_name);
+          assert((size_t)n == full_name_len - 1, "Unexpected number of characters in string");
+          module_paths->append(full_name);
+        }
+      }
+      os::closedir(dirp);
+    }
+  }
 }
 
 char* ClassLoaderExt::read_manifest(JavaThread* current, ClassPathEntry* entry,
@@ -205,6 +244,10 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", entry->name()));
   }
 
+  if (strstr(manifest, "Multi-Release: true") != nullptr) {
+    entry->set_multi_release_jar();
+  }
+
   char* cp_attr = get_class_path_attr(entry->name(), manifest, manifest_size);
 
   if (cp_attr != nullptr && strlen(cp_attr) > 0) {
@@ -213,6 +256,15 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     char sep = os::file_separator()[0];
     const char* dir_name = entry->name();
     const char* dir_tail = strrchr(dir_name, sep);
+#ifdef _WINDOWS
+    // On Windows, we also support forward slash as the file separator when locating entries in the classpath entry.
+    const char* dir_tail2 = strrchr(dir_name, '/');
+    if (dir_tail == nullptr) {
+      dir_tail = dir_tail2;
+    } else if (dir_tail2 != nullptr && dir_tail2 > dir_tail) {
+      dir_tail = dir_tail2;
+    }
+#endif
     int dir_len;
     if (dir_tail == nullptr) {
       dir_len = 0;
@@ -251,6 +303,7 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
       file_start = file_end;
     }
   }
+  return;
 }
 
 void ClassLoaderExt::setup_search_paths(JavaThread* current) {

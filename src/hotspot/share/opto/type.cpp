@@ -77,7 +77,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Bad,             T_ILLEGAL,    "vectora:",      false, Op_VecA,              relocInfo::none          },  // VectorA.
   { Bad,             T_ILLEGAL,    "vectors:",      false, 0,                    relocInfo::none          },  // VectorS
   { Bad,             T_ILLEGAL,    "vectord:",      false, Op_RegL,              relocInfo::none          },  // VectorD
-  { Bad,             T_ILLEGAL,    "vectorx:",      false, 0,                    relocInfo::none          },  // VectorX
+  { Bad,             T_ILLEGAL,    "vectorx:",      false, Op_VecX,              relocInfo::none          },  // VectorX
   { Bad,             T_ILLEGAL,    "vectory:",      false, 0,                    relocInfo::none          },  // VectorY
   { Bad,             T_ILLEGAL,    "vectorz:",      false, 0,                    relocInfo::none          },  // VectorZ
 #else // all other
@@ -554,9 +554,9 @@ void Type::Initialize_shared(Compile* current) {
   TypeInstPtr::BOTTOM  = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass());
   TypeInstPtr::MIRROR  = TypeInstPtr::make(TypePtr::NotNull, current->env()->Class_klass());
   TypeInstPtr::MARK    = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
-                                           false, 0, oopDesc::mark_offset_in_bytes());
+                                           false, nullptr, oopDesc::mark_offset_in_bytes());
   TypeInstPtr::KLASS   = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
-                                           false, 0, oopDesc::klass_offset_in_bytes());
+                                           false, nullptr, oopDesc::klass_offset_in_bytes());
   TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot, TypeOopPtr::InstanceBot);
 
   TypeMetadataPtr::BOTTOM = TypeMetadataPtr::make(TypePtr::BotPTR, nullptr, OffsetBot);
@@ -567,7 +567,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeNarrowKlass::NULL_PTR = TypeNarrowKlass::make( TypePtr::NULL_PTR );
 
   mreg2type[Op_Node] = Type::BOTTOM;
-  mreg2type[Op_Set ] = 0;
+  mreg2type[Op_Set ] = nullptr;
   mreg2type[Op_RegN] = TypeNarrowOop::BOTTOM;
   mreg2type[Op_RegI] = TypeInt::INT;
   mreg2type[Op_RegP] = TypePtr::BOTTOM;
@@ -679,7 +679,7 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= nullptr;
 
-  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(TypeInt::BOOL, MaxVectorSize))->hashcons();
+  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(T_BOOLEAN, MaxVectorSize))->hashcons();
   mreg2type[Op_RegVectMask] = TypeVect::VECTMASK;
 
   if (Matcher::supports_scalable_vector()) {
@@ -687,20 +687,20 @@ void Type::Initialize_shared(Compile* current) {
   }
 
   // Vector predefined types, it needs initialized _const_basic_type[].
-  if (Matcher::vector_size_supported(T_BYTE,4)) {
-    TypeVect::VECTS = TypeVect::make(T_BYTE,4);
+  if (Matcher::vector_size_supported(T_BYTE, 4)) {
+    TypeVect::VECTS = TypeVect::make(T_BYTE, 4);
   }
-  if (Matcher::vector_size_supported(T_FLOAT,2)) {
-    TypeVect::VECTD = TypeVect::make(T_FLOAT,2);
+  if (Matcher::vector_size_supported(T_FLOAT, 2)) {
+    TypeVect::VECTD = TypeVect::make(T_FLOAT, 2);
   }
-  if (Matcher::vector_size_supported(T_FLOAT,4)) {
-    TypeVect::VECTX = TypeVect::make(T_FLOAT,4);
+  if (Matcher::vector_size_supported(T_FLOAT, 4)) {
+    TypeVect::VECTX = TypeVect::make(T_FLOAT, 4);
   }
-  if (Matcher::vector_size_supported(T_FLOAT,8)) {
-    TypeVect::VECTY = TypeVect::make(T_FLOAT,8);
+  if (Matcher::vector_size_supported(T_FLOAT, 8)) {
+    TypeVect::VECTY = TypeVect::make(T_FLOAT, 8);
   }
-  if (Matcher::vector_size_supported(T_FLOAT,16)) {
-    TypeVect::VECTZ = TypeVect::make(T_FLOAT,16);
+  if (Matcher::vector_size_supported(T_FLOAT, 16)) {
+    TypeVect::VECTZ = TypeVect::make(T_FLOAT, 16);
   }
 
   mreg2type[Op_VecA] = TypeVect::VECTA;
@@ -2482,58 +2482,59 @@ bool TypeAry::ary_must_be_exact() const {
 
 //==============================TypeVect=======================================
 // Convenience common pre-built types.
-const TypeVect *TypeVect::VECTA = nullptr; // vector length agnostic
-const TypeVect *TypeVect::VECTS = nullptr; //  32-bit vectors
-const TypeVect *TypeVect::VECTD = nullptr; //  64-bit vectors
-const TypeVect *TypeVect::VECTX = nullptr; // 128-bit vectors
-const TypeVect *TypeVect::VECTY = nullptr; // 256-bit vectors
-const TypeVect *TypeVect::VECTZ = nullptr; // 512-bit vectors
-const TypeVect *TypeVect::VECTMASK = nullptr; // predicate/mask vector
+const TypeVect* TypeVect::VECTA = nullptr; // vector length agnostic
+const TypeVect* TypeVect::VECTS = nullptr; //  32-bit vectors
+const TypeVect* TypeVect::VECTD = nullptr; //  64-bit vectors
+const TypeVect* TypeVect::VECTX = nullptr; // 128-bit vectors
+const TypeVect* TypeVect::VECTY = nullptr; // 256-bit vectors
+const TypeVect* TypeVect::VECTZ = nullptr; // 512-bit vectors
+const TypeVect* TypeVect::VECTMASK = nullptr; // predicate/mask vector
 
 //------------------------------make-------------------------------------------
-const TypeVect* TypeVect::make(const Type *elem, uint length, bool is_mask) {
+const TypeVect* TypeVect::make(BasicType elem_bt, uint length, bool is_mask) {
   if (is_mask) {
-    return makemask(elem, length);
+    return makemask(elem_bt, length);
   }
-  BasicType elem_bt = elem->array_element_basic_type();
   assert(is_java_primitive(elem_bt), "only primitive types in vector");
   assert(Matcher::vector_size_supported(elem_bt, length), "length in range");
   int size = length * type2aelembytes(elem_bt);
   switch (Matcher::vector_ideal_reg(size)) {
   case Op_VecA:
-    return (TypeVect*)(new TypeVectA(elem, length))->hashcons();
+    return (TypeVect*)(new TypeVectA(elem_bt, length))->hashcons();
   case Op_VecS:
-    return (TypeVect*)(new TypeVectS(elem, length))->hashcons();
+    return (TypeVect*)(new TypeVectS(elem_bt, length))->hashcons();
   case Op_RegL:
   case Op_VecD:
   case Op_RegD:
-    return (TypeVect*)(new TypeVectD(elem, length))->hashcons();
+    return (TypeVect*)(new TypeVectD(elem_bt, length))->hashcons();
   case Op_VecX:
-    return (TypeVect*)(new TypeVectX(elem, length))->hashcons();
+    return (TypeVect*)(new TypeVectX(elem_bt, length))->hashcons();
   case Op_VecY:
-    return (TypeVect*)(new TypeVectY(elem, length))->hashcons();
+    return (TypeVect*)(new TypeVectY(elem_bt, length))->hashcons();
   case Op_VecZ:
-    return (TypeVect*)(new TypeVectZ(elem, length))->hashcons();
+    return (TypeVect*)(new TypeVectZ(elem_bt, length))->hashcons();
   }
  ShouldNotReachHere();
   return nullptr;
 }
 
-const TypeVect *TypeVect::makemask(const Type* elem, uint length) {
-  BasicType elem_bt = elem->array_element_basic_type();
+const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length) {
   if (Matcher::has_predicated_vectors() &&
       Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
-    return TypeVectMask::make(elem, length);
+    return TypeVectMask::make(elem_bt, length);
   } else {
-    return make(elem, length);
+    return make(elem_bt, length);
   }
 }
 
 //------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeVect::xmeet( const Type *t ) const {
+// Compute the MEET of two types. Since each TypeVect is the only instance of
+// its species, meeting often returns itself
+const Type* TypeVect::xmeet(const Type* t) const {
   // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
+  if (this == t) {
+    return this;
+  }
 
   // Current "this->_base" is Vector
   switch (t->base()) {          // switch on original type
@@ -2543,13 +2544,7 @@ const Type *TypeVect::xmeet( const Type *t ) const {
 
   default:                      // All else is a mistake
     typerr(t);
-  case VectorMask: {
-    const TypeVectMask* v = t->is_vectmask();
-    assert(  base() == v->base(), "");
-    assert(length() == v->length(), "");
-    assert(element_basic_type() == v->element_basic_type(), "");
-    return TypeVect::makemask(_elem->xmeet(v->_elem), _length);
-  }
+  case VectorMask:
   case VectorA:
   case VectorS:
   case VectorD:
@@ -2557,10 +2552,10 @@ const Type *TypeVect::xmeet( const Type *t ) const {
   case VectorY:
   case VectorZ: {                // Meeting 2 vectors?
     const TypeVect* v = t->is_vect();
-    assert(  base() == v->base(), "");
+    assert(base() == v->base(), "");
     assert(length() == v->length(), "");
     assert(element_basic_type() == v->element_basic_type(), "");
-    return TypeVect::make(_elem->xmeet(v->_elem), _length);
+    return this;
   }
   case Top:
     break;
@@ -2569,26 +2564,26 @@ const Type *TypeVect::xmeet( const Type *t ) const {
 }
 
 //------------------------------xdual------------------------------------------
-// Dual: compute field-by-field dual
-const Type *TypeVect::xdual() const {
-  return new TypeVect(base(), _elem->dual(), _length);
+// Since each TypeVect is the only instance of its species, it is self-dual
+const Type* TypeVect::xdual() const {
+  return this;
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
-bool TypeVect::eq(const Type *t) const {
-  const TypeVect *v = t->is_vect();
-  return (_elem == v->_elem) && (_length == v->_length);
+bool TypeVect::eq(const Type* t) const {
+  const TypeVect* v = t->is_vect();
+  return (element_basic_type() == v->element_basic_type()) && (length() == v->length());
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypeVect::hash(void) const {
-  return (uint)(uintptr_t)_elem + (uint)(uintptr_t)_length;
+  return (uint)base() + (uint)(uintptr_t)_elem_bt + (uint)(uintptr_t)_length;
 }
 
 //------------------------------singleton--------------------------------------
-// TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
+// TRUE if Type is a singleton type, FALSE otherwise. Singletons are simple
 // constants (Ldi nodes).  Vector is singleton if all elements are the same
 // constant value (when vector is created with Replicate code).
 bool TypeVect::singleton(void) const {
@@ -2598,52 +2593,36 @@ bool TypeVect::singleton(void) const {
 }
 
 bool TypeVect::empty(void) const {
-  return _elem->empty();
+  return false;
 }
 
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
-void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
+void TypeVect::dump2(Dict& d, uint depth, outputStream* st) const {
   switch (base()) {
   case VectorA:
-    st->print("vectora["); break;
+    st->print("vectora"); break;
   case VectorS:
-    st->print("vectors["); break;
+    st->print("vectors"); break;
   case VectorD:
-    st->print("vectord["); break;
+    st->print("vectord"); break;
   case VectorX:
-    st->print("vectorx["); break;
+    st->print("vectorx"); break;
   case VectorY:
-    st->print("vectory["); break;
+    st->print("vectory"); break;
   case VectorZ:
-    st->print("vectorz["); break;
+    st->print("vectorz"); break;
   case VectorMask:
-    st->print("vectormask["); break;
+    st->print("vectormask"); break;
   default:
     ShouldNotReachHere();
   }
-  st->print("%d]:{", _length);
-  _elem->dump2(d, depth, st);
-  st->print("}");
+  st->print("<%c,%u>", type2char(element_basic_type()), length());
 }
 #endif
 
-bool TypeVectMask::eq(const Type *t) const {
-  const TypeVectMask *v = t->is_vectmask();
-  return (element_type() == v->element_type()) && (length() == v->length());
-}
-
-const Type *TypeVectMask::xdual() const {
-  return new TypeVectMask(element_type()->dual(), length());
-}
-
-const TypeVectMask *TypeVectMask::make(const BasicType elem_bt, uint length) {
-  return make(get_const_basic_type(elem_bt), length);
-}
-
-const TypeVectMask *TypeVectMask::make(const Type* elem, uint length) {
-  const TypeVectMask* mtype = Matcher::predicate_reg_type(elem, length);
-  return (TypeVectMask*) const_cast<TypeVectMask*>(mtype)->hashcons();
+const TypeVectMask* TypeVectMask::make(const BasicType elem_bt, uint length) {
+  return (TypeVectMask*) (new TypeVectMask(elem_bt, length))->hashcons();
 }
 
 //=============================================================================
@@ -3129,11 +3108,11 @@ const TypeRawPtr *TypeRawPtr::NOTNULL;
 const TypeRawPtr *TypeRawPtr::make( enum PTR ptr ) {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for null" );
-  return (TypeRawPtr*)(new TypeRawPtr(ptr,0))->hashcons();
+  return (TypeRawPtr*)(new TypeRawPtr(ptr,nullptr))->hashcons();
 }
 
-const TypeRawPtr *TypeRawPtr::make( address bits ) {
-  assert( bits, "Use TypePtr for null" );
+const TypeRawPtr *TypeRawPtr::make(address bits) {
+  assert(bits != nullptr, "Use TypePtr for null");
   return (TypeRawPtr*)(new TypeRawPtr(Constant,bits))->hashcons();
 }
 
@@ -3141,7 +3120,7 @@ const TypeRawPtr *TypeRawPtr::make( address bits ) {
 const TypeRawPtr* TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for null" );
-  assert( _bits==0, "Why cast a constant address?");
+  assert( _bits == nullptr, "Why cast a constant address?");
   if( ptr == _ptr ) return this;
   return make(ptr);
 }
@@ -3222,15 +3201,21 @@ const TypePtr* TypeRawPtr::add_offset(intptr_t offset) const {
   case TypePtr::BotPTR:
   case TypePtr::NotNull:
     return this;
-  case TypePtr::Null:
   case TypePtr::Constant: {
-    address bits = _bits+offset;
-    if ( bits == 0 ) return TypePtr::NULL_PTR;
-    return make( bits );
+    uintptr_t bits = (uintptr_t)_bits;
+    uintptr_t sum = bits + offset;
+    if (( offset < 0 )
+        ? ( sum > bits )        // Underflow?
+        : ( sum < bits )) {     // Overflow?
+      return BOTTOM;
+    } else if ( sum == 0 ) {
+      return TypePtr::NULL_PTR;
+    } else {
+      return make( (address)sum );
+    }
   }
   default:  ShouldNotReachHere();
   }
-  return nullptr;                  // Lint noise
 }
 
 //------------------------------eq---------------------------------------------
@@ -3260,23 +3245,28 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 // Convenience common pre-built type.
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
-TypeInterfaces::TypeInterfaces()
-        : Type(Interfaces), _list(Compile::current()->type_arena(), 0, 0, nullptr),
+TypeInterfaces::TypeInterfaces(ciInstanceKlass** interfaces_base, int nb_interfaces)
+        : Type(Interfaces), _interfaces(interfaces_base, nb_interfaces),
           _hash(0), _exact_klass(nullptr) {
-  DEBUG_ONLY(_initialized = true);
-}
-
-TypeInterfaces::TypeInterfaces(GrowableArray<ciInstanceKlass*>* interfaces)
-        : Type(Interfaces), _list(Compile::current()->type_arena(), interfaces->length(), 0, nullptr),
-          _hash(0), _exact_klass(nullptr) {
-  for (int i = 0; i < interfaces->length(); i++) {
-    add(interfaces->at(i));
-  }
+  _interfaces.sort(compare);
   initialize();
 }
 
 const TypeInterfaces* TypeInterfaces::make(GrowableArray<ciInstanceKlass*>* interfaces) {
-  TypeInterfaces* result = (interfaces == nullptr) ? new TypeInterfaces() : new TypeInterfaces(interfaces);
+  // hashcons() can only delete the last thing that was allocated: to
+  // make sure all memory for the newly created TypeInterfaces can be
+  // freed if an identical one exists, allocate space for the array of
+  // interfaces right after the TypeInterfaces object so that they
+  // form a contiguous piece of memory.
+  int nb_interfaces = interfaces == nullptr ? 0 : interfaces->length();
+  size_t total_size = sizeof(TypeInterfaces) + nb_interfaces * sizeof(ciInstanceKlass*);
+
+  void* allocated_mem = operator new(total_size);
+  ciInstanceKlass** interfaces_base = (ciInstanceKlass**)((char*)allocated_mem + sizeof(TypeInterfaces));
+  for (int i = 0; i < nb_interfaces; ++i) {
+    interfaces_base[i] = interfaces->at(i);
+  }
+  TypeInterfaces* result = ::new (allocated_mem) TypeInterfaces(interfaces_base, nb_interfaces);
   return (const TypeInterfaces*)result->hashcons();
 }
 
@@ -3295,20 +3285,18 @@ int TypeInterfaces::compare(ciInstanceKlass* const& k1, ciInstanceKlass* const& 
   return 0;
 }
 
-void TypeInterfaces::add(ciInstanceKlass* interface) {
-  assert(interface->is_interface(), "for interfaces only");
-  _list.insert_sorted<compare>(interface);
-  verify();
+int TypeInterfaces::compare(ciInstanceKlass** k1, ciInstanceKlass** k2) {
+  return compare(*k1, *k2);
 }
 
 bool TypeInterfaces::eq(const Type* t) const {
   const TypeInterfaces* other = (const TypeInterfaces*)t;
-  if (_list.length() != other->_list.length()) {
+  if (_interfaces.length() != other->_interfaces.length()) {
     return false;
   }
-  for (int i = 0; i < _list.length(); i++) {
-    ciKlass* k1 = _list.at(i);
-    ciKlass* k2 = other->_list.at(i);
+  for (int i = 0; i < _interfaces.length(); i++) {
+    ciKlass* k1 = _interfaces.at(i);
+    ciKlass* k2 = other->_interfaces.at(i);
     if (!k1->equals(k2)) {
       return false;
     }
@@ -3319,12 +3307,12 @@ bool TypeInterfaces::eq(const Type* t) const {
 bool TypeInterfaces::eq(ciInstanceKlass* k) const {
   assert(k->is_loaded(), "should be loaded");
   GrowableArray<ciInstanceKlass *>* interfaces = k->transitive_interfaces();
-  if (_list.length() != interfaces->length()) {
+  if (_interfaces.length() != interfaces->length()) {
     return false;
   }
   for (int i = 0; i < interfaces->length(); i++) {
     bool found = false;
-    _list.find_sorted<ciInstanceKlass*, compare>(interfaces->at(i), found);
+    _interfaces.find_sorted<ciInstanceKlass*, compare>(interfaces->at(i), found);
     if (!found) {
       return false;
     }
@@ -3344,8 +3332,8 @@ const Type* TypeInterfaces::xdual() const {
 
 void TypeInterfaces::compute_hash() {
   uint hash = 0;
-  for (int i = 0; i < _list.length(); i++) {
-    ciKlass* k = _list.at(i);
+  for (int i = 0; i < _interfaces.length(); i++) {
+    ciKlass* k = _interfaces.at(i);
     hash += k->hash();
   }
   _hash = hash;
@@ -3356,13 +3344,13 @@ static int compare_interfaces(ciInstanceKlass** k1, ciInstanceKlass** k2) {
 }
 
 void TypeInterfaces::dump(outputStream* st) const {
-  if (_list.length() == 0) {
+  if (_interfaces.length() == 0) {
     return;
   }
   ResourceMark rm;
   st->print(" (");
   GrowableArray<ciInstanceKlass*> interfaces;
-  interfaces.appendAll(&_list);
+  interfaces.appendAll(&_interfaces);
   // Sort the interfaces so they are listed in the same order from one run to the other of the same compilation
   interfaces.sort(compare_interfaces);
   for (int i = 0; i < interfaces.length(); i++) {
@@ -3377,9 +3365,9 @@ void TypeInterfaces::dump(outputStream* st) const {
 
 #ifdef ASSERT
 void TypeInterfaces::verify() const {
-  for (int i = 1; i < _list.length(); i++) {
-    ciInstanceKlass* k1 = _list.at(i-1);
-    ciInstanceKlass* k2 = _list.at(i);
+  for (int i = 1; i < _interfaces.length(); i++) {
+    ciInstanceKlass* k1 = _interfaces.at(i-1);
+    ciInstanceKlass* k2 = _interfaces.at(i);
     assert(compare(k2, k1) > 0, "should be ordered");
     assert(k1 != k2, "no duplicate");
   }
@@ -3390,23 +3378,23 @@ const TypeInterfaces* TypeInterfaces::union_with(const TypeInterfaces* other) co
   GrowableArray<ciInstanceKlass*> result_list;
   int i = 0;
   int j = 0;
-  while (i < _list.length() || j < other->_list.length()) {
-    while (i < _list.length() &&
-           (j >= other->_list.length() ||
-            compare(_list.at(i), other->_list.at(j)) < 0)) {
-      result_list.push(_list.at(i));
+  while (i < _interfaces.length() || j < other->_interfaces.length()) {
+    while (i < _interfaces.length() &&
+           (j >= other->_interfaces.length() ||
+            compare(_interfaces.at(i), other->_interfaces.at(j)) < 0)) {
+      result_list.push(_interfaces.at(i));
       i++;
     }
-    while (j < other->_list.length() &&
-           (i >= _list.length() ||
-            compare(other->_list.at(j), _list.at(i)) < 0)) {
-      result_list.push(other->_list.at(j));
+    while (j < other->_interfaces.length() &&
+           (i >= _interfaces.length() ||
+            compare(other->_interfaces.at(j), _interfaces.at(i)) < 0)) {
+      result_list.push(other->_interfaces.at(j));
       j++;
     }
-    if (i < _list.length() &&
-        j < other->_list.length() &&
-        _list.at(i) == other->_list.at(j)) {
-      result_list.push(_list.at(i));
+    if (i < _interfaces.length() &&
+        j < other->_interfaces.length() &&
+        _interfaces.at(i) == other->_interfaces.at(j)) {
+      result_list.push(_interfaces.at(i));
       i++;
       j++;
     }
@@ -3414,14 +3402,14 @@ const TypeInterfaces* TypeInterfaces::union_with(const TypeInterfaces* other) co
   const TypeInterfaces* result = TypeInterfaces::make(&result_list);
 #ifdef ASSERT
   result->verify();
-  for (int i = 0; i < _list.length(); i++) {
-    assert(result->_list.contains(_list.at(i)), "missing");
+  for (int i = 0; i < _interfaces.length(); i++) {
+    assert(result->_interfaces.contains(_interfaces.at(i)), "missing");
   }
-  for (int i = 0; i < other->_list.length(); i++) {
-    assert(result->_list.contains(other->_list.at(i)), "missing");
+  for (int i = 0; i < other->_interfaces.length(); i++) {
+    assert(result->_interfaces.contains(other->_interfaces.at(i)), "missing");
   }
-  for (int i = 0; i < result->_list.length(); i++) {
-    assert(_list.contains(result->_list.at(i)) || other->_list.contains(result->_list.at(i)), "missing");
+  for (int i = 0; i < result->_interfaces.length(); i++) {
+    assert(_interfaces.contains(result->_interfaces.at(i)) || other->_interfaces.contains(result->_interfaces.at(i)), "missing");
   }
 #endif
   return result;
@@ -3431,21 +3419,21 @@ const TypeInterfaces* TypeInterfaces::intersection_with(const TypeInterfaces* ot
   GrowableArray<ciInstanceKlass*> result_list;
   int i = 0;
   int j = 0;
-  while (i < _list.length() || j < other->_list.length()) {
-    while (i < _list.length() &&
-           (j >= other->_list.length() ||
-            compare(_list.at(i), other->_list.at(j)) < 0)) {
+  while (i < _interfaces.length() || j < other->_interfaces.length()) {
+    while (i < _interfaces.length() &&
+           (j >= other->_interfaces.length() ||
+            compare(_interfaces.at(i), other->_interfaces.at(j)) < 0)) {
       i++;
     }
-    while (j < other->_list.length() &&
-           (i >= _list.length() ||
-            compare(other->_list.at(j), _list.at(i)) < 0)) {
+    while (j < other->_interfaces.length() &&
+           (i >= _interfaces.length() ||
+            compare(other->_interfaces.at(j), _interfaces.at(i)) < 0)) {
       j++;
     }
-    if (i < _list.length() &&
-        j < other->_list.length() &&
-        _list.at(i) == other->_list.at(j)) {
-      result_list.push(_list.at(i));
+    if (i < _interfaces.length() &&
+        j < other->_interfaces.length() &&
+        _interfaces.at(i) == other->_interfaces.at(j)) {
+      result_list.push(_interfaces.at(i));
       i++;
       j++;
     }
@@ -3453,14 +3441,14 @@ const TypeInterfaces* TypeInterfaces::intersection_with(const TypeInterfaces* ot
   const TypeInterfaces* result = TypeInterfaces::make(&result_list);
 #ifdef ASSERT
   result->verify();
-  for (int i = 0; i < _list.length(); i++) {
-    assert(!other->_list.contains(_list.at(i)) || result->_list.contains(_list.at(i)), "missing");
+  for (int i = 0; i < _interfaces.length(); i++) {
+    assert(!other->_interfaces.contains(_interfaces.at(i)) || result->_interfaces.contains(_interfaces.at(i)), "missing");
   }
-  for (int i = 0; i < other->_list.length(); i++) {
-    assert(!_list.contains(other->_list.at(i)) || result->_list.contains(other->_list.at(i)), "missing");
+  for (int i = 0; i < other->_interfaces.length(); i++) {
+    assert(!_interfaces.contains(other->_interfaces.at(i)) || result->_interfaces.contains(other->_interfaces.at(i)), "missing");
   }
-  for (int i = 0; i < result->_list.length(); i++) {
-    assert(_list.contains(result->_list.at(i)) && other->_list.contains(result->_list.at(i)), "missing");
+  for (int i = 0; i < result->_interfaces.length(); i++) {
+    assert(_interfaces.contains(result->_interfaces.at(i)) && other->_interfaces.contains(result->_interfaces.at(i)), "missing");
   }
 #endif
   return result;
@@ -3473,13 +3461,13 @@ ciInstanceKlass* TypeInterfaces::exact_klass() const {
 }
 
 void TypeInterfaces::compute_exact_klass() {
-  if (_list.length() == 0) {
+  if (_interfaces.length() == 0) {
     _exact_klass = nullptr;
     return;
   }
   ciInstanceKlass* res = nullptr;
-  for (int i = 0; i < _list.length(); i++) {
-    ciInstanceKlass* interface = _list.at(i);
+  for (int i = 0; i < _interfaces.length(); i++) {
+    ciInstanceKlass* interface = _interfaces.at(i);
     if (eq(interface)) {
       assert(res == nullptr, "");
       res = interface;
@@ -3490,8 +3478,8 @@ void TypeInterfaces::compute_exact_klass() {
 
 #ifdef ASSERT
 void TypeInterfaces::verify_is_loaded() const {
-  for (int i = 0; i < _list.length(); i++) {
-    ciKlass* interface = _list.at(i);
+  for (int i = 0; i < _interfaces.length(); i++) {
+    ciKlass* interface = _interfaces.at(i);
     assert(interface->is_loaded(), "Interface not loaded");
   }
 }
@@ -3525,7 +3513,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
   }
 #endif
   if (Compile::current()->eliminate_boxing() && (t == InstPtr) &&
-      (offset > 0) && xk && (k != 0) && k->is_instance_klass()) {
+      (offset > 0) && xk && (k != nullptr) && k->is_instance_klass()) {
     _is_ptr_to_boxed_value = k->as_instance_klass()->is_boxed_value_offset(offset);
   }
 #ifdef _LP64

@@ -210,7 +210,7 @@ FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
 FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
 FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
 FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::Posix::realpath");
+FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::realpath");
 FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
 FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
 FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
@@ -222,9 +222,9 @@ FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 const int LogBytesPerShort   = 1;
 const int LogBytesPerInt     = 2;
 #ifdef _LP64
-const int LogBytesPerWord    = 3;
+constexpr int LogBytesPerWord    = 3;
 #else
-const int LogBytesPerWord    = 2;
+constexpr int LogBytesPerWord    = 2;
 #endif
 const int LogBytesPerLong    = 3;
 
@@ -233,16 +233,16 @@ const int BytesPerInt        = 1 << LogBytesPerInt;
 const int BytesPerWord       = 1 << LogBytesPerWord;
 const int BytesPerLong       = 1 << LogBytesPerLong;
 
-const int LogBitsPerByte     = 3;
+constexpr int LogBitsPerByte     = 3;
 const int LogBitsPerShort    = LogBitsPerByte + LogBytesPerShort;
 const int LogBitsPerInt      = LogBitsPerByte + LogBytesPerInt;
-const int LogBitsPerWord     = LogBitsPerByte + LogBytesPerWord;
+constexpr int LogBitsPerWord     = LogBitsPerByte + LogBytesPerWord;
 const int LogBitsPerLong     = LogBitsPerByte + LogBytesPerLong;
 
 const int BitsPerByte        = 1 << LogBitsPerByte;
 const int BitsPerShort       = 1 << LogBitsPerShort;
 const int BitsPerInt         = 1 << LogBitsPerInt;
-const int BitsPerWord        = 1 << LogBitsPerWord;
+constexpr int BitsPerWord        = 1 << LogBitsPerWord;
 const int BitsPerLong        = 1 << LogBitsPerLong;
 
 const int WordAlignmentMask  = (1 << LogBytesPerWord) - 1;
@@ -384,8 +384,13 @@ inline T byte_size_in_proper_unit(T s) {
 #define PROPERFMT             SIZE_FORMAT "%s"
 #define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
 
+// Printing a range, with start and bytes given
 #define RANGEFMT              "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
 #define RANGEFMTARGS(p1, size) p2i(p1), p2i(p1 + size), size
+
+// Printing a range, with start and end given
+#define RANGE2FMT             "[" PTR_FORMAT " - " PTR_FORMAT "), (" SIZE_FORMAT " bytes)"
+#define RANGE2FMTARGS(p1, p2) p2i(p1), p2i(p2), ((uintptr_t)p2 - (uintptr_t)p1)
 
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
@@ -455,6 +460,7 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 typedef   signed char s_char;
 typedef unsigned char u_char;
 typedef u_char*       address;
+typedef const u_char* const_address;
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
@@ -553,6 +559,9 @@ const jint min_jintFloat = (jint)(0x00000001);
 const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
+
+// A named constant for the integral representation of a Java null.
+const intptr_t NULL_WORD = 0;
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions

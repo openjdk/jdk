@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * the given port.
  */
 import java.net.Socket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.io.IOException;
 
@@ -38,7 +39,7 @@ public class Agent {
         int port = Integer.parseInt(args);
         System.out.println("Agent connecting back to Tool....");
         Socket s = new Socket();
-        s.connect( new InetSocketAddress(port) );
+        s.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
         System.out.println("Agent connected to Tool.");
         s.close();
     }

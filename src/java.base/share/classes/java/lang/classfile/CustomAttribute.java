@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.javac.PreviewFeature;
+import java.lang.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
  * Models a non-standard attribute of a classfile.  Clients should extend
@@ -33,9 +34,8 @@ import jdk.internal.javac.PreviewFeature;
  * format and the {@linkplain CustomAttribute} representation.
  * @param <T> the custom attribute type
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
         implements Attribute<T>, CodeElement, ClassElement, MethodElement, FieldElement {
 
@@ -55,14 +55,8 @@ public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
     }
 
     @Override
-    public final String attributeName() {
-        return mapper.name();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public final void writeTo(BufWriter buf) {
-        mapper.writeAttribute(buf, (T) this);
+    public Utf8Entry attributeName() {
+        return TemporaryConstantPool.INSTANCE.utf8Entry(mapper.name());
     }
 
     @Override

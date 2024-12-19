@@ -1,7 +1,7 @@
 #!/bin/bash -f
 
 #
-# Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,10 @@
 #  (Originally from xdono, Thanks!)
 
 #------------------------------------------------------------
-copyright="Copyright (c)"
+copyright="Copyright"
+copyright_symbol="(c)"
 company="Oracle"
+year=`date +%Y`
 #------------------------------------------------------------
 
 awk="awk"
@@ -49,66 +51,75 @@ rm -f -r ${tmp}
 mkdir -p ${tmp}
 total=0
 
-# Default or supplied company name
-if [ "$3" != "" ] ; then
-  company="$3"
-fi
+usage="Usage: `basename "$0"` [-c company] [-y year] [-h|f]"
+Help()
+{
+  # Display Help
+  echo "Updates the Copyright year range in Git sources."
+  echo
+  echo "By default, the tool limits the processed changesets "
+  echo "to those in the current branch and the current year."
+  echo
+  echo "Note, cancelling the script will skip cleanup in /tmp."
+  echo
+  echo $usage
+  echo "options:"
+  echo "-c     Specifies the company. Set to Oracle by default."
+  echo "-y     Specifies the copyright year. Set to current year by default."
+  echo "-f     Updates the copyright for all change sets in a given year,"
+  echo "       as specified by -y."
+  echo "-h     Print this help."
+  echo
+}
 
-# This year or supplied year
-if [ "$2" != "" ] ; then
-  year="$2"
+full_year=false
+
+# Process options
+while getopts "c:fhy:" option; do
+  case $option in
+    c) # supplied company year
+      company=${OPTARG}
+      ;;
+    f) # update all change sets in a full year
+      full_year=true
+      ;;
+    h) # display help
+      Help
+      exit 0
+      ;;
+    y) # supplied company year
+      year=${OPTARG}
+      ;;
+    \?) # illegal option
+      echo "$usage"
+      exit 1
+      ;;
+  esac
+done
+
+# VCS check
+git_found=false
+[ -d "${this_script_dir}/../../.git" ] && git_found=true
+if [ "$git_found" != "true" ]; then
+  echo "Error: Please execute script from within make/scripts."
+  exit 1
 else
-  year=`date +%Y`
-fi
-
-# VCS select
-vcs="$1"
-
-if [ -z "$vcs" ] ; then
-  git_found=false
-  hg_found=false
-
-  [ -d "${this_script_dir}/../../.git" ] && git_found=true
-  [ -d "${this_script_dir}/../../.hg" ] && hg_found=true
-
-  if [ "$git_found" == "true" ] && [ "$hg_found" == "false" ] ; then
-    vcs="git"
-  elif [ "$hg_found" == "true" ] && [ "$git_found" == "false" ] ; then
-    vcs="hg"
-  else
-    echo "Error: could not auto-detect version control system"
-    vcs=""
-  fi
-fi
-
-case "$vcs" in
-  "git")
-    echo "Using Git version control system"
-    vcs_status=(git ls-files -m)
+  echo "Using Git version control system"
+  vcs_status=(git ls-files -m)
+  if [ "$full_year" = "true" ]; then
     vcs_list_changesets=(git log --no-merges --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
-    vcs_changeset_message=(git log -1 --pretty=tformat:"%B") # followed by ${changeset}
-    vcs_changeset_files=(git diff-tree --no-commit-id --name-only -r) # followed by ${changeset}
-    ;;
-
-  "hg")
-    echo "Using Mercurial version control system"
-    vcs_status=(hg status)
-    vcs_list_changesets=(hg log --no-merges -v -d "${year}-01-01 to ${year}-12-31" --template '{node}\n')
-    vcs_changeset_message=(hg log -l1 --template '{desc}\n' --rev) # followed by ${changeset}
-    vcs_changeset_files=(hg log -l1 -v --template '{files}\n' --rev) # followed by ${changeset}
-    ;;
-
-  *)
-    echo "Usage: `basename "$0"` <git|hg> [year [company]]"
-    exit 1
-    ;;
-esac
+  else
+    vcs_list_changesets=(git log --no-merges 'master..HEAD' --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
+  fi
+  vcs_changeset_message=(git log -1 --pretty=tformat:"%B") # followed by ${changeset}
+  vcs_changeset_files=(git diff-tree --no-commit-id --name-only -r) # followed by ${changeset}
+fi
 
 # Return true if it makes sense to edit this file
 saneFileToCheck()
 {
   if [ "$1" != "" -a -f $1 ] ; then
-    isText=`file "$1" | egrep -i '(text|source)' | cat`
+    isText=`file "$1" | grep -i -E '(text|source)' | cat`
     hasCopyright=`grep 'Copyright' "$1" | cat`
     lastLineCount=`tail -1 "$1" | wc -l`
     if [ "${isText}" != ""  \
@@ -131,9 +142,13 @@ updateFile() # file
     rm -f $1.OLD
     mv $1 $1.OLD
     cat $1.OLD | \
-      sed -e "s@\(${copyright} [12][0-9][0-9][0-9],\) [12][0-9][0-9][0-9], ${company}@\1 ${year}, ${company}@" | \
-      sed -e "s@\(${copyright} [12][0-9][0-9][0-9],\) ${company}@\1 ${year}, ${company}@" | \
-      sed -e "s@${copyright} ${year}, ${year}, ${company}@${copyright} ${year}, ${company}@"  \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9],\) [12][0-9][0-9][0-9], ${company}@\1 ${year}, ${company}@" | \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9],\) [12][0-9][0-9][0-9] ${company}@\1 ${year} ${company}@" | \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9],\) ${company}@\1 ${year}, ${company}@" | \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9],\) ${company}@\1, ${year}, ${company}@" | \
+      sed -e "s@\(${copyright} \(${copyright_symbol} \)\{0,1\}[12][0-9][0-9][0-9]\) ${company}@\1, ${year} ${company}@" | \
+      sed -e "s@${copyright} ${year}, ${year}, ${company}@${copyright} ${year}, ${company}@" | \
+      sed -e "s@${copyright} ${copyright_symbol} ${year}, ${year}, ${company}@${copyright} ${copyright_symbol} ${year}, ${company}@"  \
       > $1
     if ! diff -b -w $1.OLD $1 > /dev/null ; then \
       changed="true"
@@ -205,19 +220,19 @@ if [ -s ${all_changesets} ] ; then
     "${vcs_changeset_message[@]}" "${changeset}" > ${desc}
     printf "%d: %s\n%s\n" ${index} "${changeset}" "`cat ${desc}|head -1`"
     if [ "${year}" = "2010" ] ; then
-      if cat ${desc} | fgrep -i "Added tag" > /dev/null ; then
+      if cat ${desc} | grep -i -F "Added tag" > /dev/null ; then
         printf "  EXCLUDED tag changeset.\n"
-      elif cat ${desc} | fgrep -i rebrand > /dev/null ; then
+      elif cat ${desc} | grep -i -F rebrand > /dev/null ; then
         printf "  EXCLUDED rebrand changeset.\n"
-      elif cat ${desc} | fgrep -i copyright > /dev/null ; then
+      elif cat ${desc} | grep -i -F copyright > /dev/null ; then
         printf "  EXCLUDED copyright changeset.\n"
       else
         updateChangesetFiles ${changeset}
       fi
     else
-      if cat ${desc} | fgrep -i "Added tag" > /dev/null ; then
+      if cat ${desc} | grep -i -F "Added tag" > /dev/null ; then
         printf "  EXCLUDED tag changeset.\n"
-      elif cat ${desc} | fgrep -i "copyright year" > /dev/null ; then
+      elif cat ${desc} | grep -i -F "copyright year" > /dev/null ; then
         printf "  EXCLUDED copyright year changeset.\n"
       else
         updateChangesetFiles ${changeset}

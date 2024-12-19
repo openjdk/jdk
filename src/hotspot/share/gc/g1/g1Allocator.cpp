@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
     _g1h->old_set_remove(retained_region);
-    old->set(retained_region);
+    old->reuse(retained_region);
     G1HeapRegionPrinter::reuse(retained_region);
     evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }

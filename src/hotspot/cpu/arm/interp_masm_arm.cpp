@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -909,8 +909,8 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(R0, Robj);
-      ldr_u32(R0, Address(R0, Klass::access_flags_offset()));
-      tst(R0, JVM_ACC_IS_VALUE_BASED_CLASS);
+      ldrb(R0, Address(R0, Klass::misc_flags_offset()));
+      tst(R0, KlassFlags::_misc_is_value_based_class);
       b(slow_case, ne);
     }
 
@@ -985,15 +985,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Pass oop, not lock, in fast lock case. call_VM wants R1 though.
-      push(R1);
-      mov(R1, Robj);
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj), R1);
-      pop(R1);
-    } else {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
-    }
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
     bind(done);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
 #ifdef COMPILER2
 #include "code/vmreg.hpp"
 #include "opto/optoreg.hpp"
+#include "opto/regmask.hpp"
 
+class BarrierStubC2;
 class Node;
 #endif // COMPILER2
 
@@ -69,4 +71,26 @@ public:
 #endif // COMPILER2
 };
 
+#ifdef COMPILER2
+// This class saves and restores the registers that need to be preserved across
+// the runtime call represented by a given C2 barrier stub. Use as follows:
+// {
+//   SaveLiveRegisters save(masm, stub);
+//   ..
+//   __ bl(...);
+//   ..
+// }
+class SaveLiveRegisters {
+private:
+  MacroAssembler* const masm;
+  RegSet                gp_regs;
+  FloatRegSet           fp_regs;
+
+public:
+  void initialize(BarrierStubC2* stub);
+  SaveLiveRegisters(MacroAssembler* masm, BarrierStubC2* stub);
+  ~SaveLiveRegisters();
+};
+
+#endif // COMPILER2
 #endif // CPU_ARM_GC_SHARED_BARRIERSETASSEMBLER_ARM_HPP

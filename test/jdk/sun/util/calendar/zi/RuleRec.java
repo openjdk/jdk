@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,12 +168,13 @@ class RuleRec {
                 rec.toYear = Integer.parseInt(token);
             } catch (NumberFormatException e) {
                 // it's not integer
-                if ("min".equals(token) || "minimum".equals(token)) {
+                int len = token.length();
+                if (token.regionMatches(true, 0, "minimum", 0, len)) {
                     rec.fromYear = Zoneinfo.getMinYear();
-                } else if ("max".equals(token) || "maximum".equals(token)) {
+                } else if (token.regionMatches(true, 0, "maximum", 0, len)) {
                     rec.toYear = Integer.MAX_VALUE;
                     rec.isLastRule = true;
-                } else if ("only".equals(token)) {
+                } else if (token.regionMatches(true, 0, "only", 0, len)) {
                     rec.toYear = rec.fromYear;
                 } else {
                     Main.panic("invalid year value: "+token);

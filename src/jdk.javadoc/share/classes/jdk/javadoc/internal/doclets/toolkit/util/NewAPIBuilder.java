@@ -46,16 +46,17 @@ public class NewAPIBuilder extends SummaryAPIListBuilder {
     public final List<String> releases;
 
     public NewAPIBuilder(BaseConfiguration configuration, List<String> releases) {
-        super(configuration, element -> isNewAPI(element, configuration.utils, releases));
+        super(configuration);
         this.releases = releases;
         buildSummaryAPIInfo();
     }
 
-    private static boolean isNewAPI(Element e, Utils utils, List<String> releases) {
-        if (!utils.hasDocCommentTree(e)) {
+    @Override
+    protected boolean belongsToSummary(Element element) {
+        if (!utils.hasDocCommentTree(element)) {
             return false;
         }
-        var sinceTrees = utils.getBlockTags(e, SINCE, SinceTree.class);
+        var sinceTrees = utils.getBlockTags(element, SINCE, SinceTree.class);
         if (sinceTrees.isEmpty()) {
             return false;
         }

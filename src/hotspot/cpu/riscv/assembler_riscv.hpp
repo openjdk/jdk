@@ -46,8 +46,10 @@
 class Argument {
  public:
   enum {
-    n_int_register_parameters_c   = 8, // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
-    n_float_register_parameters_c = 8, // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+    n_int_register_parameters_c   = 8,   // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
+    n_float_register_parameters_c = 8,   // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    n_vector_register_parameters_c = 16,  // v8, v9, ... v23
 
     n_int_register_parameters_j   = 8, // x11, ... x17, x10 (j_rarg0, j_rarg1, ...)
     n_float_register_parameters_j = 8  // f10, f11, ... f17 (j_farg0, j_farg1, ...)
@@ -143,6 +145,10 @@ constexpr Register x19_sender_sp = x19; // Sender's SP while in interpreter
 constexpr Register t0 = x5;
 constexpr Register t1 = x6;
 constexpr Register t2 = x7;
+constexpr Register t3 = x28;
+constexpr Register t4 = x29;
+constexpr Register t5 = x30;
+constexpr Register t6 = x31;
 
 const Register g_INTArgReg[Argument::n_int_register_parameters_c] = {
   c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7
@@ -702,6 +708,16 @@ public:
     patch((address)&insn, 23, 20, successor);   // succ
     patch((address)&insn, 27, 24, predecessor); // pred
     patch((address)&insn, 31, 28, 0b0000);      // fm
+    emit(insn);
+  }
+
+  void fencei() {
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, 0b0001111);      // opcode
+    patch((address)&insn, 11,  7, 0b00000);        // rd
+    patch((address)&insn, 14, 12, 0b001);          // func
+    patch((address)&insn, 19, 15, 0b00000);        // rs1
+    patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
 
@@ -1267,6 +1283,7 @@ enum VectorMask {
   INSN(viota_m,   0b1010111, 0b010, 0b10000, 0b010100);
 
   // Vector Single-Width Floating-Point/Integer Type-Convert Instructions
+  INSN(vfcvt_x_f_v,      0b1010111, 0b001, 0b00001, 0b010010);
   INSN(vfcvt_f_x_v,      0b1010111, 0b001, 0b00011, 0b010010);
   INSN(vfcvt_rtz_x_f_v,  0b1010111, 0b001, 0b00111, 0b010010);
 
@@ -1415,6 +1432,10 @@ enum VectorMask {
   INSN(vredmaxu_vs,   0b1010111, 0b010, 0b000110);
   INSN(vredmax_vs,    0b1010111, 0b010, 0b000111);
 
+  // Vector Widening Integer Reduction Instructions
+  INSN(vwredsum_vs,    0b1010111, 0b000, 0b110001);
+  INSN(vwredsumu_vs,   0b1010111, 0b000, 0b110000);
+
   // Vector Floating-Point Compare Instructions
   INSN(vmfle_vv, 0b1010111, 0b001, 0b011001);
   INSN(vmflt_vv, 0b1010111, 0b001, 0b011011);
@@ -1452,6 +1473,10 @@ enum VectorMask {
   INSN(vmulhu_vv,  0b1010111, 0b010, 0b100100);
   INSN(vmulh_vv,   0b1010111, 0b010, 0b100111);
   INSN(vmul_vv,    0b1010111, 0b010, 0b100101);
+
+  // Vector Widening Integer Multiply Instructions
+  INSN(vwmul_vv,    0b1010111, 0b010, 0b111011);
+  INSN(vwmulu_vv,   0b1010111, 0b010, 0b111000);
 
   // Vector Integer Min/Max Instructions
   INSN(vmax_vv,  0b1010111, 0b000, 0b000111);
@@ -1820,6 +1845,21 @@ enum Nf {
 
 #undef INSN
 
+#define INSN(NAME, op, width, umop, mop, mew, nf)                                               \
+  void NAME(VectorRegister Vd_or_Vs3, Register Rs1, VectorMask vm = unmasked) { \
+    patch_VLdSt(op, Vd_or_Vs3, width, Rs1, umop, vm, mop, mew, nf);                         \
+  }
+
+  // Vector Unit-Stride Segment Load Instructions
+  INSN(vlseg3e8_v, 0b0000111, 0b000, 0b00000, 0b00, 0b0, g3);
+  INSN(vlseg4e8_v, 0b0000111, 0b000, 0b00000, 0b00, 0b0, g4);
+
+  // Vector Unit-Stride Segment Store Instructions
+  INSN(vsseg3e8_v, 0b0100111, 0b000, 0b00000, 0b00, 0b0, g3);
+  INSN(vsseg4e8_v, 0b0100111, 0b000, 0b00000, 0b00, 0b0, g4);
+
+#undef INSN
+
 #define INSN(NAME, op, width, mop, mew)                                                                  \
   void NAME(VectorRegister Vd, Register Rs1, VectorRegister Vs2, VectorMask vm = unmasked, Nf nf = g1) { \
     patch_VLdSt(op, Vd, width, Rs1, Vs2->raw_encoding(), vm, mop, mew, nf);                              \
@@ -1828,10 +1868,12 @@ enum Nf {
   // Vector unordered indexed load instructions
   INSN( vluxei8_v, 0b0000111, 0b000, 0b01, 0b0);
   INSN(vluxei32_v, 0b0000111, 0b110, 0b01, 0b0);
+  INSN(vluxei64_v, 0b0000111, 0b111, 0b01, 0b0);
 
   // Vector unordered indexed store instructions
   INSN( vsuxei8_v, 0b0100111, 0b000, 0b01, 0b0);
   INSN(vsuxei32_v, 0b0100111, 0b110, 0b01, 0b0);
+  INSN(vsuxei64_v, 0b0100111, 0b111, 0b01, 0b0);
 
 #undef INSN
 
@@ -1919,6 +1961,13 @@ enum Nf {
   INSN(vbrev_v,  0b1010111, 0b010, 0b01010, 0b010010); // reverse bits in every element
   INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010); // reverse bits in every byte of element
   INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010); // reverse bytes in every elememt
+
+  // Vector AES instructions (Zvkned extension)
+  INSN(vaesem_vv,   0b1110111, 0b010, 0b00010, 0b101000);
+  INSN(vaesef_vv,   0b1110111, 0b010, 0b00011, 0b101000);
+
+  INSN(vaesdm_vv,   0b1110111, 0b010, 0b00000, 0b101000);
+  INSN(vaesdf_vv,   0b1110111, 0b010, 0b00001, 0b101000);
 
   INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
   INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
@@ -2850,8 +2899,9 @@ public:
 // Unconditional branch instructions
 // --------------------------
  protected:
-  // All calls and jumps must go via MASM.
+  // All calls and jumps must go via MASM. Only use x1 (aka ra) as link register for now.
   void jalr(Register Rd, Register Rs, const int32_t offset) {
+    assert(Rd != x5 && Rs != x5, "Register x5 must not be used for calls/jumps.");
     /* jalr -> c.jr/c.jalr */
     if (do_compress() && (offset == 0 && Rs != x0)) {
       if (Rd == x1) {
@@ -2866,6 +2916,7 @@ public:
   }
 
   void jal(Register Rd, const int32_t offset) {
+    assert(Rd != x5, "Register x5 must not be used for calls/jumps.");
     /* jal -> c.j, note c.jal is RV32C only */
     if (do_compress() &&
         Rd == x0 &&
@@ -2873,7 +2924,6 @@ public:
       c_j(offset);
       return;
     }
-
     _jal(Rd, offset);
   }
 
@@ -3056,6 +3106,38 @@ public:
   INSN(prefetch_w, 0b0000000000011);
 
 #undef INSN
+
+// --------------  Zicond Instruction Definitions  --------------
+// Zicond conditional operations extension
+  private:
+  enum CZERO_OP : unsigned int {
+    CZERO_NEZ = 0b111,
+    CZERO_EQZ = 0b101
+  };
+
+  template <CZERO_OP OP_VALUE>
+  void czero(Register Rd, Register Rs1, Register Rs2) {
+    assert_cond(UseZicond);
+    uint32_t insn = 0;
+    patch    ((address)&insn,  6,  0, 0b0110011);  // bits:  7, name: 0x33, attr: ['OP']
+    patch_reg((address)&insn,      7, Rd);         // bits:  5, name: 'rd'
+    patch    ((address)&insn, 14, 12, OP_VALUE);   // bits:  3, name: 0x7, attr: ['CZERO.NEZ'] / 0x5, attr: ['CZERO.EQZ']}
+    patch_reg((address)&insn,     15, Rs1);        // bits:  5, name: 'rs1', attr: ['value']
+    patch_reg((address)&insn,     20, Rs2);        // bits:  5, name: 'rs2', attr: ['condition']
+    patch    ((address)&insn, 31, 25, 0b0000111);  // bits:  7, name: 0x7, attr: ['CZERO']
+    emit_int32(insn);
+  }
+
+  public:
+  // Moves zero to a register rd, if the condition rs2 is equal to zero, otherwise moves rs1 to rd.
+  void czero_eqz(Register rd, Register rs1_value, Register rs2_condition) {
+    czero<CZERO_EQZ>(rd, rs1_value, rs2_condition);
+  }
+
+  // Moves zero to a register rd, if the condition rs2 is nonzero, otherwise moves rs1 to rd.
+  void czero_nez(Register rd, Register rs1_value, Register rs2_condition) {
+    czero<CZERO_NEZ>(rd, rs1_value, rs2_condition);
+  }
 
 // --------------  ZCB Instruction Definitions  --------------
 // Zcb additional C instructions

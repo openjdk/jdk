@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640 8331485
+ * @bug 8327640 8331485 8333755 8335668
  * @summary Test suite for NumberFormat parsing with strict leniency
  * @run junit/othervm -Duser.language=en -Duser.country=US StrictParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP StrictParseTest
@@ -34,6 +34,7 @@
  * @run junit/othervm -Duser.language=ar -Duser.country=AR StrictParseTest
  */
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -72,17 +73,18 @@ public class StrictParseTest {
     private static final CompactNumberFormat cmpctFmt =
             (CompactNumberFormat) NumberFormat.getCompactNumberInstance(Locale.getDefault(),
                     NumberFormat.Style.SHORT);
+    private static final NumberFormat[] FORMATS = new NumberFormat[]{dFmt, cFmt, pFmt, cmpctFmt};
 
-
-    // All NumberFormats should parse strictly
-    static {
-        dFmt.setStrict(true);
-        pFmt.setStrict(true);
-        cFmt.setStrict(true);
-        cmpctFmt.setStrict(true);
-        // To effectively test strict compactNumberFormat parsing
-        cmpctFmt.setParseIntegerOnly(false);
-        cmpctFmt.setGroupingUsed(true);
+    // Restore defaults before runs
+    @BeforeEach
+    void beforeEach() {
+        for (NumberFormat fmt : FORMATS) {
+            fmt.setStrict(true);
+            fmt.setParseIntegerOnly(false);
+            fmt.setGroupingUsed(true);
+        }
+        // Grouping Size is not defined at NumberFormat level
+        // Compact needs to manually init grouping size
         cmpctFmt.setGroupingSize(3);
     }
 
@@ -112,6 +114,20 @@ public class StrictParseTest {
         successParse(nonLocalizedDFmt, "a12345,67890b");
         successParse(nonLocalizedDFmt, "a1234,67890b");
         failParse(nonLocalizedDFmt, "a123456,7890b", 6);
+    }
+
+
+    // 8333755: Check that parsing with integer only against a suffix value works
+    @Test // Non-localized, run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void integerOnlyParseWithSuffixTest() {
+        // Some pattern with a suffix
+        DecimalFormat fmt = new DecimalFormat("0.00b");
+        fmt.setParseIntegerOnly(true);
+        assertEquals(5d, successParse(fmt, "5.55b", 1));
+        assertEquals(5d, successParse(fmt, "5b", 2));
+        assertEquals(5555d, successParse(fmt, "5,555.55b", 5));
+        assertEquals(5d, successParse(fmt, "5.55E55b", 1));
     }
 
     @Test // Non-localized, only run once
@@ -170,24 +186,52 @@ public class StrictParseTest {
         } else {
             successParse(dFmt, toParse);
         }
-        dFmt.setGroupingUsed(true);
     }
 
-    // Exception should be thrown if decimal separator occurs anywhere
-    // Don't pass badParseStrings for same reason as previous method.
+    // 8333755: Parsing behavior should follow normal strict behavior
+    // However the index returned, should be before decimal point
+    // and the value parsed equal to the integer portion
     @ParameterizedTest
-    @MethodSource({"validParseStrings", "integerOnlyParseStrings"})
-    public void numFmtStrictIntegerOnlyUsed(String toParse) {
-        // When integer only is true, if a decimal separator is found,
-        // a failure should occur
+    @MethodSource("validIntegerOnlyParseStrings")
+    public void numFmtStrictIntegerOnlyUsedTest(String toParse, Number expVal) {
         dFmt.setParseIntegerOnly(true);
-        int failIndex = toParse.indexOf(dfs.getDecimalSeparator());
-        if (failIndex > -1) {
-            failParse(dFmt, toParse, failIndex);
+        int expectedIndex = toParse.indexOf(dfs.getDecimalSeparator());
+        if (expectedIndex > -1) {
+            assertEquals(successParse(dFmt, toParse, expectedIndex), expVal);
         } else {
-            successParse(dFmt, toParse);
+            assertEquals(successParse(dFmt, toParse), expVal);
         }
-        dFmt.setParseIntegerOnly(false);
+    }
+
+    // 8335668: Parsing with integer only against String with no integer portion
+    // should fail, not return 0. Expected error index should be 0
+    @Test
+    public void integerParseOnlyFractionOnlyTest() {
+        var fmt = NumberFormat.getIntegerInstance();
+        failParse(fmt, localizeText("."), 0);
+        failParse(fmt, localizeText(".0"), 0);
+        failParse(fmt, localizeText(".55"), 0);
+    }
+
+    // 8335668: Parsing with integer only against String with no integer portion
+    // should fail, not return 0. Expected error index should be 0
+    @Test // Non-localized, run once
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void compactIntegerParseOnlyFractionOnlyTest() {
+        var fmt = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
+        fmt.setParseIntegerOnly(true);
+        failParse(fmt, ".K", 0);
+        failParse(fmt, ".0K", 0);
+        failParse(fmt, ".55K", 0);
+    }
+
+    // 8333755: Parsing behavior should follow normal strict behavior
+    // when it comes to failures.
+    @ParameterizedTest
+    @MethodSource("badParseStrings")
+    public void numFmtStrictIntegerOnlyUsedFailTest(String toParse, int expectedErrorIndex) {
+        dFmt.setParseIntegerOnly(true);
+        failParse(dFmt, toParse, expectedErrorIndex);
     }
 
     // ---- CurrencyFormat tests ----
@@ -270,6 +314,18 @@ public class StrictParseTest {
         failParse(cnf, "c1bb", 2);
     }
 
+    @ParameterizedTest
+    @MethodSource({"validIntegerOnlyParseStrings", "compactValidIntegerOnlyParseStrings"})
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void compactFmtSuccessParseIntOnlyTest(String toParse, double expectedValue) {
+        // compact does not accept exponents
+        if (toParse.indexOf('E') > -1) {
+            return;
+        }
+        cmpctFmt.setParseIntegerOnly(true);
+        assertEquals(expectedValue, successParse(cmpctFmt, toParse, toParse.length()));
+    }
+
     // Ensure that on failure, the original index of the PP remains the same
     @Test
     public void parsePositionIndexTest() {
@@ -279,7 +335,13 @@ public class StrictParseTest {
     // ---- Helper test methods ----
 
     // Should parse entire String successfully, and return correctly parsed value.
-    private double successParse(NumberFormat fmt, String toParse) {
+    private Number successParse(NumberFormat fmt, String toParse) {
+        return successParse(fmt, toParse, toParse.length());
+    }
+
+    // Overloaded method that allows for an expected ParsePosition index value
+    // that is not the string length.
+    private Number successParse(NumberFormat fmt, String toParse, int expectedIndex) {
         // For Strings that don't have grouping separators, we test them with
         // grouping off so that they do not fail under the expectation that
         // grouping symbols should occur
@@ -292,7 +354,7 @@ public class StrictParseTest {
         assertDoesNotThrow(() -> fmt.parse(toParse, pp));
         assertEquals(-1, pp.getErrorIndex(),
                 "ParsePosition ErrorIndex is not in correct location");
-        assertEquals(toParse.length(), pp.getIndex(),
+        assertEquals(expectedIndex, pp.getIndex(),
                 "ParsePosition Index is not in correct location");
         fmt.setGroupingUsed(true);
         return parsedValue.doubleValue();
@@ -386,9 +448,11 @@ public class StrictParseTest {
                 Arguments.of("1,234a", 5),
                 Arguments.of("1,.a", 2),
                 Arguments.of("1.a", 2),
-                Arguments.of(".22a", 3),
-                Arguments.of(".1a1", 2),
-                Arguments.of("1,234,a", 5))
+                Arguments.of("1.22a", 4),
+                Arguments.of("1.1a1", 3),
+                Arguments.of("1,234,a", 5),
+                // Double decimal
+                Arguments.of("1,234..5", 5))
                 .map(args -> Arguments.of(
                         localizeText(String.valueOf(args.get()[0])), args.get()[1]));
     }
@@ -397,6 +461,8 @@ public class StrictParseTest {
     // Given as Arguments<String, expectedParsedNumber>
     private static Stream<Arguments> validParseStrings() {
         return Stream.of(
+                Arguments.of("1,234.55", 1234.55d),
+                Arguments.of("1,234.5", 1234.5d),
                 Arguments.of("1,234.00", 1234d),
                 Arguments.of("1,234.0", 1234d),
                 Arguments.of("1,234.", 1234d),
@@ -409,22 +475,28 @@ public class StrictParseTest {
                 Arguments.of("10000", 10000d),
                 Arguments.of("100,000", 100000d),
                 Arguments.of("1,000,000", 1000000d),
-                Arguments.of("10,000,000", 10000000d))
+                Arguments.of("10,000,000", 10000000d),
+                // Smaller value cases (w/ decimal)
+                Arguments.of(".1", .1d),
+                Arguments.of("1.1", 1.1d),
+                Arguments.of("11.1", 11.1d))
                 .map(args -> Arguments.of(
                         localizeText(String.valueOf(args.get()[0])), args.get()[1]));
     }
 
-    // Separate test data set for integer only. Can not use "badParseStrings", as
-    // there is test data where the failure may occur from some other issue,
-    // not related to grouping
-    private static Stream<Arguments> integerOnlyParseStrings() {
+    // Separate test data set for integer only.
+    // Valid parse strings, that would parse successfully for integer/non-integer parse
+    private static Stream<Arguments> validIntegerOnlyParseStrings() {
         return Stream.of(
-                Arguments.of("234.a"),
-                Arguments.of("234.a1"),
-                Arguments.of("234.1"),
-                Arguments.of("234.1a"),
-                Arguments.of("234."))
-                .map(args -> Arguments.of(localizeText(String.valueOf(args.get()[0]))));
+                Arguments.of("234", 234d),
+                Arguments.of("234.", 234d),
+                Arguments.of("234.1", 234d),
+                Arguments.of("1,234.1", 1234d),
+                Arguments.of("234.12345", 234d),
+                Arguments.of("234.543E23", 234d),
+                Arguments.of("234,000.55E22", 234000d),
+                Arguments.of("234E22", 234E22))
+                .map(args -> Arguments.of(localizeText(String.valueOf(args.get()[0])), args.get()[1]));
     }
 
     // Separate test data set for no grouping. Can not use "badParseStrings", as
@@ -514,6 +586,12 @@ public class StrictParseTest {
         );
     }
 
+    private static Stream<Arguments> compactValidIntegerOnlyParseStrings() {
+        return validIntegerOnlyParseStrings().map(args -> Arguments.of(
+                args.get()[0] + "K", (double) args.get()[1] * 1000)
+        );
+    }
+
     // Replace the grouping and decimal separators with localized variants
     // Used during localization of data
     private static String localizeText(String text) {
@@ -526,7 +604,10 @@ public class StrictParseTest {
                 sb.append(dfs.getGroupingSeparator());
             } else if (c == '.') {
                 sb.append(dfs.getDecimalSeparator());
-            } else if (c == '0') {
+            } else if (c == 'E') {
+                sb.append(dfs.getExponentSeparator());
+            }
+            else if (c == '0') {
                 sb.append(dfs.getZeroDigit());
             } else {
                 sb.append(c);

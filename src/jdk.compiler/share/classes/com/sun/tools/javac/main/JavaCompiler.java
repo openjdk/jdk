@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
+import com.sun.tools.javac.tree.JCTree.JCInstanceOf;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -1550,6 +1551,13 @@ public class JavaCompiler {
                 super.visitBindingPattern(tree);
             }
             @Override
+            public void visitTypeTest(JCInstanceOf tree) {
+                if (tree.pattern.type.isPrimitive()) {
+                    hasPatterns = true;
+                }
+                super.visitTypeTest(tree);
+            }
+            @Override
             public void visitRecordPattern(JCRecordPattern that) {
                 hasPatterns = true;
                 super.visitRecordPattern(that);
@@ -1618,14 +1626,6 @@ public class JavaCompiler {
 
             compileStates.put(env, CompileState.TRANSPATTERNS);
 
-            if (scanner.hasLambdas) {
-                if (shouldStop(CompileState.UNLAMBDA))
-                    return;
-
-                env.tree = LambdaToMethod.instance(context).translateTopLevelClass(env, env.tree, localMake);
-                compileStates.put(env, CompileState.UNLAMBDA);
-            }
-
             if (shouldStop(CompileState.LOWER))
                 return;
 
@@ -1646,6 +1646,16 @@ public class JavaCompiler {
 
             if (shouldStop(CompileState.LOWER))
                 return;
+
+            if (scanner.hasLambdas) {
+                if (shouldStop(CompileState.UNLAMBDA))
+                    return;
+
+                for (JCTree def : cdefs) {
+                    LambdaToMethod.instance(context).translateTopLevelClass(env, def, localMake);
+                }
+                compileStates.put(env, CompileState.UNLAMBDA);
+            }
 
             //generate code for each class
             for (List<JCTree> l = cdefs; l.nonEmpty(); l = l.tail) {

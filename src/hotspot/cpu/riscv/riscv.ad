@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
-// Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+// Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,8 @@ reg_def R0      ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()         ); // zr
 reg_def R0_H    ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()->next() );
 reg_def R1      ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()         ); // ra
 reg_def R1_H    ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()->next() );
-reg_def R2      ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()         ); // sp
-reg_def R2_H    ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()->next() );
+reg_def R2      ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()         ); // sp
+reg_def R2_H    ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()->next() );
 reg_def R3      ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()         ); // gp
 reg_def R3_H    ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()->next() );
 reg_def R4      ( NS,  NS,  Op_RegI, 4,  x4->as_VMReg()         ); // tp
@@ -242,7 +242,7 @@ reg_def V0_H  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next()   );
 reg_def V0_J  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next(2)  );
 reg_def V0_K  ( SOC, SOC, Op_VecA, 0,  v0->as_VMReg()->next(3)  );
 
-reg_def V1    ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg() 	        );
+reg_def V1    ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()           );
 reg_def V1_H  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next()   );
 reg_def V1_J  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next(2)  );
 reg_def V1_K  ( SOC, SOC, Op_VecA, 1,  v1->as_VMReg()->next(3)  );
@@ -262,7 +262,7 @@ reg_def V4_H  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next()   );
 reg_def V4_J  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next(2)  );
 reg_def V4_K  ( SOC, SOC, Op_VecA, 4,  v4->as_VMReg()->next(3)  );
 
-reg_def V5    ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg() 	        );
+reg_def V5    ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()           );
 reg_def V5_H  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next()   );
 reg_def V5_J  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next(2)  );
 reg_def V5_K  ( SOC, SOC, Op_VecA, 5,  v5->as_VMReg()->next(3)  );
@@ -272,7 +272,7 @@ reg_def V6_H  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next()   );
 reg_def V6_J  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next(2)  );
 reg_def V6_K  ( SOC, SOC, Op_VecA, 6,  v6->as_VMReg()->next(3)  );
 
-reg_def V7    ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg() 	        );
+reg_def V7    ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()           );
 reg_def V7_H  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next()   );
 reg_def V7_J  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next(2)  );
 reg_def V7_K  ( SOC, SOC, Op_VecA, 7,  v7->as_VMReg()->next(3)  );
@@ -942,26 +942,6 @@ reg_class v11_reg(
     V11, V11_H, V11_J, V11_K
 );
 
-// class for vector register v12
-reg_class v12_reg(
-    V12, V12_H, V12_J, V12_K
-);
-
-// class for vector register v13
-reg_class v13_reg(
-    V13, V13_H, V13_J, V13_K
-);
-
-// class for vector register v14
-reg_class v14_reg(
-    V14, V14_H, V14_J, V14_K
-);
-
-// class for vector register v15
-reg_class v15_reg(
-    V15, V15_H, V15_J, V15_K
-);
-
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -1238,32 +1218,27 @@ bool needs_acquiring_load_reserved(const Node *n)
 
 int MachCallStaticJavaNode::ret_addr_offset()
 {
-  // jal
-  return 1 * NativeInstruction::instruction_size;
+  return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
+  return NativeMovConstReg::movptr2_instruction_size + (3 * NativeInstruction::instruction_size); // movptr2, auipc + ld + jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
-  // for generated stubs the call will be
-  //   jal(addr)
-  // or with far branches
-  //   jal(trampoline_stub)
-  // for real runtime callouts it will be 11 instructions
+  // For address inside the code cache the call will be:
+  //   auipc + jalr
+  // For real runtime callouts it will be 8 instructions
   // see riscv_enc_java_to_runtime
-  //   la(t1, retaddr)                ->  auipc + addi
-  //   la(t0, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
-  //   addi(sp, sp, -2 * wordSize)    ->  addi
-  //   sd(t1, Address(sp, wordSize))  ->  sd
-  //   jalr(t0)                       ->  jalr
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb != nullptr) {
-    return 1 * NativeInstruction::instruction_size;
+  //   la(t0, retaddr)                                             ->  auipc + addi
+  //   sd(t0, Address(xthread, JavaThread::last_Java_pc_offset())) ->  sd
+  //   movptr(t1, addr, offset, t0)                                ->  lui + lui + slli + add
+  //   jalr(t1, offset)                                            ->  jalr
+  if (CodeCache::contains(_entry_point)) {
+    return 2 * NativeInstruction::instruction_size;
   } else {
-    return 11 * NativeInstruction::instruction_size;
+    return 8 * NativeInstruction::instruction_size;
   }
 }
 
@@ -1651,7 +1626,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
       case rc_int:
         if (dst_lo_rc == rc_int) {  // gpr --> gpr copy
           if (!is64 && this->ideal_reg() != Op_RegI) { // zero extended for narrow oop or klass
-            __ zero_extend(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]), 32);
+            __ zext(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]), 32);
           } else {
             __ mv(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]));
           }
@@ -1812,13 +1787,13 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   assert_cond(st != nullptr);
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tlwu t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tlwu t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tlwu t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tlwu t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   } else {
-    st->print_cr("\tld t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tld t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tld t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   }
-  st->print_cr("\tbeq t0, t2, ic_hit");
+  st->print_cr("\tbeq t1, t2, ic_hit");
   st->print_cr("\tj, SharedRuntime::_ic_miss_stub\t # Inline cache check");
   st->print_cr("\tic_hit:");
 }
@@ -1847,8 +1822,8 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 // Emit exception handler code.
 int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
 {
-  // auipc t0, #exception_blob_entry_point
-  // jr (offset)t0
+  // auipc t1, #exception_blob_entry_point
+  // jr (offset)t1
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   address base = __ start_a_stub(size_exception_handler());
@@ -1901,19 +1876,32 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 
-    case Op_ExpandBits:        // fall through
-    case Op_CompressBits:      // fall through
-      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
     case Op_StrCompressedCopy: // fall through
     case Op_StrInflatedCopy:   // fall through
     case Op_CountPositives:    // fall through
     case Op_EncodeISOArray:
       return UseRVV;
 
+    // Current test shows that, it brings performance gain when MaxVectorSize >= 32, but brings
+    // regression when MaxVectorSize == 16. So only enable the intrinsic when MaxVectorSize >= 32.
+    case Op_RoundVF:
+      return UseRVV && MaxVectorSize >= 32;
+
+    // For double, current test shows that even with MaxVectorSize == 32, there is still some regression.
+    // Although there is no hardware to verify it for now, from the trend of performance data on hardwares
+    // (with vlenb == 16 and 32 respectively), it's promising to bring better performance rather than
+    // regression for double when MaxVectorSize == 64+. So only enable the intrinsic when MaxVectorSize >= 64.
+    case Op_RoundVD:
+      return UseRVV && MaxVectorSize >= 64;
+
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;
 
+    case Op_ReverseBytesI:
+    case Op_ReverseBytesL:
+    case Op_ReverseBytesS:
+    case Op_ReverseBytesUS:
     case Op_RotateRight:
     case Op_RotateLeft:
     case Op_CountLeadingZerosI:
@@ -1921,6 +1909,7 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
+
     case Op_FmaF:
     case Op_FmaD:
     case Op_FmaVF:
@@ -1939,18 +1928,18 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VMASK_REG_mask;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
-}
-
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
-  return false;
+  return EnableVectorSupport && UseVectorStubs;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  Unimplemented();
-  return OptoRegPair(0, 0);
+  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(ideal_reg == Op_VecA, "sanity");
+  // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+  int lo = V8_num;
+  int hi = V8_K_num;
+  return OptoRegPair(hi, lo);
 }
 
 // Is this branch offset short enough that a short branch can be used?
@@ -2197,7 +2186,8 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
   if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
       is_vector_bitwise_not_pattern(n, m) ||
-      is_vector_scalar_bitwise_pattern(n, m)) {
+      is_vector_scalar_bitwise_pattern(n, m) ||
+      is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -2398,7 +2388,7 @@ encode %{
     assert_cond(addr != nullptr);
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type));
+      call = __ reloc_call(Address(addr, relocInfo::runtime_call_type));
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -2407,12 +2397,14 @@ encode %{
       // The NOP here is purely to ensure that eliding a call to
       // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
       __ nop();
+      __ nop();
+      __ nop();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       int method_index = resolved_method_index(masm);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
-      call = __ trampoline_call(Address(addr, rspec));
+      call = __ reloc_call(Address(addr, rspec));
       if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -2457,30 +2449,25 @@ encode %{
   enc_class riscv_enc_java_to_runtime(method meth) %{
     Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
 
-    // some calls to generated routines (arraycopy code) are scheduled
-    // by C2 as runtime calls. if so we can call them using a jr (they
-    // will be in a reachable segment) otherwise we have to use a jalr
-    // which loads the absolute address into a register.
+    // Some calls to generated routines (arraycopy code) are scheduled by C2
+    // as runtime calls. if so we can call them using a far call (they will be
+    // in the code cache, thus in a reachable segment) otherwise we have to use
+    // a movptr+jalr pair which loads the absolute address into a register.
     address entry = (address)$meth$$method;
-    CodeBlob *cb = CodeCache::find_blob(entry);
-    if (cb != nullptr) {
-      address call = __ trampoline_call(Address(entry, relocInfo::runtime_call_type));
-      if (call == nullptr) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
-      }
+    if (CodeCache::contains(entry)) {
+      __ far_call(Address(entry, relocInfo::runtime_call_type));
       __ post_call_nop();
     } else {
       Label retaddr;
-      __ la(t1, retaddr);
-      __ la(t0, RuntimeAddress(entry));
-      // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
-      __ addi(sp, sp, -2 * wordSize);
-      __ sd(t1, Address(sp, wordSize));
-      __ jalr(t0);
+      // Make the anchor frame walkable
+      __ la(t0, retaddr);
+      __ sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
+      int32_t offset = 0;
+      // No relocation needed
+      __ movptr(t1, entry, offset, t0); // lui + lui + slli + add
+      __ jalr(t1, offset);
       __ bind(retaddr);
       __ post_call_nop();
-      __ addi(sp, sp, 2 * wordSize);
     }
   %}
 
@@ -3310,6 +3297,16 @@ operand iRegP_R15()
   interface(REG_INTER);
 %}
 
+operand iRegP_R16()
+%{
+  constraint(ALLOC_IN_RC(r16_reg));
+  match(RegP);
+  match(iRegPNoSp);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 // Pointer 64 bit Register R28 only
 operand iRegP_R28()
 %{
@@ -3514,46 +3511,6 @@ operand vReg_V10()
 operand vReg_V11()
 %{
   constraint(ALLOC_IN_RC(v11_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V12()
-%{
-  constraint(ALLOC_IN_RC(v12_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V13()
-%{
-  constraint(ALLOC_IN_RC(v13_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V14()
-%{
-  constraint(ALLOC_IN_RC(v14_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V15()
-%{
-  constraint(ALLOC_IN_RC(v15_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -4744,10 +4701,11 @@ instruct loadP(iRegPNoSp dst, memory mem)
 // Load Compressed Pointer
 instruct loadN(iRegNNoSp dst, memory mem)
 %{
+  predicate(n->as_Load()->barrier_data() == 0);
   match(Set dst (LoadN mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadN, compressed ptr, #@loadN" %}
+  format %{ "lwu  $dst, $mem\t# compressed ptr, #@loadN" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
@@ -4774,13 +4732,33 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 // Load Narrow Klass Pointer
 instruct loadNKlass(iRegNNoSp dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadNKlass, compressed class ptr, #@loadNKlass" %}
+  format %{ "lwu  $dst, $mem\t# compressed class ptr, #@loadNKlass" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory mem)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+
+  ins_cost(LOAD_COST);
+  format %{
+    "lwu  $dst, $mem\t# compressed klass ptr, shifted\n\t"
+    "srli $dst, $dst, markWord::klass_shift_at_offset"
+  %}
+
+  ins_encode %{
+    __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), (unsigned) markWord::klass_shift_at_offset);
   %}
 
   ins_pipe(iload_reg_mem);
@@ -4992,41 +4970,6 @@ instruct loadConD0(fRegD dst, immD0 con) %{
   ins_pipe(fp_load_constant_d);
 %}
 
-// Store Instructions
-// Store CMS card-mark Immediate
-instruct storeimmCM0(immI0 zero, memory mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(STORE_COST);
-  format %{ "storestore (elided)\n\t"
-            "sb zr, $mem\t# byte, #@storeimmCM0" %}
-
-  ins_encode %{
-    __ sb(zr, Address(as_Register($mem$$base), $mem$$disp));
-  %}
-
-  ins_pipe(istore_mem);
-%}
-
-// Store CMS card-mark Immediate with intervening StoreStore
-// needed when using CMS with no conditional card marking
-instruct storeimmCM0_ordered(immI0 zero, memory mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(ALU_COST + STORE_COST);
-  format %{ "membar(StoreStore)\n\t"
-            "sb zr, $mem\t# byte, #@storeimmCM0_ordered" %}
-
-  ins_encode %{
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sb(zr, Address(as_Register($mem$$base), $mem$$disp));
-  %}
-
-  ins_pipe(istore_mem);
-%}
-
 // Store Byte
 instruct storeB(iRegIorL2I src, memory mem)
 %{
@@ -5179,6 +5122,7 @@ instruct storeimmP0(immP0 zero, memory mem)
 // Store Compressed Pointer
 instruct storeN(iRegN src, memory mem)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem src));
 
   ins_cost(STORE_COST);
@@ -5193,6 +5137,7 @@ instruct storeN(iRegN src, memory mem)
 
 instruct storeImmN0(immN0 zero, memory mem)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem zero));
 
   ins_cost(STORE_COST);
@@ -5383,6 +5328,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
 
 instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 8 + BRANCH_COST * 4);
@@ -5504,7 +5450,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
 instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
@@ -5612,6 +5558,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 3);
@@ -5745,7 +5692,7 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
 
 instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
@@ -5797,7 +5744,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapB"
   %}
 
@@ -5820,7 +5767,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapS"
   %}
 
@@ -5840,12 +5787,12 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapI"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5859,12 +5806,12 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapL"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5873,17 +5820,18 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapN"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5898,12 +5846,12 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapP"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5922,7 +5870,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapBAcq"
   %}
 
@@ -5947,7 +5895,7 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapSAcq"
   %}
 
@@ -5969,12 +5917,12 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapIAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5990,12 +5938,12 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapLAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -6004,19 +5952,19 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
 
 instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapNAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -6032,12 +5980,12 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "\t# $res == 1 when success, #@weakCompareAndSwapPAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -6076,6 +6024,8 @@ instruct get_and_setL(indirect mem, iRegL newv, iRegLNoSp prev)
 
 instruct get_and_setN(indirect mem, iRegN newv, iRegINoSp prev)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set prev (GetAndSetN mem newv));
 
   ins_cost(ALU_COST);
@@ -6141,7 +6091,7 @@ instruct get_and_setLAcq(indirect mem, iRegL newv, iRegLNoSp prev)
 
 instruct get_and_setNAcq(indirect mem, iRegN newv, iRegINoSp prev)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set prev (GetAndSetN mem newv));
 
@@ -7854,63 +7804,6 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 %}
 
 // ============================================================================
-// BSWAP Instructions
-
-instruct bytes_reverse_int(iRegINoSp dst, iRegIorL2I src, rFlagsReg cr) %{
-  match(Set dst (ReverseBytesI src));
-  effect(KILL cr);
-
-  ins_cost(ALU_COST * 13);
-  format %{ "revb_w_w  $dst, $src\t#@bytes_reverse_int" %}
-
-  ins_encode %{
-    __ revb_w_w(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct bytes_reverse_long(iRegLNoSp dst, iRegL src, rFlagsReg cr) %{
-  match(Set dst (ReverseBytesL src));
-  effect(KILL cr);
-
-  ins_cost(ALU_COST * 29);
-  format %{ "revb  $dst, $src\t#@bytes_reverse_long" %}
-
-  ins_encode %{
-    __ revb(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
-  match(Set dst (ReverseBytesUS src));
-
-  ins_cost(ALU_COST * 5);
-  format %{ "revb_h_h_u  $dst, $src\t#@bytes_reverse_unsigned_short" %}
-
-  ins_encode %{
-    __ revb_h_h_u(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-instruct bytes_reverse_short(iRegINoSp dst, iRegIorL2I src) %{
-  match(Set dst (ReverseBytesS src));
-
-  ins_cost(ALU_COST * 5);
-  format %{ "revb_h_h  $dst, $src\t#@bytes_reverse_short" %}
-
-  ins_encode %{
-    __ revb_h_h(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(pipe_class_default);
-%}
-
-// ============================================================================
 // MemBar Instruction
 
 instruct load_fence() %{
@@ -8186,7 +8079,7 @@ instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)
   ins_cost(ALU_COST);
   format %{ "addw  $dst, $src, zr\t#@convI2L_reg_reg" %}
   ins_encode %{
-    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
+    __ sext(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8198,7 +8091,7 @@ instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   format %{ "addw  $dst, $src, zr\t#@convL2I_reg" %}
 
   ins_encode %{
-    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
+    __ sext(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
   ins_pipe(ialu_reg);
@@ -8210,10 +8103,10 @@ instruct convI2UL_reg_reg(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask)
   match(Set dst (AndL (ConvI2L src) mask));
 
   ins_cost(ALU_COST * 2);
-  format %{ "zero_extend $dst, $src, 32\t# i2ul, #@convI2UL_reg_reg" %}
+  format %{ "zext $dst, $src, 32\t# i2ul, #@convI2UL_reg_reg" %}
 
   ins_encode %{
-    __ zero_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
+    __ zext(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
   ins_pipe(ialu_reg_shift);
@@ -8390,10 +8283,10 @@ instruct convP2I(iRegINoSp dst, iRegP src) %{
   match(Set dst (ConvL2I (CastP2X src)));
 
   ins_cost(ALU_COST * 2);
-  format %{ "zero_extend $dst, $src, 32\t# ptr -> int, #@convP2I" %}
+  format %{ "zext $dst, $src, 32\t# ptr -> int, #@convP2I" %}
 
   ins_encode %{
-    __ zero_extend($dst$$Register, $src$$Register, 32);
+    __ zext($dst$$Register, $src$$Register, 32);
   %}
 
   ins_pipe(ialu_reg);
@@ -8446,6 +8339,7 @@ instruct round_float_reg(iRegINoSp dst, fRegF src, fRegF ftmp) %{
 
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(iRegNNoSp dst, iRegP src) %{
+  predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull);
   match(Set dst (EncodeP src));
   ins_cost(ALU_COST);
   format %{ "encode_heap_oop  $dst, $src\t#@encodeHeapOop" %}
@@ -8453,6 +8347,17 @@ instruct encodeHeapOop(iRegNNoSp dst, iRegP src) %{
     Register s = $src$$Register;
     Register d = $dst$$Register;
     __ encode_heap_oop(d, s);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct encodeHeapOop_not_null(iRegNNoSp dst, iRegP src) %{
+  predicate(n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull);
+  match(Set dst (EncodeP src));
+  ins_cost(ALU_COST);
+  format %{ "encode_heap_oop_not_null $dst, $src\t#@encodeHeapOop_not_null" %}
+  ins_encode %{
+    __ encode_heap_oop_not_null($dst$$Register, $src$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -10019,11 +9924,11 @@ instruct CallStaticJavaDirect(method meth)
 // Call Java Dynamic Instruction
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
-instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
+instruct CallDynamicJavaDirect(method meth)
 %{
   match(CallDynamicJava);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST + ALU_COST * 5);
 
@@ -10038,11 +9943,11 @@ instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallRuntimeDirect(method meth, rFlagsReg cr)
+instruct CallRuntimeDirect(method meth)
 %{
   match(CallRuntime);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10055,11 +9960,11 @@ instruct CallRuntimeDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallLeafDirect(method meth, rFlagsReg cr)
+instruct CallLeafDirect(method meth)
 %{
   match(CallLeaf);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10070,13 +9975,30 @@ instruct CallLeafDirect(method meth, rFlagsReg cr)
   ins_pipe(pipe_class_call);
 %}
 
+// Call Runtime Instruction without safepoint and with vector arguments
+
+instruct CallLeafDirectVector(method meth)
+%{
+  match(CallLeafVector);
+
+  effect(USE meth);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "CALL, runtime leaf vector $meth" %}
+
+  ins_encode(riscv_enc_java_to_runtime(meth));
+
+  ins_pipe(pipe_class_call);
+%}
+
 // Call Runtime Instruction
 
-instruct CallLeafNoFPDirect(method meth, rFlagsReg cr)
+instruct CallLeafNoFPDirect(method meth)
 %{
   match(CallLeafNoFP);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10100,12 +10022,42 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
   match(Set result (PartialSubtypeCheck sub super));
   effect(KILL tmp, KILL cr);
 
-  ins_cost(2 * STORE_COST + 3 * LOAD_COST + 4 * ALU_COST + BRANCH_COST * 4);
+  ins_cost(11 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super\t#@partialSubtypeCheck" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
 
   opcode(0x1); // Force zero of result reg on hit
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP super_con, iRegP_R15 result,
+                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16, rFlagsReg cr)
+%{
+  predicate(UseSecondarySupersTable);
+  match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
+
+  ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
+  format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
+
+  ins_encode %{
+    bool success = false;
+    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+    if (InlineSecondarySupersTest) {
+      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $result$$Register,
+                                                 $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
+                                                 $tmpR16$$Register, super_klass_slot);
+    } else {
+      address call = __ reloc_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
+      success = (call != nullptr);
+    }
+    if (!success) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
+  %}
 
   ins_pipe(pipe_class_memory);
 %}
@@ -10116,7 +10068,7 @@ instruct partialSubtypeCheckVsZero(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 su
   match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
   effect(KILL tmp, KILL result);
 
-  ins_cost(2 * STORE_COST + 3 * LOAD_COST + 4 * ALU_COST + BRANCH_COST * 4);
+  ins_cost(11 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super == 0\t#@partialSubtypeCheckVsZero" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
@@ -10362,12 +10314,12 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 
 // clearing of an array
 instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
-                            iRegP_R31 tmp2, Universe dummy)
+                            iRegP_R31 tmp2, rFlagsReg cr, Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
   predicate(UseBlockZeroing || !UseRVV);
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
@@ -10506,17 +10458,19 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
+                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3, #@cmpFastLock" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLock" %}
 
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($object$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -10539,33 +10493,37 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iR
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $box,$tmp1,$tmp2 #@cmpFastLockLightweight" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLockLightweight" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_lock_lightweight($object$$Register, $box$$Register,
+                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                  iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $box,$tmp1,$tmp2, #@cmpFastUnlockLightweight" %}
+  format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlockLightweight" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register,
+                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -10599,6 +10557,22 @@ instruct TailjmpInd(iRegPNoSpNoFp jump_target, iRegP_R10 ex_oop)
   format %{ "jalr $jump_target\t# $ex_oop holds exception oop, #@TailjmpInd." %}
 
   ins_encode(riscv_enc_tail_jmp(jump_target));
+
+  ins_pipe(pipe_class_call);
+%}
+
+// Forward exception.
+instruct ForwardExceptionjmp()
+%{
+  match(ForwardException);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "j forward_exception_stub\t#@ForwardException" %}
+
+  ins_encode %{
+    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+  %}
 
   ins_pipe(pipe_class_call);
 %}

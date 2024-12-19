@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  */
 
 import java.io.*;
+import java.util.concurrent.CountDownLatch;
 
 class Good implements Serializable {
     private static final long serialVersionUID = 6319710844400051132L;
@@ -51,19 +52,20 @@ class Bad implements Serializable {
 class SuccessfulLookup extends Thread {
     Class<?> cl;
     long suid;
-    Object barrier;
+    final CountDownLatch lookupLatch;
     boolean ok;
 
-    SuccessfulLookup(Class<?> cl, long suid, Object barrier) {
+    SuccessfulLookup(Class<?> cl, long suid, CountDownLatch lookupLatch) {
         this.cl = cl;
         this.suid = suid;
-        this.barrier = barrier;
+        this.lookupLatch = lookupLatch;
     }
 
     public void run() {
-        synchronized (barrier) {
-            try { barrier.wait(); } catch (InterruptedException ex) {}
-        }
+        lookupLatch.countDown(); // let others know we are ready
+        try {
+            lookupLatch.await(); // await for others
+        } catch (InterruptedException ex) {}
         for (int i = 0; i < 100; i++) {
             if (ObjectStreamClass.lookup(cl).getSerialVersionUID() != suid) {
                 return;
@@ -75,18 +77,19 @@ class SuccessfulLookup extends Thread {
 
 class FailingLookup extends Thread {
     Class<?> cl;
-    final Object barrier;
+    final CountDownLatch lookupLatch;
     boolean ok;
 
-    FailingLookup(Class<?> cl, Object barrier) {
+    FailingLookup(Class<?> cl, CountDownLatch lookupLatch) {
         this.cl = cl;
-        this.barrier = barrier;
+        this.lookupLatch = lookupLatch;
     }
 
     public void run() {
-        synchronized (barrier) {
-            try { barrier.wait(); } catch (InterruptedException ex) {}
-        }
+        lookupLatch.countDown(); // let others know we are ready
+        try {
+            lookupLatch.await(); // await for others
+        } catch (InterruptedException ex) {}
         for (int i = 0; i < 100; i++) {
             try {
                 ObjectStreamClass.lookup(cl);
@@ -102,39 +105,36 @@ public class ConcurrentClassDescLookup {
     public static void main(String[] args) throws Exception {
         ClassLoader loader = ConcurrentClassDescLookup.class.getClassLoader();
         Class<?> cl = Class.forName("Good", false, loader);
-        Object barrier = new Object();
-        SuccessfulLookup[] slookups = new SuccessfulLookup[50];
+        int numSuccessfulLookups = 50;
+        CountDownLatch sLookupLatch = new CountDownLatch(numSuccessfulLookups);
+        SuccessfulLookup[] slookups = new SuccessfulLookup[numSuccessfulLookups];
         for (int i = 0; i < slookups.length; i++) {
-            slookups[i] =
-                new SuccessfulLookup(cl, 6319710844400051132L, barrier);
+            slookups[i] = new SuccessfulLookup(cl, 6319710844400051132L, sLookupLatch);
             slookups[i].start();
         }
-        Thread.sleep(1000);
-        synchronized (barrier) {
-            barrier.notifyAll();
-        }
+        System.out.println("awaiting completion of " + slookups.length + " SuccessfulLookup");
         for (int i = 0; i < slookups.length; i++) {
             slookups[i].join();
             if (!slookups[i].ok) {
                 throw new Error();
             }
         }
-
+        System.out.println("all " + slookups.length + " SuccessfulLookup completed");
         cl = Class.forName("Bad", false, loader);
-        FailingLookup[] flookups = new FailingLookup[50];
+        int numFailingLookups = 50;
+        CountDownLatch fLookupLatch = new CountDownLatch(numFailingLookups);
+        FailingLookup[] flookups = new FailingLookup[numFailingLookups];
         for (int i = 0; i < flookups.length; i++) {
-            flookups[i] = new FailingLookup(cl, barrier);
+            flookups[i] = new FailingLookup(cl, fLookupLatch);
             flookups[i].start();
         }
-        Thread.sleep(1000);
-        synchronized (barrier) {
-            barrier.notifyAll();
-        }
-        for (int i = 0; i < slookups.length; i++) {
+        System.out.println("awaiting completion of " + flookups.length + " FailingLookup");
+        for (int i = 0; i < flookups.length; i++) {
             flookups[i].join();
             if (!flookups[i].ok) {
                 throw new Error();
             }
         }
+        System.out.println("all " + flookups.length + " FailingLookup completed");
     }
 }

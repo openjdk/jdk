@@ -44,7 +44,7 @@ final class DCmdStop extends AbstractDCmd {
     protected void execute(ArgumentParser parser)  throws DCmdException {
         parser.checkUnknownArguments();
         String name = parser.getOption("name");
-        String filename = expandFilename(parser.getOption("filename"));
+        String filename = parser.getOption("filename");
         try {
             Recording recording = findRecording(name);
             WriteableUserPath path = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();
@@ -80,7 +80,7 @@ final class DCmdStop extends AbstractDCmd {
 
                  filename  (Optional) Name of the file to which the recording is written when the
                            recording is stopped. If no path is provided, the data from the recording
-                           is discarded. (STRING, no default value)
+                           is discarded. (FILE, no default value)
 
                            Note: If a path is given, '%%p' in the path will be replaced by the PID,
                            and '%%t' will be replaced by the time in 'yyyy_MM_dd_HH_mm_ss' format.
@@ -107,7 +107,7 @@ final class DCmdStop extends AbstractDCmd {
                 "STRING", true, true, null, false),
             new Argument("filename",
                 "Copy recording data to file, e.g. \\\"" + exampleFilename() +  "\\\"",
-                "STRING", false, true, null, false)
+                "FILE", false, true, null, false)
         };
     }
 }

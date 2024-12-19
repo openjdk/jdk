@@ -75,16 +75,16 @@ class VectorNode : public TypeNode {
 
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask = false);
+  static VectorNode* scalar2vector(Node* s, uint vlen, BasicType bt, bool is_mask = false);
   static VectorNode* shift_count(int opc, Node* cnt, uint vlen, BasicType bt);
   static VectorNode* make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt, bool is_var_shift = false);
-  static VectorNode* make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask = false, bool is_var_shift = false);
+  static VectorNode* make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask = false, bool is_var_shift = false, bool is_unsigned = false);
   static VectorNode* make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, BasicType bt);
   static VectorNode* make(int vopc, Node* n1, Node* n2, Node* n3, const TypeVect* vt);
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static bool is_shift_opcode(int opc);
-  static bool can_transform_shift_op(Node* n, BasicType bt);
+  static bool can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt);
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
@@ -96,12 +96,10 @@ class VectorNode : public TypeNode {
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
 
   // Limits on vector size (number of elements) for auto-vectorization.
-  static bool vector_size_supported_superword(const BasicType bt, int size);
+  static bool vector_size_supported_auto_vectorization(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
-  static bool is_type_transition_short_to_int(Node* n);
-  static bool is_type_transition_to_int(Node* n);
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
@@ -132,6 +130,9 @@ class VectorNode : public TypeNode {
     return is_vector_shift_count(n->Opcode());
   }
 
+  static bool is_scalar_unary_op_with_equal_input_and_output_types(int opc);
+  static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
+
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
     if (TraceNewVectors) {
@@ -143,6 +144,32 @@ class VectorNode : public TypeNode {
 };
 
 //===========================Vector=ALU=Operations=============================
+// Base IR node for saturating signed / unsigned operations.
+// Saturating operation prevents wrapping result value in over/underflowing
+// scenarios, instead returns delimiting MAX/MIN value of result type.
+class SaturatingVectorNode : public VectorNode {
+ private:
+  const bool _is_unsigned;
+
+ public:
+  SaturatingVectorNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : VectorNode(in1, in2, vt), _is_unsigned(is_unsigned) {
+    init_class_id(Class_SaturatingVector);
+  }
+
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
+
+#ifndef PRODUCT
+  // Print node specific info
+  virtual void dump_spec(outputStream *st) const {
+    TypeNode::dump_spec(st);
+    st->print("%s", _is_unsigned ? "{unsigned_vector_node}" : "{signed_vector_node}");
+  }
+#endif
+  virtual uint hash() const { return Node::hash() + _is_unsigned; }
+
+  bool is_unsigned() { return _is_unsigned; }
+};
 
 //------------------------------AddVBNode--------------------------------------
 // Vector add byte
@@ -205,7 +232,9 @@ class ReductionNode : public Node {
     init_class_id(Class_Reduction);
   }
 
-  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt);
+  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt,
+                             // This only effects floating-point add and mul reductions.
+                             bool requires_strict_order = true);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
   // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
@@ -227,47 +256,97 @@ class ReductionNode : public Node {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
-};
 
-//---------------------------UnorderedReductionNode-------------------------------------
-// Order of reduction does not matter. Example int add. Not true for float add.
-class UnorderedReductionNode : public ReductionNode {
-public:
-  UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {
-    init_class_id(Class_UnorderedReduction);
+  // Floating-point addition and multiplication are non-associative, so
+  // AddReductionVF/D and MulReductionVF/D require strict ordering
+  // in auto-vectorization. Vector API can generate AddReductionVF/D
+  // and MulReductionVF/VD without strict ordering, which can benefit
+  // some platforms.
+  //
+  // Other reductions don't need strict ordering.
+  virtual bool requires_strict_order() const {
+    return false;
   }
+
+#ifndef PRODUCT
+  void dump_spec(outputStream* st) const {
+    if (requires_strict_order()) {
+      st->print("requires_strict_order");
+    } else {
+      st->print("no_strict_order");
+    }
+  }
+#endif
 };
 
 //------------------------------AddReductionVINode--------------------------------------
 // Vector add byte, short and int as a reduction
-class AddReductionVINode : public UnorderedReductionNode {
+class AddReductionVINode : public ReductionNode {
 public:
-  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AddReductionVINode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------AddReductionVLNode--------------------------------------
 // Vector add long as a reduction
-class AddReductionVLNode : public UnorderedReductionNode {
+class AddReductionVLNode : public ReductionNode {
 public:
-  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AddReductionVLNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------AddReductionVFNode--------------------------------------
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
+private:
+  // True if add reduction operation for floats requires strict ordering.
+  // As an example - The value is true when add reduction for floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------AddReductionVDNode--------------------------------------
 // Vector add double as a reduction
 class AddReductionVDNode : public ReductionNode {
+private:
+  // True if add reduction operation for doubles requires strict ordering.
+  // As an example - The value is true when add reduction for doubles is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------SubVBNode--------------------------------------
@@ -299,6 +378,22 @@ class SubVINode : public VectorNode {
 class SubVLNode : public VectorNode {
  public:
   SubVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------SaturatingAddVNode-----------------------------
+// Vector saturating addition.
+class SaturatingAddVNode : public SaturatingVectorNode {
+ public:
+  SaturatingAddVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------SaturatingSubVNode-----------------------------
+// Vector saturating subtraction.
+class SaturatingSubVNode : public SaturatingVectorNode {
+ public:
+  SaturatingSubVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
   virtual int Opcode() const;
 };
 
@@ -346,8 +441,12 @@ class MulVINode : public VectorNode {
 // Vector multiply long
 class MulVLNode : public VectorNode {
 public:
-  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+    init_class_id(Class_MulVL);
+  }
   virtual int Opcode() const;
+  bool has_int_inputs() const;
+  bool has_uint_inputs() const;
 };
 
 //------------------------------MulVFNode--------------------------------------
@@ -402,34 +501,70 @@ public:
 
 //------------------------------MulReductionVINode--------------------------------------
 // Vector multiply byte, short and int as a reduction
-class MulReductionVINode : public UnorderedReductionNode {
+class MulReductionVINode : public ReductionNode {
 public:
-  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MulReductionVINode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MulReductionVLNode--------------------------------------
 // Vector multiply int as a reduction
-class MulReductionVLNode : public UnorderedReductionNode {
+class MulReductionVLNode : public ReductionNode {
 public:
-  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MulReductionVLNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MulReductionVFNode--------------------------------------
 // Vector multiply float as a reduction
 class MulReductionVFNode : public ReductionNode {
+  // True if mul reduction operation for floats requires strict ordering.
+  // As an example - The value is true when mul reduction for floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  MulReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------MulReductionVDNode--------------------------------------
 // Vector multiply double as a reduction
 class MulReductionVDNode : public ReductionNode {
+  // True if mul reduction operation for doubles requires strict ordering.
+  // As an example - The value is true when mul reduction for doubles is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  MulReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------DivVFNode--------------------------------------
@@ -472,11 +607,27 @@ public:
   virtual int Opcode() const;
 };
 
+class UMinVNode : public VectorNode {
+ public:
+  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
+    assert(is_integral_type(vt->element_basic_type()), "");
+  }
+  virtual int Opcode() const;
+};
+
 //------------------------------MaxVNode--------------------------------------
 // Vector Max
 class MaxVNode : public VectorNode {
  public:
   MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+class UMaxVNode : public VectorNode {
+ public:
+  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+    assert(is_integral_type(vt->element_basic_type()), "");
+  }
   virtual int Opcode() const;
 };
 
@@ -755,9 +906,9 @@ class AndVNode : public VectorNode {
 
 //------------------------------AndReductionVNode--------------------------------------
 // Vector and byte, short, int, long as a reduction
-class AndReductionVNode : public UnorderedReductionNode {
+class AndReductionVNode : public ReductionNode {
  public:
-  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AndReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -772,9 +923,9 @@ class OrVNode : public VectorNode {
 
 //------------------------------OrReductionVNode--------------------------------------
 // Vector xor byte, short, int, long as a reduction
-class OrReductionVNode : public UnorderedReductionNode {
+class OrReductionVNode : public ReductionNode {
  public:
-  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  OrReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -789,25 +940,25 @@ class XorVNode : public VectorNode {
 
 //------------------------------XorReductionVNode--------------------------------------
 // Vector and int, long as a reduction
-class XorReductionVNode : public UnorderedReductionNode {
+class XorReductionVNode : public ReductionNode {
  public:
-  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  XorReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MinReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MinReductionVNode : public UnorderedReductionNode {
+class MinReductionVNode : public ReductionNode {
 public:
-  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MinReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MaxReductionVNode : public UnorderedReductionNode {
+class MaxReductionVNode : public ReductionNode {
 public:
-  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MaxReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -1523,14 +1674,32 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
+
+// Select elements from two source vectors based on the wrapped indexes held in
+// the first vector.
+class SelectFromTwoVectorNode : public VectorNode {
+public:
+  SelectFromTwoVectorNode(Node* indexes, Node* src1, Node* src2, const TypeVect* vt)
+  : VectorNode(indexes, src1, src2, vt) {
+      assert(is_integral_type(indexes->bottom_type()->is_vect()->element_basic_type()),
+             "indexes must be an integral vector");
+  }
+
+  virtual int Opcode() const;
+};
+
+// The target may not directly support the rearrange operation for an element type. In those cases,
+// we can transform the rearrange into a different element type. For example, on x86 before AVX512,
+// there is no rearrange instruction for short elements, what we will then do is to transform the
+// shuffle vector into one that we can do byte rearrange such that it would provide the same
+// result. This could have been done in VectorRearrangeNode during code emission but we eagerly
+// expand this out because it is often the case that an index vector is reused in many rearrange
+// operations. This allows the index preparation to be GVN-ed as well as hoisted out of loops, etc.
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
-    : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be BYTE");
-  }
+    : VectorNode(in, vt) {}
 
-  int GetOutShuffleSize() const { return type2aelembytes(vect_type()->element_basic_type()); }
   virtual int Opcode() const;
 };
 
@@ -1769,14 +1938,11 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 };
 
 class VectorUnboxNode : public VectorNode {
- private:
-  bool _shuffle_to_vector;
  protected:
   uint size_of() const { return sizeof(*this); }
  public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem, bool shuffle_to_vector)
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
-    _shuffle_to_vector = shuffle_to_vector;
     init_class_id(Class_VectorUnbox);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -1787,7 +1953,6 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  bool is_shuffle_to_vector() { return _shuffle_to_vector; }
 };
 
 class RotateRightVNode : public VectorNode {

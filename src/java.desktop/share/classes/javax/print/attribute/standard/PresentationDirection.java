@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.print.attribute.PrintRequestAttribute;
  * <p>
  * <b>IPP Compatibility:</b> This attribute is not an IPP 1.1 attribute; it is
  * an attribute in the Production Printing Extension
- * (<a href="ftp://ftp.pwg.org/pub/pwg/standards/temp_archive/pwg5100.3.pdf">
+ * (<a href="https://ftp.pwg.org/pub/pwg/standards/temp_archive/pwg5100.3.pdf">
  * PDF</a>) of IPP 1.1. The category name returned by {@code getName()} is the
  * IPP attribute name. The enumeration's integer value is the IPP enum value.
  * The {@code toString()} method returns the IPP string representation of the

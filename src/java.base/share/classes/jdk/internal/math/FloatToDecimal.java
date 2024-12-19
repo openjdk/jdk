@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +33,24 @@ import static java.lang.Integer.*;
 import static java.lang.Math.multiplyHigh;
 import static jdk.internal.math.MathUtils.*;
 
+import sun.nio.cs.ISO_8859_1;
+
 /**
  * This class exposes a method to render a {@code float} as a string.
  */
-public final class FloatToDecimal {
+public final class FloatToDecimal extends ToDecimal {
+    /**
+     * Use LATIN1 encoding to process the in-out byte[] str
+     *
+     */
+    public static final FloatToDecimal LATIN1 = new FloatToDecimal(true);
+
+    /**
+     * Use UTF16 encoding to process the in-out byte[] str
+     *
+     */
+    public static final FloatToDecimal UTF16  = new FloatToDecimal(false);
+
     /*
      * For full details about this code see the following references:
      *
@@ -91,16 +106,6 @@ public final class FloatToDecimal {
     /* Used in rop() */
     private static final long MASK_32 = (1L << 32) - 1;
 
-    /* Used for left-to-tight digit extraction */
-    private static final int MASK_28 = (1 << 28) - 1;
-
-    private static final int NON_SPECIAL    = 0;
-    private static final int PLUS_ZERO      = 1;
-    private static final int MINUS_ZERO     = 2;
-    private static final int PLUS_INF       = 3;
-    private static final int MINUS_INF      = 4;
-    private static final int NAN            = 5;
-
     /*
      * Room for the longer of the forms
      *     -ddddd.dddd         H + 2 characters
@@ -110,12 +115,8 @@ public final class FloatToDecimal {
      */
     public static final int MAX_CHARS = H + 6;
 
-    private final byte[] bytes = new byte[MAX_CHARS];
-
-    /* Index into bytes of rightmost valid character */
-    private int index;
-
-    private FloatToDecimal() {
+    private FloatToDecimal(boolean latin1) {
+        super(latin1);
     }
 
     /**
@@ -127,71 +128,49 @@ public final class FloatToDecimal {
      * @see Float#toString(float)
      */
     public static String toString(float v) {
-        return new FloatToDecimal().toDecimalString(v);
+        byte[] str = new byte[MAX_CHARS];
+        int pair = LATIN1.toDecimal(str, 0, v);
+        int type = pair & 0xFF00;
+        if (type == NON_SPECIAL) {
+            int size = pair & 0xFF;
+            return new String(str, 0, size, ISO_8859_1.INSTANCE);
+        }
+        return special(type);
     }
 
     /**
-     * Appends the rendering of the {@code v} to {@code app}.
+     * Appends the rendering of the {@code v} to {@code str}.
      *
      * <p>The outcome is the same as if {@code v} were first
-     * {@link #toString(float) rendered} and the resulting string were then
-     * {@link Appendable#append(CharSequence) appended} to {@code app}.
+     * {@link #toString(double) rendered} and the resulting string were then
      *
-     * @param v the {@code float} whose rendering is appended.
-     * @param app the {@link Appendable} to append to.
+     * @param str the String byte array to append to
+     * @param index the index into str
+     * @param v the {@code float} whose rendering is into str.
      * @throws IOException If an I/O error occurs
      */
-    public static Appendable appendTo(float v, Appendable app)
-            throws IOException {
-        return new FloatToDecimal().appendDecimalTo(v, app);
-    }
+    public int putDecimal(byte[] str, int index, float v) {
+        assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
 
-    private String toDecimalString(float v) {
-        return switch (toDecimal(v)) {
-            case NON_SPECIAL -> charsToString();
-            case PLUS_ZERO -> "0.0";
-            case MINUS_ZERO -> "-0.0";
-            case PLUS_INF -> "Infinity";
-            case MINUS_INF -> "-Infinity";
-            default -> "NaN";
-        };
-    }
-
-    private Appendable appendDecimalTo(float v, Appendable app)
-            throws IOException {
-        switch (toDecimal(v)) {
-            case NON_SPECIAL:
-                char[] chars = new char[index + 1];
-                for (int i = 0; i < chars.length; ++i) {
-                    chars[i] = (char) bytes[i];
-                }
-                if (app instanceof StringBuilder builder) {
-                    return builder.append(chars);
-                }
-                if (app instanceof StringBuffer buffer) {
-                    return buffer.append(chars);
-                }
-                for (char c : chars) {
-                    app.append(c);
-                }
-                return app;
-            case PLUS_ZERO: return app.append("0.0");
-            case MINUS_ZERO: return app.append("-0.0");
-            case PLUS_INF: return app.append("Infinity");
-            case MINUS_INF: return app.append("-Infinity");
-            default: return app.append("NaN");
+        int pair = toDecimal(str, index, v);
+        int type = pair & 0xFF00;
+        if (type == NON_SPECIAL) {
+            return index + (pair & 0xFF);
         }
+        return putSpecial(str, index, type);
     }
 
     /*
      * Returns
+     *     Combine type and size, the first byte is size, the second byte is type
+     *
      *     PLUS_ZERO       iff v is 0.0
      *     MINUS_ZERO      iff v is -0.0
      *     PLUS_INF        iff v is POSITIVE_INFINITY
      *     MINUS_INF       iff v is NEGATIVE_INFINITY
      *     NAN             iff v is NaN
      */
-    private int toDecimal(float v) {
+    private int toDecimal(byte[] str, int index, float v) {
         /*
          * For full details see references [2] and [1].
          *
@@ -205,9 +184,9 @@ public final class FloatToDecimal {
         int t = bits & T_MASK;
         int bq = (bits >>> P - 1) & BQ_MASK;
         if (bq < BQ_MASK) {
-            index = -1;
+            int start = index;
             if (bits < 0) {
-                append('-');
+                index = putChar(str, index, '-');
             }
             if (bq != 0) {
                 /* normal value. Here mq = -q */
@@ -217,16 +196,16 @@ public final class FloatToDecimal {
                 if (0 < mq & mq < P) {
                     int f = c >> mq;
                     if (f << mq == c) {
-                        return toChars(f, 0);
+                        return toChars(str, index, f, 0) - start;
                     }
                 }
-                return toDecimal(-mq, c, 0);
+                return toDecimal(str, index, -mq, c, 0) - start;
             }
             if (t != 0) {
                 /* subnormal value */
-                return t < C_TINY
-                       ? toDecimal(Q_MIN, 10 * t, -1)
-                       : toDecimal(Q_MIN, t, 0);
+                return (t < C_TINY
+                        ? toDecimal(str, index, Q_MIN, 10 * t, -1)
+                        : toDecimal(str, index, Q_MIN, t, 0)) - start;
             }
             return bits == 0 ? PLUS_ZERO : MINUS_ZERO;
         }
@@ -236,7 +215,7 @@ public final class FloatToDecimal {
         return bits > 0 ? PLUS_INF : MINUS_INF;
     }
 
-    private int toDecimal(int q, int c, int dk) {
+    private int toDecimal(byte[] str, int index, int q, int c, int dk) {
         /*
          * The skeleton corresponds to figure 7 of [1].
          * The efficient computations are those summarized in figure 9.
@@ -300,7 +279,7 @@ public final class FloatToDecimal {
             boolean upin = vbl + out <= sp10 << 2;
             boolean wpin = (tp10 << 2) + out <= vbr;
             if (upin != wpin) {
-                return toChars(upin ? sp10 : tp10, k);
+                return toChars(str, index, upin ? sp10 : tp10, k);
             }
         }
 
@@ -315,14 +294,14 @@ public final class FloatToDecimal {
         boolean win = (t << 2) + out <= vbr;
         if (uin != win) {
             /* Exactly one of u or w lies in Rv */
-            return toChars(uin ? s : t, k + dk);
+            return toChars(str, index, uin ? s : t, k + dk);
         }
         /*
          * Both u and w lie in Rv: determine the one closest to v.
          * See section 9.3 of [1].
          */
         int cmp = vb - (s + t << 1);
-        return toChars(cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk);
+        return toChars(str, index, cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk);
     }
 
     /*
@@ -338,7 +317,7 @@ public final class FloatToDecimal {
     /*
      * Formats the decimal f 10^e.
      */
-    private int toChars(int f, int e) {
+    private int toChars(byte[] str, int index, int f, int e) {
         /*
          * For details not discussed here see section 10 of [1].
          *
@@ -373,130 +352,74 @@ public final class FloatToDecimal {
         int l = f - 100_000_000 * h;
 
         if (0 < e && e <= 7) {
-            return toChars1(h, l, e);
+            return toChars1(str, index, h, l, e);
         }
         if (-3 < e && e <= 0) {
-            return toChars2(h, l, e);
+            return toChars2(str, index, h, l, e);
         }
-        return toChars3(h, l, e);
+        return toChars3(str, index, h, l, e);
     }
 
-    private int toChars1(int h, int l, int e) {
+    private int toChars1(byte[] str, int index, int h, int l, int e) {
         /*
          * 0 < e <= 7: plain format without leading zeroes.
          * Left-to-right digits extraction:
          * algorithm 1 in [3], with b = 10, k = 8, n = 28.
          */
-        appendDigit(h);
+        index = putDigit(str, index, h);
         int y = y(l);
         int t;
         int i = 1;
         for (; i < e; ++i) {
             t = 10 * y;
-            appendDigit(t >>> 28);
+            index = putDigit(str, index, t >>> 28);
             y = t & MASK_28;
         }
-        append('.');
+        index = putChar(str, index, '.');
         for (; i <= 8; ++i) {
             t = 10 * y;
-            appendDigit(t >>> 28);
+            index = putDigit(str, index, t >>> 28);
             y = t & MASK_28;
         }
-        removeTrailingZeroes();
-        return NON_SPECIAL;
+        return removeTrailingZeroes(str, index);
     }
 
-    private int toChars2(int h, int l, int e) {
+    private int toChars2(byte[] str, int index, int h, int l, int e) {
         /* -3 < e <= 0: plain format with leading zeroes */
-        appendDigit(0);
-        append('.');
+        index = putDigit(str, index, 0);
+        index = putChar(str, index, '.');
         for (; e < 0; ++e) {
-          appendDigit(0);
+            index = putDigit(str, index, 0);
         }
-        appendDigit(h);
-        append8Digits(l);
-        removeTrailingZeroes();
-        return NON_SPECIAL;
+        index = putDigit(str, index, h);
+        index = put8Digits(str, index, l);
+        return removeTrailingZeroes(str, index);
     }
 
-    private int toChars3(int h, int l, int e) {
+    private int toChars3(byte[] str, int index, int h, int l, int e) {
         /* -3 >= e | e > 7: computerized scientific notation */
-        appendDigit(h);
-        append('.');
-        append8Digits(l);
-        removeTrailingZeroes();
-        exponent(e - 1);
-        return NON_SPECIAL;
+        index = putDigit(str, index, h);
+        index = putChar(str, index, '.');
+        index = put8Digits(str, index, l);
+        index = removeTrailingZeroes(str, index);
+        return exponent(str, index, e - 1);
     }
 
-    private void append8Digits(int m) {
-        /*
-         * Left-to-right digits extraction:
-         * algorithm 1 in [3], with b = 10, k = 8, n = 28.
-         */
-        int y = y(m);
-        for (int i = 0; i < 8; ++i) {
-            int t = 10 * y;
-            appendDigit(t >>> 28);
-            y = t & MASK_28;
-        }
-    }
-
-    private void removeTrailingZeroes() {
-        while (bytes[index] == '0') {
-            --index;
-        }
-        /* ... but do not remove the one directly to the right of '.' */
-        if (bytes[index] == '.') {
-            ++index;
-        }
-    }
-
-    private int y(int a) {
-        /*
-         * Algorithm 1 in [3] needs computation of
-         *     floor((a + 1) 2^n / b^k) - 1
-         * with a < 10^8, b = 10, k = 8, n = 28.
-         * Noting that
-         *     (a + 1) 2^n <= 10^8 2^28 < 10^17
-         * For n = 17, m = 8 the table in section 10 of [1] leads to:
-         */
-        return (int) (multiplyHigh(
-                (long) (a + 1) << 28,
-                193_428_131_138_340_668L) >>> 20) - 1;
-    }
-
-    private void exponent(int e) {
-        append('E');
+    private int exponent(byte[] str, int index, int e) {
+        index = putChar(str, index, 'E');
         if (e < 0) {
-            append('-');
+            index = putChar(str, index, '-');
             e = -e;
         }
         if (e < 10) {
-            appendDigit(e);
-            return;
+            return putDigit(str, index, e);
         }
         /*
          * For n = 2, m = 1 the table in section 10 of [1] shows
          *     floor(e / 10) = floor(103 e / 2^10)
          */
         int d = e * 103 >>> 10;
-        appendDigit(d);
-        appendDigit(e - 10 * d);
+        index = putDigit(str, index, d);
+        return putDigit(str, index, e - 10 * d);
     }
-
-    private void append(int c) {
-        bytes[++index] = (byte) c;
-    }
-
-    private void appendDigit(int d) {
-        bytes[++index] = (byte) ('0' + d);
-    }
-
-    /* Using the deprecated constructor enhances performance */
-    @SuppressWarnings("deprecation")
-    private String charsToString() {
-        return new String(bytes, 0, 0, index + 1);
-    }
-
 }

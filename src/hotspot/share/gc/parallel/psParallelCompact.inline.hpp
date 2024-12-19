@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -38,14 +39,6 @@
 
 inline bool PSParallelCompact::is_marked(oop obj) {
   return mark_bitmap()->is_marked(obj);
-}
-
-inline bool PSParallelCompact::is_in(HeapWord* p, HeapWord* beg_addr, HeapWord* end_addr) {
-  return p >= beg_addr && p < end_addr;
-}
-
-inline bool PSParallelCompact::is_in(oop* p, HeapWord* beg_addr, HeapWord* end_addr) {
-  return is_in((HeapWord*)p, beg_addr, end_addr);
 }
 
 inline MutableSpace* PSParallelCompact::space(SpaceId id) {
@@ -87,7 +80,7 @@ inline void PSParallelCompact::adjust_pointer(T* p) {
     if (!obj->is_forwarded()) {
       return;
     }
-    oop new_obj = obj->forwardee();
+    oop new_obj = FullGCForwarding::forwardee(obj);
     assert(new_obj != nullptr, "non-null address for live objects");
     assert(new_obj != obj, "inv");
     assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),

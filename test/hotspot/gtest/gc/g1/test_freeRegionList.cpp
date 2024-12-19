@@ -34,12 +34,12 @@
 #include "unittest.hpp"
 
 // @requires UseG1GC
-TEST_OTHER_VM(FreeRegionList, length) {
+TEST_OTHER_VM(G1FreeRegionList, length) {
   if (!UseG1GC) {
     return;
   }
 
-  FreeRegionList l("test");
+  G1FreeRegionList l("test");
   const uint num_regions_in_test = 5;
 
   // Create a fake heap. It does not need to be valid, as the G1HeapRegion constructor
@@ -50,7 +50,7 @@ TEST_OTHER_VM(FreeRegionList, length) {
   // the BOT.
   size_t bot_size = G1BlockOffsetTable::compute_size(heap.word_size());
   HeapWord* bot_data = NEW_C_HEAP_ARRAY(HeapWord, bot_size, mtGC);
-  ReservedSpace bot_rs(G1BlockOffsetTable::compute_size(heap.word_size()));
+  ReservedSpace bot_rs(G1BlockOffsetTable::compute_size(heap.word_size()), mtGC);
   G1RegionToSpaceMapper* bot_storage =
     G1RegionToSpaceMapper::create_mapper(bot_rs,
                                          bot_rs.size(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,9 @@ public class NegativeLength {
 
     public static void main(String[] args) throws Exception {
         SecretKeyFactory skf = SecretKeyFactory.getInstance(
-            "PBKDF2WithHmacSHA1", "SunJCE");
+            "PBKDF2WithHmacSHA1",
+                System.getProperty("test.provider.name", "SunJCE"));
+
 
         // Create a valid PBEKeySpec
         PBEKeySpec pbeks = new PBEKeySpec(

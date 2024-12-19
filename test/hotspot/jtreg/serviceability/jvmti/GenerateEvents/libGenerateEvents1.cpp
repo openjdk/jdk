@@ -71,7 +71,7 @@ CompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
   check_jvmti_status(env, err, "CompiledMethodLoad: Error in JVMTI GetMethodName");
 
   printf("%s: CompiledMethodLoad: %s%s\n", AGENT_NAME, name, sign);
-  fflush(0);
+  fflush(nullptr);
 }
 
 JNIEXPORT jint JNICALL

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,8 @@ public class CompileStates extends HashMap<Env<AttrContext>, CompileStates.Compi
         FLOW(5),
         TRANSTYPES(6),
         TRANSPATTERNS(7),
-        UNLAMBDA(8),
-        LOWER(9),
+        LOWER(8),
+        UNLAMBDA(9),
         GENERATE(10);
 
         CompileState(int value) {

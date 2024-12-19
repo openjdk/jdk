@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,17 +214,14 @@ inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(G1HeapRegion* r) const {
 }
 
 inline void G1ConcurrentMark::update_top_at_rebuild_start(G1HeapRegion* r) {
+  assert(r->is_old() || r->is_humongous(), "precondition");
+
   uint const region = r->hrm_index();
   assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
   assert(_top_at_rebuild_starts[region] == nullptr,
          "TARS for region %u has already been set to " PTR_FORMAT " should be null",
          region, p2i(_top_at_rebuild_starts[region]));
-  G1RemSetTrackingPolicy* tracker = _g1h->policy()->remset_tracker();
-  if (tracker->needs_scan_for_rebuild(r)) {
-    _top_at_rebuild_starts[region] = r->top();
-  } else {
-    // Leave TARS at null.
-  }
+  _top_at_rebuild_starts[region] = r->top();
 }
 
 inline void G1CMTask::update_liveness(oop const obj, const size_t obj_size) {

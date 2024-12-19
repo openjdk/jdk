@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,6 @@ public final class MainWrapper {
         String className = args[1];
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
-
-        // It is needed to register finalizer thread in default thread group
-        // So FinalizerThread thread can't be in virtual threads group
-        FinalizableObject finalizableObject = new FinalizableObject();
-        finalizableObject.registerCleanup();
 
         // Some tests use this property to understand if virtual threads are used
         System.setProperty("test.thread.factory", wrapperName);

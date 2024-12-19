@@ -30,7 +30,7 @@ import jdk.test.lib.Utils;
 
 /*
  * @test
- * @bug 8324655 8329797
+ * @bug 8324655 8329797 8331090
  * @key randomness
  * @summary Test that if expressions are properly folded into min/max nodes
  * @requires os.arch != "riscv64"
@@ -181,19 +181,19 @@ public class TestIfMinMax {
         int[] a = new int[512];
         int[] b = new int[512];
 
-        // Fill from 1 to 50
-        for (int i = 0; i < 50; i++) {
+        // Fill from 1 to 125
+        for (int i = 0; i < 125; i++) {
             a[i] = i + 1;
             b[i] = 1;
         }
 
-        // Fill from -1 to -50
-        for (int i = 50; i < 100; i++) {
-            a[i] = -(i - 49);
+        // Fill from -1 to -125
+        for (int i = 125; i < 250; i++) {
+            a[i] = -(i - 124);
             b[i] = 1;
         }
 
-        for (int i = 100; i < 512; i++) {
+        for (int i = 250; i < 512; i++) {
             a[i] = RANDOM.nextInt();
             b[i] = 1;
         }
@@ -206,19 +206,19 @@ public class TestIfMinMax {
         long[] a = new long[512];
         long[] b = new long[512];
 
-        // Fill from 1 to 50
-        for (int i = 0; i < 50; i++) {
+        // Fill from 1 to 125
+        for (int i = 0; i < 125; i++) {
             a[i] = i + 1;
             b[i] = 1;
         }
 
-        // Fill from -1 to -50
-        for (int i = 50; i < 100; i++) {
-            a[i] = -(i - 49);
+        // Fill from -1 to -125
+        for (int i = 125; i < 250; i++) {
+            a[i] = -(i - 124);
             b[i] = 1;
         }
 
-        for (int i = 100; i < 512; i++) {
+        for (int i = 250; i < 512; i++) {
             a[i] = RANDOM.nextLong();
             b[i] = 1;
         }
@@ -505,7 +505,27 @@ public class TestIfMinMax {
         }
     }
 
-    @Run(test = { "testMinI1", "testMinI2", "testMaxI1", "testMaxI2", "testMinI1E", "testMinI2E", "testMaxI1E", "testMaxI2E" })
+    @Test
+    @IR(failOn = { IRNode.IF }, counts = { IRNode.MIN_I, "1" })
+    public int testMinIConst(int a) {
+        if (a > 65535) {
+            a = 65535;
+        }
+
+        return a;
+    }
+
+    @Test
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MIN_L, "1" })
+    public long testMinLConst(long a) {
+        if (a > 65535) {
+            a = 65535;
+        }
+
+        return a;
+    }
+
+    @Run(test = { "testMinI1", "testMinI2", "testMaxI1", "testMaxI2", "testMinI1E", "testMinI2E", "testMaxI1E", "testMaxI2E", "testMinIConst" })
     public void runTestIntegers() {
         testIntegers(10, 20);
         testIntegers(20, 10);
@@ -526,9 +546,12 @@ public class TestIfMinMax {
         Asserts.assertEQ(a >= b ? b : a, testMinI2E(a, b));
         Asserts.assertEQ(a >= b ? a : b, testMaxI1E(a, b));
         Asserts.assertEQ(a <= b ? b : a, testMaxI2E(a, b));
+
+        Asserts.assertEQ(a > 65535 ? 65535 : a, testMinIConst(a));
+        Asserts.assertEQ(b > 65535 ? 65535 : b, testMinIConst(b));
     }
 
-    @Run(test = { "testMinL1", "testMinL2", "testMaxL1", "testMaxL2", "testMinL1E", "testMinL2E", "testMaxL1E", "testMaxL2E" })
+    @Run(test = { "testMinL1", "testMinL2", "testMaxL1", "testMaxL2", "testMinL1E", "testMinL2E", "testMaxL1E", "testMaxL2E", "testMinLConst" })
     public void runTestLongs() {
         testLongs(10, 20);
         testLongs(20, 10);
@@ -551,5 +574,8 @@ public class TestIfMinMax {
         Asserts.assertEQ(a >= b ? b : a, testMinL2E(a, b));
         Asserts.assertEQ(a >= b ? a : b, testMaxL1E(a, b));
         Asserts.assertEQ(a <= b ? b : a, testMaxL2E(a, b));
+
+        Asserts.assertEQ(a > 65535L ? 65535L : a, testMinLConst(a));
+        Asserts.assertEQ(b > 65535L ? 65535L : b, testMinLConst(b));
     }
 }

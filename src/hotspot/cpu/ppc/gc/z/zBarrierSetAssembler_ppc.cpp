@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class ZRuntimeCallSpill {
         __ save_volatile_gprs(R1_SP, -_nbytes_save, _preserve_fp_registers, preserve_R3);
       }
 
-      __ save_LR_CR(R0);
+      __ save_LR(R0);
       __ push_frame_reg_args(_nbytes_save, R0);
     }
   }
@@ -84,7 +84,7 @@ class ZRuntimeCallSpill {
     Register result = R3_RET;
     if (_needs_frame) {
       __ pop_frame();
-      __ restore_LR_CR(R0);
+      __ restore_LR(R0);
 
       if (_preserve_gp_registers) {
         bool restore_R3 = _result != R3_ARG1;
@@ -335,7 +335,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Try to self-heal null values for atomic accesses
     bool need_restore = false;
     if (!ind_or_offs.is_constant() || ind_or_offs.as_constant() != 0) {
-      __ add(ref_base, ind_or_offs, ref_base);
+      __ add(ref_base, ref_base, ind_or_offs);
       need_restore = true;
     }
     __ ld(R0, in_bytes(ZThreadLocalData::store_good_mask_offset()), R16_thread);
@@ -343,7 +343,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, need_restore ? nullptr : &slow_path);
     if (need_restore) {
-      __ subf(ref_base, ind_or_offs, ref_base);
+      __ sub(ref_base, ref_base, ind_or_offs);
       __ bne(CCR0, slow_path);
     }
   } else {
@@ -610,14 +610,14 @@ void ZBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, R
 
   // Resolve global handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, load_bad_mask.disp(), load_bad_mask.base());
+  __ ld(tmp, load_bad_mask);
   __ b(check_color);
 
   __ bind(weak_tagged);
 
   // Resolve weak handle
   __ ld(dst, 0, dst);
-  __ ld(tmp, mark_bad_mask.disp(), mark_bad_mask.base());
+  __ ld(tmp, mark_bad_mask);
 
   __ bind(check_color);
   __ and_(tmp, tmp, dst);
@@ -785,7 +785,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_parameters) * BytesPerWord;
 
   __ save_volatile_gprs(R1_SP, -nbytes_save);
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
 
   // Load arguments back again from the stack.
   __ ld(R3_ARG1, -1 * BytesPerWord, R1_SP); // ref
@@ -799,7 +799,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   __ mr(R0, R3_RET);
 
   __ pop_frame();
-  __ restore_LR_CR(R3_RET);
+  __ restore_LR(R3_RET);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ blr();
@@ -815,7 +815,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   __ save_volatile_gprs(R1_SP, -nbytes_save);
   __ mr(R3_ARG1, R0); // store address
 
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
   __ push_frame_reg_args(nbytes_save, R0);
 
   if (self_healing) {
@@ -825,7 +825,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   }
 
   __ pop_frame();
-  __ restore_LR_CR(R3_RET);
+  __ restore_LR(R3_RET);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ blr();
@@ -943,6 +943,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr(), R3_ARG1);
     } else if (stub->is_atomic()) {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr(), R3_ARG1);
+    } else if (stub->is_nokeepalive()) {
+      __ call_VM_leaf(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     } else {
       __ call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), R3_ARG1);
     }

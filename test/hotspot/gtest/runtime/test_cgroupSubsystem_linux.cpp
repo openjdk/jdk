@@ -34,6 +34,9 @@
 
 #include <stdio.h>
 
+// for basename
+#include <libgen.h>
+
 typedef struct {
   const char* mount_path;
   const char* root_path;
@@ -47,6 +50,7 @@ static bool file_exists(const char* filename) {
   return os::stat(filename, &st) == 0;
 }
 
+// we rely on temp_file returning modifiable memory in resource area.
 static char* temp_file(const char* prefix) {
   const testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
   stringStream path;
@@ -71,9 +75,12 @@ private:
   char* _path;
 public:
   TestController(char* p): _path(p) {}
-  char* subsystem_path() override {
+  const char* subsystem_path() override {
     return _path;
   };
+  bool is_read_only() override {
+    return true; // doesn't matter
+  }
 };
 
 static void fill_file(const char* path, const char* content) {
@@ -89,7 +96,7 @@ static void fill_file(const char* path, const char* content) {
 }
 
 TEST(cgroupTest, read_numerical_key_value_failure_cases) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
@@ -135,7 +142,7 @@ TEST(cgroupTest, read_numerical_key_value_failure_cases) {
 }
 
 TEST(cgroupTest, read_numerical_key_value_success_cases) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
@@ -235,7 +242,7 @@ TEST(cgroupTest, read_numerical_key_value_null) {
 }
 
 TEST(cgroupTest, read_number_tests) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   constexpr julong bad = 0xBAD;
   EXPECT_TRUE(b != nullptr) << "basename was null";
@@ -289,7 +296,7 @@ TEST(cgroupTest, read_number_tests) {
 }
 
 TEST(cgroupTest, read_string_tests) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
@@ -355,7 +362,7 @@ TEST(cgroupTest, read_string_tests) {
 }
 
 TEST(cgroupTest, read_number_tuple_test) {
-  const char* test_file = temp_file("cgroups");
+  char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
@@ -432,7 +439,8 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
                             &container_engine };
   for (int i = 0; i < length; i++) {
     CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
-                                                       (char*)testCases[i]->mount_path);
+                                                       (char*)testCases[i]->mount_path,
+                                                       true /* read-only mount */);
     ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
@@ -456,9 +464,94 @@ TEST(cgroupTest, set_cgroupv2_subsystem_path) {
                             &sub_path };
   for (int i = 0; i < length; i++) {
     CgroupV2Controller* ctrl = new CgroupV2Controller( (char*)testCases[i]->mount_path,
-                                                       (char*)testCases[i]->cgroup_path);
+                                                       (char*)testCases[i]->cgroup_path,
+                                                       true /* read-only mount */);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
+}
+
+TEST(cgroupTest, cgroupv2_is_hierarchy_walk_needed) {
+  bool controller_read_only = false; // value irrelevant;
+  CgroupV2Controller* test = new CgroupV2Controller((char*)"/sys/fs/cgroup",
+                                                    (char*)"/" /* cgroup_path */,
+                                                    controller_read_only);
+  EXPECT_FALSE(test->needs_hierarchy_adjustment());
+  test = new CgroupV2Controller((char*)"/sys/fs/cgroup",
+                                (char*)"/bar" /* cgroup_path */,
+                                controller_read_only);
+  EXPECT_TRUE(test->needs_hierarchy_adjustment());
+  test = new CgroupV2Controller((char*)"/sys/fs/cgroup/b",
+                                (char*)"/a/b" /* cgroup_path */,
+                                controller_read_only);
+  EXPECT_TRUE(test->needs_hierarchy_adjustment());
+
+  CgroupCpuController* test2 = new CgroupV2CpuController(CgroupV2Controller((char*)"/sys/fs/cgroup",
+                                                                            (char*)"/" /* cgroup_path */,
+                                                                            controller_read_only));
+  EXPECT_FALSE(test2->needs_hierarchy_adjustment());
+  test2 = new CgroupV2CpuController(CgroupV2Controller((char*)"/sys/fs/cgroup",
+                                                       (char*)"/bar" /* cgroup_path */,
+                                                       controller_read_only));
+  EXPECT_TRUE(test2->needs_hierarchy_adjustment());
+  test2 = new CgroupV2CpuController(CgroupV2Controller((char*)"/sys/fs/cgroup/b",
+                                                       (char*)"/a/b" /* cgroup_path */,
+                                                       controller_read_only));
+  EXPECT_TRUE(test2->needs_hierarchy_adjustment());
+
+  CgroupMemoryController* test3 = new CgroupV2MemoryController(CgroupV2Controller((char*)"/sys/fs/cgroup",
+                                                                                  (char*)"/" /* cgroup_path */,
+                                                                                  controller_read_only));
+  EXPECT_FALSE(test3->needs_hierarchy_adjustment());
+  test3 = new CgroupV2MemoryController(CgroupV2Controller((char*)"/sys/fs/cgroup",
+                                                          (char*)"/bar" /* cgroup_path */,
+                                                          controller_read_only));
+  EXPECT_TRUE(test3->needs_hierarchy_adjustment());
+  test3 = new CgroupV2MemoryController(CgroupV2Controller((char*)"/sys/fs/cgroup/b",
+                                                          (char*)"/a/b" /* cgroup_path */,
+                                                          controller_read_only));
+  EXPECT_TRUE(test3->needs_hierarchy_adjustment());
+}
+
+TEST(cgroupTest, cgroupv1_is_hierarchy_walk_needed) {
+  bool controller_read_only = true; // shouldn't matter;
+  CgroupV1Controller* test = new CgroupV1Controller((char*)"/a/b/c" /* root */,
+                                                    (char*)"/sys/fs/cgroup/memory" /* mount_path */,
+                                                    controller_read_only);
+  test->set_subsystem_path((char*)"/a/b/c");
+  EXPECT_FALSE(test->needs_hierarchy_adjustment());
+  test->set_subsystem_path((char*)"/");
+  EXPECT_TRUE(test->needs_hierarchy_adjustment());
+  test = new CgroupV1Controller((char*)"/a/b/c" /* root */,
+                                (char*)"/"/* mount_path */,
+                                controller_read_only);
+  test->set_subsystem_path((char*)"/");
+  EXPECT_TRUE(test->needs_hierarchy_adjustment());
+
+  CgroupCpuController* test2 = new CgroupV1CpuController(CgroupV1Controller((char*)"/a/b/c" /* root */,
+                                                                            (char*)"/sys/fs/cgroup/memory" /* mount_path */,
+                                                                            controller_read_only));
+  static_cast<CgroupV1CpuController*>(test2)->set_subsystem_path((char*)"/a/b/c");
+  EXPECT_FALSE(test2->needs_hierarchy_adjustment());
+  static_cast<CgroupV1CpuController*>(test2)->set_subsystem_path((char*)"/");
+  EXPECT_TRUE(test2->needs_hierarchy_adjustment());
+  test2 = new CgroupV1CpuController(CgroupV1Controller((char*)"/a/b/c" /* root */,
+                                                       (char*)"/"/* mount_path */,
+                                                       controller_read_only));
+  static_cast<CgroupV1CpuController*>(test2)->set_subsystem_path((char*)"/");
+  EXPECT_TRUE(test2->needs_hierarchy_adjustment());
+
+  CgroupMemoryController* test3 = new CgroupV1MemoryController(CgroupV1Controller((char*)"/a/b/c" /* root */,
+                                                                                  (char*)"/sys/fs/cgroup/memory" /* mount_path */,
+                                                                                  controller_read_only));
+  static_cast<CgroupV1MemoryController*>(test3)->set_subsystem_path((char*)"/a/b/c");
+  EXPECT_FALSE(test3->needs_hierarchy_adjustment());
+  static_cast<CgroupV1MemoryController*>(test3)->set_subsystem_path((char*)"/");
+  EXPECT_TRUE(test3->needs_hierarchy_adjustment());
+  test3 = new CgroupV1MemoryController(CgroupV1Controller((char*)"/a/b/c" /* root */,
+                                                          (char*)"/"/* mount_path */,
+                                                          controller_read_only));
+  static_cast<CgroupV1MemoryController*>(test3)->set_subsystem_path((char*)"/");
+  EXPECT_TRUE(test3->needs_hierarchy_adjustment());
 }
 
 #endif // LINUX

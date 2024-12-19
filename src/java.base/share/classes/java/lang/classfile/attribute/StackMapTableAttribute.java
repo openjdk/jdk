@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 
 package java.lang.classfile.attribute;
 
-import java.util.List;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.CodeElement;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code StackMapTable} attribute {@jvms 4.7.4}, which can appear
+ * Models the {@code StackMapTable} attribute (JVMS {@jvms 4.7.4}), which can appear
  * on a {@code Code} attribute.
  * <p>
  * The attribute does not permit multiple instances in a given location.
@@ -43,9 +42,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 6.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StackMapTableAttribute
         extends Attribute<StackMapTableAttribute>, CodeElement
         permits BoundAttribute.BoundStackMapTableAttribute, UnboundAttribute.UnboundStackMapTableAttribute {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -638,7 +638,7 @@ public class Main {
                 index++;
             }
             boolean updateEndTd = false;
-            Pattern styleAttr = Pattern.compile("(?<before>.*style=\")(?<style>[^\"]*)(?<after>\".*)");
+            Pattern styleAttr = Pattern.compile("(?s)(?<before>.*style=\")(?<style>[^\"]*)(?<after>\".*)");
             for (Entry e : entries) {
                 if (simple && e.column == maxIndex) {
                     String attrs = e.html.substring(3, e.html.length() - 1);

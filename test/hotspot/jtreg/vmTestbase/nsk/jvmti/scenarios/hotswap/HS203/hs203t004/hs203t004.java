@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@
 
 package nsk.jvmti.scenarios.hotswap.HS203.hs203t004;
 
-import vm.share.VMRuntimeEnvUtils;
-import nsk.share.Consts;
 import nsk.share.jvmti.RedefineAgent;
 
 public class hs203t004 extends RedefineAgent {
@@ -68,13 +66,6 @@ public class hs203t004 extends RedefineAgent {
 
     public static void main(String[] arg) {
         arg = nsk.share.jvmti.JVMTITest.commonInit(arg);
-
-        if (!VMRuntimeEnvUtils.isJITEnabled()) {
-            System.out.println("WARNING: test isn't valid if JIT compilation is disabled");
-            System.out.println("Exiting with 'PASSED' status");
-            System.exit(Consts.JCK_STATUS_BASE + Consts.TEST_PASSED);
-        }
-
         hs203t004 hsCase = new hs203t004(arg);
         System.exit(hsCase.runAgent());
     }

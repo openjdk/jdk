@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import java.io.PrintStream;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import jdk.jshell.JShellConsole;
 import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
@@ -69,6 +70,8 @@ import jdk.jshell.execution.impl.ConsoleImpl.ConsoleOutputStream;
  * @since 9
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
+
+    private static final int SHUTDOWN_TIMEOUT = 1; //1 second
 
     private VirtualMachine vm;
     private Process process;
@@ -267,6 +270,20 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
     @Override
     public void close() {
         super.close();
+
+        Process remoteProcess;
+
+        synchronized (this) {
+            remoteProcess = this.process;
+        }
+
+        if (remoteProcess != null) {
+            try {
+                remoteProcess.waitFor(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                debug(ex, "waitFor remote");
+            }
+        }
         disposeVM();
     }
 

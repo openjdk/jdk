@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.emulatedClient \
@@ -76,21 +74,25 @@ requires.properties= \
     vm.rtm.compiler \
     vm.cds \
     vm.cds.custom.loaders \
+    vm.cds.supports.aot.class.linking \
     vm.cds.write.archived.java.heap \
     vm.continuations \
     vm.jvmti \
     vm.graal.enabled \
     jdk.hasLibgraal \
-    vm.libgraal.enabled \
+    vm.libgraal.jit \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.musl \
     vm.flagless \
-    docker.support \
-    jdk.containerized
+    container.support \
+    systemd.support \
+    jdk.containerized \
+    jlink.runtime.linkable \
+    jlink.packagedModules
 
 # Minimum jtreg version
-requiredVersion=7.3.1+1
+requiredVersion=7.4+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

@@ -64,7 +64,7 @@ ifeq ($(USE_SCM), true)
 
   # Verify that the entire forest is consistent
   $(foreach repo, $(call FindAllReposRel), \
-    $(if $(wildcard $(TOPDIR)/$(repo)/$(SCM_DIR)),, \
+    $(if $(wildcard $(TOPDIR)/$(repo)/$(SCM_DIR)), , \
         $(error Inconsistent revision control: $(repo) is missing $(SCM_DIR) directory)) \
   )
 
@@ -72,7 +72,7 @@ ifeq ($(USE_SCM), true)
   MakeFilenameFromRepo = \
       $(strip $(subst .,top, $(subst /,-, $1)))
 
-  ################################################################################
+  ##############################################################################
   # SetupGetRevisionForRepo defines a make rule for creating a file containing
   # the name of the repository and the output of the scm command for that
   # repository.

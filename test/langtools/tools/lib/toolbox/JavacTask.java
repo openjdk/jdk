@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,6 +312,26 @@ public class JavacTask extends AbstractTask<JavacTask> {
     @Override
     public String name() {
         return "javac";
+    }
+
+    @Override
+    public Result run(Expect expect) {
+        int expectedExitCode = expect == Expect.SUCCESS ? 0 : 1;
+
+        return run(expect, (exitCode, testName) -> {
+            if (exitCode == 4) {
+                throw new TaskError("Task " + testName + " failed due to a javac crash "
+                    + "(exit code 4)");
+            }
+        });
+    }
+
+    @Override
+    public Result run(Expect expect, int exitCode) {
+        if (exitCode == 4) {
+            throw new IllegalArgumentException("Disallowed exit code: 4");
+        }
+        return super.run(expect, exitCode);
     }
 
     /**

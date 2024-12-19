@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,10 @@ import java.awt.print.*;
 @SuppressWarnings("serial") // JDK implementation class
 final class CPrinterJobDialog extends CPrinterDialog {
     private Pageable fPageable;
-    private boolean fAllowPrintToFile;
 
-    CPrinterJobDialog(Frame parent, CPrinterJob printerJob, Pageable doc, boolean allowPrintToFile) {
+    CPrinterJobDialog(Frame parent, CPrinterJob printerJob, Pageable doc) {
         super(parent, printerJob);
         fPageable = doc;
-        fAllowPrintToFile = allowPrintToFile;
     }
 
     @Override

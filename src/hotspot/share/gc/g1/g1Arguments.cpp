@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
@@ -125,15 +126,13 @@ void G1Arguments::initialize_mark_stack_size() {
                                   MAX2(MarkStackSize, (size_t)ConcGCThreads * TASKQUEUE_SIZE));
     FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   }
-
 }
-
 
 void G1Arguments::initialize_card_set_configuration() {
   assert(G1HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
   // Array of Cards card set container globals.
   const uint LOG_M = 20;
-  assert(log2i_exact(HeapRegionBounds::min_size()) == LOG_M, "inv");
+  assert(log2i_exact(G1HeapRegionBounds::min_size()) == LOG_M, "inv");
   assert(G1HeapRegion::LogOfHRGrainBytes >= LOG_M, "from the above");
   uint region_size_log_mb = G1HeapRegion::LogOfHRGrainBytes - LOG_M;
 
@@ -245,10 +244,8 @@ void G1Arguments::initialize() {
   if (max_parallel_refinement_threads > UINT_MAX / divisor) {
     vm_exit_during_initialization("Too large parallelism for remembered sets.");
   }
-}
 
-void G1Arguments::initialize_heap_flags_and_sizes() {
-  GCArguments::initialize_heap_flags_and_sizes();
+  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 CollectedHeap* G1Arguments::create_heap() {

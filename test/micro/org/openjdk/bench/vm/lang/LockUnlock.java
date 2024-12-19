@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ public class LockUnlock {
 
     public Object lockObject1;
     public Object lockObject2;
+    public volatile Object lockObject3Inflated;
+    public volatile Object lockObject4Inflated;
     public int factorial;
     public int dummyInt1;
     public int dummyInt2;
@@ -62,13 +64,28 @@ public class LockUnlock {
     public void setup() {
         lockObject1 = new Object();
         lockObject2 = new Object();
+        lockObject3Inflated = new Object();
+        lockObject4Inflated = new Object();
+
+        // Inflate the lock to use an ObjectMonitor
+        try {
+          synchronized (lockObject3Inflated) {
+            lockObject3Inflated.wait(1);
+          }
+          synchronized (lockObject4Inflated) {
+            lockObject4Inflated.wait(1);
+          }
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+
         dummyInt1 = 47;
         dummyInt2 = 11; // anything
     }
 
     /** Perform a synchronized on a local object within a loop. */
     @Benchmark
-    public void testSimpleLockUnlock() {
+    public void testBasicSimpleLockUnlockLocal() {
         Object localObject = lockObject1;
         for (int i = 0; i < innerCount; i++) {
             synchronized (localObject) {
@@ -78,9 +95,43 @@ public class LockUnlock {
         }
     }
 
+    /** Perform a synchronized on an object within a loop. */
+    @Benchmark
+    public void testBasicSimpleLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject1) {
+                dummyInt1++;
+                dummyInt2++;
+            }
+        }
+    }
+
+    /** Perform a synchronized on a local object within a loop. */
+    @Benchmark
+    public void testInflatedSimpleLockUnlockLocal() {
+        Object localObject = lockObject3Inflated;
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (localObject) {
+                dummyInt1++;
+                dummyInt2++;
+            }
+        }
+    }
+
+    /** Perform a synchronized on an object within a loop. */
+    @Benchmark
+    public void testInflatedSimpleLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject3Inflated) {
+                dummyInt1++;
+                dummyInt2++;
+            }
+        }
+    }
+
     /** Perform a recursive synchronized on a local object within a loop. */
     @Benchmark
-    public void testRecursiveLockUnlock() {
+    public void testBasicRecursiveLockUnlockLocal() {
         Object localObject = lockObject1;
         for (int i = 0; i < innerCount; i++) {
             synchronized (localObject) {
@@ -92,9 +143,22 @@ public class LockUnlock {
         }
     }
 
+    /** Perform a recursive synchronized on an object within a loop. */
+    @Benchmark
+    public void testBasicRecursiveLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject1) {
+                synchronized (lockObject1) {
+                    dummyInt1++;
+                    dummyInt2++;
+                }
+            }
+        }
+    }
+
     /** Perform two synchronized after each other on the same local object. */
     @Benchmark
-    public void testSerialLockUnlock() {
+    public void testBasicSerialLockUnlockLocal() {
         Object localObject = lockObject1;
         for (int i = 0; i < innerCount; i++) {
             synchronized (localObject) {
@@ -102,6 +166,126 @@ public class LockUnlock {
             }
             synchronized (localObject) {
                 dummyInt2++;
+            }
+        }
+    }
+
+  /** Perform two synchronized after each other on the same object. */
+    @Benchmark
+    public void testBasicSerialLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject1) {
+                dummyInt1++;
+            }
+            synchronized (lockObject1) {
+                dummyInt2++;
+            }
+        }
+    }
+
+    /** Perform two synchronized after each other on the same local object. */
+    @Benchmark
+    public void testInflatedSerialLockUnlockLocal() {
+        Object localObject = lockObject3Inflated;
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (localObject) {
+                dummyInt1++;
+            }
+            synchronized (localObject) {
+                dummyInt2++;
+            }
+        }
+    }
+
+    /** Perform two synchronized after each other on the same object. */
+    @Benchmark
+    public void testInflatedSerialLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject3Inflated) {
+                dummyInt1++;
+            }
+            synchronized (lockObject3Inflated) {
+                dummyInt2++;
+            }
+        }
+    }
+
+    /** Perform two synchronized after each other on the same object. */
+    @Benchmark
+    public void testInflatedMultipleSerialLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject3Inflated) {
+                dummyInt1++;
+            }
+            synchronized (lockObject4Inflated) {
+                dummyInt2++;
+            }
+        }
+    }
+
+    /** Perform two synchronized after each other on the same object. */
+    @Benchmark
+    public void testInflatedMultipleRecursiveLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject3Inflated) {
+                dummyInt1++;
+                synchronized (lockObject4Inflated) {
+                    dummyInt2++;
+                }
+            }
+        }
+    }
+
+      /** Perform a recursive-only synchronized on a local object within a loop. */
+    @Benchmark
+    public void testInflatedRecursiveOnlyLockUnlockLocal() {
+        Object localObject = lockObject3Inflated;
+        synchronized (localObject) {
+            for (int i = 0; i < innerCount; i++) {
+                synchronized (localObject) {
+                    dummyInt1++;
+                    dummyInt2++;
+                }
+            }
+        }
+    }
+
+    /** Perform a recursive-only synchronized on an object within a loop. */
+    @Benchmark
+    public void testInflatedRecursiveOnlyLockUnlock() {
+        synchronized (lockObject3Inflated) {
+            for (int i = 0; i < innerCount; i++) {
+                synchronized (lockObject3Inflated) {
+                    dummyInt1++;
+                    dummyInt2++;
+                }
+            }
+        }
+    }
+
+    /** Perform a recursive-only synchronized on a local object within a loop. */
+    @Benchmark
+    public void testInflatedRecursiveLockUnlockLocal() {
+        Object localObject = lockObject3Inflated;
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (localObject) {
+                synchronized (localObject) {
+                    dummyInt1++;
+                    dummyInt2++;
+                }
+            }
+        }
+    }
+
+    /** Perform a recursive-only synchronized on an object within a loop. */
+    @Benchmark
+    public void testInflatedRecursiveLockUnlock() {
+        for (int i = 0; i < innerCount; i++) {
+            synchronized (lockObject3Inflated) {
+                synchronized (lockObject3Inflated) {
+                    dummyInt1++;
+                    dummyInt2++;
+                }
             }
         }
     }
@@ -125,10 +309,11 @@ public class LockUnlock {
     }
 
     /**
-     * With two threads lockObject1 will be contended so should be
-     * inflated.
+     * With three threads lockObject1 will be contended so should be
+     * inflated. Three threads is also needed to ensure a high level
+     * of code coverage in the locking code.
      */
-    @Threads(2)
+    @Threads(3)
     @Benchmark
     public void testContendedLock() {
         synchronized (lockObject1) {

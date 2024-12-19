@@ -63,6 +63,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/deoptimization.hpp"
@@ -75,6 +76,8 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/lightweightSynchronizer.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -84,7 +87,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.hpp"
+#include "runtime/synchronizer.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -119,6 +122,10 @@ DeoptimizationScope::~DeoptimizationScope() {
 }
 
 void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
+  if (!nm->can_be_deoptimized()) {
+    return;
+  }
+
   ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
 
   // If it's already marked but we still need it to be deopted.
@@ -444,7 +451,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
   RegisterMap map(chunk->at(0)->register_map());
   bool deoptimized_objects = false;
 
-  bool const jvmci_enabled = JVMCI_ONLY(UseJVMCICompiler) NOT_JVMCI(false);
+  bool const jvmci_enabled = JVMCI_ONLY(EnableJVMCI) NOT_JVMCI(false);
 
   // Reallocate the non-escaping objects and restore their fields.
   if (jvmci_enabled COMPILER2_PRESENT(|| (DoEscapeAnalysis && EliminateAllocations)
@@ -600,9 +607,6 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // where it will be very difficult to figure out what went wrong. Better
   // to die an early death here than some very obscure death later when the
   // trail is cold.
-  // Note: on ia64 this guarantee can be fooled by frames with no memory stack
-  // in that it will fail to detect a problem when there is one. This needs
-  // more work in tiger timeframe.
   guarantee(array->unextended_sp() == unpack_sp, "vframe_array_head must contain the vframeArray to unpack");
 
   int number_of_frames = array->frames();
@@ -1058,7 +1062,7 @@ protected:
   static InstanceKlass* find_cache_klass(Thread* thread, Symbol* klass_name) {
     ResourceMark rm(thread);
     char* klass_name_str = klass_name->as_C_string();
-    InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle(), Handle());
+    InstanceKlass* ik = SystemDictionary::find_instance_klass(thread, klass_name, Handle());
     guarantee(ik != nullptr, "%s must be loaded", klass_name_str);
     if (!ik->is_in_error_state()) {
       guarantee(ik->is_initialized(), "%s must be initialized", klass_name_str);
@@ -1634,22 +1638,37 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              mon_info->lock()->set_displaced_header(markWord::unused_mark());
+              if (LockingMode == LM_LEGACY) {
+                mon_info->lock()->set_displaced_header(markWord::unused_mark());
+              } else if (UseObjectMonitorTable) {
+                mon_info->lock()->clear_object_monitor_cache();
+              }
+#ifdef ASSERT
+              else {
+                assert(LockingMode == LM_MONITOR || !UseObjectMonitorTable, "must be");
+                mon_info->lock()->set_bad_metadata_deopt();
+              }
+#endif
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
               continue;
             }
           }
         }
+        BasicLock* lock = mon_info->lock();
         if (LockingMode == LM_LIGHTWEIGHT) {
           // We have lost information about the correct state of the lock stack.
-          // Inflate the locks instead. Enter then inflate to avoid races with
-          // deflation.
-          ObjectSynchronizer::enter_for(obj, nullptr, deoptee_thread);
+          // Entering may create an invalid lock stack. Inflate the lock if it
+          // was fast_locked to restore the valid lock stack.
+          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
+          if (deoptee_thread->lock_stack().contains(obj())) {
+            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                                deoptee_thread, thread);
+          }
           assert(mon_info->owner()->is_locked(), "object must be locked now");
-          ObjectMonitor* mon = ObjectSynchronizer::inflate_for(deoptee_thread, obj(), ObjectSynchronizer::inflate_cause_vm_internal);
-          assert(mon->owner() == deoptee_thread, "must be");
+          assert(obj->mark().has_monitor(), "must be");
+          assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
+          assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->has_owner(deoptee_thread), "must be");
         } else {
-          BasicLock* lock = mon_info->lock();
           ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
         }
@@ -2076,8 +2095,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     gather_statistics(reason, action, trap_bc);
 
     // Ensure that we can record deopt. history:
-    // Need MDO to record RTM code generation state.
-    bool create_if_missing = ProfileTraps RTM_OPT_ONLY( || UseRTMLocking );
+    bool create_if_missing = ProfileTraps;
 
     methodHandle profiled_method;
 #if INCLUDE_JVMCI
@@ -2321,8 +2339,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     }
 
     // Setting +ProfileTraps fixes the following, on all platforms:
-    // 4852688: ProfileInterpreter is off by default for ia64.  The result is
-    // infinite heroic-opt-uncommon-trap/deopt/recompile cycles, since the
+    // The result is infinite heroic-opt-uncommon-trap/deopt/recompile cycles, since the
     // recompile relies on a MethodData* to record heroic opt failures.
 
     // Whether the interpreter is producing MDO data or not, we also need
@@ -2425,16 +2442,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
           pdata->set_trap_state(tstate1);
       }
 
-#if INCLUDE_RTM_OPT
-      // Restart collecting RTM locking abort statistic if the method
-      // is recompiled for a reason other than RTM state change.
-      // Assume that in new recompiled code the statistic could be different,
-      // for example, due to different inlining.
-      if ((reason != Reason_rtm_state_change) && (trap_mdo != nullptr) &&
-          UseRTMDeopt && (nm->rtm_state() != ProfileRTM)) {
-        trap_mdo->atomic_set_rtm_state(ProfileRTM);
-      }
-#endif
       // For code aging we count traps separately here, using make_not_entrant()
       // as a guard against simultaneous deopts in multiple threads.
       if (reason == Reason_tenured && trap_mdo != nullptr) {
@@ -2724,7 +2731,6 @@ const char* Deoptimization::_trap_reason_name[] = {
   "speculate_class_check",
   "speculate_null_check",
   "speculate_null_assert",
-  "rtm_state_change",
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",

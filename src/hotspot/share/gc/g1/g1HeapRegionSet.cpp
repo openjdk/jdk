@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1NUMA.hpp"
 
-uint FreeRegionList::_unrealistically_long_length = 0;
+uint G1FreeRegionList::_unrealistically_long_length = 0;
 
 #ifndef PRODUCT
-void HeapRegionSetBase::verify_region(G1HeapRegion* hr) {
+void G1HeapRegionSetBase::verify_region(G1HeapRegion* hr) {
   assert(hr->containing_set() == this, "Inconsistent containing set for %u", hr->hrm_index());
   assert(!hr->is_young(), "Adding young region %u", hr->hrm_index()); // currently we don't use these sets for young regions
   assert(_checker == nullptr || _checker->is_correct_type(hr), "Wrong type of region %u (%s) and set %s",
@@ -41,7 +41,7 @@ void HeapRegionSetBase::verify_region(G1HeapRegion* hr) {
 }
 #endif
 
-void HeapRegionSetBase::verify() {
+void G1HeapRegionSetBase::verify() {
   // It's important that we also observe the MT safety protocol even
   // for the verification calls. If we do verification without the
   // appropriate locks and the set changes underneath our feet
@@ -53,18 +53,18 @@ void HeapRegionSetBase::verify() {
                             "invariant");
 }
 
-void HeapRegionSetBase::verify_start() {
+void G1HeapRegionSetBase::verify_start() {
   // See comment in verify() about MT safety and verification.
   check_mt_safety();
   assert_heap_region_set(!_verify_in_progress, "verification should not be in progress");
 
   // Do the basic verification first before we do the checks over the regions.
-  HeapRegionSetBase::verify();
+  G1HeapRegionSetBase::verify();
 
   _verify_in_progress = true;
 }
 
-void HeapRegionSetBase::verify_end() {
+void G1HeapRegionSetBase::verify_end() {
   // See comment in verify() about MT safety and verification.
   check_mt_safety();
   assert_heap_region_set(_verify_in_progress, "verification should be in progress");
@@ -72,30 +72,30 @@ void HeapRegionSetBase::verify_end() {
   _verify_in_progress = false;
 }
 
-void HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
+void G1HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
   out->cr();
   out->print_cr("Set: %s (" PTR_FORMAT ")", name(), p2i(this));
   out->print_cr("  Region Type         : %s", _checker->get_description());
   out->print_cr("  Length              : %14u", length());
 }
 
-HeapRegionSetBase::HeapRegionSetBase(const char* name, HeapRegionSetChecker* checker)
+G1HeapRegionSetBase::G1HeapRegionSetBase(const char* name, G1HeapRegionSetChecker* checker)
   : _checker(checker), _length(0), _name(name), _verify_in_progress(false)
 {
 }
 
-void FreeRegionList::set_unrealistically_long_length(uint len) {
+void G1FreeRegionList::set_unrealistically_long_length(uint len) {
   guarantee(_unrealistically_long_length == 0, "should only be set once");
   _unrealistically_long_length = len;
 }
 
-void FreeRegionList::abandon() {
+void G1FreeRegionList::abandon() {
   check_mt_safety();
   clear();
   verify_optional();
 }
 
-void FreeRegionList::remove_all() {
+void G1FreeRegionList::remove_all() {
   check_mt_safety();
   verify_optional();
 
@@ -117,7 +117,7 @@ void FreeRegionList::remove_all() {
   verify_optional();
 }
 
-void FreeRegionList::add_list_common_start(FreeRegionList* from_list) {
+void G1FreeRegionList::add_list_common_start(G1FreeRegionList* from_list) {
   check_mt_safety();
   from_list->check_mt_safety();
   verify_optional();
@@ -132,7 +132,7 @@ void FreeRegionList::add_list_common_start(FreeRegionList* from_list) {
   }
 
   #ifdef ASSERT
-  FreeRegionListIterator iter(from_list);
+  G1FreeRegionListIterator iter(from_list);
   while (iter.more_available()) {
     G1HeapRegion* hr = iter.get_next();
     // In set_containing_set() we check that we either set the value
@@ -144,7 +144,7 @@ void FreeRegionList::add_list_common_start(FreeRegionList* from_list) {
   #endif // ASSERT
 }
 
-void FreeRegionList::add_list_common_end(FreeRegionList* from_list) {
+void G1FreeRegionList::add_list_common_end(G1FreeRegionList* from_list) {
   _length += from_list->length();
   from_list->clear();
 
@@ -152,7 +152,7 @@ void FreeRegionList::add_list_common_end(FreeRegionList* from_list) {
   from_list->verify_optional();
 }
 
-void FreeRegionList::append_ordered(FreeRegionList* from_list) {
+void G1FreeRegionList::append_ordered(G1FreeRegionList* from_list) {
   add_list_common_start(from_list);
 
   if (from_list->is_empty()) {
@@ -177,7 +177,7 @@ void FreeRegionList::append_ordered(FreeRegionList* from_list) {
   add_list_common_end(from_list);
 }
 
-void FreeRegionList::add_ordered(FreeRegionList* from_list) {
+void G1FreeRegionList::add_ordered(G1FreeRegionList* from_list) {
   add_list_common_start(from_list);
 
   if (from_list->is_empty()) {
@@ -227,7 +227,7 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
 }
 
 #ifdef ASSERT
-void FreeRegionList::verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion* next) {
+void G1FreeRegionList::verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion* next) {
   assert_free_region_list(_head != next, "invariant");
   if (next != nullptr) {
     assert_free_region_list(next->prev() == curr, "invariant");
@@ -244,7 +244,7 @@ void FreeRegionList::verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion* n
 }
 #endif
 
-void FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions) {
+void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions) {
   check_mt_safety();
   assert_free_region_list(num_regions >= 1, "pre-condition");
   assert_free_region_list(!is_empty(), "pre-condition");
@@ -304,8 +304,8 @@ void FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions) {
   verify_optional();
 }
 
-void FreeRegionList::verify() {
-  // See comment in HeapRegionSetBase::verify() about MT safety and
+void G1FreeRegionList::verify() {
+  // See comment in G1HeapRegionSetBase::verify() about MT safety and
   // verification.
   check_mt_safety();
 
@@ -317,7 +317,7 @@ void FreeRegionList::verify() {
   verify_end();
 }
 
-void FreeRegionList::clear() {
+void G1FreeRegionList::clear() {
   _length = 0;
   _head = nullptr;
   _tail = nullptr;
@@ -328,7 +328,7 @@ void FreeRegionList::clear() {
   }
 }
 
-void FreeRegionList::verify_list() {
+void G1FreeRegionList::verify_list() {
   G1HeapRegion* curr = _head;
   G1HeapRegion* prev1 = nullptr;
   G1HeapRegion* prev0 = nullptr;
@@ -364,37 +364,37 @@ void FreeRegionList::verify_list() {
 }
 
 
-FreeRegionList::FreeRegionList(const char* name, HeapRegionSetChecker* checker):
-  HeapRegionSetBase(name, checker),
+G1FreeRegionList::G1FreeRegionList(const char* name, G1HeapRegionSetChecker* checker):
+  G1HeapRegionSetBase(name, checker),
   _node_info(G1NUMA::numa()->is_enabled() ? new NodeInfo() : nullptr) {
 
   clear();
 }
 
-FreeRegionList::~FreeRegionList() {
+G1FreeRegionList::~G1FreeRegionList() {
   if (_node_info != nullptr) {
     delete _node_info;
   }
 }
 
-FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _length_of_node(nullptr),
-                                       _num_nodes(_numa->num_active_nodes()) {
+G1FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _length_of_node(nullptr),
+                                         _num_nodes(_numa->num_active_nodes()) {
   assert(UseNUMA, "Invariant");
 
   _length_of_node = NEW_C_HEAP_ARRAY(uint, _num_nodes, mtGC);
 }
 
-FreeRegionList::NodeInfo::~NodeInfo() {
+G1FreeRegionList::NodeInfo::~NodeInfo() {
   FREE_C_HEAP_ARRAY(uint, _length_of_node);
 }
 
-void FreeRegionList::NodeInfo::clear() {
+void G1FreeRegionList::NodeInfo::clear() {
   for (uint i = 0; i < _num_nodes; ++i) {
     _length_of_node[i] = 0;
   }
 }
 
-void FreeRegionList::NodeInfo::add(NodeInfo* info) {
+void G1FreeRegionList::NodeInfo::add(NodeInfo* info) {
   for (uint i = 0; i < _num_nodes; ++i) {
     _length_of_node[i] += info->_length_of_node[i];
   }

@@ -188,6 +188,12 @@ public class CommentHelper {
         Utils utils = configuration.utils;
         if (e == null) {
             return null;
+        } else if (utils.isTypeParameterElement(e)) {
+            // Return the enclosing member for type parameters of generic methods or constructors.
+            Element encl = e.getEnclosingElement();
+            if (utils.isExecutableElement(encl)) {
+                return encl;
+            }
         }
         return (utils.isExecutableElement(e) || utils.isVariableElement(e)) ? e : null;
     }

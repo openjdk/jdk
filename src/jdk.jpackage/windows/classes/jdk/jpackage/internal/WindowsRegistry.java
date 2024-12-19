@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jpackage.internal;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("restricted")
 final class WindowsRegistry {
 
     // Currently we only support HKEY_LOCAL_MACHINE. Native implementation will

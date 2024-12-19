@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,9 +121,16 @@ class VectorSupport : AllStatic {
     VECTOR_OP_EXPM1 = 117,
     VECTOR_OP_HYPOT = 118,
 
-    VECTOR_OP_SVML_START = VECTOR_OP_TAN,
-    VECTOR_OP_SVML_END   = VECTOR_OP_HYPOT,
-    NUM_SVML_OP = VECTOR_OP_SVML_END - VECTOR_OP_SVML_START + 1
+    VECTOR_OP_SADD  = 119,
+    VECTOR_OP_SSUB  = 120,
+    VECTOR_OP_SUADD = 121,
+    VECTOR_OP_SUSUB = 122,
+    VECTOR_OP_UMIN  = 123,
+    VECTOR_OP_UMAX  = 124,
+
+    VECTOR_OP_MATH_START = VECTOR_OP_TAN,
+    VECTOR_OP_MATH_END   = VECTOR_OP_HYPOT,
+    NUM_VECTOR_OP_MATH   = VECTOR_OP_MATH_END - VECTOR_OP_MATH_START + 1
   };
 
   enum {
@@ -131,7 +138,8 @@ class VectorSupport : AllStatic {
     VEC_SIZE_128 = 1,
     VEC_SIZE_256 = 2,
     VEC_SIZE_512 = 3,
-    NUM_VEC_SIZES = 4
+    VEC_SIZE_SCALABLE = 4,
+    NUM_VEC_SIZES = 5
   };
 
   enum {
@@ -139,14 +147,15 @@ class VectorSupport : AllStatic {
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
 
-  static const char* svmlname[VectorSupport::NUM_SVML_OP];
+  static const char* mathname[VectorSupport::NUM_VECTOR_OP_MATH];
 
   static int vop2ideal(jint vop, BasicType bt);
+  static bool has_scalar_op(jint id);
+  static bool is_unsigned_op(jint id);
 
   static instanceOop allocate_vector(InstanceKlass* holder, frame* fr, RegisterMap* reg_map, ObjectValue* sv, TRAPS);
 
   static bool is_vector(Klass* klass);
   static bool is_vector_mask(Klass* klass);
-  static bool is_vector_shuffle(Klass* klass);
 };
 #endif // SHARE_PRIMS_VECTORSUPPORT_HPP

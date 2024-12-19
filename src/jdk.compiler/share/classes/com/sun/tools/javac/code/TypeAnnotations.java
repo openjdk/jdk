@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -510,7 +510,7 @@ public class TypeAnnotations {
                             Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
                             Fragments.TypeAnnotation(onlyTypeAnnotations);
                     log.error(typetree.pos(), Errors.TypeAnnotationInadmissible(
-                            annotationFragment, annotated.tsym.owner, annotated));
+                            annotationFragment, annotated.tsym.owner, new JCDiagnostic.AnnotatedType(annotated)));
                     return type;
                 }
 
@@ -1018,7 +1018,11 @@ public class TypeAnnotations {
                     if (!invocation.typeargs.contains(tree)) {
                         return TypeAnnotationPosition.unknown;
                     }
-                    MethodSymbol exsym = (MethodSymbol) TreeInfo.symbol(invocation.getMethodSelect());
+                    Symbol exsym = TreeInfo.symbol(invocation.getMethodSelect());
+                    if (exsym.type.isErroneous()) {
+                        // bail out, don't deal with erroneous types which would be reported anyways
+                        return TypeAnnotationPosition.unknown;
+                    }
                     final int type_index = invocation.typeargs.indexOf(tree);
                     if (exsym == null) {
                         throw new AssertionError("could not determine symbol for {" + invocation + "}");

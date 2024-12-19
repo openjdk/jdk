@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @requires !vm.graal.enabled & vm.opt.final.UseVtableBasedCHA == true
+ * @requires !vm.graal.enabled
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation

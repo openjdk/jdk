@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,12 @@ package java.util.zip;
 /**
  * Signals that an unrecoverable error has occurred.
  *
+ * @deprecated ZipError is no longer used and is obsolete.
+ * {@link ZipException} should be used instead.
  * @author  Dave Bristor
  * @since   1.6
  */
+@Deprecated(since="24", forRemoval = true)
 public class ZipError extends InternalError {
     @java.io.Serial
     private static final long serialVersionUID = 853973422266861979L;

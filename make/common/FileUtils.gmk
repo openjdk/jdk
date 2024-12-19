@@ -23,7 +23,7 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
+ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including FileUtils.gmk)
 endif
 
@@ -136,6 +136,7 @@ ifeq ($(call isTargetOs, macosx), true)
 	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
 	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
+          $(CHMOD) -h u+w '$(call DecodeSpace, $@)'; \
 	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
 	fi
   endef
@@ -187,6 +188,11 @@ else
 	$(LN) -s '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
   endef
 endif
+
+define copy-and-chmod-executable
+	$(install-file)
+	$(CHMOD) a+rx $@
+endef
 
 ################################################################################
 
@@ -281,7 +287,7 @@ CacheFindFiles = \
 #
 # $1 - Directories to start search in
 FillFindCache = \
-    $(eval CacheFindFiles_NEW_DIRS := $$(filter-out $$(addsuffix /%,\
+    $(eval CacheFindFiles_NEW_DIRS := $$(filter-out $$(addsuffix /%, \
         $$(CacheFindFiles_CACHED_DIRS)) $$(CacheFindFiles_CACHED_DIRS), $1)) \
     $(if $(CacheFindFiles_NEW_DIRS), \
       $(eval CacheFindFiles_CACHED_DIRS += $$(patsubst %/,%,$$(CacheFindFiles_NEW_DIRS))) \

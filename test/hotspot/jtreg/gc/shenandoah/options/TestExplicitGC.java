@@ -125,23 +125,5 @@ public class TestExplicitGC {
                 output.shouldNotContain(p);
             }
         }
-
-        {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
-                    "-Xmx128m",
-                    "-XX:+UnlockExperimentalVMOptions",
-                    "-XX:+UseShenandoahGC",
-                    "-Xlog:gc",
-                    "-XX:+ExplicitGCInvokesConcurrent",
-                    "-XX:ShenandoahGCMode=iu",
-                    TestExplicitGC.class.getName(),
-                    "test");
-            for (String p : full) {
-                output.shouldNotContain(p);
-            }
-            for (String p : concNormal) {
-                output.shouldContain(p);
-            }
-         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2104,6 +2104,83 @@ public class Exhaustiveness extends TestRunner {
                   }
               }""");
    }
+
+    @Test
+    public void testNestedIntersectionType(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+
+                   static abstract class Abs {}
+
+                   sealed interface B permits V {}
+
+                   static final class V extends Abs implements B {}
+
+                   final static record R<T extends B>(T b) {}
+
+                   static <T extends Abs & B> int r(R<T> r) {
+                       return switch (r) {
+                           case R(B b) -> 3;
+                       };
+                   }
+               }
+               """);
+    }
+    @Test //JDK-8327368
+    public void testExpandForTypeVariables(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface A permits T, U {}
+                   sealed interface B permits V, W {}
+
+                   static final class T implements A { public T() {} }
+                   static final class U implements A { public U() {} }
+
+                   static final class V implements B { public V() {} }
+                   static final class W implements B { public W() {} }
+
+                   final static record R<T1 extends A, T2 extends B>(T1 a, T2 b) { }
+
+                   static <T1 extends A, T2 extends B> int r(R<T1, T2> r) {
+                       return switch (r) {
+                           case R(A a, V b) -> 1; // Any A with specific B
+                           case R(T a, var b) -> 2; // Specific A with any B
+                           case R(U a, W b) -> 3; // Specific A with specific B
+                       };
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               public class Test {
+                   sealed interface A permits T, U {}
+                   sealed interface B permits V, W {}
+
+                   static final class T implements A { public T() {} }
+                   static final class U implements A { public U() {} }
+
+                   static final class V extends Abs implements B { public V() {} }
+                   static final class W extends Abs implements B { public W() {} }
+
+                   static abstract class Abs {}
+
+                   final static record R<T1 extends A, T2 extends B>(T1 a, T2 b) { }
+
+                   static <T1 extends A, T2 extends Abs & B> int r(R<T1, T2> r) {
+                       return switch (r) {
+                           case R(A a, V b) -> 1; // Any A with specific B
+                           case R(T a, var b) -> 2; // Specific A with any B
+                           case R(U a, W b) -> 3; // Specific A with specific B
+                       };
+                   }
+               }
+               """);
+    }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {
         doTest(base, libraryCode, testCode, false, expectedErrors);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 package java.lang.classfile.constantpool;
 
 import java.lang.classfile.TypeKind;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Integer_info} constant in the constant pool of a
  * classfile.
  * @jvms 4.4.4 The CONSTANT_Integer_info and CONSTANT_Float_info Structures
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface IntegerEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
         permits AbstractPoolEntry.IntegerEntryImpl {
@@ -50,6 +49,6 @@ public sealed interface IntegerEntry
      */
     @Override
     default TypeKind typeKind() {
-        return TypeKind.IntType;
+        return TypeKind.INT;
     }
 }

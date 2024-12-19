@@ -43,11 +43,11 @@ import jdk.jfr.events.SocketWriteEvent;
 import jdk.jfr.events.TLSHandshakeEvent;
 import jdk.jfr.events.ThreadSleepEvent;
 import jdk.jfr.events.VirtualThreadEndEvent;
-import jdk.jfr.events.VirtualThreadPinnedEvent;
 import jdk.jfr.events.VirtualThreadStartEvent;
 import jdk.jfr.events.VirtualThreadSubmitFailedEvent;
 import jdk.jfr.events.X509CertificateEvent;
 import jdk.jfr.events.X509ValidationEvent;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * This class registers all mirror events.
@@ -71,7 +71,6 @@ final class MirrorEvents {
         register("jdk.internal.event.TLSHandshakeEvent", TLSHandshakeEvent.class);
         register("jdk.internal.event.VirtualThreadStartEvent", VirtualThreadStartEvent.class);
         register("jdk.internal.event.VirtualThreadEndEvent", VirtualThreadEndEvent.class);
-        register("jdk.internal.event.VirtualThreadPinnedEvent", VirtualThreadPinnedEvent.class);
         register("jdk.internal.event.VirtualThreadSubmitFailedEvent", VirtualThreadSubmitFailedEvent.class);
         register("jdk.internal.event.X509CertificateEvent", X509CertificateEvent.class);
         register("jdk.internal.event.X509ValidationEvent", X509ValidationEvent.class);
@@ -85,7 +84,7 @@ final class MirrorEvents {
     }
 
     static Class<? extends MirrorEvent> find(Class<? extends jdk.internal.event.Event> eventClass) {
-        return find(eventClass.getClassLoader() == null, eventClass.getName());
+        return find(Utils.isJDKClass(eventClass), eventClass.getName());
     }
 
     static Class<? extends MirrorEvent> find(boolean bootClassLoader, String name) {

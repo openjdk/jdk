@@ -99,12 +99,12 @@ AC_DEFUN([LIB_SETUP_JVM_LIBS],
   if HOTSPOT_CHECK_JVM_VARIANT(zero); then
     if test "x$OPENJDK_$1_OS" = xlinux &&
         (test "x$OPENJDK_$1_CPU" = xarm ||
-         test "x$OPENJDK_$1_CPU" = xm68k ||
-         test "x$OPENJDK_$1_CPU" = xmips ||
-         test "x$OPENJDK_$1_CPU" = xmipsel ||
-         test "x$OPENJDK_$1_CPU" = xppc ||
-         test "x$OPENJDK_$1_CPU" = xsh ||
-         test "x$OPENJDK_$1_CPU" = xriscv32); then
+        test "x$OPENJDK_$1_CPU" = xm68k ||
+        test "x$OPENJDK_$1_CPU" = xmips ||
+        test "x$OPENJDK_$1_CPU" = xmipsel ||
+        test "x$OPENJDK_$1_CPU" = xppc ||
+        test "x$OPENJDK_$1_CPU" = xsh ||
+        test "x$OPENJDK_$1_CPU" = xriscv32); then
       BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
     fi
   fi

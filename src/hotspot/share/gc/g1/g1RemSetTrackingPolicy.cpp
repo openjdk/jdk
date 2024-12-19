@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,6 @@
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "runtime/safepoint.hpp"
-
-bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(G1HeapRegion* r) const {
-  // All non-free and non-young regions need to be scanned for references;
-  // At every gc we gather references to other regions in young.
-  // Free regions trivially do not need scanning because they do not contain live
-  // objects.
-  return !(r->is_young() || r->is_free());
-}
 
 void G1RemSetTrackingPolicy::update_at_allocate(G1HeapRegion* r) {
   assert(r->is_young() || r->is_humongous() || r->is_old(),

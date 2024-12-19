@@ -93,6 +93,18 @@ public:
   static void block_array_set_block_count(ActiveArray* blocks, size_t count) {
     blocks->_block_count = count;
   }
+
+  static const oop* get_block_pointer(const Block& block, unsigned index) {
+    return block.get_pointer(index);
+  }
+
+  static Block* new_block(const OopStorage& owner) {
+    return Block::new_block(&owner);
+  }
+
+  static void delete_block(const Block& block) {
+    Block::delete_block(block);
+  }
 };
 
 typedef OopStorage::TestAccess TestAccess;
@@ -461,7 +473,7 @@ public:
       *to_release[i] = nullptr;
     }
     if (sorted) {
-      QuickSort::sort(to_release, nrelease, PointerCompare(), false);
+      QuickSort::sort(to_release, nrelease, PointerCompare());
     }
 
     storage().release(to_release, nrelease);
@@ -518,24 +530,35 @@ TEST_VM_F(OopStorageTest, bulk_allocation) {
   }
 }
 
-#ifndef DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
-TEST_VM_F(OopStorageTest, invalid_pointer) {
-  {
-    char* mem = NEW_C_HEAP_ARRAY(char, 1000, mtInternal);
-    oop* ptr = reinterpret_cast<oop*>(align_down(mem + 250, sizeof(oop)));
-    // Predicate returns false for some malloc'ed block.
-    EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
-    FREE_C_HEAP_ARRAY(char, mem);
-  }
-
-  {
-    oop obj;
-    oop* ptr = &obj;
-    // Predicate returns false for some "random" location.
-    EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
-  }
+TEST_VM_F(OopStorageTest, invalid_malloc_pointer) {
+  char* mem = NEW_C_HEAP_ARRAY(char, 1000, mtInternal);
+  oop* ptr = reinterpret_cast<oop*>(align_down(mem + 250, sizeof(oop)));
+  // Predicate returns false for some malloc'ed block.
+  EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
+  FREE_C_HEAP_ARRAY(char, mem);
 }
-#endif // DISABLE_GARBAGE_ALLOCATION_STATUS_TESTS
+
+TEST_VM_F(OopStorageTest, invalid_random_pointer) {
+  oop obj;
+  oop* ptr = &obj;
+  // Predicate returns false for some "random" location.
+  EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
+}
+
+TEST_VM_F(OopStorageTest, invalid_block_pointer) {
+  // Allocate a block for storage, but don't insert it into the storage.  This
+  // also tests the false positive case of block_for_ptr where we have a
+  // reference to storage at just the "right" place.
+  const OopBlock* block = TestAccess::new_block(storage());
+  ASSERT_NE(block, NULL_BLOCK);
+  const oop* ptr = TestAccess::get_block_pointer(*block, 0);
+  EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(ptr));
+  TestAccess::delete_block(*block);
+}
+
+TEST_VM_F(OopStorageTest, invalid_null_pointer) {
+  EXPECT_EQ(OopStorage::INVALID_ENTRY, storage().allocation_status(nullptr));
+}
 
 class OopStorageTest::CountingIterateClosure {
 public:

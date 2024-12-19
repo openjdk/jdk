@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.util.Arrays;
  * @bug 8159696
  * @library /javax/swing/regtesthelpers
  * @compile ./stub/Stub.java
- * @run main/othervm -mx32M UnloadClassBeanInfo
+ * @run main/othervm -Xmx32M UnloadClassBeanInfo
  */
 public class UnloadClassBeanInfo {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ public class InstanceKlass extends Klass {
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
   private static int CLASS_STATE_LOADED;
-  private static int CLASS_STATE_BEING_LINKED;
   private static int CLASS_STATE_LINKED;
   private static int CLASS_STATE_BEING_INITIALIZED;
   private static int CLASS_STATE_FULLY_INITIALIZED;
@@ -101,7 +100,6 @@ public class InstanceKlass extends Klass {
     // read ClassState constants
     CLASS_STATE_ALLOCATED = db.lookupIntConstant("InstanceKlass::allocated").intValue();
     CLASS_STATE_LOADED = db.lookupIntConstant("InstanceKlass::loaded").intValue();
-    CLASS_STATE_BEING_LINKED = db.lookupIntConstant("InstanceKlass::being_linked").intValue();
     CLASS_STATE_LINKED = db.lookupIntConstant("InstanceKlass::linked").intValue();
     CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("InstanceKlass::being_initialized").intValue();
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
@@ -158,7 +156,6 @@ public class InstanceKlass extends Klass {
   public static class ClassState {
      public static final ClassState ALLOCATED    = new ClassState("allocated");
      public static final ClassState LOADED       = new ClassState("loaded");
-     public static final ClassState BEING_LINKED = new ClassState("beingLinked");
      public static final ClassState LINKED       = new ClassState("linked");
      public static final ClassState BEING_INITIALIZED      = new ClassState("beingInitialized");
      public static final ClassState FULLY_INITIALIZED    = new ClassState("fullyInitialized");
@@ -182,8 +179,6 @@ public class InstanceKlass extends Klass {
         return ClassState.ALLOCATED;
      } else if (state == CLASS_STATE_LOADED) {
         return ClassState.LOADED;
-     } else if (state == CLASS_STATE_BEING_LINKED) {
-        return ClassState.BEING_LINKED;
      } else if (state == CLASS_STATE_LINKED) {
         return ClassState.LINKED;
      } else if (state == CLASS_STATE_BEING_INITIALIZED) {
@@ -438,46 +433,6 @@ public class InstanceKlass extends Klass {
       enclosingMethodAttributeSize = db.lookupIntConstant("InstanceKlass::enclosing_method_attribute_size").intValue();
     }
   }
-
-  // refer to compute_modifier_flags in VM code.
-  public long computeModifierFlags() {
-    long access = getAccessFlags();
-    // But check if it happens to be member class.
-    U2Array innerClassList = getInnerClasses();
-    int length = (innerClassList == null)? 0 : innerClassList.length();
-    if (length > 0) {
-       if (Assert.ASSERTS_ENABLED) {
-          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
-                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosingMethodAttributeSize,
-                      "just checking");
-       }
-       for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
-          if (i == length - EnclosingMethodAttributeOffset.enclosingMethodAttributeSize) {
-              break;
-          }
-          int ioff = innerClassList.at(i +
-                         InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
-          // 'ioff' can be zero.
-          // refer to JVM spec. section 4.7.5.
-          if (ioff != 0) {
-             // only look at classes that are already loaded
-             // since we are looking for the flags for our self.
-             Symbol name = getConstants().getKlassNameAt(ioff);
-
-             if (name.equals(getName())) {
-                // This is really a member class
-                access = innerClassList.at(i +
-                        InnerClassAttributeOffset.innerClassAccessFlagsOffset);
-                break;
-             }
-          }
-       } // for inner classes
-    }
-
-    // Remember to strip ACC_SUPER bit
-    return (access & (~JVM_ACC_SUPER)) & JVM_ACC_WRITTEN_FLAGS;
-  }
-
 
   // whether given Symbol is name of an inner/nested Klass of this Klass?
   // anonymous and local classes are excluded.

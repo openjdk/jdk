@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,16 +45,6 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
   return this;
 }
 
-// Do NOT remove the opaque node until no more loop opts can happen.
-Node* Opaque3Node::Identity(PhaseGVN* phase) {
-  if (phase->C->post_loop_opts_phase()) {
-    return in(1);
-  } else {
-    phase->C->record_for_post_loop_opts_igvn(this);
-  }
-  return this;
-}
-
 #ifdef ASSERT
 CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
   Node* iff = if_node();
@@ -92,13 +82,24 @@ IfNode* OpaqueZeroTripGuardNode::if_node() const {
   return iff->as_If();
 }
 
-// Do not allow value-numbering
-uint Opaque3Node::hash() const { return NO_HASH; }
-bool Opaque3Node::cmp(const Node &n) const {
-  return (&n == this);          // Always fail except on self
+const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
+  return phase->type(in(1));
 }
 
-const Type* Opaque4Node::Value(PhaseGVN* phase) const {
+Node* OpaqueTemplateAssertionPredicateNode::Identity(PhaseGVN* phase) {
+  if (phase->C->post_loop_opts_phase()) {
+    // Template Assertion Predicates only serve as templates to create Initialized Assertion Predicates when splitting
+    // a loop during loop opts. They are not used anymore once loop opts are over and can then be removed. They feed
+    // into the bool input of an If node and can thus be replaced by true to let the Template Assertion Predicate be
+    // folded away (the success path is always the true path by design).
+    return phase->intcon(1);
+  } else {
+    phase->C->record_for_post_loop_opts_igvn(this);
+  }
+  return this;
+}
+
+const Type* OpaqueTemplateAssertionPredicateNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 

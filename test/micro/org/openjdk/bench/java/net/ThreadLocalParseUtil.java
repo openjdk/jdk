@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import static java.lang.invoke.MethodType.methodType;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 1, jvmArgsAppend = "--add-exports=java.base/sun.net.www=ALL-UNNAMED")
+@Fork(value = 1, jvmArgs = "--add-exports=java.base/sun.net.www=ALL-UNNAMED")
 public class ThreadLocalParseUtil {
 
     private static final MethodHandle MH_DECODE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,9 @@ class C2AccessValuePtr: public C2AccessValue {
 
 public:
   C2AccessValuePtr(Node* node, const TypePtr* type) :
-    C2AccessValue(node, reinterpret_cast<const Type*>(type)) {}
+    C2AccessValue(node, type) {}
 
-  const TypePtr* type() const { return reinterpret_cast<const TypePtr*>(_type); }
+  const TypePtr* type() const { return _type->is_ptr(); }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the
@@ -102,10 +102,10 @@ public:
 class C2Access: public StackObj {
 protected:
   DecoratorSet      _decorators;
-  BasicType         _type;
   Node*             _base;
   C2AccessValuePtr& _addr;
   Node*             _raw_access;
+  BasicType         _type;
   uint8_t           _barrier_data;
 
   void fixup_decorators();
@@ -114,10 +114,10 @@ public:
   C2Access(DecoratorSet decorators,
            BasicType type, Node* base, C2AccessValuePtr& addr) :
     _decorators(decorators),
-    _type(type),
     _base(base),
     _addr(addr),
     _raw_access(nullptr),
+    _type(type),
     _barrier_data(0)
   {}
 
@@ -254,6 +254,8 @@ public:
   Label* entry();
   // Return point from the stub (typically end of barrier).
   Label* continuation();
+  // High-level, GC-specific barrier flags.
+  uint8_t barrier_data() const;
 
   // Preserve the value in reg across runtime calls in this barrier.
   void preserve(Register reg);
@@ -340,6 +342,8 @@ public:
   // Estimated size of the node barrier in number of C2 Ideal nodes.
   // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
   virtual uint estimated_barrier_size(const Node* node) const { return 0; }
+  // Whether the given store can be used to initialize a newly allocated object.
+  virtual bool can_initialize_object(const StoreNode* store) const { return true; }
 
   enum CompilePhase {
     BeforeOptimize,

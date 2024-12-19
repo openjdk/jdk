@@ -538,6 +538,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public NamedImportScope namedImportScope;
         /** A scope for all import-on-demands. */
         public StarImportScope starImportScope;
+        /** A scope for all single module imports. */
+        public StarImportScope moduleImportScope;
         /** Line starting positions, defined only if option -g is set. */
         public Position.LineMap lineMap = null;
         /** A table that stores all documentation comments indexed by the tree
@@ -807,6 +809,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         /** list of target types inferred for this functional expression. */
         public Type target;
+        /** The owner of this functional expression. */
+        public Symbol owner;
 
         public Type getDescriptorType(Types types) {
             return target != null ? types.findDescriptorType(target) : types.createErrorType(null);
@@ -882,7 +886,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public List<JCExpression> getImplementsClause() {
             return implementing;
         }
-        @SuppressWarnings("removal")
         @DefinedBy(Api.COMPILER_TREE)
         public List<JCExpression> getPermitsClause() {
             return permitting;
@@ -2013,6 +2016,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public JCTree body;
         public boolean canCompleteNormally = true;
         public ParameterKind paramKind;
+        public boolean wasMethodReference;
 
         public JCLambda(List<JCVariableDecl> params,
                         JCTree body) {
@@ -2269,6 +2273,8 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /**{@code true} if this instanceof test should have
          * value {@code true} when the {@code expr} is {@code null}.*/
         public boolean allowNull;
+        public Type erasedExprOriginalType;
+
         protected JCInstanceOf(JCExpression expr, JCTree pattern) {
             this.expr = expr;
             this.pattern = pattern;

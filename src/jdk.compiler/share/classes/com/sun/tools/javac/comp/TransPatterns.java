@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.BOT;
+import static com.sun.tools.javac.code.TypeTag.VOID;
+
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
@@ -197,7 +199,27 @@ public class TransPatterns extends TreeTranslator {
 
     @Override
     public void visitTypeTest(JCInstanceOf tree) {
-        if (tree.pattern instanceof JCPattern pattern) {
+        // Translates regular instanceof type operation to instanceof pattern operator when
+        // the expression was originally T but was subsequently erased to Object.
+        //
+        // $expr instanceof $primitiveType
+        // =>
+        // $expr instanceof T $temp && $temp instanceof $primitiveType
+        if (tree.erasedExprOriginalType!=null && !types.isSameType(tree.expr.type, tree.erasedExprOriginalType)) {
+            BindingSymbol temp = new BindingSymbol(Flags.FINAL | Flags.SYNTHETIC,
+                    names.fromString("temp" + variableIndex++ + target.syntheticNameChar()),
+                    tree.erasedExprOriginalType,
+                    currentMethodSym);
+
+            JCVariableDecl tempDecl = make.at(tree.pos()).VarDef(temp, null);
+
+            JCTree resultExpr =
+                    makeBinary(Tag.AND,
+                            make.TypeTest(tree.expr, make.BindingPattern(tempDecl).setType(tree.erasedExprOriginalType)).setType(syms.booleanType),
+                            make.TypeTest(make.Ident(tempDecl), tree.pattern).setType(syms.booleanType));
+
+            result = translate(resultExpr);
+        } else if (tree.pattern instanceof JCPattern pattern) {
             //first, resolve any record patterns:
             JCExpression extraConditions = null;
             if (pattern instanceof JCRecordPattern recordPattern) {
@@ -785,7 +807,7 @@ public class TransPatterns extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         PrimitiveGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override
@@ -991,7 +1013,7 @@ public class TransPatterns extends TreeTranslator {
                        !currentNullable &&
                        !previousCompletesNormally &&
                        !currentCompletesNormally &&
-                       new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
+                       new TreeDiffer(types, List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
                 accummulator.add(c.head);
             } else {
@@ -1260,7 +1282,11 @@ public class TransPatterns extends TreeTranslator {
                 tree.body = translate(tree.body);
                 if (deconstructorCalls != null) {
                     if (tree.body instanceof JCExpression value) {
-                        tree.body = make.Block(0, List.of(make.Return(value)));
+                        if (value.type.hasTag(VOID)) {
+                            tree.body = make.Block(0, List.of(make.Exec(value)));
+                        } else {
+                            tree.body = make.Block(0, List.of(make.Return(value)));
+                        }
                     }
                     if (tree.body instanceof JCBlock block) {
                         preparePatternMatchingCatchIfNeeded(block);

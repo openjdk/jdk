@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -112,5 +112,17 @@ public class PerfMapTest {
         Path path = Paths.get("/tmp/perf-<pid>.map");
         run(new JMXExecutor(), "Compiler.perfmap " + path.toString(), path);
         Files.deleteIfExists(path);
+    }
+
+    @Test
+    public void logErrorsDcmdOutputStream() throws IOException {
+        String test_dir = System.getProperty("test.dir", ".");
+        Path path = Paths.get("nonexistent", test_dir);
+        try {
+            OutputAnalyzer output = new JMXExecutor().execute("Compiler.perfmap %s".formatted(path));
+            output.shouldContain("Warning: Failed to create nonexistent/%s for perf map".formatted(test_dir));
+        } finally {
+            Files.deleteIfExists(path);
+        }
     }
 }

@@ -1706,7 +1706,9 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   }
   rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
 
-  rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+  if (!UseCompactObjectHeaders) {
+    rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+  }
   int header_size = alloc->minimum_header_size();  // conservatively small
 
   // Array length
@@ -2045,7 +2047,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
 
 //-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
-  if (alock->box_node()->as_BoxLock()->is_unbalanced()) {
+  if (!alock->is_balanced()) {
     return; // Can't do any more elimination for this locking region
   }
   if (EliminateNestedLocks) {
@@ -2428,8 +2430,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->Opcode() == Op_Opaque3   ||
-               n->is_Opaque4()             ||
+               n->is_OpaqueNotNull()       ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
@@ -2481,41 +2482,14 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
-#if INCLUDE_RTM_OPT
-      } else if ((n->Opcode() == Op_Opaque3) && ((Opaque3Node*)n)->rtm_opt()) {
-        assert(C->profile_rtm(), "should be used only in rtm deoptimization code");
-        assert((n->outcnt() == 1) && n->unique_out()->is_Cmp(), "");
-        Node* cmp = n->unique_out();
-#ifdef ASSERT
-        // Validate graph.
-        assert((cmp->outcnt() == 1) && cmp->unique_out()->is_Bool(), "");
-        BoolNode* bol = cmp->unique_out()->as_Bool();
-        assert((bol->outcnt() == 1) && bol->unique_out()->is_If() &&
-               (bol->_test._test == BoolTest::ne), "");
-        IfNode* ifn = bol->unique_out()->as_If();
-        assert((ifn->outcnt() == 2) &&
-               ifn->proj_out(1)->is_uncommon_trap_proj(Deoptimization::Reason_rtm_state_change) != nullptr, "");
-#endif
-        Node* repl = n->in(1);
-        if (!_has_locks) {
-          // Remove RTM state check if there are no locks in the code.
-          // Replace input to compare the same value.
-          repl = (cmp->in(1) == n) ? cmp->in(2) : cmp->in(1);
-        }
-        _igvn.replace_node(n, repl);
-        success = true;
-#endif
-      } else if (n->is_Opaque4()) {
-        // With Opaque4 nodes, the expectation is that the test of input 1
-        // is always equal to the constant value of input 2. So we can
-        // remove the Opaque4 and replace it by input 2. In debug builds,
-        // leave the non constant test in instead to sanity check that it
-        // never fails (if it does, that subgraph was constructed so, at
-        // runtime, a Halt node is executed).
+      } else if (n->is_OpaqueNotNull()) {
+        // Tests with OpaqueNotNull nodes are implicitly known to be true. Replace the node with true. In debug builds,
+        // we leave the test in the graph to have an additional sanity check at runtime. If the test fails (i.e. a bug),
+        // we will execute a Halt node.
 #ifdef ASSERT
         _igvn.replace_node(n, n->in(1));
 #else
-        _igvn.replace_node(n, n->in(2));
+        _igvn.replace_node(n, _igvn.intcon(1));
 #endif
         success = true;
       } else if (n->is_OpaqueInitializedAssertionPredicate()) {

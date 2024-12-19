@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +55,7 @@ public:
   enum { Control,               // When is it safe to do this load?
          Memory,                // Chunk of memory is being loaded from
          Address,               // Actually address, derived from base
-         ValueIn,               // Value to store
-         OopStore               // Preceding oop store, only in StoreCM
+         ValueIn                // Value to store
   };
   typedef enum { unordered = 0,
                  acquire,       // Load has to acquire or be succeeded by MemBarAcquire.
@@ -105,8 +105,12 @@ public:
 
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
-  // This one should probably be a phase-specific function:
-  static bool all_controls_dominate(Node* dom, Node* sub);
+  // The following two should probably be phase-specific functions:
+  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub);
+  static bool all_controls_dominate(Node* dom, Node* sub) {
+    DomResult dom_result = maybe_all_controls_dominate(dom, sub);
+    return dom_result == DomResult::Dominate;
+  }
 
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 
@@ -119,11 +123,7 @@ public:
   // Raw access function, to allow copying of adr_type efficiently in
   // product builds and retain the debug info for debug builds.
   const TypePtr *raw_adr_type() const {
-#ifdef ASSERT
-    return _adr_type;
-#else
-    return 0;
-#endif
+    return DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
   }
 
   // Return the barrier data of n, if available, or 0 otherwise.
@@ -196,7 +196,7 @@ private:
   // non-pinned LoadNode by the pinned LoadNode.
   ControlDependency _control_dependency;
 
-  // On platforms with weak memory ordering (e.g., PPC, Ia64) we distinguish
+  // On platforms with weak memory ordering (e.g., PPC) we distinguish
   // loads that can be reordered, and such requiring acquire semantics to
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.
@@ -541,6 +541,12 @@ public:
 
 //------------------------------LoadNKlassNode---------------------------------
 // Load a narrow Klass from an object.
+// With compact headers, the input address (adr) does not point at the exact
+// header position where the (narrow) class pointer is located, but into the
+// middle of the mark word (see oopDesc::klass_offset_in_bytes()). This node
+// implicitly shifts the loaded value (markWord::klass_shift_at_offset bits) to
+// extract the actual class pointer. C2's type system is agnostic on whether the
+// input address directly points into the class pointer.
 class LoadNKlassNode : public LoadNNode {
 public:
   LoadNKlassNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const TypeNarrowKlass *tk, MemOrd mo)
@@ -560,7 +566,7 @@ public:
 // Store value; requires Store, Address and Value
 class StoreNode : public MemNode {
 private:
-  // On platforms with weak memory ordering (e.g., PPC, Ia64) we distinguish
+  // On platforms with weak memory ordering (e.g., PPC) we distinguish
   // stores that can be reordered, and such requiring release semantics to
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.
@@ -774,36 +780,6 @@ public:
     : StoreNNode(c, mem, adr, at, val, mo) {}
   virtual int Opcode() const;
   virtual BasicType memory_type() const { return T_NARROWKLASS; }
-};
-
-//------------------------------StoreCMNode-----------------------------------
-// Store card-mark byte to memory for CM
-// The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
-// Preceding equivalent StoreCMs may be eliminated.
-class StoreCMNode : public StoreNode {
- private:
-  virtual uint hash() const { return StoreNode::hash() + _oop_alias_idx; }
-  virtual bool cmp( const Node &n ) const {
-    return _oop_alias_idx == ((StoreCMNode&)n)._oop_alias_idx
-      && StoreNode::cmp(n);
-  }
-  virtual uint size_of() const { return sizeof(*this); }
-  int _oop_alias_idx;   // The alias_idx of OopStore
-
-public:
-  StoreCMNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, Node *oop_store, int oop_alias_idx ) :
-    StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
-    _oop_alias_idx(oop_alias_idx) {
-    assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           (_oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
-           "bad oop alias idx");
-  }
-  virtual int Opcode() const;
-  virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual BasicType memory_type() const { return T_VOID; } // unspecific
-  int oop_alias_idx() const { return _oop_alias_idx; }
 };
 
 //------------------------------SCMemProjNode---------------------------------------
@@ -1681,7 +1657,7 @@ public:
 // Allocation prefetch which may fault, TLAB size have to be adjusted.
 class PrefetchAllocationNode : public Node {
 public:
-  PrefetchAllocationNode(Node *mem, Node *adr) : Node(0,mem,adr) {}
+  PrefetchAllocationNode(Node *mem, Node *adr) : Node(nullptr,mem,adr) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }

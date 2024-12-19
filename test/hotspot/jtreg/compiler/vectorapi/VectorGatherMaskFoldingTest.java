@@ -100,7 +100,7 @@ public class VectorGatherMaskFoldingTest {
         for (int i = 0; i < L_SPECIES.length(); i++) {
             longArray[i] = i + 1;
             longArray2[i] = L_SPECIES.length() - i + 1;
-            longMask[i] = i % 2 == 0;
+            longMask[i] = L_SPECIES.length() > 1 && i % 2 == 0;
             longMask2[i] = i >= L_SPECIES.length() / 2;
             longIndices[i] = (i + L_SPECIES.length() / 2) % L_SPECIES.length();
             longIndices2[i] = (L_SPECIES.length() - i) % L_SPECIES.length();
@@ -126,7 +126,7 @@ public class VectorGatherMaskFoldingTest {
         for (int i = 0; i < D_SPECIES.length(); i++) {
             doubleArray[i] = (double) i + 1.0;
             doubleArray2[i] = (double) (D_SPECIES.length() - i) + 1.0;
-            doubleMask[i] = i % 2 == 0;
+            doubleMask[i] = D_SPECIES.length() > 1 && i % 2 == 0;
             doubleMask2[i] = i >= D_SPECIES.length() / 2;
             doubleIndices[i] = (i + D_SPECIES.length() / 2) % D_SPECIES.length();
             doubleIndices2[i] = (D_SPECIES.length() - i) % D_SPECIES.length();
@@ -168,7 +168,7 @@ public class VectorGatherMaskFoldingTest {
     public static void testTwoLongVectorLoadGatherNotEqualIndices() {
         LongVector res = LongVector.fromArray(L_SPECIES, longArray, 0, longIndices, 0);
         LongVector res2 = LongVector.fromArray(L_SPECIES, longArray, 0, longIndices2, 0);
-        Asserts.assertNotEquals(res, res2);
+        Asserts.assertFalse(L_SPECIES.length() != 1 && res.equals(res2));
     }
 
     @Test
@@ -176,7 +176,7 @@ public class VectorGatherMaskFoldingTest {
     public static void testOneLongVectorLoadGather() {
         LongVector res = LongVector.fromArray(L_SPECIES, longArray, 0);
         LongVector res2 = LongVector.fromArray(L_SPECIES, longArray, 0, longIndices, 0);
-        Asserts.assertNotEquals(res, res2);
+        Asserts.assertFalse(L_SPECIES.length() != 1 && res.equals(res2));
     }
 
     @Test
@@ -232,7 +232,7 @@ public class VectorGatherMaskFoldingTest {
     public static void testTwoLongVectorLoadGatherMaskedNotEqualIndices() {
         LongVector res = LongVector.fromArray(L_SPECIES, longArray, 0, longIndices, 0, longVectorMask);
         LongVector res2 = LongVector.fromArray(L_SPECIES, longArray, 0, longIndices2, 0, longVectorMask);
-        Asserts.assertNotEquals(res, res2);
+        Asserts.assertFalse(L_SPECIES.length() != 1 && res.equals(res2));
     }
 
 
@@ -334,7 +334,7 @@ public class VectorGatherMaskFoldingTest {
     public static void testTwoDoubleVectorLoadGatherNotEqualIndices() {
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleIndices, 0);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleIndices2, 0);
-        Asserts.assertNotEquals(res, res2);
+        Asserts.assertFalse(D_SPECIES.length() != 1 && res.equals(res2));
     }
 
     @Test
@@ -342,7 +342,7 @@ public class VectorGatherMaskFoldingTest {
     public static void testOneDoubleVectorLoadGather() {
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, doubleArray, 0);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleIndices, 0);
-        Asserts.assertNotEquals(res, res2);
+        Asserts.assertFalse(D_SPECIES.length() != 1 && res.equals(res2));
     }
 
     @Test
@@ -398,7 +398,7 @@ public class VectorGatherMaskFoldingTest {
     public static void testTwoDoubleVectorLoadGatherMaskedNotEqualIndices() {
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleIndices, 0, doubleVectorMask);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleIndices2, 0, doubleVectorMask);
-        Asserts.assertNotEquals(res, res2);
+        Asserts.assertFalse(D_SPECIES.length() != 1 && res.equals(res2));
     }
 
 
@@ -506,7 +506,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res2 = new long[L_SPECIES.length()];
         longVector.intoArray(res, 0, longIndices, 0);
         longVector.intoArray(res2, 0, longIndices2, 0);
-        Asserts.assertFalse(Arrays.equals(res, res2));
+        Asserts.assertFalse(L_SPECIES.length() != 1 && Arrays.equals(res, res2));
     }
 
     @Test
@@ -516,7 +516,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res2 = new long[L_SPECIES.length()];
         longVector.intoArray(res, 0);
         longVector.intoArray(res2, 0, longIndices, 0);
-        Asserts.assertFalse(Arrays.equals(res, res2));
+        Asserts.assertFalse(L_SPECIES.length() != 1 && Arrays.equals(res, res2));
     }
 
     @Test
@@ -586,7 +586,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res2 = new long[L_SPECIES.length()];
         longVector.intoArray(res, 0, longIndices, 0, longVectorMask);
         longVector.intoArray(res2, 0, longIndices2, 0, longVectorMask);
-        Asserts.assertFalse(Arrays.equals(res, res2));
+        Asserts.assertFalse(L_SPECIES.length() != 1 && Arrays.equals(res, res2));
     }
 
 
@@ -712,7 +712,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res2 = new double[D_SPECIES.length()];
         doubleVector.intoArray(res, 0, doubleIndices, 0);
         doubleVector.intoArray(res2, 0, doubleIndices2, 0);
-        Asserts.assertFalse(Arrays.equals(res, res2));
+        Asserts.assertFalse(D_SPECIES.length() != 1 && Arrays.equals(res, res2));
     }
 
     @Test
@@ -722,7 +722,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res2 = new double[D_SPECIES.length()];
         doubleVector.intoArray(res, 0);
         doubleVector.intoArray(res2, 0, doubleIndices, 0);
-        Asserts.assertFalse(Arrays.equals(res, res2));
+        Asserts.assertFalse(D_SPECIES.length() != 1 && Arrays.equals(res, res2));
     }
 
     @Test
@@ -792,7 +792,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res2 = new double[D_SPECIES.length()];
         doubleVector.intoArray(res, 0, doubleIndices, 0, doubleVectorMask);
         doubleVector.intoArray(res2, 0, doubleIndices2, 0, doubleVectorMask);
-        Asserts.assertFalse(Arrays.equals(res, res2));
+        Asserts.assertFalse(D_SPECIES.length() != 1 && Arrays.equals(res, res2));
     }
 
 
@@ -909,7 +909,7 @@ public class VectorGatherMaskFoldingTest {
         long[] array = new long[L_SPECIES.length()];
         longVector.intoArray(array, 0);
         LongVector res = LongVector.fromArray(L_SPECIES, array, 0, longIndices, 0);
-        Asserts.assertNotEquals(res, longVector);
+        Asserts.assertFalse(L_SPECIES.length() != 1 && res.equals(longVector));
     }
 
     @Test
@@ -918,7 +918,7 @@ public class VectorGatherMaskFoldingTest {
         long[] array = new long[L_SPECIES.length()];
         longVector.intoArray(array, 0, longIndices, 0);
         LongVector res = LongVector.fromArray(L_SPECIES, array, 0);
-        Asserts.assertNotEquals(res, longVector);
+        Asserts.assertFalse(L_SPECIES.length() != 1 && res.equals(longVector));
     }
 
     @Test
@@ -945,7 +945,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res = new long[L_SPECIES.length()];
         longVector.intoArray(res, 0, duplicateLongIndices, 0);
         LongVector res2 = LongVector.fromArray(L_SPECIES, res, 0, duplicateLongIndices, 0);
-        Asserts.assertNotEquals(res2, longVector);
+        Asserts.assertFalse(L_SPECIES.length() != 1 && res2.equals(longVector));
     }
 
     @Test
@@ -963,7 +963,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res = new long[L_SPECIES.length()];
         longVector.intoArray(res, 0);
         LongVector res2 = LongVector.fromArray(LongVector.SPECIES_64, res, 0);
-        Asserts.assertNotEquals(res2, longVector);
+        Asserts.assertFalse(L_SPECIES.length() != 1 && res2.equals(longVector));
     }
 
 
@@ -1041,7 +1041,7 @@ public class VectorGatherMaskFoldingTest {
         double[] array = new double[D_SPECIES.length()];
         doubleVector.intoArray(array, 0);
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, array, 0, doubleIndices, 0);
-        Asserts.assertNotEquals(res, doubleVector);
+        Asserts.assertFalse(D_SPECIES.length() != 1 && res.equals(doubleVector));
     }
 
     @Test
@@ -1050,7 +1050,7 @@ public class VectorGatherMaskFoldingTest {
         double[] array = new double[D_SPECIES.length()];
         doubleVector.intoArray(array, 0, doubleIndices, 0);
         DoubleVector res = DoubleVector.fromArray(D_SPECIES, array, 0);
-        Asserts.assertNotEquals(res, doubleVector);
+        Asserts.assertFalse(D_SPECIES.length() != 1 && res.equals(doubleVector));
     }
 
     @Test
@@ -1077,7 +1077,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res = new double[D_SPECIES.length()];
         doubleVector.intoArray(res, 0, duplicateDoubleIndices, 0);
         DoubleVector res2 = DoubleVector.fromArray(D_SPECIES, res, 0, duplicateDoubleIndices, 0);
-        Asserts.assertNotEquals(res2, doubleVector);
+        Asserts.assertFalse(D_SPECIES.length() != 1 && res2.equals(doubleVector));
     }
 
     @Test
@@ -1095,7 +1095,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res = new double[D_SPECIES.length()];
         doubleVector.intoArray(res, 0);
         DoubleVector res2 = DoubleVector.fromArray(DoubleVector.SPECIES_64, res, 0);
-        Asserts.assertNotEquals(res2, doubleVector);
+        Asserts.assertFalse(D_SPECIES.length() != 1 && res2.equals(doubleVector));
     }
 
 
@@ -1175,7 +1175,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res = new long[L_SPECIES.length()];
         LongVector vector = LongVector.fromArray(L_SPECIES, longArray, 0, longIndices, 0);
         vector.intoArray(res, 0);
-        Asserts.assertFalse(Arrays.equals(res, longArray));
+        Asserts.assertFalse(L_SPECIES.length() != 1 && Arrays.equals(res, longArray));
     }
 
     @Test
@@ -1184,7 +1184,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res = new long[L_SPECIES.length()];
         LongVector vector = LongVector.fromArray(L_SPECIES, longArray, 0);
         vector.intoArray(res, 0, longIndices, 0);
-        Asserts.assertFalse(Arrays.equals(res, longArray));
+        Asserts.assertFalse(L_SPECIES.length() != 1 && Arrays.equals(res, longArray));
     }
 
     @Test
@@ -1211,7 +1211,7 @@ public class VectorGatherMaskFoldingTest {
         long[] res = new long[L_SPECIES.length()];
         LongVector vector = LongVector.fromArray(L_SPECIES, longArray, 0, duplicateLongIndices, 0);
         vector.intoArray(res, 0, duplicateLongIndices, 0);
-        Asserts.assertFalse(Arrays.equals(res, longArray));
+        Asserts.assertFalse(L_SPECIES.length() != 1 && Arrays.equals(res, longArray));
     }
 
     @Test
@@ -1289,7 +1289,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res = new double[D_SPECIES.length()];
         DoubleVector vector = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, doubleIndices, 0);
         vector.intoArray(res, 0);
-        Asserts.assertFalse(Arrays.equals(res, doubleArray));
+        Asserts.assertFalse(D_SPECIES.length() != 1 && Arrays.equals(res, doubleArray));
     }
 
     @Test
@@ -1298,7 +1298,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res = new double[D_SPECIES.length()];
         DoubleVector vector = DoubleVector.fromArray(D_SPECIES, doubleArray, 0);
         vector.intoArray(res, 0, doubleIndices, 0);
-        Asserts.assertFalse(Arrays.equals(res, doubleArray));
+        Asserts.assertFalse(D_SPECIES.length() != 1 && Arrays.equals(res, doubleArray));
     }
 
     @Test
@@ -1325,7 +1325,7 @@ public class VectorGatherMaskFoldingTest {
         double[] res = new double[D_SPECIES.length()];
         DoubleVector vector = DoubleVector.fromArray(D_SPECIES, doubleArray, 0, duplicateDoubleIndices, 0);
         vector.intoArray(res, 0, duplicateDoubleIndices, 0);
-        Asserts.assertFalse(Arrays.equals(res, doubleArray));
+        Asserts.assertFalse(D_SPECIES.length() != 1 && Arrays.equals(res, doubleArray));
     }
 
     @Test
@@ -1398,7 +1398,7 @@ public class VectorGatherMaskFoldingTest {
     public static void main(String[] args) {
         TestFramework testFramework = new TestFramework();
         testFramework.setDefaultWarmup(10000)
-                     .addFlags("--add-modules=jdk.incubator.vector", "-XX:+IncrementalInlineForceCleanup")
+                     .addFlags("--add-modules=jdk.incubator.vector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+IncrementalInlineForceCleanup")
                      .start();
     }
 }

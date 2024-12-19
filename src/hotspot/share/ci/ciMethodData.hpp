@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -478,17 +478,6 @@ public:
   bool is_mature() { return _state == mature_state; }
 
   int invocation_count() { return _invocation_counter; }
-
-#if INCLUDE_RTM_OPT
-  // return cached value
-  int rtm_state() {
-    if (is_empty()) {
-      return NoRTM;
-    } else {
-      return get_MethodData()->rtm_state();
-    }
-  }
-#endif
 
   // Transfer information about the method to MethodData*.
   // would_profile means we would like to profile this method,

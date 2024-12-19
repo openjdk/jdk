@@ -59,7 +59,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     int flag = 0;       // general purpose flag
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
-    int extraAttributes = -1; // e.g. POSIX permissions, sym links.
+    int externalFileAttributes = -1; // File type, setuid, setgid, sticky, POSIX permissions
     /**
      * Compression method for uncompressed entries.
      */
@@ -78,7 +78,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     /**
      * Approximately 128 years, in milliseconds (ignoring leap years etc).
      *
-     * This establish an approximate high-bound value for DOS times in
+     * This establishes an approximate high-bound value for DOS times in
      * milliseconds since epoch, used to enable an efficient but
      * sufficient bounds check to avoid generating extended last modified
      * time entries.
@@ -91,7 +91,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     private static final long UPPER_DOSTIME_BOUND =
             128L * 365 * 24 * 60 * 60 * 1000;
-
+    // CEN header size + name length + comment length + extra length
+    // should not exceed 65,535 bytes per the PKWare APP.NOTE
+    // 4.4.10, 4.4.11, & 4.4.12.
+    private static final int MAX_COMBINED_CEN_HEADER_SIZE = 0xFFFF;
     /**
      * Creates a new ZIP entry with the specified name.
      *
@@ -99,12 +102,12 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *         The entry name
      *
      * @throws NullPointerException if the entry name is null
-     * @throws IllegalArgumentException if the entry name is longer than
-     *         0xFFFF bytes
+     * @throws IllegalArgumentException if the combined length of the entry name
+     * and the {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      */
     public ZipEntry(String name) {
         Objects.requireNonNull(name, "name");
-        if (name.length() > 0xFFFF) {
+        if (!isCENHeaderValid(name, null, null)) {
             throw new IllegalArgumentException("entry name too long");
         }
         this.name = name;
@@ -134,12 +137,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
         flag = e.flag;
         extra = e.extra;
         comment = e.comment;
-        extraAttributes = e.extraAttributes;
+        externalFileAttributes = e.externalFileAttributes;
     }
 
     /**
-     * Returns the name of the entry.
-     * @return the name of the entry
+     * {@return the name of the entry}
      */
     public String getName() {
         return name;
@@ -520,8 +522,10 @@ public class ZipEntry implements ZipConstants, Cloneable {
      * @param  extra
      *         The extra field data bytes
      *
-     * @throws IllegalArgumentException if the length of the specified
-     *         extra field data is greater than 0xFFFF bytes
+     * @throws IllegalArgumentException if the combined length of the specified
+     * extra field data, the {@linkplain #getName() entry name},
+     * the {@linkplain #getComment() entry comment}, and the
+     * {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      *
      * @see #getExtra()
      */
@@ -542,7 +546,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     void setExtra0(byte[] extra, boolean doZIP64, boolean isLOC) {
         if (extra != null) {
-            if (extra.length > 0xFFFF) {
+            if (!isCENHeaderValid(name, extra, comment)) {
                 throw new IllegalArgumentException("invalid extra field length");
             }
             // extra fields are in "HeaderID(2)DataSize(2)Data... format
@@ -565,20 +569,20 @@ public class ZipEntry implements ZipConstants, Cloneable {
                             // be the magic value and it "accidentally" has some
                             // bytes in extra match the id.
                             if (sz >= 16) {
-                                size = get64(extra, off);
-                                csize = get64(extra, off + 8);
+                                size = get64S(extra, off);
+                                csize = get64S(extra, off + 8);
                             }
                         } else {
                             // CEN extra zip64
                             if (size == ZIP64_MAGICVAL) {
                                 if (off + 8 > len)  // invalid zip64 extra
                                     break;          // fields, just skip
-                                size = get64(extra, off);
+                                size = get64S(extra, off);
                             }
                             if (csize == ZIP64_MAGICVAL) {
                                 if (off + 16 > len)  // invalid zip64 extra
                                     break;           // fields, just skip
-                                csize = get64(extra, off + 8);
+                                csize = get64S(extra, off + 8);
                             }
                         }
                     }
@@ -589,15 +593,15 @@ public class ZipEntry implements ZipConstants, Cloneable {
                     int pos = off + 4;               // reserved 4 bytes
                     if (get16(extra, pos) !=  0x0001 || get16(extra, pos + 2) != 24)
                         break;
-                    long wtime = get64(extra, pos + 4);
+                    long wtime = get64S(extra, pos + 4);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         mtime = winTimeToFileTime(wtime);
                     }
-                    wtime = get64(extra, pos + 12);
+                    wtime = get64S(extra, pos + 12);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         atime = winTimeToFileTime(wtime);
                     }
-                    wtime = get64(extra, pos + 20);
+                    wtime = get64S(extra, pos + 20);
                     if (wtime != WINDOWS_TIME_NOT_AVAILABLE) {
                         ctime = winTimeToFileTime(wtime);
                     }
@@ -643,16 +647,19 @@ public class ZipEntry implements ZipConstants, Cloneable {
 
     /**
      * Sets the optional comment string for the entry.
-     *
-     * <p>ZIP entry comments have maximum length of 0xffff. If the length of the
-     * specified comment string is greater than 0xFFFF bytes after encoding, only
-     * the first 0xFFFF bytes are output to the ZIP file entry.
-     *
      * @param comment the comment string
-     *
+     * @throws IllegalArgumentException if the combined length
+     * of the specified entry comment, the {@linkplain #getName() entry name},
+     * the {@linkplain #getExtra() extra field data}, and the
+     * {@linkplain #CENHDR CEN Header size} exceeds 65,535 bytes.
      * @see #getComment()
      */
     public void setComment(String comment) {
+        if (comment != null) {
+            if (!isCENHeaderValid(name, extra, comment)) {
+                throw new IllegalArgumentException("entry comment too long");
+            }
+        }
         this.comment = comment;
     }
 
@@ -702,5 +709,23 @@ public class ZipEntry implements ZipConstants, Cloneable {
             // This should never happen, since we are Cloneable
             throw new InternalError(e);
         }
+    }
+
+    /**
+     * Initial validation that the CEN header size + name length + comment length
+     * + extra length do not exceed 65,535 bytes per the PKWare APP.NOTE
+     * 4.4.10, 4.4.11, & 4.4.12.   Prior to writing out the CEN Header,
+     * ZipOutputStream::writeCEN will do an additional validation  of the combined
+     * length of the fields after encoding the name and comment to a byte array.
+     * @param name Zip entry name
+     * @param extra Zip extra data
+     * @param comment Zip entry comment
+     * @return true if valid CEN Header size; false otherwise
+     */
+     static boolean isCENHeaderValid(String name, byte[] extra, String comment) {
+        int clen = comment == null ? 0 : comment.length();
+        int elen = extra == null ? 0 : extra.length;
+        long headerSize = (long)CENHDR + name.length() + clen + elen;
+        return headerSize <= MAX_COMBINED_CEN_HEADER_SIZE;
     }
 }

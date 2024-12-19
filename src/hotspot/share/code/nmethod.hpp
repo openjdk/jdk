@@ -260,12 +260,6 @@ class nmethod : public CodeBlob {
   CompLevel    _comp_level;            // compilation level (s1)
   CompilerType _compiler_type;         // which compiler made this nmethod (u1)
 
-#if INCLUDE_RTM_OPT
-  // RTM state at compile time. Used during deoptimization to decide
-  // whether to restart collecting RTM locking abort statistic again.
-  RTMState _rtm_state;
-#endif
-
   // Local state used to keep track of whether unloading is happening or not
   volatile uint8_t _is_unloading_state;
 
@@ -277,6 +271,7 @@ class nmethod : public CodeBlob {
           _has_method_handle_invokes:1,// Has this method MethodHandle invokes?
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
+          _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
           _has_flushed_dependencies:1, // Used for maintenance of dependencies (under CodeCache_lock)
           _is_unlinked:1,              // mark during class unloading
           _load_reported:1;            // used by jvmti to track if an event has been posted for this nmethod
@@ -629,12 +624,6 @@ public:
   bool is_unloading();
   void do_unloading(bool unloading_occurred);
 
-#if INCLUDE_RTM_OPT
-  // rtm state accessing and manipulating
-  RTMState  rtm_state() const          { return _rtm_state; }
-  void set_rtm_state(RTMState state)   { _rtm_state = state; }
-#endif
-
   bool make_in_use() {
     return try_transition(in_use);
   }
@@ -675,6 +664,9 @@ public:
 
   bool  has_monitors() const                      { return _has_monitors; }
   void  set_has_monitors(bool z)                  { _has_monitors = z; }
+
+  bool  has_scoped_access() const                 { return _has_scoped_access; }
+  void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
 
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
@@ -717,6 +709,7 @@ public:
 
   void copy_values(GrowableArray<jobject>* oops);
   void copy_values(GrowableArray<Metadata*>* metadata);
+  void copy_values(GrowableArray<address>* metadata) {} // Nothing to do
 
   // Relocation support
 private:

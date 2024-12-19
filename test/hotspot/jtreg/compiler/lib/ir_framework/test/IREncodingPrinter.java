@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -74,7 +75,10 @@ public class IREncodingPrinter {
         "x86",
         // corresponds to vm.bits
         "32-bit",
-        "64-bit"
+        "64-bit",
+        // java.nio.ByteOrder
+        "little-endian",
+        "big-endian"
     ));
 
     // Please verify new CPU features before adding them. If we allow non-existent features
@@ -104,8 +108,9 @@ public class IREncodingPrinter {
         "asimd",
         "sve",
         // Riscv64
-        "v",
-        "zvbb"
+        "rvv",
+        "zvbb",
+        "zvfh"
     ));
 
     public IREncodingPrinter() {
@@ -359,7 +364,9 @@ public class IREncodingPrinter {
             arch = "x86";
         }
 
-        String currentPlatform = os + " " + arch + " " + (Platform.is32bit() ? "32-bit" : "64-bit");
+        String endianess = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)? "big-endian" : "little-endian";
+
+        String currentPlatform = os + " " + arch + " " + (Platform.is32bit() ? "32-bit" : "64-bit") + " " + endianess;
 
         return (trueValue && currentPlatform.contains(platform)) || (falseValue && !currentPlatform.contains(platform));
     }

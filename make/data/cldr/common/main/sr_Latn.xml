@@ -56,6 +56,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="be">beloruski</language>
 			<language type="bej">bedža</language>
 			<language type="bem">bemba</language>
+			<language type="bew" draft="contributed">betavi</language>
 			<language type="bez">bena</language>
 			<language type="bg">bugarski</language>
 			<language type="bgc">harijanski</language>
@@ -65,6 +66,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bik">bikol</language>
 			<language type="bin">bini</language>
 			<language type="bla">sisika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengalski</language>
 			<language type="bo">tibetanski</language>
@@ -72,6 +74,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bra">braj</language>
 			<language type="brx">bodo</language>
 			<language type="bs">bosanski</language>
+			<language type="bss" draft="contributed">akose</language>
 			<language type="bua">burjatski</language>
 			<language type="bug">bugijski</language>
 			<language type="byn">blinski</language>
@@ -94,6 +97,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chp">čipevjanski</language>
 			<language type="chr">čeroki</language>
 			<language type="chy">čejenski</language>
+			<language type="cic" draft="contributed">čikaso</language>
 			<language type="ckb">centralni kurdski</language>
 			<language type="clc">čilkotin</language>
 			<language type="co">korzikanski</language>
@@ -203,6 +207,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="hil">hiligajnonski</language>
 			<language type="hit">hetitski</language>
 			<language type="hmn">hmonški</language>
+			<language type="hnj" draft="contributed">hmong ndžua</language>
 			<language type="ho">hiri motu</language>
 			<language type="hr">hrvatski</language>
 			<language type="hsb">gornjolužičkosrpski</language>
@@ -280,6 +285,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kv">komi</language>
 			<language type="kw">kornvolski</language>
 			<language type="kwk">kvakvala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgiski</language>
 			<language type="la">latinski</language>
 			<language type="lad">ladino</language>
@@ -290,9 +296,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez">lezginski</language>
 			<language type="lg">ganda</language>
 			<language type="li">limburški</language>
+			<language type="lij">ligurski</language>
 			<language type="lil">lilut</language>
 			<language type="lkt">lakota</language>
-			<language type="lmo" draft="contributed">lombard</language>
+			<language type="lmo">lombard</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laoski</language>
 			<language type="lol">mongo</language>
@@ -471,7 +478,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ssy">saho</language>
 			<language type="st">sesoto</language>
 			<language type="str">streicsališ</language>
-			<language type="su">sundanski</language>
+			<language type="su">sundski</language>
 			<language type="suk">sukuma</language>
 			<language type="sus">susu</language>
 			<language type="sux">sumerski</language>
@@ -481,6 +488,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="swb">komorski</language>
 			<language type="syc">sirijački</language>
 			<language type="syr">sirijski</language>
+			<language type="szl">siležanski</language>
 			<language type="ta">tamilski</language>
 			<language type="tce">južni tačon</language>
 			<language type="te">telugu</language>
@@ -529,7 +537,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="uz">uzbečki</language>
 			<language type="vai">vai</language>
 			<language type="ve">venda</language>
+			<language type="vec">venecijanski</language>
 			<language type="vi">vijetnamski</language>
+			<language type="vmw">makuva</language>
 			<language type="vo">volapik</language>
 			<language type="vot">vodski</language>
 			<language type="vun">vundžo</language>
@@ -543,6 +553,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wuu">vu kineski</language>
 			<language type="xal">kalmički</language>
 			<language type="xh">kosa</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yao">jao</language>
 			<language type="yap">japski</language>
@@ -769,7 +780,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BI">Burundi</territory>
 			<territory type="BJ">Benin</territory>
 			<territory type="BL">Sveti Bartolomej</territory>
-			<territory type="BM">Bermuda</territory>
+			<territory type="BM">Bermudi</territory>
 			<territory type="BN">Brunej</territory>
 			<territory type="BO">Bolivija</territory>
 			<territory type="BQ">Karipska Holandija</territory>
@@ -861,8 +872,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Izrael</territory>
 			<territory type="IM">Ostrvo Man</territory>
 			<territory type="IN">Indija</territory>
-			<territory type="IO" draft="contributed">Britanska teritorija Indijskog okeana</territory>
-			<territory type="IO" alt="chagos" draft="contributed">arhipelag Čagos</territory>
+			<territory type="IO">Britanska teritorija Indijskog okeana</territory>
+			<territory type="IO" alt="chagos">arhipelag Čagos</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
@@ -946,7 +957,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paragvaj</territory>
 			<territory type="QA">Katar</territory>
-			<territory type="QO">Okeanija (udaljena ostrva)</territory>
+			<territory type="QO">udaljena ostrva Okeanije</territory>
 			<territory type="RE">Reinion</territory>
 			<territory type="RO">Rumunija</territory>
 			<territory type="RS">Srbija</territory>
@@ -1009,7 +1020,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Valis i Futuna</territory>
 			<territory type="WS">Samoa</territory>
-			<territory type="XA">Pseudoakcenti</territory>
+			<territory type="XA">simulirane dijakritike</territory>
 			<territory type="XB">Pseudobidi</territory>
 			<territory type="XK">Kosovo</territory>
 			<territory type="YE">Jemen</territory>
@@ -1017,7 +1028,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZA">Južnoafrička Republika</territory>
 			<territory type="ZM">Zambija</territory>
 			<territory type="ZW">Zimbabve</territory>
-			<territory type="ZZ">Nepoznat region</territory>
+			<territory type="ZZ">nepoznat region</territory>
 		</territories>
 		<subdivisions>
 			<subdivision type="gbeng">Engleska</subdivision>
@@ -1192,9 +1203,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="vaii">vai cifre</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric">Metrički</measurementSystemName>
-			<measurementSystemName type="UK">UK</measurementSystemName>
-			<measurementSystemName type="US">SAD</measurementSystemName>
+			<measurementSystemName type="metric">metrički</measurementSystemName>
+			<measurementSystemName type="UK">britanski</measurementSystemName>
+			<measurementSystemName type="US">američki</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Jezik: {0}</codePattern>
@@ -1212,7 +1223,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1220,8 +1231,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
-		<quotationEnd>“</quotationEnd>
-		<alternateQuotationEnd>‘</alternateQuotationEnd>
+		<alternateQuotationStart>’</alternateQuotationStart>
 	</delimiters>
 	<dates>
 		<calendars>
@@ -1558,12 +1568,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">ponoć</dayPeriod>
 							<dayPeriod type="noon">podne</dayPeriod>
-							<dayPeriod type="morning1">ujutro</dayPeriod>
+							<dayPeriod type="morning1">ujutru</dayPeriod>
 							<dayPeriod type="afternoon1">po podne</dayPeriod>
 							<dayPeriod type="evening1">uveče</dayPeriod>
 							<dayPeriod type="night1">noću</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">ponoć</dayPeriod>
+							<dayPeriod type="noon">podne</dayPeriod>
+							<dayPeriod type="morning1">ujutru</dayPeriod>
+							<dayPeriod type="afternoon1">po podne</dayPeriod>
+							<dayPeriod type="evening1">uveče</dayPeriod>
+							<dayPeriod type="night1">noću</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">ponoć</dayPeriod>
 							<dayPeriod type="noon">podne</dayPeriod>
 							<dayPeriod type="morning1">ujutru</dayPeriod>
@@ -1578,10 +1596,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="afternoon1">popodne</dayPeriod>
 							<dayPeriod type="evening1">veče</dayPeriod>
 							<dayPeriod type="night1">noć</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">pre podne</dayPeriod>
-							<dayPeriod type="pm">po podne</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -1622,7 +1636,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>d.M.yy.</pattern>
+							<pattern>d. M. y.</pattern>
 							<datetimeSkeleton>yyMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
@@ -1674,8 +1688,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Bhm">hh:mm B</dateFormatItem>
 						<dateFormatItem id="Bhms">hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="E">E</dateFormatItem>
-						<dateFormatItem id="EBhm">E hh:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E hh:mm:ss B</dateFormatItem>
+						<dateFormatItem id="EBhms">E, hh:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
@@ -1697,9 +1710,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMEd">E d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d. MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">W. 'sedmica' 'u' MMMM.</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="few">W. 'sedmica' 'u' MMMM.</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="other">W. 'sedmica' 'u' MMMM.</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMMM: W. 'nedelja'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">MMMM: W. 'nedelja'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMMM: W. 'nedelja'</dateFormatItem>
 						<dateFormatItem id="y">y.</dateFormatItem>
 						<dateFormatItem id="yM">M. y.</dateFormatItem>
 						<dateFormatItem id="yMd">d. M. y.</dateFormatItem>
@@ -1712,9 +1725,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMM">MMMM y.</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y.</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y.</dateFormatItem>
-						<dateFormatItem id="yw" count="one">w. 'sedmica' 'u' Y.</dateFormatItem>
-						<dateFormatItem id="yw" count="few">w. 'sedmica' 'u' Y.</dateFormatItem>
-						<dateFormatItem id="yw" count="other">w. 'sedmica' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="one">w. 'nedelja' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="few">w. 'nedelja' 'u' Y.</dateFormatItem>
+						<dateFormatItem id="yw" count="other">w. 'nedelja' 'u' Y.</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
@@ -2672,6 +2685,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<regionFormat type="daylight">{0}, letnje vreme</regionFormat>
 			<regionFormat type="standard">{0}, standardno vreme</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordinisano univerzalno vreme</standard>
@@ -3409,9 +3425,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan Bator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Čojbalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makao</exemplarCity>
 			</zone>
@@ -3811,9 +3824,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Nome">
 				<exemplarCity>Nom</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Enkoridž</exemplarCity>
 			</zone>
@@ -4193,13 +4203,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Kina, letnje vreme</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Čojbalsan vreme</generic>
-					<standard>Čojbalsan, standardno vreme</standard>
-					<daylight>Čojbalsan, letnje vreme</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Božićno ostrvo vreme</standard>
@@ -4466,6 +4469,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Petropavlovsko-kamčatsko vreme</generic>
 					<standard>Petropavlovsko-kamčatsko standardno vreme</standard>
 					<daylight>Petropavlovsko-kamčatsko letnje računanje vremena</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazahstansko vreme</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -5040,9 +5048,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5184,10 +5189,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">bosansko-hercegovačkih dinara</displayName>
 			</currency>
 			<currency type="BAM">
-				<displayName>bosansko-hercegovačka konvertibilna marka</displayName>
-				<displayName count="one">bosansko-hercegovačka konvertibilna marka</displayName>
-				<displayName count="few">bosansko-hercegovačke konvertibilne marke</displayName>
-				<displayName count="other">bosansko-hercegovačkih konvertibilnih maraka</displayName>
+				<displayName>bosanskohercegovačka konvertibilna marka</displayName>
+				<displayName count="one">bosanskohercegovačka konvertibilna marka</displayName>
+				<displayName count="few">bosanskohercegovačke konvertibilne marke</displayName>
+				<displayName count="other">bosanskohercegovačkih konvertibilnih maraka</displayName>
 				<symbol>KM</symbol>
 			</currency>
 			<currency type="BAN">
@@ -5606,7 +5611,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">etiopskih bira</displayName>
 			</currency>
 			<currency type="EUR">
-				<displayName>Evro</displayName>
+				<displayName>evro</displayName>
 				<displayName count="one">evro</displayName>
 				<displayName count="few">evra</displayName>
 				<displayName count="other">evra</displayName>
@@ -6523,10 +6528,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">turskih lira</displayName>
 			</currency>
 			<currency type="TTD">
-				<displayName>Trinidad-tobagoški dolar</displayName>
-				<displayName count="one">trinidad-tobagoški dolar</displayName>
-				<displayName count="few">trinidad-tobagoška dolara</displayName>
-				<displayName count="other">trinidad-tobagoških dolara</displayName>
+				<displayName>trinidadskotobaški dolar</displayName>
+				<displayName count="one">trinidadskotobaški dolar</displayName>
+				<displayName count="few">trinidadskotobaška dolara</displayName>
+				<displayName count="other">trinidadskotobaških dolara</displayName>
 			</currency>
 			<currency type="TWD">
 				<displayName>novi tajvanski dolar</displayName>
@@ -6759,7 +6764,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">kodova testirane valute</displayName>
 			</currency>
 			<currency type="XXX">
-				<displayName>Nepoznata valuta</displayName>
+				<displayName>nepoznata valuta</displayName>
 				<displayName count="one">nepoznata jedinica valute</displayName>
 				<displayName count="few">nepoznate valute</displayName>
 				<displayName count="other">nepoznatih valuta</displayName>
@@ -6970,8 +6975,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>kvadratni {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">kvadratni {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" gender="feminine">kvadratna {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few">kvadratna {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" gender="feminine">kvadratna {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">kvadratnih {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" gender="feminine">kvadratnih {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1>kubni {0}</compoundUnitPattern1>
@@ -7170,10 +7178,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="instrumental">{0} karata</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>inanimate</gender>
 				<displayName>miligrami po decilitru</displayName>
 				<unitPattern count="one">{0} miligram po decilitru</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} miligramom po decilitru</unitPattern>
 				<unitPattern count="few">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} miligrama po decilitru</unitPattern>
 				<unitPattern count="other">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miligrama po decilitru</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} miligrama po decilitru</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>inanimate</gender>
@@ -7464,7 +7479,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} decenije</unitPattern>
 				<unitPattern count="few" case="accusative">{0} decenije</unitPattern>
 				<unitPattern count="few" case="genitive">{0} decenije</unitPattern>
-				<unitPattern count="few" case="instrumental">{0} decenije</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} decenijom</unitPattern>
 				<unitPattern count="other">{0} decenija</unitPattern>
 				<unitPattern count="other" case="accusative">{0} decenija</unitPattern>
 				<unitPattern count="other" case="genitive">{0} decenija</unitPattern>
@@ -7680,10 +7695,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="instrumental">{0} volti</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>feminine</gender>
 				<displayName>kilokalorije</displayName>
 				<unitPattern count="one">{0} kilokalorija</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilokaloriju</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilokalorije</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilokalorijom</unitPattern>
 				<unitPattern count="few">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilokalorije</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kilokalorije</unitPattern>
 				<unitPattern count="other">{0} kilokalorija</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilokalorija</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilokalorija</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilokalorija</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>feminine</gender>
@@ -7779,6 +7804,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<gender>inanimate</gender>
+				<displayName>kilovat-sati na 100 kilometara</displayName>
+				<unitPattern count="one">{0} kilovat-sat na 100 kilometara</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilovat-sat na 100 kilometara</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilovat-sata na 100 kilometara</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilovat-satom na 100 kilometara</unitPattern>
+				<unitPattern count="few">{0} kilovat-sata na 100 kilometara</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kilovat-sata na 100 kilometara</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilovat-sata na 100 kilometara</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kilovat-sata na 100 kilometara</unitPattern>
+				<unitPattern count="other">{0} kilovat-sati na 100 kilometara</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilovat-sati na 100 kilometara</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilovat-sati na 100 kilometara</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilovat-sati na 100 kilometara</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<gender>inanimate</gender>
@@ -8070,6 +8108,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} skandinavskih milja</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} skandinavskih milja</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<gender>feminine</gender>
+				<displayName>tipografske tačke</displayName>
+				<unitPattern count="one">{0} tipografska tačka</unitPattern>
+				<unitPattern count="one" case="accusative">{0} tipografsku tačku</unitPattern>
+				<unitPattern count="one" case="genitive">{0} tipografske tačke</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} tipografskom tačkom</unitPattern>
+				<unitPattern count="few">{0} tipografske tačke</unitPattern>
+				<unitPattern count="few" case="accusative">{0} tipografske tačke</unitPattern>
+				<unitPattern count="few" case="genitive">{0} tipografskih tačaka</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} tipografske tačke</unitPattern>
+				<unitPattern count="other">{0} tipografskih tačaka</unitPattern>
+				<unitPattern count="other" case="accusative">{0} tipografskih tačaka</unitPattern>
+				<unitPattern count="other" case="genitive">{0} tipografskih tačaka</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} tipografskih tačaka</unitPattern>
+			</unit>
 			<unit type="length-solar-radius">
 				<displayName>sunčevi poluprečnici</displayName>
 				<unitPattern count="one">{0} sunčev poluprečnik</unitPattern>
@@ -8332,10 +8386,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} konjskih snaga</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>inanimate</gender>
 				<displayName>milimetri živinog stuba</displayName>
 				<unitPattern count="one">{0} milimetar živinog stuba</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milimetra živinog stuba</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milimetrom živinog stuba</unitPattern>
 				<unitPattern count="few">{0} milimetra živinog stuba</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milimetra živinog stuba</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} milimetra živinog stuba</unitPattern>
 				<unitPattern count="other">{0} milimetara živinog stuba</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milimetara živinog stuba</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milimetara živinog stuba</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>funte po kvadratnom inču</displayName>
@@ -8807,8 +8868,61 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} imperijske četvrtine</unitPattern>
 				<unitPattern count="other">{0} imperijskih četvrtina</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<gender>neuter</gender>
+				<displayName>svetlo</displayName>
+				<unitPattern count="one">{0} svetlo</unitPattern>
+				<unitPattern count="one" case="accusative">{0} svetlo</unitPattern>
+				<unitPattern count="one" case="genitive">{0} svetla</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} svetlom</unitPattern>
+				<unitPattern count="few">{0} svetla</unitPattern>
+				<unitPattern count="few" case="accusative">{0} svetla</unitPattern>
+				<unitPattern count="few" case="genitive">{0} svetla</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} svetla</unitPattern>
+				<unitPattern count="other">{0} svetala</unitPattern>
+				<unitPattern count="other" case="accusative">{0} svetala</unitPattern>
+				<unitPattern count="other" case="genitive">{0} svetala</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} svetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>inanimate</gender>
+				<displayName>delovi na milijardu</displayName>
+				<unitPattern count="one">{0} deo na milijardu</unitPattern>
+				<unitPattern count="one" case="accusative">{0} deo na milijardu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} dela na milijardu</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} delom na milijardu</unitPattern>
+				<unitPattern count="few">{0} dela na milijardu</unitPattern>
+				<unitPattern count="few" case="accusative">{0} dela na milijardu</unitPattern>
+				<unitPattern count="few" case="genitive">{0} dela na milijardu</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} dela na milijardu</unitPattern>
+				<unitPattern count="other">{0} delova na milijardu</unitPattern>
+				<unitPattern count="other" case="accusative">{0} delova na milijardu</unitPattern>
+				<unitPattern count="other" case="genitive">{0} delova na milijardu</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} delova na milijardu</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>noć</displayName>
+				<unitPattern count="one">{0} noć</unitPattern>
+				<unitPattern count="one" case="accusative">{0} noć</unitPattern>
+				<unitPattern count="one" case="genitive">{0} noći</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} noći</unitPattern>
+				<unitPattern count="few">{0} noći</unitPattern>
+				<unitPattern count="few" case="accusative">{0} noći</unitPattern>
+				<unitPattern count="few" case="genitive">{0} noći</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} noći</unitPattern>
+				<unitPattern count="other">{0} noći</unitPattern>
+				<unitPattern count="other" case="accusative">{0} noći</unitPattern>
+				<unitPattern count="other" case="genitive">{0} noći</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} noći</unitPattern>
+				<perUnitPattern>{0}/noć</perUnitPattern>
+			</unit>
 			<coordinateUnit>
-				<displayName>glavni pravac</displayName>
+				<displayName>strana sveta</displayName>
+				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -9038,6 +9152,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-fathom">
 				<displayName>hv</displayName>
 			</unit>
+			<unit type="length-point">
+				<displayName>tipografske tačke</displayName>
+			</unit>
 			<unit type="mass-gram">
 				<displayName>grami</displayName>
 			</unit>
@@ -9132,12 +9249,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} prstohvata</unitPattern>
 				<unitPattern count="other">{0} prstohvata</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svetlo</displayName>
+				<unitPattern count="one">{0} svetlo</unitPattern>
+				<unitPattern count="few">{0} svetla</unitPattern>
+				<unitPattern count="other">{0} svetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>delovi/milijarda</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noć</displayName>
+				<unitPattern count="one">{0} noć</unitPattern>
+				<unitPattern count="few">{0} noći</unitPattern>
+				<unitPattern count="other">{0} noći</unitPattern>
+				<perUnitPattern>{0}/noć</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>pravac</displayName>
-				<coordinateUnitPattern type="east">{0}I</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}J</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}Z</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} W</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -9274,6 +9407,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} qt Imp</unitPattern>
 				<unitPattern count="other">{0} qt Imp</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svetlo</displayName>
+				<unitPattern count="one">{0} svetlo</unitPattern>
+				<unitPattern count="few">{0} svetla</unitPattern>
+				<unitPattern count="other">{0} svetala</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>noć</displayName>
+				<unitPattern count="one">{0} noć</unitPattern>
+				<unitPattern count="few">{0} noći</unitPattern>
+				<unitPattern count="other">{0} noći</unitPattern>
+				<perUnitPattern>{0}/noć</perUnitPattern>
+			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h.mm</durationUnitPattern>

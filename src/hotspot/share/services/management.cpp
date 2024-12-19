@@ -149,9 +149,8 @@ void Management::init() {
 }
 
 void Management::initialize(TRAPS) {
-  if (UseNotificationThread) {
-    NotificationThread::initialize();
-  }
+  NotificationThread::initialize();
+
   if (ManagementServer) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
@@ -161,7 +160,6 @@ void Management::initialize(TRAPS) {
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_agent_Agent(),
                                                    loader,
-                                                   Handle(),
                                                    THREAD);
     if (k == nullptr) {
       vm_exit_during_initialization("Management agent initialization failure: "
@@ -1821,7 +1819,7 @@ JVM_END
 // of a given length and return the objArrayOop
 static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRAPS) {
   if (array == nullptr) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), 0);
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   objArrayOop oa = objArrayOop(JNIHandles::resolve_non_null(array));
@@ -1829,16 +1827,16 @@ static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRA
 
   // array must be of the given length
   if (length != array_h->length()) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "The length of the given MemoryUsage array does not match the number of memory pools.", 0);
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "The length of the given MemoryUsage array does not match the number of memory pools.");
   }
 
   // check if the element of array is of type MemoryUsage class
   Klass* usage_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_NULL);
   Klass* element_klass = ObjArrayKlass::cast(array_h->klass())->element_klass();
   if (element_klass != usage_klass) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "The element type is not MemoryUsage class", 0);
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "The element type is not MemoryUsage class");
   }
 
   return array_h();
@@ -2015,10 +2013,6 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].name = info->name();
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
-    JavaPermission p = info->permission();
-    infoArray[i].permission_class = p._class;
-    infoArray[i].permission_name = p._name;
-    infoArray[i].permission_action = p._action;
     infoArray[i].num_arguments = info->num_arguments();
     infoArray[i].enabled = info->is_enabled();
   }
