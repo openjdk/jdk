@@ -1297,6 +1297,11 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     contains spaces, then it must be enclosed in quotation marks. For an
     example of a command string, see the description of the `-XX:OnError`
     option.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
+
     This does not apply to any `OutOfMemoryError` thrown by Java, or native,
     code in the JDK libraries.
 
@@ -2196,8 +2201,10 @@ perform extensive debugging.
     name using the `-XX:HeapDumpPath` option. By default, this option is
     disabled and the heap isn't dumped when an `OutOfMemoryError` exception is
     thrown.
-    This does not apply to any `OutOfMemoryError` thrown by Java, or native,
-    code in the JDK libraries.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:HeapDumpPath=`*path*
 :   Sets the path and file name for writing the heap dump provided by the heap
