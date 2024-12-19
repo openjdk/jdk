@@ -23,10 +23,10 @@
 
 /**
  * @test
- * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940 8331467
+ * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940
  * @modules jdk.jartool
  * @library /test/lib
- * @build SetDefaultProvider TestProvider m/* jdk.test.lib.process.ProcessTools jdk.test.lib.process.OutputAnalyzer foo/*
+ * @build SetDefaultProvider TestProvider m/* jdk.test.lib.process.ProcessTools
  * @run testng/othervm SetDefaultProvider
  * @summary Runs tests with -Djava.nio.file.spi.DefaultFileSystemProvider set on
  *          the command line to override the default file system provider
@@ -38,13 +38,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -59,11 +57,6 @@ public class SetDefaultProvider {
         .orElseThrow(() ->
             new RuntimeException("jar tool not found")
         );
-
-    private static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
-            .orElseThrow(() -> new RuntimeException("jmod tool not found"));
-    private static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
-            .orElseThrow(() -> new RuntimeException("jlink tool not found"));
 
     private static Path createTempDirectory(String prefix) throws IOException {
         Path testDir = Paths.get(System.getProperty("test.dir", "."));
@@ -202,73 +195,6 @@ public class SetDefaultProvider {
         int ret = JAR_TOOL.run(System.out, System.out, args);
         assertEquals(ret, 0);
         return jar;
-    }
-
-
-    /**
-     * Test CustomfsImage with --list-modules and main When the default FileSystemProvider was overridden within a custom image
-     */
-    public void testCustomfsImage() throws Exception {
-        Path customfsImage = createCustomfsImage();
-        Path javaBin = customfsImage.resolve("bin","java");
-        if( !Files.exists(javaBin)) {
-            javaBin = customfsImage.resolve("bin","java.exe");
-        }
-        String[] withListModules = {javaBin.toString(),"--list-modules"};
-        String[] withMain = {javaBin.toString(),"-m","foo/customfs.Main"};
-
-        System.out.println("launch with --list-modules");
-        OutputAnalyzer oa = ProcessTools.executeCommand(withListModules);
-        oa.shouldHaveExitValue(0);
-
-        System.out.println("launch with main");
-        oa = ProcessTools.executeCommand(withMain);
-        oa.shouldHaveExitValue(0);
-    }
-
-    /**
-     * creates an image which contains the custom implementation of a FileSystemProvider
-     */
-    private Path createCustomfsImage() throws Exception {
-        String customFSProviderModule = createCustomFSProviderModule().toString();
-        Path customfsImageDir = Path.of("8331467-image");
-        String[] cmd = {"--module-path",customFSProviderModule,
-                "--add-modules","foo",
-                "--add-options","-Djava.nio.file.spi.DefaultFileSystemProvider=customfs.CustomFileSystemProvider",
-                "--output",customfsImageDir.toString()};
-        System.out.println("create image with" + Arrays.toString(cmd));
-        int exitCode = JLINK_TOOL.run(System.out, System.err, cmd);
-        if ( exitCode != 0 ) {
-            throw new AssertionError("Unexpected exit code: " + exitCode + " from jlink command");
-        }
-        return customfsImageDir;
-    }
-
-    /**
-     * creates a module which contains the custom implementation of a FileSystemProvider
-     */
-    private Path createCustomFSProviderModule() throws Exception {
-        Path compileDestDir = customfsModuleClasses();
-        Path fsProviderJmod = createTempDirectory("8331467-custom-fs").resolve("foo.jmod");
-        String[] cmd = {"create", "--class-path", compileDestDir.toString(),
-                "--main-class", "customfs.Main",
-                fsProviderJmod.toString()};
-        System.out.println("creating module for custom FileSystemProvider: "
-                + Arrays.toString(cmd));
-        int exitCode = JMOD_TOOL.run(System.out, System.err, cmd);
-        if ( exitCode != 0 ) {
-            throw new AssertionError("Unexpected exit code: " + exitCode + " from jmod command");
-        }
-        return fsProviderJmod;
-    }
-
-    private Path customfsModuleClasses() throws Exception {
-        String mp = System.getProperty("jdk.module.path");
-        for (String dir : mp.split(File.pathSeparator)) {
-            Path foo = Paths.get(dir, "foo");
-            if (Files.exists(foo)) return foo;
-        }
-        throw new RuntimeException("foo dir not found");
     }
 
     /**
