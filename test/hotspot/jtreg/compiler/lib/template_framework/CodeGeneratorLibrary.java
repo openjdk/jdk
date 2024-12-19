@@ -310,24 +310,62 @@ public final class CodeGeneratorLibrary {
         codeGenerators.add(factorySampleVariable(false));
         codeGenerators.add(factorySampleVariable(true));
 
-        // ClassScope generators.
-        codeGenerators.add(new Template("new_field_in_class",
-            """
-            // start $new_field_in_class
-            public static int #{name} = #{:int_con};
-            #{:add_variable(scope=class,type=int,name=#name,final=#final):}
-            // end   $new_field_in_class
-            """
+        // Internal: Define variable
+        codeGenerators.add(new Template("_internal_def_var",
+            "#{prefix} #{name} = #{value};#{:add_variable(scope=method,name=#name,type=#type,mutable=#mutable)}"
         ));
 
-        // MethodScope generators.
-        codeGenerators.add(new Template("new_var_in_method",
-            """
-            // start $new_var_in_method
-            int #{name} = #{:int_con};
-            #{:add_variable(scope=method,type=int,name=#name,final=#final):}
-            // end   $new_var_in_method
-            """
+        // Internal: Define field
+        codeGenerators.add(new Template("_internal_def_field",
+            "#{prefix} #{name} = #{value};#{:add_variable(scope=class,name=#name,type=#type,mutable=#mutable)}"
+        ));
+
+        /**
+	 * {@code def_var} defines a variable in the current method scope.
+         *
+         * @param name Name of the variable.
+         * @param prefix Access qualifier and type.
+         * @param value Value assigned to the variable on definition.
+         * @param type Type for which the variable can be sampled with {@code var} or {@code mutable_var}.
+         */
+        codeGenerators.add(new Template("def_var",
+            "#{:dispatch(scope=method,call=_internal_def_var,name=#name,prefix=#prefix,value=#value,type=#type,mutable=true)}"
+        ));
+
+        /**
+	 * {@code def_final_var} defines a variable in the current method scope.
+         *
+         * @param name Name of the variable.
+         * @param prefix Access qualifier and type.
+         * @param value Value assigned to the variable on definition.
+         * @param type Type for which the variable can be sampled with {@code var}.
+         */
+        codeGenerators.add(new Template("def_final_var",
+            "#{:dispatch(scope=method,call=_internal_def_var,name=#name,prefix=#prefix,value=#value,type=#type,mutable=false)}"
+        ));
+
+        /**
+	 * {@code def_field} defines a field in the current class scope.
+         *
+         * @param name Name of the field.
+         * @param prefix Access qualifier and type.
+         * @param value Value assigned to the field on definition.
+         * @param type Type for which the field can be sampled with {@code var} or {@code mutable_var}.
+         */
+        codeGenerators.add(new Template("def_field",
+            "#{:dispatch(scope=class,call=_internal_def_field,name=#name,prefix=#prefix,value=#value,type=#type,mutable=true)}"
+        ));
+
+        /**
+	 * {@code def_final_field} defines a final field in the current class scope.
+         *
+         * @param name Name of the field.
+         * @param prefix Access qualifier and type.
+         * @param value Value assigned to the field on definition.
+         * @param type Type for which the field can be sampled with {@code var}.
+         */
+        codeGenerators.add(new Template("def_final_field",
+            "#{:dispatch(scope=class,call=_internal_def_field,name=#name,prefix=#prefix,value=#value,type=#type,mutable=false)}"
         ));
     }
 

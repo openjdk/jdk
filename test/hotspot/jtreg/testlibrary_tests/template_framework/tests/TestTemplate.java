@@ -49,6 +49,7 @@ public class TestTemplate {
         testClassInstantiatorAndDispatch();
         testChoose();
         testFieldsAndVariables();
+        testFieldsAndVariablesDispatch();
         // TODO variables auto dispatch, con, fields, etc
     }
 
@@ -585,7 +586,6 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-
     public static void testFieldsAndVariables() {
         // We use dummy types like "my_int_1" etc. to make sure we have exactly 1 valid
         // option, so that we get a deterministic output string from the instantiation.
@@ -699,6 +699,39 @@ public class TestTemplate {
             """;
         checkEQ(code, expected);
     }
+
+    public static void testFieldsAndVariablesDispatch() {
+        Template template = new Template("my_template",
+            """
+            public class XYZ {
+                #open(class)
+
+                static void test() {
+                    #open(method)
+                    // comment1
+                    #{:_internal_def_var(name=var1,prefix=final int,value=1,type=int,mutable=true)}
+                    #{:_internal_def_var(name=var1,prefix=final int,value=1,type=int,mutable=false)}
+                    #{:def_var(name=var2,prefix=int,value=2,type=int)}
+                    #{:def_final_var(name=var3,prefix=final long,value=3,type=long)}
+                    #{:def_field(name=field1,prefix=public static long,value=4,type=long)}
+                    #{:def_final_field(name=field2,prefix=public static final long,value=5,type=long)}
+
+                    TODO
+
+                    #close(method)
+                }
+                #close(class)
+            }
+            """
+        );
+        String code = template.instantiate();
+        String expected =
+            """
+            TODO
+            """;
+        checkEQ(code, expected);
+    }
+
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
