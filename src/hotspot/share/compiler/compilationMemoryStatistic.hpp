@@ -33,10 +33,12 @@ class DirectiveSet;
 class outputStream;
 
 class CompilationMemoryStatistic : public AllStatic {
-  static bool _enabled;
+  static bool _enabled; // set to true if memstat is active for any method.
 
   static void on_phase_start_0(int phasetraceid);
   static void on_phase_end_0(int phasetraceid);
+  static void on_arena_chunk_allocation_0(size_t size, int arenatag, uint64_t* stamp);
+  static void on_arena_chunk_deallocation_0(size_t size, uint64_t stamp);
 
 public:
   static void initialize();
@@ -54,17 +56,24 @@ public:
       on_phase_start_0(phasetraceid);
     }
   }
+
   static inline void on_phase_end(int phasetraceid) {
     if (enabled()) {
       on_phase_end_0(phasetraceid);
     }
   }
 
-  // Account an arena allocation.
-  static void on_arena_chunk_allocation(size_t size, int arenatag, uint64_t* stamp);
+  static inline void on_arena_chunk_allocation(size_t size, int arenatag, uint64_t* stamp) {
+    if (enabled()) {
+      on_arena_chunk_allocation_0(size, arenatag, stamp);
+    }
+  }
 
-  // Account an arena deallocation.
-  static void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
+  static inline void on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
+    if (enabled()) {
+      on_arena_chunk_deallocation_0(size, stamp);
+    }
+  }
 
   static void print_all_by_size(outputStream* st, bool human_readable, bool by_phase, size_t minsize);
 

@@ -197,11 +197,13 @@ void ArenaState::end() {
 }
 
 void ArenaState::on_phase_start(PhaseTrcId id) {
+  assert(_active, "compilation has not yet started");
   _phase_id_stack.push(id);
   _movement_tracker.on_phase_start(id, _peak);
 }
 
 void ArenaState::on_phase_end(PhaseTrcId id) {
+  assert(_active, "compilation has not yet started");
   _phase_id_stack.pop(id);
   _movement_tracker.on_phase_start(_phase_id_stack.top(), _peak); // parent phase "restarts"
 }
@@ -760,7 +762,7 @@ static void inform_compilation_about_oom(CompilerType ct) {
   }
 }
 
-void CompilationMemoryStatistic::on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp) {
+void CompilationMemoryStatistic::on_arena_chunk_allocation_0(size_t size, int tag, uint64_t* stamp) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
 
@@ -831,7 +833,7 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation(size_t size, int tag,
   }
 }
 
-void CompilationMemoryStatistic::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
+void CompilationMemoryStatistic::on_arena_chunk_deallocation_0(size_t size, uint64_t stamp) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
 

@@ -166,7 +166,7 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
 
   // Inform compilation memstat
-  if (CompilationMemoryStatistic::enabled() && arena->get_mem_tag() == mtCompiler) {
+  if (arena->get_mem_tag() == mtCompiler) {
     Thread* const t = Thread::current();
     if (t != nullptr && t->is_Compiler_thread()) {
       uint64_t stamp = 0;
@@ -182,7 +182,6 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
 
   // Inform compilation memstat
   if (c->stamp() != 0) {
-    assert(CompilationMemoryStatistic::enabled(), "must be");
     Thread* const t = Thread::current();
     if (t != nullptr && t->is_Compiler_thread()) {
       CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());
