@@ -29,8 +29,6 @@
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
 
-
-
 // Static routines and parsing loops for processing field and method
 // descriptors.  In the HotSpot sources we call them "signatures".
 //
