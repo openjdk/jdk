@@ -145,13 +145,8 @@ public:
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
-  // Merge-scan time for a region is handling card-based remembered sets of that region
-  // (as a single unit).
-  double predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
   // Code root scan time prediction for the given region.
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
-  // Non-copy time for a region is handling remembered sets and other time.
-  double predict_region_non_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   double predict_merge_scan_time(size_t card_rs_length) const;
   // Predict other time for count young regions.
@@ -160,9 +155,6 @@ public:
   // Predict copying live data time for count eden regions. Return the predict bytes if
   // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
-  // Total time for a region is handling remembered sets (as a single unit), copying its live data
-  // and other time.
-  double predict_region_total_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
 
   void cset_regions_freed() {
     bool update = should_update_surv_rate_group_predictors();

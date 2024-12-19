@@ -39,11 +39,10 @@ class G1HeapRegionClosure;
 
 struct G1CollectionSetCandidateInfo {
   G1HeapRegion* _r;
-  double _gc_efficiency;
   uint _num_unreclaimed;          // Number of GCs this region has been found unreclaimable.
 
-  G1CollectionSetCandidateInfo() : G1CollectionSetCandidateInfo(nullptr, 0.0) { }
-  G1CollectionSetCandidateInfo(G1HeapRegion* r, double gc_efficiency) : _r(r), _gc_efficiency(gc_efficiency), _num_unreclaimed(0) { }
+  G1CollectionSetCandidateInfo() : G1CollectionSetCandidateInfo(nullptr) { }
+  G1CollectionSetCandidateInfo(G1HeapRegion* r) : _r(r), _num_unreclaimed(0) { }
 
   bool update_num_unreclaimed() {
     ++_num_unreclaimed;
@@ -94,6 +93,7 @@ public:
   uint length() const { return (uint)_candidates.length(); }
 
   G1CardSet* card_set() { return &_card_set; }
+  const G1CardSet* card_set() const { return &_card_set; }
 
   uint group_id() const { return _group_id; }
 

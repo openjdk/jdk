@@ -540,7 +540,7 @@ double G1Policy::predict_retained_regions_evac_time() const {
       break;
     }
     min_regions_left--;
-    result += predict_region_total_time_ms(r, collector_state()->in_young_only_phase());
+    result += group->predict_group_total_time_ms();
     num_regions++;
   }
 
@@ -1132,16 +1132,7 @@ double G1Policy::predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_on
   return _analytics->predict_object_copy_time_ms(bytes_to_copy, for_young_only_phase);
 }
 
-double G1Policy::predict_region_merge_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  size_t card_rs_length = hr->rem_set()->occupied();
-  size_t scan_card_num = _analytics->predict_scan_card_num(card_rs_length, for_young_only_phase);
-
-  return
-    _analytics->predict_card_merge_time_ms(card_rs_length, for_young_only_phase) +
-    _analytics->predict_card_scan_time_ms(scan_card_num, for_young_only_phase);
-}
-
-double G1Policy::predict_merge_scan_time(size_t card_rs_length)  const {
+double G1Policy::predict_merge_scan_time(size_t card_rs_length) const {
   size_t scan_card_num = _analytics->predict_scan_card_num(card_rs_length, false);
 
   return
@@ -1154,27 +1145,6 @@ double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_y
 
   return
     _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);
-}
-
-double G1Policy::predict_region_non_copy_time_ms(G1HeapRegion* hr,
-                                                 bool for_young_only_phase) const {
-
-  double region_elapsed_time_ms = predict_region_merge_scan_time(hr, for_young_only_phase) +
-                                  predict_region_code_root_scan_time(hr, for_young_only_phase);
-  // The prediction of the "other" time for this region is based
-  // upon the region type and NOT the GC type.
-  if (hr->is_young()) {
-    region_elapsed_time_ms += _analytics->predict_young_other_time_ms(1);
-  } else {
-    region_elapsed_time_ms += _analytics->predict_non_young_other_time_ms(1);
-  }
-  return region_elapsed_time_ms;
-}
-
-double G1Policy::predict_region_total_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const {
-  return
-    predict_region_non_copy_time_ms(hr, for_young_only_phase) +
-    predict_region_copy_time_ms(hr, for_young_only_phase);
 }
 
 bool G1Policy::should_allocate_mutator_region() const {

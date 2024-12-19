@@ -2998,7 +2998,6 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   _total_capacity_bytes(0),
   _total_live_bytes(0),
   _total_remset_bytes(0),
-  _young_cardset_bytes_per_region(0),
   _total_code_roots_bytes(0)
 {
   if (!log_is_enabled(Trace, gc, liveness)) {
@@ -3008,13 +3007,6 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   MemRegion reserved = g1h->reserved();
   double now = os::elapsedTime();
-
-  uint num_young_regions = g1h->young_regions_count();
-  size_t young_cardset_bytes = g1h->young_regions_cardset()->mem_size();
-
-  if (num_young_regions > 0) {
-    _young_cardset_bytes_per_region = young_cardset_bytes / num_young_regions;
-  }
 
   // Print the header of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" PHASE %s @ %1.3f", phase_name, now);
@@ -3064,16 +3056,20 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t capacity_bytes  = r->capacity();
   size_t used_bytes      = r->used();
   size_t live_bytes      = r->live_bytes();
-  double gc_eff          = r->calc_gc_efficiency();
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_groud_gid     = r->rem_set()->cset_group()->group_id();
-  FormatBuffer<16> gc_efficiency("");
+  double gc_eff           = -1.0;
+  uint cset_groud_gid     = 0;
 
-  if (r->is_young()) {
-    remset_bytes = _young_cardset_bytes_per_region;
+  if (r->rem_set()->is_added_to_cset_group()) {
+    if (r->rem_set()->cset_group()->length() == 1) {
+      gc_eff = r->rem_set()->cset_group()->gc_efficiency();
+    }
+    cset_groud_gid = r->rem_set()->cset_group_id();
   }
+
+  FormatBuffer<16> gc_efficiency("");
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;

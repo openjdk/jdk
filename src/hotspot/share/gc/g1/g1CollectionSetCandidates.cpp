@@ -42,7 +42,7 @@ G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, uint 
 { }
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
-  G1CollectionSetCandidateInfo c(hr, hr->calc_gc_efficiency());
+  G1CollectionSetCandidateInfo c(hr);
   add(c);
 }
 
@@ -89,7 +89,7 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
 
   for (G1CollectionSetCandidateInfo ci : _candidates) {
     G1HeapRegion* r = ci._r;
-    assert(r->rem_set()->card_set() == &_card_set, "Must be!");
+    assert(r->rem_set()->cset_group() == this, "Must be!");
 
     predict_bytes_to_copy += p->predict_bytes_to_copy(r);
     predicted_copy_time_ms += p->predict_region_copy_time_ms(r, false /* for_young_only_phase */);

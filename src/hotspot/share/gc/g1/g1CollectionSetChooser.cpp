@@ -94,7 +94,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
     void set(uint idx, G1HeapRegion* hr) {
       assert(idx < _max_size, "Index %u out of bounds %u", idx, _max_size);
       assert(_data[idx]._r == nullptr, "Value must not have been set.");
-      _data[idx] = CandidateInfo(hr, 0.0);
+      _data[idx] = CandidateInfo(hr);
     }
 
     void sort_by_reclaimable_bytes() {

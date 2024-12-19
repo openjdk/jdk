@@ -138,27 +138,6 @@ void G1HeapRegion::clear_cardtable() {
   ct->clear_MemRegion(MemRegion(bottom(), end()));
 }
 
-double G1HeapRegion::calc_gc_efficiency() {
-  if (is_young() || is_free()) {
-    return -1.0;
-  }
-  // GC efficiency is the ratio of how much space would be
-  // reclaimed over how long we predict it would take to reclaim it.
-  G1Policy* policy = G1CollectedHeap::heap()->policy();
-
-  // Retrieve a prediction of the elapsed time for this region for
-  // a mixed gc because the region will only be evacuated during a
-  // mixed gc.
-  // If the region will be collected as part of a group, then we cannot
-  // rely on the predition for this region.
-  if (_rem_set->is_added_to_cset_group() && _rem_set->cset_group()->length() > 1) {
-    return -1.0;
-  } else {
-    double region_elapsed_time_ms = policy->predict_region_total_time_ms(this, false /* for_young_only_phase */);
-    return (double)reclaimable_bytes() / region_elapsed_time_ms;
-  }
-}
-
 void G1HeapRegion::set_free() {
   if (!is_free()) {
     report_region_type_change(G1HeapRegionTraceType::Free);
@@ -201,6 +180,9 @@ void G1HeapRegion::set_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
+  G1CSetCandidateGroup* cset_group = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config());
+  cset_group->add(this);
+
   _bot->update_for_block(bottom(), obj_top);
   if (fill_size > 0) {
     _bot->update_for_block(obj_top, obj_top + fill_size);
@@ -221,6 +203,13 @@ void G1HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == G1HeapRegion::GrainBytes, "pre-condition");
+  if (is_starts_humongous()) {
+    G1CSetCandidateGroup* cset_group = _rem_set->cset_group();
+    assert(cset_group != nullptr, "pre-condition %u missing cardset", hrm_index());
+    uninstall_cset_group();
+    cset_group->clear();
+    delete cset_group;
+  }
   _humongous_start_region = nullptr;
 }
 
@@ -260,7 +249,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new G1HeapRegionRemSet(this, config);
+  _rem_set = new G1HeapRegionRemSet(this);
   initialize();
 }
 
@@ -612,7 +601,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     bool failed() const {
       if (_from != _to && !_from->is_young() &&
           _to->rem_set()->is_complete() &&
-          _from->rem_set()->card_set() != _to->rem_set()->card_set()) {
+          _from->rem_set()->cset_group() != _to->rem_set()->cset_group()) {
         const CardValue dirty = G1CardTable::dirty_card_val();
         return !(_to->rem_set()->contains_reference(this->_p) ||
                  (this->_containing_obj->is_objArray() ?

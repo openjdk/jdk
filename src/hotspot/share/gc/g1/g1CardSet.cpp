@@ -785,7 +785,8 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   {
     uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
     G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
-    assert(r->rem_set()->card_set() != this, "must be");
+    assert(!r->rem_set()->is_added_to_cset_group() ||
+           r->rem_set()->cset_group()->card_set() != this, "Should not be sharing a cardset");
   }
 #endif
 

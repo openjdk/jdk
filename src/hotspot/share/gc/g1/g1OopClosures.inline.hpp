@@ -152,7 +152,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
   if (to_rem_set->is_tracked()) {
     G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-    if (from->rem_set()->card_set() != to_rem_set->card_set()) {
+    if (from->rem_set()->cset_group() != to_rem_set->cset_group()) {
       to_rem_set->add_reference(p, _worker_id);
     }
   }
@@ -274,7 +274,7 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   if (rem_set->is_tracked()) {
     G1HeapRegion* from = _g1h->heap_region_containing(p);
 
-    if (from->rem_set()->card_set() != rem_set->card_set()) {
+    if (from->rem_set()->cset_group() != rem_set->cset_group()) {
       rem_set->add_reference(p, _worker_id);
     }
   }
