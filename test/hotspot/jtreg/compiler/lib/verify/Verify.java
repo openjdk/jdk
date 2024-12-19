@@ -27,15 +27,22 @@ import java.util.Optional;
 import java.lang.foreign.*;
 
 /**
- * The Verify class provides a single Verify.checkEQ static method, which recursively compares
- * the two Objects by value. It deconstructs Object[], compares boxed primitive types, and
- * compares the content of arrays and MemorySegments.
+ * The {@link Verify} class provides a single {@link Verify#checkEQ} static method, which recursively
+ * compares the two {@link Object}s by value. It deconstructs {@link Object[]}, compares boxed primitive
+ * types, and compares the content of arrays and {@link MemorySegment}s.
  *
- * When a comparison fail, then methods print helpful messages, before throwing a VerifyException.
+ * When a comparison fail, then methods print helpful messages, before throwing a {@link VerifyException}.
  */
 public final class Verify {
+
+    private Verify() {}
+
     /**
      * Verify the content of two Objects, possibly recursively. Only limited types are implemented.
+     *
+     * @param a First object to be recursively compared with the second.
+     * @param b Second object to be recursively compared with the first.
+     * @throws VerifyException If the comparison fails.
      */
     public static void checkEQ(Object a, Object b) {
         checkEQ(a, b, "");

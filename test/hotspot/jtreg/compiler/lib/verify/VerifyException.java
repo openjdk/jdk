@@ -27,11 +27,13 @@ package compiler.lib.verify;
  * Exception thrown in verification.
  */
 public class VerifyException extends RuntimeException {
+
+    /**
+     * Creates a new verification exception.
+     *
+     * @param message Exception message for context when debugging.
+     */
     public VerifyException(String message) {
         super("Value verification failed:" + System.lineSeparator() + message);
-    }
-
-    public VerifyException(String message, Throwable e) {
-        super("Value verification failed:" + System.lineSeparator() + message, e);
     }
 }
