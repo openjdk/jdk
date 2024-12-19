@@ -31,10 +31,13 @@
 
 import java.awt.Dimension;
 import java.awt.Robot;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.JFrame;
 import javax.swing.JScrollBar;
 import javax.swing.SwingUtilities;
-import java.awt.event.MouseEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import java.util.Date;
 
@@ -42,6 +45,7 @@ public class bug4865918 {
 
     private static TestScrollBar sbar;
     private static JFrame frame;
+    private static final CountDownLatch mousePressLatch = new CountDownLatch(1);
 
     public static void main(String[] argv) throws Exception {
         try {
@@ -52,6 +56,9 @@ public class bug4865918 {
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
+            if (!mousePressLatch.await(2, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Timed out waiting for mouse press");
+            }
 
             robot.waitForIdle();
             robot.delay(200);
@@ -81,6 +88,11 @@ public class bug4865918 {
         sbar = new TestScrollBar(JScrollBar.HORIZONTAL, -1, 10, -100, 100);
         sbar.setPreferredSize(new Dimension(200, 20));
         sbar.setBlockIncrement(10);
+        sbar.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                mousePressLatch.countDown();
+            }
+        });
 
         frame.getContentPane().add(sbar);
         frame.pack();
