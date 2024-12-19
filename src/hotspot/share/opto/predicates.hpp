@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,6 +400,15 @@ class TemplateAssertionPredicate : public Predicate {
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
+
+#ifdef ASSERT
+  static void verify(IfTrueNode* template_assertion_predicate_success_proj) {
+    TemplateAssertionPredicate template_assertion_predicate(template_assertion_predicate_success_proj);
+    template_assertion_predicate.verify();
+  }
+
+  void verify() const;
+#endif // ASSERT
 };
 
 // Class to represent an Initialized Assertion Predicate which always has a halt node on the failing path.
@@ -419,6 +428,10 @@ class InitializedAssertionPredicate : public Predicate {
     return _if_node->in(0);
   }
 
+  OpaqueInitializedAssertionPredicateNode* opaque_node() const {
+    return _if_node->in(1)->as_OpaqueInitializedAssertionPredicate();
+  }
+
   IfNode* head() const override {
     return _if_node;
   }
@@ -433,6 +446,15 @@ class InitializedAssertionPredicate : public Predicate {
 
   void kill(PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
+
+#ifdef ASSERT
+  static void verify(IfTrueNode* initialized_assertion_predicate_success_proj) {
+    InitializedAssertionPredicate initialized_assertion_predicate(initialized_assertion_predicate_success_proj);
+    initialized_assertion_predicate.verify();
+  }
+
+  void verify() const;
+#endif // ASSERT
 };
 
 // Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Expression.
@@ -962,46 +984,26 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   Node* const _init;
   Node* const _stride;
   Node* const _old_target_loop_entry;
-  Node* _new_control;
+  Node* _current_predicate_chain_head;
   PhaseIdealLoop* const _phase;
   bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
   const bool _clone_template;
 
   IfTrueNode* clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate);
-  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
+  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
+                                       Node* new_control) const;
+  void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
-  CreateAssertionPredicatesVisitor(Node* init, Node* stride, Node* new_control, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body, const bool clone_template)
-      : _init(init),
-        _stride(stride),
-        _old_target_loop_entry(new_control),
-        _new_control(new_control),
-        _phase(phase),
-        _has_hoisted_check_parse_predicates(false),
-        _node_in_loop_body(node_in_loop_body),
-        _clone_template(clone_template) {}
+  CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head, PhaseIdealLoop* phase,
+                                   const NodeInLoopBody& node_in_loop_body, bool clone_template);
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
 
   void visit(const ParsePredicate& parse_predicate) override;
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
-
-  // Did we create any new Initialized Assertion Predicates?
-  bool has_created_predicates() const {
-    return _new_control != _old_target_loop_entry;
-  }
-
-  // Return the last created node by this visitor or the originally provided 'new_control' to the visitor if there was
-  // no new node created (i.e. no Template Assertion Predicates found).
-  IfTrueNode* last_created_success_proj() const {
-    assert(has_created_predicates(), "should only be queried if new nodes have been created");
-    assert(_new_control->unique_ctrl_out_or_null() == nullptr, "no control outputs, yet");
-    assert(_new_control->is_IfTrue(), "Assertion Predicates only have IfTrue on success proj");
-    return _new_control->as_IfTrue();
-  }
 };
 
 // This visitor collects all Template Assertion Predicates If nodes or the corresponding Opaque nodes, depending on the

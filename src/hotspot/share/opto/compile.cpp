@@ -2969,6 +2969,9 @@ void Compile::Code_Gen() {
     print_method(PHASE_GLOBAL_CODE_MOTION, 2);
     NOT_PRODUCT( verify_graph_edges(); )
     cfg.verify();
+    if (failing()) {
+      return;
+    }
   }
 
   PhaseChaitin regalloc(unique(), cfg, matcher, false);
@@ -3143,6 +3146,13 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
   // Replace them with a fused divmod if supported
   if (Matcher::has_match_rule(Op_DivModIL(bt, is_unsigned))) {
     DivModNode* divmod = DivModNode::make(n, bt, is_unsigned);
+    // If the divisor input for a Div (or Mod etc.) is not zero, then the control input of the Div is set to zero.
+    // It could be that the divisor input is found not zero because its type is narrowed down by a CastII in the
+    // subgraph for that input. Range check CastIIs are removed during final graph reshape. To preserve the dependency
+    // carried by a CastII, precedence edges are added to the Div node. We need to transfer the precedence edges to the
+    // DivMod node so the dependency is not lost.
+    divmod->add_prec_from(n);
+    divmod->add_prec_from(d);
     d->subsume_by(divmod->div_proj(), this);
     n->subsume_by(divmod->mod_proj(), this);
   } else {
@@ -3428,6 +3438,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+  case Op_CastII: {
+    n->as_CastII()->remove_range_check_cast(this);
+    break;
+  }
 #ifdef _LP64
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
@@ -3577,16 +3591,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
 
-#endif
-
-#ifdef ASSERT
-  case Op_CastII:
-    // Verify that all range check dependent CastII nodes were removed.
-    if (n->isa_CastII()->has_range_check()) {
-      n->dump(3);
-      assert(false, "Range check dependent CastII node was not removed");
-    }
-    break;
 #endif
 
   case Op_ModI:
@@ -4335,6 +4339,9 @@ Compile::TracePhase::TracePhase(PhaseTraceId id)
 
 Compile::TracePhase::~TracePhase() {
   if (_compile->failing_internal()) {
+    if (_log != nullptr) {
+      _log->done("phase");
+    }
     return; // timing code, not stressing bailouts.
   }
 #ifdef ASSERT
@@ -5038,7 +5045,6 @@ bool Compile::fail_randomly() {
 }
 
 bool Compile::failure_is_artificial() {
-  assert(failing_internal(), "should be failing");
   return C->failure_reason_is("StressBailout");
 }
 #endif
@@ -5162,7 +5168,7 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
 
   const char* name = ss.as_string();
   if (should_print_igv(level)) {
-    _igv_printer->print_method(name, level);
+    _igv_printer->print_graph(name);
   }
   if (should_print_phase(cpt)) {
     print_ideal_ir(CompilerPhaseTypeHelper::to_name(cpt));
@@ -5204,6 +5210,15 @@ bool Compile::should_print_phase(CompilerPhaseType cpt) {
   return false;
 }
 
+#ifndef PRODUCT
+void Compile::init_igv() {
+  if (_igv_printer == nullptr) {
+    _igv_printer = IdealGraphPrinter::printer();
+    _igv_printer->set_compile(this);
+  }
+}
+#endif
+
 bool Compile::should_print_igv(const int level) {
 #ifndef PRODUCT
   if (PrintIdealGraphLevel < 0) { // disabled by the user
@@ -5211,9 +5226,8 @@ bool Compile::should_print_igv(const int level) {
   }
 
   bool need = directive()->IGVPrintLevelOption >= level;
-  if (need && !_igv_printer) {
-    _igv_printer = IdealGraphPrinter::printer();
-    _igv_printer->set_compile(this);
+  if (need) {
+    Compile::init_igv();
   }
   return need;
 #else
@@ -5281,17 +5295,23 @@ void Compile::igv_print_method_to_file(const char* phase_name, bool append) {
     _debug_file_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method %s to %s", append ? "appended" : "printed", file_name);
-  _debug_file_printer->print(phase_name, (Node*)C->root());
+  _debug_file_printer->print_graph(phase_name);
 }
 
 void Compile::igv_print_method_to_network(const char* phase_name) {
+  ResourceMark rm;
+  GrowableArray<const Node*> empty_list;
+  igv_print_graph_to_network(phase_name, (Node*) C->root(), empty_list);
+}
+
+void Compile::igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes) {
   if (_debug_network_printer == nullptr) {
     _debug_network_printer = new IdealGraphPrinter(C);
   } else {
     _debug_network_printer->update_compiled_method(C->method());
   }
   tty->print_cr("Method printed over network stream to IGV");
-  _debug_network_printer->print(phase_name, (Node*)C->root());
+  _debug_network_printer->print(name, C->root(), visible_nodes);
 }
 #endif
 

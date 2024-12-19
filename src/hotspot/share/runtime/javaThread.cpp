@@ -100,6 +100,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
@@ -236,8 +237,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   // constructor calls Thread.current(), which must be set here.
   java_lang_Thread::set_thread(thread_oop(), this);
   set_threadOopHandles(thread_oop());
-  // Set the lock_id to the next thread_id temporarily while initialization runs.
-  set_lock_id(ThreadIdentifier::next());
+  // Set the _monitor_owner_id to the next thread_id temporarily while initialization runs.
+  set_monitor_owner_id(ThreadIdentifier::next());
 
   JavaValue result(T_VOID);
   if (thread_name != nullptr) {
@@ -263,8 +264,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             Handle(),
                             CHECK);
   }
-  // Update the lock_id with the tid value.
-  set_lock_id(java_lang_Thread::thread_id(thread_oop()));
+  // Update the _monitor_owner_id with the tid value.
+  set_monitor_owner_id(java_lang_Thread::thread_id(thread_oop()));
 
   os::set_priority(this, NormPriority);
 
@@ -435,7 +436,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _current_waiting_monitor(nullptr),
   _active_handles(nullptr),
   _free_handle_block(nullptr),
-  _lock_id(0),
+  _monitor_owner_id(0),
 
   _suspend_flags(0),
 
@@ -517,6 +518,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _class_being_initialized(nullptr),
 
   _SleepEvent(ParkEvent::Allocate(this)),
+
+#if INCLUDE_JFR
+  _last_freeze_fail_result(freeze_ok),
+#endif
 
   _lock_stack(this),
   _om_cache(this) {
@@ -1540,8 +1545,7 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
   if (thread_oop != nullptr) {
     if (is_vthread_mounted()) {
-      // _lock_id is the thread ID of the mounted virtual thread
-      st->print_cr("   Carrying virtual thread #" INT64_FORMAT, lock_id());
+      st->print_cr("   Carrying virtual thread #" INT64_FORMAT, java_lang_Thread::thread_id(vthread()));
     } else {
       st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
     }
@@ -1725,7 +1729,7 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   assert(InstanceKlass::cast(thread_oop->klass())->is_linked(),
          "must be initialized");
   set_threadOopHandles(thread_oop());
-  set_lock_id(java_lang_Thread::thread_id(thread_oop()));
+  set_monitor_owner_id(java_lang_Thread::thread_id(thread_oop()));
 
   if (prio == NoPriority) {
     prio = java_lang_Thread::priority(thread_oop());
@@ -1769,15 +1773,10 @@ void JavaThread::print_jni_stack() {
       tty->print_cr("Unable to print native stack - out of memory");
       return;
     }
+    NativeStackPrinter nsp(this);
     address lastpc = nullptr;
-    if (os::platform_print_native_stack(tty, nullptr, buf, O_BUFLEN, lastpc)) {
-      // We have printed the native stack in platform-specific code,
-      // so nothing else to do in this case.
-    } else {
-      frame f = os::current_frame();
-      VMError::print_native_stack(tty, f, this, true /*print_source_info */,
-                                  -1 /* max stack */, buf, O_BUFLEN);
-    }
+    nsp.print_stack(tty, buf, O_BUFLEN, lastpc,
+                    true /*print_source_info */, -1 /* max stack */ );
   } else {
     print_active_stack_on(tty);
   }
@@ -2230,7 +2229,7 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
 
   // Now bind the thread_oop to the target JavaThread.
   target->set_threadOopHandles(thread_oop());
-  target->set_lock_id(java_lang_Thread::thread_id(thread_oop()));
+  target->set_monitor_owner_id(java_lang_Thread::thread_id(thread_oop()));
 
   Threads::add(target); // target is now visible for safepoint/handshake
   // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
