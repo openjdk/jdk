@@ -144,7 +144,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // TODO PPC port: requires change in shared code.
     //assert(in_bytes(AccessFlags::flags_offset()) == 0,
     //       "MethodDesc._access_flags == MethodDesc._access_flags._flags");
-    // _access_flags must be a 32 bit value. ???
+    // _access_flags must be a 16 bit value.
     assert(sizeof(AccessFlags) == 2, "wrong size");
     __ lha(R11_scratch1/*access_flags*/, method_(access_flags));
     // testbit with condition register.
