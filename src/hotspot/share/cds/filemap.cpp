@@ -2416,12 +2416,11 @@ void FileMapInfo::unmap_regions(int regions[], int num_regions, ReservedSpace rs
 
     // If the region is inside an active ReservedSpace, its memory and address space will be
     // freed when the ReservedSpace is released. Skip unmap here to avoid a double release
-    if (rs.is_reserved()) {
+    if (is_mapped() && rs.is_reserved()) {
       FileMapRegion* r = region_at(idx);
       char* mapped_base = r->mapped_base();
       size_t size = r->used_aligned();
 
-      assert(rs.is_reserved(), "must be");
       assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
             PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
             p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
