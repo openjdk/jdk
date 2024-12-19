@@ -778,7 +778,8 @@ public class File
 
     /**
      * Tests whether the file or directory denoted by this abstract pathname
-     * exists.
+     * exists. If this abstract pathname is the empty abstract pathname then
+     * this method returns {@code false}.
      *
      * @return  {@code true} if and only if the file or directory denoted
      *          by this abstract pathname exists; {@code false} otherwise
