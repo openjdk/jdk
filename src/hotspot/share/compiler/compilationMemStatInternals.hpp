@@ -90,10 +90,12 @@ public:
   inline PhaseTrcId top() const;
 };
 
-class FootprintMovementTracker {
+class FootprintTimeline {
   struct Entry {
     PhaseTrcId phase;
     size_t cur, peak, start;
+    bool did_footprint_change() const       { return cur != start; }
+    bool has_significant_local_peak() const { return (peak - start) > M && (peak - cur) > M; }
   };
   static constexpr int max_entries = 64; // we wrap, keeping the last n phase movements
   Entry _entries[max_entries];
@@ -101,9 +103,8 @@ class FootprintMovementTracker {
   bool _wrapped;
   void print_entry_on(outputStream* st, int pos) const;
 public:
-  FootprintMovementTracker() : _pos(-1), _wrapped(false) {}
-  inline void register_allocation(size_t s);
-  inline void register_deallocation(size_t s);
+  FootprintTimeline() : _pos(-1), _wrapped(false) {}
+  inline void on_footprint_change(size_t cur_abs);
   void print_on(outputStream* st) const;
   void on_phase_start(PhaseTrcId phase, size_t cur_abs);
 };
@@ -135,7 +136,7 @@ class ArenaState : public CHeapObj<mtCompiler> {
   // Keep track of current C2 phase
   PhaseIdStack _phase_id_stack;
 
-  FootprintMovementTracker _movement_tracker;
+  FootprintTimeline _movement_tracker;
 
   const CompilerType _comp_type;
   const int _comp_id;

@@ -64,19 +64,13 @@ inline void ArenaCounterTable::sub(size_t size, PhaseTrcId id, ArenaTag tag) {
   _v[id.raw()][tag.raw()] -= size;
 }
 
-inline void FootprintMovementTracker::register_allocation(size_t s) {
-  assert(_pos >= 0 && _pos < max_entries, "sanity");
+inline void FootprintTimeline::on_footprint_change(size_t cur_abs) {
+  assert(_pos >= 0 && _pos < max_entries, "no phase has begun yet");
   Entry& e = _entries[_pos];
-  e.cur += s;
+  e.cur = cur_abs;
   if (e.cur > e.peak) {
     e.peak = e.cur;
   }
-}
-
-inline void FootprintMovementTracker::register_deallocation(size_t s) {
-  Entry& e = _entries[_pos];
-  assert(e.cur >= s, "Underflow");
-  e.cur -= s;
 }
 
 #endif // SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_INLINE_HPP

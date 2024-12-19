@@ -116,17 +116,28 @@ void ArenaCounterTable::print_on(outputStream* st, bool human_readable) const {
 
 PhaseIdStack::PhaseIdStack() : _depth(0) {}
 
-void FootprintMovementTracker::print_entry_on(outputStream* st, int pos) const {
+void FootprintTimeline::print_entry_on(outputStream* st, int pos) const {
   const Entry& e = _entries[pos];
-  if (e.start != e.peak || e.start != e.cur) {
-      tty->print_cr("%24s: %zu -> %zu -> %zu",
-          Phase::get_phase_trace_id_text((Phase::PhaseTraceId)e.phase.raw()),
-          e.start, e.peak, e.cur);
+  st->print("   %24s:", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)e.phase.raw()));
+  st->fill_to(30);
+  st->print("%12zu", e.start); // start
+  st->fill_to(40);
+  st->print("%12zu", e.cur); // end
+  st->fill_to(50);
+  st->print("%+12zd", (ssize_t)e.cur - e.start); // delta end
+  if (e.has_significant_local_peak()) {
+    st->fill_to(60);
+    st->print(" significant temp. peak: %zu (%+zd)", e.peak, (ssize_t)e.peak - e.start); // peak
   }
+  st->cr();
 }
 
-void FootprintMovementTracker::print_on(outputStream* st) const {
+void FootprintTimeline::print_on(outputStream* st) const {
   if (_pos >= 0) {
+    st->print_cr("%30s%12s%12s%12s", "", "start", "end", "end delta");
+    if (_wrapped) {
+      st->print_cr("%50s", "(older entries have been lost)");
+    }
     assert(_pos < max_entries, "sanity");
     if (_wrapped) {
       for (int i = _pos + 1; i < max_entries; i++) {
@@ -139,13 +150,27 @@ void FootprintMovementTracker::print_on(outputStream* st) const {
   }
 }
 
-void FootprintMovementTracker::on_phase_start(PhaseTrcId id, size_t cur_abs) {
-  _pos++;
-  if (_pos == max_entries) {
-    _pos = 0; _wrapped = true;
+void FootprintTimeline::on_phase_start(PhaseTrcId id, size_t cur_abs) {
+  size_t start_footprint = 0;
+  if (_pos == -1) {
+    _pos = 0;
+  } else {
+    const Entry& old = _entries[_pos];
+    start_footprint = old.cur;
+    // close old, open new entry; but only if the last phase is "interesting".
+    // An "interesting" phase is one that causes a footprint change (end != start),
+    // and/or one that has a local peak that significantly raises above either starting
+    // or ending footprint.
+    if (old.did_footprint_change() || old.has_significant_local_peak()) {
+      _pos++;
+      if (_pos == max_entries) {
+        _pos = 0; _wrapped = true;
+      }
+    }
   }
   Entry& e = _entries[_pos];
-  e.start = e.cur = e.peak = cur_abs;
+  e.start = e.cur = e.peak = start_footprint;
+  e.phase = id;
 }
 
 ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit) :
@@ -156,12 +181,13 @@ ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit) :
 
 void ArenaState::on_phase_start(PhaseTrcId id) {
   _phase_id_stack.push(id);
-  _movement_tracker.on_phase_start(id, _peak);
+  _movement_tracker.on_phase_start(id, _current);
 }
 
 void ArenaState::on_phase_end(PhaseTrcId id) {
   _phase_id_stack.pop(id);
-  _movement_tracker.on_phase_start(_phase_id_stack.top(), _peak); // parent phase "restarts"
+  // parent phase "restarts"
+  _movement_tracker.on_phase_start(_phase_id_stack.top(), _current);
 }
 
 int ArenaState::retrieve_live_node_count() const {
@@ -186,6 +212,8 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
   const size_t old_current = _current;
   _current += size;
   assert(_current >= old_current, "Overflow");
+
+  _movement_tracker.on_footprint_change(_current);
 
   const PhaseTrcId phase_id = _phase_id_stack.top();
   const ArenaTag arena_tag(arenatagid);
@@ -215,8 +243,6 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
   cs.phase_id = (uint16_t)_phase_id_stack.top().raw();
   *stamp = cs.raw;
 
-  _movement_tracker.register_allocation(size);
-
   return rc;
 }
 
@@ -233,8 +259,7 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   _current -= size;
   _counters_current.sub(size, phase_id, arena_tag);
   _live_nodes_current = retrieve_live_node_count();
-
-  _movement_tracker.register_deallocation(size);
+  _movement_tracker.on_footprint_change(_current);
 }
 
 // Used for logging, not for the report table generated with jcmd Compiler.memory
@@ -259,9 +284,10 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
     if (_comp_type == CompilerType::compiler_c2) {
       st->print_cr("----- Peak composition by phase and arena type -----");
       _counters_at_global_peak.print_on(st, false);
+      st->print_cr("----- Allocation timelime by phase -----");
+      _movement_tracker.print_on(st);
       st->print_cr("----------------------------------------------------");
     }
-    _movement_tracker.print_on(st);
 #endif
   } else {
     st->cr();
