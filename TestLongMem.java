@@ -8,6 +8,7 @@ public class TestLongMem {
     static long[] a;
     static long[] b;
     static long[] c;
+    static long[] d;
 
     public static long testKernel(int a, int b) {
         long ans;
@@ -16,6 +17,14 @@ public class TestLongMem {
         long m = Long.rotateLeft(a, Math.abs(Long.bitCount(l) % 7));
         ans = (a ^ b) + Math.max((a >> Math.min(2, k)), ((b >>> Math.min(3, l)) << 2));
         return ans;
+    }
+
+    public static long testCmovP(long x, int i) {
+        // TODO: generates ecmovq (need a way to produce compressed ptr)
+        long[] p = x > i ? a : null;
+        long[] q = x == i ? b : p;
+        d = p == q ? a : b;
+        return d[0];
     }
 
     public static long testTzcnt(long x, int i) {

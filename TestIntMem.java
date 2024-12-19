@@ -8,6 +8,10 @@ public class TestIntMem {
     static int[] a;
     static int[] b;
     static int[] c;
+    static int[] d;
+    static int u = 0;
+    static int v = 0;
+    static int w;
 
     public static int testKernel(int a, int b) {
         int ans;
@@ -16,6 +20,24 @@ public class TestIntMem {
         int m = Integer.rotateLeft(a, Math.abs(Integer.bitCount(l) % 7));
         ans = (a ^ b) + Math.max((a >> Math.min(2, k)), ((b >>> Math.min(3, l)) << 2));
         return ans;
+    }
+
+    public static int testCmov(int x, int i) {
+        //TODO: find kernel
+        return a != null ? (x > i ? i : a[i]): b[i];
+    }
+
+    public static int testCmovU(int x, int i) {
+        //TODO: find kernel
+        return 0;
+    }
+
+    public static int testCmovP(int x, int i) {
+        // TODO: generates ecmovq (need a way to produce compressed ptr)
+        int[] p = x > i ? a : null;
+        int[] q = x == i ? b : p;
+        d = p == q ? a : b;
+        return d[0];
     }
 
     public static int testTzcnt(int x, int i) {

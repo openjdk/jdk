@@ -30,7 +30,6 @@ public class TestIntReg {
         return Integer.compareUnsigned(a, b) > 0 ? b : a;
     }
 
-
     public static int testTzcnt(int a, int b) {
         return  Integer.numberOfTrailingZeros(a);
     }
