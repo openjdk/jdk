@@ -58,10 +58,11 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * queue. For example, {@code Robot.mouseMove} will actually move
  * the mouse cursor instead of just generating mouse move events.
  * <p>
- * Note: {@code waitForIdle()} must not be called on the AWT EDT, since
- * when {@code autoWaitForIdle()} is enabled, mouse and key related methods
- * will implicitly call {@code waitForIdle()} and therefore {@code IllegalThreadStateException}
- * will be thrown. In addition, screen capture operations can be lengthy
+ * Note: When {@code autoWaitForIdle()} is enabled, mouse and key related methods
+ * cannot be called on the AWT EDT. This is because when {@code autoWaitForIdle()}
+ * is enabled, the mouse and key methods implicitly call {@code waitForIdle()}
+ * which will throw {@code IllegalThreadStateException} when called on the AWT EDT.
+ * In addition, screen capture operations can be lengthy
  * and {@code delay(long ms)} clearly inserts a delay, so these also
  * should not be called on the EDT. Taken together, this means that as much as possible,
  * methods on this class should not be called on the EDT.
