@@ -52,8 +52,8 @@ public class TestRandomCode {
 
     // Generate a source Java file as String
     public static String generate() {
-        // Template with a main method that calls the CodeGenerator "code", which
-	// generates random code.
+        // Template with a main method that calls the CodeGenerator "method_code", which
+        // generates random code for a method.
         Template template = new Template("my_example",
             """
             package p.xyz;
@@ -62,7 +62,7 @@ public class TestRandomCode {
                 #open(class)
                 public static void main() {
                     #open(method)
-                    #{:code}
+                    #{:method_code}
                     #close(method)
                 }
                 #close(class)

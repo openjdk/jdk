@@ -321,7 +321,7 @@ public final class CodeGeneratorLibrary {
         ));
 
         /**
-	 * {@code def_var} defines a variable in the current method scope.
+         * {@code def_var} defines a variable in the current method scope.
          *
          * @param name Name of the variable.
          * @param prefix Access qualifier and type.
@@ -333,7 +333,7 @@ public final class CodeGeneratorLibrary {
         ));
 
         /**
-	 * {@code def_final_var} defines a variable in the current method scope.
+         * {@code def_final_var} defines a variable in the current method scope.
          *
          * @param name Name of the variable.
          * @param prefix Access qualifier and type.
@@ -345,7 +345,7 @@ public final class CodeGeneratorLibrary {
         ));
 
         /**
-	 * {@code def_field} defines a field in the current class scope.
+         * {@code def_field} defines a field in the current class scope.
          *
          * @param name Name of the field.
          * @param prefix Access qualifier and type.
@@ -357,7 +357,7 @@ public final class CodeGeneratorLibrary {
         ));
 
         /**
-	 * {@code def_final_field} defines a final field in the current class scope.
+         * {@code def_final_field} defines a final field in the current class scope.
          *
          * @param name Name of the field.
          * @param prefix Access qualifier and type.
@@ -373,18 +373,18 @@ public final class CodeGeneratorLibrary {
         // empty: as default and generally last generator in recursive generation.
         codeGenerators.add(new Template("empty","/* empty */", 0));
 
-        codeGenerators.add(new Template("code_split",
+        codeGenerators.add(new Template("method_code_split",
             """
-            #{:code}
-            #{:code}
+            #{:method_code}
+            #{:method_code}
             """
         ));
 
         // TODO some random if, loops, while, try/catch, random variables, etc
 
         // Selector for code blocks.
-        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("code", "empty");
-        selectorForCode.add("code_split",  100);
+        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("method_code", "empty");
+        selectorForCode.add("method_code_split",  100);
         // TODO add more
         codeGenerators.add(selectorForCode);
 
