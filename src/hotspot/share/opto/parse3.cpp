@@ -320,40 +320,6 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
   return array;
 }
 
-// arr = new int[size1][size2]
-// -->
-// arr = new[size1][]; for (int i=0; i<size1; i++) { arr[i] = new int[size2]; }
-Node* Parse::expand_multianewarray2(ciArrayKlass* array_klass, Node* *lengths, int ndimensions, int nargs) {
-  Node* length = lengths[0];
-  assert(length != nullptr, "");
-  Node* array = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length, nargs);
-
-  // here must be a runtime cycle: for (int i = 0; i < length; i++) { array[i] = new_array[length1]; }
-  Node* idx = _gvn.transform(new SubINode(length, _gvn.intcon(1)));
-  { // _loop:
-    Node* cmp = _gvn.transform(new CmpINode(idx, _gvn.intcon(0)));
-    Node* tst = _gvn.transform(new BoolNode(cmp, BoolTest::ge));
-    IfNode* iff = create_and_map_if(control(), tst, 0.9f, 0.1f);
-    int after_loop_bci = 0; // does not work this way. next block :(
-    //jump_if_true_fork(iff, after_loop_bci, false);
-
-    ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
-    const TypePtr* adr_type = TypeAryPtr::OOPS;
-    const TypeOopPtr* elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
-    const intptr_t header = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
-    Node* elem = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
-    jint index = 0;
-    intptr_t offset = header + ((intptr_t)index << LogBytesPerHeapOop);
-    Node*    eaddr  = basic_plus_adr(array, offset);
-    access_store_at(array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
-
-    // _gvn.transform(new SubINode(idx, _gvn.intcon(1)));
-    // goto: _loop
-  }
-
-  return array;
-}
-
 void Parse::do_multianewarray() {
   int ndimensions = iter().get_dimensions();
 
@@ -407,13 +373,6 @@ void Parse::do_multianewarray() {
       // Pass 0 as nargs since uncommon trap code does not need to restore stack.
       obj = expand_multianewarray(array_klass, &length[0], ndimensions, 0);
     } //original reexecute and sp are set back here
-    push(obj);
-    return;
-  }
-
-  if (ndimensions == 2) {
-    // PreserveReexecuteState?
-    Node* obj = expand_multianewarray2(array_klass, &length[0], ndimensions, 0);
     push(obj);
     return;
   }
@@ -477,5 +436,6 @@ void Parse::do_multianewarray() {
   push(cast);
 
   // Possible improvements:
+  // - Make a fast path for small multi-arrays.  (W/ implicit init. loops.)
   // - Issue CastII against length[*] values, to TypeInt::POS.
 }
