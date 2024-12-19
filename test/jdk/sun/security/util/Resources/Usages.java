@@ -36,12 +36,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,7 +102,7 @@ public class Usages {
             "ioException[ \\n]*\\([ \\n]*\"(.*?)\",");
 
     // For each Resources file, where and how the strings are used.
-    static Map<ResourceBundle, List<Pair>> MAP = Map.of(
+    static Map<ListResourceBundle, List<Pair>> MAP = Map.of(
             new sun.security.tools.keytool.Resources(),
             List.of(
                     new Pair("java.base/share/classes/sun/security/tools/keytool/Main.java",
@@ -151,7 +146,7 @@ public class Usages {
         }
     }
 
-    private static void check(ResourceBundle res, List<Pair> fnps) {
+    private static void check(ListResourceBundle res, List<Pair> fnps) {
         try {
             System.out.println(">>>> Checking " + res.getClass().getName());
 

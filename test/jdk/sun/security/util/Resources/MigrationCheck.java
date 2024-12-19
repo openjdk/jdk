@@ -36,41 +36,116 @@ import static org.testng.AssertJUnit.assertEquals;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.ResourceBundle;
+import java.util.ListResourceBundle;
 import org.testng.annotations.Test;
-import sun.security.util.AuthResources;
-import sun.security.util.Resources;
-import sun.security.util.ResourcesMgr;
 
 public class MigrationCheck {
 
     @Test
-    public void testSecurityDefault() throws Exception {
-        checkResourcesMgrSecurity(new Resources());
+    public void testAuth() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources(),
+                                new sun.security.util.resources.auth());
     }
 
     @Test
-    public void testAuthDefault() throws Exception {
-        checkResourcesMgrAuth(new AuthResources());
+    public void testAuth_de() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_de(),
+                                new sun.security.util.resources.auth_de());
     }
 
-    private static void checkResourcesMgrSecurity(ResourceBundle res) {
-        System.out.println(">>>> Checking " + res.getClass().getName());
-        List<String> keys = Collections.list(res.getKeys());
+    @Test
+    public void testAuth_es() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_es(),
+                                new sun.security.util.resources.auth_es());
+    }
+
+    @Test
+    public void testAuth_fr() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_fr(),
+                                new sun.security.util.resources.auth_fr());
+    }
+
+    @Test
+    public void testAuth_it() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_it(),
+                                new sun.security.util.resources.auth_it());
+    }
+
+    @Test
+    public void testAuth_ja() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_ja(),
+                                new sun.security.util.resources.auth_ja());
+    }
+
+    @Test
+    public void testAuth_ko() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_ko(),
+                                new sun.security.util.resources.auth_ko());
+    }
+
+    @Test
+    public void testAuth_sv() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_sv(),
+                                new sun.security.util.resources.auth_sv());
+    }
+
+    @Test
+    public void testAuth_pt_BR() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_pt_BR(),
+                                new sun.security.util.resources.auth_pt_BR());
+    }
+
+    @Test
+    public void testAuth_zh_CN() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_zh_CN(),
+                                new sun.security.util.resources.auth_zh_CN());
+    }
+
+    @Test
+    public void testAuth_zh_TW() throws Exception {
+        checkResourcesMigration(new sun.security.util.AuthResources_zh_TW(),
+                                new sun.security.util.resources.auth_zh_TW());
+    }
+
+    @Test
+    public void testResourcesMgrSecurityDefault() throws Exception {
+        checkResourcesMgrSecurity(new sun.security.util.Resources());
+    }
+
+    @Test
+    public void testResourcesMgrAuthDefault() throws Exception {
+        checkResourcesMgrAuth(new sun.security.util.AuthResources());
+    }
+
+    private static void checkResourcesMigration(ListResourceBundle fromRes,
+                                                ListResourceBundle toRes) {
+        System.out.println(">>>> Checking from " + fromRes.getClass().getName()
+                                   + " to " + toRes.getClass().getName());
+        List<String> keys = Collections.list(fromRes.getKeys());
 
         for (String key : keys) {
-            assertEquals(res.getString(key),
-                         ResourcesMgr.getString(key));
+            assertEquals(fromRes.getString(key), toRes.getString(key));
         }
     }
 
-    private static void checkResourcesMgrAuth(ResourceBundle res) {
+    private static void checkResourcesMgrSecurity(ListResourceBundle res) {
         System.out.println(">>>> Checking " + res.getClass().getName());
         List<String> keys = Collections.list(res.getKeys());
 
         for (String key : keys) {
             assertEquals(res.getString(key),
-                         ResourcesMgr.getAuthResourceString(key));
+                         sun.security.util.ResourcesMgr.getString(key));
+        }
+    }
+
+    private static void checkResourcesMgrAuth(ListResourceBundle res) {
+        System.out.println(">>>> Checking " + res.getClass().getName());
+        List<String> keys = Collections.list(res.getKeys());
+
+        for (String key : keys) {
+            assertEquals(res.getString(key),
+                         sun.security.util.ResourcesMgr.getAuthResourceString(
+                                 key));
         }
     }
 }
