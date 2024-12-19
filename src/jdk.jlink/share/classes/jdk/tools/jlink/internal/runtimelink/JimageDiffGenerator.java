@@ -158,7 +158,7 @@ public class JimageDiffGenerator {
         } catch (IOException e) {
             throw new UncheckedIOException("IO exception when comparing bytes", e);
         }
-        return true;
+        return false;
     }
 
 }
