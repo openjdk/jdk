@@ -118,19 +118,22 @@ public class SnippetsTest {
         var className = "LoadableArrayOf200Paged";
         var elementSnippets = Snippet.buildAll(Arrays.asList(expected), Snippet::loadInteger);
         var instance = new ArraySnippetBuilder(CD_Integer)
-                .activatePagingThreshold(expected.length - 1)
                 .ownerClassDesc(ClassDesc.of(className))
-                .methodNamePrefix("page")
-                .pageSize(100);
+                .enablePagination("page", 100);
+
+        try {
+            instance.build(elementSnippets);
+            fail("Should throw NPE without ClassBuilder");
+        } catch (NullPointerException npe) {
+            // expected
+        }
 
         Supplier<Integer[]> supplier = generateSupplier(className, clb -> instance.classBuilder(clb).build(elementSnippets));
         verifyPaginationMethods(supplier.getClass(), Integer.class, "page", 2);
         assertArrayEquals(expected, supplier.get());
 
-        var loadable = instance.activatePagingThreshold(expected.length)
+        var loadable = instance.disablePagination()
                 .ownerClassDesc(ClassDesc.of("LoadableArrayOf200NotPaged"))
-                .methodNamePrefix("page")
-                .pageSize(100)
                 .build(elementSnippets);
 
         // SimpleArray generate bytecode inline, so can be generated in any class
@@ -162,10 +165,8 @@ public class SnippetsTest {
 
         var className = "AllSetTestPageNotActivated";
         var methodNamePrefix = "page";
-        var loadable = setBuilder.activatePagingThreshold(all.size())
+        var loadable = setBuilder.disablePagination()
                 .ownerClassDesc(ClassDesc.of(className))
-                .methodNamePrefix(methodNamePrefix)
-                .pageSize(10)
                 .build(allSnippets);
         supplier = generateSupplier(className, clb -> loadable);
         assertEquals(all, supplier.get());
@@ -173,8 +174,7 @@ public class SnippetsTest {
         className = "AllSetTestPageSize20";
         setBuilder.ownerClassDesc(ClassDesc.of(className));
         supplier = generateSupplier(className, clb -> setBuilder.classBuilder(clb)
-                .activatePagingThreshold(all.size() - 1)
-                .pageSize(20)
+                .enablePagination(methodNamePrefix, 20)
                 .build(allSnippets));
         verifyPaginationMethods(supplier.getClass(), String.class, methodNamePrefix, 5);
         assertEquals(all, supplier.get());
@@ -187,10 +187,8 @@ public class SnippetsTest {
         var className = String.format("SnippetArrayProviderTest%dPagedBy%d", elementCount, pageSize);
         ClassDesc testClassDesc = ClassDesc.of(className);
         var builder = new ArraySnippetBuilder(CD_String)
-                .activatePagingThreshold(1)
-                .ownerClassDesc(testClassDesc)
-                .methodNamePrefix("ArrayPage")
-                .pageSize(pageSize);
+                .enablePagination("ArrayPage", pageSize, 1)
+                .ownerClassDesc(testClassDesc);
         var snippets = Snippet.buildAll(Arrays.asList(expected), Snippet::loadConstant);
         var pagingContext = new PagingContext(expected.length, pageSize);
 
@@ -206,9 +204,11 @@ public class SnippetsTest {
                                  .toArray(String[]::new);
         String className = "SnippetArrayProviderTest" + elementCount;
         var array = new ArraySnippetBuilder(CD_String)
+                .disablePagination()
                 .build(Snippet.buildAll(Arrays.asList(expected), Snippet::loadConstant));
 
         Supplier<String[]> supplier = generateSupplier(className, clb -> array);
+        verifyPaginationMethods(supplier.getClass(), String.class, "page", 0);
         assertArrayEquals(expected, supplier.get());
     }
 

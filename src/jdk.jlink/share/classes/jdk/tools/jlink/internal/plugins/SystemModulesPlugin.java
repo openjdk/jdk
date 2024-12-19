@@ -87,6 +87,8 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 import static java.lang.classfile.ClassFile.*;
 import static jdk.tools.jlink.internal.Snippets.*;
+import static jdk.tools.jlink.internal.Snippets.CollectionSnippetBuilder.ENUM_PAGE_SIZE;
+import static jdk.tools.jlink.internal.Snippets.CollectionSnippetBuilder.STRING_PAGE_SIZE;
 
 /**
  * Jlink plugin to reconstitute module descriptors and other attributes for system
@@ -331,7 +333,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             = new SystemModulesClassGenerator(className, moduleInfos, moduleDescriptorsPerMethod);
         byte[] bytes = generator.genClassBytes(cf);
         // Diagnosis help, can be removed
-        if (Boolean.parseBoolean(System.getProperty("JlinkDumpSystemModuleClass", "false"))) {
+        if (Boolean.parseBoolean(System.getProperty("jlink.dumpSystemModuleClass", "false"))) {
             try {
                 var filePath = Path.of(className + ".class").toAbsolutePath();
                 System.err.println("Write " + filePath.toString());
@@ -543,8 +545,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private static final MethodTypeDesc MTD_MapEntry_Object_Object = MethodTypeDesc.of(CD_Map_Entry, CD_Object, CD_Object);
         private static final MethodTypeDesc MTD_Map_MapEntryArray = MethodTypeDesc.of(CD_Map, CD_Map_Entry.arrayType());
 
-        static final int PAGING_THRESHOLD = 512; // An arbitrary number as this likely generate minimum ~4K code
-
         private static final int MAX_LOCAL_VARS = 256;
 
         private final int MT_VAR         = 1;  // variable for ModuleTarget
@@ -563,6 +563,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         // names or modifiers to reduce the footprint
         // e.g. target modules of qualified exports
         private final DedupSetBuilder dedupSetBuilder;
+        private final ArrayList<Snippet> clinitSnippets = new ArrayList<>();
 
         public SystemModulesClassGenerator(String className,
                                            List<ModuleInfo> moduleInfos,
@@ -581,19 +582,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void dedups(ModuleDescriptor md) {
             // exports
-            for (Exports e : sorted(md.exports())) {
+            for (Exports e : md.exports()) {
                 dedupSetBuilder.stringSet(e.targets());
                 dedupSetBuilder.exportsModifiers(e.modifiers());
             }
 
             // opens
-            for (Opens opens : sorted(md.opens())) {
+            for (Opens opens : md.opens()) {
                 dedupSetBuilder.stringSet(opens.targets());
                 dedupSetBuilder.opensModifiers(opens.modifiers());
             }
 
             // requires
-            for (Requires r : sorted(md.requires())) {
+            for (Requires r : md.requires()) {
                 dedupSetBuilder.requiresModifiers(r.modifiers());
             }
 
@@ -614,9 +615,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         // generate <init>
                         genConstructor(clb);
 
-                        // generate dedup set fields and provider methods
-                        var dedupSets = genConstants(clb);
-
                         // generate hasSplitPackages
                         genHasSplitPackages(clb);
 
@@ -624,7 +622,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         genIncubatorModules(clb);
 
                         // generate moduleDescriptors
-                        genModuleDescriptorsMethod(clb, dedupSets);
+                        genModuleDescriptorsMethod(clb);
 
                         // generate moduleTargets
                         genModuleTargetsMethod(clb);
@@ -637,6 +635,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                         // generate moduleReads
                         genModuleReads(clb, cf);
+
+                        // generate static initializer
+                        genClassInitializer(clb);
                     });
         }
 
@@ -655,20 +656,17 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                               .return_());
         }
 
-        private DedupSet genConstants(ClassBuilder clb) {
-            var dedupSet = dedupSetBuilder.build(clb);
-            var clinitSnippet = dedupSet.cacheSetupSnippet();
-            if (!clinitSnippet.isEmpty()) {
+        private void genClassInitializer(ClassBuilder clb) {
+            if (!clinitSnippets.isEmpty()) {
                 clb.withMethodBody(
                         CLASS_INIT_NAME,
                         MTD_void,
                         ACC_STATIC,
                         cob -> {
-                            clinitSnippet.get().emit(cob);
+                            clinitSnippets.forEach(s -> s.emit(cob));
                             cob.return_();
                         });
             }
-            return dedupSet;
         }
 
         /**
@@ -707,15 +705,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                               .ireturn());
         }
 
-        private void genModuleDescriptorsMethod(ClassBuilder clb, DedupSet dedupSets) {
+        /**
+         * Generate bytecode for moduleDescriptors method
+         */
+        private void genModuleDescriptorsMethod(ClassBuilder clb) {
+            var dedupSets = dedupSetBuilder.build(clb);
+            dedupSets.cacheSetupSnippet().ifPresent(clinitSnippets::add);
+
             var converter = new ModuleDescriptorBuilder(clb, dedupSets, classDesc);
             var elementSnippets = converter.buildAll(moduleInfos);
             var moduleDescriptors = new ArraySnippetBuilder(CD_MODULE_DESCRIPTOR)
                     .classBuilder(clb)
-                    .activatePagingThreshold(moduleDescriptorsPerMethod)
                     .ownerClassDesc(classDesc)
-                    .methodNamePrefix("sub")
-                    .pageSize(moduleDescriptorsPerMethod)
+                    .enablePagination("sub", moduleDescriptorsPerMethod)
                     .build(elementSnippets);
 
             clb.withMethodBody(
@@ -869,6 +871,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                         // map of Set -> local
                         Map<Set<String>, Integer> locals;
+                        int setBuilt = 0;
 
                         // generate code to create the sets that are duplicated
                         if (dedup) {
@@ -880,7 +883,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             locals = new HashMap<>();
                             int index = 1;
                             for (Set<String> s : duplicateSets) {
-                                genImmutableSet(cob, s);
+                                genImmutableSet(clb, cob, s, methodName + setBuilt++);
                                 cob.astore(index);
                                 locals.put(s, index);
                                 if (++index >= MAX_LOCAL_VARS) {
@@ -907,7 +910,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             // if de-duplicated then load the local, otherwise generate code
                             Integer varIndex = locals.get(s);
                             if (varIndex == null) {
-                                genImmutableSet(cob, s);
+                                genImmutableSet(clb, cob, s, methodName + setBuilt++);
                             } else {
                                 cob.aload(varIndex);
                             }
@@ -932,9 +935,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         /**
          * Generate code to generate an immutable set.
          */
-        private void genImmutableSet(CodeBuilder cob, Set<String> set) {
+        private void genImmutableSet(ClassBuilder clb, CodeBuilder cob, Set<String> set, String methodNamePrefix) {
             var snippets = Snippet.buildAll(sorted(set), Snippet::loadConstant);
             new SetSnippetBuilder(CD_String)
+                    .classBuilder(clb)
+                    .ownerClassDesc(classDesc)
+                    .enablePagination(methodNamePrefix, STRING_PAGE_SIZE)
                     .build(snippets)
                     .emit(cob);
         }
@@ -1032,7 +1038,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         /*
-         * Wraps set creation, ensuring identical sets are properly deduplicated.
+         * Snippets to load the deduplicated set onto the operand stack.
+         * Set referenced more than once will be read from the cache, cacheSetupSnippet contains
+         * the bytecode to populate that cache.
          */
         static record DedupSet(Map<Set<String>, Snippet> stringSets,
                                Map<Set<Requires.Modifier>, Snippet> requiresModifiersSets,
@@ -1040,6 +1048,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                Map<Set<Exports.Modifier>, Snippet> exportsModifiersSets,
                                Optional<Snippet> cacheSetupSnippet) {};
 
+        /*
+         * Wraps set creation, ensuring identical sets are properly deduplicated.
+         */
         static class DedupSetBuilder {
             final Map<Set<String>, SetReference<String>> stringSets = new HashMap<>();
             final Map<Set<Requires.Modifier>, SetReference<Requires.Modifier>>
@@ -1058,69 +1069,81 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             }
 
             /*
-            * Add the given set of strings to this builder.
-            */
+             * Add the given set of strings to this builder.
+             */
             void stringSet(Set<String> strings) {
                 stringSets.computeIfAbsent(strings, SetReference<String>::new).increment();
             }
 
             /*
-            * Add the given set of Exports.Modifiers
-            */
+             * Add the given set of Exports.Modifiers
+             */
             void exportsModifiers(Set<Exports.Modifier> mods) {
                 exportsModifiersSets.computeIfAbsent(mods, SetReference<Exports.Modifier>::new).increment();
             }
 
             /*
-            * Add the given set of Opens.Modifiers
-            */
+             * Add the given set of Opens.Modifiers
+             */
             void opensModifiers(Set<Opens.Modifier> mods) {
                 opensModifiersSets.computeIfAbsent(mods, SetReference::new).increment();
             }
 
             /*
-            * Add the given set of Requires.Modifiers
-            */
+             * Add the given set of Requires.Modifiers
+             */
             void requiresModifiers(Set<Requires.Modifier> mods) {
                 requiresModifiersSets.computeIfAbsent(mods, SetReference::new).increment();
             }
 
+            /*
+             * Generate bytecode to load a set onto the operand stack.
+             * Use cache if the set is references more than once.
+             */
             private Snippet buildStringSet(ClassBuilder clb, SetReference<String> setRef) {
                 return cacheBuilder.transform(setRef,
                         new SetSnippetBuilder(CD_String)
                                 .classBuilder(clb)
-                                .activatePagingThreshold(PAGING_THRESHOLD)
                                 .ownerClassDesc(owner)
-                                .methodNamePrefix("dedupSet" + setBuilt++)
-                                .pageSize(STRING_PAGE_SIZE)
+                                .enablePagination("dedupSet" + setBuilt++, STRING_PAGE_SIZE)
                                 .build(Snippet.buildAll(setRef.elements(), Snippet::loadConstant)));
             }
 
+            /*
+             * Generate the mapping from a set to the bytecode loading the set onto the operand stack.
+             * Ordering the sets to ensure same generated bytecode.
+             */
+            private Map<Set<String>, Snippet> buildStringSets(ClassBuilder clb, Map<Set<String>, SetReference<String>> map) {
+                Map<Set<String>, Snippet> snippets = new HashMap<>(map.size());
+                map.entrySet().stream()
+                        .sorted(Map.Entry.comparingByValue())
+                        .forEach(e -> snippets.put(e.getKey(), buildStringSet(clb, e.getValue())));
+                return snippets;
+            }
+
+            /*
+             * Enum set support
+             */
             private <T extends Enum<T>> Snippet buildEnumSet(ClassBuilder clb, SetReference<T> setRef) {
                 return cacheBuilder.transform(setRef,
                         new SetSnippetBuilder(CD_Object)
                                 .classBuilder(clb)
-                                .activatePagingThreshold(PAGING_THRESHOLD)
                                 .ownerClassDesc(owner)
-                                .methodNamePrefix("dedupSet" + setBuilt++)
-                                .pageSize(ENUM_PAGE_SIZE)
+                                .enablePagination("dedupSet" + setBuilt++, ENUM_PAGE_SIZE)
                                 .build(Snippet.buildAll(setRef.elements(), Snippet::loadEnum)));
-            }
-
-            private Map<Set<String>, Snippet> buildStringSets(ClassBuilder clb, Map<Set<String>, SetReference<String>> map) {
-                Map<Set<String>, Snippet> snippets = new HashMap<>(map.size());
-                map.entrySet().forEach(entry -> snippets.put(entry.getKey(),
-                        buildStringSet(clb, entry.getValue())));
-                return snippets;
             }
 
             private <T extends Enum<T>> Map<Set<T>, Snippet> buildEnumSets(ClassBuilder clb, Map<Set<T>, SetReference<T>> map) {
                 Map<Set<T>, Snippet> snippets = new HashMap<>(map.size());
-                map.entrySet().forEach(entry -> snippets.put(entry.getKey(),
-                        buildEnumSet(clb, entry.getValue())));
+                map.entrySet().stream()
+                        .sorted(Map.Entry.comparingByValue())
+                        .forEach(e -> snippets.put(e.getKey(), buildEnumSet(clb, e.getValue())));
                 return snippets;
             }
 
+            /*
+             * Build snippets for all sets and optionally the cache.
+             */
             DedupSet build(ClassBuilder clb) {
                 return new DedupSet(
                     buildStringSets(clb, stringSets),
@@ -1132,13 +1155,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             }
 
             /*
-             * SetReference count references to the set, and use LoadableSet under the hood to
-             * support paginiation as needed.
-             * For sets referenced more than once, a cache is used to store the pre-built result
-             * and load from there. Otherwise, the set is built in place and load onto the operand
-             * stack.
+             * SetReference count references to the set, and keeps sorted elements to ensure
+             * generate same bytecode for a given set.
+             * SetReference itself needs ordering to ensure generate same bytecode for the cache.
              */
-            class SetReference<T extends Comparable<T>> {
+            class SetReference<T extends Comparable<T>> implements Comparable<SetReference<T>> {
                 // sorted elements of the set to ensure same generated code
                 private final List<T> elements;
                 private int refCount;
@@ -1158,8 +1179,32 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 List<T> elements() {
                     return elements;
                 }
+
+                @Override
+                public int compareTo(SetReference<T> o) {
+                    if (o == this) {
+                        return 0;
+                    }
+                    if (elements.size() == o.elements.size()) {
+                        var a1 = elements;
+                        var a2 = o.elements;
+                        for (int i = 0; i < elements.size(); i++) {
+                            var r = a1.get(i).compareTo(a2.get(i));
+                            if (r != 0) {
+                                return r;
+                            }
+                        }
+                        return 0;
+                    } else {
+                        return elements.size() - o.elements.size();
+                    }
+                }
             }
 
+            /**
+             * Build an array to host sets referenced more than once so a given set will only be constructed once.
+             * Transform the bytecode for loading the set onto the operand stack as needed.
+             */
             class CacheBuilder {
                 private static final String VALUES_ARRAY = "dedupSetValues";
                 final ArrayList<Snippet> cachedValues = new ArrayList<>();
@@ -1177,6 +1222,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                            .aaload();
                 }
 
+                /**
+                 * Transform the bytecode for loading the set onto the operand stack.
+                 * @param loadSnippet The origin snippet to load the set onto the operand stack.
+                 */
                 Snippet transform(SetReference<?> setRef, Snippet loadSnippet) {
                     if (setRef.refCount() > 1) {
                         cachedValues.add(loadSnippet);
@@ -1187,22 +1236,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
 
                 /*
-                * Adding provider methods to the class. For those set used more than once, built
-                * once and keep the reference for later access.
-                * Return a snippet to setup the cache <clinit>.
-                *
-                * The returned snippet would set up the set referenced more than once,
-                *
-                * static final Set[] dedupSetValues;
-                *
-                * static {
-                *     dedupSetValues = new Set[countOfStoredValues];
-                *     dedupSetValues[0] = Set.of(elements); // elements no more than SET_SIZE_THRESHOLD
-                *     dedupSetValues[1] = dedup<setWithIndex>Provider(); // set elements more than SET_SIZE_THRESHOLD
-                *     ...
-                *     dedupSetValues[countOfStoredValues - 1] = ...
-                * }
-                */
+                 * Facilitate the cache in the class. Return a snippet to populate the cache in <clinit>.
+                 *
+                 * The generated cache is essentially as the following:
+                 *
+                 * static final Set[] dedupSetValues;
+                 *
+                 * static {
+                 *     dedupSetValues = new Set[countOfStoredValues];
+                 *     dedupSetValues[0] = Set.of(elements); // for inline set
+                 *     dedupSetValues[1] = dedupSet<setIndex>0(); // for paginated set
+                 *     ...
+                 *     dedupSetValues[countOfStoredValues - 1] = ...
+                 * }
+                 */
                 Optional<Snippet> build(ClassBuilder clb) {
                     if (cachedValues.isEmpty()) {
                         return Optional.empty();
@@ -1210,10 +1257,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                     var cacheValuesArray = new ArraySnippetBuilder(CD_Set)
                             .classBuilder(clb)
-                            .activatePagingThreshold(PAGING_THRESHOLD)
                             .ownerClassDesc(owner)
-                            .methodNamePrefix(VALUES_ARRAY)
-                            .pageSize(2000)
+                            .enablePagination(VALUES_ARRAY)
                             .build(cachedValues.toArray(Snippet[]::new));
 
                     clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);

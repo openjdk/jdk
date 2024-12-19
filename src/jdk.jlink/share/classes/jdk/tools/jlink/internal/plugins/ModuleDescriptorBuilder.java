@@ -42,17 +42,20 @@ import java.util.List;
 import java.util.Set;
 
 import static jdk.tools.jlink.internal.Snippets.*;
+import static jdk.tools.jlink.internal.Snippets.CollectionSnippetBuilder.STRING_PAGE_SIZE;
 
 import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.ModuleInfo;
 import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.SystemModulesClassGenerator.DedupSet;
 
+/**
+ * Build a Snippet to load a ModuleDescriptor onto the operand stack.
+ */
 class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo> {
     private static final ClassDesc CD_MODULE_DESCRIPTOR =
         ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor");
     private static final ClassDesc CD_MODULE_BUILDER =
         ClassDesc.ofInternalName("jdk/internal/module/Builder");
 
-    private static final int PAGING_THRESHOLD = 512;
     private final DedupSet dedupSet;
     private final ClassDesc ownerClassDesc;
     private final ClassBuilder clb;
@@ -159,11 +162,9 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
 
         private Snippet buildRequiresArray(ClassBuilder clb) {
             return new ArraySnippetBuilder(CD_REQUIRES)
+                    .enablePagination("module" + index + "Requires")
                     .classBuilder(clb)
-                    .activatePagingThreshold(PAGING_THRESHOLD)
                     .ownerClassDesc(ownerClassDesc)
-                    .methodNamePrefix("module" + index + "Requires")
-                    .pageSize(2000) // number safe for a single page helper under 64K size limit
                     .build(Snippet.buildAll(sorted(md.requires()), this::loadRequire));
         }
 
@@ -199,10 +200,8 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
         private Snippet buildExportsArray(ClassBuilder clb) {
             return new ArraySnippetBuilder(CD_EXPORTS)
                     .classBuilder(clb)
-                    .activatePagingThreshold(PAGING_THRESHOLD)
                     .ownerClassDesc(ownerClassDesc)
-                    .methodNamePrefix("module" + index + "Exports")
-                    .pageSize(2000) // number safe for a single page helper under 64K size limit
+                    .enablePagination("module" + index + "Exports")
                     .build(Snippet.buildAll(sorted(md.exports()), this::loadExports));
         }
 
@@ -239,10 +238,8 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
         private Snippet buildOpensArray(ClassBuilder clb) {
             return new ArraySnippetBuilder(CD_OPENS)
                     .classBuilder(clb)
-                    .activatePagingThreshold(PAGING_THRESHOLD)
                     .ownerClassDesc(ownerClassDesc)
-                    .methodNamePrefix("module" + index + "Opens")
-                    .pageSize(2000) // number safe for a single page helper under 64K size limit
+                    .enablePagination("module" + index + "Opens")
                     .build(Snippet.buildAll(sorted(md.opens()), this::loadOpens));
         }
 
@@ -257,9 +254,8 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
             return cob -> {
                 var providersArray = new ArraySnippetBuilder(CD_String)
                         .classBuilder(clb)
-                        .activatePagingThreshold(PAGING_THRESHOLD)
                         .ownerClassDesc(ownerClassDesc)
-                        .methodNamePrefix("module" + index + "Provider" + offset)
+                        .enablePagination("module" + index + "Provider" + offset)
                         .pageSize(STRING_PAGE_SIZE)
                         .build(Snippet.buildAll(provide.providers(), Snippet::loadConstant));
 
@@ -279,19 +275,16 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
             IndexedElementSnippetBuilder<Provides> builder = (e, i) -> loadProvides(clb, e, i);
             return new ArraySnippetBuilder(CD_PROVIDES)
                     .classBuilder(clb)
-                    .activatePagingThreshold(PAGING_THRESHOLD)
                     .ownerClassDesc(ownerClassDesc)
-                    .methodNamePrefix("module" + index + "Provides")
-                    .pageSize(2000) // number safe for a single page helper under 64K size limit
+                    .enablePagination("module" + index + "Provides")
                     .build(builder.buildAll(md.provides()));
         }
 
         private Snippet buildPackagesSet(ClassBuilder clb, Collection<String> packages) {
             return new SetSnippetBuilder(CD_String)
                     .classBuilder(clb)
-                    .activatePagingThreshold(PAGING_THRESHOLD)
                     .ownerClassDesc(ownerClassDesc)
-                    .methodNamePrefix("module" + index + "Packages")
+                    .enablePagination("module" + index + "Packages")
                     .pageSize(STRING_PAGE_SIZE)
                     .build(Snippet.buildAll(sorted(packages), Snippet::loadConstant));
         }
