@@ -32,81 +32,116 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Objects;
 
 /**
- * Specifies a set of parameters used by a {@code Cipher} for the
- * Hybrid Public Key Encryption (HPKE) algorithm. HPKE is defined
- * in https://datatracker.ietf.org/doc/rfc9180/. The <a href=
+ * This immutable class specifies the set of parameters used with a {@code Cipher} for the
+ * <a href="https://www.rfc-editor.org/info/rfc9180">Hybrid Public Key Encryption</a>
+ * (HPKE) algorithm. The <a href=
  * "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
- * standard algorithm name</a> of the cipher is "HPKE".
+ * standard algorithm name</a> for the cipher is "HPKE".
  * <p>
- * In HPKE, The sender is always initialized with the recipient's public key
- * in encrypt mode, and the recipient is always initialized with its own
- * private key in decrypt mode.
+ * In HPKE, the {@code Cipher} object on the sender side is always initialized
+ * with the recipient's public key in {@linkplain Cipher#ENCRYPT_MODE encrypt mode},
+ * and {@code Cipher} object on the recipient side is always initialized with
+ * its own private key in {@linkplain Cipher#DECRYPT_MODE decrypt mode}.
  * <p>
- * The HPKE cipher initialization can include an optional
- * {@code HPKEParameterSpec} object.
+ * An {@code HPKEParameterSpec} object can be provided at HPKE
+ * {@linkplain Cipher#init(int, Key, AlgorithmParameterSpec) cipher initialization}.
  * <p>
- * An {@code HPKEParameterSpec} object can be created in two ways. The
- * {@link #of()} method returns one whose identifiers for the KEM, KDF, and
- * AEAD algorithms used by HPKE will be determined by the type of key provided
- * to the {@code init()} method. The {@link #of(int, int, int)} method returns
- * one whose KEM, KDF, and AEAD algorithms are determined by the numeric
- * identifiers provided. The identifiers provided to this method must not be zero.
+ * An {@code HPKEParameterSpec} object can be created in two ways.
+ * <ul>
+ * <li> The {@link #of()} method creates an object whose KEM, KDF, and AEAD
+ * algorithms are determined by the type of key provided to the {@code init()}
+ * method.
+ * <li>
+ * The {@link #of(int, int, int)} method creates an object whose KEM, KDF,
+ * and AEAD algorithms are determined by the specified numeric identifiers,
+ * which must not be zero.
+ * </ul>
+ * The terms "KEM algorithm identifiers", "KDF algorithm identifiers", and
+ * "AEAD algorithm identifiers" refer to the numeric values (for example,
+ * {@code kem_id}, {@code kdf_id}, and {@code aead_id}) as defined in
+ * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-7">Section 7</a>
+ * of RFC 9180 and the
+ * <a href="https://www.iana.org/assignments/hpke/hpke.xhtml">IANA HPKE page</a>.
  * <p>
- * After an {@code HPKEParameterSpec} object is created, it can call several
- * other methods to generate a new {@code HPKEParameterSpec} object with
+ * Once an {@code HPKEParameterSpec} object is created, additional methods
+ * are available to generate new {@code HPKEParameterSpec} objects with
  * different features:
  * <ul>
  * <li>
- * An application-supplied information can be provided using the
- * {@link #info(byte[])} method by both parties.
+ * Application-supplied information can be provided using the
+ * {@link #info(byte[])} method by both sides.
  * <li>
  * If HPKE modes {@code mode_auth} or {@code mode_auth_psk} are used,
- * the keys for authentication must be provided using the
+ * the asymmetric keys for authentication must be provided using the
  * {@link #authKey(Key)} method. Precisely, the sender must call this method
  * with its own private key and the recipient must call it with the sender's
  * public key.
  * <li>
  * If HPKE modes {@code mode_psk} or {@code mode_auth_psk} are used,
  * the pre-shared key for authentication and its identifier must be provided
- * using the {@link #psk(SecretKey, byte[])} method by both parties.The key
- * and the identifier must not be empty.
+ * using the {@link #psk(SecretKey, byte[])} method by both sides.
  * <li>
  * In HPKE, a shared secret is negotiated during the KEM step and a key
  * encapsulation message must be transmitted from the sender to the recipient
  * so that the recipient can recover this shared secret. On the sender side,
  * the key encapsulation message can be retrieved using the {@link Cipher#getIV()}
  * method after the cipher is initialized. On the recipient side, the key
- * encapsulation message is provided using the {@link #encapsulation(byte[])}
+ * encapsulation message can be provided using the {@link #encapsulation(byte[])}
  * method.
  * </ul>
- * For successful interoperability, both parties need to supply identical
+ * For successful interoperability, both sides need to supply identical
  * {@code info}, {@code psk}, and {@code psk_id} or matching authentication
- * keys if provided.
+ * keys if provided. For details about HPKE modes, refer to
+ * <a href="https://www.rfc-editor.org/rfc/rfc9180.html#section-5">Section 5</a>
+ * of RFC 9180.
  * <p>
  * If the sender cipher is initialized without parameters, it assumes a
  * default parameters object is used, which is equivalent to
  * {@code HPKEParameterSpec.of()}. The recipient cipher can also be initialized
  * with a {@code new IvParameterSpec(encap)} object, which is equivalent to
  * {@code HPKEParameterSpec.of().encapsulation(encap)}. In either case, the
- * cipher always work in {@code mode_base} mode with an empty {@code info}.
- *
+ * cipher always works in {@code mode_base} mode with an empty {@code info}.
+ * If the recipient side is initialized without any parameters, an
+ * {@code InvalidKeyException} will be thrown.
  * <p>
+ * At HPKE cipher initialization, if no HPKE implementation supports the provided
+ * key type, an {@code InvalidKeyException} should be thrown. If an
+ * {@code HPKEParameterSpec} is provided but it is not supported by any HPKE
+ * implementation, an {@code InvalidAlgorithmParameterException} will be thrown.
+ * For example:
+ * <ul>
+ * <li> The algorithm identifiers do not match the provided key type.
+ * <li> An attempt to use {@code authKey(key)} is made with an incompatible key.
+ * <li> An attempt to use {@code authKey(key)} is made but the selected KEM
+ *      does not support authentication.
+ * </ul>
  * Example:
  * {@snippet lang = java:
+ * // Key pair generation
  * var g = KeyPairGenerator.getInstance("X25519");
  * var kp = g.generateKeyPair();
+ *
+ * // The HPKE sender side is initialized with the recipient's public key
  * var sender = Cipher.getInstance("HPKE");
  * var ps = HPKEParameterSpec.of()
  *         .info("this_info".getBytes(StandardCharsets.UTF_8));
  * sender.init(Cipher.ENCRYPT_MODE, kp.getPublic(), ps);
- * var receiver = Cipher.getInstance("HPKE");
+ *
+ * // Retrieve the key encapsulation message (the KEM output) from the sender
+ * var kemEncap = sender.getIV();
+ *
+ * // The HPKE recipient side is initialized with its own private key
+ * // and the key encapsulation message from the sender
+ * var recipient = Cipher.getInstance("HPKE");
  * var pr = HPKEParameterSpec.of()
  *         .info("this_info".getBytes(StandardCharsets.UTF_8))
- *         .encapsulation(sender.getIV());
- * receiver.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
+ *         .encapsulation(kemEncap);
+ * recipient.init(Cipher.DECRYPT_MODE, kp.getPrivate(), pr);
+ *
+ * // Secure communication between the 2 sides
  * var msg = "Hello World".getBytes(StandardCharsets.UTF_8);
  * var ct = sender.doFinal(msg);
- * var pt = receiver.doFinal(ct);
+ * var pt = recipient.doFinal(ct);
  *
  * assert Arrays.equals(msg, pt);
  * }
@@ -114,17 +149,38 @@ import java.util.Objects;
  * @implNote
  * In the HPKE implementation in the SunJCE provider included in this JDK
  * implementation, {@code HPKEParameterSpec.of()} chooses the following
- * KEM, KDF, and AEAD algorithms depending on the key used:
- * <ul>
- * <li>For EC key on the secp256r1 curve, the kem_id is 0x10, and the kdf_id is 0x1.
- * <li>For EC key on the secp384r1 curve, the kem_id is 0x11, and the kdf_id is 0x2.
- * <li>For EC key on the secp521r1 curve, the kem_id is 0x12, and the kdf_id is 0x3.
- * <li>For XDH key on the x25519 curve, the kem_id is 0x20, and the kdf_id is 0x1.
- * <li>For XDH key on the x448 curve, the kem_id is 0x21, and the kdf_id is 0x3.
- * </ul>
- * The aead_id is always 0x2. Other keys are not supported.
- * <p>
- * The {@code mode_auth} and {@code mode_auth_psk} modes are not supported.
+ * KEM, KDF, and AEAD algorithms depending on the provided key type:
+ * <table class="striped">
+ * <caption style="display:none">Default Algorithm Identifiers</caption>
+ * <thead>
+ * <tr><th scope="col">key type
+ *     <th scope="col">{@code kem_id}
+ *     <th scope="col">{@code kdf_id}
+ *     <th scope="col">{@code aead_id}
+ * </thead>
+ * <tbody>
+ * <tr><td scope="row">EC (secp256r1)
+ *     <td scope="row">0x10<br>DHKEM(P-256, HKDF-SHA256)
+ *     <td scope="row">0x1<br>HKDF-SHA256
+ *     <td scope="row" rowspan="5">0x2<br>AES-256-GCM
+ * <tr><td scope="row">EC (secp384r1)
+ *     <td scope="row">0x11<br>DHKEM(P-384, HKDF-SHA384)
+ *     <td scope="row">0x2<br>HKDF-SHA384
+ * <tr><td scope="row">EC (secp521r1)
+ *     <td scope="row">0x12<br>DHKEM(P-521, HKDF-SHA512)
+ *     <td scope="row">0x3<br>HKDF-SHA512
+ * <tr><td scope="row">XDH (X25519)
+ *     <td scope="row">0x20<br>DHKEM(X25519, HKDF-SHA256)
+ *     <td scope="row">0x1<br>HKDF-SHA256
+ * <tr><td scope="row">XDH (X448)
+ *     <td scope="row">0x21<br>DHKEM(X448, HKDF-SHA512)
+ *     <td scope="row">0x3<br>HKDF-SHA512
+ * </tbody>
+ * </table>
+ * No other keys are supported.
+ *
+ * @spec https://www.rfc-editor.org/info/rfc9180
+ *      RFC 9180: Hybrid Public Key Encryption
  */
 public final class HPKEParameterSpec implements AlgorithmParameterSpec {
 
