@@ -135,8 +135,6 @@ serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
-serviceability/dcmd/vm/SystemDumpMapTest.java 8340401 windows-all
-serviceability/dcmd/vm/SystemMapTest.java 8340401 windows-all
 
 serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64

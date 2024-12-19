@@ -264,7 +264,7 @@ public class LinkTaglet extends BaseTaglet {
                 }
             }
             String refMemName = refFragment;
-            if (config.currentTypeElement != containing) {
+            if (htmlWriter.getCurrentTypeElement() != containing) {
                 refMemName = (utils.isConstructor(refMem))
                         ? refMemName
                         : utils.getSimpleName(containing) + "." + refMemName;

@@ -164,6 +164,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
 
         {"history.with.ts", "- \u7531 \"%1$s\" \u7B7E\u540D\n    \u6458\u8981\u7B97\u6CD5: %2$s\n    \u7B7E\u540D\u7B97\u6CD5: %3$s, %4$s\n  \u7531 \"%6$s\" \u4E8E %5$tc \u52A0\u65F6\u95F4\u6233\n    \u65F6\u95F4\u6233\u6458\u8981\u7B97\u6CD5: %7$s\n    \u65F6\u95F4\u6233\u7B7E\u540D\u7B97\u6CD5: %8$s, %9$s"},
         {"history.without.ts", "- \u7531 \"%1$s\" \u7B7E\u540D\n    \u6458\u8981\u7B97\u6CD5: %2$s\n    \u7B7E\u540D\u7B97\u6CD5: %3$s, %4$s"},
+        {"history.nonexistent.entries", "\u8B66\u544A\uFF1A\u4E0D\u5B58\u5728\u7684\u7B7E\u540D\u6761\u76EE\uFF1A "},
         {"history.unparsable", "- \u65E0\u6CD5\u89E3\u6790\u7684\u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6587\u4EF6 %s"},
         {"history.nosf", "- \u7F3A\u5C11\u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6587\u4EF6 META-INF/%s.SF"},
         {"history.nobk", "- \u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6587\u4EF6 META-INF/%s.SF \u7F3A\u5C11\u5757\u6587\u4EF6"},
@@ -178,6 +179,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"key.bit.disabled", "%d \u4F4D\u5BC6\u94A5\uFF08\u7981\u7528\uFF09"},
         {"key.bit.eccurve.disabled", "%1$d \u4F4D %2$s \u5BC6\u94A5\uFF08\u7981\u7528\uFF09"},
         {"unknown.size", "\u672A\u77E5\u5927\u5C0F"},
+        {"nonexistent.entries.found", "\u6B64 jar \u7684\u6587\u4EF6\u5305\u542B\u4E0D\u5B58\u5728\u7684\u7B7E\u540D\u6761\u76EE\u3002\u6709\u5173\u66F4\u591A\u8BE6\u7EC6\u4FE1\u606F\uFF0C\u8BF7\u53C2\u89C1 -verbose \u8F93\u51FA\u3002"},
         {"external.file.attributes.detected", "\u68C0\u6D4B\u5230 POSIX \u6587\u4EF6\u6743\u9650\u548C/\u6216 symlink \u5C5E\u6027\u3002\u8FD9\u4E9B\u5C5E\u6027\u5728\u8FDB\u884C\u7B7E\u540D\u65F6\u4F1A\u88AB\u5FFD\u7565\uFF0C\u4E0D\u53D7\u8BE5\u7B7E\u540D\u7684\u4FDD\u62A4\u3002"},
 
         {"jarsigner.", "jarsigner: "},

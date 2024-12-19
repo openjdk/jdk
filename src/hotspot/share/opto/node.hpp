@@ -1999,6 +1999,10 @@ Compile::locate_node_notes(GrowableArray<Node_Notes*>* arr,
   return arr->at(block_idx) + (idx & (_node_notes_block_size-1));
 }
 
+inline Node_Notes* Compile::node_notes_at(int idx) {
+  return locate_node_notes(_node_note_array, idx, false);
+}
+
 inline bool
 Compile::set_node_notes_at(int idx, Node_Notes* value) {
   if (value == nullptr || value->is_clear())

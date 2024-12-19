@@ -270,7 +270,7 @@ public class HtmlLinkFactory {
             TypeElement enclosing = utils.getEnclosingTypeElement(linkInfo.getTargetMember());
             Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
             if (flags.contains(ElementFlag.PREVIEW) && enclosingFlags.contains(ElementFlag.PREVIEW)) {
-                if (enclosing.equals(m_writer.getCurrentPageElement())) {
+                if (enclosing.equals(m_writer.getCurrentTypeElement())) {
                     //skip the PREVIEW tag:
                     flags = EnumSet.copyOf(flags);
                     flags.remove(ElementFlag.PREVIEW);
@@ -294,7 +294,7 @@ public class HtmlLinkFactory {
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
                 DocPath fileName = getPath(linkInfo);
-                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentPageElement()) {
+                if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentTypeElement()) {
                         link.add(m_writer.links.createLink(
                                 fileName.fragment(linkInfo.getFragment()),
                                 label, linkInfo.getStyle(), linkInfo.getTitle()));
