@@ -95,16 +95,6 @@ public:
 // a single compilation. It is created on demand (if memstat is active) and tied to the
 // CompilerThread.
 class ArenaState : public CHeapObj<mtCompiler> {
-  // Note, Peaks: we differentiate between:
-  // - the "total peak" - when did the memory consumption peak during the compilation, and
-  //   how did the individual phases and arena types contribute
-  // - "phase-local peaks" - what is the highest footprint each individual phase allocated,
-  //   even if it did not happen to be part of the global peak.
-  // The former is useful for analyzing situations where we hit a memory limit - in that
-  // case, we want to know the composition of the triggering footprint. But since the former
-  // can hide substantial per-phase peaks that were not part of the global peak footprint (e.g.
-  // large allocations in temporary arenas that got destroyed when the phase ended), we also
-  // keep record of phase-local peaks.
 
   // Bytes total now
   size_t _current;
@@ -114,8 +104,6 @@ class ArenaState : public CHeapObj<mtCompiler> {
   ArenaCounterTable _counters_current;
   // Bytes per arena/phase when we last reached the global peak
   ArenaCounterTable _counters_at_global_peak;
-  // Phase-local peaks per arena/phase
-  ArenaCounterTable _counters_local_peaks;
 
   // Number of live nodes now (C2 only)
   unsigned _live_nodes_current;
@@ -173,8 +161,6 @@ public:
   size_t peak() const { return _peak; }
   // Bytes per arena/phase when we last reached the global peak
   const ArenaCounterTable& counters_at_global_peak() const { return _counters_at_global_peak; }
-  // Phase-local peaks per arena/phase
-  const ArenaCounterTable& counters_local_peaks() const { return _counters_local_peaks; }
   // Number of live nodes at global peak (C2 only)
   unsigned live_nodes_at_global_peak() const { return _live_nodes_at_global_peak; }
 };

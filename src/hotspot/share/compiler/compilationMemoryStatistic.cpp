@@ -135,7 +135,6 @@ void ArenaState::reset() {
   _current = _peak = 0;
   _counters_current.reset();
   _counters_at_global_peak.reset();
-  _counters_local_peaks.reset();
   _live_nodes_current = _live_nodes_at_global_peak = 0;
   _limit = 0;
   _hit_limit = false;
@@ -214,12 +213,6 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
     rc = true;
   }
 
-  // Did we reach a phase-local peak?
-  const size_t s = _counters_current.at(phase_id, arena_tag);
-  if (_counters_local_peaks.at(phase_id, arena_tag) < s) {
-    _counters_local_peaks.set(s, phase_id, arena_tag);
-  }
-
   // calculate arena chunk stamp
   chunkstamp_t cs;
   cs.tracked = 1;
@@ -268,8 +261,6 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
     if (_comp_type == CompilerType::compiler_c2) {
       st->print_cr("----- Peak composition by phase and arena type -----");
       _counters_at_global_peak.print_on(st, false);
-      st->print_cr("----- Phase-local peaks ----------------------------");
-      _counters_local_peaks.print_on(st, false);
       st->print_cr("----------------------------------------------------");
     }
 #endif
@@ -281,14 +272,15 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
 #ifdef ASSERT
 void ArenaState::verify() const {
   assert(_current <= _peak, "Sanity");
-  for (int arenatag = 0; arenatag < ArenaTag::max; arenatag ++) {
-    for (int phaseid = 0; phaseid < PhaseTrcId::max; phaseid ++) {
-      assert(_counters_local_peaks.at(phaseid, arenatag) >=
-             _counters_current.at(phaseid, arenatag), "Sanity");
-      assert(_counters_local_peaks.at(phaseid, arenatag) >=
-             _counters_at_global_peak.at(phaseid, arenatag), "Sanity");
+#ifdef COMPILER2
+  size_t sum = 0;
+  for (int phaseid = 0; phaseid < PhaseTrcId::max; phaseid++) {
+    for (int arenatag = 0; arenatag < ArenaTag::max; arenatag ++) {
+      sum += _counters_at_global_peak.at(phaseid, arenatag);
     }
   }
+  assert(sum == _peak, "per phase counter mismatch - %zu, expected %zu", sum, _peak);
+#endif
 }
 #endif // ASSERT
 
@@ -407,6 +399,7 @@ public:
     _peak = state->peak();
     _live_nodes_at_global_peak = state->live_nodes_at_global_peak();
     state->counters_at_global_peak().summarize(_peak_composition_per_arena_tag);
+#ifdef COMPILER2
     if (_comp_type == CompilerType::compiler_c2) {
       // Only store per phase details for C2 to save memory. Should we ever introduce something like phases for
       // other compilers, this needs to be changed to a possibly more generic solution.
@@ -414,8 +407,8 @@ public:
         _per_phase_counters = NEW_C_HEAP_OBJ(PerPhaseCounters, mtInternal);
       }
       _per_phase_counters->counters_at_global_peak.copy_from(state->counters_at_global_peak());
-      _per_phase_counters->counters_local_peaks.copy_from(state->counters_local_peaks());
     }
+#endif // COMPILER2
   }
 
   void set_result(const char* s) { _result = s; }

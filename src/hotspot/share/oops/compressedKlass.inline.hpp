@@ -32,6 +32,8 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+extern volatile int XXX;
+
 inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v, address narrow_base_base, int shift) {
   return (Klass*)((uintptr_t)narrow_base_base +((uintptr_t)v << shift));
 }
