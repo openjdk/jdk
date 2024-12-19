@@ -205,6 +205,8 @@ bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
 
 bool DirectiveSet::should_collect_memstat() const {
   // MemLimit requires the memory statistic to be active
+  // Note: in debug builds memlimits are enabled by default, so this almost always fires unless
+  // memlimit had been deactivated with -XX:CompileCommand,...,0
   return MemStatOption > 0 || MemLimitOption != 0;
 }
 

@@ -64,6 +64,7 @@ public:
   }
 
   static inline void on_arena_chunk_allocation(size_t size, int arenatag, uint64_t* stamp) {
+    (*stamp) = 0; // defaults to "not tracked"
     if (enabled()) {
       on_arena_chunk_allocation_0(size, arenatag, stamp);
     }

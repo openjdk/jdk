@@ -182,6 +182,7 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
 
   // Inform compilation memstat
   if (c->stamp() != 0) {
+    assert(CompilationMemoryStatistic::enabled(), "must be");
     Thread* const t = Thread::current();
     if (t != nullptr && t->is_Compiler_thread()) {
       CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());

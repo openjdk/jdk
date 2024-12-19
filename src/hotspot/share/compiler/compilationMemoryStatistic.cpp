@@ -63,15 +63,11 @@ union chunkstamp_t {
 STATIC_ASSERT(sizeof(chunkstamp_t) == sizeof(chunkstamp_t::raw));
 
 ArenaCounterTable::ArenaCounterTable() {
-  reset();
+  memset(_v, 0, sizeof(_v));
 }
 
 void ArenaCounterTable::copy_from(const ArenaCounterTable& other) {
   memcpy(_v, other._v, sizeof(_v));
-}
-
-void ArenaCounterTable::reset() {
-  memset(_v, 0, sizeof(_v));
 }
 
 void ArenaCounterTable::summarize(size_t out[ArenaTag::max]) const {
@@ -118,17 +114,7 @@ void ArenaCounterTable::print_on(outputStream* st, bool human_readable) const {
   }
 }
 
-PhaseIdStack::PhaseIdStack() {
-  reset();
-}
-
-void PhaseIdStack::reset() {
-  _depth = 0;
-}
-
-ArenaState::ArenaState() {
-  reset();
-}
+PhaseIdStack::PhaseIdStack() : _depth(0) {}
 
 void FootprintMovementTracker::print_entry_on(outputStream* st, int pos) const {
   const Entry& e = _entries[pos];
@@ -162,48 +148,18 @@ void FootprintMovementTracker::on_phase_start(PhaseTrcId id, size_t cur_abs) {
   e.start = e.cur = e.peak = cur_abs;
 }
 
-void FootprintMovementTracker::reset() {
-  _pos = -1;
-}
-
-void ArenaState::reset() {
-  _current = _peak = 0;
-  _counters_current.reset();
-  _counters_at_global_peak.reset();
-  _live_nodes_current = _live_nodes_at_global_peak = 0;
-  _limit = 0;
-  _hit_limit = false;
-  _limit_in_process = false;
-  _active = false;
-  _phase_id_stack.reset();
-  _comp_type = CompilerType::compiler_none;
-  _comp_id = 0;
-  _movement_tracker.reset();
-}
-
-void ArenaState::start(CompilerType comp_type, int comp_id, size_t limit) {
-  reset();
-  _comp_type = comp_type;
-  _comp_id = comp_id;
-  _active = true;
-  _limit = limit;
-}
-
-void ArenaState::end() {
-  _limit = 0;
-  _hit_limit = false;
-  _active = false;
-  DEBUG_ONLY(verify();)
-}
+ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit) :
+    _current(0), _peak(0), _live_nodes_current(0), _live_nodes_at_global_peak(0),
+    _limit(limit), _hit_limit(false), _limit_in_process(false),
+    _comp_type(comp_type), _comp_id(comp_id)
+{}
 
 void ArenaState::on_phase_start(PhaseTrcId id) {
-  assert(_active, "compilation has not yet started");
   _phase_id_stack.push(id);
   _movement_tracker.on_phase_start(id, _peak);
 }
 
 void ArenaState::on_phase_end(PhaseTrcId id) {
-  assert(_active, "compilation has not yet started");
   _phase_id_stack.pop(id);
   _movement_tracker.on_phase_start(_phase_id_stack.top(), _peak); // parent phase "restarts"
 }
@@ -225,7 +181,6 @@ int ArenaState::retrieve_live_node_count() const {
 
 // Account an arena allocation. Returns true if new peak reached.
 bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t* stamp) {
-  assert(_active, "compilation has not yet started");
   bool rc = false;
 
   const size_t old_current = _current;
@@ -266,7 +221,6 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
 }
 
 void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
-  assert(_active, "compilation has not yet started");
   assert(_current >= size, "Underflow (%zu %zu)", size, _current);
 
   // Extract tag and phase id from stamp
@@ -666,24 +620,32 @@ void CompilationMemoryStatistic::initialize() {
 
 void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* directive) {
   assert(enabled(), "Not enabled?");
+  assert(directive->should_collect_memstat(), "Don't call if not needed");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaState* const arena_stat = th->arena_stat();
   CompileTask* const task = th->task();
   const CompilerType comp_type = task->compiler()->type();
   const int comp_id = task->compile_id();
   const size_t limit = directive->mem_limit();
-  arena_stat->start(comp_type, comp_id, limit);
+  ArenaState* const arena_stat = new ArenaState(comp_type, comp_id, limit);
+  th->set_arenastat(arena_stat);
   arena_stat->on_phase_start((int)Phase::PhaseTraceId::_t_none);
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
   assert(enabled(), "Not enabled?");
-  ResourceMark rm;
+
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaState* const arena_stat = th->arena_stat();
+  if (arena_stat == nullptr) { // not started
+    return;
+  }
+
   CompileTask* const task = th->task();
+  assert(task->compile_id() == arena_stat->comp_id(), "Different compilation?");
 
   const Method* const m = th->task()->method();
+
+  ResourceMark rm;
   FullMethodName fmn(m);
   fmn.make_permanent();
 
@@ -724,7 +686,9 @@ void CompilationMemoryStatistic::on_end_compilation() {
     tty->print_raw(ss.base());
   }
 
-  arena_stat->end(); // reset things
+  // Mark end of compilation by clearing out the arena state object
+  th->set_arenastat(nullptr);
+  delete arena_stat;
 }
 
 static void inform_compilation_about_oom(CompilerType ct) {
@@ -764,12 +728,10 @@ static void inform_compilation_about_oom(CompilerType ct) {
 
 void CompilationMemoryStatistic::on_arena_chunk_allocation_0(size_t size, int tag, uint64_t* stamp) {
   assert(enabled(), "Not enabled?");
+
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-
-  (*stamp) = 0; // defaults to "not tracked"
-
   ArenaState* const arena_stat = th->arena_stat();
-  if (!arena_stat->is_active()) {
+  if (arena_stat == nullptr) { // not started
     return;
   }
   if (arena_stat->limit_in_process()) {
@@ -836,15 +798,13 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation_0(size_t size, int ta
 void CompilationMemoryStatistic::on_arena_chunk_deallocation_0(size_t size, uint64_t stamp) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-
   ArenaState* const arena_stat = th->arena_stat();
-  if (!arena_stat->is_active()) {
+  if (arena_stat == nullptr) { // not started
     return;
   }
   if (arena_stat->limit_in_process()) {
     return; // avoid recursion on limit hit
   }
-
   arena_stat->on_arena_chunk_deallocation(size, stamp);
 }
 
@@ -852,7 +812,9 @@ void CompilationMemoryStatistic::on_phase_start_0(int phasetraceid) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaState* const arena_stat = th->arena_stat();
-  assert(arena_stat != nullptr, "A compilation should be in process?");
+  if (arena_stat == nullptr) { // not started
+    return;
+  }
   arena_stat->on_phase_start(phasetraceid);
 }
 
@@ -860,7 +822,9 @@ void CompilationMemoryStatistic::on_phase_end_0(int phasetraceid) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaState* const arena_stat = th->arena_stat();
-  assert(arena_stat != nullptr, "A compilation should be in process?");
+  if (arena_stat == nullptr) { // not started
+    return;
+  }
   arena_stat->on_phase_end(phasetraceid);
 }
 

@@ -73,7 +73,6 @@ public:
   inline void set(size_t size, PhaseTrcId id, ArenaTag tag);
   inline void add(size_t size, PhaseTrcId id, ArenaTag tag);
   inline void sub(size_t size, PhaseTrcId id, ArenaTag tag);
-  void reset();
   void print_on(outputStream* ss, bool human_readable) const;
   void summarize(size_t out[ArenaTag::max]) const;
 };
@@ -89,7 +88,6 @@ public:
   inline void push(PhaseTrcId id);
   inline void pop(PhaseTrcId id);
   inline PhaseTrcId top() const;
-  void reset();
 };
 
 class FootprintMovementTracker {
@@ -108,7 +106,6 @@ public:
   inline void register_deallocation(size_t s);
   void print_on(outputStream* st) const;
   void on_phase_start(PhaseTrcId phase, size_t cur_abs);
-  void reset();
 };
 
 // ArenaState is the central data structure holding all statistics and temp data during
@@ -131,33 +128,24 @@ class ArenaState : public CHeapObj<mtCompiler> {
   unsigned _live_nodes_at_global_peak;
 
   // MemLimit handling
-  size_t _limit;
+  const size_t _limit;
   bool _hit_limit;
   bool _limit_in_process;
-
-  // When to start accounting
-  bool _active;
 
   // Keep track of current C2 phase
   PhaseIdStack _phase_id_stack;
 
   FootprintMovementTracker _movement_tracker;
 
-  CompilerType _comp_type;
-  int _comp_id;
-
-  void reset();
+  const CompilerType _comp_type;
+  const int _comp_id;
 
   int retrieve_live_node_count() const;
 
   DEBUG_ONLY(void verify() const;)
 
 public:
-  ArenaState();
-
-  // Mark the start and end of a compilation.
-  void start(CompilerType comp_type, int comp_id, size_t limit);
-  void end();
+  ArenaState(CompilerType comp_type, int comp_id, size_t limit);
 
   void on_phase_start(PhaseTrcId id);
   void on_phase_end(PhaseTrcId id);
@@ -174,7 +162,6 @@ public:
   bool   hit_limit() const          { return _hit_limit; }
   bool   limit_in_process() const     { return _limit_in_process; }
   void   set_limit_in_process(bool v) { _limit_in_process = v; }
-  bool   is_active() const          { return _active; }
 
   CompilerType comp_type() const { return _comp_type; }
   int comp_id() const { return _comp_id; }
