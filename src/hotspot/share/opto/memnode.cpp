@@ -2019,13 +2019,10 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   // (Also allow a variable load from a fresh array to produce zero.)
   const TypeOopPtr *tinst = tp->isa_oopptr();
   bool is_instance = (tinst != nullptr) && tinst->is_known_instance_field();
-  bool is_boxed_value = (tinst != nullptr) && tinst->is_ptr_to_boxed_value();
-  if (ReduceFieldZeroing || is_instance || is_boxed_value) {
-    Node* value = can_see_stored_value(mem,phase);
-    if (value != nullptr && value->is_Con()) {
-      assert(value->bottom_type()->higher_equal(_type),"sanity");
-      return value->bottom_type();
-    }
+  Node* value = can_see_stored_value(mem, phase);
+  if (value != nullptr && value->is_Con()) {
+    assert(value->bottom_type()->higher_equal(_type), "sanity");
+    return value->bottom_type();
   }
 
   // Try to guess loaded type from pointer type
