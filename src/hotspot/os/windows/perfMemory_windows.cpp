@@ -1803,7 +1803,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    MemTracker::NmtVirtualMemoryLocker nvml;
     remove_file_mapping(addr);
     MemTracker::record_virtual_memory_release((address)addr, bytes);
   } else {

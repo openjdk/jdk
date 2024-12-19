@@ -141,7 +141,7 @@ void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   {
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    MemTracker::NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }
 

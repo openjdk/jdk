@@ -94,7 +94,7 @@ public:
     size_t size  = 0x01000000;
 
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -171,7 +171,7 @@ public:
     size_t size  = 0x01000000;
 
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -261,7 +261,7 @@ public:
     size_t size  = 0x01000000;
 
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 
@@ -434,7 +434,7 @@ public:
     size_t size  = 0x01000000;
 
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    MemTracker::NmtVirtualMemoryLocker nvml;
 
     address addr = (address)rs.base();
 

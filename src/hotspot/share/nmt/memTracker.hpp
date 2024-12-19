@@ -133,7 +133,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
@@ -159,7 +159,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -170,7 +170,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -178,7 +178,7 @@ class MemTracker : AllStatic {
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    NmtVirtualMemoryLocker nvml;
     return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
@@ -186,7 +186,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::free_file(file);
   }
 
@@ -195,7 +195,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, mem_tag);
   }
 
@@ -204,7 +204,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+    NmtVirtualMemoryLocker nvml;
     MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
@@ -218,7 +218,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
@@ -227,7 +227,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ConditionalMutexLocker cml(NmtVirtualMemory_lock, MemTracker::is_done_bootstrap(), Mutex::_no_safepoint_check_flag);
+      NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
     }
   }
@@ -276,6 +276,14 @@ class MemTracker : AllStatic {
   // Given an unknown pointer, check if it points into a known region; print region if found
   // and return true; false if not found.
   static bool print_containing_region(const void* p, outputStream* out);
+
+  // Same as MutexLocker but can be used during VM init while single threaded and before mutexes are ready or current thread has been assigned.
+  // Performs no action during VM init.
+  class NmtVirtualMemoryLocker: StackObj {
+      ConditionalMutexLocker _cml;
+  public:
+      NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, _done_bootstrap, Mutex::_no_safepoint_check_flag){}
+  };
 
  private:
   static void report(bool summary_only, outputStream* output, size_t scale);
