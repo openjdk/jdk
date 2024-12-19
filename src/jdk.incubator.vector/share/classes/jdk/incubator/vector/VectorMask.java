@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ import java.util.Objects;
  * @param <E> the boxed version of {@code ETYPE},
  *           the element type of a vector
  *
- * <p style="font-size: large; font-weight: bold;">Value-based classes and identity operations</p>
+ * <h2>Value-based classes and identity operations</h2>
  *
  * {@code VectorMask}, along with {@link Vector}, is a
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
