@@ -135,6 +135,10 @@ else ifeq ($(call isTargetCpu, x86_64), true)
   JVM_EXCLUDE_PATTERNS += x86_32
 endif
 
+ifeq ($(call isTargetCpu, riscv64), true)
+  JVM_CFLAGS += $(RVV_CFLAGS)
+endif
+
 JVM_OPTIMIZATION ?= HIGHEST_JVM
 
 # Need to set JVM_STRIPFLAGS to the default value from SPEC since the STRIPFLAGS

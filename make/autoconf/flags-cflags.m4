@@ -916,6 +916,24 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     fi
   fi
   AC_SUBST($2SVE_CFLAGS)
+
+  if test "x$OPENJDK_TARGET_CPU" = "xriscv64"; then
+    AC_MSG_CHECKING([if RVV/vector sigcontext supported])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <linux/ptrace.h>],
+        [
+          return (int)sizeof(struct __riscv_v_ext_state);
+        ])],
+        [
+          AC_MSG_RESULT([yes])
+          $2RVV_CFLAGS=""
+        ],
+        [
+          AC_MSG_RESULT([no])
+          $2RVV_CFLAGS="-DNO_RVV_SIGCONTEXT"
+        ]
+    )
+  fi
+  AC_SUBST($2RVV_CFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
