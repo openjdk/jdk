@@ -1112,7 +1112,7 @@ void TemplateTable::aastore() {
 
   // Pop stack arguments
   __ bind(done);
-  __ add(esp, esp, 3 * Interpreter::stackElementSize);
+  __ addi(esp, esp, 3 * Interpreter::stackElementSize);
 }
 
 void TemplateTable::bastore() {
@@ -1185,12 +1185,12 @@ void TemplateTable::astore(int n) {
 
 void TemplateTable::pop() {
   transition(vtos, vtos);
-  __ add(esp, esp, Interpreter::stackElementSize);
+  __ addi(esp, esp, Interpreter::stackElementSize);
 }
 
 void TemplateTable::pop2() {
   transition(vtos, vtos);
-  __ add(esp, esp, 2 * Interpreter::stackElementSize);
+  __ addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 
 void TemplateTable::dup() {

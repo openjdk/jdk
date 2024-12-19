@@ -266,7 +266,7 @@ void InterpreterMacroAssembler::pop_i(Register r) {
 
 void InterpreterMacroAssembler::pop_l(Register r) {
   ld(r, Address(esp, 0));
-  add(esp, esp, 2 * Interpreter::stackElementSize);
+  addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 
 void InterpreterMacroAssembler::push_ptr(Register r) {
@@ -293,7 +293,7 @@ void InterpreterMacroAssembler::pop_f(FloatRegister r) {
 
 void InterpreterMacroAssembler::pop_d(FloatRegister r) {
   fld(r, Address(esp, 0));
-  add(esp, esp, 2 * Interpreter::stackElementSize);
+  addi(esp, esp, 2 * Interpreter::stackElementSize);
 }
 
 void InterpreterMacroAssembler::push_f(FloatRegister r) {
