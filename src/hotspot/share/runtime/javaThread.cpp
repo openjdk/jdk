@@ -100,6 +100,7 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
@@ -1772,15 +1773,10 @@ void JavaThread::print_jni_stack() {
       tty->print_cr("Unable to print native stack - out of memory");
       return;
     }
+    NativeStackPrinter nsp(this);
     address lastpc = nullptr;
-    if (os::platform_print_native_stack(tty, nullptr, buf, O_BUFLEN, lastpc)) {
-      // We have printed the native stack in platform-specific code,
-      // so nothing else to do in this case.
-    } else {
-      frame f = os::current_frame();
-      VMError::print_native_stack(tty, f, this, true /*print_source_info */,
-                                  -1 /* max stack */, buf, O_BUFLEN);
-    }
+    nsp.print_stack(tty, buf, O_BUFLEN, lastpc,
+                    true /*print_source_info */, -1 /* max stack */ );
   } else {
     print_active_stack_on(tty);
   }

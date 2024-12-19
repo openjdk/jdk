@@ -2553,17 +2553,18 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     // Verify the correct encoding of the poll we're about to skip.
     // See NativeInstruction::is_lwu_to_zr()
     __ lwu(t0, Address(x18));
-    __ andi(t1, t0, 0b0000011);
+    __ andi(t1, t0, 0b1111111);
     __ mv(t2, 0b0000011);
     __ bne(t1, t2, bail); // 0-6:0b0000011
     __ srli(t1, t0, 7);
-    __ andi(t1, t1, 0b00000);
+    __ andi(t1, t1, 0b11111);
     __ bnez(t1, bail);    // 7-11:0b00000
     __ srli(t1, t0, 12);
-    __ andi(t1, t1, 0b110);
+    __ andi(t1, t1, 0b111);
     __ mv(t2, 0b110);
     __ bne(t1, t2, bail); // 12-14:0b110
 #endif
+
     // Adjust return pc forward to step over the safepoint poll instruction
     __ add(x18, x18, NativeInstruction::instruction_size);
     __ sd(x18, Address(fp, frame::return_addr_offset * wordSize));

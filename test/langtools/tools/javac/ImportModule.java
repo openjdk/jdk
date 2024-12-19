@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8328481 8332236 8332890
+ * @bug 8328481 8332236 8332890 8344647
  * @summary Check behavior of module imports.
  * @library /tools/lib
  * @modules java.logging
@@ -33,7 +33,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main ImportModule
-*/
+ */
 
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TaskEvent;
@@ -829,6 +829,7 @@ public class ImportModule extends TestRunner {
         }
     }
 
+    @Test
     public void testPackageImportDisambiguates(Path base) throws Exception {
         Path current = base.resolve(".");
         Path src = current.resolve("src");
@@ -916,6 +917,52 @@ public class ImportModule extends TestRunner {
                          "--module-source-path", src.toString())
                 .outdir(classes)
                 .files(tb.findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll();
+    }
+
+    @Test //JDK-8344647
+    public void testJavaBaseOverride(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path javaBaseClasses = current.resolve("javaBaseClasses");
+        Path javaBase = src.resolve("java.base");
+        tb.writeJavaFiles(javaBase,
+                          """
+                          module java.base {
+                             exports java.lang;
+                          }
+                          """,
+                          """
+                          package java.lang;
+                          public class Object {}
+                          """);
+
+        Files.createDirectories(javaBaseClasses);
+
+        new JavacTask(tb)
+                .options("--patch-module", "java.base=" + src.toString())
+                .outdir(javaBaseClasses)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        Path test = current.resolve("test");
+        tb.writeJavaFiles(test,
+                          """
+                          module test {
+                              requires java.se;
+                          }
+                          """);
+
+        Path classes = current.resolve("classes");
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+                .options("--patch-module", "java.base=" + javaBaseClasses.toString())
+                .outdir(classes)
+                .files(tb.findJavaFiles(test))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
     }
