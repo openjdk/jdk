@@ -760,7 +760,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ load_unsigned_short(rscratch1, Address(rmethod, Method::access_flags_offset()));
+      __ ldrh(rscratch1, Address(rmethod, Method::access_flags_offset()));
       __ andsw(zr, rscratch1, JVM_ACC_STATIC);
       __ br(Assembler::EQ, L_skip_barrier); // non-static
     }

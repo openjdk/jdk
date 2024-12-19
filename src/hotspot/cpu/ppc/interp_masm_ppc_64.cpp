@@ -687,8 +687,8 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
 
     push(state);
 
-    // Skip if we don't have to unlock. (???is this right???)
-    rldicl_(R0, Raccess_flags, 64-JVM_ACC_SYNCHRONIZED_BIT, 63); // Extract bit and compare to 0.
+    // Skip if we don't have to unlock.
+    testbitdi(CCR0, R0, Raccess_flags, JVM_ACC_SYNCHRONIZED_BIT);
     beq(CCR0, Lunlocked);
 
     cmpwi(CCR0, Rdo_not_unlock_flag, 0);
