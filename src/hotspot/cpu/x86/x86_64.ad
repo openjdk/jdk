@@ -6328,12 +6328,23 @@ instruct cmovI_imm_01UCF(rRegI dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %}
 
 instruct cmovI_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst src)));
   ins_cost(200);
   expand %{
     cmovI_regU(cop, cr, dst, src);
   %}
 %}
+
+instruct cmovI_regUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, rRegI src2) %{
+  predicate(UseAPX);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
+  ins_cost(200);
+  expand %{
+    cmovI_regU_ndd(dst, cop, cr, src1, src2);
+  %}
+%}
+
 
 instruct cmovI_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
@@ -6367,6 +6378,7 @@ instruct cmovI_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegI dst, rRegI src) 
 
 // Conditional move
 instruct cmovI_mem(cmpOp cop, rFlagsReg cr, rRegI dst, memory src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
 
   ins_cost(250); // XXX
@@ -6378,8 +6390,23 @@ instruct cmovI_mem(cmpOp cop, rFlagsReg cr, rRegI dst, memory src) %{
 %}
 
 // Conditional move
+instruct cmovI_rReg_rReg_mem_ndd(rRegI dst, cmpOp cop, rFlagsReg cr, rRegI src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
+
+  ins_cost(250); // XXX
+  format %{ "ecmovl$cop $dst, $src1, $src2\t# signed, int ndd" %}
+  ins_encode %{
+    __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Address);
+  %}
+  ins_pipe(pipe_cmov_mem);
+%}
+
+// Conditional move
 instruct cmovI_memU(cmpOpU cop, rFlagsRegU cr, rRegI dst, memory src)
 %{
+  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
 
   ins_cost(250); // XXX
@@ -6391,10 +6418,34 @@ instruct cmovI_memU(cmpOpU cop, rFlagsRegU cr, rRegI dst, memory src)
 %}
 
 instruct cmovI_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegI dst, memory src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary dst (LoadI src))));
   ins_cost(250);
   expand %{
     cmovI_memU(cop, cr, dst, src);
+  %}
+%}
+
+instruct cmovI_rReg_rReg_memU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
+
+  ins_cost(250); // XXX
+  format %{ "ecmovl$cop $dst, $src1, $src2\t# unsigned, int ndd" %}
+  ins_encode %{
+    __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Address);
+  %}
+  ins_pipe(pipe_cmov_mem);
+%}
+
+instruct cmovI_rReg_rReg_memUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegI src1, memory src2) 
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveI (Binary cop cr) (Binary src1 (LoadI src2))));
+  ins_cost(250);
+  expand %{
+    cmovI_rReg_rReg_memU_ndd(dst, cop, cr, src1, src2);
   %}
 %}
 
@@ -6647,12 +6698,26 @@ instruct cmovL_reg_ndd(rRegL dst, cmpOp cop, rFlagsReg cr, rRegL src1, rRegL src
 
 instruct cmovL_mem(cmpOp cop, rFlagsReg cr, rRegL dst, memory src)
 %{
+  predicate(!UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst (LoadL src))));
 
   ins_cost(200); // XXX
   format %{ "cmovq$cop $dst, $src\t# signed, long" %}
   ins_encode %{
     __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Address);
+  %}
+  ins_pipe(pipe_cmov_mem);  // XXX
+%}
+
+instruct cmovL_rReg_rReg_mem_ndd(rRegL dst, cmpOp cop, rFlagsReg cr, rRegL src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src1 (LoadL src2))));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovq$cop $dst, $src1, $src2\t# signed, long ndd" %}
+  ins_encode %{
+    __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Address);
   %}
   ins_pipe(pipe_cmov_mem);  // XXX
 %}
@@ -6712,10 +6777,21 @@ instruct cmovL_imm_01UCF(rRegL dst, immL1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %}
 
 instruct cmovL_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, rRegL src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
   ins_cost(200);
   expand %{
     cmovL_regU(cop, cr, dst, src);
+  %}
+%}
+
+instruct cmovL_regUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, rRegL src2) 
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src1 src2)));
+  ins_cost(200);
+  expand %{
+    cmovL_regU_ndd(dst, cop, cr, src1, src2);
   %}
 %}
 
@@ -6751,6 +6827,7 @@ instruct cmovL_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegL dst, rRegL src) 
 
 instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
 %{
+  predicate(!UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst (LoadL src))));
 
   ins_cost(200); // XXX
@@ -6762,10 +6839,34 @@ instruct cmovL_memU(cmpOpU cop, rFlagsRegU cr, rRegL dst, memory src)
 %}
 
 instruct cmovL_memUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegL dst, memory src) %{
+  predicate(!UseAPX);
   match(Set dst (CMoveL (Binary cop cr) (Binary dst (LoadL src))));
   ins_cost(200);
   expand %{
     cmovL_memU(cop, cr, dst, src);
+  %}
+%}
+
+instruct cmovL_rReg_rReg_memU_ndd(rRegL dst, cmpOpU cop, rFlagsRegU cr, rRegL src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src1 (LoadL src2))));
+
+  ins_cost(200); // XXX
+  format %{ "ecmovq$cop $dst, $src1, $src2\t# unsigned, long ndd" %}
+  ins_encode %{
+    __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Address);
+  %}
+  ins_pipe(pipe_cmov_mem); // XXX
+%}
+
+instruct cmovL_rReg_rReg_memUCF_ndd(rRegL dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegL src1, memory src2) 
+%{
+  predicate(UseAPX);
+  match(Set dst (CMoveL (Binary cop cr) (Binary src1 (LoadL src2))));
+  ins_cost(200);
+  expand %{
+    cmovL_rReg_rReg_memU_ndd(dst, cop, cr, src1, src2);
   %}
 %}
 
