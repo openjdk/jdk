@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @summary Test some basic Template instantiations.
+ * @summary Test some basic Template instantiations. We do not necessarily generate correct
+ *          java code, we just test that the code generation deterministically creates the
+ *          expected String.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver template_framework.tests.TestTemplate
@@ -50,7 +52,7 @@ public class TestTemplate {
         testChoose();
         testFieldsAndVariables();
         testFieldsAndVariablesDispatch();
-        // TODO variables auto dispatch, con, fields, etc
+        // TODO con, etc
     }
 
     public static void testSingleLine() {
@@ -705,19 +707,23 @@ public class TestTemplate {
             """
             public class XYZ {
                 #open(class)
+                // class body
 
                 static void test() {
                     #open(method)
-                    // comment1
-                    #{:_internal_def_var(name=var1,prefix=final int,value=1,type=int,mutable=true)}
-                    #{:_internal_def_var(name=var1,prefix=final int,value=1,type=int,mutable=false)}
-                    #{:def_var(name=var2,prefix=int,value=2,type=int)}
-                    #{:def_final_var(name=var3,prefix=final long,value=3,type=long)}
-                    #{:def_field(name=field1,prefix=public static long,value=4,type=long)}
-                    #{:def_final_field(name=field2,prefix=public static final long,value=5,type=long)}
-
-                    TODO
-
+                    // method body
+                    #{:_internal_def_var(name=var1,prefix=final int,value=1,type=my_int_1,mutable=false)}
+                    int x1 = #{:var(type=my_int_1)} + 1;
+                    #{:_internal_def_var(name=var2,prefix=int,value=2,type=my_int_1,mutable=true)}
+                    #{:mutable_var(type=my_int_1)} += 2;
+                    #{:def_final_var(name=var3,prefix=final int,value=3,type=my_int_2)}
+                    int x2 = #{:var(type=my_int_2)} + 1;
+                    #{:def_var(name=var4,prefix=int,value=4,type=my_int_2)}
+                    #{:mutable_var(type=my_int_2)} += 2;
+                    #{:def_final_field(name=field1,prefix=public static final int,value=5,type=my_int_3)}
+                    int x3 = #{:var(type=my_int_3)} + 1;
+                    #{:def_field(name=field2,prefix=public static int,value=6,type=my_int_3)}
+                    #{:mutable_var(type=my_int_3)} += 2;
                     #close(method)
                 }
                 #close(class)
@@ -727,7 +733,33 @@ public class TestTemplate {
         String code = template.instantiate();
         String expected =
             """
-            TODO
+            public class XYZ {
+                public static final int field1 = 5;
+                public static int field2 = 6;
+
+                // class body
+
+                static void test() {
+                    final int var3 = 3;
+                    int var4 = 4;
+
+                    // method body
+                    final int var1 = 1;
+                    int x1 = var1 + 1;
+                    int var2 = 2;
+                    var2 += 2;
+
+                    int x2 = var3 + 1;
+
+                    var4 += 2;
+
+                    int x3 = field1 + 1;
+
+                    field2 += 2;
+
+                }
+
+            }
             """;
         checkEQ(code, expected);
     }
