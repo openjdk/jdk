@@ -106,8 +106,6 @@ public class TestJMenuItemShortcutAccessibility {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setJMenuBar(menuBar);
         frame.setSize(300, 200);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
         return frame;
     }
 }
