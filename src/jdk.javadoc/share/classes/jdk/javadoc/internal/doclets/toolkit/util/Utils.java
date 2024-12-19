@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1236,13 +1236,13 @@ public class Utils {
      * @return true if element is hidden, false otherwise
      */
     public boolean isHidden(Element e) {
+        // Non-included elements may still be visible through the type hierarchy
         if (!isIncluded(e)) {
-            // Treat types that are not included and not exported unconditionally by their module as hidden
+            // Treat types that are not included and not unconditionally exported as hidden
             if (isClassOrInterface(e) && isUnexportedType((TypeElement) e)) {
                 return true;
             }
-            // Non-included elements may still be visible via "transclusion" from undocumented enclosures;
-            // use unchecked method to avoid running doclint, causing warnings or errors.
+            // Use unchecked method to avoid running doclint, causing warnings or errors.
             return hasBlockTagUnchecked(e, HIDDEN);
         }
         if (options.javafx() &&
@@ -1254,7 +1254,7 @@ public class Utils {
 
     /**
      * {@return true if typeElement is in a package that is not unconditionally exported
-     * from its module}
+     * by its module}
      * @param typeElement a type element
      */
     private boolean isUnexportedType(TypeElement typeElement) {
