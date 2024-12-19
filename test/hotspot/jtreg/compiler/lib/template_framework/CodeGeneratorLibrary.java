@@ -260,6 +260,19 @@ public final class CodeGeneratorLibrary {
                 }
         }, 0));
 
+        // Dispatch generator call to a ClassScope or MethodScope
+        codeGenerators.add(factoryDispatch());
+
+        // Control flow.
+        codeGenerators.add(factoryRepeat());
+
+        addBasicOperators(codeGenerators);
+        addVariableCodeGenerators(codeGenerators);
+        addRandomCode(codeGenerators);
+        return new CodeGeneratorLibrary(null, codeGenerators);
+    }
+
+    private static void addBasicOperators(HashSet<CodeGenerator> codeGenerators) {
         // Random choice from a list "aaa|bbb|ccc" -> return either "aaa", "bbb" or "ccc"
         codeGenerators.add(new ProgrammaticCodeGenerator("choose",
             (Scope scope, Parameters parameters) -> {
@@ -269,16 +282,6 @@ public final class CodeGeneratorLibrary {
                 int r = RANDOM.nextInt(elements.length);
                 scope.stream.addCodeToLine(elements[r]);
         }, 0));
-
-        // Dispatch generator call to a ClassScope or MethodScope
-        codeGenerators.add(factoryDispatch());
-
-        // Control flow.
-        codeGenerators.add(factoryRepeat());
-
-        addVariableCodeGenerators(codeGenerators);
-        addRandomCode(codeGenerators);
-        return new CodeGeneratorLibrary(null, codeGenerators);
     }
 
     private static void addVariableCodeGenerators(HashSet<CodeGenerator> codeGenerators) {

@@ -47,7 +47,7 @@ public class TestTemplate {
         testRepeat();
         testDispatch();
         testClassInstantiatorAndDispatch();
-        test9();
+        testChoose();
         // variables, choose, con, fields, etc
     }
 
@@ -566,7 +566,22 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void test9() {
+    public static void testChoose() {
+        Template template = new Template("my_template",
+            """
+            x#{v1:choose(from=11|11|11)}x#{v1}x
+            x#{v2:choose(from=)}x#{v2}x
+            x#{v3:choose(from=abc)}x#{v3}x
+            """
+        );
+        String code = template.instantiate();
+        String expected =
+            """
+            x11x11x
+            xxx
+            xabcxabcx
+            """;
+        checkEQ(code, expected);
     }
 
     public static void checkEQ(String code, String expected) {

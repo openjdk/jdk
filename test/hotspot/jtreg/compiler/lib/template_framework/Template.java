@@ -623,7 +623,7 @@ public final class Template extends CodeGenerator {
         HashMap<String,String> map = new HashMap<String,String>();
         if (!pairs.equals("")) {
             for (String pair : pairs.split(",")) {
-                String[] parts = pair.split("=");
+                String[] parts = pair.split("=", -1);
                 if (parts.length != 2) {
                     state.currentScope.print();
                     throw new TemplateFrameworkException("Template syntax error in key value pairs. " +
