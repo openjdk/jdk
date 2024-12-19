@@ -600,20 +600,20 @@ public class TestTemplate {
             public class XYZ {
                 #open(class)
                 public static int hardCoded1 = 1;
-                #{:add_variable(scope=class,name=hardCoded1,type=my_int_1)}
+                #{:add_var(scope=class,name=hardCoded1,type=my_int_1)}
                 public static int hardCoded2 = 1;
                 public static final int hardCoded3 = 1;
-                #{:add_variable(scope=class,name=hardCoded2,type=my_int_2)}
-                #{:add_variable(scope=class,name=hardCoded3,type=my_int_2,mutable=false)}
+                #{:add_var(scope=class,name=hardCoded2,type=my_int_2)}
+                #{:add_var(scope=class,name=hardCoded3,type=my_int_2,mutable=false)}
 
                 static void test() {
                     #open(method)
                     int hardCoded4 = 1;
-                    #{:add_variable(scope=method,name=hardCoded4,type=my_int_3)}
+                    #{:add_var(scope=method,name=hardCoded4,type=my_int_3)}
                     int hardCoded5 = 1;
                     final int hardCoded6 = 1;
-                    #{:add_variable(scope=method,name=hardCoded5,type=my_int_4)}
-                    #{:add_variable(scope=method,name=hardCoded6,type=my_int_4,mutable=false)}
+                    #{:add_var(scope=method,name=hardCoded5,type=my_int_4)}
+                    #{:add_var(scope=method,name=hardCoded6,type=my_int_4,mutable=false)}
 
                     #{:mutable_var(type=my_int_1)} = #{:var(type=my_int_1)} + 1;
                     #{:mutable_var(type=my_int_2)} = 5;
@@ -625,16 +625,16 @@ public class TestTemplate {
                 }
 
                 public static int hardCoded0 = 1;
-                #{:add_variable(scope=class,name=hardCoded0,type=my_int_4)}
+                #{:add_var(scope=class,name=hardCoded0,type=my_int_4)}
 
                 static void foo() {
                     #open(method)
                     int hardCoded7 = 1;
-                    #{:add_variable(scope=method,name=hardCoded7,type=my_int_5)}
+                    #{:add_var(scope=method,name=hardCoded7,type=my_int_5)}
                     int hardCoded8 = 1;
                     final int hardCoded9 = 1;
-                    #{:add_variable(scope=method,name=hardCoded8,type=my_int_6)}
-                    #{:add_variable(scope=method,name=hardCoded9,type=my_int_6,mutable=false)}
+                    #{:add_var(scope=method,name=hardCoded8,type=my_int_6)}
+                    #{:add_var(scope=method,name=hardCoded9,type=my_int_6,mutable=false)}
 
                     #{:mutable_var(type=my_int_5)} = #{:var(type=my_int_5)} + 1;
                     #{:mutable_var(type=my_int_6)} = 5;

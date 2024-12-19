@@ -157,7 +157,7 @@ public final class CodeGeneratorLibrary {
     }
 
     /**
-     * {@code add_variable} adds a variable.
+     * {@code add_var} adds a variable.
      *
      * @param scope Either {@code class} or {@code method}, to add to class or method scope.
      * @param name Name of the variable.
@@ -167,16 +167,16 @@ public final class CodeGeneratorLibrary {
      *                if false: it can only be sampled via {@code var}.
      */
     private static CodeGenerator factoryAddVariable() {
-        return new ProgrammaticCodeGenerator("add_variable", (Scope scope, Parameters parameters) -> {
+        return new ProgrammaticCodeGenerator("add_var", (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "scope", "name", "type", "mutable");
-            String scopeKind = parameters.get("scope", scope, " for generator call to 'add_variable'");
-            String name = parameters.get("name", scope, " for generator call to 'add_variable'");
-            String type = parameters.get("type", scope, " for generator call to 'add_variable'");
+            String scopeKind = parameters.get("scope", scope, " for generator call to 'add_var'");
+            String name = parameters.get("name", scope, " for generator call to 'add_var'");
+            String type = parameters.get("type", scope, " for generator call to 'add_var'");
             String isMutable = parameters.getOrNull("mutable");
 
             if (isMutable != null && !isMutable.equals("true") && !isMutable.equals("false")) {
                 scope.print();
-                throw new TemplateFrameworkException("Generator 'add_variable' got: mutable=" + isMutable +
+                throw new TemplateFrameworkException("Generator 'add_var' got: mutable=" + isMutable +
                                                      "but should be mutable=true or mutable=false " +
                                                      "or unset with default false.");
             }
@@ -184,11 +184,11 @@ public final class CodeGeneratorLibrary {
 
             switch(scopeKind) {
                 case "class" -> {
-                    ClassScope classScope = scope.classScope(" in 'add_variable' for " + name);
+                    ClassScope classScope = scope.classScope(" in 'add_var' for " + name);
                     classScope.addVariable(name, type, mutable);
                 }
                 case "method" -> {
-                    MethodScope methodScope = scope.methodScope(" in 'add_variable' for " + name);
+                    MethodScope methodScope = scope.methodScope(" in 'add_var' for " + name);
                     methodScope.addVariable(name, type, mutable);
                 }
                 default -> {
@@ -312,12 +312,12 @@ public final class CodeGeneratorLibrary {
 
         // Internal: Define variable
         codeGenerators.add(new Template("_internal_def_var",
-            "#{prefix} #{name} = #{value};#{:add_variable(scope=method,name=#name,type=#type,mutable=#mutable)}"
+            "#{prefix} #{name} = #{value};#{:add_var(scope=method,name=#name,type=#type,mutable=#mutable)}"
         ));
 
         // Internal: Define field
         codeGenerators.add(new Template("_internal_def_field",
-            "#{prefix} #{name} = #{value};#{:add_variable(scope=class,name=#name,type=#type,mutable=#mutable)}"
+            "#{prefix} #{name} = #{value};#{:add_var(scope=class,name=#name,type=#type,mutable=#mutable)}"
         ));
 
         /**
