@@ -222,7 +222,7 @@ jint ciKlass::modifier_flags() {
 jint ciKlass::access_flags() {
   assert(is_loaded(), "not loaded");
   GUARDED_VM_ENTRY(
-    return get_Klass()->access_flags().as_int();
+    return get_Klass()->access_flags().as_unsigned_short();
   )
 }
 

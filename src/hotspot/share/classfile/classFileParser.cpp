@@ -2998,7 +2998,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
     inner_classes->at_put(index++, inner_class_info_index);
     inner_classes->at_put(index++, outer_class_info_index);
     inner_classes->at_put(index++, inner_name_index);
-    inner_classes->at_put(index++, inner_access_flags.as_int());
+    inner_classes->at_put(index++, inner_access_flags.as_unsigned_short());
   }
 
   // Check for circular and duplicate entries.

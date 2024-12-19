@@ -1005,8 +1005,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   }
 
   // Check whether class modifiers are the same.
-  jushort old_flags = (jushort) the_class->access_flags().as_int();
-  jushort new_flags = (jushort) scratch_class->access_flags().as_int();
+  u2 old_flags = the_class->access_flags().as_unsigned_short();
+  u2 new_flags = scratch_class->access_flags().as_unsigned_short();
   if (old_flags != new_flags) {
     log_info(redefine, class, normalize)
         ("redefined class %s modifiers change error: modifiers changed from %d to %d.",
@@ -1040,9 +1040,9 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
       return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED;
     }
     // access
-    old_flags = old_fs.access_flags().as_int();
-    new_flags = new_fs.access_flags().as_int();
-    if ((old_flags ^ new_flags) & JVM_RECOGNIZED_FIELD_MODIFIERS) {
+    old_flags = old_fs.access_flags().as_field_flags();
+    new_flags = new_fs.access_flags().as_field_flags();
+    if (old_flags != new_flags) {
       log_info(redefine, class, normalize)
           ("redefined class %s field %s change error: modifiers changed from %d to %d.",
            the_class->external_name(), name_sym2->as_C_string(), old_flags, new_flags);
@@ -1147,8 +1147,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     switch (method_was) {
     case matched:
       // methods match, be sure modifiers do too
-      old_flags = k_old_method->access_flags().as_int();
-      new_flags = k_new_method->access_flags().as_int();
+      old_flags = k_old_method->access_flags().as_unsigned_short();
+      new_flags = k_new_method->access_flags().as_unsigned_short();
       if ((old_flags ^ new_flags) & ~(JVM_ACC_NATIVE)) {
         log_info(redefine, class, normalize)
           ("redefined class %s  method %s modifiers error: modifiers changed from %d to %d",

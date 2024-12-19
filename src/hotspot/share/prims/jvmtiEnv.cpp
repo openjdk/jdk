@@ -3149,7 +3149,7 @@ jvmtiError
 JvmtiEnv::GetFieldModifiers(fieldDescriptor* fdesc_ptr, jint* modifiers_ptr) {
 
   AccessFlags resultFlags = fdesc_ptr->access_flags();
-  jint result = resultFlags.as_int();
+  jint result = resultFlags.as_unsigned_short();
   *modifiers_ptr = result;
 
   return JVMTI_ERROR_NONE;
@@ -3228,7 +3228,7 @@ JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
 jvmtiError
 JvmtiEnv::GetMethodModifiers(Method* method, jint* modifiers_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
-  (*modifiers_ptr) = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  (*modifiers_ptr) = method->access_flags().as_method_flags();
   return JVMTI_ERROR_NONE;
 } /* end GetMethodModifiers */
 

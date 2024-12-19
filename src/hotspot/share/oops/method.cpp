@@ -1652,7 +1652,7 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
       && sig_id == vmSymbolID::NO_SID) {
     return;
   }
-  jshort flags = access_flags().as_int();
+  jshort flags = checked_cast<jshort>(access_flags().as_unsigned_short());
 
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
   if (id != vmIntrinsics::_none) {
@@ -2300,7 +2300,7 @@ void Method::print_on(outputStream* st) const {
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
-  st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
+  st->print   (" - access:            0x%x  ", access_flags().as_unsigned_short()); access_flags().print_on(st); st->cr();
   st->print   (" - flags:             0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
   st->print   (" - signature:         ");    signature()->print_value_on(st); st->cr();

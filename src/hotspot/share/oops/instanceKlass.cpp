@@ -3323,7 +3323,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
 }
 
 u2 InstanceKlass::compute_modifier_flags() const {
-  u2 access = access_flags().as_int();
+  u2 access = access_flags().as_unsigned_short();
 
   // But check if it happens to be member class.
   InnerClassesIterator iter(this);

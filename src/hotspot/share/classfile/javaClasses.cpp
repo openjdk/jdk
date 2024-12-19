@@ -3169,7 +3169,7 @@ void java_lang_ClassFrameInfo::serialize_offsets(SerializeClosure* f) {
 #endif
 
 static int get_flags(const methodHandle& m) {
-  int flags = (jushort)( m->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS );
+  u2 flags = m->access_flags().as_method_flags();
   if (m->is_object_initializer()) {
     flags |= java_lang_invoke_MemberName::MN_IS_CONSTRUCTOR;
   } else {
@@ -5537,7 +5537,7 @@ int InjectedField::compute_offset() {
   ik->print();
   tty->print_cr("all fields:");
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
+    tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_unsigned_short());
   }
 #endif //PRODUCT
   vm_exit_during_initialization("Invalid layout of well-known class: use -Xlog:class+load=info to see the origin of the problem class");

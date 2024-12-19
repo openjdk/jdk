@@ -85,7 +85,7 @@ void JvmtiClassFileReconstituter::write_field_infos() {
     // JVMSpec|         attribute_info attributes[attributes_count];
     // JVMSpec|   }
 
-    write_u2(access_flags.as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
+    write_u2(access_flags.as_field_flags());
     write_u2(name_index);
     write_u2(signature_index);
     u2 attr_count = 0;
@@ -704,7 +704,7 @@ void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) 
     return;
   }
 
-  write_u2(access_flags.as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS);
+  write_u2(access_flags.as_method_flags());
   write_u2(const_method->name_index());
   write_u2(const_method->signature_index());
 
@@ -919,7 +919,7 @@ void JvmtiClassFileReconstituter::write_class_file_format() {
   copy_cpool_bytes(writeable_address(cpool_size()));
 
   // JVMSpec|           u2 access_flags;
-  write_u2(ik()->access_flags().as_int() & JVM_RECOGNIZED_CLASS_MODIFIERS);
+  write_u2(ik()->access_flags().as_class_flags());
 
   // JVMSpec|           u2 this_class;
   // JVMSpec|           u2 super_class;
