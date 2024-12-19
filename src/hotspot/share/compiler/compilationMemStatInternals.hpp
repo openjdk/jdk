@@ -42,13 +42,14 @@ class outputStream;
 template <int max_val, int init_val>
 class EnumWrapper {
   typedef EnumWrapper<max_val, init_val> Type;
-  const int _v;
+  int _v;
 public:
   static constexpr int max = max_val;
   EnumWrapper() : _v(init_val) {}
-  EnumWrapper(int v) : _v(v) { assert(v >= 0 && v < max_val, "OOM (%d)", v); }
+  EnumWrapper(int v) : _v(v) { assert(v >= 0 && v < max_val, "OOB (%d)", v); }
   EnumWrapper(const Type& e) : _v(e._v) {}
   int raw() const { return _v; }
+  Type operator=(Type other) { _v = other._v; return *this; }
   bool operator==(const Type& other) const { return _v == other._v; }
   bool operator!=(const Type& other) const { return _v != other._v; }
 };
@@ -91,6 +92,25 @@ public:
   void reset();
 };
 
+class FootprintMovementTracker {
+  struct Entry {
+    PhaseTrcId phase;
+    size_t cur, peak, start;
+  };
+  static constexpr int max_entries = 64; // we wrap, keeping the last n phase movements
+  Entry _entries[max_entries];
+  int _pos;
+  bool _wrapped;
+  void print_entry_on(outputStream* st, int pos) const;
+public:
+  FootprintMovementTracker() : _pos(-1), _wrapped(false) {}
+  inline void register_allocation(size_t s);
+  inline void register_deallocation(size_t s);
+  void print_on(outputStream* st) const;
+  void on_phase_start(PhaseTrcId phase, size_t cur_abs);
+  void reset();
+};
+
 // ArenaState is the central data structure holding all statistics and temp data during
 // a single compilation. It is created on demand (if memstat is active) and tied to the
 // CompilerThread.
@@ -120,6 +140,8 @@ class ArenaState : public CHeapObj<mtCompiler> {
 
   // Keep track of current C2 phase
   PhaseIdStack _phase_id_stack;
+
+  FootprintMovementTracker _movement_tracker;
 
   CompilerType _comp_type;
   int _comp_id;

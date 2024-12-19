@@ -124,11 +124,46 @@ PhaseIdStack::PhaseIdStack() {
 
 void PhaseIdStack::reset() {
   _depth = 0;
-  push(PhaseTrcId((int)Phase::PhaseTraceId::_t_none));
 }
 
 ArenaState::ArenaState() {
   reset();
+}
+
+void FootprintMovementTracker::print_entry_on(outputStream* st, int pos) const {
+  const Entry& e = _entries[pos];
+  if (e.start != e.peak || e.start != e.cur) {
+      tty->print_cr("%24s: %zu -> %zu -> %zu",
+          Phase::get_phase_trace_id_text((Phase::PhaseTraceId)e.phase.raw()),
+          e.start, e.peak, e.cur);
+  }
+}
+
+void FootprintMovementTracker::print_on(outputStream* st) const {
+  if (_pos >= 0) {
+    assert(_pos < max_entries, "sanity");
+    if (_wrapped) {
+      for (int i = _pos + 1; i < max_entries; i++) {
+        print_entry_on(st, i);
+      }
+    }
+    for (int i = 0; i <= _pos; i++) {
+      print_entry_on(st, i);
+    }
+  }
+}
+
+void FootprintMovementTracker::on_phase_start(PhaseTrcId id, size_t cur_abs) {
+  _pos++;
+  if (_pos == max_entries) {
+    _pos = 0; _wrapped = true;
+  }
+  Entry& e = _entries[_pos];
+  e.start = e.cur = e.peak = cur_abs;
+}
+
+void FootprintMovementTracker::reset() {
+  _pos = -1;
 }
 
 void ArenaState::reset() {
@@ -143,6 +178,7 @@ void ArenaState::reset() {
   _phase_id_stack.reset();
   _comp_type = CompilerType::compiler_none;
   _comp_id = 0;
+  _movement_tracker.reset();
 }
 
 void ArenaState::start(CompilerType comp_type, int comp_id, size_t limit) {
@@ -162,10 +198,12 @@ void ArenaState::end() {
 
 void ArenaState::on_phase_start(PhaseTrcId id) {
   _phase_id_stack.push(id);
+  _movement_tracker.on_phase_start(id, _peak);
 }
 
 void ArenaState::on_phase_end(PhaseTrcId id) {
   _phase_id_stack.pop(id);
+  _movement_tracker.on_phase_start(_phase_id_stack.top(), _peak); // parent phase "restarts"
 }
 
 int ArenaState::retrieve_live_node_count() const {
@@ -220,6 +258,8 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
   cs.phase_id = (uint16_t)_phase_id_stack.top().raw();
   *stamp = cs.raw;
 
+  _movement_tracker.register_allocation(size);
+
   return rc;
 }
 
@@ -237,6 +277,8 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   _current -= size;
   _counters_current.sub(size, phase_id, arena_tag);
   _live_nodes_current = retrieve_live_node_count();
+
+  _movement_tracker.register_deallocation(size);
 }
 
 // Used for logging, not for the report table generated with jcmd Compiler.memory
@@ -263,6 +305,7 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
       _counters_at_global_peak.print_on(st, false);
       st->print_cr("----------------------------------------------------");
     }
+    _movement_tracker.print_on(st);
 #endif
   } else {
     st->cr();
@@ -628,6 +671,7 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   const int comp_id = task->compile_id();
   const size_t limit = directive->mem_limit();
   arena_stat->start(comp_type, comp_id, limit);
+  arena_stat->on_phase_start((int)Phase::PhaseTraceId::_t_none);
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
