@@ -106,11 +106,18 @@ public final class CodeGeneratorLibrary {
         }
     }
 
-    private static CodeGenerator factoryLoadStore(boolean mutable) {
-        String generatorName = mutable ? "store" : "load";
+    /**
+     * {@code mutable_var} samples a random mutable variable.
+     * {@code var} samples a random variable, including mutable and immutable.
+     *
+     * @param type Name of the type of the variable.
+     * @return Name of the variable.
+     */
+    private static CodeGenerator factorySampleVariable(boolean mutable) {
+        String generatorName = mutable ? "mutable_var" : "var";
         return new ProgrammaticCodeGenerator(generatorName, (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "type");
-            String type = parameters.get("type", scope, " for generator call to load/store");
+            String type = parameters.get("type", scope, " for generator call to var/mutable_var");
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
                 scope.print();
@@ -149,20 +156,31 @@ public final class CodeGeneratorLibrary {
         }, 0);
     }
 
+    /**
+     * {@code add_variable} adds a variable.
+     *
+     * @param scope Either {@code class} or {@code method}, to add to class or method scope.
+     * @param name Name of the variable.
+     * @param type Name of the type of the variable.
+     * @param mutable Optional (default true), if set to true: the variable is mutable, and
+     *                can be chosen both via {@code var} and {@code mutable_var} sampling,
+     *                if false: it can only be sampled via {@code var}.
+     */
     private static CodeGenerator factoryAddVariable() {
         return new ProgrammaticCodeGenerator("add_variable", (Scope scope, Parameters parameters) -> {
-            parameters.checkOnlyHas(scope, "scope", "name", "type", "final");
+            parameters.checkOnlyHas(scope, "scope", "name", "type", "mutable");
             String scopeKind = parameters.get("scope", scope, " for generator call to 'add_variable'");
             String name = parameters.get("name", scope, " for generator call to 'add_variable'");
             String type = parameters.get("type", scope, " for generator call to 'add_variable'");
-            String isFinal = parameters.getOrNull("final");
+            String isMutable = parameters.getOrNull("mutable");
 
-            if (isFinal != null && !isFinal.equals("true") && !isFinal.equals("false")) {
+            if (isMutable != null && !isMutable.equals("true") && !isMutable.equals("false")) {
                 scope.print();
-                throw new TemplateFrameworkException("Generator 'add_variable' got: final=" + isFinal +
-                                                     "but should be final=true or final=false");
+                throw new TemplateFrameworkException("Generator 'add_variable' got: mutable=" + isMutable +
+                                                     "but should be mutable=true or mutable=false " +
+                                                     "or unset with default false.");
             }
-            boolean mutable = isFinal.equals("false");
+            boolean mutable = (isMutable == null) || isMutable.equals("true");
 
             switch(scopeKind) {
                 case "class" -> {
@@ -285,12 +303,12 @@ public final class CodeGeneratorLibrary {
     }
 
     private static void addVariableCodeGenerators(HashSet<CodeGenerator> codeGenerators) {
-        // Variable load/store.
-        codeGenerators.add(factoryLoadStore(false));
-        codeGenerators.add(factoryLoadStore(true));
-
         // Add variable to ClassScope or MethodScope.
         codeGenerators.add(factoryAddVariable());
+
+        // Sample random variable, mutable or immutable.
+        codeGenerators.add(factorySampleVariable(false));
+        codeGenerators.add(factorySampleVariable(true));
 
         // ClassScope generators.
         codeGenerators.add(new Template("new_field_in_class",
@@ -323,46 +341,13 @@ public final class CodeGeneratorLibrary {
             #{:code}
             """
         ));
-        // codeGenerators.add(new Template("prefix",
-        //     """
-        //     // start $prefix
-        //     // ... prefix code ...
-        //         #{:code}
-        //     // end   $prefix
-        //     """
-        // ));
-        // codeGenerators.add(new Template("foo",
-        //     """
-        //     // start $foo
-        //     {
-        //         #{v1:store(type=int)} = #{v11:load(type=int)};
-        //         #{v2:store(type=int)} = #{v12:load(type=int)};
-        //         #{v3:store(type=int)} = #{v13:load(type=int)};
-        //         #{v4:store(type=int)} = #{v14:load(type=int)};
-        //         #{v5:store(type=int)} = #{v15:load(type=int)};
-        //     }
-        //     // end   $foo
-        //     """
-        // ));
-        // codeGenerators.add(new Template("bar",
-        //     """
-        //     // start $bar
-        //     {
-        //         ${fieldI} += 42;
-        //         #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI,final=false)}
-        //         ${varI} += 42;
-        //         #{:dispatch(scope=method,call=new_var_in_method,name=$varI,final=false)}
-        //     }
-        //     // end   $bar
-        //     """
-        // ));
+
+        // TODO some random if, loops, while, try/catch, random variables, etc
 
         // Selector for code blocks.
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("code", "empty");
         selectorForCode.add("code_split",  100);
-        //selectorForCode.add("prefix", 100);
-        //selectorForCode.add("foo", 100);
-        //selectorForCode.add("bar", 100);
+        // TODO add more
         codeGenerators.add(selectorForCode);
 
     }

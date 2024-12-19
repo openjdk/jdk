@@ -48,7 +48,8 @@ public class TestTemplate {
         testDispatch();
         testClassInstantiatorAndDispatch();
         testChoose();
-        // variables, choose, con, fields, etc
+        testFieldsAndVariables();
+        // TODO variables auto dispatch, con, fields, etc
     }
 
     public static void testSingleLine() {
@@ -580,6 +581,121 @@ public class TestTemplate {
             x11x11x
             xxx
             xabcxabcx
+            """;
+        checkEQ(code, expected);
+    }
+
+
+    public static void testFieldsAndVariables() {
+        // We use dummy types like "my_int_1" etc. to make sure we have exactly 1 valid
+        // option, so that we get a deterministic output string from the instantiation.
+        //
+        // We generate 2 variables for "my_int_2", but only "hardCoded2" is mutable.
+        // Same for "my_int_4".
+        //
+        // "hardCoded7" is added to "my_int_4", which has also variables declared in the
+        // method test, but should not be available outside method test.
+        Template template = new Template("my_template",
+            """
+            public class XYZ {
+                #open(class)
+                public static int hardCoded1 = 1;
+                #{:add_variable(scope=class,name=hardCoded1,type=my_int_1)}
+                public static int hardCoded2 = 1;
+                public static final int hardCoded3 = 1;
+                #{:add_variable(scope=class,name=hardCoded2,type=my_int_2)}
+                #{:add_variable(scope=class,name=hardCoded3,type=my_int_2,mutable=false)}
+
+                static void test() {
+                    #open(method)
+                    int hardCoded4 = 1;
+                    #{:add_variable(scope=method,name=hardCoded4,type=my_int_3)}
+                    int hardCoded5 = 1;
+                    final int hardCoded6 = 1;
+                    #{:add_variable(scope=method,name=hardCoded5,type=my_int_4)}
+                    #{:add_variable(scope=method,name=hardCoded6,type=my_int_4,mutable=false)}
+
+                    #{:mutable_var(type=my_int_1)} = #{:var(type=my_int_1)} + 1;
+                    #{:mutable_var(type=my_int_2)} = 5;
+
+                    #{:mutable_var(type=my_int_3)} = #{:var(type=my_int_3)} + 1;
+                    #{:mutable_var(type=my_int_4)} = 5;
+
+                    #close(method)
+                }
+
+                public static int hardCoded0 = 1;
+                #{:add_variable(scope=class,name=hardCoded0,type=my_int_4)}
+
+                static void foo() {
+                    #open(method)
+                    int hardCoded7 = 1;
+                    #{:add_variable(scope=method,name=hardCoded7,type=my_int_5)}
+                    int hardCoded8 = 1;
+                    final int hardCoded9 = 1;
+                    #{:add_variable(scope=method,name=hardCoded8,type=my_int_6)}
+                    #{:add_variable(scope=method,name=hardCoded9,type=my_int_6,mutable=false)}
+
+                    #{:mutable_var(type=my_int_5)} = #{:var(type=my_int_5)} + 1;
+                    #{:mutable_var(type=my_int_6)} = 5;
+
+                    #{:mutable_var(type=my_int_4)} = #{:var(type=my_int_4)} + 1;
+                    #close(method)
+                }
+                #close(class)
+            }
+            """
+        );
+        String code = template.instantiate();
+        String expected =
+            """
+            public class XYZ {
+
+                public static int hardCoded1 = 1;
+
+                public static int hardCoded2 = 1;
+                public static final int hardCoded3 = 1;
+
+
+
+                static void test() {
+
+                    int hardCoded4 = 1;
+
+                    int hardCoded5 = 1;
+                    final int hardCoded6 = 1;
+
+
+
+                    hardCoded1 = hardCoded1 + 1;
+                    hardCoded2 = 5;
+
+                    hardCoded4 = hardCoded4 + 1;
+                    hardCoded5 = 5;
+
+
+                }
+
+                public static int hardCoded0 = 1;
+
+
+                static void foo() {
+
+                    int hardCoded7 = 1;
+
+                    int hardCoded8 = 1;
+                    final int hardCoded9 = 1;
+
+
+
+                    hardCoded7 = hardCoded7 + 1;
+                    hardCoded8 = 5;
+
+                    hardCoded0 = hardCoded0 + 1;
+
+                }
+
+            }
             """;
         checkEQ(code, expected);
     }
