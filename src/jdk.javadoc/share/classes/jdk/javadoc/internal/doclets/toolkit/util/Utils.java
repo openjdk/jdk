@@ -384,7 +384,7 @@ public class Utils {
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
-                    || hasHiddenTag(enclosingTypeElement))
+                    || isHidden(enclosingTypeElement))
                 && !isLinkable(enclosingTypeElement);
     }
 
@@ -849,7 +849,7 @@ public class Utils {
         return
             typeElem != null &&
             ((isIncluded(typeElem) && configuration.isGeneratedDoc(typeElem) &&
-                    !hasHiddenTag(typeElem)) ||
+                    !isHidden(typeElem)) ||
             (configuration.extern.isExternal(typeElem) &&
                     (isPublic(typeElem) || isProtected(typeElem))));
     }
@@ -874,7 +874,7 @@ public class Utils {
             return isLinkable((TypeElement) elem); // defer to existing behavior
         }
 
-        if (isIncluded(elem) && !hasHiddenTag(elem)) {
+        if (isIncluded(elem) && !isHidden(elem)) {
             return true;
         }
 
@@ -1006,7 +1006,7 @@ public class Utils {
             t = supertypes.get(0); // if non-empty, the first element is always the superclass
             var te = asTypeElement(t);
             assert alreadySeen.add(te); // it should be the first time we see `te`
-            if (!hasHiddenTag(te) && (isPublic(te) || isLinkable(te))) {
+            if (!isHidden(te) && (isPublic(te) || isLinkable(te))) {
                 return t;
             }
         }
@@ -1228,16 +1228,21 @@ public class Utils {
     }
 
     /**
-     * Returns true if the element is included or selected, contains &#64;hidden tag,
-     * or if javafx flag is present and element contains &#64;treatAsPrivate
-     * tag.
+     * Returns true if the element is hidden. An element is hidden if it contains a
+     * &#64;hidden tag, or if javafx flag is present and the element contains a
+     * &#64;treatAsPrivate tag, or the element is a type and is not included and
+     * not exported unconditionally by its module.
      * @param e the queried element
-     * @return true if it exists, false otherwise
+     * @return true if element is hidden, false otherwise
      */
-    public boolean hasHiddenTag(Element e) {
-        // Non-included elements may still be visible via "transclusion" from undocumented enclosures,
-        // but we don't want to run doclint on them, possibly causing warnings or errors.
+    public boolean isHidden(Element e) {
         if (!isIncluded(e)) {
+            // Treat types that are not included and not exported unconditionally by their module as hidden
+            if (isClassOrInterface(e) && isUnexportedType((TypeElement) e)) {
+                return true;
+            }
+            // Non-included elements may still be visible via "transclusion" from undocumented enclosures;
+            // use unchecked method to avoid running doclint, causing warnings or errors.
             return hasBlockTagUnchecked(e, HIDDEN);
         }
         if (options.javafx() &&
@@ -1245,6 +1250,21 @@ public class Utils {
             return true;
         }
         return hasBlockTag(e, DocTree.Kind.HIDDEN);
+    }
+
+    /**
+     * {@return true if typeElement is in a package that is not unconditionally exported
+     * from its module}
+     * @param typeElement a type element
+     */
+    private boolean isUnexportedType(TypeElement typeElement) {
+        var pkg = elementUtils.getPackageOf(typeElement);
+        var mdl = elementUtils.getModuleOf(typeElement);
+        return mdl != null && !mdl.isUnnamed()
+                && mdl.getDirectives().stream()
+                .filter(d -> d.getKind() == ModuleElement.DirectiveKind.EXPORTS)
+                .map(d -> (ModuleElement.ExportsDirective) d)
+                .noneMatch(e -> e.getPackage().equals(pkg) && e.getTargetModules() == null);
     }
 
     /*
@@ -1284,14 +1304,14 @@ public class Utils {
                 new TreeSet<>(comparators.generalPurposeComparator());
         if (!javafx) {
             for (TypeElement te : classlist) {
-                if (!hasHiddenTag(te)) {
+                if (!isHidden(te)) {
                     filteredOutClasses.add(te);
                 }
             }
             return filteredOutClasses;
         }
         for (TypeElement e : classlist) {
-            if (isPrivate(e) || isPackagePrivate(e) || hasHiddenTag(e)) {
+            if (isPrivate(e) || isPackagePrivate(e) || isHidden(e)) {
                 continue;
             }
             filteredOutClasses.add(e);

@@ -608,7 +608,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
      */
     public boolean isVisibleClass(TypeElement typeElement) {
         return visibleClasses.contains(typeElement) && configuration.isGeneratedDoc(typeElement)
-                && !utils.hasHiddenTag(typeElement);
+                && !utils.isHidden(typeElement);
     }
 
      Content getClassHeader(TypeElement typeElement) {

@@ -111,7 +111,7 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
         boolean noDeprecated = options.noDeprecated();
         Set<TypeElement> includedTypes = configuration.getIncludedTypeElements();
         for (TypeElement typeElement : includedTypes) {
-            if (utils.hasHiddenTag(typeElement) || !utils.isCoreClass(typeElement)) {
+            if (utils.isHidden(typeElement) || !utils.isCoreClass(typeElement)) {
                 continue;
             }
             if (noDeprecated

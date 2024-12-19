@@ -204,7 +204,7 @@ public class PropertyWriter extends AbstractMemberWriter {
                     (!utils.isPublic(holder) || utils.isLinkable(holder))) {
                 writer.addInlineComment(property, propertyContent);
             } else {
-                if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(property)) {
+                if (!utils.isHidden(holder) && !utils.isHidden(property)) {
                     Content link =
                             writer.getDocLink(HtmlLinkInfo.Kind.PLAIN,
                                     holder, property,
