@@ -4070,9 +4070,13 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
       return;
     }
 
-    if (super_ik->is_sealed() && !super_ik->has_as_permitted_subclass(this_klass)) {
-      classfile_icce_error("class %s cannot inherit from sealed class %s", super_ik, THREAD);
-      return;
+    if (super_ik->is_sealed()) {
+      stringStream ss;
+      ResourceMark rm(THREAD);
+      if (!super_ik->has_as_permitted_subclass(this_klass, ss)) {
+        classfile_icce_error(ss.as_string(), THREAD);
+        return;
+      }
     }
 
     Reflection::VerifyClassAccessResults vca_result =
@@ -4117,12 +4121,13 @@ void ClassFileParser::check_super_interface_access(const InstanceKlass* this_kla
     InstanceKlass* const k = local_interfaces->at(i);
     assert (k != nullptr && k->is_interface(), "invalid interface");
 
-    if (k->is_sealed() && !k->has_as_permitted_subclass(this_klass)) {
-      classfile_icce_error(this_klass->is_interface() ?
-                             "class %s cannot extend sealed interface %s" :
-                             "class %s cannot implement sealed interface %s",
-                           k, THREAD);
-      return;
+    if (k->is_sealed()) {
+      stringStream ss;
+      ResourceMark rm(THREAD);
+      if (!k->has_as_permitted_subclass(this_klass, ss)) {
+        classfile_icce_error(ss.as_string(), THREAD);
+        return;
+      }
     }
 
     Reflection::VerifyClassAccessResults vca_result =

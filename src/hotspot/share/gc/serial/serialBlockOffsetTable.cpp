@@ -28,8 +28,8 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/universe.hpp"
-#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -47,7 +47,7 @@ SerialBlockOffsetTable::SerialBlockOffsetTable(MemRegion reserved,
                                                size_t init_word_size):
   _reserved(reserved) {
   size_t size = compute_size(reserved.word_size());
-  ReservedSpace rs(size, mtGC);
+  ReservedSpace rs = MemoryReserver::reserve(size, mtGC);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for heap offset array");
   }

@@ -212,8 +212,10 @@ bool InstanceKlass::has_nest_member(JavaThread* current, InstanceKlass* k) const
   return false;
 }
 
-// Called to verify that k is a permitted subclass of this class
-bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
+// Called to verify that k is a permitted subclass of this class.
+// The incoming stringStream is used to format the messages for error logging and for the caller
+// to use for exception throwing.
+bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k, stringStream& ss) const {
   Thread* current = Thread::current();
   assert(k != nullptr, "sanity check");
   assert(_permitted_subclasses != nullptr && _permitted_subclasses != Universe::the_empty_short_array(),
@@ -221,22 +223,34 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
 
   if (log_is_enabled(Trace, class, sealed)) {
     ResourceMark rm(current);
-    log_trace(class, sealed)("Checking for permitted subclass of %s in %s",
+    log_trace(class, sealed)("Checking for permitted subclass %s in %s",
                              k->external_name(), this->external_name());
   }
 
   // Check that the class and its super are in the same module.
   if (k->module() != this->module()) {
-    ResourceMark rm(current);
-    log_trace(class, sealed)("Check failed for same module of permitted subclass %s and sealed class %s",
-                             k->external_name(), this->external_name());
+    ss.print("Failed same module check: subclass %s is in module '%s' with loader %s, "
+             "and sealed class %s is in module '%s' with loader %s",
+             k->external_name(),
+             k->module()->name_as_C_string(),
+             k->module()->loader_data()->loader_name_and_id(),
+             this->external_name(),
+             this->module()->name_as_C_string(),
+             this->module()->loader_data()->loader_name_and_id());
+    log_trace(class, sealed)(" - %s", ss.as_string());
     return false;
   }
 
   if (!k->is_public() && !is_same_class_package(k)) {
-    ResourceMark rm(current);
-    log_trace(class, sealed)("Check failed, subclass %s not public and not in the same package as sealed class %s",
-                             k->external_name(), this->external_name());
+    ss.print("Failed same package check: non-public subclass %s is in package '%s' with classloader %s, "
+             "and sealed class %s is in package '%s' with classloader %s",
+             k->external_name(),
+             k->package() != nullptr ? k->package()->name()->as_C_string() : "unnamed",
+             k->module()->loader_data()->loader_name_and_id(),
+             this->external_name(),
+             this->package() != nullptr ? this->package()->name()->as_C_string() : "unnamed",
+             this->module()->loader_data()->loader_name_and_id());
+    log_trace(class, sealed)(" - %s", ss.as_string());
     return false;
   }
 
@@ -248,7 +262,10 @@ bool InstanceKlass::has_as_permitted_subclass(const InstanceKlass* k) const {
       return true;
     }
   }
-  log_trace(class, sealed)("- class is NOT a permitted subclass!");
+
+  ss.print("Failed listed permitted subclass check: class %s is not a permitted subclass of %s",
+           k->external_name(), this->external_name());
+  log_trace(class, sealed)(" - %s", ss.as_string());
   return false;
 }
 
