@@ -104,7 +104,7 @@ public class RemoveJar {
         // Create JAR and URLClassLoader
         Path jar = createJar();
         String path = jar.toAbsolutePath().toString();
-        URL url = new URL("jar", "", "file:" +path  + "!/" + subPath);
+        URL url = new URL("jar", "", "file:" + path + "!/" + subPath);
         URLClassLoader loader = new URLClassLoader(new URL[]{url});
 
         try {
