@@ -3925,6 +3925,8 @@ public final class AccessBridge {
             return 0;
         int code = keyStroke.getKeyCode();
         switch (code) {
+            case KeyEvent.VK_TAB:
+            case KeyEvent.VK_SPACE:
             case KeyEvent.VK_BACK_SPACE:
             case KeyEvent.VK_DELETE:
             case KeyEvent.VK_DOWN:
@@ -3967,13 +3969,11 @@ public final class AccessBridge {
             debugString("[INFO]:   Shortcut is control character: " + Integer.toHexString(keyCode));
             return (char)keyCode;
         }
-        String keyText = KeyEvent.getKeyText(keyStroke.getKeyCode());
-        debugString("[INFO]:   Shortcut is: " + keyText);
-        if (keyText != null || keyText.length() > 0) {
-            CharSequence seq = keyText.subSequence(0, 1);
-            if (seq != null || seq.length() > 0) {
-                return seq.charAt(0);
-            }
+
+        keyCode = keyStroke.getKeyCode();
+        debugString("[INFO]:   Shortcut is: " + Integer.toHexString(keyCode));
+        if (keyCode != 0) {
+            return (char) keyCode;
         }
         return 0;
     }
