@@ -3094,6 +3094,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         event will not be generated for any frames.
         See the <eventlink id="FramePop"></eventlink> event for details.
         <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>new</origin>
       <capabilities>

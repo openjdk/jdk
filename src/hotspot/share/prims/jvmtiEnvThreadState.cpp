@@ -73,10 +73,7 @@ JvmtiFramePops::clear(JvmtiFramePop& fp) {
 
 void
 JvmtiFramePops::clear_all() {
-  for (int idx = _pops->length() - 1; idx >= 0; idx--) {
-    _pops->remove_at(idx);
-  }
-  assert(_pops->length() == 0, "sanity check");
+  _pops->clear();
 }
 
 int
@@ -219,10 +216,7 @@ void JvmtiEnvThreadState::compare_and_set_current_location(Method* new_method,
 
 
 JvmtiFramePops* JvmtiEnvThreadState::get_frame_pops() {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   if (_frame_pops == nullptr) {
     _frame_pops = new JvmtiFramePops();
@@ -237,10 +231,7 @@ bool JvmtiEnvThreadState::has_frame_pops() {
 }
 
 void JvmtiEnvThreadState::set_frame_pop(int frame_number) {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   JvmtiFramePop fpop(frame_number);
   JvmtiEventController::set_frame_pop(this, fpop);
@@ -255,19 +246,13 @@ void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
 }
 
 void JvmtiEnvThreadState::clear_all_frame_pops() {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   JvmtiEventController::clear_all_frame_pops(this);
 }
 
 bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
-#ifdef ASSERT
-  Thread *current = Thread::current();
-#endif
-  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(Thread::current()),
          "frame pop data only accessible from same or detached thread or direct handshake");
   if (!jvmti_thread_state()->is_interp_only_mode() || _frame_pops == nullptr) {
     return false;

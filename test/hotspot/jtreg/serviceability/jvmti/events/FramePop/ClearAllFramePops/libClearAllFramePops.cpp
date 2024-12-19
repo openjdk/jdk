@@ -41,9 +41,9 @@ static const char* TEST_CLASS_SIG = "LClearAllFramePops$TestTask;";
 
 static
 bool isTestThread(JNIEnv *jni, jvmtiEnv *jvmti, jthread thr) {
-  jvmtiThreadInfo inf = get_thread_info(jvmti, jni, thr);
-  bool result = strncmp(inf.name, TEST_THREAD_NAME_BASE, strlen(TEST_THREAD_NAME_BASE)) == 0;
-  deallocate(jvmti, jni, inf.name);
+  char* tname = get_thread_name(jvmti, jni, thr);
+  bool result = strncmp(tname, TEST_THREAD_NAME_BASE, strlen(TEST_THREAD_NAME_BASE)) == 0;
+  deallocate(jvmti, jni, tname);
 
   return result;
 }
@@ -52,15 +52,15 @@ static
 void printInfo(JNIEnv *jni, jvmtiEnv *jvmti, jthread thr, jmethodID method, int depth) {
   jclass cls;
   char *mname, *msig, *csig;
-  jvmtiThreadInfo inf = get_thread_info(jvmti, jni, thr);
+  char* tname = get_thread_name(jvmti, jni, thr);
 
   check_jvmti_status(jni, jvmti->GetMethodDeclaringClass(method, &cls), "Error in GetMethodDeclaringClass.");
   check_jvmti_status(jni, jvmti->GetClassSignature(cls, &csig, nullptr), "Error in GetClassSignature.");
   check_jvmti_status(jni, jvmti->GetMethodName(method, &mname, &msig, nullptr), "Error in GetMethodName.");
 
-  LOG(" %s: %s.%s%s, depth = %d\n", inf.name, csig, mname, msig, depth);
+  LOG(" %s: %s.%s%s, depth = %d\n", tname, csig, mname, msig, depth);
 
-  deallocate(jvmti, jni, inf.name);
+  deallocate(jvmti, jni, tname);
   deallocate(jvmti, jni, mname);
   deallocate(jvmti, jni, msig);
   deallocate(jvmti, jni, csig);
@@ -78,7 +78,6 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
   }
   jclass cls;
   char *csig;
-  jvmtiThreadInfo inf = get_thread_info(jvmti, jni, thr);
 
   check_jvmti_status(jni, jvmti->GetMethodDeclaringClass(method, &cls), "Error in GetMethodDeclaringClass.");
   check_jvmti_status(jni, jvmti->GetClassSignature(cls, &csig, nullptr), "Error in GetClassSignature.");
@@ -128,11 +127,6 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   err = jvmti->AddCapabilities(&caps);
   if (err != JVMTI_ERROR_NONE) {
     LOG("(AddCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
-    return JNI_ERR;
-  }
-  err = jvmti->GetCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
   }
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
