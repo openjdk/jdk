@@ -3926,7 +3926,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_getClassAccessFlags:
     prim_return_value = intcon(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
-    return_type = TypeInt::CHAR;  // not bool!  6297094
+    return_type = TypeInt::CHAR;
     break;
   default:
     fatal_unexpected_iid(id);
