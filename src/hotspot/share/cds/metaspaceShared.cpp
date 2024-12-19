@@ -62,6 +62,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
@@ -282,7 +283,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   SharedBaseAddress = (size_t)_requested_base_address;
 
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
-  _symbol_rs = ReservedSpace(symbol_rs_size, mtClassShared);
+  _symbol_rs = MemoryReserver::reserve(symbol_rs_size, mtClassShared);
   if (!_symbol_rs.is_reserved()) {
     log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
@@ -1266,7 +1267,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
       if (use_requested_addr) {
         assert(!total_space_rs.is_reserved(), "Should not be reserved for Windows");
         log_info(cds)("Windows mmap workaround: releasing archive space.");
-        archive_space_rs.release();
+        MemoryReserver::release(archive_space_rs);
+        // Mark as not reserved
+        archive_space_rs = {};
       }
     }
     MapArchiveResult static_result = map_archive(static_mapinfo, mapped_base_address, archive_space_rs);
@@ -1438,8 +1441,10 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
              "Archive base address unaligned: " PTR_FORMAT ", needs alignment: %zu.",
              p2i(base_address), archive_space_alignment);
 
-    archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                     os::vm_page_size(), (char*)base_address);
+    archive_space_rs = MemoryReserver::reserve((char*)base_address,
+                                               archive_space_size,
+                                               archive_space_alignment,
+                                               os::vm_page_size());
     if (archive_space_rs.is_reserved()) {
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
@@ -1505,10 +1510,14 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       // caller will not split the combined space for mapping, instead read the archive data
       // via sequential file IO.
       address ccs_base = base_address + archive_space_size + gap_size;
-      archive_space_rs = ReservedSpace(archive_space_size, archive_space_alignment,
-                                       os::vm_page_size(), (char*)base_address);
-      class_space_rs   = ReservedSpace(class_space_size, class_space_alignment,
-                                       os::vm_page_size(), (char*)ccs_base);
+      archive_space_rs = MemoryReserver::reserve((char*)base_address,
+                                                 archive_space_size,
+                                                 archive_space_alignment,
+                                                 os::vm_page_size());
+      class_space_rs   = MemoryReserver::reserve((char*)ccs_base,
+                                                 class_space_size,
+                                                 class_space_alignment,
+                                                 os::vm_page_size());
     }
     if (!archive_space_rs.is_reserved() || !class_space_rs.is_reserved()) {
       release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
@@ -1519,8 +1528,10 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     MemTracker::record_virtual_memory_tag(class_space_rs.base(), mtClass);
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
-      total_space_rs = ReservedSpace(total_range_size, base_address_alignment,
-                                     os::vm_page_size(), (char*) base_address);
+      total_space_rs = MemoryReserver::reserve((char*) base_address,
+                                               total_range_size,
+                                               base_address_alignment,
+                                               os::vm_page_size());
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
@@ -1568,15 +1579,18 @@ void MetaspaceShared::release_reserved_spaces(ReservedSpace& total_space_rs,
                                               ReservedSpace& class_space_rs) {
   if (total_space_rs.is_reserved()) {
     log_debug(cds)("Released shared space (archive + class) " INTPTR_FORMAT, p2i(total_space_rs.base()));
-    total_space_rs.release();
+    MemoryReserver::release(total_space_rs);
+    total_space_rs = {};
   } else {
     if (archive_space_rs.is_reserved()) {
       log_debug(cds)("Released shared space (archive) " INTPTR_FORMAT, p2i(archive_space_rs.base()));
-      archive_space_rs.release();
+      MemoryReserver::release(archive_space_rs);
+      archive_space_rs = {};
     }
     if (class_space_rs.is_reserved()) {
       log_debug(cds)("Released shared space (classes) " INTPTR_FORMAT, p2i(class_space_rs.base()));
-      class_space_rs.release();
+      MemoryReserver::release(class_space_rs);
+      class_space_rs = {};
     }
   }
 }

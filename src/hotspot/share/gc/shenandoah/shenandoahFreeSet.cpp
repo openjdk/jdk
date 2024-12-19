@@ -792,7 +792,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
   // Free set maintains mutator and collector partitions.  Normally, each allocates only from its partition,
   // except in special cases when the collector steals regions from the mutator partition.
 
-  // Overwrite with non-zero (non-NULL) values only if necessary for allocation bookkeeping.
+  // Overwrite with non-zero (non-null) values only if necessary for allocation bookkeeping.
 
   switch (req.type()) {
     case ShenandoahAllocRequest::_alloc_tlab:
