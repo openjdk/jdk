@@ -97,7 +97,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
     assert(fi_ref->name_index() == fi.name_index(), "Must be");
     assert(fi_ref->signature_index() == fi.signature_index(), "Must be");
     assert(fi_ref->offset() == fi.offset(), "Must be");
-    assert(fi_ref->access_flags() == fi.access_flags(), "Must be");
+    assert(fi_ref->access_flags().as_unsigned_short() == fi.access_flags().as_unsigned_short(), "Must be");
     assert(fi_ref->field_flags().as_uint() == fi.field_flags().as_uint(), " Must be");
     if(fi_ref->field_flags().is_initialized()) {
       assert(fi_ref->initializer_index() == fi.initializer_index(), "Must be");

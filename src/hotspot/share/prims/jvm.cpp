@@ -2469,7 +2469,7 @@ JVM_ENTRY(jint, JVM_GetFieldIxModifiers(JNIEnv *env, jclass cls, int field_index
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   u2 field_access_flags = InstanceKlass::cast(k)->field_access_flags(field_index);
   // This & should be unnecessary.
-  assert(field_access_flags & JVM_RECOGNIZED_FIELD_MODIFIERS == field_access_flags, "already masked");
+  assert((field_access_flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == field_access_flags, "already masked");
   return field_access_flags;
 JVM_END
 
