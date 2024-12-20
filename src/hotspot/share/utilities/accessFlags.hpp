@@ -30,7 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-// AccessFlags is an abstraction over Java access flags.
+// AccessFlags is an abstraction over Java ACC flags.
 // See generated file classfile_constants.h for shared JVM_ACC_XXX access flags
 
 class outputStream;
