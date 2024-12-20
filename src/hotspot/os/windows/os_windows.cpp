@@ -313,7 +313,7 @@ void os::init_system_properties_values() {
           *pslash = '\0';
         }
 
-        // Get rid of \hotspot_variant>, if binary is libjvm.so,
+        // Get rid of \hotspot_variant>, if binary is jvm.dll,
         // or cut off \<executable>, if it is a statically linked binary.
         pslash = strrchr(home_dir, '\\');
         if (pslash != nullptr) {
