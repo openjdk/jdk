@@ -52,7 +52,7 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
-bool MemTracker::_done_bootstrap;
+bool MemTracker::_bootstrapping_done;
 
 void MemTracker::initialize() {
   bool rc = true;

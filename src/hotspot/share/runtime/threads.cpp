@@ -543,7 +543,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->set_thread_state(_thread_in_vm);
   main_thread->initialize_thread_current();
   // Once mutexes are ready, we can use NMT locks.
-  MemTracker::set_done_bootstrap();
+  MemTracker::set_bootstrapping_done();
   // must do this before set_active_handles
   main_thread->record_stack_base_and_size();
   main_thread->register_thread_stack_with_NMT();

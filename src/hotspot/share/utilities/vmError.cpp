@@ -649,7 +649,9 @@ void VMError::report(outputStream* st, bool _verbose) {
   address lastpc = nullptr;
 
   BEGIN
-  if (MemTracker::enabled() && NmtVirtualMemory_lock != nullptr  && MemTracker::is_done_bootstrap() && NmtVirtualMemory_lock->owned_by_self()) {
+  if (MemTracker::enabled() &&
+      MemTracker::is_bootstrapping_done() &&
+      NmtVirtualMemory_lock->owned_by_self()) {
     // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
     NmtVirtualMemory_lock->unlock();
   }
