@@ -234,16 +234,7 @@ public final class CodeGeneratorLibrary {
     public static CodeGeneratorLibrary standard() {
         HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
-        // Random Constants.
-        codeGenerators.add(new ProgrammaticCodeGenerator("int_con",
-            (Scope scope, Parameters parameters) -> {
-                parameters.checkOnlyHas(scope, "lo", "hi");
-                int lo = parameters.getIntOrDefault("lo", Integer.MIN_VALUE, scope);
-                int hi = parameters.getIntOrDefault("hi", Integer.MAX_VALUE, scope);
-
-                int v = intGenerator.nextInt(lo, hi);
-                scope.stream.addCodeToLine(String.valueOf(v));
-        }, 0));
+        addConstants(codeGenerators);
 
         // Dispatch generator call to a ClassScope or MethodScope
         codeGenerators.add(factoryDispatch());
@@ -257,8 +248,32 @@ public final class CodeGeneratorLibrary {
         return new CodeGeneratorLibrary(null, codeGenerators);
     }
 
+    private static void addConstants(HashSet<CodeGenerator> codeGenerators) {
+        /**
+         * {@code int_con} returns a random int.
+         *
+         * @param lo Optional: lower inclusive bound of the range, default min_int.
+         * @param hi Optional: upper inclusive bound of the range, default max_int.
+         * @return Value in the range [lo,hi].
+         */
+        codeGenerators.add(new ProgrammaticCodeGenerator("int_con",
+            (Scope scope, Parameters parameters) -> {
+                parameters.checkOnlyHas(scope, "lo", "hi");
+                int lo = parameters.getIntOrDefault("lo", Integer.MIN_VALUE, scope);
+                int hi = parameters.getIntOrDefault("hi", Integer.MAX_VALUE, scope);
+
+                int v = intGenerator.nextInt(lo, hi);
+                scope.stream.addCodeToLine(String.valueOf(v));
+        }, 0));
+    }
+
     private static void addBasicOperators(HashSet<CodeGenerator> codeGenerators) {
-        // Random choice from a list "aaa|bbb|ccc" -> return either "aaa", "bbb" or "ccc"
+        /**
+         * {@code choose} picks a random choice from a list like "aaa|bbb|ccc", with separator "|".
+         *
+         * @param from List of strings, separated by "|".
+         * @return One element from the list, picked uniformly at random.
+         */
         codeGenerators.add(new ProgrammaticCodeGenerator("choose",
             (Scope scope, Parameters parameters) -> {
                 parameters.checkOnlyHas(scope, "from");
@@ -337,7 +352,6 @@ public final class CodeGeneratorLibrary {
     }
 
     private static void addRandomCode(HashSet<CodeGenerator> codeGenerators) {
-        // empty: as default and generally last generator in recursive generation.
         codeGenerators.add(new Template("empty","/* empty */", 0));
 
         codeGenerators.add(new Template("method_code_split",
@@ -349,11 +363,12 @@ public final class CodeGeneratorLibrary {
 
         // TODO some random if, loops, while, try/catch, random variables, etc
 
-        // Selector for code blocks.
+        /**
+         * {@code method_code} recursively generates random code, to be instantiated inside a method body.
+         */
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("method_code", "empty");
         selectorForCode.add("method_code_split",  100);
         // TODO add more
         codeGenerators.add(selectorForCode);
-
     }
 }
