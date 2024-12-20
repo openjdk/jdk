@@ -283,8 +283,21 @@ class MemTracker : AllStatic {
   // and return true; false if not found.
   static bool print_containing_region(const void* p, outputStream* out);
 
-  // Same as MutexLocker but can be used during VM init while single threaded and before mutexes are ready or current thread has been assigned.
-  // Performs no action during VM init.
+  /*
+   * NmtVirtualMemoryLocker is similar to MutexLocker but can be used during VM init before mutexes are ready or
+   * current thread has been assigned. Performs no action during VM init.
+   *
+   * Unlike malloc, NMT requires locking for virtual memory operations. This is because it must synchronize the usage
+   * of global data structures used for modelling the effect of virtual memory operations.
+   * It is important that locking is used such that the actual OS memory operations (mmap) are done atomically with the
+   * corresponding NMT accounting (updating the internal model). Currently, this is not the case in all situations
+   * (see JDK-8341491), but this should be changed in the future.
+   *
+   * An issue with using Mutex is that NMT is used early during VM initialization before mutexes are initialized
+   * and current thread is attached. Mutexes do not work under those conditions, so we must use a flag to avoid
+   * attempting to lock until initialization is finished. Lack of synchronization here should not be a problem since it
+   * is single threaded at that point in time anyway.
+   */
   class NmtVirtualMemoryLocker: StackObj {
     ConditionalMutexLocker _cml;
   public:

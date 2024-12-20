@@ -3620,8 +3620,6 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
     if (err != nullptr) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #ifdef ASSERT
-      fileStream fs(defaultStream::output_stream());
-      os::print_memory_mappings((char*)start, bytes, &fs);
       assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #endif
       return false;
