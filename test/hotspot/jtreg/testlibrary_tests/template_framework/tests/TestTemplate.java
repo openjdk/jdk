@@ -58,6 +58,7 @@ public class TestTemplate {
         testFieldsAndVariablesDispatch();
         testIntCon();
         testLongCon();
+        testFuel();
     }
 
     public static void testSingleLine() {
@@ -856,6 +857,55 @@ public class TestTemplate {
             + param2 +
             """
             y
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testFuel() {
+        HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
+
+        codeGenerators.add(new Template("my_leaf",
+            "leaf"
+        ));
+
+        // Default fuel is 50, the cost of this is set to 25 so we get 2 recursion levels.
+        codeGenerators.add(new Template("my_split",
+            """
+            begin
+                #{:my_code}
+            mid
+                #{:my_code}
+            end""", 25
+        ));
+
+        SelectorCodeGenerator selector = new SelectorCodeGenerator("my_code", "my_leaf");
+        selector.add("my_split",  100);
+        codeGenerators.add(selector);
+
+        CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
+
+        Template template = new Template("my_template",
+            """
+            #{:my_code}
+            """
+        );
+
+        String code = template.with(library).instantiate();
+        String expected =
+            """
+            begin
+                begin
+                    leaf
+                mid
+                    leaf
+                end
+            mid
+                begin
+                    leaf
+                mid
+                    leaf
+                end
+            end
             """;
         checkEQ(code, expected);
     }
