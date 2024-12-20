@@ -26,7 +26,6 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
-#include "memory/virtualspace.hpp"
 
 G1CMBitMap::G1CMBitMap() : MarkBitMap(), _listener() {
   _listener.set_bitmap(this);

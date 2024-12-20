@@ -4,7 +4,7 @@ jbs=JDK
 version=25
 
 [checks]
-error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists
+error=author,committer,reviewers,merge,issues,executable,symlink,message,hg-tag,whitespace,problemlists,copyright
 warning=issuestitle,binary
 
 [repository]
@@ -34,3 +34,8 @@ pattern=^([124-8][0-9]{6}): (\S.*)$
 
 [checks "problemlists"]
 dirs=test/jdk|test/langtools|test/lib-test|test/hotspot/jtreg|test/jaxp
+
+[checks "copyright"]
+files=^(?!LICENSE|license\.txt|.*\.bin|.*\.gif|.*\.jpg|.*\.png|.*\.icon|.*\.tiff|.*\.dat|.*\.patch|.*\.wav|.*\.class|.*-header|.*\.jar|).*
+oracle_locator=.*Copyright \(c\)(.*)Oracle and/or its affiliates\. All rights reserved\.
+oracle_validator=.*Copyright \(c\) (\d{4})(?:, (\d{4}))?, Oracle and/or its affiliates\. All rights reserved\.

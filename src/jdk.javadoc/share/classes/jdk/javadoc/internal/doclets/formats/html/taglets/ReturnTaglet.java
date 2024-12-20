@@ -94,7 +94,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends ReturnTree> tags = utils.getReturnTrees(holder);
 
         // make sure we are not using @return on a method with the void return type
-        TypeMirror returnType = utils.getReturnType(tagletWriter.getCurrentPageElement(), method);
+        TypeMirror returnType = utils.getReturnType(tagletWriter.getCurrentTypeElement(), method);
         if (returnType != null && utils.isVoid(returnType)) {
             if (!tags.isEmpty() && !config.isDocLintReferenceGroupEnabled()) {
                 messages.warning(holder, "doclet.Return_tag_on_void_method");

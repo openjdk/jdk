@@ -278,7 +278,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   if (!set_klass_decode_mode()) {
 
     // Give fatal error if this is a specified address
-    if ((address)CompressedClassSpaceBaseAddress == _base) {
+    if (CompressedClassSpaceBaseAddress == (size_t)_base) {
       vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
                     CompressedClassSpaceBaseAddress, _shift));
