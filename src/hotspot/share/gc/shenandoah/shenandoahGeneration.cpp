@@ -41,28 +41,6 @@
 
 #include "utilities/quickSort.hpp"
 
-
-class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahHeap* _heap;
-  ShenandoahMarkingContext* const _ctx;
-public:
-  ShenandoahResetUpdateRegionStateClosure() :
-    _heap(ShenandoahHeap::heap()),
-    _ctx(_heap->marking_context()) {}
-
-  void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_active()) {
-      // Reset live data and set TAMS optimistically. We would recheck these under the pause
-      // anyway to capture any updates that happened since now.
-      _ctx->capture_top_at_mark_start(r);
-      r->clear_live_data();
-    }
-  }
-
-  bool is_thread_safe() override { return true; }
-};
-
 template <bool PREPARE_FOR_CURRENT_CYCLE>
 class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
