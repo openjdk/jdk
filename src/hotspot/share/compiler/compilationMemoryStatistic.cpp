@@ -79,7 +79,7 @@ void ArenaCounterTable::summarize(size_t out[ArenaTag::max]) const {
   }
 }
 
-void ArenaCounterTable::print_on(outputStream* st, bool human_readable) const {
+void ArenaCounterTable::print_on(outputStream* st) const {
   bool header_printed = false;
   for (int phaseid = 0; phaseid < (int)Phase::PhaseTraceId::max_phase_timers; phaseid++) {
     size_t sum = 0;
@@ -96,29 +96,34 @@ void ArenaCounterTable::print_on(outputStream* st, bool human_readable) const {
         header_printed = true;
       }
       st->print("%24s ", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phaseid));
-      if (human_readable) {
-        st->print(PROPERFMT_W(10), PROPERFMTARGS(sum));
-      } else {
-        st->print(SIZE_FORMAT_W(10), sum);
-      }
+      st->print(SIZE_FORMAT_W(10), sum);
       for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
         const size_t v = at(phaseid, arenatag);
-        if (human_readable) {
-          st->print(PROPERFMT_W(10), PROPERFMTARGS(v));
-        } else {
-          st->print(SIZE_FORMAT_W(10), v);
-        }
+        st->print(SIZE_FORMAT_W(10), v);
       }
       st->cr();
     }
   }
 }
 
-PhaseIdStack::PhaseIdStack() : _depth(0) {}
+PhaseIdStack::PhaseIdStack() : _depth(0) {
+  push((int)Phase::PhaseTraceId::_t_none); // "outside phase"
+}
 
-void FootprintTimeline::print_entry_on(outputStream* st, int pos) const {
-  const Entry& e = _entries[pos];
-  st->print("   %24s:", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)e.phase.raw()));
+FootprintTimeline::FootprintTimeline() {
+  _pos = 0;
+  _entries[0].cur = _entries[0].start = _entries[0].peak = 0;
+  _entries[0].phaseid = (int)Phase::PhaseTraceId::_t_none; // "outside phase"
+}
+
+void FootprintTimeline::copy_from(const FootprintTimeline& other) {
+  memcpy(_entries, other._entries, sizeof(_entries));
+  _pos = other._pos;
+}
+
+void FootprintTimeline::print_entry_on(outputStream* st, unsigned pos) const {
+  const Entry& e = at(pos);
+  st->print("%2u %24s:", pos, Phase::get_phase_trace_id_text((Phase::PhaseTraceId)e.phaseid));
   st->fill_to(30);
   st->print("%12zu", e.start); // start
   st->fill_to(40);
@@ -127,24 +132,20 @@ void FootprintTimeline::print_entry_on(outputStream* st, int pos) const {
   st->print("%+12zd", (ssize_t)e.cur - e.start); // delta end
   if (e.has_significant_local_peak()) {
     st->fill_to(60);
-    st->print(" significant temp. peak: %zu (%+zd)", e.peak, (ssize_t)e.peak - e.start); // peak
+    st->print(" significant temporary peak: %zu (%+zd)", e.peak, (ssize_t)e.peak - e.start); // peak
   }
   st->cr();
 }
 
 void FootprintTimeline::print_on(outputStream* st) const {
-  if (_pos >= 0) {
+  if (_pos > 0) {
     st->print_cr("%30s%12s%12s%12s", "", "start", "end", "end delta");
-    if (_wrapped) {
-      st->print_cr("%50s", "(older entries have been lost)");
+    unsigned from = 0;
+    if (_pos > max_entries) {
+      st->print_cr("         (%u older entries skipped)", _pos - max_entries);
+      from = _pos - max_entries;
     }
-    assert(_pos < max_entries, "sanity");
-    if (_wrapped) {
-      for (int i = _pos + 1; i < max_entries; i++) {
-        print_entry_on(st, i);
-      }
-    }
-    for (int i = 0; i <= _pos; i++) {
+    for (unsigned i = from; i < _pos; i++) {
       print_entry_on(st, i);
     }
   }
@@ -152,25 +153,18 @@ void FootprintTimeline::print_on(outputStream* st) const {
 
 void FootprintTimeline::on_phase_start(PhaseTrcId id, size_t cur_abs) {
   size_t start_footprint = 0;
-  if (_pos == -1) {
-    _pos = 0;
-  } else {
-    const Entry& old = _entries[_pos];
-    start_footprint = old.cur;
-    // close old, open new entry; but only if the last phase is "interesting".
-    // An "interesting" phase is one that causes a footprint change (end != start),
-    // and/or one that has a local peak that significantly raises above either starting
-    // or ending footprint.
-    if (old.did_footprint_change() || old.has_significant_local_peak()) {
-      _pos++;
-      if (_pos == max_entries) {
-        _pos = 0; _wrapped = true;
-      }
-    }
+  const Entry& old = at(_pos);
+  start_footprint = old.cur;
+  // close old, open new entry; but only if the last phase is "interesting".
+  // An "interesting" phase is one that causes a footprint change (end != start),
+  // and/or one that has a local peak that significantly raises above either starting
+  // or ending footprint.
+  if (old.did_footprint_change() || old.has_significant_local_peak()) {
+    _pos++;
   }
-  Entry& e = _entries[_pos];
+  Entry& e = at(_pos);
   e.start = e.cur = e.peak = start_footprint;
-  e.phase = id;
+  e.phaseid = id.raw();
 }
 
 ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit) :
@@ -181,13 +175,12 @@ ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit) :
 
 void ArenaState::on_phase_start(PhaseTrcId id) {
   _phase_id_stack.push(id);
-  _movement_tracker.on_phase_start(id, _current);
+  _timeline.on_phase_start(id, _current);
 }
 
 void ArenaState::on_phase_end(PhaseTrcId id) {
   _phase_id_stack.pop(id);
-  // parent phase "restarts"
-  _movement_tracker.on_phase_start(_phase_id_stack.top(), _current);
+  _timeline.on_phase_start(_phase_id_stack.top(), _current); // parent phase "restarts"
 }
 
 int ArenaState::retrieve_live_node_count() const {
@@ -213,7 +206,7 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
   _current += size;
   assert(_current >= old_current, "Overflow");
 
-  _movement_tracker.on_footprint_change(_current);
+  _timeline.on_footprint_change(_current);
 
   const PhaseTrcId phase_id = _phase_id_stack.top();
   const ArenaTag arena_tag(arenatagid);
@@ -259,7 +252,7 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   _current -= size;
   _counters_current.sub(size, phase_id, arena_tag);
   _live_nodes_current = retrieve_live_node_count();
-  _movement_tracker.on_footprint_change(_current);
+  _timeline.on_footprint_change(_current);
 }
 
 // Used for logging, not for the report table generated with jcmd Compiler.memory
@@ -282,11 +275,11 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
     st->print_cr("]");
 #ifdef COMPILER2
     if (_comp_type == CompilerType::compiler_c2) {
-      st->print_cr("----- Peak composition by phase and arena type -----");
-      _counters_at_global_peak.print_on(st, false);
-      st->print_cr("----- Allocation timelime by phase -----");
-      _movement_tracker.print_on(st);
-      st->print_cr("----------------------------------------------------");
+      st->print_cr("----- By phase and arena type, at arena usage peak (%zu) -----", _peak);
+      _counters_at_global_peak.print_on(st);
+      st->print_cr("------------- Arena allocation timelime by phase -----------------");
+      _timeline.print_on(st);
+      st->print_cr("------------------------------------------------------------------");
     }
 #endif
   } else {
@@ -388,8 +381,7 @@ class MemStatEntry : public CHeapObj<mtInternal /* (sic) */> {
   struct PerPhaseCounters {
     // Bytes at global peak broken down on per phase and per arena type
     ArenaCounterTable counters_at_global_peak;
-    // Phase-local peaks per phase and per arena type
-    ArenaCounterTable counters_local_peaks;
+    FootprintTimeline timeline;
   };
   PerPhaseCounters* _per_phase_counters; // we only carry these if needed
 
@@ -429,9 +421,10 @@ public:
       // Only store per phase details for C2 to save memory. Should we ever introduce something like phases for
       // other compilers, this needs to be changed to a possibly more generic solution.
       if (_per_phase_counters == nullptr) {
-        _per_phase_counters = NEW_C_HEAP_OBJ(PerPhaseCounters, mtInternal);
+        _per_phase_counters = NEW_C_HEAP_OBJ(PerPhaseCounters, mtTest);
       }
       _per_phase_counters->counters_at_global_peak.copy_from(state->counters_at_global_peak());
+      _per_phase_counters->timeline.copy_from(state->timeline());
     }
 #endif // COMPILER2
   }
@@ -542,11 +535,12 @@ public:
     // One containing the counter composition at global peak, one containing the phase-local
     // counters
     if (_per_phase_counters != nullptr && by_phase) {
-      st->print_cr("----- Peak composition by phase and arena type -----");
-      _per_phase_counters->counters_at_global_peak.print_on(st, human_readable);
-      st->print_cr("----- Phase-local peaks ----------------------------");
-      _per_phase_counters->counters_local_peaks.print_on(st, human_readable);
-      st->print_cr("----------------------------------------------------");
+      st->print_cr("------------- Arena allocation timelime by phase -----------------");
+      st->print_cr("----- By phase and arena type, at arena usage peak (%zu) -----", _peak);
+      _per_phase_counters->counters_at_global_peak.print_on(st);
+      st->print_cr("------------- Arena allocation timelime by phase -----------------");
+      _per_phase_counters->timeline.print_on(st);
+      st->print_cr("------------------------------------------------------------------");
     }
   }
 
@@ -654,7 +648,6 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   const size_t limit = directive->mem_limit();
   ArenaState* const arena_stat = new ArenaState(comp_type, comp_id, limit);
   th->set_arenastat(arena_stat);
-  arena_stat->on_phase_start((int)Phase::PhaseTraceId::_t_none);
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {

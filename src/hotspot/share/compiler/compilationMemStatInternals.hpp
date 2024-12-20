@@ -73,7 +73,7 @@ public:
   inline void set(size_t size, PhaseTrcId id, ArenaTag tag);
   inline void add(size_t size, PhaseTrcId id, ArenaTag tag);
   inline void sub(size_t size, PhaseTrcId id, ArenaTag tag);
-  void print_on(outputStream* ss, bool human_readable) const;
+  void print_on(outputStream* ss) const;
   void summarize(size_t out[ArenaTag::max]) const;
 };
 
@@ -92,18 +92,20 @@ public:
 
 class FootprintTimeline {
   struct Entry {
-    PhaseTrcId phase;
+    int phaseid;
     size_t cur, peak, start;
     bool did_footprint_change() const       { return cur != start; }
     bool has_significant_local_peak() const { return (peak - start) > M && (peak - cur) > M; }
   };
-  static constexpr int max_entries = 64; // we wrap, keeping the last n phase movements
+  static constexpr unsigned max_entries = 64; // we wrap, keeping the last n phase movements
   Entry _entries[max_entries];
-  int _pos;
-  bool _wrapped;
-  void print_entry_on(outputStream* st, int pos) const;
+  unsigned _pos;
+  Entry& at(unsigned pos)             { return _entries[pos % max_entries]; }
+  const Entry& at(unsigned pos) const { return _entries[pos % max_entries]; }
+  void print_entry_on(outputStream* st, unsigned pos) const;
 public:
-  FootprintTimeline() : _pos(-1), _wrapped(false) {}
+  FootprintTimeline();
+  void copy_from(const FootprintTimeline& other);
   inline void on_footprint_change(size_t cur_abs);
   void print_on(outputStream* st) const;
   void on_phase_start(PhaseTrcId phase, size_t cur_abs);
@@ -136,7 +138,8 @@ class ArenaState : public CHeapObj<mtCompiler> {
   // Keep track of current C2 phase
   PhaseIdStack _phase_id_stack;
 
-  FootprintTimeline _movement_tracker;
+  // Keep track of C2 phase allocations over time
+  FootprintTimeline _timeline;
 
   const CompilerType _comp_type;
   const int _comp_id;
@@ -171,6 +174,7 @@ public:
   size_t peak() const { return _peak; }
   // Bytes per arena/phase when we last reached the global peak
   const ArenaCounterTable& counters_at_global_peak() const { return _counters_at_global_peak; }
+  const FootprintTimeline& timeline() const                { return _timeline; }
   // Number of live nodes at global peak (C2 only)
   unsigned live_nodes_at_global_peak() const { return _live_nodes_at_global_peak; }
 };
