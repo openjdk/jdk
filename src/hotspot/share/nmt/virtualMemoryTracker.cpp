@@ -417,7 +417,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 void VirtualMemoryTracker::set_reserved_region_type(address addr, MemTag mem_tag) {
   assert(addr != nullptr, "Invalid address");
   assert(_reserved_regions != nullptr, "Sanity check");
-  assert(!MemTracker::is_bootstrapping_done() || NmtVirtualMemory_lock->owned_by_self() , "Should have acquired NmtVirtualMemory_lock");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion   rgn(addr, 1);
   ReservedMemoryRegion*  reserved_rgn = _reserved_regions->find(rgn);
