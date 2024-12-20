@@ -35,13 +35,13 @@ public class FixedSecureRandomTest {
                 new byte[] {4, 5, 6});
         var b1 = new byte[2];
         fsr.nextBytes(b1);
-        Asserts.assertEqualsByteArray(b1, new byte[] {1, 2});
+        Asserts.assertEqualsByteArray(new byte[] {1, 2}, b1);
         Asserts.assertTrue(fsr.hasRemaining());
         fsr.nextBytes(b1);
-        Asserts.assertEqualsByteArray(b1, new byte[] {3, 4});
+        Asserts.assertEqualsByteArray(new byte[] {3, 4}, b1);
         Asserts.assertTrue(fsr.hasRemaining());
         fsr.nextBytes(b1);
-        Asserts.assertEqualsByteArray(b1, new byte[] {5, 6});
+        Asserts.assertEqualsByteArray(new byte[] {5, 6}, b1);
         Asserts.assertFalse(fsr.hasRemaining());
         Utils.runAndCheckException(() -> fsr.nextBytes(b1),
                 IllegalStateException.class);
