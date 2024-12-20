@@ -46,6 +46,10 @@ public class JarCreateFileNameTest {
                     new RuntimeException("jar tool not found")
             );
 
+    /*
+     * Launches "jar --create --file" with file names of varying lengths and verifies
+     * that the JAR file was successfully created.
+     */
     @ParameterizedTest
     @ValueSource(strings = {"abcd", "abc", "ab", "a", "d.jar", "ef.jar"})
     void testCreate(final String targetJarFileName) throws Exception {
