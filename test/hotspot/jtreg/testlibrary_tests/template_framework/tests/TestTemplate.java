@@ -930,12 +930,17 @@ public class TestTemplate {
             throw new RuntimeException("Unexpected result: " + ret1);
         }
 
-        // int ret2 = InnerTest.test1(5);
+        // int ret2 = InnerTest.test2(5);
         int ret2 = (int)comp.invoke("p.xyz.InnerTest", "test2", new Object[] {5});
         if (ret2 != 5 * 7) {
             throw new RuntimeException("Unexpected result: " + ret2);
         }
 
+        // int ret3 = InnerTest.test3(5);
+        int ret3 = (int)comp.invoke("p.xyz.InnerTest", "test3", new Object[] {5});
+        if (ret3 != 5 + 11) {
+            throw new RuntimeException("Unexpected result: " + ret3);
+        }
     }
 
     public static String generateRecursiveCalls() {
@@ -974,6 +979,21 @@ public class TestTemplate {
         instantiator.where("param", "7")
                     .where("op", "*")
                     .add(null, null, test2Template);
+
+        // test3(in) -> in + 11
+        // Register $in as local variable but don't pass it, so that only the field
+        // can be sampled inside my_param_op_var.
+        Template test3Template = new Template("my_test3",
+            """
+            public static int test3(int ${in:my_int_3:immutable}) {
+                #{:def_final_field(name=$field3,prefix=public static int,value=#param,type=my_int_3)}
+                return #{:my_param_op_var(param=$in,op=#op,type=my_int_3)};
+            }
+            """
+        );
+        instantiator.where("param", "11")
+                    .where("op", "+")
+                    .add(null, null, test3Template);
 
         return instantiator.instantiate();
     }
