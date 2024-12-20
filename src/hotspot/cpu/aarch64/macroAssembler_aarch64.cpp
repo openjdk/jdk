@@ -5029,7 +5029,6 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 // src - the oop we want to load the klass from.
 // dst - output narrow klass.
 void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
-  BLOCK_COMMENT("load_narrow_klass_compact");
   assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
   ldr(dst, Address(src, oopDesc::mark_offset_in_bytes()));
   lsr(dst, dst, markWord::klass_shift);
