@@ -23,13 +23,15 @@
 
 /*
  * @test
- * @summary Generate random code with the library.
+ * @summary Generate random code with the library, demonstrating a simple Fuzzer.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver template_framework.examples.TestRandomCode
  */
 
 package template_framework.examples;
+
+import java.util.HashSet;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
@@ -52,8 +54,29 @@ public class TestRandomCode {
 
     // Generate a source Java file as String
     public static String generate() {
-        // Template with a main method that calls the CodeGenerator "method_code", which
-        // generates random code for a method.
+        // Add some extra methods to the library.
+        HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
+
+        codeGenerators.add(new Template("my_empty","/* empty */", 0));
+
+        codeGenerators.add(new Template("my_method_code_split",
+            """
+            #{:my_method_code}
+            #{:my_method_code}
+            """
+        ));
+
+        // TODO some random if, loops, while, try/catch, random variables, etc
+
+        // This is the core of the random code generator: the selector picks a random template from above,
+        // and then those templates may call back recursively to this selector.
+        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("my_method_code", "my_empty");
+        selectorForCode.add("my_method_code_split", 100);
+        // TODO add more
+        codeGenerators.add(selectorForCode);
+
+        CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
+
         Template template = new Template("my_example",
             """
             package p.xyz;
@@ -62,13 +85,13 @@ public class TestRandomCode {
                 #open(class)
                 public static void main() {
                     #open(method)
-                    #{:method_code}
+                    #{:my_method_code}
                     #close(method)
                 }
                 #close(class)
             }
             """
         );
-        return template.instantiate();
+        return template.with(library).instantiate();
     }
 }

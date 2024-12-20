@@ -878,8 +878,10 @@ public class TestTemplate {
             end""", 25
         ));
 
+        // The selector picks my_split as long as there is enough fuel, and once there is no fuel left, it picks
+        // my_leaf.
         SelectorCodeGenerator selector = new SelectorCodeGenerator("my_code", "my_leaf");
-        selector.add("my_split",  100);
+        selector.add("my_split", 100);
         codeGenerators.add(selector);
 
         CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);

@@ -244,7 +244,6 @@ public final class CodeGeneratorLibrary {
 
         addBasicOperators(codeGenerators);
         addVariableCodeGenerators(codeGenerators);
-        addRandomCode(codeGenerators);
         return new CodeGeneratorLibrary(null, codeGenerators);
     }
 
@@ -366,26 +365,5 @@ public final class CodeGeneratorLibrary {
         codeGenerators.add(new Template("def_final_field",
             "#{:dispatch(scope=class,call=_internal_def_field,name=#name,prefix=#prefix,value=#value,type=#type,mutable=false)}"
         ));
-    }
-
-    private static void addRandomCode(HashSet<CodeGenerator> codeGenerators) {
-        codeGenerators.add(new Template("empty","/* empty */", 0));
-
-        codeGenerators.add(new Template("method_code_split",
-            """
-            #{:method_code}
-            #{:method_code}
-            """
-        ));
-
-        // TODO some random if, loops, while, try/catch, random variables, etc
-
-        /**
-         * {@code method_code} recursively generates random code, to be instantiated inside a method body.
-         */
-        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("method_code", "empty");
-        selectorForCode.add("method_code_split",  100);
-        // TODO add more
-        codeGenerators.add(selectorForCode);
     }
 }
