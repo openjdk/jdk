@@ -34,16 +34,21 @@ import java.awt.Robot;
  */
 
 public class MouseMoveOffScreen {
+    private static final Point OFF_SCREEN_LOC = new Point(20000, 200);
+
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
         robot.mouseMove(200, 200);
         robot.delay(500);
-        robot.mouseMove(20000, 200);
+        robot.mouseMove(OFF_SCREEN_LOC.x, OFF_SCREEN_LOC.y);
         robot.delay(500);
 
+        if (MouseInfo.getPointerInfo().getLocation() == null) {
+            throw new RuntimeException("Test Failed, getLocation returned null.");
+        }
         Point currLoc = MouseInfo.getPointerInfo().getLocation();
         System.out.println("Current mouse location: " + currLoc);
-        if(currLoc.equals(new Point(20000,200))) {
+        if (currLoc.equals(OFF_SCREEN_LOC)) {
             throw new RuntimeException("Test Failed, robot moved mouse off screen.");
         }
     }
