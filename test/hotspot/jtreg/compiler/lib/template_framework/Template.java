@@ -103,6 +103,7 @@ public final class Template extends CodeGenerator {
     /**
      * Match local variable with type declaration:
      *   ${name:type}
+     *   ${name:type:immutable}
      */
     private static final String VARIABLE_WITH_TYPE_CHARS = "\\w:";
     private static final String VARIABLE_WITH_TYPE_PATTERN = "(\\$\\{[" + VARIABLE_WITH_TYPE_CHARS + "]+\\})";
@@ -482,7 +483,7 @@ public final class Template extends CodeGenerator {
                 return;
             }
             String type = parts[1];
-            boolean mutable = parts.length == 1; // third position is "immutable" qualifier.
+            boolean mutable = parts.length == 2; // third position is "immutable" qualifier.
             state.registerVariable(name, type, mutable);
             state.currentScope.stream.addCodeToLine(name);
         } else if (templated.startsWith("$")) {

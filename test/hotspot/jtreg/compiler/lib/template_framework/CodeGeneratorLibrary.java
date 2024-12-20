@@ -127,7 +127,7 @@ public final class CodeGeneratorLibrary {
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
                 scope.print();
-                throw new TemplateFrameworkException("Generator call to load/store cannot find variable of type: " + type);
+                throw new TemplateFrameworkException("Cannot find variable of type: " + type);
             }
             scope.stream.addCodeToLine(String.valueOf(name));
         }, 0);
