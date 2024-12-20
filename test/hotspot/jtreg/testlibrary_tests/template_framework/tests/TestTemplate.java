@@ -40,6 +40,7 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.*;
+import compiler.lib.compile_framework.*;
 
 public class TestTemplate {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -59,6 +60,7 @@ public class TestTemplate {
         testIntCon();
         testLongCon();
         testFuel();
+        testRecursiveCalls();
     }
 
     public static void testSingleLine() {
@@ -910,6 +912,70 @@ public class TestTemplate {
             end
             """;
         checkEQ(code, expected);
+    }
+
+    public static void testRecursiveCalls() {
+        // Create a new CompileFramework instance.
+        CompileFramework comp = new CompileFramework();
+
+        // Add a java source file.
+        comp.addJavaSourceCode("p.xyz.InnerTest", generateRecursiveCalls());
+
+        // Compile the source file.
+        comp.compile();
+
+        // int ret1 = InnerTest.test1(5);
+        int ret1 = (int)comp.invoke("p.xyz.InnerTest", "test1", new Object[] {5});
+        if (ret1 != 5 * 3) {
+            throw new RuntimeException("Unexpected result: " + ret1);
+        }
+
+        // int ret2 = InnerTest.test1(5);
+        int ret2 = (int)comp.invoke("p.xyz.InnerTest", "test2", new Object[] {5});
+        if (ret2 != 5 * 7) {
+            throw new RuntimeException("Unexpected result: " + ret2);
+        }
+
+    }
+
+    public static String generateRecursiveCalls() {
+        // First, we set up some additional code generators for the library.
+        HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
+
+        codeGenerators.add(new Template("my_param_op_var",
+            "#{param} #{op} #{:var(type=#type)}"
+        ));
+
+        CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
+
+        // Now, we start generating code.
+        TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest", library);
+
+        // test1(in) -> in * 3
+        Template test1Template = new Template("my_test1",
+            """
+            public static int test1(int in) {
+                return in * #{param};
+            }
+            """
+        );
+        instantiator.where("param", "3").add(null, null, test1Template);
+
+        // test2(in) -> in * 7
+        // Register $in as a local variable, then pass it on with ":$in",
+        // and sample it as the only option inside my_param_op_var.
+        Template test2Template = new Template("my_test2",
+            """
+            public static int test2(int ${in:my_int_2:immutable}) {
+                return #{:my_param_op_var(param=#param,op=#op,type=my_int_2):$in};
+            }
+            """
+        );
+        instantiator.where("param", "7")
+                    .where("op", "*")
+                    .add(null, null, test2Template);
+
+        return instantiator.instantiate();
     }
 
     public static void checkEQ(String code, String expected) {
