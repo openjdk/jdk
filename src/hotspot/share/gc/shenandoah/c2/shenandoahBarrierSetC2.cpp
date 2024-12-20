@@ -458,18 +458,24 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
 
   // No store check needed if we're storing a null.
   if (val != nullptr && val->is_Con()) {
-    // must be either an oop or NULL
+    // must be either an oop or null
     const Type* t = val->bottom_type();
     if (t == TypePtr::NULL_PTR || t == Type::TOP)
       return;
   }
 
   if (ReduceInitialCardMarks && obj == kit->just_allocated_object(kit->control())) {
-    // We can skip marks on a freshly-allocated object in Eden.
-    // Keep this code in sync with new_deferred_store_barrier() in runtime.cpp.
-    // That routine informs GC to take appropriate compensating steps,
-    // upon a slow-path allocation, so as to make this card-mark
-    // elision safe.
+    // We use card marks to track old to young references in Generational Shenandoah;
+    // see flag ShenandoahCardBarrier above.
+    // Objects are always allocated in the young generation and initialized
+    // before they are promoted. There's always a safepoint (e.g. at final mark)
+    // before an object is promoted from young to old. Promotion entails dirtying of
+    // the cards backing promoted objects, so they will be guaranteed to be scanned
+    // at the next remembered set scan of the old generation.
+    // Thus, we can safely skip card-marking of initializing stores on a
+    // freshly-allocated object. If any of the assumptions above change in
+    // the future, this code will need to be re-examined; see check in
+    // ShenandoahCardBarrier::on_slowpath_allocation_exit().
     return;
   }
 

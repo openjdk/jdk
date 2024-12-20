@@ -230,8 +230,7 @@ public class FieldWriter extends AbstractMemberWriter {
 
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
-        Content classLink = writer.getPreQualifiedClassLink(
-                HtmlLinkInfo.Kind.PLAIN, typeElement);
+        Content classLink = getMemberSummaryLinkOrFQN(typeElement, VisibleMemberTable.Kind.FIELDS);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = Text.of(utils.isClass(typeElement)

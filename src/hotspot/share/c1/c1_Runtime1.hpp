@@ -29,7 +29,6 @@
 #include "code/stubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/stubDeclarations.hpp"
 
 class StubAssembler;

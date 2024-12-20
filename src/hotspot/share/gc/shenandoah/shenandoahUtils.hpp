@@ -242,4 +242,19 @@ public:
   }
 };
 
+// Regions cannot be uncommitted when concurrent reset is zeroing out the bitmaps.
+// This CADR class enforces this by forbidding region uncommits while it is in scope.
+class ShenandoahNoUncommitMark : public StackObj {
+  ShenandoahHeap* const _heap;
+public:
+  explicit ShenandoahNoUncommitMark(ShenandoahHeap* heap) : _heap(heap) {
+    _heap->forbid_uncommit();
+  }
+
+  ~ShenandoahNoUncommitMark() {
+    _heap->allow_uncommit();
+  }
+};
+
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP

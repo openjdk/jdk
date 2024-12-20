@@ -97,6 +97,7 @@ public final class Recording implements Closeable {
      *         support, or if the file repository can't be created or accessed)
      *
      * @see jdk.jfr
+     * @since 11
      */
     public Recording(Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");

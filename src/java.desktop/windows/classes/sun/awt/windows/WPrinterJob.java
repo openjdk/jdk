@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1913,16 +1913,7 @@ public final class WPrinterJob extends RasterPrinterJob
             Destination destPrn = (Destination)attributes.get(
                                                  Destination.class);
             if (destPrn == null) {
-                try {
-                    attributes.add(new Destination(
-                                               new File("./out.prn").toURI()));
-                } catch (SecurityException se) {
-                    try {
-                        attributes.add(new Destination(
-                                                new URI("file:out.prn")));
-                    } catch (URISyntaxException e) {
-                    }
-                }
+                attributes.add(new Destination(new File("./out.prn").toURI()));
             }
         } else {
             attributes.remove(Destination.class);
