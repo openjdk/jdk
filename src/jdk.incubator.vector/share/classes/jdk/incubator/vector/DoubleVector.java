@@ -525,6 +525,19 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r;
     }
 
+    static DoubleVector selectFromTwoVectorHelper(Vector<Double> indexes, Vector<Double> src1, Vector<Double> src2) {
+        int vlen = indexes.length();
+        double[] res = new double[vlen];
+        double[] vecPayload1 = ((DoubleVector)indexes).vec();
+        double[] vecPayload2 = ((DoubleVector)src1).vec();
+        double[] vecPayload3 = ((DoubleVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((DoubleVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -953,7 +966,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,double,double,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,double,VectorMask)
@@ -2125,9 +2138,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         DoubleVector that = (DoubleVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Double> iota = iotaShuffle();
-        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
+        LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vspecies().asIntegral(), (long)(length() - origin));
+        VectorMask<Double> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+        AbstractShuffle<Double> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2155,9 +2169,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     DoubleVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Double> iota = iotaShuffle();
-        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
+        LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vspecies().asIntegral(), (long)(length() - origin));
+        VectorMask<Double> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+        AbstractShuffle<Double> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2176,10 +2191,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         DoubleVector that = (DoubleVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Double> iota = iotaShuffle();
-        VectorMask<Double> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast((double)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
+        LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vspecies().asIntegral(), (long)origin);
+        VectorMask<Double> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());
+        AbstractShuffle<Double> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2216,10 +2231,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     DoubleVector
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Double> iota = iotaShuffle();
-        VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast((double)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
+        LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vspecies().asIntegral(), (long)origin);
+        VectorMask<Double> blendMask = iotaVector.compare(VectorOperators.GE, filter).cast(vspecies());
+        AbstractShuffle<Double> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2242,13 +2257,12 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     final
     <S extends VectorShuffle<Double>>
     DoubleVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, double.class, length(),
-            this, ws, null,
+            this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2269,15 +2283,13 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, double.class, length(),
-                   this, ws, m,
+                   this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
@@ -2298,48 +2310,43 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                            S shuffle,
                                            DoubleVector v) {
         VectorMask<Double> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         DoubleVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, double.class, length(),
-                this, ws, null,
+                this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         DoubleVector r1 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, double.class, length(),
-                v, ws, null,
+                v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<Double> toShuffle0(DoubleSpecies dsp) {
-        double[] a = toArray();
-        int[] sa = new int[a.length];
-        for (int i = 0; i < a.length; i++) {
-            sa[i] = (int) a[i];
-        }
-        return VectorShuffle.fromArray(dsp, sa, 0);
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Double> toShuffleTemplate(Class<?> shuffleType) {
-        DoubleSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), double.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     DoubleVector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+        LongVector idx = convert(VectorOperators.D2L, 0).reinterpretAsLongs();
+        LongVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            LongVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<Long> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
@@ -2415,6 +2422,22 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    DoubleVector selectFrom(Vector<Double> v1, Vector<Double> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -3592,7 +3615,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================
@@ -3702,9 +3725,10 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         private DoubleSpecies(VectorShape shape,
                 Class<? extends DoubleVector> vectorType,
                 Class<? extends AbstractMask<Double>> maskType,
+                Class<? extends AbstractShuffle<Double>> shuffleType,
                 Function<Object, DoubleVector> vectorFactory) {
             super(shape, LaneType.of(double.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Double.SIZE);
         }
@@ -3990,6 +4014,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_64_BIT,
                             Double64Vector.class,
                             Double64Vector.Double64Mask.class,
+                            Double64Vector.Double64Shuffle.class,
                             Double64Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -3997,6 +4022,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_128_BIT,
                             Double128Vector.class,
                             Double128Vector.Double128Mask.class,
+                            Double128Vector.Double128Shuffle.class,
                             Double128Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4004,6 +4030,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_256_BIT,
                             Double256Vector.class,
                             Double256Vector.Double256Mask.class,
+                            Double256Vector.Double256Shuffle.class,
                             Double256Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4011,6 +4038,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_512_BIT,
                             Double512Vector.class,
                             Double512Vector.Double512Mask.class,
+                            Double512Vector.Double512Shuffle.class,
                             Double512Vector::new);
 
     /** Species representing {@link DoubleVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4018,6 +4046,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         = new DoubleSpecies(VectorShape.S_Max_BIT,
                             DoubleMaxVector.class,
                             DoubleMaxVector.DoubleMaxMask.class,
+                            DoubleMaxVector.DoubleMaxShuffle.class,
                             DoubleMaxVector::new);
 
     /**

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -720,6 +720,11 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for (vtos));
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
+}
+
 
 //
 // Helpers for commoning out cases in the various type of method entries.

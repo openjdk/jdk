@@ -25,6 +25,8 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -36,59 +38,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.BlockCodeBuilderImpl;
-import jdk.internal.classfile.impl.BytecodeHelpers;
-import jdk.internal.classfile.impl.CatchBuilderImpl;
-import jdk.internal.classfile.impl.ChainedCodeBuilder;
-import jdk.internal.classfile.impl.LabelImpl;
-import jdk.internal.classfile.impl.NonterminalCodeBuilder;
-import jdk.internal.classfile.impl.TerminalCodeBuilder;
-import java.lang.classfile.instruction.ArrayLoadInstruction;
-import java.lang.classfile.instruction.ArrayStoreInstruction;
-import java.lang.classfile.instruction.BranchInstruction;
-import java.lang.classfile.instruction.CharacterRange;
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.ConvertInstruction;
-import java.lang.classfile.instruction.ExceptionCatch;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.IncrementInstruction;
-import java.lang.classfile.instruction.InvokeDynamicInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-import java.lang.classfile.instruction.LineNumber;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.LocalVariable;
-import java.lang.classfile.instruction.LocalVariableType;
-import java.lang.classfile.instruction.LookupSwitchInstruction;
-import java.lang.classfile.instruction.MonitorInstruction;
-import java.lang.classfile.instruction.NewMultiArrayInstruction;
-import java.lang.classfile.instruction.NewObjectInstruction;
-import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
-import java.lang.classfile.instruction.NewReferenceArrayInstruction;
-import java.lang.classfile.instruction.NopInstruction;
-import java.lang.classfile.instruction.OperatorInstruction;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StackInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
-import java.lang.classfile.instruction.SwitchCase;
-import java.lang.classfile.instruction.TableSwitchInstruction;
-import java.lang.classfile.instruction.ThrowInstruction;
-import java.lang.classfile.instruction.TypeCheckInstruction;
+import jdk.internal.classfile.impl.*;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
-
-import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for code attributes (method bodies).  Builders are not created
@@ -98,7 +51,7 @@ import jdk.internal.javac.PreviewFeature;
  * #with(ClassFileElement)} or concretely by calling the various {@code withXxx}
  * methods.
  *
- * <h2>Instruction Factories</h2>
+ * <h2 id="instruction-factories">Instruction Factories</h2>
  * {@code CodeBuilder} provides convenience methods to create instructions (See
  * JVMS {@jvms 6.5} Instructions) by their mnemonic, taking necessary operands.
  * <ul>
@@ -121,9 +74,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see CodeTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeBuilder
         extends ClassFileBuilder<CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
@@ -195,9 +147,8 @@ public sealed interface CodeBuilder
     /**
      * A builder for blocks of code.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface BlockCodeBuilder extends CodeBuilder
             permits BlockCodeBuilderImpl {
         /**
@@ -336,9 +287,8 @@ public sealed interface CodeBuilder
      *
      * @see #trying
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface CatchBuilder permits CatchBuilderImpl {
         /**
          * Adds a catch block that catches an exception of the given type.
@@ -431,7 +381,6 @@ public sealed interface CodeBuilder
      * @return this builder
      * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
      *         or {@code slot} is out of range
-     * @since 23
      */
     default CodeBuilder loadLocal(TypeKind tk, int slot) {
         return with(LoadInstruction.of(tk, slot));
@@ -444,7 +393,6 @@ public sealed interface CodeBuilder
      * @return this builder
      * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
      *         or {@code slot} is out of range
-     * @since 23
      */
     default CodeBuilder storeLocal(TypeKind tk, int slot) {
         return with(StoreInstruction.of(tk, slot));
@@ -456,7 +404,6 @@ public sealed interface CodeBuilder
      * @param op the branch opcode
      * @param target the branch target
      * @return this builder
-     * @since 23
      */
     default CodeBuilder branch(Opcode op, Label target) {
         return with(BranchInstruction.of(op, target));
@@ -466,7 +413,6 @@ public sealed interface CodeBuilder
      * Generate return instruction
      * @param tk the return type
      * @return this builder
-     * @since 23
      */
     default CodeBuilder return_(TypeKind tk) {
         return with(ReturnInstruction.of(tk));
@@ -478,7 +424,6 @@ public sealed interface CodeBuilder
      * @param opcode the field access opcode
      * @param ref the field reference
      * @return this builder
-     * @since 23
      */
     default CodeBuilder fieldAccess(Opcode opcode, FieldRefEntry ref) {
         return with(FieldInstruction.of(opcode, ref));
@@ -492,7 +437,6 @@ public sealed interface CodeBuilder
      * @param name the field name
      * @param type the field type
      * @return this builder
-     * @since 23
      */
     default CodeBuilder fieldAccess(Opcode opcode, ClassDesc owner, String name, ClassDesc type) {
         return fieldAccess(opcode, constantPool().fieldRefEntry(owner, name, type));
@@ -504,7 +448,6 @@ public sealed interface CodeBuilder
      * @param opcode the invoke opcode
      * @param ref the interface method or method reference
      * @return this builder
-     * @since 23
      */
     default CodeBuilder invoke(Opcode opcode, MemberRefEntry ref) {
         return with(InvokeInstruction.of(opcode, ref));
@@ -519,7 +462,6 @@ public sealed interface CodeBuilder
      * @param desc the method type
      * @param isInterface the interface method invocation indication
      * @return this builder
-     * @since 23
      */
     default CodeBuilder invoke(Opcode opcode, ClassDesc owner, String name, MethodTypeDesc desc, boolean isInterface) {
         return invoke(opcode,
@@ -531,7 +473,6 @@ public sealed interface CodeBuilder
      * Generate an instruction to load from an array
      * @param tk the array element type
      * @return this builder
-     * @since 23
      */
     default CodeBuilder arrayLoad(TypeKind tk) {
         Opcode opcode = BytecodeHelpers.arrayLoadOpcode(tk);
@@ -542,7 +483,6 @@ public sealed interface CodeBuilder
      * Generate an instruction to store into an array
      * @param tk the array element type
      * @return this builder
-     * @since 23
      */
     default CodeBuilder arrayStore(TypeKind tk) {
         Opcode opcode = BytecodeHelpers.arrayStoreOpcode(tk);
@@ -556,7 +496,6 @@ public sealed interface CodeBuilder
      * @return this builder
      * @throws IllegalArgumentException for conversions of {@link TypeKind#VOID void} or
      *         {@link TypeKind#REFERENCE reference}
-     * @since 23
      */
     default CodeBuilder conversion(TypeKind fromType, TypeKind toType) {
         var computationalFrom = fromType.asLoadable();
@@ -612,7 +551,6 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
-     * @since 23
      */
     default CodeBuilder loadConstant(ConstantDesc value) {
         //avoid switch expressions here
@@ -1786,7 +1724,6 @@ public sealed interface CodeBuilder
      *
      * @param target the target type
      * @return this builder
-     * @since 23
      */
     default CodeBuilder instanceOf(ClassEntry target) {
         return with(TypeCheckInstruction.of(Opcode.INSTANCEOF, target));
@@ -1802,7 +1739,6 @@ public sealed interface CodeBuilder
      * @param target the target type
      * @return this builder
      * @throws IllegalArgumentException if {@code target} represents a primitive type
-     * @since 23
      */
     default CodeBuilder instanceOf(ClassDesc target) {
         return instanceOf(constantPool().classEntry(target));

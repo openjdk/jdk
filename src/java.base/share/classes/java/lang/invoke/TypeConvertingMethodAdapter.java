@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,9 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.MethodRefEntry;
+
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.invoke.util.Wrapper;
 
 import static java.lang.constant.ConstantDescs.*;
@@ -202,6 +203,6 @@ class TypeConvertingMethodAdapter {
         return cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
              : cls == Object.class ? CD_Object
              : cls == String.class ? CD_String
-             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+             : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 }

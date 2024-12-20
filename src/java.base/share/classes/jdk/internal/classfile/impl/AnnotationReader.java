@@ -25,21 +25,18 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.Annotation;
-import java.lang.classfile.AnnotationElement;
-import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassReader;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.List;
+
+import jdk.internal.access.SharedSecrets;
 
 import static java.lang.classfile.AnnotationValue.*;
 import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
-
-import java.util.List;
-import java.lang.classfile.Label;
-import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.access.SharedSecrets;
 
 public final class AnnotationReader {
     private AnnotationReader() { }
@@ -357,7 +354,7 @@ public final class AnnotationReader {
     public static void writeAnnotationValue(BufWriterImpl buf, AnnotationValue value) {
         var tag = value.tag();
         buf.writeU1(tag);
-        switch (value.tag()) {
+        switch (tag) {
             case TAG_BOOLEAN, TAG_BYTE, TAG_CHAR, TAG_DOUBLE, TAG_FLOAT, TAG_INT, TAG_LONG, TAG_SHORT, TAG_STRING ->
                     buf.writeIndex(((AnnotationValue.OfConstant) value).constant());
             case TAG_CLASS -> buf.writeIndex(((AnnotationValue.OfClass) value).className());

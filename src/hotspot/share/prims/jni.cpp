@@ -288,7 +288,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
                                         CHECK_NULL);
 
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*)buf, bufLen, nullptr, ClassFileStream::verify);
+  ClassFileStream st((u1*)buf, bufLen, nullptr);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
   Handle protection_domain;
   ClassLoadInfo cl_info(protection_domain);
@@ -321,8 +321,6 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
     SystemDictionary::class_name_symbol(name, vmSymbols::java_lang_NoClassDefFoundError(),
                                         CHECK_NULL);
 
-  //%note jni_3
-  Handle protection_domain;
   // Find calling class
   Klass* k = thread->security_get_caller_class(0);
   // default to the system loader when no context
@@ -344,15 +342,13 @@ JNI_ENTRY(jclass, jni_FindClass(JNIEnv *env, const char *name))
       if (mirror != nullptr) {
         Klass* fromClass = java_lang_Class::as_Klass(mirror);
         loader = Handle(THREAD, fromClass->class_loader());
-        protection_domain = Handle(THREAD, fromClass->protection_domain());
       }
     } else {
       loader = Handle(THREAD, k->class_loader());
     }
   }
 
-  result = find_class_from_class_loader(env, class_name, true, loader,
-                                        protection_domain, true, thread);
+  result = find_class_from_class_loader(env, class_name, true, loader, true, thread);
 
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
@@ -537,8 +533,7 @@ JNI_ENTRY(jint, jni_ThrowNew(JNIEnv *env, jclass clazz, const char *message))
   InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
   Symbol*  name = k->name();
   Handle class_loader (THREAD,  k->class_loader());
-  Handle protection_domain (THREAD, k->protection_domain());
-  THROW_MSG_LOADER_(name, (char *)message, class_loader, protection_domain, JNI_OK);
+  THROW_MSG_LOADER_(name, (char *)message, class_loader, JNI_OK);
   ShouldNotReachHere();
   return 0;  // Mute compiler.
 JNI_END
@@ -2407,11 +2402,10 @@ static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
     size_t size = os::vm_allocation_granularity();
-    bad_address = os::reserve_memory(size);
+    bad_address = os::reserve_memory(size, false, mtInternal);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
-      MemTracker::record_virtual_memory_tag((void*)bad_address, mtInternal);
     }
   }
   return bad_address;
@@ -2929,10 +2923,9 @@ static jfieldID  bufferCapacityField         = nullptr;
 
 static jclass lookupOne(JNIEnv* env, const char* name, TRAPS) {
   Handle loader;            // null (bootstrap) loader
-  Handle protection_domain; // null protection domain
 
   TempNewSymbol sym = SymbolTable::new_symbol(name);
-  jclass result =  find_class_from_class_loader(env, sym, true, loader, protection_domain, true, CHECK_NULL);
+  jclass result =  find_class_from_class_loader(env, sym, true, loader, true, CHECK_NULL);
 
   if (log_is_enabled(Debug, class, resolve) && result != nullptr) {
     trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
@@ -3849,6 +3842,9 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     return JNI_ERR;
   }
 
+  // Want this inside 'attaching via jni'.
+  JFR_ONLY(Jfr::on_thread_start(thread);)
+
   // mark the thread as no longer attaching
   // this uses a fence to push the change through so we don't have
   // to regrab the threads_lock
@@ -3862,8 +3858,6 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(thread);
   }
-
-  JFR_ONLY(Jfr::on_thread_start(thread);)
 
   *(JNIEnv**)penv = thread->jni_environment();
 

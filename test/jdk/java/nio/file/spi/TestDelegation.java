@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import static org.testng.AssertJUnit.assertEquals;
  * @test
  * @summary Verifies that a FileSystemProvider's implementation of the exists
  * and readAttributesIfExists methods are invoked
- * @build TestDelegation TestProvider
- * @run testng/othervm  TestDelegation
+ * @compile testfsp/testfsp/TestProvider.java
+ * @run testng TestDelegation
  */
 public class TestDelegation {
 
@@ -54,7 +54,6 @@ public class TestDelegation {
     private Path fileThatExists;
     // The FileSystemProvider used by the test
     private MyProvider myProvider;
-
 
     /**
      * Create the FileSystemProvider, the FileSystem and
@@ -182,7 +181,7 @@ public class TestDelegation {
     /**
      * The FileSystemProvider implementation used by the test
      */
-    static class MyProvider extends TestProvider {
+    static class MyProvider extends testfsp.TestProvider {
         private final Map<String, List<Path>> calls = new HashMap<>();
 
         private MyProvider() {

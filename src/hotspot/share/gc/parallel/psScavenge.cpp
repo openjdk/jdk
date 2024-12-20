@@ -51,6 +51,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -127,8 +128,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
   while (true) {
     ScannerTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
-      TASKQUEUE_STATS_ONLY(pm->record_steal(task));
-      pm->process_popped_location_depth(task);
+      pm->process_popped_location_depth(task, true);
       pm->drain_stacks_depth(true);
     } else {
       if (terminator.offer_termination()) {

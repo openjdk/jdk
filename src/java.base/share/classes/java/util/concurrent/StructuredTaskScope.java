@@ -26,8 +26,6 @@ package java.util.concurrent;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -261,8 +259,8 @@ import jdk.internal.invoke.MhUtil;
  * {@snippet lang=java :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
  *
- *     // @link substring="runWhere" target="ScopedValue#runWhere(ScopedValue, Object, Runnable)" :
- *     ScopedValue.runWhere(USERNAME, "duke", () -> {
+ *     // @link substring="run" target="ScopedValue.Carrier#run(Runnable)" :
+ *     ScopedValue.where(USERNAME, "duke").run(() -> {
  *         try (var scope = new StructuredTaskScope<String>()) {
  *
  *             scope.fork(() -> childTask());           // @highlight substring="fork"
@@ -688,7 +686,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     /**
      * Interrupt all unfinished threads.
      */
-    private void implInterruptAll() {
+    private void interruptAll() {
         flock.threads()
             .filter(t -> t != Thread.currentThread())
             .forEach(t -> {
@@ -696,19 +694,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                     t.interrupt();
                 } catch (Throwable ignore) { }
             });
-    }
-
-    @SuppressWarnings("removal")
-    private void interruptAll() {
-        if (System.getSecurityManager() == null) {
-            implInterruptAll();
-        } else {
-            PrivilegedAction<Void> pa = () -> {
-                implInterruptAll();
-                return null;
-            };
-            AccessController.doPrivileged(pa);
-        }
     }
 
     /**
@@ -1007,9 +992,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
-         * details how parent-child relations are established implicitly for the purpose
-         * of inheritance of scoped value bindings.
+         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section
+         * in the class description details how parent-child relations are established
+         * implicitly for the purpose of inheritance of scoped value bindings.
          *
          * @param name the name of the task scope, can be null
          * @param factory the thread factory
@@ -1187,7 +1172,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
+         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section in the class description
          * details how parent-child relations are established implicitly for the purpose
          * of inheritance of scoped value bindings.
          *

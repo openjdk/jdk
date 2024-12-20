@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,8 @@ public class PrivateKeyEqualityTest {
     /**
      * JDK default RSA Provider.
      */
-    private static final String PROVIDER_NAME = "SunRsaSign";
+    private static final String PROVIDER_NAME =
+            System.getProperty("test.provider.name", "SunRsaSign");
 
     public static void main(String[] args) throws NoSuchAlgorithmException,
             NoSuchProviderException, InvalidKeySpecException {

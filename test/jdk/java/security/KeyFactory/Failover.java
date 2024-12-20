@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4894125 7054918 8130181
- * @library ../testlibrary
+ * @library ../testlibrary /test/lib
  * @summary test that failover for KeyFactory works
  * @author Andreas Sterbenz
  */
@@ -34,6 +34,7 @@ import java.util.*;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class Failover {
 
@@ -72,8 +73,9 @@ public class Failover {
         // somewhat more real tests using DSA
         System.out.println("DSA tests...");
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("DSA");
-        kpg.initialize(512);
+        String kpgAlgorithm = "DSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         kf = KeyFactory.getInstance("DSA");

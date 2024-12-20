@@ -27,6 +27,7 @@
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/GetThreadListStackTraces/OneGetThreadListStackTraces.java 8308027 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
 
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
@@ -85,6 +86,11 @@ vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java
 # of this no vthreads can complete their reads, and the test times out as a result.
 
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 generic-all
+
+###
+# Fails because resume of a virtual thread is not enough to allow the virtual thread
+# to make progress when all other threads are currently suspended.
+vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
 
 ###
 # Fails on Windows because of additional memory allocation.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  /*
  * @test
  * @bug 8184359
+ * @library /test/lib
  * @summary Standard tests on KeySpec, KeyFactory, KeyPairs and Keys.
  *  Arguments order <KeyExchangeAlgorithm> <Provider> <KeyGenAlgorithm> <Curve*>
  * @run main KeySpecTest DiffieHellman SunJCE DiffieHellman
@@ -55,13 +56,14 @@ import java.util.Arrays;
 import javax.crypto.KeyAgreement;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
+import jdk.test.lib.security.SecurityUtils;
 
 public class KeySpecTest {
 
     public static void main(String[] args) throws Exception {
 
         String kaAlgo = args[0];
-        String provider = args[1];
+        String provider = System.getProperty("test.provider.name", args[1]);
         String kpgAlgo = args[2];
         KeyPair kp = genKeyPair(provider, kpgAlgo,
                 (args.length > 3) ? args[3] : kpgAlgo);
@@ -78,7 +80,7 @@ public class KeySpecTest {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgo, provider);
         switch (kpgInit) {
             case "DiffieHellman":
-                kpg.initialize(512);
+                kpg.initialize(SecurityUtils.getTestKeySize(kpgInit));
                 break;
             case "EC":
                 kpg.initialize(256);

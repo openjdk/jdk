@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.security.CodeSource;
-import java.security.PermissionCollection;
 import java.util.jar.Manifest;
 
 import jdk.internal.access.JavaLangAccess;
@@ -170,31 +168,6 @@ public class ClassLoaders {
             super("app", parent, ucp);
         }
 
-        @Override
-        protected Class<?> loadClass(String cn, boolean resolve)
-            throws ClassNotFoundException
-        {
-            // for compatibility reasons, say where restricted package list has
-            // been updated to list API packages in the unnamed module.
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                int i = cn.lastIndexOf('.');
-                if (i != -1) {
-                    sm.checkPackageAccess(cn.substring(0, i));
-                }
-            }
-
-            return super.loadClass(cn, resolve);
-        }
-
-        @Override
-        protected PermissionCollection getPermissions(CodeSource cs) {
-            PermissionCollection perms = super.getPermissions(cs);
-            perms.add(new RuntimePermission("exitVM"));
-            return perms;
-        }
-
         /**
          * Called by the VM to support dynamic additions to the class path
          *
@@ -207,6 +180,7 @@ public class ClassLoaders {
         /**
          * Called by the VM to support define package for AppCDS
          */
+        @Override
         protected Package defineOrCheckPackage(String pn, Manifest man, URL url) {
             return super.defineOrCheckPackage(pn, man, url);
         }

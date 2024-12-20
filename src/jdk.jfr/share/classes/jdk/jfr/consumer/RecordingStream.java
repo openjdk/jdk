@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,10 +92,6 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have
-     *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     public RecordingStream() {
         this(Map.of());
@@ -149,9 +145,6 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException if a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
      *
      * @see Configuration
      */
@@ -432,9 +425,6 @@ public final class RecordingStream implements AutoCloseable, EventStream {
      * @throws IOException if the recording data can't be copied to the specified
      *         location, or if the stream is closed, or not started.
      *
-     * @throws SecurityException if a security manager exists and the caller doesn't
-     *         have {@code FilePermission} to write to the destination path
-     *
      * @see RecordingStream#setMaxAge(Duration)
      * @see RecordingStream#setMaxSize(long)
      *
@@ -465,6 +455,27 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         directoryStream.awaitTermination();
     }
 
+    /**
+     * Registers an action to perform when new metadata arrives in the stream.
+     *
+     * The event type of an event always arrives sometime before the actual event.
+     * The action must be registered before the stream is started.
+     * <p>
+     * The following example shows how to listen to new event types, register
+     * an action if the event type name matches a regular expression and increase a
+     * counter if a matching event is found. A benefit of using an action per
+     * event type, instead of the generic {@link #onEvent(Consumer)} method,
+     * is that a stream implementation can avoid reading events that are of no
+     * interest.
+     *
+     * {@snippet class = "Snippets" region = "RecordingStreamMetadata"}
+     *
+     * @param action to perform, not {@code null}
+     *
+     * @throws IllegalStateException if an action is added after the stream has
+     *                               started
+     * @since 16
+     */
     @Override
     public void onMetadata(Consumer<MetadataEvent> action) {
         directoryStream.onMetadata(action);

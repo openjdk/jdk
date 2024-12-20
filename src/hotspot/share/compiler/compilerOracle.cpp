@@ -36,6 +36,7 @@
 #include "oops/symbol.hpp"
 #include "opto/phasetype.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -801,6 +802,12 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
 #if !defined(PRODUCT) && defined(COMPILER2)
       else if (option == CompileCommandEnum::TraceAutoVectorization) {
         TraceAutoVectorizationTagValidator validator(value, true);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommandEnum::TraceMergeStores) {
+        TraceMergeStores::TagValidator validator(value, true);
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());

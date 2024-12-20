@@ -15,6 +15,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="af">африкаанс</language>
 			<language type="am">амҳарӣ</language>
 			<language type="ar">арабӣ</language>
+			<language type="ar_001">Стандарти муосири арабӣ</language>
 			<language type="as">ассомӣ</language>
 			<language type="az">озарбойҷонӣ</language>
 			<language type="ba">бошқирдӣ</language>
@@ -43,7 +44,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dv">дивеҳӣ</language>
 			<language type="dz">дзонгха</language>
 			<language type="el">юнонӣ</language>
-			<language type="en">Англисӣ</language>
+			<language type="en">англисӣ</language>
 			<language type="en_AU">англисии австралиягӣ</language>
 			<language type="en_CA">англисии канадагӣ</language>
 			<language type="en_GB">англисии британӣ</language>
@@ -122,6 +123,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ne">непалӣ</language>
 			<language type="niu">ниуэӣ</language>
 			<language type="nl">голландӣ</language>
+			<language type="nl_BE">Фламандӣ</language>
 			<language type="no">норвегӣ</language>
 			<language type="ny">нянҷа</language>
 			<language type="oc">окситанӣ</language>
@@ -367,6 +369,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Zzzz">Скрипти номаълум</script>
 		</scripts>
 		<territories>
+			<territory type="001">ҷаҳонӣ</territory>
+			<territory type="002">Африқо</territory>
+			<territory type="003">Америкаи Шимолӣ</territory>
+			<territory type="005">Америкаи Ҷанубӣ</territory>
+			<territory type="009">Уқёнус</territory>
+			<territory type="011">Африқои Ғарбӣ</territory>
+			<territory type="013">Америкаи Марказӣ</territory>
+			<territory type="014">Африқои Шимолӣ</territory>
+			<territory type="015">Африқои Шарқӣ</territory>
+			<territory type="017">Африқои Миёна</territory>
+			<territory type="018">Африқои Ҷанубӣ</territory>
+			<territory type="019">Америка</territory>
+			<territory type="021">Амрикои Шимолӣ</territory>
+			<territory type="029">Кариб</territory>
+			<territory type="030">Осиёи Шарқӣ</territory>
+			<territory type="034">Осиёи Ҷанубӣ</territory>
+			<territory type="035">Осиёи Ҷанубу Шарқӣ</territory>
+			<territory type="039">Аврупои Ҷанубӣ</territory>
+			<territory type="053">Австралияву Осиё</territory>
+			<territory type="054">Меланезия</territory>
+			<territory type="057">Минтақаи Микронезия</territory>
+			<territory type="061">Полинезия</territory>
+			<territory type="142">Осиё</territory>
+			<territory type="143">Осиёи Марказӣ</territory>
+			<territory type="145">Осиёи Ғарбӣ</territory>
+			<territory type="150">Аврупо</territory>
+			<territory type="151">Аврупои Шарқӣ</territory>
+			<territory type="154">Аврупои Шимолӣ</territory>
+			<territory type="155">Аврупои Ғарбӣ</territory>
+			<territory type="202">Африқои Суб-Сахара</territory>
+			<territory type="419">Америкаи Лотинӣ</territory>
 			<territory type="AC">Асунсон</territory>
 			<territory type="AD">Андорра</territory>
 			<territory type="AE">Аморатҳои Муттаҳидаи Араб</territory>
@@ -397,6 +430,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BM">Бермуда</territory>
 			<territory type="BN">Бруней</territory>
 			<territory type="BO">Боливия</territory>
+			<territory type="BQ">Кариби Нидерланд</territory>
 			<territory type="BR">Бразилия</territory>
 			<territory type="BS">Багам</territory>
 			<territory type="BT">Бутон</territory>
@@ -406,9 +440,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="BZ">Белиз</territory>
 			<territory type="CA">Канада</territory>
 			<territory type="CC">Ҷазираҳои Кокос (Килинг)</territory>
-			<territory type="CD">Конго (ҶДК)</territory>
+			<territory type="CD">Конго - Киншаса</territory>
 			<territory type="CF">Ҷумҳурии Африқои Марказӣ</territory>
-			<territory type="CG">Конго</territory>
+			<territory type="CG">Конго - Браззавил</territory>
+			<territory type="CG" alt="variant">Конго (Ҷумҳурии)</territory>
 			<territory type="CH">Швейтсария</territory>
 			<territory type="CI">Кот-д’Ивуар</territory>
 			<territory type="CK">Ҷазираҳои Кук</territory>
@@ -416,6 +451,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CM">Камерун</territory>
 			<territory type="CN">Хитой</territory>
 			<territory type="CO">Колумбия</territory>
+			<territory type="CP">Ҷазираи Клиппертон</territory>
 			<territory type="CR">Коста-Рика</territory>
 			<territory type="CU">Куба</territory>
 			<territory type="CV">Кабо-Верде</territory>
@@ -424,17 +460,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="CY">Кипр</territory>
 			<territory type="CZ">Ҷумҳурии Чех</territory>
 			<territory type="DE">Германия</territory>
+			<territory type="DG">Диего-Гарсия</territory>
 			<territory type="DJ">Ҷибути</territory>
 			<territory type="DK">Дания</territory>
 			<territory type="DM">Доминика</territory>
 			<territory type="DO">Ҷумҳурии Доминикан</territory>
 			<territory type="DZ">Алҷазоир</territory>
+			<territory type="EA">Сеута ва Мелилла</territory>
 			<territory type="EC">Эквадор</territory>
 			<territory type="EE">Эстония</territory>
 			<territory type="EG">Миср</territory>
+			<territory type="EH">Сахараи Ғарбӣ</territory>
 			<territory type="ER">Эритрея</territory>
 			<territory type="ES">Испания</territory>
 			<territory type="ET">Эфиопия</territory>
+			<territory type="EU">Иттиҳоди Аврупо</territory>
+			<territory type="EZ">Минтақаи Аврупо</territory>
 			<territory type="FI">Финляндия</territory>
 			<territory type="FJ">Фиҷи</territory>
 			<territory type="FK">Ҷазираҳои Фолкленд</territory>
@@ -467,12 +508,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="HR">Хорватия</territory>
 			<territory type="HT">Гаити</territory>
 			<territory type="HU">Маҷористон</territory>
+			<territory type="IC">Ҷазираҳои Канария</territory>
 			<territory type="ID">Индонезия</territory>
 			<territory type="IE">Ирландия</territory>
 			<territory type="IL">Исроил</territory>
 			<territory type="IM">Ҷазираи Мэн</territory>
 			<territory type="IN">Ҳиндустон</territory>
 			<territory type="IO">Қаламрави Британия дар уқёнуси Ҳинд</territory>
+			<territory type="IO" alt="chagos">Галаҷазираи Чагос</territory>
 			<territory type="IQ">Ироқ</territory>
 			<territory type="IR">Эрон</territory>
 			<territory type="IS">Исландия</territory>
@@ -488,6 +531,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="KM">Комор</territory>
 			<territory type="KN">Сент-Китс ва Невис</territory>
 			<territory type="KP">Кореяи Шимолӣ</territory>
+			<territory type="KR">Кореяи Ҷанубӣ</territory>
 			<territory type="KW">Қувайт</territory>
 			<territory type="KY">Ҷазираҳои Кайман</territory>
 			<territory type="KZ">Қазоқистон</territory>
@@ -538,6 +582,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NR">Науру</territory>
 			<territory type="NU">Ниуэ</territory>
 			<territory type="NZ">Зеландияи Нав</territory>
+			<territory type="NZ" alt="variant">Аотеароа Зеландияи Нав</territory>
 			<territory type="OM">Умон</territory>
 			<territory type="PA">Панама</territory>
 			<territory type="PE">Перу</territory>
@@ -549,10 +594,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PM">Сент-Пер ва Микелон</territory>
 			<territory type="PN">Ҷазираҳои Питкейрн</territory>
 			<territory type="PR">Пуэрто-Рико</territory>
+			<territory type="PS">Қаламравҳои Фаластинӣ</territory>
+			<territory type="PS" alt="short">Фаластин</territory>
 			<territory type="PT">Португалия</territory>
 			<territory type="PW">Палау</territory>
 			<territory type="PY">Парагвай</territory>
 			<territory type="QA">Қатар</territory>
+			<territory type="QO">Уқёнуси Дур</territory>
 			<territory type="RE">Реюнион</territory>
 			<territory type="RO">Руминия</territory>
 			<territory type="RS">Сербия</territory>
@@ -578,7 +626,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="SV">Эл-Салвадор</territory>
 			<territory type="SX">Синт-Маартен</territory>
 			<territory type="SY">Сурия</territory>
-			<territory type="SZ">Свазиленд</territory>
+			<territory type="SZ">Эсватини</territory>
 			<territory type="TA">Тристан-да-Куня</territory>
 			<territory type="TC">Ҷазираҳои Теркс ва Кайкос</territory>
 			<territory type="TD">Чад</territory>
@@ -588,6 +636,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TJ">Тоҷикистон</territory>
 			<territory type="TK">Токелау</territory>
 			<territory type="TL">Тимор-Лесте</territory>
+			<territory type="TL" alt="variant">Тимори Шарқӣ</territory>
 			<territory type="TM">Туркманистон</territory>
 			<territory type="TN">Тунис</territory>
 			<territory type="TO">Тонга</territory>
@@ -599,6 +648,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="UA">Украина</territory>
 			<territory type="UG">Уганда</territory>
 			<territory type="UM">Ҷазираҳои Хурди Дурдасти ИМА</territory>
+			<territory type="UN">Созмони Милали Муттаҳид</territory>
 			<territory type="US">Иёлоти Муттаҳида</territory>
 			<territory type="US" alt="short">ИМ</territory>
 			<territory type="UY">Уругвай</territory>
@@ -612,6 +662,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VU">Вануату</territory>
 			<territory type="WF">Уоллис ва Футуна</territory>
 			<territory type="WS">Самоа</territory>
+			<territory type="XA">Псевдо-аксентҳо</territory>
+			<territory type="XB">Псевдо-бидӣ</territory>
 			<territory type="XK">Косово</territory>
 			<territory type="YE">Яман</territory>
 			<territory type="YT">Майотта</territory>
@@ -622,6 +674,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 		<types>
 			<type key="calendar" type="gregorian">Тақвими грегорианӣ</type>
+			<type key="calendar" type="islamic-civil">Тақвими ҳиҷрӣ (ҷадвал, давраи шаҳрвандӣ)</type>
+			<type key="calendar" type="islamic-tbla">Тақвими ҳиҷрӣ (ҷадвал, давраи ситорашиносӣ)</type>
+			<type key="calendar" type="iso8601">Тақвими ISO-8601</type>
 			<type key="collation" type="standard">Тартиби мураттабсозии стандартӣ</type>
 			<type key="numbers" type="arab">Рақамҳои ҳинду-арабӣ</type>
 			<type key="numbers" type="latn">Рақамҳои ғарбӣ</type>
@@ -633,7 +688,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Забон: {0}</codePattern>
-			<codePattern type="script">Скрипт: {0}</codePattern>
+			<codePattern type="script">Алифбо: {0}</codePattern>
 			<codePattern type="territory">Минтақа: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
@@ -643,10 +698,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="index" draft="contributed">[А Б В Г Ғ Д ЕЁ Ж З ИӢ Й К Қ Л М Н О П Р С Т УӮ Ф Х Ҳ Ч Ҷ Ш Ъ Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” » ( ) \[ \] § @ * / \&amp; # † ‡ ′ {″«}]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>»</quotationStart>
-		<quotationEnd>«</quotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -681,26 +732,39 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'соати' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'соати' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
@@ -992,20 +1056,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'соати' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'соати' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -1027,10 +1103,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'ҳафтаи' W, MMMM</dateFormatItem>
 						<dateFormatItem id="yM">MM-y</dateFormatItem>
-						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMd">d.M.y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd">d MMM, y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, d MMM, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
@@ -1195,8 +1271,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Дхул-Ҳ.</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">муҳаррам</month>
-							<month type="2">сафар</month>
+							<month type="1">Муҳаррам</month>
+							<month type="2">Сафар</month>
 							<month type="3">Рабеъ I</month>
 							<month type="4">Рабеъ II</month>
 							<month type="5">ҷимоди-ул-уло</month>
@@ -1211,16 +1287,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="wide">
-							<month type="1">муҳаррам</month>
-							<month type="2">сафар</month>
+							<month type="1">Муҳаррам</month>
+							<month type="2">Сафар</month>
 							<month type="3">Рабеъ I</month>
 							<month type="4">Рабеъ II</month>
-							<month type="5">ҷимоди-ул-уло</month>
-							<month type="6">ҷимоди-ул-сони</month>
-							<month type="7">раҷаб</month>
-							<month type="8">Шабан</month>
-							<month type="9">Рамадан</month>
-							<month type="10">Шаввал</month>
+							<month type="5">Ҷимоди-ул-уло</month>
+							<month type="6">Ҷимоди-ул-сони</month>
+							<month type="7">Раҷаб</month>
+							<month type="8">Шаъбон</month>
+							<month type="9">Рамазон</month>
+							<month type="10">Шаавол</month>
 							<month type="11">Дхул-Қидаҳ</month>
 							<month type="12">Дхул-Ҳиҷҷаҳ</month>
 						</monthWidth>
@@ -1638,7 +1714,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">шнб о.</relative>
 			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
+				<displayName>субҳ/бегоҳ</displayName>
 			</field>
 			<field type="hour">
 				<displayName>соат</displayName>
@@ -1702,7 +1778,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<gmtZeroFormat>Вақти GMT</gmtZeroFormat>
 			<regionFormat>Вақти {0}</regionFormat>
 			<regionFormat type="daylight">Вақти рӯзонаи {0}</regionFormat>
 			<regionFormat type="standard">Вақти стандартии {0}</regionFormat>
@@ -1714,9 +1789,1301 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Шаҳри номаълум</exemplarCity>
 			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity>Андорра</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>Дубай</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>Кобул</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>Антигуа</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>Ангиля</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity>Тиран</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity>Ереван</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity>Луанда</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>Ротера</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>Палмер</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Troll">
+				<exemplarCity>Тролл</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>Сёва</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>Мавсон</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity>Дэвис</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>Восток</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>Кейси</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>Дюмон д’Урвилл</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>Макмердо</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity>Рио Галлегос</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity>Мендоза</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity>Сан-Хуан</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity>Ушуайя</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity>Ла Риоха</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity>Сан Луис</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity>Катамарка</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity>Салта</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity>Ҷуҷуй</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity>Тукуман</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity>Кордоба</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity>Буэнос-Айрес</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity>Паго Паго</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity>Вена</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity>Перт</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity>Эукла</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity>Дарвин</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>Аделаида</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity>Брокен-Хилл</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>Мелбурн</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity>Хобарт</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity>Линдеман</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>Сидней</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>Брисбен</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>Маккуари</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity>Лорд Хоу</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>Аруба</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity>Марихамн</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>Боку</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity>Сараево</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>Барбадос</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>Дакка</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity>Брюссел</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity>Уагадугу</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity>София</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>Баҳрайн</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity>Буҷумбура</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity>Порто-Ново</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>Сент Бартелеми</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>Бермуда</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity>Бруней</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity>Ла-Пас</exemplarCity>
+			</zone>
+			<zone type="America/Kralendijk">
+				<exemplarCity>Кралендйк</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity>Эйрунепе</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity>Рио Бранко</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity>Порту Велхо</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>Боа Виста</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity>Манаус</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity>Куяба</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity>Сантарем</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity>Кампо Гранде</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>Белем</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>Арагуайна</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>Сан-Паулу</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>Бахия</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity>Форталеза</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity>Масейо</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity>Ресифи</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity>Норонха</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>Нассау</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity>Тимфу</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity>Габороне</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity>Минск</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>Белиз</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>Доусон</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>Уайтхорс</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>Инувик</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>Ванкувер</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Форт Нелсон</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>Доусон Крик</exemplarCity>
+			</zone>
+			<zone type="America/Creston">
+				<exemplarCity>Крестон</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>Эдмонтон</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>Свифт-Каррент</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>Кембриҷ Бэй</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>Регина</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>Виннипег</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>Резолют</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>Ранкин Инлет</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity>Атикокан</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>Торонто</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>Икалуит</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>Монктон</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>Галифакс</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>Гус Бэй</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>Глэйс Бэй</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>Блан-Саблон</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>Сент Ҷонс</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity>Кокос</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity>Киншаса</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity>Лубумбаши</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity>Бангуи</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity>Браззавил</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity>Сюрих</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>Абидҷон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity>Раротонга</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>Истер</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Пунта Аренас</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity>Сантьяго</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity>Дуала</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>Урумчи</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>Шанхай</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity>Богота</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>Коста Рика</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>Ҳавана</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>Кабо-Верде</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>Кюрасао</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity>Кристмас</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity>Никосия</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Фамагуста</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>Прага</exemplarCity>
+			</zone>
+			<zone type="Europe/Busingen">
+				<exemplarCity>Бусинген</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>Берлин</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>Ҷибути</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>Копенгаген</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>Доминика</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>Санто Доминго</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity>Алҷазоир</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>Галапагос</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity>Гуаякил</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity>Таллин</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>Қоҳира</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity>Эл Аиун</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity>Асмара</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>Канария</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity>Сеута</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity>Мадрид</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity>Аддис-Абеба</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity>Хелсинки</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity>Фиҷи</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity>Стэнли</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity>Чук</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity>Понпей</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity>Косрае</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>Фарер</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>Париж</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity>Либревиль</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>Вақти тобистонаи Британия</daylight>
+				</long>
+				<exemplarCity>Лондон</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>Гренада</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>Тбилиси</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity>Кайен</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity>Гернси</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>Аккра</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity>Гибралтар</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>Туле</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity>Нуук</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>Иттоккортоормиит</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>Данмаркшавн</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity>Банҷул</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity>Конакри</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>Гваделупа</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity>Малабо</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>Афина</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>Ҷорҷияи Ҷанубӣ</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>Гватемала</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity>Гуам</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity>Бисау</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity>Гайана</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>Ҳонконг</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>Тегусигалпа</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity>Загреб</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>Порт-о-Пренс</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>Будапешт</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>Ҷакарта</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity>Понтианак</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity>Макасар</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity>Ҷаяпура</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Вақти стандартии Ирландия</daylight>
+				</long>
+				<exemplarCity>Дублин</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>Йерусалим</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>Ҷазираи Ман</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>Колката</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>Чагос</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>Багдод</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>Теҳрон</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity>Рейкявик</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>Рим</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity>Ҷерси</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Ямайка</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>Аммон</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>Токио</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity>Найроби</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>Бишкек</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity>Пномпен</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kanton">
+				<exemplarCity>Кантон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity>Киритимати</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity>Тарава</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>Коморо</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>Сент Китс</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity>Пхенян</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>Сеул</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>Кувайт</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>Кайман</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>Актау</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>Орал</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Атирау</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>Актобе</exemplarCity>
+			</zone>
+			<zone type="Asia/Qostanay">
+				<exemplarCity>Кустанай</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>Қизилорда</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>Алмаато</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity>Вьентян</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>Бейрут</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>Сент-Люсия</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity>Вадуз</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>Коломбо</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity>Монровия</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity>Масеру</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity>Вилнюс</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>Люксембург</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity>Рига</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>Триполи</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity>Касабланка</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>Монако</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity>Кишинёв</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity>Подгоритса</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>Мариго</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity>Антананариву</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>Кважалейн</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity>Мажуро</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity>Скопйе</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity>Бамако</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>Янгон</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>Ховд</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>Улан-Батор</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>Макао</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity>Сайпан</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>Мартиника</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity>Нуакшот</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>Монсеррат</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity>Малта</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>Маврикий</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>Малдив</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity>Блантайр</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>Тихуана</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>Эрмосилло</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Сюдад Хуарес</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>Мазатлан</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>Чихуахуа</exemplarCity>
+			</zone>
+			<zone type="America/Bahia_Banderas">
+				<exemplarCity>Бахия де Бандерас</exemplarCity>
+			</zone>
+			<zone type="America/Ojinaga">
+				<exemplarCity>Ожинага</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>Монтеррей</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Мехико</exemplarCity>
+			</zone>
+			<zone type="America/Matamoros">
+				<exemplarCity>Матаморос</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>Мерида</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>Канкун</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity>Куала Лумпур</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity>Кучинг</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity>Мапуту</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity>Виндхук</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity>Нумеа</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity>Ниамей</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>Норфолк</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity>Лагос</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>Манагуа</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>Амстердам</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>Осло</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>Катманду</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>Науру</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity>Ниуэ</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>Чатам</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity>Окленд</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>Маскат</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>Панама</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity>Лима</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity>Таити</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>Маркес</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity>Гамбир</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity>Порт Морсби</exemplarCity>
+			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity>Бугенвилл</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity>Манила</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>Карачи</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>Варшава</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>Микелон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>Питкэрн</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Пуэрто-Рико</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>Ғазза</exemplarCity>
+			</zone>
+			<zone type="Asia/Hebron">
+				<exemplarCity>Хеброн</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>Ҷазираҳои Азор</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity>Мадейра</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>Лиссабон</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>Палау</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>Асунсион</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>Қатар</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>Реюнион</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity>Бухарест</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>Белград</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity>Калининград</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>Москва</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity>Волгоград</exemplarCity>
+			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Саратов</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Астрахань</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Уляновск</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Киров</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity>Самара</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity>Екатеринбург</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity>Омск</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity>Новосибирск</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Барнаул</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Томск</exemplarCity>
+			</zone>
+			<zone type="Asia/Novokuznetsk">
+				<exemplarCity>Новокузнетск</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity>Красноярск</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity>Иркутск</exemplarCity>
+			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>Чита</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity>Якутск</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity>Владивосток</exemplarCity>
+			</zone>
+			<zone type="Asia/Khandyga">
+				<exemplarCity>Хандига</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>Сахалин</exemplarCity>
+			</zone>
+			<zone type="Asia/Ust-Nera">
+				<exemplarCity>Уст-Нера</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity>Магадан</exemplarCity>
+			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>Среднеколимск</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>Камчатка</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>Анадир</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity>Кигали</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>Риёз</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity>Гвадалканал</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity>Махе</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity>Хартум</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>Стокголм</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>Сингапур</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>Сент Елена</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity>Любляна</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity>Лонгйербён</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity>Братислава</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity>Фритаун</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity>Сан-Марино</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity>Дакар</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity>Могадишо</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity>Парамарибо</exemplarCity>
+			</zone>
+			<zone type="Africa/Juba">
+				<exemplarCity>Ҷуба</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity>Сан-Томе</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>Сальвадор</exemplarCity>
+			</zone>
+			<zone type="America/Lower_Princes">
+				<exemplarCity>Квартали Поёни Принс</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>Димишқ</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity>Мбабане</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>Гранд Терк</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity>Нҷамена</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>Кергулен</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity>Ломе</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>Бангкок</exemplarCity>
+			</zone>
 			<zone type="Asia/Dushanbe">
 				<exemplarCity>Душанбе</exemplarCity>
 			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity>Факаофо</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity>Дили</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>Ашхобод</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>Тунис</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity>Тонгатапу</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>Истанбул</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>Порти Испания</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity>Фунафути</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity>Тайбэй</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity>Доруссалом</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>Киев</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>Симферопол</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity>Кампала</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>Мидвей</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>Вейк</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>Адак</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity>Ном</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>Анкорич</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity>Якутат</exemplarCity>
+			</zone>
+			<zone type="America/Sitka">
+				<exemplarCity>Ситка</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>Ҷуно</exemplarCity>
+			</zone>
+			<zone type="America/Metlakatla">
+				<exemplarCity>Метлакатла</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>Лос-Анҷелес</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>Бойз</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>Финикс</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>Денвер</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>Бейла, Дакотаи Шимолӣ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>Ню Салем, Дакотаи Шимолӣ</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>Сентр, Дакотаи Шимолӣ</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>Чикаго</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity>Меномин</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>Винсенс, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>Петербург, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>Тел Сити, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>Нокс, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>Винамак, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>Маренго, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>Индианаполис</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>Луисвилл</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>Вевай, Индиана</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>Монтичелло, Кентукки</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>Детройт</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>Ню-Йорк</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity>Монтевидео</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>Самарқанд</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>Тошкент</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>Ватикан</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>Сент Винсент</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>Каракас</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>Тортола</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>Сент Томас</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>Хо Ши Мин</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity>Эфате</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>Уоллис</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>Апиа</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>Адан</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity>Майотта</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity>Йоханнесбург</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity>Лусака</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity>Хараре</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Вақти Афғонистон</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Вақти Африқои Марказӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Вақти Африқои Шарқӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Вақти стандартии Африқои Ҷанубӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Вақти Африқои Ғарбӣ</generic>
+					<standard>Вақти стандартии Африқои Ғарбӣ</standard>
+					<daylight>Вақти тобистонаи Африқои Ғарбӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Вақти Аляска</generic>
+					<standard>Вақти стандартии Аляска</standard>
+					<daylight>Вақти рӯзонаи Аляска</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Вақти Амазон</generic>
+					<standard>Вақти стандартии Амазон</standard>
+					<daylight>Вақти тобистонаи Амазон</daylight>
+				</long>
+			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>Вақти марказӣ</generic>
@@ -1745,6 +3112,41 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Вақти рӯзонаи Уқёнуси Ором</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Вақти Апиа</generic>
+					<standard>Вақти стандартии Апиа</standard>
+					<daylight>Вақти рӯзонаи Апиа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Вақти Арабистон</generic>
+					<standard>Вақти стандартии Арабистон</standard>
+					<daylight>Вақти рӯзонаи Арабистон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Вақти Аргентина</generic>
+					<standard>Вақти стандартии Аргентина</standard>
+					<daylight>Вақти тобистонаи Аргентина</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Вақти Аргентинаи Ғарбӣ</generic>
+					<standard>Вақти стандартии Аргентинаи Ғарбӣ</standard>
+					<daylight>Вақти тобистонаи Аргентинаи Ғарбӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Вақти Арманистон</generic>
+					<standard>Вақти стандартии Арманистон</standard>
+					<daylight>Вақти рӯзонаи Арманистон</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Вақти атлантикӣ</generic>
@@ -1752,9 +3154,171 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Вақти рӯзонаи атлантикӣ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Вақти Австралияи Марказӣ</generic>
+					<standard>Вақти стандартии Австралияи Марказӣ</standard>
+					<daylight>Вақти рӯонаи Австралияи Марказӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Вақти Ғарбии Марказии Австралия</generic>
+					<standard>Вақти стандартии Ғарбии Австралия Марказӣ</standard>
+					<daylight>Вақти рӯзонаи Ғарбии Австралия Марказӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Вақти Австралияи Шарқӣ</generic>
+					<standard>Вақти стандартии шарқии Австралия</standard>
+					<daylight>Вақти рӯзонаи шарқии Австралия</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Вақти Австралияи Ғарбӣ</generic>
+					<standard>Вақти стандартии Австралияи Ғарбӣ</standard>
+					<daylight>Вақти рӯзонаи Австралияи Ғарбӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Вақти Озарбойҷон</generic>
+					<standard>Вақти стандартии Озарбойҷон</standard>
+					<daylight>Вақти тобистонаи Озарбойҷон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Вақти Азор</generic>
+					<standard>Вақти стандартии Азор</standard>
+					<daylight>Вақти тобистонаи Азор</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Вақти Бангладеш</generic>
+					<standard>Вақти стандартии Бангладеш</standard>
+					<daylight>Вақти тобистонаи Бангладеш</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Вақти Бутан</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Вақти Боливия</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Вақти Бразилия</generic>
+					<standard>Вақти стандартии Бразилия</standard>
+					<daylight>Вақти тобистонаи Бразилия</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Вақти Бруней Доруссалом</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Вақти Кабо Верде</generic>
+					<standard>Вақти стандартии Кабо-Верде</standard>
+					<daylight>Вақти тобистонаи Кабо-Верде</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Вақти стандартии Чаморро</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Вақти Чатам</generic>
+					<standard>Вақти стандартии Чатам</standard>
+					<daylight>Вақти рӯзонаи Чатам</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Вақти Чили</generic>
+					<standard>Вақти стандартии Чили</standard>
+					<daylight>Вақти тобистонаи Чили</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Вақти Чин</generic>
+					<standard>Вақти стандартии Чин</standard>
+					<daylight>Вақти рӯзонаи Чин</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Вақти ҷазираи Мавлуди Исо</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Вақти Ҷазираҳои Кокос</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Вақти Колумбия</generic>
+					<standard>Вақти стандартии Колумбия</standard>
+					<daylight>Вақти тобистонаи Колумбия</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Вақти ҷазираҳои Кук</generic>
+					<standard>Вақти стандартии Ҷазираҳои Кук</standard>
+					<daylight>Вақти нимаи тобистонаи Ҷазираҳои Кук</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Вақти Куба</generic>
+					<standard>Вақти стандартии Куба</standard>
+					<daylight>Вақти рӯзонаи Куба</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Вақти Давис</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Вақти Дюмон-д’Урвил</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Вақти Тимори Шарқӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Вақти ҷазираи Пасха</generic>
+					<standard>Вақти стандартии ҷазираи Пасха</standard>
+					<daylight>Вақти тобистонаи ҷазираи Пасха</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Вақти Эквадор</standard>
+				</long>
+			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>Вақти аврупоии марказӣ</generic>
+					<generic>Вақти Аврупоии Марказӣ</generic>
 					<standard>Вақти стандартии аврупоии марказӣ</standard>
 					<daylight>Вақти тобистонаи аврупоии марказӣ</daylight>
 				</long>
@@ -1766,6 +3330,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Вақти тобистонаи аврупоии шарқӣ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>Вақти Аврупои Шарқӣ</standard>
+				</long>
+			</metazone>
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Вақти аврупоии ғарбӣ</generic>
@@ -1773,9 +3342,577 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Вақти тобистонаи аврупоии ғарбӣ</daylight>
 				</long>
 			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Вақти Ҷазираҳои Фолкленд</generic>
+					<standard>Вақти стандартии Ҷазираҳои Фолкленд</standard>
+					<daylight>Вақти тобистонаи Ҷазираҳои Фолкленд</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Вақти Фиҷи</generic>
+					<standard>Вақти стандартии Фиҷи</standard>
+					<daylight>Вақти тобистонаи Фиҷи</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>Вақти Гвианаи Фаронса</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Вақти ҷанубӣ ва Антарктидаи Фаронса</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Вақти Галапагос</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Вақти Гамбир</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Вақти Гурҷистон</generic>
+					<standard>Вақти стандартии Гурҷистон</standard>
+					<daylight>Вақти тобистонаи Гурҷистон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Вақти Ҷазираҳои Гилберт</standard>
+				</long>
+			</metazone>
 			<metazone type="GMT">
 				<long>
 					<standard>Вақти миёнаи Гринвич</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Вақти Гренландияи Шарқӣ</generic>
+					<standard>Вақти стандартии Гренландияи Шарқӣ</standard>
+					<daylight>Вақти тобистонаи Гренландияи Шарқӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Вақти Гренландияи Ғарбӣ</generic>
+					<standard>Вақти стандартии Гренландияи Ғарбӣ</standard>
+					<daylight>Вақти тобистонаи Гренландияи Ғарбӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Вақти стандартии Халиҷи Форс</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Вақти Гайана</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Вақти Ҳавайӣ-Алеутӣ</generic>
+					<standard>Вақти стандартии Ҳавайӣ-Алеутӣ</standard>
+					<daylight>Вақти рӯзонаи Ҳавайӣ-Алеутӣ</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Вақти Ҳонконг</generic>
+					<standard>Вақти стандартии Ҳонконг</standard>
+					<daylight>Вақти тобистонаи Ҳонконг</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Вақти Ховд</generic>
+					<standard>Вақти стандартии Ҳовд</standard>
+					<daylight>Вақти тобистонаи Ховд</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>Вақти стандартии Ҳиндустон</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Вақти уқёнуси Ҳинд</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Вақти Ҳиндучин</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Вақти Индонезияи Марказӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Вақти шарқии Индонезия</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Вақти Индонезияи Ғарбӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Вақти Эрон</generic>
+					<standard>Вақти стандартии Эрон</standard>
+					<daylight>Вақти рӯзонаи Эрон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Вақти Иркутск</generic>
+					<standard>Вақти стандартии Иркутск</standard>
+					<daylight>Вақти тобистонаи Иркутск</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Вақти Исроил</generic>
+					<standard>Вақти стандартии Исроил</standard>
+					<daylight>Вақти рӯзонаи Исроил</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Вақти Ҷопон</generic>
+					<standard>Вақти стандартии Ҷопон</standard>
+					<daylight>Вақти равшании Ҷопон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Вақти Қазоқистон</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Вақти Қазоқистони Шарқӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Вақти Қазоқистони Ғарбӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Вақти Корея</generic>
+					<standard>Вақти стандартии Корея</standard>
+					<daylight>Вақти рӯзонаи Корея</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Вақти Косрае</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Вақти Красноярск</generic>
+					<standard>Вақти стандартии Красноярск</standard>
+					<daylight>Вақти тобистонаи Красноярск</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Вақти Қирғизистон</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Вақти Ҷазираҳои Лин</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Лорд Хоу Time</generic>
+					<standard>Вақти стандартии Лорд Хоу</standard>
+					<daylight>Вақти рӯзонаи Лорд Хоу</daylight>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Вақти Магадан</generic>
+					<standard>Вақти стандартии Магадан</standard>
+					<daylight>Вақти тобистонаи Магадан</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Вақти Малайзия</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Вақти Малдив</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Вақти Маркес</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Вақти Ҷазираҳои Маршалл</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Вақти Маврикий</generic>
+					<standard>Вақти стандартии Маврикий</standard>
+					<daylight>Вақти тобистонаи Маврикий</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Вақти Мавсон</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Вақти Уқёнуси Ором Мексика</generic>
+					<standard>Вақти стандартии Уқёнуси Ором Мексика</standard>
+					<daylight>Вақти рӯзонаи Уқёнуси Ором Мексика</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Вақти Улан-Батор</generic>
+					<standard>Вақти стандартии Улан-Батор</standard>
+					<daylight>Вақти тобистонаи Улан-Батор</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Вақти Москва</generic>
+					<standard>Вақти стандартии Маскав</standard>
+					<daylight>Вақти тобистонаи Маскав</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Вақти Мянма</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Вақти Науру</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Вақти Непал</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>Вақти Каледонияи Нав</generic>
+					<standard>Вақти стандартии Каледонияи Нав</standard>
+					<daylight>Вақти тобистонаи Каледонияи Нав</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>Вақти Зеландияи Нав</generic>
+					<standard>Вақти стандартии Зеландияи Нав</standard>
+					<daylight>Вақти рӯзонаи Зеландияи Нав</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Вақти Нюфаундленд</generic>
+					<standard>Вақти стандартии Нюфаундленд</standard>
+					<daylight>Вақти рӯзонаи Нюфаундленд</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Вақти Ниуэ</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>Вақти ҷазираи Норфолк</generic>
+					<standard>Вақти стандартии ҷазираи Норфолк</standard>
+					<daylight>Вақти рӯзонаи ҷазираи Норфолк</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Вақти Фернандо де Норонха</generic>
+					<standard>Вақти стандартии Фернандо де Норонха</standard>
+					<daylight>Вақти тобистонаи Фернандо де Норонха</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Вақти Новосибирск</generic>
+					<standard>Вақти стандартии Новосибирск</standard>
+					<daylight>Вақти тобистонаи Новосибирск</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Вақти Омск</generic>
+					<standard>Омск вақти стандартӣ</standard>
+					<daylight>Вақти тобистонаи Омск</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Вақти Покистон</generic>
+					<standard>Вақти стандартии Покистон</standard>
+					<daylight>Вақти тобистонаи Покистон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Вақти Палау</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Вақти Папуа Гвинеяи Нав</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Вақти Парагвай</generic>
+					<standard>Вақти стандартии Парагвай</standard>
+					<daylight>Вақти тобистонаи Парагвай</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Вақти Перу</generic>
+					<standard>Вақти стандартии Перу</standard>
+					<daylight>Вақти тобистонаи Перу</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Вақти Филиппин</generic>
+					<standard>Вақти стандартии Филиппин</standard>
+					<daylight>Вақти тобистонаи Филиппин</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Вақти Ҷазираҳои Финикс</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Вақти Сент-Пиер ва Микелон</generic>
+					<standard>Вақти стандартии Сент-Пиер ва Микелон</standard>
+					<daylight>Вақти рӯзонаи Сент-Пиер ва Микелон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Вақти Питкэрн</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Ponape Time</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Вақти Пхенян</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Вақти Реюнион</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Вақти Ротера</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Вақти Сахалин</generic>
+					<standard>Вақти стандартии Сахалин</standard>
+					<daylight>Вақти тобистонаи Сахалин</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Вақти Самоа</generic>
+					<standard>Вақти стандартии Самоа</standard>
+					<daylight>Вақти рӯзонаи Самоа</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Вақти Сейшел</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Вақти стандартии Сингапур</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Вақти Ҷазираҳои Соломон</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Вақти Ҷорҷияи Ҷанубӣ</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Вақти Суринам</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Вақти Сёва</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Вақти Таити</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Вақти Тайбэй</generic>
+					<standard>Вақти стандартии Тайбэй</standard>
+					<daylight>Вақти рӯзонаи Тайбэй</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Вақти Тоҷикистон</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Вақти Токелау</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Вақти Тонга</generic>
+					<standard>Вақти стандартии Тонга</standard>
+					<daylight>Вақти тобистонаи Тонга</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Вақти Чук</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Вақти Туркманистон</generic>
+					<standard>Вақти стандартии Туркманистон</standard>
+					<daylight>Вақти тобистонаи Туркманистон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Вақти Тувалу</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Вақти Уругвай</generic>
+					<standard>Вақти стандартии Уругвай</standard>
+					<daylight>Вақти тобистонаи Уругвай</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Вақти Ӯзбекистон</generic>
+					<standard>Вақти стандартии Ӯзбекистон</standard>
+					<daylight>Вақти тобистонаи Ӯзбекистон</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Вақти Вануату</generic>
+					<standard>Вақти стандартии Вануату</standard>
+					<daylight>Вақти тобистонаи Вануату</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Вақти Венесуэла</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Вақти Владивосток</generic>
+					<standard>Вақти стандартии Владивосток</standard>
+					<daylight>Вақти тобистонаи Владивосток</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Вақти Волгоград</generic>
+					<standard>Вақти стандартии Волгоград</standard>
+					<daylight>Вақти тобистонаи Волгоград</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Вақти Восток</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Вақти бедории ҷазира</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Вақти Уоллис ва Футуна</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Вақти Якутск</generic>
+					<standard>Якутск вақти стандартӣ</standard>
+					<daylight>Якутск вақти тобистона</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Вақти Екатеринбург</generic>
+					<standard>Вақти стандартии Екатеринбург</standard>
+					<daylight>Вақти тобистонаи Екатеринбург</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Вақти Юкон</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -1824,15 +3961,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
+				<currencyFormat type="accounting">
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
+				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other">0 ҳзр'.' ¤</pattern>
-					<pattern type="10000" count="other">00 ҳзр'.' ¤</pattern>
-					<pattern type="100000" count="other">000 ҳзр'.' ¤</pattern>
-					<pattern type="1000000" count="other">0 млн'.' ¤</pattern>
-					<pattern type="10000000" count="other">00 млн'.' ¤</pattern>
-					<pattern type="100000000" count="other">000 млн'.' ¤</pattern>
+					<pattern type="1000" count="other">¤0 ҳазор</pattern>
+					<pattern type="10000" count="other">¤00 ҳазор</pattern>
+					<pattern type="100000" count="other">¤000 ҳазор</pattern>
+					<pattern type="1000000" count="other">¤0 млн</pattern>
+					<pattern type="10000000" count="other">¤00 млн</pattern>
+					<pattern type="100000000" count="other">¤000 млн</pattern>
 					<pattern type="1000000000" count="other">0 млрд'.' ¤</pattern>
 					<pattern type="10000000000" count="other">00 млрд'.' ¤</pattern>
 					<pattern type="100000000000" count="other">000 млрд'.' ¤</pattern>
@@ -1841,55 +3981,709 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">000 трлн'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="AED">
+				<displayName>Дирҳами АМА</displayName>
+				<displayName count="other">дирҳами АМА</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>Афғонии Афғонистон</displayName>
+				<displayName count="other">афғонии Афғонистон</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Леки албанӣ</displayName>
+				<displayName count="other">леки албанӣ</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Драми Арманистон</displayName>
+				<displayName count="other">драми Арманистон</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Гулдени Антилии Нидерланд</displayName>
+				<displayName count="other">гулдени Антилии Нидерланд</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Кванзаи Ангола</displayName>
+				<displayName count="other">кванзаи Ангола</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Песои Аргентина</displayName>
+				<displayName count="other">песои Аргентина</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Доллари Австралия</displayName>
+				<displayName count="other">доллари Австралия</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Флорини Арубан</displayName>
+				<displayName count="other">флорини Арубан</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Манати Озарбойҷон</displayName>
+				<displayName count="other">манати Озарбойҷон</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Маркаҳои конвертатсияшавандаи Босния-Герсеговина</displayName>
+				<displayName count="other">Маркаҳои конвертатсияшавандаи Босния-Герсеговина</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Доллари Барбад</displayName>
+				<displayName count="other">доллари Барбад</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Такаси Бангладеши</displayName>
+				<displayName count="other">такаси Бангладеши</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Леви Болгария</displayName>
+				<displayName count="other">леви Болгария</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Динори Баҳрайн</displayName>
+				<displayName count="other">динори Баҳрайн</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Франки Бурунди</displayName>
+				<displayName count="other">франки Бурунди</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>Доллари Бермуд</displayName>
+				<displayName count="other">доллари Бермуд</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Доллари Бруней</displayName>
+				<displayName count="other">доллари Бруней</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Боливянои Боливия</displayName>
+				<displayName count="other">боливянои Боливия</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>Реали бразилиягӣ</displayName>
 				<displayName count="other">реали бразилиягӣ</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Доллари Багама</displayName>
+				<displayName count="other">доллари Багама</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Нгултруми Бутан</displayName>
+				<displayName count="other">нгултруми Бутан</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Пулаи Ботсвана</displayName>
+				<displayName count="other">пулаи Ботсвана</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Рубли Беларус</displayName>
+				<displayName count="other">рубли Беларус</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Доллари Белиз</displayName>
+				<displayName count="other">доллари Белиз</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Доллари Канада</displayName>
+				<displayName count="other">доллари Канада</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>Франки Конго</displayName>
+				<displayName count="other">франки Конго</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>Франки Швейтсария</displayName>
+				<displayName count="other">франки Швейтсария</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Песои Чили</displayName>
+				<displayName count="other">песои Чили</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Юани Хитой (офшорӣ)</displayName>
+				<displayName count="other">юани Хитой (офшорӣ)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Иенаи хитоӣ</displayName>
 				<displayName count="other">иенаи хитоӣ</displayName>
 			</currency>
+			<currency type="COP">
+				<displayName>Песои Колумбия</displayName>
+				<displayName count="other">песои Колумбия</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Колони Коста-Рика</displayName>
+				<displayName count="other">Колони Коста-Рика</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Песои конвертшавандаи Куба</displayName>
+				<displayName count="other">песои конвертшавандаи Куба</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Песои Куба</displayName>
+				<displayName count="other">песои Куба</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Эскудои Кабо Верде</displayName>
+				<displayName count="other">эскудои Кабо Верде</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Крони Чехия</displayName>
+				<displayName count="other">крони Чехия</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>Франки Ҷибутӣ</displayName>
+				<displayName count="other">франки Ҷибутӣ</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Крони Дания</displayName>
+				<displayName count="other">крони Дания</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Песои Доминикан</displayName>
+				<displayName count="other">песои Доминикан</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Динори Алҷазоир</displayName>
+				<displayName count="other">динори Алҷазоир</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>Фунти мисрӣ</displayName>
+				<displayName count="other">фунти мисрӣ</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName>Накфаи Эритрея</displayName>
+				<displayName count="other">накфаи Эритрея</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Бирри Эфиопия</displayName>
+				<displayName count="other">бирри Эфиопия</displayName>
+			</currency>
 			<currency type="EUR">
 				<displayName>Евро</displayName>
 				<displayName count="other">евро</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>Доллари Фиҷи</displayName>
+				<displayName count="other">доллари Фиҷи</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Фунти Ҷазираҳои Фолкленд</displayName>
+				<displayName count="other">фунти Ҷазираҳои Фолкленд</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>Фунт стерлинги британӣ</displayName>
 				<displayName count="other">фунт стерлинги британӣ</displayName>
 			</currency>
+			<currency type="GEL">
+				<displayName>Лариси гурҷӣ</displayName>
+				<displayName count="other">лариси гурҷӣ</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>Седи Гана</displayName>
+				<displayName count="other">седи Гана</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Фунти Гибралтар</displayName>
+				<displayName count="other">фунти Гибралтар</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>Даласи Гамбия</displayName>
+				<displayName count="other">даласи Гамбия</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>Франки Гвинея</displayName>
+				<displayName count="other">франки Гвинея</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>Кветзали Гватемала</displayName>
+				<displayName count="other">кветзали Гватемала</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>Доллари Гайана</displayName>
+				<displayName count="other">доллари Гайана</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Доллари Гонконг</displayName>
+				<displayName count="other">доллари Гонконг</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Лемпираи Гондурас</displayName>
+				<displayName count="other">лемпираи Гондурас</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Кунаи Хорватия</displayName>
+				<displayName count="other">кунаи Хорватия</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Гурди Ҳаити</displayName>
+				<displayName count="other">гурди Ҳаити</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Форинти Венгрия</displayName>
+				<displayName count="other">форинти Венгрия</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Рупияи Индонезия</displayName>
+				<displayName count="other">рупияи Индонезия</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Шекелҳои нави Исроил</displayName>
+				<displayName count="other">шекелҳои нави Исроил</displayName>
+			</currency>
 			<currency type="INR">
 				<displayName>Рупияи ҳиндустонӣ</displayName>
 				<displayName count="other">рупияи ҳиндустонӣ</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Динори Ироқ</displayName>
+				<displayName count="other">динори Ироқ</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>Риёли Эрон</displayName>
+				<displayName count="other">риёли Эрон</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Кронури Исландия</displayName>
+				<displayName count="other">кронури Исландия</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>Доллари Ямайка</displayName>
+				<displayName count="other">доллари Ямайка</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Динори Иордания</displayName>
+				<displayName count="other">динори Иордания</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Иенаи японӣ</displayName>
 				<displayName count="other">иенаи японӣ</displayName>
 			</currency>
+			<currency type="KES">
+				<displayName>Шиллинги Кения</displayName>
+				<displayName count="other">шиллинги Кения</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName>Соми Қирғизистон</displayName>
+				<displayName count="other">соми Қирғизистон</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Риэли Камбоҷа</displayName>
+				<displayName count="other">риэли Камбоҷа</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>Франки Комория</displayName>
+				<displayName count="other">франки Комория</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>Вони Кореяи Шимолӣ</displayName>
+				<displayName count="other">вони Кореяи Шимолӣ</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>Вони Кореяи Ҷанубӣ</displayName>
+				<displayName count="other">вони Кореяи Ҷанубӣ</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>Динори Кувайт</displayName>
+				<displayName count="other">динори Кувайт</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Доллари Ҷазираҳои Кайман</displayName>
+				<displayName count="other">доллари Ҷазираҳои Кайман</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Тангаи Казокистон</displayName>
+				<displayName count="other">тангаи Казокистон</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>Кипи Лаосй</displayName>
+				<displayName count="other">кипи Лаос</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Фунти Лубнон</displayName>
+				<displayName count="other">фунти Лубнон</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Рупи Шри-Ланка</displayName>
+				<displayName count="other">рупи Шри-Ланка</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName>Доллари Либерия</displayName>
+				<displayName count="other">доллари Либерия</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>Лотиси Лесото</displayName>
+				<displayName count="other">лотиси Лесото</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>Динори Либия</displayName>
+				<displayName count="other">динори Либия</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>Дирхами Марокаш</displayName>
+				<displayName count="other">дирхами Марокаш</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>Лейи Молдова</displayName>
+				<displayName count="other">лейи Молдова</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>Ариарии Малагасий</displayName>
+				<displayName count="other">ариарии Малагасий</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>Денори Македония</displayName>
+				<displayName count="other">денори Македония</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>киати Мянмар</displayName>
+				<displayName count="other">киати Мянмар</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>Тугрики Муғулистон</displayName>
+				<displayName count="other">тугрики Муғулистон</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Патакаи Макао</displayName>
+				<displayName count="other">патакаи Макао</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName>Огуияи Мавритания</displayName>
+				<displayName count="other">Огуияи Мавритания</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName>Рупияи Маврикий</displayName>
+				<displayName count="other">рупияи Маврикий</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>Руфияи Малдив</displayName>
+				<displayName count="other">руфияи Малдив</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName>Квачаи Малавия</displayName>
+				<displayName count="other">квачаи Малавия</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>Песои Мексика</displayName>
+				<displayName count="other">песои Мексика</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Ринггити Малайзия</displayName>
+				<displayName count="other">ринггити Малайзия</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>Метикали Мозамбик</displayName>
+				<displayName count="other">метикали Мозамбик</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName>Доллари Намибия</displayName>
+				<displayName count="other">доллари Намибия</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName>Найраи Нигерия</displayName>
+				<displayName count="other">Найраи Нигерия</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>Кордобаи Никарагуа</displayName>
+				<displayName count="other">кордобаи Никарагуа</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Кронаи Норвегия</displayName>
+				<displayName count="other">кронаи Норвегия</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>Рупияи Непал</displayName>
+				<displayName count="other">рупияи Непал</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>Доллари Зеландияи Нав</displayName>
+				<displayName count="other">доллари Зеландияи Нав</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>Риёли Уммон</displayName>
+				<displayName count="other">риёли Уммон</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Балбоаи Панама</displayName>
+				<displayName count="other">балбоаи Панама</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>Соли Перу</displayName>
+				<displayName count="other">соли Перу</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Кинаи Гвинеяи Папуа</displayName>
+				<displayName count="other">кинаи Гвинеяи Папуа</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Песои Филиппин</displayName>
+				<displayName count="other">песои Филиппин</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>Рупияи Покистон</displayName>
+				<displayName count="other">рупияи Покистон</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Злотии Польша</displayName>
+				<displayName count="other">злотии Польша</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Гуарании Парагвай</displayName>
+				<displayName count="other">гуарании Парагвай</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>Риёли Қатар</displayName>
+				<displayName count="other">риёли Қатар</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Лейи Руминия</displayName>
+				<displayName count="other">лейи Руминия</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>Динори Сербия</displayName>
+				<displayName count="other">динори Сербия</displayName>
+			</currency>
 			<currency type="RUB">
 				<displayName>Рубли русӣ</displayName>
 				<displayName count="other">рубли русӣ</displayName>
 			</currency>
+			<currency type="RWF">
+				<displayName>Франки Руанда</displayName>
+				<displayName count="other">франки Руанда</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>Риёли Саудӣ</displayName>
+				<displayName count="other">риёли Саудӣ</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Доллари Ҷазираҳои Соломон</displayName>
+				<displayName count="other">доллари Ҷазираҳои Соломон</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Рупии Сейшел</displayName>
+				<displayName count="other">рупии Сейшел</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName>Фунти Судон</displayName>
+				<displayName count="other">фунти Судон</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>Крони шведӣ</displayName>
+				<displayName count="other">крони шведӣ</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>Доллари Сингапур</displayName>
+				<displayName count="other">доллари Сингапур</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>Фунти Сент Елена</displayName>
+				<displayName count="other">фунти Сент Елена</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName>Леони Серра-Леоне</displayName>
+				<displayName count="other">леони Серра-Леоне</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Леони Серра-Леоне (1964—2022)</displayName>
+				<displayName count="other">леони Серра-Леоне (1964—2022)</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>Шиллинги Сомали</displayName>
+				<displayName count="other">шиллинги Сомали</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName>Доллари Суринам</displayName>
+				<displayName count="other">доллари Суринам</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName>Фунти Судони Ҷанубӣ</displayName>
+				<displayName count="other">фунти Судони Ҷанубӣ</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName>Добраи Сан-Томе ва Принсипи</displayName>
+				<displayName count="other">добраи Сан-Томе ва Принсипи</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName>Фунти Сурия</displayName>
+				<displayName count="other">фунти Сурия</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>Эмалангени Свази</displayName>
+				<displayName count="other">эмалангени Свази</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Бати Таиланд</displayName>
+				<displayName count="other">бати Таиланд</displayName>
+			</currency>
 			<currency type="TJS">
-				<displayName>Сомонӣ</displayName>
+				<displayName>Сомонии Тоҷикистон</displayName>
+				<displayName count="other">сомонии Тоҷикистон</displayName>
 				<symbol draft="contributed">сом.</symbol>
+			</currency>
+			<currency type="TMT">
+				<displayName>манати Туркманистон</displayName>
+				<displayName count="other">манати Туркманистон</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName>Динори Тунис</displayName>
+				<displayName count="other">динори Тунис</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName>Паангаи Тонга</displayName>
+				<displayName count="other">паангаи Тонга</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Лираи Туркия</displayName>
+				<displayName count="other">лираи Туркия</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>Доллари Тринидад ва Тобаго</displayName>
+				<displayName count="other">доллари Тринидад ва Тобаго</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>Доллари нави Тайван</displayName>
+				<displayName count="other">доллари нави Тайван</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>Шиллинги Танзания</displayName>
+				<displayName count="other">шиллинги Танзания</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Гривнаи украинӣ</displayName>
+				<displayName count="other">гривнаи украинӣ</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>Шилинги Уганда</displayName>
+				<displayName count="other">шиллинги Уганда</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>Доллари ИМА</displayName>
 				<displayName count="other">доллари ИМА</displayName>
 				<symbol draft="contributed">$</symbol>
 			</currency>
+			<currency type="UYU">
+				<displayName>Песои Уругвай</displayName>
+				<displayName count="other">песои Уругвай</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Сўми Ӯзбекистон</displayName>
+				<displayName count="other">сўми Ӯзбекистон</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>Боливари Венесуэла</displayName>
+				<displayName count="other">боливари Венесуэла</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Донги Ветнам</displayName>
+				<displayName count="other">донги Ветнам</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Ватуи Вануату</displayName>
+				<displayName count="other">ватуи Вануату</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Талаи Самоа</displayName>
+				<displayName count="other">талаи Самоа</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName>Франки CFA Африқои Марказӣ</displayName>
+				<displayName count="other">франки CFA Африқои Марказӣ</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Доллари Кариби Шарқӣ</displayName>
+				<displayName count="other">доллари Кариби Шарқӣ</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>Франки Африқои Ғарбӣ</displayName>
+				<displayName count="other">франки Африқои Ғарбӣ</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>Франки CFP</displayName>
+				<displayName count="other">франки CFP</displayName>
+			</currency>
 			<currency type="XXX">
 				<displayName>Асъори номаълум</displayName>
 				<displayName count="other">(асъори номаълум)</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Риали Яман</displayName>
+				<displayName count="other">риали Яман</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Рэнди Африқои Ҷанубӣ</displayName>
+				<displayName count="other">рэнди Африқои Ҷанубӣ</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName>Квачаи Замбия</displayName>
+				<displayName count="other">квачаи Замбия</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">⩾{0}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} рӯз</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}-умро рост кунед.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
+	<units>
+		<unitLength type="long">
+			<compoundUnit type="per">
+				<compoundUnitPattern>{0} барои {1}</compoundUnitPattern>
+			</compoundUnit>
+			<coordinateUnit>
+				<displayName>самти кардиналӣ</displayName>
+				<coordinateUnitPattern type="east">{0} Шм</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} Шр</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} ҷануб</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ғарб</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<coordinateUnit>
+				<displayName>самт</displayName>
+				<coordinateUnitPattern type="east">{0} Шм</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} Шр</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} Ҷ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} Ғ</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<coordinateUnit>
+				<displayName>самт</displayName>
+				<coordinateUnitPattern type="east">{0} Шм</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} Шр</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}Ҷ</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}Ғ</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="2">{0} ва {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="end">{0}, ё {1}</listPatternPart>
+			<listPatternPart type="2">{0}, ё {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="end">{0}, ё {1}</listPatternPart>
+			<listPatternPart type="2">{0}, ё {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="end">{0}, ё {1}</listPatternPart>
+			<listPatternPart type="2">{0}, ё {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="2">{0} ва {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und tg</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>

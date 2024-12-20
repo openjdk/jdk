@@ -152,13 +152,16 @@ public class Main {
      * flag0: no zip compression (store only)
      * Mflag: DO NOT generate a manifest file (just ZIP)
      * iflag: generate jar index
-     * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
+     * kflag: keep existing file
      */
-    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag, validate;
+    boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag, pflag, dflag, kflag, validate;
 
     boolean suppressDeprecateMsg = false;
+
+    // destination directory for extraction
+    String xdestDir = null;
 
     /* To support additional GNU Style informational options */
     Consumer<PrintWriter> info;
@@ -206,18 +209,8 @@ public class Main {
         }
     }
 
-    static String formatMsg(String key, String arg) {
+    static String formatMsg(String key, String... args) {
         String msg = getMsg(key);
-        String[] args = new String[1];
-        args[0] = arg;
-        return MessageFormat.format(msg, (Object[]) args);
-    }
-
-    static String formatMsg2(String key, String arg, String arg1) {
-        String msg = getMsg(key);
-        String[] args = new String[2];
-        args[0] = arg;
-        args[1] = arg1;
         return MessageFormat.format(msg, (Object[]) args);
     }
 
@@ -372,6 +365,15 @@ public class Main {
                     }
                 }
             } else if (xflag) {
+                if (xdestDir != null) {
+                    final Path destPath = Paths.get(xdestDir);
+                    try {
+                        Files.createDirectories(destPath);
+                    } catch (IOException ioe) {
+                        throw new IOException(formatMsg("error.create.dir",
+                                destPath.toString()), ioe);
+                    }
+                }
                 replaceFSC(filesMap);
                 // For the extract action, when extracting all the entries,
                 // access using the ZipInputStream class is most efficient,
@@ -418,8 +420,9 @@ public class Main {
                     file = new File(fname);
                 } else {
                     file = createTemporaryFile("tmpJar", ".jar");
-                    try (InputStream in = new FileInputStream(FileDescriptor.in)) {
-                        Files.copy(in, file.toPath());
+                    try (InputStream in = new FileInputStream(FileDescriptor.in);
+                         OutputStream os = Files.newOutputStream(file.toPath())) {
+                        in.transferTo(os);
                     }
                 }
                 ok = validateJar(file);
@@ -446,7 +449,7 @@ public class Main {
         try (ZipFile zf = new ZipFile(file)) {
             return Validator.validate(this, zf);
         } catch (IOException e) {
-            error(formatMsg2("error.validator.jarfile.exception", fname, e.getMessage()));
+            error(formatMsg("error.validator.jarfile.exception", fname, e.getMessage()));
             return true;
         }
     }
@@ -582,6 +585,9 @@ public class Main {
                         case '0':
                             flag0 = true;
                             break;
+                        case 'k':
+                            kflag = true;
+                            break;
                         case 'i':
                             if (cflag || uflag || xflag || tflag) {
                                 usageError(getMsg("error.multiple.main.operations"));
@@ -612,6 +618,9 @@ public class Main {
             usageError(getMsg("error.bad.option"));
             return false;
         }
+        if (kflag && !xflag) {
+            warn(formatMsg("warn.option.is.ignored", "--keep-old-files/-k/k"));
+        }
 
         /* parse file arguments */
         int n = args.length - count;
@@ -631,6 +640,11 @@ public class Main {
                         }
                         /* change the directory */
                         String dir = args[++i];
+                        if (xflag && xdestDir != null) {
+                            // extract option doesn't allow more than one destination directory
+                            usageError(getMsg("error.extract.multiple.dest.dir"));
+                            return false;
+                        }
                         dir = (dir.endsWith(File.separator) ?
                                dir : (dir + File.separator));
                         dir = dir.replace(File.separatorChar, '/');
@@ -642,8 +656,12 @@ public class Main {
                         if (hasUNC) { // Restore Windows UNC path.
                             dir = "/" + dir;
                         }
-                        pathsMap.get(version).add(dir);
-                        nameBuf[k++] = dir + args[++i];
+                        if (xflag) {
+                            xdestDir = dir;
+                        } else {
+                            pathsMap.get(version).add(dir);
+                            nameBuf[k++] = dir + args[++i];
+                        }
                     } else if (args[i].startsWith("--release")) {
                         int v = BASE_VERSION;
                         try {
@@ -701,6 +719,10 @@ public class Main {
                 usageError(getMsg("error.bad.uflag"));
                 return false;
             }
+        }
+        if (xflag && pflag && xdestDir != null) {
+            usageError(getMsg("error.extract.pflag.not.allowed"));
+            return false;
         }
         return true;
     }
@@ -808,7 +830,7 @@ public class Main {
                     // the entry starts with VERSIONS_DIR and version != BASE_VERSION,
                     // which means the "[dirs|files]" in --release v [dirs|files]
                     // includes VERSIONS_DIR-ed entries --> warning and skip (?)
-                    error(formatMsg2("error.release.unexpected.versioned.entry",
+                    error(formatMsg("error.release.unexpected.versioned.entry",
                                      name, String.valueOf(version)));
                     ok = false;
                     return;
@@ -1232,8 +1254,7 @@ public class Main {
         if (vflag) {
             size = e.getSize();
             long csize = e.getCompressedSize();
-            out.print(formatMsg2("out.size", String.valueOf(size),
-                        String.valueOf(csize)));
+            out.print(formatMsg("out.size", String.valueOf(size), String.valueOf(csize)));
             if (e.getMethod() == ZipEntry.DEFLATED) {
                 long ratio = 0;
                 if (size != 0) {
@@ -1355,7 +1376,7 @@ public class Main {
             if (lastModified != -1) {
                 String name = safeName(ze.getName().replace(File.separatorChar, '/'));
                 if (name.length() != 0) {
-                    File f = new File(name.replace('/', File.separatorChar));
+                    File f = new File(xdestDir, name.replace('/', File.separatorChar));
                     f.setLastModified(lastModified);
                 }
             }
@@ -1366,6 +1387,10 @@ public class Main {
      * Extracts specified entries from JAR file.
      */
     void extract(InputStream in, String[] files) throws IOException {
+        if (vflag) {
+            output(formatMsg("out.extract.dir", Path.of(xdestDir == null ? "." : xdestDir).normalize()
+                    .toAbsolutePath().toString()));
+        }
         ZipInputStream zis = new ZipInputStream(in);
         ZipEntry e;
         Set<ZipEntry> dirs = newDirSet();
@@ -1394,6 +1419,10 @@ public class Main {
      * Extracts specified entries from JAR file, via ZipFile.
      */
     void extract(String fname, String[] files) throws IOException {
+        if (vflag) {
+            output(formatMsg("out.extract.dir", Path.of(xdestDir == null ? "." : xdestDir).normalize()
+                    .toAbsolutePath().toString()));
+        }
         final Set<ZipEntry> dirs;
         try (ZipFile zf = new ZipFile(fname)) {
             dirs = newDirSet();
@@ -1423,16 +1452,24 @@ public class Main {
      */
     ZipEntry extractFile(InputStream is, ZipEntry e) throws IOException {
         ZipEntry rc = null;
-        // The spec requres all slashes MUST be forward '/', it is possible
+        // The spec requires all slashes MUST be forward '/', it is possible
         // an offending zip/jar entry may uses the backwards slash in its
         // name. It might cause problem on Windows platform as it skips
-        // our "safe" check for leading slahs and dot-dot. So replace them
+        // our "safe" check for leading slash and dot-dot. So replace them
         // with '/'.
         String name = safeName(e.getName().replace(File.separatorChar, '/'));
         if (name.length() == 0) {
             return rc;    // leading '/' or 'dot-dot' only path
         }
-        File f = new File(name.replace('/', File.separatorChar));
+        // the xdestDir points to the user specified location where the jar needs to
+        // be extracted. By default xdestDir is null and represents current working
+        // directory.
+        // jar extraction using -P option is only allowed when the destination
+        // directory isn't specified (and hence defaults to current working directory).
+        // In such cases using this java.io.File constructor which accepts a null parent path
+        // allows us to extract entries that may have leading slashes and hence may need
+        // to be extracted outside of the current directory.
+        File f = new File(xdestDir, name.replace('/', File.separatorChar));
         if (e.isDirectory()) {
             if (f.exists()) {
                 if (!f.isDirectory()) {
@@ -1452,6 +1489,12 @@ public class Main {
                 output(formatMsg("out.create", name));
             }
         } else {
+            if (f.exists() && kflag) {
+                if (vflag) {
+                    output(formatMsg("out.kept", name));
+                }
+                return rc;
+            }
             if (f.getParent() != null) {
                 File d = new File(f.getParent());
                 if (!d.exists() && !d.mkdirs() || !d.isDirectory()) {
