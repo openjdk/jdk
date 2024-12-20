@@ -181,8 +181,7 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
             System.err.println(MessageFormat.format("""
                     The external link {0} needs to be added to the whitelist test/docs/jdk/javadoc/doccheck/ExtLinksJdk.txt in order to be checked regularly\s
                     The link is present in:
-                        {1}
-                                        
+                        {1}\n
                     """, uri, files.stream().map(Path::toString).collect(Collectors.joining("\n    "))));
         }
     }
