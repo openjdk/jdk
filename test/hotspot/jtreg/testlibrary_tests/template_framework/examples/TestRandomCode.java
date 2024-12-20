@@ -59,19 +59,28 @@ public class TestRandomCode {
 
         codeGenerators.add(new Template("my_empty","/* empty */", 0));
 
-        codeGenerators.add(new Template("my_method_code_split",
+        codeGenerators.add(new Template("my_split",
             """
-            #{:my_method_code}
-            #{:my_method_code}
+            #{:my_code}
+            #{:my_code}
             """
         ));
 
-        // TODO some random if, loops, while, try/catch, random variables, etc
+        codeGenerators.add(new Template("my_loop",
+            """
+            for (int ${i:int:immutable} = 0; $i < 100; $i++) {
+                #{:my_code}
+            }
+            """
+        ));
+
+        // TODO some random if, while, try/catch, random variables, etc
 
         // This is the core of the random code generator: the selector picks a random template from above,
         // and then those templates may call back recursively to this selector.
-        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("my_method_code", "my_empty");
-        selectorForCode.add("my_method_code_split", 100);
+        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("my_code", "my_empty");
+        selectorForCode.add("my_split", 100);
+        selectorForCode.add("my_loop", 100);
         // TODO add more
         codeGenerators.add(selectorForCode);
 
@@ -85,7 +94,7 @@ public class TestRandomCode {
                 #open(class)
                 public static void main() {
                     #open(method)
-                    #{:my_method_code}
+                    #{:my_code}
                     #close(method)
                 }
                 #close(class)

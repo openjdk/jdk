@@ -468,12 +468,12 @@ public final class Template extends CodeGenerator {
      */
     private void handleTemplated(InstantiationState state, String templated) {
         if (templated.startsWith("${")) {
-            // Local variable with type declaration: ${name} or ${name:type} or ${name:type:final}
+            // Local variable with type declaration: ${name} or ${name:type} or ${name:type:immutable}
             String[] parts = templated.substring(2, templated.length() - 1).split(":");
-            if (parts.length > 3 || (parts.length == 3 && !parts[2].equals("final"))) {
+            if (parts.length > 3 || (parts.length == 3 && !parts[2].equals("immutable"))) {
                 state.currentScope.print();
                 throw new TemplateFrameworkException("Template local variable with type declaration should have format " +
-                                                     "$name or ${name} or ${name:type} or ${name:type:final}, but got " + templated);
+                                                     "$name or ${name} or ${name:type} or ${name:type:immutable}, but got " + templated);
             }
             String name = state.wrapVariable(parts[0], templated);
             if (parts.length == 1) {
@@ -482,7 +482,7 @@ public final class Template extends CodeGenerator {
                 return;
             }
             String type = parts[1];
-            boolean mutable = parts.length == 2; // third position is "final" qualifier.
+            boolean mutable = parts.length == 1; // third position is "immutable" qualifier.
             state.registerVariable(name, type, mutable);
             state.currentScope.stream.addCodeToLine(name);
         } else if (templated.startsWith("$")) {
