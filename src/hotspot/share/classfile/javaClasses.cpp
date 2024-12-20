@@ -1113,12 +1113,6 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
   assert(k != nullptr, "Use create_basic_type_mirror for primitive types");
   assert(k->java_mirror() == nullptr, "should only assign mirror once");
 
-  // Use this moment of initialization to cache modifier_flags also,
-  // to support Class.getModifiers().  Instance classes recalculate
-  // the cached flags after the class file is parsed, but before the
-  // class is put into the system dictionary.
-  int computed_modifiers = k->compute_modifier_flags();
-  k->set_modifier_flags(computed_modifiers);
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
   if (vmClasses::Class_klass_loaded()) {

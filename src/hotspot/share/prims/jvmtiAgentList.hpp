@@ -61,7 +61,6 @@ class JvmtiAgentList : AllStatic {
  private:
   static JvmtiAgent* _list;
 
-  static Iterator all();
   static void initialize();
   static void convert_xrun_agents();
 
@@ -82,6 +81,7 @@ class JvmtiAgentList : AllStatic {
 
   static JvmtiAgent* lookup(JvmtiEnv* env, void* f_ptr);
 
+  static Iterator all();
   static Iterator agents() NOT_JVMTI({ Iterator it; return it; });
   static Iterator java_agents();
   static Iterator native_agents();
