@@ -58,6 +58,8 @@ public:
 
   virtual bool is_modules_image() const { return false; }
   virtual bool is_jar_file() const { return false; }
+  virtual bool is_multi_release_jar() const { return false; }
+  virtual void set_multi_release_jar() {}
   // Is this entry created from the "Class-path" attribute from a JAR Manifest?
   virtual bool from_class_path_attr() const { return false; }
   virtual const char* name() const = 0;
@@ -91,11 +93,14 @@ class ClassPathZipEntry: public ClassPathEntry {
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
   bool _from_class_path_attr; // From the "Class-path" attribute of a jar file
+  bool _multi_release;       // multi-release jar
  public:
   bool is_jar_file() const { return true;  }
+  bool is_multi_release_jar() const { return _multi_release; }
+  void set_multi_release_jar() { _multi_release = true; }
   bool from_class_path_attr() const { return _from_class_path_attr; }
   const char* name() const { return _zip_name; }
-  ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr);
+  ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append, bool from_class_path_attr, bool multi_release);
   virtual ~ClassPathZipEntry();
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
@@ -260,7 +265,8 @@ class ClassLoader: AllStatic {
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
                                                  const char *path, const struct stat* st,
                                                  bool is_boot_append,
-                                                 bool from_class_path_attr);
+                                                 bool from_class_path_attr,
+                                                 bool is_multi_release = false);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
