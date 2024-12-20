@@ -243,8 +243,8 @@ public class TestCustomLibraryForClassFuzzing {
         // Creates a new field in a klass, with the specified type. Returns the name of the field.
         codeGenerators.add(new ProgrammaticCodeGenerator("my_new_field", (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "klass", "type");
-            String klassName = parameters.get("klass", scope, " for generator call to 'my_new_field'");
-            String type = parameters.get("type", scope, " for generator call to 'my_new_field'");
+            String klassName = parameters.get("klass", scope);
+            String type = parameters.get("type", scope);
             String fieldName = hierarchy.makeField(klassName, type, scope);
             scope.stream.addCodeToLine(fieldName);
         }, 0));
@@ -257,7 +257,7 @@ public class TestCustomLibraryForClassFuzzing {
 
         codeGenerators.add(new ProgrammaticCodeGenerator("my_random_field", (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "klass");
-            String klassName = parameters.get("klass", scope, " for generator call to 'my_random_field'");
+            String klassName = parameters.get("klass", scope);
             String fieldName = hierarchy.randomField(klassName, scope);
             scope.stream.addCodeToLine(fieldName);
         }, 0));

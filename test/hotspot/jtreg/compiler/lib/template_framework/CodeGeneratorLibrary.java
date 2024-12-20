@@ -31,12 +31,15 @@ import java.util.function.Consumer;
 
 import jdk.test.lib.Utils;
 
+import compiler.lib.generators.*;
+
 /**
  * The {@link CodeGeneratorLibrary} provides a way to map {@link CodeGenerator} names to {@link CodeGenerator},
  * and provides the lookup facility required for recursive instantiation calls.
  */
 public final class CodeGeneratorLibrary {
     private static final Random RANDOM = Utils.getRandomInstance();
+    private static final IntGenerator intGenerator = Generators.ints();
 
     private CodeGeneratorLibrary parent;
     private HashMap<String,CodeGenerator> library;
@@ -117,7 +120,7 @@ public final class CodeGeneratorLibrary {
         String generatorName = mutable ? "mutable_var" : "var";
         return new ProgrammaticCodeGenerator(generatorName, (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "type");
-            String type = parameters.get("type", scope, " for generator call to var/mutable_var");
+            String type = parameters.get("type", scope);
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
                 scope.print();
@@ -129,8 +132,8 @@ public final class CodeGeneratorLibrary {
 
     private static CodeGenerator factoryDispatch() {
         return new ProgrammaticCodeGenerator("dispatch", (Scope scope, Parameters parameters) -> {
-            String scopeKind = parameters.get("scope", scope, " for generator call to 'dispatch'");
-            String generatorName = parameters.get("call", scope, " for generator call to 'dispatch'");
+            String scopeKind = parameters.get("scope", scope);
+            String generatorName = parameters.get("call", scope);
             CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
 
             // Copy arguments, and remove the 2 args we just used. Forward the other args to the dispatch.
@@ -169,9 +172,9 @@ public final class CodeGeneratorLibrary {
     private static CodeGenerator factoryAddVariable() {
         return new ProgrammaticCodeGenerator("add_var", (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "scope", "name", "type", "mutable");
-            String scopeKind = parameters.get("scope", scope, " for generator call to 'add_var'");
-            String name = parameters.get("name", scope, " for generator call to 'add_var'");
-            String type = parameters.get("type", scope, " for generator call to 'add_var'");
+            String scopeKind = parameters.get("scope", scope);
+            String name = parameters.get("name", scope);
+            String type = parameters.get("type", scope);
             String isMutable = parameters.getOrNull("mutable");
 
             if (isMutable != null && !isMutable.equals("true") && !isMutable.equals("false")) {
@@ -202,8 +205,8 @@ public final class CodeGeneratorLibrary {
 
     private static CodeGenerator factoryRepeat() {
         return new ProgrammaticCodeGenerator("repeat", (Scope scope, Parameters parameters) -> {
-            String generatorName = parameters.get("call", scope, " for generator call to 'repeat'");
-            int repeat = parameters.getInt("repeat", scope, " In call to 'repeat'");
+            String generatorName = parameters.get("call", scope);
+            int repeat = parameters.getInt("repeat", scope);
 
             if (repeat > 1000) {
                 scope.print();
@@ -235,47 +238,11 @@ public final class CodeGeneratorLibrary {
         codeGenerators.add(new ProgrammaticCodeGenerator("int_con",
             (Scope scope, Parameters parameters) -> {
                 parameters.checkOnlyHas(scope, "lo", "hi");
-                String lo = parameters.getOrNull("lo");
-                String hi = parameters.getOrNull("hi");
+                int lo = parameters.getIntOrDefault("lo", Integer.MIN_VALUE, scope);
+                int hi = parameters.getIntOrDefault("hi", Integer.MAX_VALUE, scope);
 
-                // TODO biased sampling?
-
-                if (lo == null && hi == null) {
-                    // Full int range
-                    int v = RANDOM.nextInt();
-                    scope.stream.addCodeToLine(String.valueOf(v));
-                } else if (lo == null) {
-                    // Bounded: [min_int, hi)
-                    int hiVal = parameters.getInt("hi", scope, " In int_con.");
-                    if (hiVal == Integer.MIN_VALUE) {
-                        scope.print();
-                        throw new TemplateFrameworkException("Generator int_con must have min_int < hi");
-                    }
-                    int v = RANDOM.nextInt(Integer.MIN_VALUE, hiVal);
-                    scope.stream.addCodeToLine(String.valueOf(v));
-                } else if (hi == null) {
-                    // Bounded: [lo, max_int]
-                    int loVal = parameters.getInt("lo", scope, " In int_con.");
-                    if (loVal == Integer.MIN_VALUE) {
-                        // Full int range
-                        int v = RANDOM.nextInt();
-                        scope.stream.addCodeToLine(String.valueOf(v));
-                    } else {
-                        // We have to shift things to make sure max_int can be generated.
-                        int v = RANDOM.nextInt(loVal-1, Integer.MAX_VALUE) + 1;
-                        scope.stream.addCodeToLine(String.valueOf(v));
-                    }
-                } else {
-                    // Bounded: [lo, hi)
-                    int loVal = parameters.getInt("lo", scope, " In int_con.");
-                    int hiVal = parameters.getInt("hi", scope, " In int_con.");
-                    if (loVal >= hiVal) {
-                        scope.print();
-                        throw new TemplateFrameworkException("Generator int_con must have lo < hi.");
-                    }
-                    int v = RANDOM.nextInt(loVal, hiVal);
-                    scope.stream.addCodeToLine(String.valueOf(v));
-                }
+                int v = intGenerator.nextInt(lo, hi);
+                scope.stream.addCodeToLine(String.valueOf(v));
         }, 0));
 
         // Dispatch generator call to a ClassScope or MethodScope
@@ -295,7 +262,7 @@ public final class CodeGeneratorLibrary {
         codeGenerators.add(new ProgrammaticCodeGenerator("choose",
             (Scope scope, Parameters parameters) -> {
                 parameters.checkOnlyHas(scope, "from");
-                String list = parameters.get("from", scope, " for generator call to 'choose'");
+                String list = parameters.get("from", scope);
                 String[] elements = list.split("\\|");
                 int r = RANDOM.nextInt(elements.length);
                 scope.stream.addCodeToLine(elements[r]);

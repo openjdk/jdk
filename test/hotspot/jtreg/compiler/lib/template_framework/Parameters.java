@@ -104,41 +104,60 @@ public final class Parameters {
      *
      * @param name The name of the parameter.
      * @param scope For debug printing the "scope-trace".
-     * @param errorMessage Message added to exception if parameter for this name does not exist.
      * @return Parameter value.
      * @throws TemplateFrameworkException If the parameter for the name does not exist.
      */
-    public String get(String name, Scope scope, String errorMessage) {
+    public String get(String name, Scope scope) {
         String param = getOrNull(name);
         if (param == null) {
             scope.print();
-            throw new TemplateFrameworkException("Missing parameter '" + name + "' " + errorMessage);
+            throw new TemplateFrameworkException("Missing parameter '" + name + "'.");
         }
         return param;
     }
-
 
     /**
      * Get the parameter value as an int for a specified parameter name.
      *
      * @param name The name of the parameter.
      * @param scope For debug printing the "scope-trace".
-     * @param errorMessage Message added to exception if parameter for this name does not exist.
      * @return Parameter int value.
      * @throws TemplateFrameworkException If the parameter for the name does not exist, or cannot be
      *                                    parsed as an int.
      */
-    public int getInt(String name, Scope scope, String errorMessage) {
-        String param = get(name, scope, errorMessage);
-        switch (param) {
+    public int getInt(String name, Scope scope) {
+        String param = get(name, scope);
+        return parseInt(param, scope, "for parameter '" + name + "'.");
+    }
+
+    /**
+     * Get the parameter value as an int for a specified parameter name, or the default value if the parameter is not available.
+     *
+     * @param name The name of the parameter.
+     * @param defaultValue Default value if the parameter name is not available.
+     * @param scope For debug printing the "scope-trace".
+     * @return Parameter int value if the parameter name is present, else the default value.
+     * @throws TemplateFrameworkException If the parameter for the name exists but cannot be
+     *                                    parsed as an int.
+     */
+    public int getIntOrDefault(String name, int defaultValue, Scope scope) {
+        String param = getOrNull(name);
+        if (param == null) {
+            return defaultValue;
+        }
+        return parseInt(param, scope, "for parameter '" + name + "'.");
+    }
+
+    private static int parseInt(String string, Scope scope, String errorMessage) {
+        switch (string) {
             case "min_int" -> { return Integer.MIN_VALUE; }
             case "max_int" -> { return Integer.MAX_VALUE; }
         }
         try {
-            return Integer.valueOf(param);
+            return Integer.valueOf(string);
         } catch (NumberFormatException e) {
             scope.print();
-            throw new TemplateFrameworkException("Could not parse parameter '" + name + "' with value '" + param + "' as int. " + errorMessage);
+            throw new TemplateFrameworkException("Could not parse int from string '" + string + "' " + errorMessage);
         }
     }
 
