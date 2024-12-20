@@ -361,8 +361,8 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 
 #ifdef NO_RVV_SIGCONTEXT
-    st->print_cr("Vector state: JVM compiled without vector sigcontext support");
-#else
+  st->print_cr("Vector state: JVM compiled without vector sigcontext support");
+#else // ifndef NO_RVV_SIGCONTEXT
 // This magic number is not in any user-space header.
 // No other choice but to define it.
 #ifndef RISCV_V_MAGIC
@@ -380,6 +380,7 @@ void os::print_context(outputStream *st, const void *context) {
     return;
   }
 
+  // The size passed to user-space is calculated accordingly:
   // size = sizeof(struct __riscv_ctx_hdr) + sizeof(struct __sc_riscv_v_state) + riscv_v_vsize;
   uint32_t ext_size = ext->hdr.size;
 
@@ -417,7 +418,7 @@ void os::print_context(outputStream *st, const void *context) {
     regp += vr_size;
   }
   st->cr();
-#endif
+#endif // #ifndef NO_RVV_SIGCONTEXT
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
