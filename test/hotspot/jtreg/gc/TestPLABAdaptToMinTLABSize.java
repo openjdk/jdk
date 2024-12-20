@@ -35,6 +35,7 @@ package gc;
  */
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -68,9 +69,11 @@ public class TestPLABAdaptToMinTLABSize {
     }
 
     public static void main(String[] args) throws Exception {
-        runTest(true, "-XX:MinTLABSize=100k");
-        // Should not succeed when explicitly specifying invalid combination.
-        runTest(false, "-XX:MinTLABSize=100k", "-XX:OldPLABSize=5k");
-        runTest(false, "-XX:MinTLABSize=100k", "-XX:YoungPLABSize=5k");
+        for (String gc : Arrays.asList("-XX:+UseG1GC", "-XX:+UseParallelGC")) {
+            runTest(true, gc, "-XX:MinTLABSize=100k");
+            // Should not succeed when explicitly specifying invalid combination.
+            runTest(false, gc, "-XX:MinTLABSize=100k", "-XX:OldPLABSize=5k");
+            runTest(false, gc, "-XX:MinTLABSize=100k", "-XX:YoungPLABSize=5k");
+        }
     }
 }
