@@ -1133,10 +1133,9 @@ public final class DateTimeFormatterBuilder {
 
     /**
      * Appends the time-zone region ID, such as 'Europe/Paris', to the formatter,
-     * rejecting the zone ID if it is a {@code ZoneOffset} during formatting.
+     * rejecting the zone ID if it is a {@code ZoneOffset}.
      * <p>
-     * This appends an instruction to format/parse the zone ID to the builder
-     * only if it is a region-based ID.
+     * This appends an instruction to format only region-based zone IDs to the builder.
      * <p>
      * During formatting, the zone is obtained using a mechanism equivalent
      * to querying the temporal with {@link TemporalQueries#zoneId()}.
