@@ -587,7 +587,11 @@ void ShenandoahConcurrentGC::op_reset() {
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_reset();
   }
-  if (_do_old_gc_bootstrap) {
+  // If it old GC bootstrap cycle, or there was attempt to bootstrap old GC but get canclled after
+  // concurrent old mark in progress is set, always clear bitmap for global gen to ensure bitmap for old gen
+  // is clear for old marking after this cycle.
+  if (_do_old_gc_bootstrap || heap->is_concurrent_old_mark_in_progress()) {
+    assert(!heap->is_prepare_for_old_mark_in_progress(), "Cannot reset old without making it parsable");
     heap->global_generation()->prepare_gc();
   } else {
     _generation->prepare_gc();
