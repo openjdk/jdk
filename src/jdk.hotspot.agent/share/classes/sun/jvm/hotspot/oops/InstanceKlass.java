@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,46 +433,6 @@ public class InstanceKlass extends Klass {
       enclosingMethodAttributeSize = db.lookupIntConstant("InstanceKlass::enclosing_method_attribute_size").intValue();
     }
   }
-
-  // refer to compute_modifier_flags in VM code.
-  public long computeModifierFlags() {
-    long access = getAccessFlags();
-    // But check if it happens to be member class.
-    U2Array innerClassList = getInnerClasses();
-    int length = (innerClassList == null)? 0 : innerClassList.length();
-    if (length > 0) {
-       if (Assert.ASSERTS_ENABLED) {
-          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
-                      length % InnerClassAttributeOffset.innerClassNextOffset == EnclosingMethodAttributeOffset.enclosingMethodAttributeSize,
-                      "just checking");
-       }
-       for (int i = 0; i < length; i += InnerClassAttributeOffset.innerClassNextOffset) {
-          if (i == length - EnclosingMethodAttributeOffset.enclosingMethodAttributeSize) {
-              break;
-          }
-          int ioff = innerClassList.at(i +
-                         InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
-          // 'ioff' can be zero.
-          // refer to JVM spec. section 4.7.5.
-          if (ioff != 0) {
-             // only look at classes that are already loaded
-             // since we are looking for the flags for our self.
-             Symbol name = getConstants().getKlassNameAt(ioff);
-
-             if (name.equals(getName())) {
-                // This is really a member class
-                access = innerClassList.at(i +
-                        InnerClassAttributeOffset.innerClassAccessFlagsOffset);
-                break;
-             }
-          }
-       } // for inner classes
-    }
-
-    // Remember to strip ACC_SUPER bit
-    return (access & (~JVM_ACC_SUPER)) & JVM_ACC_WRITTEN_FLAGS;
-  }
-
 
   // whether given Symbol is name of an inner/nested Klass of this Klass?
   // anonymous and local classes are excluded.
