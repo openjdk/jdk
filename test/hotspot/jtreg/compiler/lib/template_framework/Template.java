@@ -117,7 +117,7 @@ public final class Template extends CodeGenerator {
      *   #{:generator}
      *   #{:generator:var1,var2,var3}
      */
-    private static final String KEY_VALUE_PATTERN = "\\w+=[\\$#]?[\\w\\|\\s]*";
+    private static final String KEY_VALUE_PATTERN = "\\w+=[\\$#]?[\\w\\|\\s-]*";
     private static final String KEY_VALUE_LIST_PATTERN = "(?:" + // open non-capturing group 1
                                                              KEY_VALUE_PATTERN +
                                                              "(?:" + // open non-capturing group 1

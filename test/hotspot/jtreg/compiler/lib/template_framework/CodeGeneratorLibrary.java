@@ -236,10 +236,7 @@ public final class CodeGeneratorLibrary {
 
         addConstants(codeGenerators);
 
-        // Dispatch generator call to a ClassScope or MethodScope
         codeGenerators.add(factoryDispatch());
-
-        // Control flow.
         codeGenerators.add(factoryRepeat());
 
         addBasicOperators(codeGenerators);

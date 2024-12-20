@@ -35,10 +35,14 @@ package template_framework.tests;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
 
 import compiler.lib.template_framework.*;
 
 public class TestTemplate {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         testSingleLine();
@@ -52,7 +56,7 @@ public class TestTemplate {
         testChoose();
         testFieldsAndVariables();
         testFieldsAndVariablesDispatch();
-        // TODO con, etc
+        testIntCon();
     }
 
     public static void testSingleLine() {
@@ -764,6 +768,41 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testIntCon() {
+        // To keep the result deterministic, we have to always keep hi=lo.
+        Template template = new Template("my_template",
+            """
+            x#{c1:int_con(lo=min_int,hi=min_int)}x
+            x#{c2:int_con(lo=max_int,hi=max_int)}x
+            x#{c3:int_con(lo=42,hi=42)}x
+            x#{c4:int_con(lo=-2147483648,hi=-2147483648)}x
+            x#{c5:int_con(lo=2147483647,hi=2147483647)}x
+            y#{c3}y
+            x#{c6:int_con(lo=#param,hi=#param)}x
+            y#{param}y
+            """
+        );
+        String param = String.valueOf(RANDOM.nextInt());
+        String code = template.where("param", param).instantiate();
+        String expected =
+            """
+            x-2147483648x
+            x2147483647x
+            x42x
+            x-2147483648x
+            x2147483647x
+            y42y
+            x"""
+            + param +
+            """
+            x
+            y"""
+            + param +
+            """
+            y
+            """;
+        checkEQ(code, expected);
+    }
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
