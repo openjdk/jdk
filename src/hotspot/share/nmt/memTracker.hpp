@@ -63,7 +63,7 @@ class MemTracker : AllStatic {
 
   // This may be called on a detached thread during VM init, so we should check is_bootstrapping_done() first.
   static inline void assert_locked() {
-    assert(!MutexLocker::is_bootstrapping_done() || NmtVirtualMemory_lock->owned_by_self(),
+    assert(!Mutex::is_bootstrapping_done() || NmtVirtualMemory_lock->owned_by_self(),
            "should have acquired NmtVirtualMemory_lock");
   }
 
@@ -292,7 +292,7 @@ class MemTracker : AllStatic {
   class NmtVirtualMemoryLocker: StackObj {
     ConditionalMutexLocker _cml;
   public:
-    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, MutexLocker::is_bootstrapping_done(), Mutex::_no_safepoint_check_flag){}
+    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, Mutex::is_bootstrapping_done(), Mutex::_no_safepoint_check_flag){}
   };
 
  private:

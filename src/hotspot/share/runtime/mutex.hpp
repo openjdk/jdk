@@ -210,6 +210,16 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // by fatal error handler.
   static void print_owned_locks_on_error(outputStream* st);
   static void print_lock_ranks(outputStream* st);
+
+  static inline bool is_bootstrapping_done()  {
+    return _bootstrapping_done;
+  }
+
+  static inline void set_bootstrapping_done()  {
+    _bootstrapping_done = true;
+  }
+ private:
+  static bool _bootstrapping_done;
 };
 
 class Monitor : public Mutex {

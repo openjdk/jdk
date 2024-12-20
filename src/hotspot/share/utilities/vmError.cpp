@@ -650,7 +650,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   BEGIN
   if (MemTracker::enabled() &&
-      MutexLocker::is_bootstrapping_done() &&
+      Mutex::is_bootstrapping_done() &&
       NmtVirtualMemory_lock->owned_by_self()) {
     // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
     NmtVirtualMemory_lock->unlock();
