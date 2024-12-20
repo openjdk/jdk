@@ -280,7 +280,7 @@ public final class CodeGeneratorLibrary {
                 long hi = parameters.getLongOrDefault("hi", Long.MAX_VALUE, scope);
 
                 long v = longGenerator.nextLong(lo, hi);
-                scope.stream.addCodeToLine(String.valueOf(v));
+                scope.stream.addCodeToLine(String.valueOf(v) + "L");
         }, 0));
     }
 

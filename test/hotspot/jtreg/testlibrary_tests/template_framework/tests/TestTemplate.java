@@ -830,28 +830,28 @@ public class TestTemplate {
         String code = template.where("param1", param1).where("param2", param2).instantiate();
         String expected =
             """
-            x-2147483648x
-            x2147483647x
-            x42x
-            x-2147483648x
-            x2147483647x
-            y42y
+            x-2147483648Lx
+            x2147483647Lx
+            x42Lx
+            x-2147483648Lx
+            x2147483647Lx
+            y42Ly
             x"""
             + param1 +
             """
-            x
+            Lx
             y"""
             + param1 +
             """
             y
-            x-9223372036854775808x
-            x9223372036854775807x
-            x-9223372036854775808x
-            x9223372036854775807x
+            x-9223372036854775808Lx
+            x9223372036854775807Lx
+            x-9223372036854775808Lx
+            x9223372036854775807Lx
             x"""
             + param2 +
             """
-            x
+            Lx
             y"""
             + param2 +
             """
