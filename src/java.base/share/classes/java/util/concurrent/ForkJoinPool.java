@@ -37,12 +37,6 @@ package java.util.concurrent;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.Permission;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -616,12 +610,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * it tries to deactivate()), giving up (and rescanning) on "ctl"
      * contention. To avoid missed signals during deactivation, the
      * method rescans and reactivates if there may have been a missed
-     * (external) signal during deactivation. To reduce false-alarm
-     * reactivations while doing so, we scan multiple times
-     * (analogously to method quiescent()) before trying to
-     * reactivate.  Because idle workers are often not yet blocked
-     * (parked), we use a WorkQueue field to advertise that a waiter
-     * actually needs unparking upon signal.
+     * signal during deactivation. To reduce false-alarm reactivations
+     * while doing so, we scan multiple times (analogously to method
+     * quiescent()) before trying to reactivate.  Because idle workers
+     * are often not yet blocked (parked), we use a WorkQueue field to
+     * advertise that a waiter actually needs unparking upon signal.
      *
      * Quiescence. Workers scan looking for work, giving up when they
      * don't find any, without being sure that none are available.
@@ -811,9 +804,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * initialization.  Since it (or any other created pool) need
      * never be used, we minimize initial construction overhead and
      * footprint to the setup of about a dozen fields, although with
-     * some System property parsing and security processing that takes
-     * far longer than the actual construction when SecurityManagers
-     * are used or properties are set. The common pool is
+     * some System property parsing properties are set. The common pool is
      * distinguished by having a null workerNamePrefix (which is an
      * odd convention, but avoids the need to decode status in factory
      * classes).  It also has PRESET_SIZE config set if parallelism
@@ -839,13 +830,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * As a more appropriate default in managed environments, unless
      * overridden by system properties, we use workers of subclass
-     * InnocuousForkJoinWorkerThread when there is a SecurityManager
-     * present. These workers have no permissions set, do not belong
-     * to any user-defined ThreadGroup, and clear all ThreadLocals and
-     * reset the ContextClassLoader before (re)activating to execute
-     * top-level task.  The associated mechanics may be JVM-dependent
-     * and must access particular Thread class fields to achieve this
-     * effect.
+     * InnocuousForkJoinWorkerThread for the commonPool.  These
+     * workers do not belong to any user-defined ThreadGroup, and
+     * clear all ThreadLocals and reset the ContextClassLoader before
+     * (re)activating to execute top-level tasks.  The associated
+     * mechanics may be JVM-dependent and must access particular
+     * Thread class fields to achieve this effect.
      *
      * InterruptibleTasks
      * ====================
@@ -917,9 +907,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * shorts would suffice.  For class WorkQueue, an
      * embedded @Contended region segregates fields most heavily
      * updated by owners from those most commonly read by stealers or
-     * other management.  For class WorkQueue, an embedded padded
-     * region segregates fields (all declared as "int") most heavily
-     * updated by owners from those most commonly read by stealers or
      * other management.
      *
      * Initial sizing and resizing of WorkQueue arrays is an even more
@@ -929,8 +916,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * direct false-sharing and indirect cases due to GC bookkeeping
      * (cardmarks etc), and reduce the number of resizes, which are
      * not especially fast because they require atomic transfers.
-     * Currently, arrays are initialized to be just large enough to
-     * avoid resizing in most tree-structured tasks. (Maintenance note:
+     * Currently, arrays for workers are initialized to be just large
+     * enough to avoid resizing in most tree-structured tasks, but
+     * larger for external queues where both false-sharing problems
+     * and the need for resizing are more common. (Maintenance note:
      * any changes in fields, queues, or their uses, or JVM layout
      * policies, must be accompanied by re-evaluation of these
      * placement and sizing decisions.)
@@ -1019,6 +1008,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     static final int INITIAL_QUEUE_CAPACITY = 1 << 6;
 
+    /**
+     * Initial capacity of work-stealing queue array for external queues.
+     * Must be a power of two, at least 2. See above.
+     */
+    static final int INITIAL_EXTERNAL_QUEUE_CAPACITY = 1 << 9;
+
     // conversions among short, int, long
     static final int  SMASK           = 0xffff;      // (unsigned) short bits
     static final long LMASK           = 0xffffffffL; // lower 32 bits of long
@@ -1097,21 +1092,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         return ((long)index << ASHIFT) + ABASE;
     }
 
-    /**
-     * If there is a security manager, makes sure caller has
-     * permission to modify threads.
-     */
-    @SuppressWarnings("removal")
-    private static void checkPermission() {
-        SecurityManager security; RuntimePermission perm;
-        if ((security = System.getSecurityManager()) != null) {
-            if ((perm = modifyThreadPermission) == null)
-                modifyThreadPermission = perm = // races OK
-                    new RuntimePermission("modifyThread");
-            security.checkPermission(perm);
-        }
-    }
-
     // Nested classes
 
     /**
@@ -1147,64 +1127,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final class DefaultForkJoinWorkerThreadFactory
         implements ForkJoinWorkerThreadFactory {
         public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
-            boolean isCommon = (pool.workerNamePrefix == null);
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null && isCommon)
-                return newCommonWithACC(pool);
-            else
-                return newRegularWithACC(pool);
-        }
-
-        /*
-         * Create and use static AccessControlContexts only if there
-         * is a SecurityManager. (These can be removed if/when
-         * SecurityManagers are removed from platform.) The ACCs are
-         * immutable and equivalent even when racily initialized, so
-         * they don't require locking, although with the chance of
-         * needlessly duplicate construction.
-         */
-        @SuppressWarnings("removal")
-        static volatile AccessControlContext regularACC, commonACC;
-
-        @SuppressWarnings("removal")
-        static ForkJoinWorkerThread newRegularWithACC(ForkJoinPool pool) {
-            AccessControlContext acc = regularACC;
-            if (acc == null) {
-                Permissions ps = new Permissions();
-                ps.add(new RuntimePermission("getClassLoader"));
-                ps.add(new RuntimePermission("setContextClassLoader"));
-                regularACC = acc =
-                    new AccessControlContext(new ProtectionDomain[] {
-                            new ProtectionDomain(null, ps) });
-            }
-            return AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public ForkJoinWorkerThread run() {
-                        return new ForkJoinWorkerThread(null, pool, true, false);
-                    }}, acc);
-        }
-
-        @SuppressWarnings("removal")
-        static ForkJoinWorkerThread newCommonWithACC(ForkJoinPool pool) {
-            AccessControlContext acc = commonACC;
-            if (acc == null) {
-                Permissions ps = new Permissions();
-                ps.add(new RuntimePermission("getClassLoader"));
-                ps.add(new RuntimePermission("setContextClassLoader"));
-                ps.add(new RuntimePermission("modifyThread"));
-                ps.add(new RuntimePermission("enableContextClassLoaderOverride"));
-                ps.add(new RuntimePermission("modifyThreadGroup"));
-                commonACC = acc =
-                    new AccessControlContext(new ProtectionDomain[] {
-                            new ProtectionDomain(null, ps) });
-            }
-            return AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public ForkJoinWorkerThread run() {
-                        return new ForkJoinWorkerThread.
-                            InnocuousForkJoinWorkerThread(pool);
-                    }}, acc);
+            return ((pool.workerNamePrefix == null) ? // is commonPool
+                    new ForkJoinWorkerThread.InnocuousForkJoinWorkerThread(pool) :
+                    new ForkJoinWorkerThread(null, pool, true, false));
         }
     }
 
@@ -1264,7 +1189,9 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         WorkQueue(ForkJoinWorkerThread owner, int id, int cfg,
                   boolean clearThreadLocals) {
-            array = new ForkJoinTask<?>[INITIAL_QUEUE_CAPACITY];
+            array = new ForkJoinTask<?>[owner == null ?
+                                        INITIAL_EXTERNAL_QUEUE_CAPACITY :
+                                        INITIAL_QUEUE_CAPACITY];
             this.owner = owner;
             this.config = (clearThreadLocals) ? cfg | CLEAR_TLS : cfg;
         }
@@ -2068,7 +1995,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             return IDLE;
         int p = phase | IDLE, activePhase = phase + (IDLE << 1);
         long pc = ctl, qc = (activePhase & LMASK) | ((pc - RC_UNIT) & UMASK);
-        w.stackPred = (int)pc;                // set ctl stack link
+        int sp = w.stackPred = (int)pc;       // set ctl stack link
         w.phase = p;
         if (!compareAndSetCtl(pc, qc))        // try to enqueue
             return w.phase = phase;           // back out on possible signal
@@ -2078,18 +2005,18 @@ public class ForkJoinPool extends AbstractExecutorService {
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
         int prechecks = Math.min(ac, 2);      // reactivation threshold
-        for (int k = Math.max(n + (n << 1), SPIN_WAITS << 1);;) {
-            WorkQueue q; int cap; ForkJoinTask<?>[] a;
+        for (int k = Math.max(n << 2, SPIN_WAITS << 1);;) {
+            WorkQueue q; int cap; ForkJoinTask<?>[] a; long c;
             if (w.phase == activePhase)
                 return activePhase;
             if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
-            if ((k & 1) != 0)
-                Thread.onSpinWait();          // interleave spins and rechecks
-            else if ((q = qs[k & (n - 1)]) != null &&
-                     (a = q.array) != null && (cap = a.length) > 0 &&
+            if ((q = qs[k & (n - 1)]) == null)
+                Thread.onSpinWait();
+            else if ((a = q.array) != null && (cap = a.length) > 0 &&
                      a[q.base & (cap - 1)] != null && --prechecks < 0 &&
-                     ctl == qc && compareAndSetCtl(qc, pc))
+                     (int)(c = ctl) == activePhase &&
+                     compareAndSetCtl(c, (sp & LMASK) | ((c + RC_UNIT) & UMASK)))
                 return w.phase = activePhase; // reactivate
         }
     }
@@ -3024,7 +2951,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                         Predicate<? super ForkJoinPool> saturate,
                         long keepAliveTime,
                         TimeUnit unit) {
-        checkPermission();
         int p = parallelism;
         if (p <= 0 || p > MAX_CAP || p > maximumPoolSize || keepAliveTime <= 0L)
             throw new IllegalArgumentException();
@@ -3312,7 +3238,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             throw new IllegalArgumentException();
         if ((config & PRESET_SIZE) != 0)
             throw new UnsupportedOperationException("Cannot override System property");
-        checkPermission();
         return getAndSetParallelism(size);
     }
 
@@ -3710,7 +3635,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * may not be rejected.
      */
     public void shutdown() {
-        checkPermission();
         if (workerNamePrefix != null) // not common pool
             tryTerminate(false, true);
     }
@@ -3730,7 +3654,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return an empty list
      */
     public List<Runnable> shutdownNow() {
-        checkPermission();
         if (workerNamePrefix != null) // not common pool
             tryTerminate(true, true);
         return Collections.emptyList();
@@ -3837,7 +3760,6 @@ public class ForkJoinPool extends AbstractExecutorService {
     @Override
     public void close() {
         if (workerNamePrefix != null) {
-            checkPermission();
             CountDownLatch done = null;
             boolean interrupted = false;
             while ((tryTerminate(interrupted, true) & TERMINATED) == 0) {
@@ -4075,11 +3997,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             });
         defaultForkJoinWorkerThreadFactory =
             new DefaultForkJoinWorkerThreadFactory();
-        @SuppressWarnings("removal")
-        ForkJoinPool p = common = (System.getSecurityManager() == null) ?
-            new ForkJoinPool((byte)0) :
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public ForkJoinPool run() {
-                        return new ForkJoinPool((byte)0); }});
+        common = new ForkJoinPool((byte)0);
     }
 }

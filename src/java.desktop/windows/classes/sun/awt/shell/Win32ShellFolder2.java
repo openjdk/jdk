@@ -666,13 +666,6 @@ final class Win32ShellFolder2 extends ShellFolder {
                 return getFileSystemPath0(csidl);
             }
         }, IOException.class);
-        if (path != null) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkRead(path);
-            }
-        }
         return path;
     }
 
@@ -750,11 +743,6 @@ final class Win32ShellFolder2 extends ShellFolder {
      *         {@code null} if this shellfolder does not denote a directory.
      */
     public File[] listFiles(final boolean includeHiddenFiles) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(getPath());
-        }
 
         try {
             File[] files = invoke(new Callable<File[]>() {
@@ -813,7 +801,7 @@ final class Win32ShellFolder2 extends ShellFolder {
                 }
             }, InterruptedException.class);
 
-            return Win32ShellFolderManager2.checkFiles(files);
+            return files;
         } catch (InterruptedException e) {
             return new File[0];
         }

@@ -95,21 +95,11 @@ gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
+gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 
 #############################################################################
 
 # :hotspot_runtime
-
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id0 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id1 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id2 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id3 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id4 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id5 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id6 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id7 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id8 8344583 macosx-aarch64
-runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java#id9 8344583 macosx-aarch64
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8317789 aix-ppc64
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
@@ -125,10 +115,6 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
-
-# Fails with +UseCompactObjectHeaders on aarch64
-runtime/cds/appcds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
-runtime/cds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -149,8 +135,6 @@ serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
-serviceability/dcmd/vm/SystemDumpMapTest.java 8340401 windows-all
-serviceability/dcmd/vm/SystemMapTest.java 8340401 windows-all
 
 serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64
@@ -187,7 +171,6 @@ vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 807
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
-vmTestbase/gc/memory/Nio/Nio.java 8340728 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all

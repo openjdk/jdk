@@ -737,6 +737,17 @@ The following commands are available:
     -   `-e`: (Optional) Print extended thread information (BOOLEAN, false)
     -   `-l`: (Optional) Prints `java.util.concurrent` locks (BOOLEAN, false)
 
+`Thread.vthread_scheduler`
+:   Print the virtual thread scheduler, and the delayed task schedulers that support
+    virtual threads doing timed operations.
+
+    Impact: Low
+
+`Thread.vthread_pollers`
+:   Print the I/O pollers that support virtual threads doing blocking network I/O operations.
+
+    Impact: Low
+
 `VM.cds` \[*arguments*\]
 :   Dump a static or dynamic shared archive that includes all currently loaded classes.
 

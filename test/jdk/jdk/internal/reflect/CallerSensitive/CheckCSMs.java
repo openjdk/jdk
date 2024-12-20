@@ -58,7 +58,6 @@ import static java.lang.constant.ConstantDescs.CD_Class;
  * @test
  * @summary CallerSensitive methods should be static or final instance
  *          methods except the known list of non-final instance methods
- * @enablePreview
  * @build CheckCSMs
  * @run main/othervm/timeout=900 CheckCSMs
  */

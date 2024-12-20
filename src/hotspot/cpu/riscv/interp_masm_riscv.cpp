@@ -70,20 +70,20 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(notBool);
   mv(t1, T_BYTE);
   bne(t0, t1, notByte);
-  sign_extend(result, result, 8);
+  sext(result, result, 8);
   j(done);
 
   bind(notByte);
   mv(t1, T_CHAR);
   bne(t0, t1, notChar);
-  zero_extend(result, result, 16);
+  zext(result, result, 16);
   j(done);
 
   bind(notChar);
-  sign_extend(result, result, 16);
+  sext(result, result, 16);
 
   bind(done);
-  sign_extend(result, result, 32);
+  sext(result, result, 32);
 }
 
 void InterpreterMacroAssembler::jump_to_entry(address entry) {
@@ -179,15 +179,10 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
 void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  if (AvoidUnalignedAccesses && (bcp_offset % 2)) {
-    lbu(t1, Address(xbcp, bcp_offset));
-    lbu(reg, Address(xbcp, bcp_offset + 1));
-    slli(t1, t1, 8);
-    add(reg, reg, t1);
-  } else {
-    lhu(reg, Address(xbcp, bcp_offset));
-    revb_h_h_u(reg, reg);
-  }
+  lbu(t1, Address(xbcp, bcp_offset));
+  lbu(reg, Address(xbcp, bcp_offset + 1));
+  slli(t1, t1, 8);
+  add(reg, reg, t1);
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
@@ -200,15 +195,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    if (AvoidUnalignedAccesses) {
-      assert_different_registers(index, tmp);
-      load_unsigned_byte(index, Address(xbcp, bcp_offset));
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
-      slli(tmp, tmp, 8);
-      add(index, index, tmp);
-    } else {
-      load_unsigned_short(index, Address(xbcp, bcp_offset));
-    }
+    load_short_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
   } else if (index_size == sizeof(u4)) {
     load_int_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
   } else if (index_size == sizeof(u1)) {
@@ -289,7 +276,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_i(Register r) {
   addi(esp, esp, -wordSize);
-  sign_extend(r, r, 32);
+  sext(r, r, 32);
   sd(r, Address(esp, 0));
 }
 

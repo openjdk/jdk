@@ -58,11 +58,6 @@ class LogDiagnosticCommand : public DCmdWithParser {
   static const char* description() {
     return "Lists current log configuration, enables/disables/configures a log output, or rotates all logs.";
   }
-
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission", "control", nullptr};
-    return p;
-  }
 };
 
 #endif // SHARE_LOGGING_LOGDIAGNOSTICCOMMAND_HPP

@@ -32,6 +32,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunkManager.hpp"
@@ -57,11 +58,11 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "virtualspace.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::CommitLimiter;
@@ -597,17 +598,20 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   }
 
   // Wrap resulting range in ReservedSpace
-  ReservedSpace rs;
   if (result != nullptr) {
     log_debug(metaspace, map)("Mapped at " PTR_FORMAT, p2i(result));
     assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
-    rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
-                                                      os::vm_page_size(), false, false);
+
+    return ReservedSpace(result,
+                         size,
+                         Metaspace::reserve_alignment(),
+                         os::vm_page_size(),
+                         !ExecMem,
+                         false /* special */);
   } else {
     log_debug(metaspace, map)("Failed to map.");
-    rs = ReservedSpace();
+    return {};
   }
-  return rs;
 }
 #endif // _LP64
 
@@ -760,8 +764,12 @@ void Metaspace::global_initialize() {
                     "(must be aligned to " SIZE_FORMAT_X ").",
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
-      rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                         os::vm_page_size() /* large */, (char*)base);
+
+      rs = MemoryReserver::reserve((char*)base,
+                                   size,
+                                   Metaspace::reserve_alignment(),
+                                   os::vm_page_size());
+
       if (rs.is_reserved()) {
         log_info(metaspace)("Successfully forced class space address to " PTR_FORMAT, p2i(base));
       } else {
@@ -1021,4 +1029,3 @@ bool Metaspace::is_in_shared_metaspace(const void* ptr) {
 bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }
-

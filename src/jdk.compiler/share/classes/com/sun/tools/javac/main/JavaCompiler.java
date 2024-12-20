@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
 import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
+import com.sun.tools.javac.tree.JCTree.JCInstanceOf;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -1548,6 +1549,13 @@ public class JavaCompiler {
             public void visitBindingPattern(JCBindingPattern tree) {
                 hasPatterns = true;
                 super.visitBindingPattern(tree);
+            }
+            @Override
+            public void visitTypeTest(JCInstanceOf tree) {
+                if (tree.pattern.type.isPrimitive()) {
+                    hasPatterns = true;
+                }
+                super.visitTypeTest(tree);
             }
             @Override
             public void visitRecordPattern(JCRecordPattern that) {
