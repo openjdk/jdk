@@ -428,8 +428,8 @@ public final class ZoneOffset
             ZoneOffset result = SECONDS_CACHE.get(totalSecs);
             if (result == null) {
                 result = new ZoneOffset(totalSeconds);
-                SECONDS_CACHE.putIfAbsent(totalSecs, result);
-                result = SECONDS_CACHE.get(totalSecs);
+                var existing = SECONDS_CACHE.putIfAbsent(totalSecs, result);
+                return (existing != null) ? existing : result;
                 ID_CACHE.putIfAbsent(result.getId(), result);
             }
             return result;
