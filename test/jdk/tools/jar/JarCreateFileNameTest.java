@@ -31,6 +31,7 @@ import java.util.zip.ZipEntry;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
  * @test
@@ -61,12 +62,8 @@ public class JarCreateFileNameTest {
         assertEquals(0, exitCode, "jar command failed");
         // verify the JAR file is created and contains the expected entry
         try (final JarFile jarFile = new JarFile(new File(targetJarFileName))) {
-            jarFile.stream()
-                    .map(ZipEntry::getName)
-                    .filter(fileName::equals)
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("missing " + fileName
-                            + " entry in JAR file " + targetJarFileName));
+            final ZipEntry entry = jarFile.getEntry(fileName);
+            assertNotNull(entry, "missing " + fileName + " entry in JAR file " + targetJarFileName);
         }
     }
 }
