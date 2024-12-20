@@ -172,9 +172,6 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBB)) {
     VM_Version::ext_Zbb.enable_feature();
   }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBC)) {
-    VM_Version::ext_Zbc.enable_feature();
-  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
     VM_Version::ext_Zbs.enable_feature();
   }
@@ -183,15 +180,6 @@ void RiscvHwprobe::add_features_from_query_result() {
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
     VM_Version::ext_Zicboz.enable_feature();
-  }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
-    VM_Version::ext_Ztso.enable_feature();
-  }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
-    VM_Version::ext_Zacas.enable_feature();
-  }
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBB)) {
-    VM_Version::ext_Zvbb.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
     VM_Version::ext_Zvfh.enable_feature();
