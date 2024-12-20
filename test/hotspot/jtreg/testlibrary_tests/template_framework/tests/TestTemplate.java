@@ -941,6 +941,12 @@ public class TestTemplate {
         if (ret3 != 5 + 11) {
             throw new RuntimeException("Unexpected result: " + ret3);
         }
+
+        // int ret4 = InnerTest.test3(5);
+        int ret4 = (int)comp.invoke("p.xyz.InnerTest", "test4", new Object[] {5});
+        if (ret4 != 5 - 13) {
+            throw new RuntimeException("Unexpected result: " + ret4);
+        }
     }
 
     public static String generateRecursiveCalls() {
@@ -949,6 +955,10 @@ public class TestTemplate {
 
         codeGenerators.add(new Template("my_param_op_var",
             "#{param} #{op} #{:var(type=#type)}"
+        ));
+
+        codeGenerators.add(new Template("my_assign",
+            "#{:mutable_var(type=#type_dst)} = #{:var(type=#type_src)};"
         ));
 
         CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
@@ -994,6 +1004,26 @@ public class TestTemplate {
         instantiator.where("param", "11")
                     .where("op", "+")
                     .add(null, null, test3Template);
+
+        // test4(in) -> in - 13
+        // garbage4 should not be written to, but has the same type as field4a.
+        // field4a = 0
+        // field4b = param
+        // field4a = field4b
+        Template test4Template = new Template("my_test4",
+            """
+            public static int test4(int $in) {
+                #{:def_immutable_field(name=$garbage4,prefix=public static final int,value=0,type=my_int_4a)}
+                #{:def_field(name=$field4a,prefix=public static int,value=0,type=my_int_4a)}
+                #{:def_immutable_field(name=$field4b,prefix=public static final int,value=#param,type=my_int_4b)}
+                #{:my_assign(type_src=my_int_4b,type_dst=my_int_4a)}
+                return $in #{op} $field4a;
+            }
+            """
+        );
+        instantiator.where("param", "13")
+                    .where("op", "-")
+                    .add(null, null, test4Template);
 
         return instantiator.instantiate();
     }
