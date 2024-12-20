@@ -467,7 +467,8 @@ VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   if (err == JVMTI_ERROR_DUPLICATE) {
     LOG("NotifyFramePop at VirtualThreadUnmount event returned expected JVMTI_ERROR_DUPLICATE\n");
   } else {
-    LOG("Failed: expected JVMTI_ERROR_DUPLICATE from NotifyFramePop at VirtualThreadUnmount event\n");
+    LOG("Failed: NotifyFramePop at VirtualThreadUnmount returned %s(%d) instead of expected JVMTI_ERROR_DUPLICATE\n",
+           TranslateError(err), err);
     jni->FatalError("NotifyFramePop error: expected error code JVMTI_ERROR_DUPLICATE");
   }
 
