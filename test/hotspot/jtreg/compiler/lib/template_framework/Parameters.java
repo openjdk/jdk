@@ -131,7 +131,8 @@ public final class Parameters {
     }
 
     /**
-     * Get the parameter value as an int for a specified parameter name, or the default value if the parameter is not available.
+     * Get the parameter value as an int for a specified parameter name,
+     * or the default value if the parameter is not available.
      *
      * @param name The name of the parameter.
      * @param defaultValue Default value if the parameter name is not available.
@@ -148,6 +149,25 @@ public final class Parameters {
         return parseInt(param, scope, "for parameter '" + name + "'.");
     }
 
+    /**
+     * Get the parameter value as an long for a specified parameter name,
+     * or the default value if the parameter is not available.
+     *
+     * @param name The name of the parameter.
+     * @param defaultValue Default value if the parameter name is not available.
+     * @param scope For debug printing the "scope-trace".
+     * @return Parameter long value if the parameter name is present, else the default value.
+     * @throws TemplateFrameworkException If the parameter for the name exists but cannot be
+     *                                    parsed as a long.
+     */
+    public long getLongOrDefault(String name, long defaultValue, Scope scope) {
+        String param = getOrNull(name);
+        if (param == null) {
+            return defaultValue;
+        }
+        return parseLong(param, scope, "for parameter '" + name + "'.");
+    }
+
     private static int parseInt(String string, Scope scope, String errorMessage) {
         switch (string) {
             case "min_int" -> { return Integer.MIN_VALUE; }
@@ -158,6 +178,21 @@ public final class Parameters {
         } catch (NumberFormatException e) {
             scope.print();
             throw new TemplateFrameworkException("Could not parse int from string '" + string + "' " + errorMessage);
+        }
+    }
+
+    private static long parseLong(String string, Scope scope, String errorMessage) {
+        switch (string) {
+            case "min_int" -> { return Integer.MIN_VALUE; }
+            case "max_int" -> { return Integer.MAX_VALUE; }
+            case "min_long" -> { return Long.MIN_VALUE; }
+            case "max_long" -> { return Long.MAX_VALUE; }
+        }
+        try {
+            return Long.valueOf(string);
+        } catch (NumberFormatException e) {
+            scope.print();
+            throw new TemplateFrameworkException("Could not parse long from string '" + string + "' " + errorMessage);
         }
     }
 

@@ -40,6 +40,9 @@ import compiler.lib.generators.*;
 public final class CodeGeneratorLibrary {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final IntGenerator intGenerator = Generators.ints();
+    private static final LongGenerator longGenerator = Generators.longs();
+    private static final FloatGenerator floatGenerator = Generators.floats();
+    private static final DoubleGenerator doubleGenerator = Generators.doubles();
 
     private CodeGeneratorLibrary parent;
     private HashMap<String,CodeGenerator> library;
@@ -260,6 +263,23 @@ public final class CodeGeneratorLibrary {
                 int hi = parameters.getIntOrDefault("hi", Integer.MAX_VALUE, scope);
 
                 int v = intGenerator.nextInt(lo, hi);
+                scope.stream.addCodeToLine(String.valueOf(v));
+        }, 0));
+
+        /**
+         * {@code long_con} returns a random long.
+         *
+         * @param lo Optional: lower inclusive bound of the range, default min_long.
+         * @param hi Optional: upper inclusive bound of the range, default max_long.
+         * @return Value in the range [lo,hi].
+         */
+        codeGenerators.add(new ProgrammaticCodeGenerator("long_con",
+            (Scope scope, Parameters parameters) -> {
+                parameters.checkOnlyHas(scope, "lo", "hi");
+                long lo = parameters.getLongOrDefault("lo", Long.MIN_VALUE, scope);
+                long hi = parameters.getLongOrDefault("hi", Long.MAX_VALUE, scope);
+
+                long v = longGenerator.nextLong(lo, hi);
                 scope.stream.addCodeToLine(String.valueOf(v));
         }, 0));
     }

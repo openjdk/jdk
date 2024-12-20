@@ -57,6 +57,7 @@ public class TestTemplate {
         testFieldsAndVariables();
         testFieldsAndVariablesDispatch();
         testIntCon();
+        testLongCon();
     }
 
     public static void testSingleLine() {
@@ -798,6 +799,61 @@ public class TestTemplate {
             x
             y"""
             + param +
+            """
+            y
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testLongCon() {
+        // To keep the result deterministic, we have to always keep hi=lo.
+        Template template = new Template("my_template",
+            """
+            x#{c1:long_con(lo=min_int,hi=min_int)}x
+            x#{c2:long_con(lo=max_int,hi=max_int)}x
+            x#{c3:long_con(lo=42,hi=42)}x
+            x#{c4:long_con(lo=-2147483648,hi=-2147483648)}x
+            x#{c5:long_con(lo=2147483647,hi=2147483647)}x
+            y#{c3}y
+            x#{c6:long_con(lo=#param1,hi=#param1)}x
+            y#{param1}y
+            x#{l1:long_con(lo=min_long,hi=min_long)}x
+            x#{l2:long_con(lo=max_long,hi=max_long)}x
+            x#{l4:long_con(lo=-9223372036854775808,hi=-9223372036854775808)}x
+            x#{l5:long_con(lo=9223372036854775807,hi=9223372036854775807)}x
+            x#{l6:long_con(lo=#param2,hi=#param2)}x
+            y#{param2}y
+            """
+        );
+        String param1 = String.valueOf(RANDOM.nextInt());
+        String param2 = String.valueOf(RANDOM.nextLong());
+        String code = template.where("param1", param1).where("param2", param2).instantiate();
+        String expected =
+            """
+            x-2147483648x
+            x2147483647x
+            x42x
+            x-2147483648x
+            x2147483647x
+            y42y
+            x"""
+            + param1 +
+            """
+            x
+            y"""
+            + param1 +
+            """
+            y
+            x-9223372036854775808x
+            x9223372036854775807x
+            x-9223372036854775808x
+            x9223372036854775807x
+            x"""
+            + param2 +
+            """
+            x
+            y"""
+            + param2 +
             """
             y
             """;
