@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,7 @@ public final class ClassInfo {
         if (type == null) {
             return DEFAULT;
         }
-        try {
-            return CACHE.get(type);
-        } catch (SecurityException exception) {
-            return DEFAULT;
-        }
+        return CACHE.get(type);
     }
 
     public static void clear() {

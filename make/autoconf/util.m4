@@ -575,7 +575,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_directory],
 
   if test "[x]ARG_CHECK_FOR_FILES" != "x:"; then
     for file in ARG_CHECK_FOR_FILES; do
-      found_files=$($ECHO $(ls $1/$file 2> /dev/null))
+      found_files=$($ECHO $($LS -d $1/$file 2> /dev/null))
       if test "x$found_files" = x; then
         FAILURE="Directory $1 does not contain $file"
         break

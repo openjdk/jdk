@@ -73,8 +73,9 @@ public:
     WorkerTask("Shenandoah Reset Bitmap"), _generation(generation) {}
 
   void work(uint worker_id) {
-    ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
+    assert(!heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
+    ShenandoahHeapRegion* region = _regions.next();
     ShenandoahMarkingContext* const ctx = heap->marking_context();
     while (region != nullptr) {
       auto const affiliation = region->affiliation();
@@ -882,8 +883,7 @@ size_t ShenandoahGeneration::increment_affiliated_region_count() {
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
-  _affiliated_region_count++;
-  return _affiliated_region_count;
+  return Atomic::add(&_affiliated_region_count, (size_t) 1);
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count() {
@@ -891,34 +891,37 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
-  _affiliated_region_count--;
+  auto affiliated_region_count = Atomic::sub(&_affiliated_region_count, (size_t) 1);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
-  return _affiliated_region_count;
+  return affiliated_region_count;
+}
+
+size_t ShenandoahGeneration::decrement_affiliated_region_count_without_lock() {
+  return Atomic::sub(&_affiliated_region_count, (size_t) 1);
 }
 
 size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_safepoint();
-  _affiliated_region_count += delta;
-  return _affiliated_region_count;
+  return Atomic::add(&_affiliated_region_count, delta);
 }
 
 size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_safepoint();
-  assert(_affiliated_region_count >= delta, "Affiliated region count cannot be negative");
+  assert(Atomic::load(&_affiliated_region_count) >= delta, "Affiliated region count cannot be negative");
 
-  _affiliated_region_count -= delta;
+  auto const affiliated_region_count = Atomic::sub(&_affiliated_region_count, delta);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used + _humongous_waste <= _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         (_used + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
-  return _affiliated_region_count;
+  return affiliated_region_count;
 }
 
 void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  _affiliated_region_count = num_regions;
-  _used = num_bytes;
+  Atomic::store(&_affiliated_region_count, num_regions);
+  Atomic::store(&_used, num_bytes);
   _humongous_waste = humongous_waste;
 }
 
@@ -947,21 +950,22 @@ void ShenandoahGeneration::decrease_used(size_t bytes) {
 }
 
 size_t ShenandoahGeneration::used_regions() const {
-  return _affiliated_region_count;
+  return Atomic::load(&_affiliated_region_count);
 }
 
 size_t ShenandoahGeneration::free_unaffiliated_regions() const {
   size_t result = max_capacity() / ShenandoahHeapRegion::region_size_bytes();
-  if (_affiliated_region_count > result) {
+  auto const used_regions = this->used_regions();
+  if (used_regions > result) {
     result = 0;
   } else {
-    result -= _affiliated_region_count;
+    result -= used_regions;
   }
   return result;
 }
 
 size_t ShenandoahGeneration::used_regions_size() const {
-  return _affiliated_region_count * ShenandoahHeapRegion::region_size_bytes();
+  return used_regions() * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahGeneration::available() const {
@@ -995,7 +999,7 @@ size_t ShenandoahGeneration::increase_capacity(size_t increment) {
 
   // This detects arithmetic wraparound on _used
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
+         (used_regions_size() >= used()),
          "Affiliated regions must hold more than what is currently used");
   return _max_capacity;
 }
@@ -1019,12 +1023,12 @@ size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
 
   // This detects arithmetic wraparound on _used
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() >= _used),
+         (used_regions_size() >= used()),
          "Affiliated regions must hold more than what is currently used");
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used <= _max_capacity), "Cannot use more than capacity");
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_affiliated_region_count * ShenandoahHeapRegion::region_size_bytes() <= _max_capacity),
+         (used_regions_size() <= _max_capacity),
          "Cannot use more than capacity");
   return _max_capacity;
 }

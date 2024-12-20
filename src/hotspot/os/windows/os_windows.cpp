@@ -788,9 +788,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 void os::free_thread(OSThread* osthread) {
   assert(osthread != nullptr, "osthread not set");
 
-  // We are told to free resources of the argument thread,
-  // but we can only really operate on the current thread.
-  assert(Thread::current()->osthread() == osthread,
+  // We are told to free resources of the argument thread, but we can only really operate
+  // on the current thread. The current thread may be already detached at this point.
+  assert(Thread::current_or_null() == nullptr || Thread::current()->osthread() == osthread,
          "os::free_thread but not current thread");
 
   CloseHandle(osthread->thread_handle());
@@ -1399,6 +1399,12 @@ void* os::dll_lookup(void *lib, const char *name) {
     }
   }
   return ret;
+}
+
+void* os::lookup_function(const char* name) {
+  // This is needed only for static builds which are not supported on Windows
+  ShouldNotReachHere();
+  return nullptr; // Satisfy compiler
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -5827,57 +5833,6 @@ bool os::start_debugging(char *buf, int buflen) {
 
 void* os::get_default_process_handle() {
   return (void*)GetModuleHandle(nullptr);
-}
-
-// Builds a platform dependent Agent_OnLoad_<lib_name> function name
-// which is used to find statically linked in agents.
-// Parameters:
-//            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, null for shared libs.
-//            is_absolute_path == true if lib_name is absolute path to agent
-//                                     such as "C:/a/b/L.dll"
-//            == false if only the base name of the library is passed in
-//               such as "L"
-char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
-                                    bool is_absolute_path) {
-  char *agent_entry_name;
-  size_t len;
-  size_t name_len;
-  size_t prefix_len = strlen(JNI_LIB_PREFIX);
-  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
-  const char *start;
-
-  if (lib_name != nullptr) {
-    len = name_len = strlen(lib_name);
-    if (is_absolute_path) {
-      // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
-        lib_name = ++start;
-      } else {
-        // Need to check for drive prefix
-        if ((start = strchr(lib_name, ':')) != nullptr) {
-          lib_name = ++start;
-        }
-      }
-      if (len <= (prefix_len + suffix_len)) {
-        return nullptr;
-      }
-      lib_name += prefix_len;
-      name_len = strlen(lib_name) - suffix_len;
-    }
-  }
-  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
-  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == nullptr) {
-    return nullptr;
-  }
-
-  strcpy(agent_entry_name, sym_name);
-  if (lib_name != nullptr) {
-    strcat(agent_entry_name, "_");
-    strncat(agent_entry_name, lib_name, name_len);
-  }
-  return agent_entry_name;
 }
 
 /*

@@ -95,7 +95,7 @@ gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
-gc/shenandoah/oom/TestAllocOutOfMemory.java 8344312 linux-ppc64le
+gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 
 #############################################################################
 
@@ -115,10 +115,6 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
-
-# Fails with +UseCompactObjectHeaders on aarch64
-runtime/cds/appcds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
-runtime/cds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 
