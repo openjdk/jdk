@@ -331,14 +331,15 @@ public final class CodeGeneratorLibrary {
         ));
 
         /**
-         * {@code def_final_var} defines a variable in the current method scope.
+         * {@code def_immutable_var} defines a variable in the current method scope, and the
+         * variable is to be considered immutable.
          *
          * @param name Name of the variable.
          * @param prefix Access qualifier and type.
          * @param value Value assigned to the variable on definition.
          * @param type Type for which the variable can be sampled with {@code var}.
          */
-        codeGenerators.add(new Template("def_final_var",
+        codeGenerators.add(new Template("def_immutable_var",
             "#{:dispatch(scope=method,call=_internal_def_var,name=#name,prefix=#prefix,value=#value,type=#type,mutable=false)}"
         ));
 
@@ -355,14 +356,15 @@ public final class CodeGeneratorLibrary {
         ));
 
         /**
-         * {@code def_final_field} defines a final field in the current class scope.
+         * {@code def_immutable_field} defines a field in the current class scope, and the field
+         * is to be considered immutable.
          *
          * @param name Name of the field.
          * @param prefix Access qualifier and type.
          * @param value Value assigned to the field on definition.
          * @param type Type for which the field can be sampled with {@code var}.
          */
-        codeGenerators.add(new Template("def_final_field",
+        codeGenerators.add(new Template("def_immutable_field",
             "#{:dispatch(scope=class,call=_internal_def_field,name=#name,prefix=#prefix,value=#value,type=#type,mutable=false)}"
         ));
     }

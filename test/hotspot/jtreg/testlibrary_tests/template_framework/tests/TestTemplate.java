@@ -724,11 +724,11 @@ public class TestTemplate {
                     int x1 = #{:var(type=my_int_1)} + 1;
                     #{:_internal_def_var(name=var2,prefix=int,value=2,type=my_int_1,mutable=true)}
                     #{:mutable_var(type=my_int_1)} += 2;
-                    #{:def_final_var(name=var3,prefix=final int,value=3,type=my_int_2)}
+                    #{:def_immutable_var(name=var3,prefix=final int,value=3,type=my_int_2)}
                     int x2 = #{:var(type=my_int_2)} + 1;
                     #{:def_var(name=var4,prefix=int,value=4,type=my_int_2)}
                     #{:mutable_var(type=my_int_2)} += 2;
-                    #{:def_final_field(name=field1,prefix=public static final int,value=5,type=my_int_3)}
+                    #{:def_immutable_field(name=field1,prefix=public static final int,value=5,type=my_int_3)}
                     int x3 = #{:var(type=my_int_3)} + 1;
                     #{:def_field(name=field2,prefix=public static int,value=6,type=my_int_3)}
                     #{:mutable_var(type=my_int_3)} += 2;
@@ -986,7 +986,7 @@ public class TestTemplate {
         Template test3Template = new Template("my_test3",
             """
             public static int test3(int ${in:my_int_3:immutable}) {
-                #{:def_final_field(name=$field3,prefix=public static int,value=#param,type=my_int_3)}
+                #{:def_immutable_field(name=$field3,prefix=public static int,value=#param,type=my_int_3)}
                 return #{:my_param_op_var(param=$in,op=#op,type=my_int_3)};
             }
             """
