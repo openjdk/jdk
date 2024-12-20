@@ -152,7 +152,7 @@ public class BadCharacterChecker implements FileChecker, AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         report();
     }
 }

@@ -149,12 +149,12 @@ public class LinkChecker implements HtmlChecker {
 
         int anchors = 0;
         for (IDTable t : allFiles.values()) {
-            anchors += t.map.values().stream()
+            anchors += (int) t.map.values().stream()
                     .filter(e -> !e.getReferences().isEmpty())
                     .count();
         }
         for (IDTable t : allURIs.values()) {
-            anchors += t.map.values().stream()
+            anchors += (int) t.map.values().stream()
                     .filter(e -> !e.references.isEmpty())
                     .count();
         }
@@ -227,7 +227,7 @@ public class LinkChecker implements HtmlChecker {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         report();
         if (!isOK()) {
             throw new RuntimeException(
@@ -248,7 +248,7 @@ public class LinkChecker implements HtmlChecker {
             String fragment = null;
 
             // The checker runs into a problem with links that have more than one hash character.
-            // You cannot create a URI unless you convert the second hash character into
+            // You cannot create a URI unless the second hash is escaped.
 
             int firstHashIndex = ref.indexOf('#');
             int lastHashIndex = ref.lastIndexOf('#');
@@ -361,34 +361,6 @@ public class LinkChecker implements HtmlChecker {
 
         Set<Position> getReferences() {
             return references == null ? Collections.emptySet() : references;
-        }
-    }
-
-    static class URIComparator implements Comparator<URI> {
-        final HostComparator hostComparator = new HostComparator();
-
-        @Override
-        public int compare(URI o1, URI o2) {
-            if (o1.isOpaque() || o2.isOpaque()) {
-                return o1.compareTo(o2);
-            }
-            String h1 = o1.getHost();
-            String h2 = o2.getHost();
-            String s1 = o1.getScheme();
-            String s2 = o2.getScheme();
-            if (h1 == null || h1.isEmpty() || s1 == null || s1.isEmpty()
-                    || h2 == null || h2.isEmpty() || s2 == null || s2.isEmpty()) {
-                return o1.compareTo(o2);
-            }
-            int v = hostComparator.compare(h1, h2);
-            if (v != 0) {
-                return v;
-            }
-            v = s1.compareTo(s2);
-            if (v != 0) {
-                return v;
-            }
-            return o1.compareTo(o2);
         }
     }
 

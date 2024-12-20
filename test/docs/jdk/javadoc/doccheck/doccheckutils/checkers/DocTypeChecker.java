@@ -150,7 +150,7 @@ public class DocTypeChecker implements HtmlChecker {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (!isOK()) {
             report();
             throw new RuntimeException("Found HTML files with missing doctype declaration");

@@ -71,7 +71,7 @@ public interface HtmlChecker extends Checker {
      * @param line        the line number on which the start tag for an element was found
      * @param name        the name of the tag
      * @param attrs       the attributes of the tag
-     * @param selfClosing whether or not the tag is self-closing
+     * @param selfClosing whether the tag is self-closing
      */
     void startElement(int line, String name, Map<String, String> attrs, boolean selfClosing);
 

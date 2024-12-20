@@ -43,6 +43,8 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
     private static final Path testBasePath = Path.of(System.getProperty("test.src"));
     private static final Set<String> extLinks = new HashSet<>();
 
+    private static final String currentVersion = String.valueOf(Runtime.version().feature());
+
     static {
         String input = null;
         try {
@@ -51,8 +53,8 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
             throw new RuntimeException(e);
         }
         extLinks.addAll(input.lines()
-                .map(line -> line.replaceAll("\\@\\@JAVASE_VERSION\\@\\@", String.valueOf(Runtime.version().feature())))
                 .filter(line -> !line.startsWith("#"))
+                .map(line -> line.replaceAll("\\@\\@JAVASE_VERSION\\@\\@", currentVersion))
                 .collect(Collectors.toUnmodifiableSet()));
     }
 
@@ -107,7 +109,7 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
             String fragment = null;
 
             // The checker runs into a problem with links that have more than one hash character.
-            // You cannot create a URI unless you convert the second hash character into
+            // You cannot create a URI unless the second hash is escaped.
 
             int firstHashIndex = ref.indexOf('#');
             int lastHashIndex = ref.lastIndexOf('#');
@@ -149,7 +151,7 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         report();
     }
 

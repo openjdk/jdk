@@ -33,7 +33,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,14 +41,14 @@ import java.util.stream.Stream;
 
 public class TidyChecker implements FileChecker, AutoCloseable {
     private final Path TIDY;
-    Map<Pattern, Integer> counts = new HashMap<>();
-    Pattern okPattern = Pattern.compile("No warnings or errors were found.");
-    Pattern countPattern = Pattern.compile("([0-9]+) warnings, ([0-9]+) errors were found!.*?(Not all warnings/errors were shown.)?");
-    Pattern countPattern2 = Pattern.compile("Tidy found ([0-9]+) warning[s]? and ([0-9]+) error[s]?!.*?(Not all warnings/errors were shown.)?");
-    Pattern cssPattern = Pattern.compile("You are recommended to use CSS.*");
-    Pattern guardPattern = Pattern.compile("(line [0-9]+ column [0-9]+ - |[^:]+:[0-9]+:[0-9]+: )(Error|Warning):.*");
+    final Map<Pattern, Integer> counts = new HashMap<>();
+    final Pattern okPattern = Pattern.compile("No warnings or errors were found.");
+    final Pattern countPattern = Pattern.compile("([0-9]+) warnings, ([0-9]+) errors were found!.*?(Not all warnings/errors were shown.)?");
+    final Pattern countPattern2 = Pattern.compile("Tidy found ([0-9]+) warning[s]? and ([0-9]+) error[s]?!.*?(Not all warnings/errors were shown.)?");
+    final Pattern cssPattern = Pattern.compile("You are recommended to use CSS.*");
+    final Pattern guardPattern = Pattern.compile("(line [0-9]+ column [0-9]+ - |[^:]+:[0-9]+:[0-9]+: )(Error|Warning):.*");
 
-    Pattern[] patterns = {
+    final Pattern[] patterns = {
             Pattern.compile(".*Error: <.*> is not recognized!"),
             Pattern.compile(".*Error: missing quote mark for attribute value"),
             Pattern.compile(".*Warning: '<' \\+ '/' \\+ letter not allowed here"),
@@ -135,7 +134,7 @@ public class TidyChecker implements FileChecker, AutoCloseable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException();
         }
     }
 
