@@ -366,7 +366,7 @@ void os::print_context(outputStream *st, const void *context) {
 // This magic number is not in any user-space header.
 // No other choice but to define it.
 #ifndef RISCV_V_MAGIC
-#define RISCV_V_MAGIC		0x53465457
+#define RISCV_V_MAGIC 0x53465457
 #endif
 
   // vector state
