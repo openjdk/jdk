@@ -29,9 +29,3 @@
  * @build DocTester toolbox.TestRunner
  * @run main/othervm -Ddoccheck.checks=extlinks DocCheck
  */
-
-
-public class jdkCheckExtlinks
-{
-void main(){};
-}

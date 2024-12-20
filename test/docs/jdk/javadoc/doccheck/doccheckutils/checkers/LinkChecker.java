@@ -281,8 +281,8 @@ public class LinkChecker implements HtmlChecker {
                 }
             }
         } catch (URISyntaxException e) {
-            log.log(currFile, line, "invalid URI: " + e);
             System.err.println("Failed to create URI: " + ref);
+            log.log(currFile, line, "invalid URI: " + e);
         }
     }
 

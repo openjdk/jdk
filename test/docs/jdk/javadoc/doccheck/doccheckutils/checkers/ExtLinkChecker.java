@@ -32,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,7 +50,10 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        extLinks.addAll(input.lines().collect(Collectors.toUnmodifiableSet()));
+        extLinks.addAll(input.lines()
+                .map(line -> line.replaceAll("\\@\\@JAVASE_VERSION\\@\\@", String.valueOf(Runtime.version().feature())))
+                .filter(line -> !line.startsWith("#"))
+                .collect(Collectors.toUnmodifiableSet()));
     }
 
     private final Log log;
@@ -99,14 +103,34 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
 
     private void foundReference(int line, String ref) {
         try {
-            URI uri = new URI(ref);
+            String uriPath = ref;
+            String fragment = null;
+
+            // The checker runs into a problem with links that have more than one hash character.
+            // You cannot create a URI unless you convert the second hash character into
+
+            int firstHashIndex = ref.indexOf('#');
+            int lastHashIndex = ref.lastIndexOf('#');
+            if (firstHashIndex != -1 && firstHashIndex != lastHashIndex) {
+                uriPath = ref.substring(0, firstHashIndex);
+                fragment = ref.substring(firstHashIndex + 1).replace("#", "%23");
+            } else if (firstHashIndex != -1) {
+                uriPath = ref.substring(0, firstHashIndex);
+                fragment = ref.substring(firstHashIndex + 1);
+            }
+
+            URI uri = new URI(uriPath);
+            if (fragment != null) {
+                uri = new URI(uri + "#" + fragment);
+            }
+
             if (uri.isAbsolute()) {
                 if (Objects.equals(uri.getScheme(), "javascript")) {
                     // ignore JavaScript URIs
                     return;
                 }
-                String fragment = uri.getRawFragment();
-                URI noFrag = new URI(uri.toString().replaceAll("#\\Q" + fragment + "\\E$", ""));
+                String rawFragment = uri.getRawFragment();
+                URI noFrag = new URI(uri.toString().replaceAll("#\\Q" + rawFragment + "\\E$", ""));
                 allURIs.computeIfAbsent(noFrag, _ -> new LinkedHashSet<>()).add(currFile);
             }
         } catch (URISyntaxException e) {
@@ -153,11 +177,13 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
     }
 
     private void isVettedLink(URI uri, Set<Path> files) {
-        if (!uri.toString().contains("docs.oracle.com/") && !extLinks.contains(uri.toString())) {
-            System.err.println("The external link " + uri + "\n" + "needs to be added to the whitelist " +
-                    "test/docs/jdk/javadoc/doccheck/ExtLinksJdk.txt in order to be checked regularly ");
-            System.err.println("The link is present in:");
-            files.forEach(System.err::println);
+        if (!extLinks.contains(uri.toString())) {
+            System.err.println(MessageFormat.format("""
+                    The external link {0} needs to be added to the whitelist test/docs/jdk/javadoc/doccheck/ExtLinksJdk.txt in order to be checked regularly\s
+                    The link is present in:
+                        {1}
+                                        
+                    """, uri, files.stream().map(Path::toString).collect(Collectors.joining("\n    "))));
         }
     }
 
