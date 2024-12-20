@@ -37,44 +37,30 @@
 
 class outputStream;
 
-// We prevent littering this code with enum casts and ifdef COMPILER2. We
-// only (mostly) need the enums for bounds checking.
-template <int max_val, int init_val>
-class EnumWrapper {
-  typedef EnumWrapper<max_val, init_val> Type;
-  int _v;
-public:
-  static constexpr int max = max_val;
-  EnumWrapper() : _v(init_val) {}
-  EnumWrapper(int v) : _v(v) { assert(v >= 0 && v < max_val, "OOB (%d)", v); }
-  EnumWrapper(const Type& e) : _v(e._v) {}
-  int raw() const { return _v; }
-  Type operator=(Type other) { _v = other._v; return *this; }
-  bool operator==(const Type& other) const { return _v == other._v; }
-  bool operator!=(const Type& other) const { return _v != other._v; }
-};
-
 #ifdef COMPILER2
-typedef EnumWrapper<(int)Phase::PhaseTraceId::max_phase_timers, 0> PhaseTrcId;
+constexpr int phase_trc_id_max     = (int)Phase::PhaseTraceId::max_phase_timers;
+constexpr int phase_trc_id_default = (int)Phase::PhaseTraceId::_t_none;
 #else
 // In minimal builds, the ArenaCounterTable is just a single-dimension vector of arena tags (see below)
-typedef EnumWrapper<1, 0> PhaseTraceId;
+constexpr int phase_trc_id_max = 1;
+constexpr int phase_trc_id_default = 0;
 #endif
+inline void check_phase_trace_id(int v) { assert(v >= 0 && v < phase_trc_id_max, "OOB"); }
 
-typedef EnumWrapper<(int)Arena::Tag::tag_count, 0> ArenaTag;
+constexpr int arena_tag_max = (int)Arena::Tag::tag_count;
+inline void check_arena_tag(int v) { assert(v >= 0 && v < arena_tag_max, "OOB"); }
 
 // A table containing counters per arena Tag and per compilation Phase
 class ArenaCounterTable {
-  size_t _v[PhaseTrcId::max][ArenaTag::max];
+  size_t _v[phase_trc_id_max][arena_tag_max];
 public:
   ArenaCounterTable();
   void copy_from(const ArenaCounterTable& other);
-  inline size_t at(PhaseTrcId id, ArenaTag tag) const;
-  inline void set(size_t size, PhaseTrcId id, ArenaTag tag);
-  inline void add(size_t size, PhaseTrcId id, ArenaTag tag);
-  inline void sub(size_t size, PhaseTrcId id, ArenaTag tag);
+  inline size_t at(int phase_trc_id, int arena_tag) const;
+  inline void add(size_t size, int phase_trc_id, int arena_tag);
+  inline void sub(size_t size, int phase_trc_id, int arena_tag);
   void print_on(outputStream* ss) const;
-  void summarize(size_t out[ArenaTag::max]) const;
+  void summarize(size_t out[arena_tag_max]) const;
 };
 
 // A stack keeping track of the current compilation phase. For simplicity,
@@ -85,14 +71,14 @@ class PhaseIdStack {
   int _stack[max_depth];
 public:
   PhaseIdStack();
-  inline void push(PhaseTrcId id);
-  inline void pop(PhaseTrcId id);
-  inline PhaseTrcId top() const;
+  inline void push(int phase_trc_id);
+  inline void pop(int phase_trc_id);
+  inline int top() const;
 };
 
 class FootprintTimeline {
   struct Entry {
-    int phaseid;
+    int phase_trc_id;
     size_t cur, peak, start;
     bool did_footprint_change() const       { return cur != start; }
     bool has_significant_local_peak() const { return (peak - start) > M && (peak - cur) > M; }
@@ -108,7 +94,7 @@ public:
   void copy_from(const FootprintTimeline& other);
   inline void on_footprint_change(size_t cur_abs);
   void print_on(outputStream* st) const;
-  void on_phase_start(PhaseTrcId phase, size_t cur_abs);
+  void on_phase_start(int phase_trc_id, size_t cur_abs);
 };
 
 // ArenaState is the central data structure holding all statistics and temp data during
@@ -135,6 +121,8 @@ class ArenaState : public CHeapObj<mtCompiler> {
   bool _hit_limit;
   bool _limit_in_process;
 
+  const bool _collect_details;
+
   // Keep track of current C2 phase
   PhaseIdStack _phase_id_stack;
 
@@ -149,13 +137,13 @@ class ArenaState : public CHeapObj<mtCompiler> {
   DEBUG_ONLY(void verify() const;)
 
 public:
-  ArenaState(CompilerType comp_type, int comp_id, size_t limit);
+  ArenaState(CompilerType comp_type, int comp_id, size_t limit, bool collect_details);
 
-  void on_phase_start(PhaseTrcId id);
-  void on_phase_end(PhaseTrcId id);
+  void on_phase_start(int phase_trc_id);
+  void on_phase_end(int phase_trc_id);
 
   // Account an arena allocation. Returns true if new peak reached.
-  bool on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp);
+  bool on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t* stamp);
 
   // Account an arena deallocation.
   void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
@@ -166,6 +154,8 @@ public:
   bool   hit_limit() const          { return _hit_limit; }
   bool   limit_in_process() const     { return _limit_in_process; }
   void   set_limit_in_process(bool v) { _limit_in_process = v; }
+
+  bool collect_details() const      { return _collect_details; }
 
   CompilerType comp_type() const { return _comp_type; }
   int comp_id() const { return _comp_id; }

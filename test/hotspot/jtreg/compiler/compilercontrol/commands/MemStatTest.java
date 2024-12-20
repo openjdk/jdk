@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2023, 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,27 +36,37 @@ package compiler.compilercontrol.commands;
 import jdk.test.lib.process.ProcessTools;
 
 public class MemStatTest {
+    record Expected (String subcommand, int value) {}
+    static Expected expectedValues[] = {
+            new Expected("", 1), // default => collect
+            new Expected("collect", 1),
+            new Expected("print", 2 | 1),
+            new Expected("details", 4 | 1),
+            new Expected("print+details", 4 | 2 | 1),
+            new Expected("details+print", 4 | 2 | 1),
+            new Expected("details+collect+print", 4 | 2 | 1),
+    };
+
+    static String invalid[] = new String[] {
+            "invalid", "collect,invalid", "collect,print"
+    };
+
     public static void main(String[] args) throws Exception {
-        // default => collect
-        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*", "-version")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 1"); // should be registered
-        // collect explicit
-        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,collect", "-version")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 1"); // should be registered
-        // print explicit
-        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,print", "-version")
-                .shouldHaveExitValue(0)
-                .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 2");
-        // invalid suboption
-        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,invalid", "-version")
-                .shouldNotHaveExitValue(0)
-                .shouldContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("Error: Value cannot be read for option 'MemStat'")
-                .shouldNotContain("CompileCommand: MemStat"); // should *NOT* be registered
+        for (Expected e : expectedValues) {
+            String comma = e.subcommand.isEmpty() ? "" : ",";
+            ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*" + comma + e.subcommand, "-version")
+                    .shouldHaveExitValue(0)
+                    .shouldNotContain("CompileCommand: An error occurred during parsing")
+                    .shouldContain("CompileCommand: MemStat *.* uintx MemStat = " + e.value); // should be registered
+        }
+
+        for (String s : invalid) {
+            // invalid suboption should be rejected
+            ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*," + s, "-version")
+                    .shouldNotHaveExitValue(0)
+                    .shouldContain("CompileCommand: An error occurred during parsing")
+                    .shouldContain("Error: Value cannot be read for option 'MemStat'")
+                    .shouldNotContain("CompileCommand: MemStat"); // should *NOT* be registered
+        }
     }
 }

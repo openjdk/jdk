@@ -35,8 +35,8 @@ class outputStream;
 class CompilationMemoryStatistic : public AllStatic {
   static bool _enabled; // set to true if memstat is active for any method.
 
-  static void on_phase_start_0(int phasetraceid);
-  static void on_phase_end_0(int phasetraceid);
+  static void on_phase_start_0(int phase_trc_id);
+  static void on_phase_end_0(int phase_trc_id);
   static void on_arena_chunk_allocation_0(size_t size, int arenatag, uint64_t* stamp);
   static void on_arena_chunk_deallocation_0(size_t size, uint64_t stamp);
 
@@ -51,22 +51,22 @@ public:
   // must be set at this point (so place CompilationMemoryStatisticMark correctly).
   static void on_end_compilation();
 
-  static inline void on_phase_start(int phasetraceid) {
+  static inline void on_phase_start(int phase_trc_id) {
     if (enabled()) {
-      on_phase_start_0(phasetraceid);
+      on_phase_start_0(phase_trc_id);
     }
   }
 
-  static inline void on_phase_end(int phasetraceid) {
+  static inline void on_phase_end(int phase_trc_id) {
     if (enabled()) {
-      on_phase_end_0(phasetraceid);
+      on_phase_end_0(phase_trc_id);
     }
   }
 
-  static inline void on_arena_chunk_allocation(size_t size, int arenatag, uint64_t* stamp) {
+  static inline void on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t* stamp) {
     (*stamp) = 0; // defaults to "not tracked"
     if (enabled()) {
-      on_arena_chunk_allocation_0(size, arenatag, stamp);
+      on_arena_chunk_allocation_0(size, arena_tag, stamp);
     }
   }
 

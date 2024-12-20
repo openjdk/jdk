@@ -210,8 +210,14 @@ bool DirectiveSet::should_collect_memstat() const {
   return MemStatOption > 0 || MemLimitOption != 0;
 }
 
+bool DirectiveSet::should_collect_memstat_details() const {
+  // Guards collecting information that may take more time or memory
+  // to keep around
+  return MemStatOption & (uintx)MemStatAction::collect_details;
+}
+
 bool DirectiveSet::should_print_memstat() const {
-  return MemStatOption == (uintx)MemStatAction::print;
+  return MemStatOption & (uintx)MemStatAction::print;
 }
 
 size_t DirectiveSet::mem_limit() const {

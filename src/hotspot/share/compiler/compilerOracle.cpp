@@ -698,26 +698,32 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
 }
 
 static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
-
-#define IF_ENUM_STRING(S, CMD)                \
-  if (strncasecmp(line, S, strlen(S)) == 0) { \
-    bytes_read += (int)strlen(S);             \
-    CMD                                       \
-    return true;                              \
+  // A "+" separated list of memstat sub commands
+  // e.g. "print" or "details+print" or "collect+print+details"
+  value = (uintx)MemStatAction::collect; // set implicitly
+  int n = 0;
+  while(line[n]) {
+    if (strncasecmp(line + n, "collect", 7) == 0) {
+      n += 7; // ignore, already set
+    } else if (strncasecmp(line + n, "print", 5) == 0) {
+      n += 5;
+      value |= (uintx)MemStatAction::print;
+      print_final_memstat_report = true;
+    } else if (strncasecmp(line + n, "details", 7) == 0) {
+      n += 7;
+      value |= (uintx)MemStatAction::collect_details;
+    } else {
+      jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
+      return false;
+    }
+    // swallow "+"
+    if (line[n] == '+') {
+      n ++;
+    }
   }
+  bytes_read += n;
 
-  IF_ENUM_STRING("collect", {
-    value = (uintx)MemStatAction::collect;
-  });
-  IF_ENUM_STRING("print", {
-    value = (uintx)MemStatAction::print;
-    print_final_memstat_report = true;
-  });
-#undef IF_ENUM_STRING
-
-  jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
-
-  return false;
+  return true;
 }
 
 static void scan_value(enum OptionType type, char* line, int& total_bytes_read,

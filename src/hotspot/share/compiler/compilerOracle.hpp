@@ -116,7 +116,9 @@ enum class OptionType {
 };
 
 enum class MemStatAction {
-  collect = 1, print = 2
+  collect = 1,
+  print = 2,
+  collect_details = 4
 };
 
 class CompilerOracle : AllStatic {
