@@ -36,6 +36,8 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
+bool MutexLocker::_bootstrapping_done;
+
 class InFlightMutexRelease {
  private:
   Mutex* _in_flight_mutex;

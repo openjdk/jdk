@@ -61,18 +61,9 @@ class MemTracker : AllStatic {
     return _tracking_level != NMT_unknown;
   }
 
-  // We need this to avoid attempting to lock NmtVirtualMemory_lock during VM init (before mutexes are ready or current thread has been assigned).
-  static inline bool is_bootstrapping_done()  {
-    return _bootstrapping_done;
-  }
-
-  static inline void set_bootstrapping_done()  {
-    _bootstrapping_done = true;
-  }
-
   // This may be called on a detached thread during VM init, so we should check is_bootstrapping_done() first.
   static inline void assert_locked() {
-    assert(!is_bootstrapping_done() || NmtVirtualMemory_lock->owned_by_self(),
+    assert(!MutexLocker::is_bootstrapping_done() || NmtVirtualMemory_lock->owned_by_self(),
            "should have acquired NmtVirtualMemory_lock");
   }
 
@@ -301,7 +292,7 @@ class MemTracker : AllStatic {
   class NmtVirtualMemoryLocker: StackObj {
     ConditionalMutexLocker _cml;
   public:
-    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, _bootstrapping_done, Mutex::_no_safepoint_check_flag){}
+    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, MutexLocker::is_bootstrapping_done(), Mutex::_no_safepoint_check_flag){}
   };
 
  private:
@@ -312,7 +303,6 @@ class MemTracker : AllStatic {
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
   static MemBaseline      _baseline;
-  static bool             _bootstrapping_done;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

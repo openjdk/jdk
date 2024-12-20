@@ -235,6 +235,16 @@ class MutexLocker: public MutexLockerImpl {
      MutexLockerImpl(thread, mutex, flag) {
      assert(mutex != nullptr, "null mutex not allowed");
    }
+
+   static inline bool is_bootstrapping_done()  {
+     return _bootstrapping_done;
+   }
+
+   static inline void set_bootstrapping_done()  {
+     _bootstrapping_done = true;
+   }
+ private:
+   static bool _bootstrapping_done;
 };
 
 // Conditional mutex locker.

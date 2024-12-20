@@ -627,7 +627,7 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    if (MemTracker::is_bootstrapping_done()) {
+    if (MutexLocker::is_bootstrapping_done()) {
       assert_lock_strong(NmtVirtualMemory_lock);
     }
     if (rgn->mem_tag() == mtThreadStack) {
