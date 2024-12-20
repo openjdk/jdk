@@ -806,7 +806,7 @@ public:
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<bool> _human_readable;
-  DCmdArgument<bool> _by_phase;
+  DCmdArgument<bool> _verbose;
   DCmdArgument<MemorySizeArgument> _minsize;
 public:
   static int num_arguments() { return 3; }

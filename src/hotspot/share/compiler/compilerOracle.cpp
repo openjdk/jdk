@@ -121,7 +121,7 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
-static bool print_final_memstat_report = false;
+static uintx all_memstat_options_superimposed = 0; // if a suboption is set on any method, it is set here
 
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommandEnum::Unknown) + 1] = { 0 };
@@ -483,7 +483,13 @@ bool CompilerOracle::should_collect_memstat() {
 }
 
 bool CompilerOracle::should_print_final_memstat_report() {
-  return print_final_memstat_report;
+  // We print a report if printing is enabled for any method
+  return all_memstat_options_superimposed & MemStatAction::print;
+}
+
+bool CompilerOracle::memstat_detail_suboption_active() {
+  // We warn about details not being switched if someone wants detail informations
+  return all_memstat_options_superimposed & MemStatAction::collect_details;
 }
 
 bool CompilerOracle::should_log(const methodHandle& method) {
@@ -708,7 +714,6 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
     } else if (strncasecmp(line + n, "print", 5) == 0) {
       n += 5;
       value |= (uintx)MemStatAction::print;
-      print_final_memstat_report = true;
     } else if (strncasecmp(line + n, "details", 7) == 0) {
       n += 7;
       value |= (uintx)MemStatAction::collect_details;
@@ -716,6 +721,9 @@ static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* 
       jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
       return false;
     }
+
+    all_memstat_options_superimposed |= value;
+
     // swallow "+"
     if (line[n] == '+') {
       n ++;

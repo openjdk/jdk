@@ -32,6 +32,7 @@
 #include "compiler/compilationMemStatInternals.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "compiler/compilerThread.hpp"
@@ -477,7 +478,7 @@ public:
     st->print_cr("");
   }
 
-  void print_on(outputStream* st, bool human_readable, bool by_phase) const {
+  void print_on(outputStream* st, bool human_readable, bool verbose) const {
     int col = 0;
 
     // Total
@@ -546,7 +547,7 @@ public:
     // If we have detail information, print two additional tables in the next lines:
     // One containing the counter composition at global peak, one containing the phase-local
     // counters
-    if (_per_phase_counters != nullptr && by_phase) {
+    if (_per_phase_counters != nullptr && verbose) {
       st->print_cr("----- By phase and arena type, at arena usage peak (%zu) -----", _peak);
       _per_phase_counters->counters_at_global_peak.print_on(st);
       st->print_cr("------------- Arena allocation timelime by phase -----------------");
@@ -862,19 +863,24 @@ static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStat
   return e1->compare_by_size(e2);
 }
 
-void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_readable, bool by_phase, size_t min_size) {
+void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_readable, bool verbose, size_t min_size) {
 
   MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
-  st->cr();
-  st->print_cr("Compilation memory statistics v2");
-
   if (!enabled()) {
-    st->print_cr("(unavailable)");
+    st->print_cr("Compilation memory statistics are unavailable. "
+                 "Did you specifiy -XX:CompileCommand=memstat?");
     return;
   }
 
   st->cr();
+  st->print_cr("Compilation memory statistics");
+  st->cr();
+
+  if (verbose && !CompilerOracle::should_collect_memstat_details()) {
+    st->print_cr("*** No detail information are available. "
+                 "For verbose mode, \"-XX:CompileCommand=memstat,...,details\" must have been specified.");
+  }
 
   MemStatEntry::print_legend(st);
   st->cr();
@@ -898,7 +904,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
       QuickSort::sort(filtered, num, diff_entries_by_size);
       // Now print. Has to happen under lock protection too, since entries may be changed.
       for (int i = 0; i < num; i ++) {
-        filtered[i]->print_on(st, human_readable, by_phase);
+        filtered[i]->print_on(st, human_readable, verbose);
       }
     } else {
       st->print_cr("No entries.");

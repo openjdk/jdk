@@ -104,7 +104,6 @@ size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 const intptr_t    VMError::segfault_address = pd_segfault_address;
 
-
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
   // All platforms
@@ -361,7 +360,6 @@ static bool add_if_absent(address value, address* list, int list_capacity) {
  */
 static bool print_code(outputStream* st, Thread* thread, address pc, bool is_crash_pc,
                        address* printed, int printed_capacity) {
-
   if (Interpreter::contains(pc)) {
     if (is_crash_pc) {
       // The interpreter CodeBlob is very large so try to print the codelet instead.

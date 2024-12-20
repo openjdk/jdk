@@ -76,7 +76,7 @@ public:
     }
   }
 
-  static void print_all_by_size(outputStream* st, bool human_readable, bool by_phase, size_t minsize);
+  static void print_all_by_size(outputStream* st, bool human_readable, bool verbose, size_t minsize);
 
   // For compilers
   static const char* failure_reason_memlimit();
