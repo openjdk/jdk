@@ -9058,6 +9058,18 @@ instruct shrI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift)
   ins_pipe(ialu_reg);
 %}
 
+instruct shrI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (URShiftI (LoadI src) shift));
+
+  format %{ "eshrl    $dst, $src, $shift\t # int (ndd)" %}
+  ins_encode %{
+    __ eshrl($dst$$Register, $src$$Address, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Logical Shift Right by 8-bit immediate
 instruct shrI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
@@ -9421,6 +9433,18 @@ instruct shrL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift)
   format %{ "eshrq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
     __ eshrq($dst$$Register, $src$$Register, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct shrL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (URShiftL (LoadL src) shift));
+
+  format %{ "eshrq    $dst, $src, $shift\t# long (ndd)" %}
+  ins_encode %{
+    __ eshrq($dst$$Register, $src$$Address, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}

@@ -65,8 +65,8 @@ public class TestIntMem {
         return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
     }
 
-    public static int testShr(int a, int b) {
-        return  a >>> 6 ;
+    public static int testShr(int x, int i) {
+        return  b[i] >>> 6 ;
     }
 
     public static int testSal(int x, int i) {

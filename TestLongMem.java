@@ -46,8 +46,8 @@ public class TestLongMem {
         return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
     }
 
-    public static long testShr(int a, int b) {
-        return  a >>> 6 ;
+    public static long testShr(long x, int i) {
+        return  a[i] >>> 6 ;
     }
 
     public static long testSal(long x, int i) {
