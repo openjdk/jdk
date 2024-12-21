@@ -120,7 +120,7 @@ public class TestShiftAndMask {
     @IR(counts = { IRNode.AND_I, "1" })
     @IR(failOn = { IRNode.ADD_I, IRNode.LSHIFT_I })
     public static int addShiftMaskInt(int i, int j) {
-        return (j + (i << 2)) & 3; // transformed to: return j & 3;
+        return (j + ((i + 1) << 2)) & 3; // transformed to: return j & 3;
     }
 
     @Run(test = "addShiftMaskInt")
@@ -165,7 +165,7 @@ public class TestShiftAndMask {
     @IR(counts = { IRNode.AND_L, "1" })
     @IR(failOn = { IRNode.ADD_L, IRNode.LSHIFT_L })
     public static long addShiftMaskLong(long i, long j) {
-        return (j + (i << 2)) & 3; // transformed to: return j & 3;
+        return (j + ((i - 3) << 2)) & 3; // transformed to: return j & 3;
     }
 
     @Run(test = "addShiftMaskLong")
