@@ -45,10 +45,10 @@ constexpr int phase_trc_id_default = (int)Phase::PhaseTraceId::_t_none;
 constexpr int phase_trc_id_max = 1;
 constexpr int phase_trc_id_default = 0;
 #endif
-inline void check_phase_trace_id(int v) { assert(v >= 0 && v < phase_trc_id_max, "OOB"); }
+inline void check_phase_trace_id(int v) { assert(v >= 0 && v < phase_trc_id_max, "OOB (%d)", v); }
 
 constexpr int arena_tag_max = (int)Arena::Tag::tag_count;
-inline void check_arena_tag(int v) { assert(v >= 0 && v < arena_tag_max, "OOB"); }
+inline void check_arena_tag(int v) { assert(v >= 0 && v < arena_tag_max, "OOB (%d)", v); }
 
 // A table containing counters per arena Tag and per compilation Phase
 class ArenaCounterTable {
@@ -66,7 +66,7 @@ public:
 // A stack keeping track of the current compilation phase. For simplicity,
 // fixed-width, since the nesting depth of TracePhase is limited
 class PhaseIdStack {
-  static constexpr int max_depth = 32;
+  static constexpr int max_depth = 16; // we rarely go beyond 3 layers of nesting
   int _depth;
   int _stack[max_depth];
 public:
@@ -76,6 +76,13 @@ public:
   inline int top() const;
 };
 
+// Holds a table of n entries; each entry keeping start->end footprints when
+// a phase started and ended; each entry also keeping the phase-local peak (if
+// a phase caused a temporary spike in footprint that vanished before the phase
+// ended).
+// Handling nested phases: for this structure, there is always a phase active;
+// if a phase ends, we "restart" the parent phase (which often is the
+// "outside any phase" phase).
 class FootprintTimeline {
   struct Entry {
     int phase_trc_id;

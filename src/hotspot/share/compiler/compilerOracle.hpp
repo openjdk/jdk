@@ -115,7 +115,7 @@ enum class OptionType {
     Unknown
 };
 
-enum class MemStatAction {
+enum class MemStatFlags {
   collect = 1,
   print = 2,
   collect_details = 4

@@ -32,14 +32,19 @@ inline void PhaseIdStack::push(int phase_trc_id) {
   check_phase_trace_id(phase_trc_id);
   assert(_depth < max_depth, "Sanity");
   assert(_depth == 0 || top() != phase_trc_id, "Nesting identical phases?");
-  _stack[_depth++] = phase_trc_id;
+  _stack[_depth] = phase_trc_id;
+  if (_depth < max_depth) { // release builds
+    _depth++;
+  }
 }
 
 inline void PhaseIdStack::pop(int phase_trc_id) {
   check_phase_trace_id(phase_trc_id);
   assert(_depth > 1, "Sanity " PTR_FORMAT, p2i(this));
   assert(top() == phase_trc_id, "Mismatched PhaseTraceId pop (%d, expected %d)", phase_trc_id, top());
-  _depth --;
+  if (_depth > 0) { // release builds
+    _depth--;
+  }
 }
 
 inline int PhaseIdStack::top() const {

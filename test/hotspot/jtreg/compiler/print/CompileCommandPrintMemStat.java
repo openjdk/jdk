@@ -23,11 +23,19 @@
  */
 
 /*
- * @test
+ * @test id=c2
  * @summary Checks that -XX:CompileCommand=PrintMemStat,... works
- * @requires vm.compiler1.enabled | vm.compiler2.enabled
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @library /test/lib
- * @run driver compiler.print.CompileCommandPrintMemStat
+ * @run driver compiler.print.CompileCommandPrintMemStat c2
+ */
+
+/*
+ * @test id=c1
+ * @summary Checks that -XX:CompileCommand=PrintMemStat,... works
+ * @requires vm.compiler1.enabled & vm.compiler2.enabled
+ * @library /test/lib
+ * @run driver compiler.print.CompileCommandPrintMemStat c1
  */
 
 package compiler.print;
@@ -44,20 +52,61 @@ public class CompileCommandPrintMemStat {
     final static String METHOD1 = "method1";
     final static String METHOD2 = "method2";
 
-    public static void main(String[] args) throws Exception {
-        test(METHOD1, METHOD2);
-        test(METHOD2, METHOD1);
+    enum CompType {
+        c1, c2
     }
 
-    private static void test(String include, String exclude) throws Exception {
+    public static void main(String[] args) throws Exception {
+        if (args.length != 1) {
+            throw new RuntimeException("Missing Args");
+        }
+        CompType ctyp = CompType.valueOf(args[0]);
+        test(METHOD1, METHOD2, ctyp);
+        test(METHOD2, METHOD1, ctyp);
+        test(METHOD1, METHOD2, ctyp);
+        test(METHOD2, METHOD1, ctyp);
+    }
+
+    // Example output for a C2 compilation:
+    //
+    //    CompileCommand: MemStat compiler/print/CompileCommandPrintMemStat$TestMain.method1 uintx MemStat = 3
+    //    c1 (5) Arena usagecompiler/print/CompileCommandPrintMemStat$TestMain::method1(()V): 65456 [ra 65456]
+    //    c2 (6) Arena usagecompiler/print/CompileCommandPrintMemStat$TestMain::method1(()V): 405888 [ra 272024, node 66440, comp 33712, other 33712]
+    //    ----- By phase and arena type, at arena usage peak (405888) -----
+    //                  phase name      total        ra      node      comp      type     index   reglive  regsplit     cienv     other
+    //         (outside any phase)     111336     42928       984     33712         0         0         0         0         0     33712
+    //                       parse      32728         0     32728         0         0         0         0         0         0         0
+    //                     matcher      32728         0     32728         0         0         0         0         0         0         0
+    //                  bldOopMaps      32728     32728         0         0         0         0         0         0         0         0
+    //                   testTimer     196368    196368         0         0         0         0         0         0         0         0
+    //    ------------- Arena allocation timelime by phase -----------------
+    //                                         start         end   end delta
+    //     0      (outside any phase):             0      102120     +102120
+    //     1                    parse:        102120      134848      +32728
+    //     2      (outside any phase):        134848      145048      +10200
+    //     3                  matcher:        145048      176792      +31744
+    //     4                 regalloc:        176792      178760       +1968
+    //     5              computeLive:        178760      211488      +32728
+    //     6                 regalloc:        211488      176792      -34696
+    //     7               bldOopMaps:        176792      209520      +32728
+    //     8                testTimer:        209520      307704      +98184
+    //------------------------------------------------------------------
+
+    private static void test(String include, String exclude, CompType ctyp) throws Exception {
         List<String> options = new ArrayList<String>();
         options.add("-Xcomp");
-        options.add("-XX:-Inline");
         options.add("-XX:CompileCommand=compileonly," + getTestClass() + "::*");
+        options.add("-XX:-Inline");
+        if (ctyp.equals(CompType.c2)) {
+            options.add("-XX:-TieredCompilation");
+        } else {
+            options.add("-XX:TieredStopAtLevel=1");
+        }
         options.add("-XX:CompileCommand=MemStat," + getTestMethod(include) + ",print");
         options.add(getTestClass());
 
         OutputAnalyzer oa = ProcessTools.executeTestJava(options);
+        oa.reportDiagnosticSummary();
 
         // We expect two printouts for "PrintMemStat". A line at compilation time, and a line in a summary report
         // that is printed when we exit. Both use the typical <class>::name format but use / as separator and also

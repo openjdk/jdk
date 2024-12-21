@@ -131,6 +131,7 @@ void FootprintTimeline::copy_from(const FootprintTimeline& other) {
 
 void FootprintTimeline::print_entry_on(outputStream* st, unsigned pos) const {
   const Entry& e = at(pos);
+  check_phase_trace_id(e.phase_trc_id);
   st->print("%2u %24s:", pos, phase_trc_id_to_string(e.phase_trc_id));
   st->fill_to(30);
   st->print("%12zu", e.start); // start
@@ -172,7 +173,7 @@ void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs) {
   }
   Entry& e = at(_pos);
   e.start = e.cur = e.peak = start_footprint;
-  e.phase_trc_id = phase_trc_id_max;
+  e.phase_trc_id = phase_trc_id;
 }
 
 ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit, bool collect_details) :
@@ -459,27 +460,33 @@ public:
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "time", "time taken for last compilation (sec)");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "type", "compiler type");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "id", "compile id");
-    st->print_cr("  " LEGEND_KEY_FMT ": %s", "#rc", "how often recompiled");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "rec", "how often recompiled");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "thread", "compiler thread");
 #undef LEGEND_KEY_FMT
   }
 
   static void print_header(outputStream* st) {
+    st->print("%-6s", "ctyp");
+
 #define SIZE_FMT "%-10s"
     st->print(SIZE_FMT, "total");
     for (int tag = 0; tag < arena_tag_max; tag++) {
       st->print(SIZE_FMT, Arena::tag_name[tag]);
     }
 #define HDR_FMT1 "%-8s%-8s%-8s%-8s"
-#define HDR_FMT2 "%-6s%-6s%-4s%-19s%s"
+#define HDR_FMT2 "%-6s%-4s%-19s%s"
 
     st->print(HDR_FMT1, "result", "#nodes", "limit", "time");
-    st->print(HDR_FMT2, "type", "id", "#rc", "thread", "method");
+    st->print(HDR_FMT2, "id", "#rc", "thread", "method");
     st->print_cr("");
   }
 
   void print_on(outputStream* st, bool human_readable, bool verbose) const {
     int col = 0;
+
+    // Type
+    st->print("%2s ", compilertype2name(_comp_type));
+    col += 6; st->fill_to(col);
 
     // Total
     size_t v = _peak;
@@ -523,10 +530,6 @@ public:
     // TimeStamp
     st->print("%.3f ", _time);
     col += 8; st->fill_to(col);
-
-    // Type
-    st->print("%s ", compilertype2name(_comp_type));
-    col += 6; st->fill_to(col);
 
     // Compile ID
     st->print("%d ", _comp_id);
@@ -710,7 +713,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   if (print) {
     // Pre-assemble string to prevent tearing
     stringStream ss;
-    ss.print("%s (%d) Arena usage", compilertype2name(arena_stat->comp_type()), arena_stat->comp_id());
+    ss.print("%s (%d) Arena usage ", compilertype2name(arena_stat->comp_type()), arena_stat->comp_id());
     fmn.print_on(&ss);
     ss.print_raw(": ");
     arena_stat->print_peak_state_on(&ss);
@@ -877,9 +880,9 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   st->print_cr("Compilation memory statistics");
   st->cr();
 
-  if (verbose && !CompilerOracle::should_collect_memstat_details()) {
-    st->print_cr("*** No detail information are available. "
-                 "For verbose mode, \"-XX:CompileCommand=memstat,...,details\" must have been specified.");
+  if (verbose && !CompilerOracle::memstat_detail_suboption_active()) {
+    st->print_cr("*** Note: Verbose mode specified, but no detail statistics have been collected. ***");
+    st->print_cr("    (Start JVM with -XX:CompileCommand=memstat,...,details)");
   }
 
   MemStatEntry::print_legend(st);

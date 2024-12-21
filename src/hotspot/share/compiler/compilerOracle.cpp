@@ -484,12 +484,12 @@ bool CompilerOracle::should_collect_memstat() {
 
 bool CompilerOracle::should_print_final_memstat_report() {
   // We print a report if printing is enabled for any method
-  return all_memstat_options_superimposed & MemStatAction::print;
+  return all_memstat_options_superimposed & (uintx)MemStatFlags::print;
 }
 
 bool CompilerOracle::memstat_detail_suboption_active() {
   // We warn about details not being switched if someone wants detail informations
-  return all_memstat_options_superimposed & MemStatAction::collect_details;
+  return all_memstat_options_superimposed & (uintx)MemStatFlags::collect_details;
 }
 
 bool CompilerOracle::should_log(const methodHandle& method) {
@@ -706,17 +706,17 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
 static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
   // A "+" separated list of memstat sub commands
   // e.g. "print" or "details+print" or "collect+print+details"
-  value = (uintx)MemStatAction::collect; // set implicitly
+  value = (uintx)MemStatFlags::collect; // set implicitly
   int n = 0;
   while(line[n]) {
     if (strncasecmp(line + n, "collect", 7) == 0) {
       n += 7; // ignore, already set
     } else if (strncasecmp(line + n, "print", 5) == 0) {
       n += 5;
-      value |= (uintx)MemStatAction::print;
+      value |= (uintx)MemStatFlags::print;
     } else if (strncasecmp(line + n, "details", 7) == 0) {
       n += 7;
-      value |= (uintx)MemStatAction::collect_details;
+      value |= (uintx)MemStatFlags::collect_details;
     } else {
       jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
       return false;
@@ -1065,7 +1065,7 @@ bool CompilerOracle::parse_from_line(char* line) {
         return true;
       } else if (option == CompileCommandEnum::MemStat) {
         // MemStat default action is to collect data but to not print
-        register_command(matcher, option, (uintx)MemStatAction::collect);
+        register_command(matcher, option, (uintx)MemStatFlags::collect);
         return true;
       } else {
         jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));
