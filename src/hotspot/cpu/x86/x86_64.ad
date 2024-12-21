@@ -8929,6 +8929,18 @@ instruct sarI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift)
   ins_pipe(ialu_mem_imm);
 %}
 
+instruct sarI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (RShiftI (LoadI src) shift));
+
+  format %{ "esarl    $dst, $src, $shift\t# int (ndd)" %}
+  ins_encode %{
+    __ esarl($dst$$Register, $src$$Address, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_mem_imm);
+%}
+
 // Arithmetic Shift Right by 8-bit immediate
 instruct sarI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
@@ -9260,14 +9272,26 @@ instruct sarL_rReg_imm(rRegL dst, immI shift, rFlagsReg cr)
 %}
 
 // Arithmetic Shift Right by 8-bit immediate
-instruct sarL_rReg_imm_ndd(rRegL dst, rRegL src, immI shift)
+instruct sarL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift)
 %{
   predicate(UseAPX);
   match(Set dst (RShiftL src shift));
 
   format %{ "esarq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esarq($dst$$Register, $src$$Register, (unsigned char)($shift$$constant & 0x3F));
+    __ esarq($dst$$Register, $src$$Register, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_mem_imm);
+%}
+
+instruct sarL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (RShiftL (LoadL src) shift));
+
+  format %{ "esarq    $dst, $src, $shift\t# long (ndd)" %}
+  ins_encode %{
+    __ esarq($dst$$Register, $src$$Address, $shift$$constant, true);
   %}
   ins_pipe(ialu_mem_imm);
 %}

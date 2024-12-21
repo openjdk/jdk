@@ -73,8 +73,8 @@ public class TestIntMem {
         return  a << 5 ;
     }
 
-    public static int testSar(int a, int b) {
-        return  b >> 4 ;
+    public static int testSar(int x, int i) {
+        return  b[i] >> 4 ;
     }
 
     public static int testDec(int x, int i) {

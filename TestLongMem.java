@@ -10,17 +10,11 @@ public class TestLongMem {
     static long[] c;
     static long[] d;
 
-    public static long testKernel(int a, int b) {
-        long ans;
-        long k = Long.rotateLeft(-a, 5);
-        long l = Long.rotateRight(-b, 6);
-        long m = Long.rotateLeft(a, Math.abs(Long.bitCount(l) % 7));
-        ans = (a ^ b) + Math.max((a >> Math.min(2, k)), ((b >>> Math.min(3, l)) << 2));
-        return ans;
+    public static long testTemp(long x, int i) {
+        return 0;
     }
 
     public static long testCmovP(long x, int i) {
-        // TODO: generates ecmovq (need a way to produce compressed ptr)
         long[] p = x > i ? a : null;
         long[] q = x == i ? b : p;
         d = p == q ? a : b;
@@ -60,8 +54,8 @@ public class TestLongMem {
         return  a << 5 ;
     }
 
-    public static long testSar(int a, int b) {
-        return  b >> 4 ;
+    public static long testSar(long x, int i) {
+        return  a[i] >> 63 ;
     }
 
     public static long testDec(long x, int i) {
@@ -145,7 +139,7 @@ public class TestLongMem {
     }
 
     public static long testAdd2(long x, int i) {
-        return b[i] + x; // map to RRM
+        return b[i] + x;
     }
 
     public static long testAdd1(long x, int i) {
