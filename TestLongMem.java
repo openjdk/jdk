@@ -50,8 +50,8 @@ public class TestLongMem {
         return  a >>> 6 ;
     }
 
-    public static long testSal(int a, int b) {
-        return  a << 5 ;
+    public static long testSal(long x, int i) {
+        return  b[i] << 5 ;
     }
 
     public static long testSar(long x, int i) {

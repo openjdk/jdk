@@ -8824,6 +8824,18 @@ instruct salI_rReg_imm_ndd(rRegI dst, rRegI src, immI8 shift)
   ins_pipe(ialu_reg);
 %}
 
+instruct salI_rReg_mem_imm_ndd(rRegI dst, memory src, immI8 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (LShiftI (LoadI src) shift));
+
+  format %{ "esall    $dst, $src, $shift\t# int (ndd)" %}
+  ins_encode %{
+    __ esall($dst$$Register, $src$$Address, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Shift Left by 8-bit immediate
 instruct salI_mem_imm(memory dst, immI8 shift, rFlagsReg cr)
 %{
@@ -9145,7 +9157,7 @@ instruct salL_rReg_immI2_ndd(rRegL dst, rRegL src, immI2 shift)
   predicate(UseAPX);
   match(Set dst (LShiftL src shift));
 
-  format %{ "esalq    $dst, $src, $shift\t# int (ndd)" %}
+  format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
     __ esalq($dst$$Register, $dst$$Register, $shift$$constant, true);
   %}
@@ -9172,9 +9184,21 @@ instruct salL_rReg_imm_ndd(rRegL dst, rRegL src, immI8 shift)
   predicate(UseAPX);
   match(Set dst (LShiftL src shift));
 
-  format %{ "esalq    $dst, $src, $shift\t# int (ndd)" %}
+  format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
     __ esalq($dst$$Register, $src$$Register, $shift$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct salL_rReg_mem_imm_ndd(rRegL dst, memory src, immI8 shift)
+%{
+  predicate(UseAPX);
+  match(Set dst (LShiftL (LoadL src) shift));
+
+  format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
+  ins_encode %{
+    __ esalq($dst$$Register, $src$$Address, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -9212,7 +9236,7 @@ instruct salL_rReg_CL_ndd(rRegL dst, rRegL src, rcx_RegI shift)
   predicate(UseAPX && !VM_Version::supports_bmi2());
   match(Set dst (LShiftL src shift));
 
-  format %{ "esalq    $dst, $src, $shift\t# int (ndd)" %}
+  format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
     __ esalq($dst$$Register, $src$$Register, true);
   %}
@@ -9266,7 +9290,7 @@ instruct sarL_rReg_imm(rRegL dst, immI shift, rFlagsReg cr)
 
   format %{ "sarq    $dst, $shift" %}
   ins_encode %{
-    __ sarq($dst$$Register, (unsigned char)($shift$$constant & 0x3F));
+    __ sarq($dst$$Register, (unsigned char)($shift$$constant & 0x3F)); //TODO: why & 0x3F?
   %}
   ins_pipe(ialu_mem_imm);
 %}
