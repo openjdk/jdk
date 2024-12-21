@@ -28,6 +28,7 @@
 #ifdef COMPILER1
 #include "c1/c1_Compilation.hpp"
 #endif
+#include "code/nmethod.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationMemStatInternals.inline.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -118,10 +119,15 @@ PhaseIdStack::PhaseIdStack() : _depth(0) {
   push(phase_trc_id_default); // "outside phase"
 }
 
+// When reporting phase footprint movements, if phase-local peak over start as well over end
+// was larger than this threshold, we report it.
+static constexpr size_t significant_peak_threshold = M;
+
+
 FootprintTimeline::FootprintTimeline() {
   _pos = 0;
-  _entries[0]._bytes.reset();
-  _entries[0]._live_nodes.reset();
+  _entries[0]._bytes.init(0);
+  _entries[0]._live_nodes.init(0);
   _entries[0].phase_trc_id = phase_trc_id_default; // "outside phase"
 }
 
@@ -134,31 +140,36 @@ void FootprintTimeline::print_entry_on(outputStream* st, unsigned pos) const {
   const Entry& e = at(pos);
   check_phase_trace_id(e.phase_trc_id);
   st->print("%2u %24s: ", pos, phase_trc_id_to_string(e.phase_trc_id));
+#ifdef DEBUG_OUTPUT_RAW
+  st->print("%zu -> zu peak: zu / %u -> %u peak %u",
+    e._bytes.start, e._bytes.cur, e._bytes.peak,
+    e._live_nodes.start, e._live_nodes.cur, e._live_nodes.peak
+  );
+#else
   st->fill_to(30);
-  st->print("%12zu ", e._bytes.start); // start
+  st->print("%9zu ", e._bytes.cur); // end
   st->fill_to(40);
-  st->print("%12zu ", e._bytes.cur); // end
-  st->fill_to(50);
-  st->print("%+12zd ", e._bytes.end_delta()); // delta end
-  st->fill_to(60);
-
-  st->print("  %u >> %u, %+12zd ", e._live_nodes.start, e._live_nodes.cur, e._live_nodes.end_delta()); // delta nodes
-  //st->print("%+12zd", (int64_t)e.cur_nodes - e.start_nodes); // delta nodes
-
-  if (e.has_significant_local_peak()) {
-    st->fill_to(70);
+  st->print("%+9zd ", e._bytes.end_delta()); // delta end
+  st->fill_to(55);
+  st->print("%6u ", e._live_nodes.cur); // end
+  st->fill_to(62);
+  st->print("%+6zd ", e._live_nodes.end_delta()); // end
+  if (e._bytes.peak_size() > significant_peak_threshold) {
+    st->fill_to(80);
     st->print(" significant temporary peak: %zu (%+zd)", e._bytes.peak, (ssize_t)e._bytes.peak - e._bytes.start); // peak
   }
+#endif
   st->cr();
 }
 
 void FootprintTimeline::print_on(outputStream* st) const {
   if (_pos > 0) {
-    st->print_cr("%30s%12s%12s%12s%12s", "", "start", "end", "end delta", "#nodes delta");
+               // .123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789
+    st->print_cr("                                      bytes               #nodes");
     unsigned from = 0;
-    if (_pos > max_entries) {
-      st->print_cr("         (%u older entries skipped)", _pos - max_entries);
-      from = _pos - max_entries;
+    if (_pos > max_num_phases) {
+      st->print_cr("         (%u older entries lost)", _pos - max_num_phases);
+      from = _pos - max_num_phases;
     }
     for (unsigned i = from; i < _pos; i++) {
       print_entry_on(st, i);
@@ -178,7 +189,7 @@ void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigne
   // and/or one that has a local peak that significantly raises above either starting
   // or ending footprint.
   const Entry& old = at(_pos);
-  if (old.did_footprint_change() || old.has_significant_local_peak()) {
+  if (old._bytes.end_delta() != 0 || old._bytes.peak_size() > significant_peak_threshold) {
     _pos++;
   }
   Entry& e = at(_pos);
@@ -297,9 +308,9 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
     st->print_cr("]");
 #ifdef COMPILER2
     if (_comp_type == CompilerType::compiler_c2) {
-      st->print_cr("----- By phase and arena type, at arena usage peak (%zu) -----", _peak);
+      st->print_cr("----- Peak composition, accumulated by phase and arena type ------");
       _counters_at_global_peak.print_on(st);
-      st->print_cr("------------- Arena allocation timelime by phase -----------------");
+      st->print_cr("------Allocation timelime by phase, last %u phases ---------------", FootprintTimeline::max_num_phases);
       _timeline.print_on(st);
       st->print_cr("------------------------------------------------------------------");
     }
@@ -392,6 +403,7 @@ class MemStatEntry : public CHeapObj<mtInternal /* (sic) */> {
   size_t _limit;
 
   const char* _result;
+  size_t _code_size;
 
   // Bytes total at global peak
   size_t _peak;
@@ -414,7 +426,7 @@ public:
   MemStatEntry(FullMethodName method)
     : _method(method), _comp_type(compiler_none), _comp_id(-1),
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
-      _result(nullptr), _peak(0), _live_nodes_at_global_peak(0),
+      _result(nullptr), _code_size(0), _peak(0), _live_nodes_at_global_peak(0),
       _per_phase_counters(nullptr) {
   }
 
@@ -456,21 +468,23 @@ public:
   }
 
   void set_result(const char* s) { _result = s; }
+  void set_code_size(size_t s)   { _code_size = s; }
 
   size_t peak() const { return _peak; }
 
   static void print_legend(outputStream* st) {
 #define LEGEND_KEY_FMT "%11s"
     st->print_cr("Legend:");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "ctype", "compiler type");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "total", "peak memory allocated via arenas while compiling");
     for (int tag = 0; tag < arena_tag_max; tag++) {
       st->print_cr("  " LEGEND_KEY_FMT ": %s", Arena::tag_name[tag], Arena::tag_desc[tag]);
     }
-    st->print_cr("  " LEGEND_KEY_FMT ": %s", "result", "Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "#nodes", "...how many nodes (c2 only)");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "codesz", "Compiled method code size");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "result", "Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "limit", "memory limit, if set");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "time", "time taken for last compilation (sec)");
-    st->print_cr("  " LEGEND_KEY_FMT ": %s", "type", "compiler type");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "id", "compile id");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "rec", "how often recompiled");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "thread", "compiler thread");
@@ -485,10 +499,10 @@ public:
     for (int tag = 0; tag < arena_tag_max; tag++) {
       st->print(SIZE_FMT, Arena::tag_name[tag]);
     }
-#define HDR_FMT1 "%-8s%-8s%-8s%-8s"
+#define HDR_FMT1 "%-8s%-8s%-8s%-8s%-8s"
 #define HDR_FMT2 "%-6s%-4s%-19s%s"
 
-    st->print(HDR_FMT1, "result", "#nodes", "limit", "time");
+    st->print(HDR_FMT1, "#nodes", "codesz", "result", "limit", "time");
     st->print(HDR_FMT2, "id", "#rc", "thread", "method");
     st->print_cr("");
   }
@@ -519,16 +533,20 @@ public:
       col += 10; st->fill_to(col);
     }
 
-    // result?
-    st->print("%s ", _result ? _result : "");
-    col += 8; st->fill_to(col);
-
     // Number of Nodes when memory peaked
     if (_live_nodes_at_global_peak > 0) {
       st->print("%u ", _live_nodes_at_global_peak);
     } else {
       st->print("-");
     }
+    col += 8; st->fill_to(col);
+
+    // code size
+    st->print("%zu ", _code_size);
+    col += 8; st->fill_to(col);
+
+    // result?
+    st->print("%s ", _result ? _result : "");
     col += 8; st->fill_to(col);
 
     // Limit
@@ -563,9 +581,9 @@ public:
     // One containing the counter composition at global peak, one containing the phase-local
     // counters
     if (_per_phase_counters != nullptr && verbose) {
-      st->print_cr("----- By phase and arena type, at arena usage peak (%zu) -----", _peak);
+      st->print_cr("----- Peak composition, accumulated by phase and arena type ------");
       _per_phase_counters->counters_at_global_peak.print_on(st);
-      st->print_cr("------------- Arena allocation timelime by phase -----------------");
+      st->print_cr("------Allocation timelime by phase, last %u phases ---------------", FootprintTimeline::max_num_phases);
       _per_phase_counters->timeline.print_on(st);
       st->print_cr("------------------------------------------------------------------");
     }
@@ -607,7 +625,7 @@ class MemStatTable :
 {
 public:
 
-  void add(const FullMethodName& fmn, const ArenaState* state, const char* result) {
+  void add(const FullMethodName& fmn, const ArenaState* state, size_t code_size, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     MemStatTableKey key(fmn, state->comp_type());
     MemStatEntry** pe = get(key);
@@ -624,6 +642,7 @@ public:
     e->set_current_thread();
     e->inc_recompilation();
     e->set_result(result);
+    e->set_code_size(code_size);
 
     e->set_from_state(state);
   }
@@ -715,11 +734,16 @@ void CompilationMemoryStatistic::on_end_compilation() {
     }
   }
 
+  size_t code_size = 0;
+  if (m->code() != nullptr) {
+    code_size = m->code()->total_size();
+  }
+
   {
     MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
     assert(_the_table != nullptr, "not initialized");
 
-    _the_table->add(fmn, arena_stat, result);
+    _the_table->add(fmn, arena_stat, code_size, result);
   }
 
   if (print) {

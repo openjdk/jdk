@@ -84,28 +84,29 @@ public:
 // if a phase ends, we "restart" the parent phase (which often is the
 // "outside any phase" phase).
 class FootprintTimeline {
+public:
+  static constexpr unsigned max_num_phases = 64; // beyond that we wrap, keeping the last n phases
+private:
   template <typename T, typename dT>
   struct C {
     T start, peak, cur;
-    void reset()          { start = cur = peak = 0; }
+    void init(T v)        { start = cur = peak = v; }
     void update(T v)      { cur = v; if (v > peak) peak = v; }
-    dT end_delta() const  { return (dT) cur - start; }
+    dT end_delta() const  { return (dT)cur - (dT)start; }
     size_t peak_size() const {
-      return MAX2(peak - cur, peak - start);
+      return MIN2(peak - cur, peak - start);
     }
   };
   struct Entry {
     int phase_trc_id;
     C<size_t, ssize_t> _bytes;
     C<unsigned, ssize_t> _live_nodes;
-    bool did_footprint_change() const       { return _bytes.end_delta() != 0; }
     bool has_significant_local_peak() const { return _bytes.peak_size() > M; }
   };
-  static constexpr unsigned max_entries = 64; // we wrap, keeping the last n phase movements
-  Entry _entries[max_entries];
+  Entry _entries[max_num_phases];
   unsigned _pos;
-  Entry& at(unsigned pos)             { return _entries[pos % max_entries]; }
-  const Entry& at(unsigned pos) const { return _entries[pos % max_entries]; }
+  Entry& at(unsigned pos)             { return _entries[pos % max_num_phases]; }
+  const Entry& at(unsigned pos) const { return _entries[pos % max_num_phases]; }
   void print_entry_on(outputStream* st, unsigned pos) const;
 public:
   FootprintTimeline();
