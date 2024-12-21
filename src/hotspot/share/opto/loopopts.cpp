@@ -363,8 +363,7 @@ void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* domina
 
   for (DUIterator_Fast imax, i = source->fast_outs(imax); i < imax; i++) {
     Node* out = source->fast_out(i); // Control-dependent node
-    // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
-    if (out->depends_only_on_test() && _igvn.no_dependent_zero_check(out)) {
+    if (out->depends_only_on_test()) {
       assert(out->in(0) == source, "must be control dependent on source");
       _igvn.replace_input_of(out, 0, dominator);
       if (pin_array_access_nodes) {
@@ -1648,7 +1647,7 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
 void PhaseIdealLoop::push_pinned_nodes_thru_region(IfNode* dom_if, Node* region) {
   for (DUIterator i = region->outs(); region->has_out(i); i++) {
     Node* u = region->out(i);
-    if (!has_ctrl(u) || u->is_Phi() || !u->depends_only_on_test() || !_igvn.no_dependent_zero_check(u)) {
+    if (!has_ctrl(u) || u->is_Phi() || !u->depends_only_on_test()) {
       continue;
     }
     assert(u->in(0) == region, "not a control dependent node?");

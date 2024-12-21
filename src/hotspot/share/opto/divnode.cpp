@@ -1474,6 +1474,113 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
   return TypeD::make(jdouble_cast(xr));
 }
 
+// If the division control input is a test that excludes 0 from the divisor value range, then the
+// division depends only on that test. This check is pessimistic, that means that it may return
+// false even if the control input is a test that excludes 0 from the divisor value range
+template <class TypeClass>
+static bool div_mod_depends_only_on_test(const Node* division) {
+  static_assert(std::is_same<TypeClass, TypeInt>::value || std::is_same<TypeClass, TypeLong>::value, "must be int or long");
+
+  BasicType bt;
+  if (std::is_same<TypeClass, TypeInt>::value) {
+    bt = T_INT;
+  } else {
+    bt = T_LONG;
+  }
+
+  Node* control = division->in(0);
+  if (control == nullptr) {
+    return true;
+  }
+
+  // The control input is not a test
+  if (!control->is_IfTrue() && !control->is_IfFalse()) {
+    return false;
+  }
+  Node* iff = control->in(0);
+  if (!iff->is_If()) {
+    return false;
+  }
+  BoolNode* bol = iff->in(1)->isa_Bool();
+  if (bol == nullptr) {
+    return false;
+  }
+  Node* cmp = bol->in(1);
+  if (cmp->Opcode() != Op_Cmp(bt) && cmp->Opcode() != Op_Cmp_unsigned(bt)) {
+    return false;
+  }
+
+  bool is_unsigned = cmp->Opcode() == Op_Cmp_unsigned(bt);
+  bool is_reverted = control->is_IfFalse();
+  bool is_commuted;
+  Node* divisor = division->in(2)->uncast();
+  Node* other;
+  if (cmp->in(1)->uncast() == divisor) {
+    other = cmp->in(2);
+    is_commuted = false;
+  } else if (cmp->in(2)->uncast() == divisor) {
+    other = cmp->in(1);
+    is_commuted = true;
+  } else {
+    // Not a test involving the divisor
+    return false;
+  }
+
+  // Normalize to the form (divisor <=> other) == true
+  const TypeClass* bottom_type = other->bottom_type()->cast<TypeClass>();
+  BoolTest normalized_test = bol->_test;
+  if (is_reverted) {
+    normalized_test = normalized_test.negate();
+  }
+  if (is_commuted) {
+    normalized_test = normalized_test.commute();
+  }
+
+  // Try to see if the test does exclude 0 from the divisor value range
+  switch (normalized_test._test) {
+    case BoolTest::eq: return bottom_type->_lo > 0 || bottom_type->_hi < 0;
+    case BoolTest::ne: return bottom_type == TypeClass::ZERO;
+    case BoolTest::lt: return !is_unsigned && bottom_type->_hi <= 0;
+    case BoolTest::le: return !is_unsigned && bottom_type->_hi < 0;
+    case BoolTest::gt: return is_unsigned || bottom_type->_lo >= 0;
+    case BoolTest::ge: return bottom_type->_lo > 0;
+    default: ShouldNotReachHere();
+  }
+  return false;
+}
+
+bool DivINode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeInt>(this);
+}
+
+bool DivLNode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeLong>(this);
+}
+
+bool UDivINode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeInt>(this);
+}
+
+bool UDivLNode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeLong>(this);
+}
+
+bool ModINode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeInt>(this);
+}
+
+bool ModLNode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeLong>(this);
+}
+
+bool UModINode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeInt>(this);
+}
+
+bool UModLNode::depends_only_on_test() const {
+  return div_mod_depends_only_on_test<TypeLong>(this);
+}
+
 //=============================================================================
 
 DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) {

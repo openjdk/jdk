@@ -1569,9 +1569,8 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_ac
     // Loop ends when projection has no more uses.
     for (DUIterator_Last jmin, j = ifp->last_outs(jmin); j >= jmin; --j) {
       Node* s = ifp->last_out(j);   // Get child of IfTrue/IfFalse
-      if (s->depends_only_on_test() && igvn->no_dependent_zero_check(s)) {
-        // For control producers.
-        // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
+      if (s->depends_only_on_test()) {
+        // For control producers
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
         if (pin_array_access_nodes && data_target != top) {
           // As a result of range check smearing, Loads and range check Cast nodes that are control dependent on this

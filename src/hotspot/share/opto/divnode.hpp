@@ -49,6 +49,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------DivLNode---------------------------------------
@@ -62,6 +63,7 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------DivFNode---------------------------------------
@@ -101,6 +103,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------UDivLNode---------------------------------------
@@ -114,6 +117,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------ModINode---------------------------------------
@@ -126,6 +130,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------ModLNode---------------------------------------
@@ -138,6 +143,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------ModFNode---------------------------------------
@@ -172,6 +178,7 @@ public:
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------UModLNode---------------------------------------
@@ -184,6 +191,7 @@ public:
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual bool depends_only_on_test() const;
 };
 
 //------------------------------DivModNode---------------------------------------
@@ -203,6 +211,7 @@ public:
   virtual uint hash() const { return Node::hash(); }
   virtual bool is_CFG() const  { return false; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
+  virtual bool depends_only_on_test() const { return false; }
 
   static DivModNode* make(Node* div_or_mod, BasicType bt, bool is_unsigned);
 
