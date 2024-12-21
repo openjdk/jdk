@@ -6142,10 +6142,10 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
   }
   int64_t imm = (int64_t)(1UL << bit_pos);
   if (is_simm12(imm)) {
-    andi(Rd, Rs, imm);
+    and_imm12(Rd, Rs, imm);
   } else {
     srli(Rd, Rs, bit_pos);
-    andi(Rd, Rd, 1);
+    and_imm12(Rd, Rd, 1);
   }
 }
 
