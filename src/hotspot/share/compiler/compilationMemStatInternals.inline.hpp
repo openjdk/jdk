@@ -73,12 +73,10 @@ inline void ArenaCounterTable::sub(size_t size, int phase_trc_id, int arena_tag)
   _v[phase_trc_id][arena_tag] -= size;
 }
 
-inline void FootprintTimeline::on_footprint_change(size_t cur_abs) {
+inline void FootprintTimeline::on_footprint_change(size_t cur_abs, unsigned cur_nodes) {
   Entry& e = at(_pos);
-  e.cur = cur_abs;
-  if (e.cur > e.peak) {
-    e.peak = e.cur;
-  }
+  e._bytes.update(cur_abs);
+  e._live_nodes.update(cur_nodes);
 }
 
 #endif // SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_INLINE_HPP

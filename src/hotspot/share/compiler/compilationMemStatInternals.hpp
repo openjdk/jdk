@@ -84,11 +84,22 @@ public:
 // if a phase ends, we "restart" the parent phase (which often is the
 // "outside any phase" phase).
 class FootprintTimeline {
+  template <typename T, typename dT>
+  struct C {
+    T start, peak, cur;
+    void reset()          { start = cur = peak = 0; }
+    void update(T v)      { cur = v; if (v > peak) peak = v; }
+    dT end_delta() const  { return (dT) cur - start; }
+    size_t peak_size() const {
+      return MAX2(peak - cur, peak - start);
+    }
+  };
   struct Entry {
     int phase_trc_id;
-    size_t cur, peak, start;
-    bool did_footprint_change() const       { return cur != start; }
-    bool has_significant_local_peak() const { return (peak - start) > M && (peak - cur) > M; }
+    C<size_t, ssize_t> _bytes;
+    C<unsigned, ssize_t> _live_nodes;
+    bool did_footprint_change() const       { return _bytes.end_delta() != 0; }
+    bool has_significant_local_peak() const { return _bytes.peak_size() > M; }
   };
   static constexpr unsigned max_entries = 64; // we wrap, keeping the last n phase movements
   Entry _entries[max_entries];
@@ -99,9 +110,9 @@ class FootprintTimeline {
 public:
   FootprintTimeline();
   void copy_from(const FootprintTimeline& other);
-  inline void on_footprint_change(size_t cur_abs);
+  inline void on_footprint_change(size_t cur_abs, unsigned cur_nodes);
   void print_on(outputStream* st) const;
-  void on_phase_start(int phase_trc_id, size_t cur_abs);
+  void on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes);
 };
 
 // ArenaState is the central data structure holding all statistics and temp data during

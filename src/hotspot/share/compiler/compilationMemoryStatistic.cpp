@@ -120,7 +120,8 @@ PhaseIdStack::PhaseIdStack() : _depth(0) {
 
 FootprintTimeline::FootprintTimeline() {
   _pos = 0;
-  _entries[0].cur = _entries[0].start = _entries[0].peak = 0;
+  _entries[0]._bytes.reset();
+  _entries[0]._live_nodes.reset();
   _entries[0].phase_trc_id = phase_trc_id_default; // "outside phase"
 }
 
@@ -132,23 +133,28 @@ void FootprintTimeline::copy_from(const FootprintTimeline& other) {
 void FootprintTimeline::print_entry_on(outputStream* st, unsigned pos) const {
   const Entry& e = at(pos);
   check_phase_trace_id(e.phase_trc_id);
-  st->print("%2u %24s:", pos, phase_trc_id_to_string(e.phase_trc_id));
+  st->print("%2u %24s: ", pos, phase_trc_id_to_string(e.phase_trc_id));
   st->fill_to(30);
-  st->print("%12zu", e.start); // start
+  st->print("%12zu ", e._bytes.start); // start
   st->fill_to(40);
-  st->print("%12zu", e.cur); // end
+  st->print("%12zu ", e._bytes.cur); // end
   st->fill_to(50);
-  st->print("%+12zd", (ssize_t)e.cur - e.start); // delta end
+  st->print("%+12zd ", e._bytes.end_delta()); // delta end
+  st->fill_to(60);
+
+  st->print("  %u >> %u, %+12zd ", e._live_nodes.start, e._live_nodes.cur, e._live_nodes.end_delta()); // delta nodes
+  //st->print("%+12zd", (int64_t)e.cur_nodes - e.start_nodes); // delta nodes
+
   if (e.has_significant_local_peak()) {
-    st->fill_to(60);
-    st->print(" significant temporary peak: %zu (%+zd)", e.peak, (ssize_t)e.peak - e.start); // peak
+    st->fill_to(70);
+    st->print(" significant temporary peak: %zu (%+zd)", e._bytes.peak, (ssize_t)e._bytes.peak - e._bytes.start); // peak
   }
   st->cr();
 }
 
 void FootprintTimeline::print_on(outputStream* st) const {
   if (_pos > 0) {
-    st->print_cr("%30s%12s%12s%12s", "", "start", "end", "end delta");
+    st->print_cr("%30s%12s%12s%12s%12s", "", "start", "end", "end delta", "#nodes delta");
     unsigned from = 0;
     if (_pos > max_entries) {
       st->print_cr("         (%u older entries skipped)", _pos - max_entries);
@@ -160,19 +166,24 @@ void FootprintTimeline::print_on(outputStream* st) const {
   }
 }
 
-void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs) {
-  size_t start_footprint = 0;
-  const Entry& old = at(_pos);
-  start_footprint = old.cur;
-  // close old, open new entry; but only if the last phase is "interesting".
+void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes) {
+  // Since we see all allocations, cur_abs should correspond to our topmost cur. But the
+  // the same does not hold for nodes, since we only see allocations that cause new arena chunks
+  // to be born. One can allocate a node without causing the arena to expand. So, cur_nodes
+  // may be a new number for us. Just act as if this is a footprint change.
+  on_footprint_change(cur_abs, cur_nodes);
+
+  // Close old, open new entry; but only if the last phase was "interesting".
   // An "interesting" phase is one that causes a footprint change (end != start),
   // and/or one that has a local peak that significantly raises above either starting
   // or ending footprint.
+  const Entry& old = at(_pos);
   if (old.did_footprint_change() || old.has_significant_local_peak()) {
     _pos++;
   }
   Entry& e = at(_pos);
-  e.start = e.cur = e.peak = start_footprint;
+  e._bytes.start = e._bytes.cur = e._bytes.peak = cur_abs;
+  e._live_nodes.start = e._live_nodes.cur = e._live_nodes.peak = cur_nodes;
   e.phase_trc_id = phase_trc_id;
 }
 
@@ -184,12 +195,14 @@ ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit, bool c
 
 void ArenaState::on_phase_start(int phase_trc_id) {
   _phase_id_stack.push(phase_trc_id);
-  _timeline.on_phase_start(phase_trc_id, _current);
+  _live_nodes_current = retrieve_live_node_count();
+  _timeline.on_phase_start(phase_trc_id, _current, _live_nodes_current);
 }
 
 void ArenaState::on_phase_end(int phase_trc_id) {
   _phase_id_stack.pop(phase_trc_id);
-  _timeline.on_phase_start(_phase_id_stack.top(), _current); // parent phase "restarts"
+  _live_nodes_current = retrieve_live_node_count();
+  _timeline.on_phase_start(_phase_id_stack.top(), _current, _live_nodes_current); // parent phase "restarts"
 }
 
 int ArenaState::retrieve_live_node_count() const {
@@ -215,12 +228,11 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t*
   _current += size;
   assert(_current >= old_current, "Overflow");
 
-  _timeline.on_footprint_change(_current);
-
   const int phase_trc_id = _phase_id_stack.top();
-
   _counters_current.add(size, phase_trc_id, arena_tag);
   _live_nodes_current = retrieve_live_node_count();
+
+  _timeline.on_footprint_change(_current, _live_nodes_current);
 
   // Did we reach a global peak?
   if (_current > _peak) {
@@ -262,7 +274,7 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   _current -= size;
   _counters_current.sub(size, phase_trc_id, arena_tag);
   _live_nodes_current = retrieve_live_node_count();
-  _timeline.on_footprint_change(_current);
+  _timeline.on_footprint_change(_current, _live_nodes_current);
 }
 
 // Used for logging, not for the report table generated with jcmd Compiler.memory
