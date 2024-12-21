@@ -2870,7 +2870,7 @@ void MacroAssembler::revb(Register Rd, Register Rs, Register tmp1, Register tmp2
 }
 
 // rotate right with shift bits
-void MacroAssembler::ror_imm(Register dst, Register src, uint32_t shift, Register tmp)
+void MacroAssembler::ror(Register dst, Register src, uint32_t shift, Register tmp)
 {
   if (UseZbb) {
     rori(dst, src, shift);
@@ -2886,7 +2886,7 @@ void MacroAssembler::ror_imm(Register dst, Register src, uint32_t shift, Registe
 }
 
 // rotate left with shift bits, 32-bit version
-void MacroAssembler::rolw_imm(Register dst, Register src, uint32_t shift, Register tmp) {
+void MacroAssembler::rolw(Register dst, Register src, uint32_t shift, Register tmp) {
   if (UseZbb) {
     // no roliw available
     roriw(dst, src, 32 - shift);
@@ -4359,7 +4359,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   // Linear probe.
   if (bit != 0) {
-    ror_imm(r_bitmap, r_bitmap, bit);
+    ror(r_bitmap, r_bitmap, bit);
   }
 
   // The slot we just inspected is at secondary_supers[r_array_index - 1].
@@ -4440,7 +4440,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     test_bit(t0, r_bitmap, 2);  // look-ahead check (Bit 2); result is non-zero
     beqz(t0, L_fallthrough);
 
-    ror_imm(r_bitmap, r_bitmap, 1);
+    ror(r_bitmap, r_bitmap, 1);
     addi(r_array_index, r_array_index, 1);
     j(L_loop);
   }
@@ -5054,7 +5054,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
 
   shadd(t0, xstart, x, t0, LogBytesPerInt);
   ld(x_xstart, Address(t0, 0));
-  ror_imm(x_xstart, x_xstart, 32); // convert big-endian to little-endian
+  ror(x_xstart, x_xstart, 32); // convert big-endian to little-endian
 
   bind(L_first_loop);
   subiw(idx, idx, 1);
@@ -5064,7 +5064,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
 
   shadd(t0, idx, y, t0, LogBytesPerInt);
   ld(y_idx, Address(t0, 0));
-  ror_imm(y_idx, y_idx, 32); // convert big-endian to little-endian
+  ror(y_idx, y_idx, 32); // convert big-endian to little-endian
   bind(L_multiply);
 
   mulhu(t0, x_xstart, y_idx);
@@ -5073,7 +5073,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   adc(carry, t0, zr, t1);
 
   subiw(kdx, kdx, 2);
-  ror_imm(product, product, 32); // back to big-endian
+  ror(product, product, 32); // back to big-endian
   shadd(t0, kdx, z, t0, LogBytesPerInt);
   sd(product, Address(t0, 0));
 
@@ -5134,8 +5134,8 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
 
   shadd(tmp6, idx, z, t0, LogBytesPerInt);
 
-  ror_imm(yz_idx1, yz_idx1, 32); // convert big-endian to little-endian
-  ror_imm(yz_idx2, yz_idx2, 32);
+  ror(yz_idx1, yz_idx1, 32); // convert big-endian to little-endian
+  ror(yz_idx2, yz_idx2, 32);
 
   ld(t1, Address(tmp6, 0));
   ld(t0, Address(tmp6, wordSize));
@@ -5143,8 +5143,8 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   mul(tmp3, product_hi, yz_idx1); //  yz_idx1 * product_hi -> tmp4:tmp3
   mulhu(tmp4, product_hi, yz_idx1);
 
-  ror_imm(t0, t0, 32, tmp); // convert big-endian to little-endian
-  ror_imm(t1, t1, 32, tmp);
+  ror(t0, t0, 32, tmp); // convert big-endian to little-endian
+  ror(t1, t1, 32, tmp);
 
   mul(tmp, product_hi, yz_idx2); //  yz_idx2 * product_hi -> carry2:tmp
   mulhu(carry2, product_hi, yz_idx2);
@@ -5157,8 +5157,8 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   cad(tmp4, tmp4, t1, carry2);
   adc(carry, carry, zr, carry2);
 
-  ror_imm(tmp3, tmp3, 32); // convert little-endian to big-endian
-  ror_imm(tmp4, tmp4, 32);
+  ror(tmp3, tmp3, 32); // convert little-endian to big-endian
+  ror(tmp4, tmp4, 32);
   sd(tmp4, Address(tmp6, 0));
   sd(tmp3, Address(tmp6, wordSize));
 
@@ -5175,18 +5175,18 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
 
   shadd(t0, idx, y, t0, LogBytesPerInt);
   ld(yz_idx1, Address(t0, 0));
-  ror_imm(yz_idx1, yz_idx1, 32);
+  ror(yz_idx1, yz_idx1, 32);
 
   mul(tmp3, product_hi, yz_idx1); //  yz_idx1 * product_hi -> tmp4:tmp3
   mulhu(tmp4, product_hi, yz_idx1);
 
   shadd(t0, idx, z, t0, LogBytesPerInt);
   ld(yz_idx2, Address(t0, 0));
-  ror_imm(yz_idx2, yz_idx2, 32, tmp);
+  ror(yz_idx2, yz_idx2, 32, tmp);
 
   add2_with_carry(carry, tmp4, tmp3, carry, yz_idx2, tmp);
 
-  ror_imm(tmp3, tmp3, 32, tmp);
+  ror(tmp3, tmp3, 32, tmp);
   sd(tmp3, Address(t0, 0));
 
   bind(L_check_1);
@@ -5358,7 +5358,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 
   shadd(t0, xstart, x, t0, LogBytesPerInt);
   ld(product_hi, Address(t0, 0));
-  ror_imm(product_hi, product_hi, 32); // convert big-endian to little-endian
+  ror(product_hi, product_hi, 32); // convert big-endian to little-endian
 
   Label L_third_loop_prologue;
   bind(L_third_loop_prologue);

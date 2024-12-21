@@ -3556,7 +3556,7 @@ class StubGenerator: public StubCodeGenerator {
     void reverse1(Register d, Register s, Register tmp) {
       subi(s, s, wordSize);
       ld(tmp, Address(s));
-      ror_imm(tmp, tmp, 32, t0);
+      ror(tmp, tmp, 32, t0);
       sd(tmp, Address(d));
       addi(d, d, wordSize);
     }
@@ -4523,7 +4523,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(a, a, value);
 
     // a = Integer.rotateLeft(a, s) + b;
-    __ rolw_imm(a, a, s);
+    __ rolw(a, a, s);
     __ addw(a, a, b);
   }
 
@@ -5028,7 +5028,7 @@ class StubGenerator: public StubCodeGenerator {
       __ xorr(cur_w, cur_w, t1);
 
       __ xorr(cur_w, cur_w, t0);
-      __ rolw_imm(cur_w, cur_w, 1, t0);
+      __ rolw(cur_w, cur_w, 1, t0);
 
       // copy the cur_w value to ws[8].
       // now, valid w't values are at:
@@ -5048,7 +5048,7 @@ class StubGenerator: public StubCodeGenerator {
     __ xorr(cur_w, ws[(idx-16)/2], ws[(idx-14)/2]);
 
     __ xorr(cur_w, cur_w, t0);
-    __ rolw_imm(cur_w, cur_w, 1, t0);
+    __ rolw(cur_w, cur_w, 1, t0);
 
     // copy the cur_w value to ws[8]
     __ zext(cur_w, cur_w, 32);
@@ -5113,7 +5113,7 @@ class StubGenerator: public StubCodeGenerator {
     Register tmp3 = e;
     __ add(tmp2, cur_k, tmp2);
     __ add(tmp3, tmp3, tmp2);
-    __ rolw_imm(tmp2, a, 5, t0);
+    __ rolw(tmp2, a, 5, t0);
 
     sha1_f(tmp, b, c, d, round);
 
@@ -5128,7 +5128,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(e, d);
     __ mv(d, c);
 
-    __ rolw_imm(c, b, 30);
+    __ rolw(c, b, 30);
     __ mv(b, a);
     __ mv(a, tmp2);
   }

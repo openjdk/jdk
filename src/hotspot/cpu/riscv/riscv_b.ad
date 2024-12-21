@@ -60,7 +60,7 @@ instruct rorI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
   format %{ "rorw  $dst, $src, $shift\t#@rorI_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
-    __ rorw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
+    __ rorrw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -72,7 +72,7 @@ instruct rorL_reg_b(iRegLNoSp dst, iRegL src, iRegI shift) %{
   format %{ "ror  $dst, $src, $shift\t#@rorL_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
-    __ ror(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
+    __ rorr(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -84,7 +84,7 @@ instruct rolI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
   format %{ "rolw  $dst, $src, $shift\t#@rolI_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
-    __ rolw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
+    __ rolrw(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
   ins_pipe(ialu_reg_reg);
 %}
@@ -96,7 +96,7 @@ instruct rolL_reg_b(iRegLNoSp dst, iRegL src, iRegI shift) %{
   format %{ "rol  $dst, $src, $shift\t#@rolL_reg_b" %}
   ins_cost(ALU_COST);
   ins_encode %{
-    __ rol(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
+    __ rolr(as_Register($dst$$reg), as_Register($src$$reg), as_Register($shift$$reg));
   %}
   ins_pipe(ialu_reg_reg);
 %}
