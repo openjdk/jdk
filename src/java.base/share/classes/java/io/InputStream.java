@@ -101,7 +101,7 @@ public abstract class InputStream implements Closeable {
             }
 
             @Override
-            public int read() throws IOException {
+            public byte read() throws IOException {
                 ensureOpen();
                 return -1;
             }
@@ -169,7 +169,7 @@ public abstract class InputStream implements Closeable {
 
     /**
      * Reads the next byte of data from the input stream. The value byte is
-     * returned as an {@code int} in the range {@code 0} to
+     * returned as an {@code byte} in the range {@code 0} to
      * {@code 255}. If no byte is available because the end of the stream
      * has been reached, the value {@code -1} is returned. This method
      * blocks until input data is available, the end of the stream is detected,
@@ -179,7 +179,7 @@ public abstract class InputStream implements Closeable {
      *             stream is reached.
      * @throws     IOException  if an I/O error occurs.
      */
-    public abstract int read() throws IOException;
+    public abstract byte read() throws IOException;
 
     /**
      * Reads some number of bytes from the input stream and stores them into
@@ -286,11 +286,11 @@ public abstract class InputStream implements Closeable {
             return 0;
         }
 
-        int c = read();
+        byte c = read();
         if (c == -1) {
             return -1;
         }
-        b[off] = (byte)c;
+        b[off] = c;
 
         int i = 1;
         try {
@@ -299,7 +299,7 @@ public abstract class InputStream implements Closeable {
                 if (c == -1) {
                     break;
                 }
-                b[off + i] = (byte)c;
+                b[off + i] = c;
             }
         } catch (IOException ee) {
         }
