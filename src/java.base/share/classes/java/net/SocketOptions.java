@@ -222,7 +222,7 @@ public interface SocketOptions {
      * @see ServerSocket#setSoTimeout
      * @see DatagramSocket#setSoTimeout
      */
-    @Native public static final int SO_TIMEOUT = 0x1006;
+    @Native public static final long SO_TIMEOUT = 0x1006;
 
     /**
      * See {@link StandardSocketOptions#SO_SNDBUF} for description of this socket option.

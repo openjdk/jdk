@@ -123,7 +123,7 @@ public abstract class SocketImpl implements SocketOptions {
      *               connection.
      * @since 1.4
      */
-    protected abstract void connect(SocketAddress address, int timeout) throws IOException;
+    protected abstract void connect(SocketAddress address, long timeout) throws IOException;
 
     /**
      * Binds this socket to the specified local IP address and port number.
@@ -419,12 +419,12 @@ public abstract class SocketImpl implements SocketOptions {
 
     /**
      * Attempts to copy socket options from this SocketImpl to a target SocketImpl.
-     * At this time, only the SO_TIMEOUT make sense to copy.
+     * At this time, only the SO_TIMEOUT makes sense to copy.
      */
     void copyOptionsTo(SocketImpl target) {
         try {
             Object timeout = getOption(SocketOptions.SO_TIMEOUT);
-            if (timeout instanceof Integer) {
+            if (timeout instanceof Long) {
                 target.setOption(SocketOptions.SO_TIMEOUT, timeout);
             }
         } catch (IOException ignore) { }

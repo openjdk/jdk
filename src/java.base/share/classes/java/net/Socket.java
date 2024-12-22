@@ -642,7 +642,7 @@ public class Socket implements java.io.Closeable {
      *          if {@code timeout} is negative
      * @since 1.4
      */
-    public void connect(SocketAddress endpoint, int timeout) throws IOException {
+    public void connect(SocketAddress endpoint, long timeout) throws IOException {
         if (endpoint == null)
             throw new IllegalArgumentException("connect: The address can't be null");
 
@@ -993,7 +993,7 @@ public class Socket implements java.io.Closeable {
             }
         }
 
-        private int getSoTimeout() {
+        private long getSoTimeout() {
             try {
                 return parent.getSoTimeout();
             } catch (SocketException e) {
@@ -1282,7 +1282,7 @@ public class Socket implements java.io.Closeable {
      * @since   1.1
      * @see #getSoTimeout()
      */
-    public void setSoTimeout(int timeout) throws SocketException {
+    public void setSoTimeout(long timeout) throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         if (timeout < 0)
@@ -1299,15 +1299,15 @@ public class Socket implements java.io.Closeable {
      *         such as a TCP error, or the socket is closed.
      *
      * @since   1.1
-     * @see #setSoTimeout(int)
+     * @see #setSoTimeout(long)
      */
-    public int getSoTimeout() throws SocketException {
+    public long getSoTimeout() throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
         Object o = getImpl().getOption(SocketOptions.SO_TIMEOUT);
         /* extra type safety */
-        if (o instanceof Integer i) {
-            return i.intValue();
+        if (o instanceof Long i) {
+            return i.longValue();
         } else {
             return 0;
         }
