@@ -151,6 +151,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
     ShenandoahHeapLocker locker(heap->lock());
     result = heap->balance_generations();
   }
+  heap->heuristics()->resume_idle_span();
 
   LogTarget(Info, gc, ergo) lt;
   if (lt.is_enabled()) {

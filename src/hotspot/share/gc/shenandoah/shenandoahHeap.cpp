@@ -466,6 +466,11 @@ jint ShenandoahHeap::initialize() {
     size_t first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+#undef KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+    log_info(gc)("starting idle span after rebuilding free set");
+#endif
+    start_idle_span();
   }
 
   if (ShenandoahUncommit) {
@@ -481,7 +486,7 @@ jint ShenandoahHeap::initialize() {
 
 void ShenandoahHeap::initialize_controller() {
   _control_thread = new ShenandoahControlThread();
-#define KELVIN_DEBUG
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
   log_info(gc)("initialize_controller set _control_thread: " PTR_FORMAT, p2i(_control_thread));
 #endif
@@ -858,6 +863,10 @@ void ShenandoahHeap::notify_heap_changed() {
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
   _heap_changed.try_set();
+}
+
+void ShenandoahHeap::start_idle_span() {
+  heuristics()->start_idle_span();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {
@@ -2444,6 +2453,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     old_gen->heuristics()->evaluate_triggers(first_old_region, last_old_region, old_region_count, num_regions());
   }
+  start_idle_span();
 }
 
 void ShenandoahHeap::print_extended_on(outputStream *st) const {

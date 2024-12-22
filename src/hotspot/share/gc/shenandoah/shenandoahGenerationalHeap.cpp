@@ -190,6 +190,10 @@ void ShenandoahGenerationalHeap::stop() {
   ShenandoahHeap::stop();
 }
 
+void ShenandoahGenerationalHeap::start_idle_span() {
+  young_generation()->heuristics()->start_idle_span();
+}
+
 void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {
   ShenandoahRegionIterator regions;
   ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, false /* only promote regions */);

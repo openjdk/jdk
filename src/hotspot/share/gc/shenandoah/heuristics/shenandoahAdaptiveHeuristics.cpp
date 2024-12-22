@@ -62,30 +62,33 @@ const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
 
-// To enable detection of GC time acceleration, we keep separate track of the recent history of gc time.  During initialization, for example,
-// the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history allows us to predict
-// increasing GC times rather than always assuming average recent GC time is the best predictor.
-const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 6;
+// To enable detection of GC time acceleration, we keep separate track of the recent history of gc time.  During initialization,
+// for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
+// allows us to predict increasing GC times rather than always assuming average recent GC time is the best predictor.
+const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 
 // We also keep separate track of recently sampled allocation rates for two purposes:
-//  1. The number of samples examined to determine acceleration of allocation is represented by ShenandoahRateAccelerationSampleSize, default value 4
+//  1. The number of samples examined to determine acceleration of allocation is represented by 
+//     ShenandoahRateAccelerationSampleSize, default value 6
 //  2. The number of most recent samples averaged to determine a momentary allocation spike is represented by
-//     ShenandoahMomentaryAllocationRateSpikeSampleSize, default value 3
+//     ShenandoahMomentaryAllocationRateSpikeSampleSize, default value 4
 
-// Allocation rates are sampled by the regulator thread, which typically runs every ms.  There may be jitter in the scheduling of the regulator
-// thread.  To reduce signal noise and synchronization overhead, we do not sample allocation rate with every iteration of the regulator.  We
-// prefer sample time longer than 1 ms so that there can be a statistically significant number of allocations occuring within each sample period.
-// The regulator thread samples allocation rate only if at least 3.5 ms has passed since the previous time the regulator thread sampled the
-// allocation rate.  In the default configuration, acceleration is detected if 5 allocation rate samples of 3 ms each manifest an increasing
-// trend (e.g. acceleration trend spans 15 ms).  This trigger responds much more quickly than the traditional trigger, which monitors 100 ms
-// spans.  When acceleration is detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
+// Allocation rates are sampled by the regulator thread, which typically runs every ms.  There may be jitter in the scheduling
+// of the regulator thread.  To reduce signal noise and synchronization overhead, we do not sample allocation rate with every
+// iteration of the regulator.  We prefer sample time longer than 1 ms so that there can be a statistically significant number
+// of allocations occuring within each sample period.  The regulator thread samples allocation rate only if at least 3.5 ms has
+// passed since the previous time the regulator thread sampled the allocation rate.  In the default configuration, acceleration
+// is detected if 5 allocation rate samples of 3 ms each manifest an increasing trend (e.g. acceleration trend spans 15 ms).
+// This trigger responds much more quickly than the traditional trigger, which monitors 100 ms spans.  When acceleration is
+// detected, the impact of acceleration on anticipated consumption of available memory is also much more impactful
 // than the assumed constant allocation rate consumption of available memory.
 
-#define KELVIN_DEBUG
+#undef KELVIN_VISIBLE
+#undef KELVIN_DEBUG
 #ifdef KELVIN_DEBUG
 const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.010;
 #else
-const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.0025;
+const double ShenandoahAdaptiveHeuristics::MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL = 0.0015;
 #endif
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info) :
@@ -97,7 +100,6 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _freeset(nullptr),
   _is_generational(ShenandoahHeap::heap()->mode()->is_generational()),
   _regulator_thread(nullptr),
-  _previous_total_allocations(0),
   _previous_allocation_timestamp(0.0),
   _gc_time_first_sample_index(0),
   _gc_time_num_samples(0),
@@ -143,18 +145,20 @@ void ShenandoahAdaptiveHeuristics::post_initialize() {
   ShenandoahHeuristics::post_initialize();
   if (_is_generational) {
     _regulator_thread = ShenandoahGenerationalHeap::heap()->regulator_thread();
-#define KELVIN_VISIBLE
+    size_t young_available = ShenandoahGenerationalHeap::heap()->young_generation()->max_capacity() -
+      (ShenandoahGenerationalHeap::heap()->young_generation()->used_including_humongous_waste() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
-    log_info(gc)("ShenandoahAdaptiveHeuristics::post_initialize() set regulator thread to " PTR_FORMAT, p2i(_regulator_thread));
+    log_info(gc)("post_initialize() to recalculate young trigger with: " SIZE_FORMAT, young_available);
 #endif
-    recalculate_trigger_threshold(ShenandoahGenerationalHeap::heap()->young_generation()->available());
+    recalculate_trigger_threshold(young_available);
   } else {
     _control_thread = ShenandoahHeap::heap()->control_thread();
-#define KELVIN_VISIBLE
+    size_t global_available = ShenandoahHeap::heap()->global_generation()->max_capacity() -
+      (ShenandoahHeap::heap()->global_generation()->used_including_humongous_waste() + _freeset->reserved());
 #ifdef KELVIN_VISIBLE
-    log_info(gc)("ShenandoahAdaptiveHeuristics::post_initialize() set control thread to " PTR_FORMAT, p2i(_control_thread));
+    log_info(gc)("post_initialize() to recalculate global trigger with: " SIZE_FORMAT, global_available);
 #endif
-    recalculate_trigger_threshold(ShenandoahHeap::heap()->global_generation()->available());
+    recalculate_trigger_threshold(global_available);
   }
 }
 
@@ -174,6 +178,8 @@ double ShenandoahAdaptiveHeuristics::get_planned_sleep_interval() const {
   return (_is_generational)? _regulator_thread->get_planned_sleep_interval(): _control_thread->get_planned_sleep_interval();
 }
 
+#undef KELVIN_VERBOSE
+
 void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_available) {
   // The trigger threshold represents mutator available - "head room".  
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
@@ -181,12 +187,16 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
   // our trigger.
 #ifdef KELVIN_VISIBLE
-  log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT "), _space_info: " PTR_FORMAT,
-               mutator_available, p2i(_space_info));
+  log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT ") for _space_info: %s",
+               mutator_available, _space_info->name());
 #endif
   size_t capacity       = _space_info->soft_max_capacity();
   size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
   size_t penalties      = capacity / 100 * _gc_time_penalties;
+
+#ifdef KELVIN_VERBOSE
+  size_t original_mutator_available = mutator_available;
+#endif
 
   // make headroom adjustments
   size_t headroom_adjustments = spike_headroom + penalties;
@@ -211,38 +221,57 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
                byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties));
  
   _most_recent_headroom_at_start_of_idle = mutator_available;
-  _trigger_threshold = mutator_available;
+  // _trigger_threshold is expressed in words
+  _trigger_threshold = mutator_available / HeapWordSize;
+
+#ifdef KELVIN_VERBOSE
+  log_info(gc)("%s: recalculate trigger, capacity: " SIZE_FORMAT ", original_mutator_available: " SIZE_FORMAT
+               ", spike_headroom: " SIZE_FORMAT ", penalties: " SIZE_FORMAT
+               ", used: " SIZE_FORMAT ", reserved: " SIZE_FORMAT ", final answer: " SIZE_FORMAT,
+               _space_info->name(), capacity, original_mutator_available, spike_headroom, penalties, _space_info->used(),
+               _freeset->reserved(), _trigger_threshold);
+#endif
+#ifdef KELVIN_VISIBLE
+  log_info(gc)(" recalculated _trigger_threshold: " SIZE_FORMAT, _trigger_threshold);
+#endif
 }
 
 void ShenandoahAdaptiveHeuristics::start_idle_span() {
-  size_t mutator_available = ShenandoahHeap::heap()->get_mutator_free_after_updaterefs();
+  size_t mutator_available = _freeset->capacity() - _freeset->used();
+
+#undef KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+  log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:%s::start_idle_span() with available " SIZE_FORMAT,
+               _space_info->name(), mutator_available);
+#endif
+
 #ifdef KELVIN_VISIBLE
-  log_info(gc)("start_idle_span() is recalculating trigger threshold with available: " SIZE_FORMAT, mutator_available);
+  log_info(gc)("start_idle_span() is recalculating %s trigger threshold with available: " SIZE_FORMAT,
+               _space_info->name(), mutator_available);
 #endif
   recalculate_trigger_threshold(mutator_available);
 }
 
-void ShenandoahAdaptiveHeuristics::resume_idle_span(size_t mutator_available) {
+void ShenandoahAdaptiveHeuristics::resume_idle_span() {
+  size_t mutator_available = _freeset->capacity() - _freeset->used();
 #ifdef KELVIN_VISIBLE
   log_info(gc)("resume_idle_span() is recalculating trigger threshold with available: " SIZE_FORMAT, mutator_available);
 #endif
   recalculate_trigger_threshold(mutator_available);
 }
 
-#ifdef FUTURE_SUPPORT_FOR_ALLOCATION_THROTTLE_DURING_GC
 // There is no headroom during evacuation and update refs.  This information is not used to trigger the next GC.
 // Rather, it is made available to support throttling of allocations during GC.
-void ShenandoahAdaptiveHeuristics::start_evac_span(size_t mutator_free) {
-  // Note that we rebuild free set at the start of evacuation, and this resets count of mutator allocated words.
-  _trigger_threshold = mutator_free;
-}
+void ShenandoahAdaptiveHeuristics::start_evac_span() {
+  size_t mutator_available = _freeset->capacity() - _freeset->used();
+#ifdef KELVIN_VISIBLE
+  log_info(gc)("start_evac_span() is setting (pacing) trigger threshold with available: " SIZE_FORMAT, mutator_available);
 #endif
+  _trigger_threshold = mutator_available;
+}
 
 void ShenandoahAdaptiveHeuristics::adjust_penalty(intx step) {
   ShenandoahHeuristics::adjust_penalty(step);
-  if (strcmp(_space_info->name(), "YOUNG") == 0) {
-    start_idle_span();
-  }
 }
 
 void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
@@ -308,6 +337,11 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 
 void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double timestamp, double gc_time) {
   // Conservatively add sample into linear model If this time is above the predicted concurrent gc time
+#undef KELVIN_VERBOSITY
+#ifdef KELVIN_VERBOSITY
+  log_info(gc)("add_degen_gc_time(%0.3fs, %0.3fs) if > predict_gc_time: %0.3f",
+               timestamp, gc_time, predict_gc_time(timestamp));
+#endif
   if (predict_gc_time(timestamp) < gc_time) {
     add_gc_time(timestamp, gc_time);
   }
@@ -338,6 +372,14 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
     _gc_time_first_sample_index = (_gc_time_first_sample_index + 1) % GC_TIME_SAMPLE_SIZE;
   }
 
+#ifdef KELVIN_VERBOSITY
+  log_info(gc)("add_gc_time(%0.6f, %0.6f), samples: %u", timestamp, gc_time, _gc_time_num_samples);
+  for (uint i = 0; i < _gc_time_num_samples; i++) {
+    uint index = (_gc_time_first_sample_index + i) % GC_TIME_SAMPLE_SIZE;
+    log_info(gc)(" @%0.6fs, GC time: %0.6fs", _gc_time_timestamps[index], _gc_time_samples[index]);
+  }
+#endif
+
   if (_gc_time_num_samples == 1) {
     // The predictor is constant (horizontal line)
     _gc_time_m = 0;
@@ -364,18 +406,26 @@ void ShenandoahAdaptiveHeuristics::add_gc_time(double timestamp, double gc_time)
       double x = _gc_time_timestamps[index];
       double predicted_y = _gc_time_m * x + _gc_time_b;
       double deviation = predicted_y - _gc_time_samples[index];
-      sum_of_squared_deviations = deviation * deviation;
+      sum_of_squared_deviations += deviation * deviation;
+#ifdef KELVIN_VERBOSITY
+      log_info(gc)("predicted_y: %0.3f, deviation: %0.3f, sum_of_squareds: %0.3f",
+                   predicted_y, deviation, sum_of_squared_deviations);
+#endif
     }
     _gc_time_sd = sqrt(sum_of_squared_deviations / _gc_time_num_samples);
   }
+
+#ifdef KELVIN_VERBOSITY
+  log_info(gc)(" GC(t) = %0.3f * t + %0.3f, with stdev: %0.3f", _gc_time_m, _gc_time_b, _gc_time_sd);
+#endif
 }
 
 double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) {
   double result = _gc_time_m * timestamp_at_start + _gc_time_b + _gc_time_sd * _margin_of_error_sd;;
 
-#ifdef KELVIN_VISIBLE
+#ifdef KELVIN_VERBOSITY
   log_info(gc)("predict_gc_time(_gc_time_m: %0.3f, @start: %0.3f, _gc_time_b: %0.3f, _gc_time_sd: %0.3f, "
-               "margin_off_error: %0.3f => result: %0.3f",
+               "margin_of_error: %0.3f => result: %0.3f",
                _gc_time_m, timestamp_at_start, _gc_time_b, _gc_time_sd, _margin_of_error_sd, result);
 #endif
 
@@ -478,11 +528,17 @@ void ShenandoahAdaptiveHeuristics::record_success_full() {
   adjust_spike_threshold(FULL_PENALTY_SD);
 }
 
-#define KELVIN_NEEDS_TO_SEE
+#undef KELVIN_NEEDS_TO_SEE
 
 static double saturate(double value, double min, double max) {
   return MAX2(MIN2(value, max), min);
 }
+
+#ifdef KELVIN_VERBOSE
+static size_t _global_allocatable_words;
+static size_t _global_available_bytes;
+static size_t _global_min_threshold;
+#endif
 
 //  Rationale:
 //    The idea is that there is an average allocation rate and there are occasional abnormal bursts (or spikes) of
@@ -537,6 +593,11 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
+#ifdef KELVIN_VERBOSE
+  _global_available_bytes = available;
+  _global_min_threshold = min_threshold;
+#endif
+
 #ifdef KELVIN_NEEDS_TO_SEE
   log_info(gc)("should_start_gc? did not trigger for minimum threshold");
 #endif
@@ -582,14 +643,14 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 #ifdef KELVIN_NEEDS_TO_SEE
   log_info(gc)("should_start_gc? planned_gc_time is: %0.3f", planned_gc_time);
 #endif
-  size_t allocatable = this->allocatable();
+  size_t allocatable_words = this->allocatable();
 
 #ifdef KELVIN_NEEDS_TO_SEE
   log_info(gc)("should_start_gc? now: %0.3f, predicted_gc_time: %0.3f, MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL: %0.3f, "
                "avg_gc_time: %0.3f, avg_alloc_rate: %0.3f, previous_allocation_timestamp: %0.3f"
-               ", allocatable: " SIZE_FORMAT,
+               ", allocatable bytes: " SIZE_FORMAT,
                now, predicted_gc_time, MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL, avg_cycle_time, avg_alloc_rate,
-               _previous_allocation_timestamp, allocatable);
+               _previous_allocation_timestamp, allocatable_words * HeapWordSize);
 #endif
 
   if ((now - _previous_allocation_timestamp) >= MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL) {
@@ -605,31 +666,33 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       future_accelerated_planned_gc_time = avg_cycle_time;
       future_accelerated_planned_gc_time_is_average = true;
     }
-    size_t total_allocations = _freeset->get_mutator_allocations();
-    size_t allocated_since_last_sample = total_allocations - _previous_total_allocations;
-    size_t allocated_since_idle = total_allocations;
-    double instantaneous_rate = allocated_since_last_sample / (now - _previous_allocation_timestamp);
-    _previous_total_allocations = total_allocations;
+    size_t allocated_since_last_sample = _freeset->get_mutator_allocations_since_previous_sample();
+
+    double instantaneous_rate_words_per_second = allocated_since_last_sample / (now - _previous_allocation_timestamp);
     _previous_allocation_timestamp = now;
 
 #ifdef KELVIN_NEEDS_TO_SEE
-    log_info(gc)("should_start_gc()?, predicted_future_accelerated_gc_time: %0.3f, avg_gc_cycle_time: %0.3f, total_allocations: "
-                 SIZE_FORMAT ", allocated_since_last_sample: " SIZE_FORMAT 
-                 ", allocated_since_idle: " SIZE_FORMAT ", instantaneous_rate: %0.3f",
-                 predicted_future_accelerated_gc_time, avg_cycle_time, total_allocations, allocated_since_last_sample,
-                 allocated_since_idle, instantaneous_rate);
+    log_info(gc)("should_start_gc()?, predicted_future_accelerated_gc_time: %0.3f, avg_gc_cycle_time: %0.3f"
+                 ", allocated_since_last_sample: " SIZE_FORMAT ", instantaneous_rate: %0.3f",
+                 predicted_future_accelerated_gc_time, avg_cycle_time, allocated_since_last_sample,
+                 instantaneous_rate_words_per_second * HeapWordSize);
 #endif
-
-    add_rate_to_acceleration_history(now, instantaneous_rate);
-    size_t consumption_accelerated = accelerated_consumption(acceleration, instantaneous_rate,
-                                                              MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL
-                                                              + future_accelerated_planned_gc_time);
+#ifdef KELVIN_VERBOSE
+    _global_allocatable_words = allocatable_words;
+#endif
+    add_rate_to_acceleration_history(now, instantaneous_rate_words_per_second);
+    size_t consumption_accelerated = accelerated_consumption(acceleration, instantaneous_rate_words_per_second,
+                                                             avg_alloc_rate / HeapWordSize,
+                                                             MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL
+                                                             + future_accelerated_planned_gc_time);
 
 #ifdef KELVIN_NEEDS_TO_SEE
-    log_info(gc)("should_start_gc() checking instantaneous allocation: total_allocations: " SIZE_FORMAT ", since_last: " SIZE_FORMAT
-                 ", predicted_future_gc_time: %0.3f, instantaneous_rate: %0.3f, acceleration: %0.3f, accelerated consumption:" SIZE_FORMAT,
-                 total_allocations, allocated_since_last_sample, predicted_future_accelerated_gc_time, instantaneous_rate,
-                 acceleration, consumption_accelerated);
+    log_info(gc)("should_start_gc() checking instantaneous allocation: allocations since_last: " SIZE_FORMAT
+                 ", predicted_future_gc_time: %0.3f, instantaneous_rate: %0.3f B/s, acceleration: %0.3f B/s/s"
+                 ", accelerated consumption:" SIZE_FORMAT,
+                 allocated_since_last_sample, predicted_future_accelerated_gc_time,
+                 instantaneous_rate_words_per_second * HeapWordSize,
+                 acceleration * HeapWordSize, consumption_accelerated * HeapWordSize);
 #endif
 
     // Note that even a single thread that wakes up and begins to allocate excessively can manifest as accelerating allocation
@@ -715,18 +778,27 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // sizes are more susceptible to false triggers based on random noise.  The default configuration uses a sample size of 5,
     // spanning 15ms of execution.
 
-    if (consumption_accelerated > allocatable) {
-      size_t size_t_acceleration = (size_t) acceleration;
-      size_t size_t_alloc_rate = (size_t) instantaneous_rate;
+    if (consumption_accelerated > allocatable_words) {
+      size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
+      size_t size_t_alloc_rate = (size_t) instantaneous_rate_words_per_second * HeapWordSize;
       log_trigger("Accelerated consumption (" SIZE_FORMAT "%s) exceeds free headroom (" SIZE_FORMAT "%s) at "
                   "current rate (" SIZE_FORMAT "%s/s) with acceleration (" SIZE_FORMAT
                   "%s/s/s) for planned %s GC time (%.2f ms)",
-                  byte_size_in_proper_unit(consumption_accelerated), proper_unit_for_byte_size(consumption_accelerated),
-                  byte_size_in_proper_unit(allocatable), proper_unit_for_byte_size(allocatable),
+                  byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
+                  byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
                   byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
                   byte_size_in_proper_unit(size_t_acceleration), proper_unit_for_byte_size(size_t_acceleration),
                   future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
                   future_accelerated_planned_gc_time * 1000);
+#undef KELVIN_VERBOSITY
+#ifdef KELVIN_VERBOSITY
+      log_info(gc)(" avg_alloc_rate is: %0.3f MB/s", avg_alloc_rate / (1024 * 1024));
+      for (uint i = 0; i < _spike_acceleration_num_samples; i++) {
+        uint index = (_spike_acceleration_first_sample_index + i) % ShenandoahRateAccelerationSampleSize;
+        log_info(gc)(" accel_consumption[%u] @%0.6f s: %0.6f MB/s", i, _spike_acceleration_rate_timestamps[index],
+                     _spike_acceleration_rate_samples[index] * HeapWordSize / (1024 * 1024));
+      }
+#endif
 
       _spike_acceleration_num_samples = 0;
       _spike_acceleration_first_sample_index = 0;
@@ -759,13 +831,13 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc)("%s: average GC time: %.2f ms, predicted GC time: %.2f ms, allocation rate: %.0f %s/s",
                 _space_info->name(), avg_cycle_time * 1000, predicted_gc_time * 1000,
                 byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
-
-  if (planned_gc_time > allocatable / avg_alloc_rate) {
+  size_t allocatable_bytes = allocatable_words * HeapWordSize;
+  if (planned_gc_time > allocatable_bytes / avg_alloc_rate) {
     log_trigger("%s GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (" SIZE_FORMAT "%s) (margin of error = %.2f)",
                 planned_gc_time_is_average? "Average": "Linear prediction of", planned_gc_time * 1000,
                 byte_size_in_proper_unit(avg_alloc_rate),    proper_unit_for_byte_size(avg_alloc_rate),
-                byte_size_in_proper_unit(allocatable),       proper_unit_for_byte_size(allocatable),
+                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
                 _margin_of_error_sd);
 
     size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
@@ -784,12 +856,12 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   }
 
   bool is_spiking = _allocation_rate.is_spiking(rate, _spike_threshold_sd);
-  if (is_spiking && planned_gc_time > allocatable / rate) {
+  if (is_spiking && planned_gc_time > allocatable_bytes / rate) {
     log_trigger("%s GC time (%.2f ms) is above the time for instantaneous allocation rate (%.0f %sB/s)"
                 " to deplete free headroom (" SIZE_FORMAT "%s) (spike threshold = %.2f)",
                 planned_gc_time_is_average? "Average": "Linear prediction of", planned_gc_time * 1000,
                 byte_size_in_proper_unit(rate),              proper_unit_for_byte_size(rate),
-                byte_size_in_proper_unit(allocatable),       proper_unit_for_byte_size(allocatable),
+                byte_size_in_proper_unit(allocatable_bytes), proper_unit_for_byte_size(allocatable_bytes),
                 _spike_threshold_sd);
 
     _last_trigger = SPIKE;
@@ -841,6 +913,7 @@ size_t ShenandoahAdaptiveHeuristics::min_free_threshold() {
 // This is called each time a new rate sample has been gathered, as governed by MINMUM_ALLOC_RATE_SAMPLE_INTERVAL.
 // There is no adjustment for standard deviation of the accelerated rate prediction.
 size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleration, double& current_rate,
+                                                             double avg_alloc_rate_words_per_second,
                                                              double predicted_cycle_time) const
 {
   double *x_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
@@ -852,26 +925,42 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
   assert(_spike_acceleration_num_samples > 0, "At minimum, we should have sample from this period");
 
   double largest_rate_seen = 0.0;
+  double weighted_y_sum = 0;
+  double total_weight = 0;
+  double previous_x = 0;
   for (uint i = 0; i < _spike_acceleration_num_samples; i++) {
     uint index = (_spike_acceleration_first_sample_index + i) % ShenandoahRateAccelerationSampleSize;
+#ifdef KELVIN_NEEDS_TO_SEE
+    log_info(gc)(" accel_consumption[%u] @%0.6f s: %0.6f MB/s", i, _spike_acceleration_rate_timestamps[index],
+                 _spike_acceleration_rate_samples[index] * HeapWordSize / (1024 * 1024));
+#endif
     x_array[i] = _spike_acceleration_rate_timestamps[index];
     x_sum += x_array[i];
     y_array[i] = _spike_acceleration_rate_samples[index];
+    if (i > 0) {
+      // first sample not included in weighted average because it has no weight.
+      double sample_weight = x_array[i] - x_array[i-1];
+      weighted_y_sum = y_array[i] * sample_weight;
+      total_weight += sample_weight;
+    }
     if (y_array[i] > largest_rate_seen) {
       largest_rate_seen = y_array[i];
     }
     y_sum += y_array[i];
   }
+  double weighted_average_alloc = (total_weight > 0)? weighted_y_sum / total_weight: 0;
 
-  double weighted_y_sum = 0;
-  double weight = 0;
-  if (_spike_acceleration_num_samples >= ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+  weighted_y_sum = 0;
+  total_weight = 0;
+  if (_spike_acceleration_num_samples > ShenandoahMomentaryAllocationRateSpikeSampleSize) {
     double sum_for_average = 0.0;
-    for (uint i = _spike_acceleration_num_samples - ShenandoahMomentaryAllocationRateSpikeSampleSize; i < _spike_acceleration_num_samples; i++) {
-      weighted_y_sum += y_array[i] * x_array[i];
-      weight += x_array[i];
+    for (uint i = _spike_acceleration_num_samples - ShenandoahMomentaryAllocationRateSpikeSampleSize;
+         i < _spike_acceleration_num_samples; i++) {
+      double sample_weight = x_array[i] - x_array[i-1];
+      weighted_y_sum += y_array[i] * sample_weight;
+      total_weight += sample_weight;
     }
-    y_avg = weighted_y_sum / weight;
+    y_avg = weighted_y_sum / total_weight;
   } else {
     y_avg = 0.0;
   }
@@ -880,7 +969,11 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
   current_rate = y_avg;
   acceleration = 0.0;
 
-  if (_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize) {
+  if ((_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize)
+      && (weighted_average_alloc >= avg_alloc_rate_words_per_second))  {
+    // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
+    //  represent acceleration of allocation rate.  We may just be catching up with allocations after a lull.
+
     double *xy_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
     double *x2_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
     double xy_sum = 0.0;
@@ -895,8 +988,8 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     double m;                 /* slope */
     double b;                 /* y-intercept */
 
-    
-    m = (ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum) / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum);
+    m = ((ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum)
+         / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum));
     b = (y_sum - m * x_sum) / ShenandoahRateAccelerationSampleSize;
 
     if (m > 0) {
@@ -942,8 +1035,21 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
   // and here also, leave current_rate = y_max, acceleration = 0
 
   double time_delta = get_planned_sleep_interval() + predicted_cycle_time;
-  size_t bytes_to_be_consumed = (size_t) (current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
-  return bytes_to_be_consumed;
+  size_t words_to_be_consumed = (size_t) (current_rate * time_delta + 0.5 * acceleration * time_delta * time_delta);
+#ifdef KELVIN_VERBOSE
+  size_t bytes_to_be_consumed = words_to_be_consumed * HeapWordSize;
+  log_info(gc)("Consuming " SIZE_FORMAT "%s @ rate: %0.3f MB/s, accel: %0.3f MB/s/s @ %0.3f s",
+               byte_size_in_proper_unit(bytes_to_be_consumed), proper_unit_for_byte_size(bytes_to_be_consumed),
+               current_rate * HeapWordSize / (1024 * 1024),
+               acceleration * HeapWordSize / (1024 * 1024), time_delta);
+  log_info(gc)("Allocatable bytes: " SIZE_FORMAT ", available: " SIZE_FORMAT ", min_threshold: " SIZE_FORMAT,
+               _global_allocatable_words * HeapWordSize, _global_available_bytes, _global_min_threshold);
+#endif
+#ifdef KELVIN_NEEDS_TO_SEE
+  log_info(gc)("For time %0.6f = %0.6f + %0.6f, bytes to be consumed is: " SIZE_FORMAT,
+               time_delta, get_planned_sleep_interval(), predicted_cycle_time, words_to_be_consumed * HeapWordSize);
+#endif
+  return words_to_be_consumed;
 }
 
 ShenandoahAllocationRate::ShenandoahAllocationRate() :

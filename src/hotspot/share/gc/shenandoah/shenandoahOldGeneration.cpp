@@ -478,7 +478,11 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     // This is just old-gen completion.  No future budgeting required here.  The only reason to rebuild the freeset here
     // is in case there was any immediate old garbage identified.
     size_t mutator_free = heap->free_set()->finish_rebuild(cset_young_regions, cset_old_regions, num_old);
-    ((ShenandoahAdaptiveHeuristics *) (heap->young_generation()->heuristics()))->resume_idle_span(mutator_free);
+#undef KELVIN_VISIBLE
+#ifdef KELVIN_VISIBLE
+    log_info(gc)("resuming idle span with mutator_free: " SIZE_FORMAT, mutator_free);
+#endif
+    ((ShenandoahAdaptiveHeuristics *) (heap->young_generation()->heuristics()))->resume_idle_span();
   }
 }
 

@@ -90,12 +90,17 @@ public:
 
   // At the end of GC(N), we idle GC until necessary to start the next GC.  Compute the threshold of memory that can be allocated
   // before we need to start the next GC.
-  void start_idle_span();
+  void start_idle_span() override;
 
   // If old-generation marking finishes during an idle span and immediate old-generation garbage is identified, we will rebuild
   // the free set.  If this happens, resume_idle_span() recomputes the threshold of memory that can be allocated before we need
   // to start the next GC.
-  void resume_idle_span(size_t mutator_available);
+  void resume_idle_span() override;
+
+  // As we begin to do evacuation, adjust the trigger threshold to not account for headroom, as we are now free to allocate
+  // everything that remains in the mutator set up until that is exhausted.  Our hope is that we finish GC before the
+  // remaining mutator memory is fully depleted.
+  void start_evac_span() override;
 
   // Having observed a new allocation rate sample, add this to the acceleration history so that we can determine if allocation
   // rate is accelerating.
@@ -103,12 +108,8 @@ public:
 
   // Compute and return the current allocation rate, the current rate of acceleration, and the amount of memory that we expect
   // to consume if we start GC right now and gc takes predicted_cycle_time to complete.
-  size_t accelerated_consumption(double& acceleration, double& current_rate, double predicted_cycle_time) const;
-
-#ifdef FUTURE_SUPPORT_FOR_ALLOCATION_THROTTLE_DURING_GC
-  void start_evac_span(size_t mutator_free);
-  // probably also need start_mark_span(), state_update_span()
-#endif
+  size_t accelerated_consumption(double& acceleration, double& current_rate,
+                                 double avg_rate_words_per_sec, double predicted_cycle_time) const;
 
   void record_cycle_start();
   void record_success_concurrent();
@@ -157,18 +158,15 @@ public:
   // times that GC is idle.  A similar approach might be used to throttle allocations between GC cycles and during GC cycles.
   void recalculate_trigger_threshold(size_t mutator_available);
 
-  // Queries are issued only by should_start_gc(), approximately once every 3 ms in the default configuration.
-  inline size_t allocated_since_last_query() {
-    size_t allocated_words = _freeset->get_mutator_allocations();
-    size_t result = allocated_words - _allocated_at_previous_query;
-    _allocated_at_previous_query = allocated_words;
-    return result;
-  }
-
   // Returns number of words that can be allocated before we need to trigger next GC.
   inline size_t allocatable() const {
-    size_t allocated_words = _freeset->get_mutator_allocations();
-    return (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
+    size_t allocated_words = _freeset->get_mutator_allocations_since_rebuild();
+    size_t result = (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
+#ifdef KELVIN_DEBUG
+    log_info(gc)("allocatable returns " SIZE_FORMAT " words from allocated " SIZE_FORMAT ", trigger_threshold: " SIZE_FORMAT,
+                 result, allocated_words, _trigger_threshold);
+#endif
+    return result;
   }
 
   double get_most_recent_wake_time() const;
@@ -215,7 +213,6 @@ protected:
   ShenandoahRegulatorThread* _regulator_thread;
   ShenandoahController* _control_thread;
 
-  size_t _previous_total_allocations;
   double _previous_allocation_timestamp;
   size_t _total_allocations_at_start_of_idle;
   size_t _trigger_threshold;
@@ -245,7 +242,7 @@ protected:
   // there is generally an abundance of memory at this time as well, so this will not generally trigger GC.
   uint _spike_acceleration_first_sample_index;
   uint _spike_acceleration_num_samples;
-  double* const _spike_acceleration_rate_samples;
+  double* const _spike_acceleration_rate_samples; // holds rates in words/second
   double* const _spike_acceleration_rate_timestamps;
 
   size_t _most_recent_headroom_at_start_of_idle;

@@ -420,6 +420,7 @@ void ShenandoahDegenGC::op_update_roots() {
   }
 
   heap->rebuild_free_set(false /*concurrent*/);
+  heap->start_idle_span();
 }
 
 void ShenandoahDegenGC::op_cleanup_complete() {

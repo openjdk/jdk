@@ -675,6 +675,8 @@ void ShenandoahGenerationalControlThread::service_stw_degenerated_cycle(GCCause:
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   GCIdMark gc_id_mark;
+  _degen_generation->heuristics()->record_degenerated_cycle_start(ShenandoahGC::ShenandoahDegenPoint::_degenerated_outside_cycle
+                                                                  == point);
   ShenandoahGCSession session(cause, _degen_generation);
 
   ShenandoahDegenGC gc(point, _degen_generation);

@@ -95,7 +95,7 @@ public:
 
   // return planned sleep duration, in s
   inline double get_planned_sleep_interval() const {
-    return ((double) _sleep) * 1000.0;
+    return ((double) _sleep) / 1000.0;
   }
 };
 

@@ -100,6 +100,12 @@ size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.
   size_t available = this->ShenandoahGeneration::available();
+#undef KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+  ShenandoahFreeSet* freeset = ShenandoahHeap::heap()->free_set();
+  log_info(gc)("Young available is MIN(" SIZE_FORMAT ", " SIZE_FORMAT ") with capacity: " SIZE_FORMAT " and reserve: " SIZE_FORMAT,
+               available, freeset->available(), max_capacity(), freeset->reserved());
+#endif
   return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
 }
 

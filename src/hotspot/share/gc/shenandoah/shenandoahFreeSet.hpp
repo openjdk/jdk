@@ -292,6 +292,9 @@ private:
   // This value is modified and fetched only under HeapLock.
   size_t _mutator_words_allocated;
 
+  size_t _mutator_words_allocated_at_rebuild;
+  size_t _mutator_words_at_last_sample;
+
   // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
   size_t _prepare_to_rebuild_mutator_free;
 
@@ -402,10 +405,37 @@ public:
 
   void clear();
 
-  inline size_t get_mutator_allocations() {
+  // How many words allocated since rebuild
+  inline size_t get_mutator_allocations_since_rebuild() {
     shenandoah_assert_not_heaplocked();
     ShenandoahHeapLocker locker(_heap->lock());
     return _mutator_words_allocated;
+  }
+
+  // How many total words have been allocated?
+  inline size_t get_mutator_allocations() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahHeapLocker locker(_heap->lock());
+    return _mutator_words_allocated + _mutator_words_allocated_at_rebuild;
+  }
+
+  inline size_t get_mutator_allocations_since_previous_sample() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahHeapLocker locker(_heap->lock());
+    size_t total_words = _mutator_words_allocated + _mutator_words_allocated_at_rebuild;
+    size_t result = total_words - _mutator_words_at_last_sample;
+
+    // Note: there's always the possibility that the tally of total allocations exceeds the 64-bit capacity of our size_t
+    // counter.  We assume that the difference between relevant samples does not exceed this count.  Example:
+    //   Suppose _mutator_words_at_last_sample is 0xffff_ffff_ffff_fff0 (18,446,744,073,709,551,600 Decimal)
+    //                        and _total_words is 0x0000_0000_0000_0800 (                    32,768 Decimal)
+    // Then, total_words - _mutator_words_at_last_sample can be done adding 1's complement of subtrahend:
+    //   1's complement of _mutator_words_at_last_sample is: 0x0000_0000_0000_0010 (    16 Decimal))
+    //                                     plus total_words: 0x0000_0000_0000_0800 (32,768 Decimal)
+    //                                                  sum: 0x0000_0000_0000_0810 (32,784 Decimal)
+
+    _mutator_words_at_last_sample = total_words;
+    return result;
   }
 
   // Examine the existing free set representation, capturing the current state into var arguments:
@@ -458,8 +488,10 @@ public:
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
   void log_status_under_lock();
 
-  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator); }
-  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);     }
+  inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);   }
+  inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);       }
+  inline size_t reserved()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector); }
+                              
   inline size_t available() const {
     assert(used() <= capacity(), "must use less than capacity");
     return capacity() - used();

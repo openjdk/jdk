@@ -53,7 +53,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 5, EXPERIMENTAL,     \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 10, EXPERIMENTAL,     \
           "In selected ShenandoahControlIntervals (e.g. one out of three), "\
           "we compute the allocation rate since the previous control "      \
           "interval.  This many samples are analyzed to determine whether " \
@@ -67,7 +67,7 @@
           "triggering excess collections.")                                 \
                                                                             \
   product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
-          3, EXPERIMENTAL,                                                  \
+          5, EXPERIMENTAL,                                                  \
           "In selected ShenandoahControlIntervals (e.g. one out of three), "\
           "we compute the allocation rate since the previous control "      \
           "interval.  The average of this many most recent samples "        \
@@ -79,7 +79,7 @@
           "is more effective at detecting slower spikes.  The latter "      \
           "spike detection samples at the rate specifieid by "              \
           "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
-          "parameter must be less than or equal to the value of "           \
+          "parameter must be less than the value of "                       \
           "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
           "momentary spike detection less sensitive.  A smaller value "     \
           "may result in excessive GC triggers.")                           \

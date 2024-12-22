@@ -45,7 +45,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle) {
-  _planned_sleep_interval = ShenandoahControlIntervalMin;
+  _planned_sleep_interval = ShenandoahControlIntervalMin / 1000.0;
   set_name("Shenandoah Control Thread");
   create_and_start();
 }
@@ -254,7 +254,7 @@ void ShenandoahControlThread::run_service() {
     }
     os::naked_short_sleep(sleep);
     // Record a conservative estimate of the longest anticipated sleep duration until we sample again.
-    _planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
+    _planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2)) / 1000.0;
     _most_recent_wake_time = os::elapsedTime();
     if (LogTarget(Debug, gc, thread)::is_enabled()) {
       double elapsed = _most_recent_wake_time - before_sleep;

@@ -731,6 +731,8 @@ ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _partitions(max_regions, this),
   _trash_regions(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, max_regions, mtGC)),
   _mutator_words_allocated(0),
+  _mutator_words_allocated_at_rebuild(0),
+  _mutator_words_at_last_sample(0),
   _alloc_bias_weight(0)
 {
   clear_internal();
@@ -1335,6 +1337,9 @@ void ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
   if (!transferred) {
     log_warning(gc, free)("Forcing transfer of " SIZE_FORMAT " to old reserve.", idx);
     gen_heap->generation_sizer()->force_transfer_to_old(1);
+  } else {
+    // Decrease mutator allocation budget by transferred memory
+    increase_mutator_allocations(region_capacity / HeapWordSize);
   }
   // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
   // to recycle trash before attempting to allocate anything in the region.
@@ -1350,6 +1355,9 @@ void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
   _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                ShenandoahFreeSetPartitionId::Collector, ac);
   _partitions.assert_bounds();
+
+  // Decrease mutator allocation budget by transferred memory
+  increase_mutator_allocations(ac / HeapWordSize);
 
   // We do not ensure that the region is no longer trash, relying on try_allocate_in(), which always comes next,
   // to recycle trash before attempting to allocate anything in the region.
@@ -1645,6 +1653,7 @@ size_t ShenandoahFreeSet::finish_rebuild(size_t young_cset_regions, size_t old_c
     old_reserve = 0;
   }
 
+  _mutator_words_allocated_at_rebuild += _mutator_words_allocated;
   _mutator_words_allocated = 0;
 
   // Move some of the mutator regions in the Collector and OldCollector partitions in order to satisfy
@@ -1665,7 +1674,7 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_cset_regions
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
   ShenandoahOldGeneration* const old_generation = _heap->old_generation();
-#define KELVIN_VISIBLE
+#undef KELVIN_VISIBLE
 #ifdef KELVIN_VISIBLE
   log_info(gc)("old-generation: " PTR_FORMAT, p2i(old_generation));
 #endif
@@ -1716,8 +1725,8 @@ void ShenandoahFreeSet::compute_young_and_old_reserves(size_t young_cset_regions
     log_info(gc)("xfer_bytes: " SSIZE_FORMAT ", old_available: " SIZE_FORMAT ", old_unaffiliated_regions: " SIZE_FORMAT
                  ", young_capacity: " SIZE_FORMAT ", young_unaffiliated_regions: " SIZE_FORMAT,
                  xfer_bytes, old_available, old_unaffiliated_regions, young_capacity, young_unaffiliated_regions);
-  }
 #endif
+  }
   // All allocations taken from the old collector set are performed by GC, generally using PLABs for both
   // promotions and evacuations.  The partition between which old memory is reserved for evacuation and
   // which is reserved for promotion is enforced using thread-local variables that prescribe intentions for

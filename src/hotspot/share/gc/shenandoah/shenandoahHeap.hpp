@@ -384,6 +384,8 @@ public:
     return _heap_changed.try_unset();
   }
 
+  virtual void start_idle_span();
+
   void set_concurrent_young_mark_in_progress(bool in_progress);
   void set_concurrent_old_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);

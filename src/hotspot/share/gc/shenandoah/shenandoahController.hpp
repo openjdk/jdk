@@ -57,7 +57,7 @@ protected:
   // Remember when Controller most recently woke from its periodic sleep
   double _most_recent_wake_time;
 
-  // How long do we plan to sleep before we again sample control status, in seconds?
+  // How long do we plan to sleep before we again sample control status, in seconds.
   double _planned_sleep_interval;
 
 public:

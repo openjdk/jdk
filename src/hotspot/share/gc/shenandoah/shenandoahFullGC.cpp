@@ -1185,4 +1185,5 @@ void ShenandoahFullGC::phase5_epilog() {
     ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set();
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
+  heap->start_idle_span();
 }

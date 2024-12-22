@@ -180,6 +180,10 @@ public:
     _guaranteed_gc_interval = guaranteed_gc_interval;
   }
 
+  virtual void start_idle_span();
+  virtual void start_evac_span();
+  virtual void resume_idle_span();
+
   virtual void record_cycle_start();
 
   void record_degenerated_cycle_start(bool out_of_cycle);

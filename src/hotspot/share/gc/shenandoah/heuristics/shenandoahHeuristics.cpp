@@ -176,12 +176,37 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
                      collection_set->count());
 }
 
+void ShenandoahHeuristics::start_idle_span() {
+  // do nothing
+#undef KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+  log_info(gc)("Made it to do-nothing implementation of start_idle_span()");
+#endif
+}
+
+void ShenandoahHeuristics::start_evac_span() {
+  // do nothing
+}
+
+void ShenandoahHeuristics::resume_idle_span() {
+  // do nothing
+}
+
 void ShenandoahHeuristics::record_degenerated_cycle_start(bool out_of_cycle) {
   if (out_of_cycle) {
     _precursor_cycle_start = _cycle_start = os::elapsedTime();
+#undef KELVIN_VERBOSITY
+#ifdef KELVIN_VERBOSITY
+    log_info(gc)("record_degen_cycle_start(true), _precursor_cycle_start (aka cycle_start): %0.3f",
+                 _precursor_cycle_start);
+#endif
   } else {
     _precursor_cycle_start = _cycle_start;
     _cycle_start = os::elapsedTime();
+#ifdef KELVIN_VERBOSITY
+    log_info(gc)("record_degen_cycle_start(false), _precursor_cycle_start: %0.3f, cycle_start: %0.3f",
+                 _precursor_cycle_start, _cycle_start);
+#endif
   }
 }
 
@@ -302,5 +327,9 @@ double ShenandoahHeuristics::elapsed_cycle_time() const {
 
 // Includes the time spent in abandoned concurrent GC cycle that may have triggered this degenerated cycle.
 double ShenandoahHeuristics::elapsed_degenerated_cycle_time() const {
-  return os::elapsedTime() - _precursor_cycle_start;
+  double now = os::elapsedTime();
+#ifdef KELVIN_VERBOSITY
+  log_info(gc)("degen elapsed cycle time: %0.3f", now - _precursor_cycle_start);
+#endif
+  return now - _precursor_cycle_start;
 }

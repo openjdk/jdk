@@ -86,6 +86,8 @@ public:
     return _evac_tracker;
   }
 
+  void start_idle_span() override;
+
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
   void update_region_ages(ShenandoahMarkingContext* ctx);

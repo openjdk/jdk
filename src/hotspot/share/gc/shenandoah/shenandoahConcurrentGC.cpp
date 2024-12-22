@@ -1155,6 +1155,7 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+  heap->heuristics()->start_idle_span();
 }
 
 void ShenandoahConcurrentGC::op_final_roots() {
