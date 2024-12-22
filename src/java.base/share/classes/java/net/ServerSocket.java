@@ -421,6 +421,50 @@ public class ServerSocket implements java.io.Closeable {
      * of the {@linkplain Socket#setSocketImplFactory(SocketImplFactory)
      * client socket implementation factory}, if one has been set.
      *
+     * @param      s the Socket
+     * @throws     IOException  if an I/O error occurs when waiting for a
+     *               connection, the socket is not bound or the socket is closed.
+     * @throws     SocketTimeoutException if a timeout was previously set with setSoTimeout and
+     *             the timeout has been reached.
+     * @throws     java.nio.channels.IllegalBlockingModeException
+     *             if this socket has an associated channel, the channel is in
+     *             non-blocking mode, and there is no connection ready to be
+     *             accepted
+     */
+    public Socket accept(Socket s) throws IOException {
+        if (isClosed())
+            throw new SocketException("Socket is closed");
+        if (!isBound())
+            throw new SocketException("Socket is not bound yet");
+        implAccept(s);
+    }
+
+    /**
+     * Listens for a connection to be made to this socket and accepts
+     * it. The method blocks until a connection is made.
+     *
+     * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
+     * following circumstances:
+     * <ol>
+     *   <li> The socket is {@linkplain ServerSocketChannel#socket() associated}
+     *        with a {@link ServerSocketChannel ServerSocketChannel}. In that
+     *        case, interrupting a thread accepting a connection will close the
+     *        underlying channel and cause this method to throw {@link
+     *        java.nio.channels.ClosedByInterruptException} with the interrupt
+     *        status set.
+     *   <li> The socket uses the system-default socket implementation and a
+     *        {@linkplain Thread#isVirtual() virtual thread} is accepting a
+     *        connection. In that case, interrupting the virtual thread will
+     *        cause it to wakeup and close the socket. This method will then throw
+     *        {@code SocketException} with the interrupt status set.
+     * </ol>
+     *
+     * @implNote
+     * An instance of this class using a system-default {@code SocketImpl}
+     * accepts sockets with a {@code SocketImpl} of the same type, regardless
+     * of the {@linkplain Socket#setSocketImplFactory(SocketImplFactory)
+     * client socket implementation factory}, if one has been set.
+     *
      * @throws     IOException  if an I/O error occurs when waiting for a
      *               connection, the socket is not bound or the socket is closed.
      * @throws     SocketTimeoutException if a timeout was previously set with setSoTimeout and
@@ -433,12 +477,8 @@ public class ServerSocket implements java.io.Closeable {
      * @return the new Socket
      */
     public Socket accept() throws IOException {
-        if (isClosed())
-            throw new SocketException("Socket is closed");
-        if (!isBound())
-            throw new SocketException("Socket is not bound yet");
         Socket s = new Socket((SocketImpl) null);
-        implAccept(s);
+        accept(s);
         return s;
     }
 
