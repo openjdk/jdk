@@ -119,3 +119,12 @@ innerclass innerClass javax/swing/plaf/basic/BasicScrollBarUI$TrackListener oute
 class name javax/swing/plaf/basic/BasicSplitPaneDivider
 method name setEnabled descriptor (Z)V flags 1
 
+class name javax/swing/text/html/CSS
+header extends java/lang/Object implements java/io/Serializable nestMembers javax/swing/text/html/CSS$Attribute flags 21
+innerclass innerClass javax/swing/text/html/CSS$Attribute outerClass javax/swing/text/html/CSS innerClassName Attribute flags 19
+innerclass innerClass javax/swing/text/html/HTML$Tag outerClass javax/swing/text/html/HTML innerClassName Tag flags 9
+innerclass innerClass javax/swing/text/html/HTML$Attribute outerClass javax/swing/text/html/HTML innerClassName Attribute flags 19
+innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+

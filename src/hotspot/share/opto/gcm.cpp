@@ -243,7 +243,6 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
   }
 }
 
-#ifdef ASSERT
 // Assert that new input b2 is dominated by all previous inputs.
 // Check this by by seeing that it is dominated by b1, the deepest
 // input observed until b2.
@@ -255,6 +254,7 @@ static void assert_dom(Block* b1, Block* b2, Node* n, const PhaseCFG* cfg) {
     tmp = tmp->_idom;
   }
   if (tmp != b1) {
+#ifdef ASSERT
     // Detected an unschedulable graph.  Print some nice stuff and die.
     tty->print_cr("!!! Unschedulable graph !!!");
     for (uint j=0; j<n->len(); j++) { // For all inputs
@@ -267,10 +267,11 @@ static void assert_dom(Block* b1, Block* b2, Node* n, const PhaseCFG* cfg) {
     }
     tty->print("Failing node: ");
     n->dump();
-    assert(false, "unscheduable graph");
+    assert(false, "unschedulable graph");
+#endif
+    cfg->C->record_failure("unschedulable graph");
   }
 }
-#endif
 
 static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
   // Find the last input dominated by all other inputs.
@@ -285,7 +286,10 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
       // The new inb must be dominated by the previous deepb.
       // The various inputs must be linearly ordered in the dom
       // tree, or else there will not be a unique deepest block.
-      DEBUG_ONLY(assert_dom(deepb, inb, n, cfg));
+      assert_dom(deepb, inb, n, cfg);
+      if (cfg->C->failing()) {
+        return nullptr;
+      }
       deepb = inb;                      // Save deepest block
       deepb_dom_depth = deepb->_dom_depth;
     }
@@ -372,6 +376,9 @@ bool PhaseCFG::schedule_early(VectorSet &visited, Node_Stack &roots) {
         if (!parent_node->pinned()) {
           // Set earliest legal block.
           Block* earliest_block = find_deepest_input(parent_node, this);
+          if (C->failing()) {
+            return false;
+          }
           map_node_to_block(parent_node, earliest_block);
         } else {
           assert(get_block_for_node(parent_node) == get_block_for_node(parent_node->in(0)), "Pinned Node should be at the same block as its control edge");
@@ -523,7 +530,10 @@ static Block* memory_early_block(Node* load, Block* early, const PhaseCFG* cfg) 
         // The new inb must be dominated by the previous deepb.
         // The various inputs must be linearly ordered in the dom
         // tree, or else there will not be a unique deepest block.
-        DEBUG_ONLY(assert_dom(deepb, inb, load, cfg));
+        assert_dom(deepb, inb, load, cfg);
+        if (cfg->C->failing()) {
+          return nullptr;
+        }
         deepb = inb;                      // Save deepest block
         deepb_dom_depth = deepb->_dom_depth;
       }
@@ -715,6 +725,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // dominator tree, and allow for a broader discovery of anti-dependences.
   if (C->subsume_loads()) {
     early = memory_early_block(load, early, this);
+    if (C->failing()) {
+      return nullptr;
+    }
   }
 
   ResourceArea* area = Thread::current()->resource_area();
@@ -1519,6 +1532,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       // Hoist LCA above possible-defs and insert anti-dependences to
       // defs in new LCA block.
       LCA = insert_anti_dependences(LCA, self);
+      if (C->failing()) {
+        return;
+      }
     }
 
     if (early->_dom_depth > LCA->_dom_depth) {
@@ -1611,8 +1627,8 @@ void PhaseCFG::global_code_motion() {
   Node_Stack stack((C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
-    assert(false, "early schedule failed");
-    C->record_method_not_compilable("early schedule failed");
+    assert(C->failure_is_artificial(), "early schedule failed");
+    C->record_method_not_compilable("early schedule failed" DEBUG_ONLY(COMMA true));
     return;
   }
 
@@ -1657,6 +1673,9 @@ void PhaseCFG::global_code_motion() {
       // uncommon trap.  Combined with the too_many_traps guards
       // above, this prevents SEGV storms reported in 6366351,
       // by recompiling offending methods without this optimization.
+      if (C->failing()) {
+        return;
+      }
     }
   }
 
@@ -1726,6 +1745,9 @@ void PhaseCFG::global_code_motion() {
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
     call_catch_cleanup(block);
+    if (C->failing()) {
+      return;
+    }
   }
 
 #ifndef PRODUCT

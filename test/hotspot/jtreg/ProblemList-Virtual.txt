@@ -27,6 +27,7 @@
 serviceability/AsyncGetCallTrace/MyPackage/ASGCTBaseTest.java 8308026 generic-all
 serviceability/jvmti/GetThreadListStackTraces/OneGetThreadListStackTraces.java 8308027 generic-all
 serviceability/jvmti/Heap/IterateHeapWithEscapeAnalysisEnabled.java 8264699 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
 
 ####
 ## Classes not unloaded as expected (TODO, need to check if FJ keeps a reference)
@@ -87,18 +88,9 @@ vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 generic-all
 
 ###
-# The test first suspends a vthread and all the carriers and then it resumes the vthread expecting it
-# to run to completion. In mainline it only works because the suspension step happens while the vthread is
-# pinned to the carrier blocked on synchronized. So the carrier only actually suspends on the next unmount
-# transition which in this test happens once the vthread has finished executing the expected code.
-
+# Fails because resume of a virtual thread is not enough to allow the virtual thread
+# to make progress when all other threads are currently suspended.
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
-
-###
-# The test sends a StopThread to a vthread expecting that is currently pinned to the carrier blocked on
-# synchronized. Since the vthread is now unmounted StopThread returns JVMTI_ERROR_OPAQUE_FRAME error.
-
-vmTestbase/nsk/jdb/kill/kill001/kill001.java 8338714 generic-all
 
 ###
 # Fails on Windows because of additional memory allocation.
@@ -112,7 +104,9 @@ gc/g1/TestMixedGCLiveThreshold.java#25percent 8334759 windows-x64
 
 gc/arguments/TestNewSizeThreadIncrease.java 0000000 generic-all
 gc/g1/TestSkipRebuildRemsetPhase.java 0000000 generic-all
+runtime/classFileParserBug/TestEmptyBootstrapMethodsAttr.java JDK-8346442 generic-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 0000000 generic-all
+runtime/logging/LoaderConstraintsTest.java JDK-8346442 generic-all
 runtime/Thread/AsyncExceptionOnMonitorEnter.java 0000000 generic-all
 runtime/Thread/StopAtExit.java 0000000 generic-all
 runtime/handshake/HandshakeWalkStackTest.java 0000000 generic-all
