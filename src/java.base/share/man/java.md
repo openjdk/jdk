@@ -1302,9 +1302,6 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
     directly from Java code, nor by the JVM for other types of resource
     exhaustion (such as native thread creation errors).
 
-    This does not apply to any `OutOfMemoryError` thrown by Java, or native,
-    code in the JDK libraries.
-
 `-XX:+PrintCommandLineFlags`
 :   Enables printing of ergonomically selected JVM flags that appeared on the
     command line. It can be useful to know the ergonomic values set by the JVM,
