@@ -1527,7 +1527,6 @@ static bool div_mod_depends_only_on_test(const Node* division) {
   }
 
   // Normalize to the form (divisor <=> other) == true
-  const TypeClass* bottom_type = other->bottom_type()->cast<TypeClass>();
   BoolTest normalized_test = bol->_test;
   if (is_reverted) {
     normalized_test = normalized_test.negate();
@@ -1537,6 +1536,10 @@ static bool div_mod_depends_only_on_test(const Node* division) {
   }
 
   // Try to see if the test does exclude 0 from the divisor value range
+  if (other->bottom_type() == Type::TOP) {
+    return false;
+  }
+  const TypeClass* bottom_type = other->bottom_type()->cast<TypeClass>();
   switch (normalized_test._test) {
     case BoolTest::eq: return bottom_type->_lo > 0 || bottom_type->_hi < 0;
     case BoolTest::ne: return bottom_type == TypeClass::ZERO;

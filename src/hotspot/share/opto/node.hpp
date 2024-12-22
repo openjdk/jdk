@@ -1035,12 +1035,43 @@ public:
 
   virtual bool is_CFG() const { return false; }
 
-  // If this node is control-dependent on a test, can it be
-  // rerouted to a dominating equivalent test?  This is usually
-  // true of non-CFG nodes, but can be false for operations which
-  // depend for their correct sequencing on more than one test.
-  // (In that case, hoisting to a dominating test may silently
-  // skip some other important test.)
+  // If this node is control-dependent on a test, can it be rerouted to a dominating equivalent
+  // test? This means that the node can be executed safely as long as it happens after the test
+  // that is its control input without worrying about the whole control flow. On the contrary, if
+  // the node depends on a test that is not its control input, or if it depends on more than one
+  // tests, then this method must return false.
+  //
+  // Pseudocode examples:
+  // 1. if (y != 0) {
+  //      x / y;
+  //    }
+  // The division depends only on the test y != 0 and can be executed anywhere y != 0 holds true.
+  // As a result, depends_only_on_test returns true.
+  // 2. if (y != 0) {
+  //      if (x > 1) {
+  //        x / y;
+  //      }
+  //    }
+  // If the division x / y has its control input being the IfTrueNode of the test y != 0, then
+  // depends_only_on_test returns true. Otherwise, if the division has its control input being the
+  // IfTrueNode of the test x > 1, then depends_only_on_test returns false.
+  // 3. if (y > z) {
+  //      if (z > 0) {
+  //        x / y
+  //      }
+  //    }
+  // The division depends on both tests y > z and z > 0. As a result, depends_only_on_test returns
+  // false.
+  //
+  // This method allows more freedom in certain nodes with regards to scheduling, for example it
+  // allows nodes to float out of loops together with its test.
+  //
+  // This method is pessimistic, this means that it may return false even if the node satisfy its
+  // requirements. However, it must return false if the node does not satisfy its requirements.
+  // When a test is decomposed into multiple tests, all nodes that depend on the decomposed test
+  // must be pinned at the common denominator of those tests. For example, when a zero check of a
+  // division is split through a region but the division itself is not, it must be pinned at the
+  // merge point by returning false when calling this method.
   virtual bool depends_only_on_test() const { assert(!is_CFG(), ""); return true; };
 
   // When building basic blocks, I need to have a notion of block beginning
