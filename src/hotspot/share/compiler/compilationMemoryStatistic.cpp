@@ -961,12 +961,58 @@ const char* CompilationMemoryStatistic::failure_reason_memlimit() {
   return s;
 }
 
+#ifdef ASSERT
+static bool is_compiling_jtreg_test(CompilerThread* th) {
+  CompileTask* const task = th->task();
+  const Method* const m = th->task()->method();
+  FullMethodName fmn(m);
+  char tmp[1024];
+  fmn.as_C_string(tmp, sizeof(tmp));
+#define TEST_METHOD_PREFIX "compiler/print/CompileCommandPrintMemStat$TestMain::method"
+  return strncmp(tmp, TEST_METHOD_PREFIX, sizeof(TEST_METHOD_PREFIX) - 1) == 0;
+#undef TEST_METHOD_PREFIX
+}
+
+void CompilationMemoryStatistic::do_test_allocations() {
+#ifdef COMPILER2
+  // For jtreg tests
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+  if (!is_compiling_jtreg_test(th)) {
+    return;
+  }
+  // Allocate large amounts - large enough to (comfortably) cause new arena chunks to be
+  // allocated, as well as large enough to trigger a new peak that is the highest peak that
+  // would happend during compilation of the very small test methods.
+  const size_t large_size = MAX3(M * 3, (size_t)Chunk::max_default_size * 2, significant_peak_threshold);
+  Compile::TracePhase tp(Phase::_t_testTimer1);
+  Arena testArena1(MemTag::mtCompiler, Arena::Tag::tag_ra);
+  Arena testArena2(MemTag::mtCompiler, Arena::Tag::tag_regsplit);
+  // The following allocations bring us to a new peak
+  testArena1.Amalloc(large_size);
+  testArena2.Amalloc(large_size);
+  {
+    Compile::TracePhase tp(Phase::_t_testTimer2);
+    testArena1.Amalloc(large_size);
+    testArena2.Amalloc(large_size);
+  }
+  // In the end, this should have happened:
+  // - we should have reached multiple peaks, the last peak with the last Amalloc. It should have given us
+  //   a total peak size of >12MB (3MB * 4), the normal footprint of compilation for such a small
+  //   method.
+  // - we should see both "testTimer1" and "testTimer2" in both the Peak composition printout as well as
+  //   in the footprint timeline;
+  // - footprint timeline should show both test phases as "significant"
+#endif // COMPILER2
+}
+#endif // ASSERT
+
 CompilationMemoryStatisticMark::CompilationMemoryStatisticMark(const DirectiveSet* directive)
   : _active(directive->should_collect_memstat()) {
   if (_active) {
     CompilationMemoryStatistic::on_start_compilation(directive);
   }
 }
+
 CompilationMemoryStatisticMark::~CompilationMemoryStatisticMark() {
   if (_active) {
     CompilationMemoryStatistic::on_end_compilation();

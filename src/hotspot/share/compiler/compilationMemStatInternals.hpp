@@ -180,7 +180,10 @@ public:
   int comp_id() const { return _comp_id; }
 
   // Bytes total at last global peak
+  size_t current() const { return _current; }
+  // Bytes total at last global peak
   size_t peak() const { return _peak; }
+
   // Bytes per arena/phase when we last reached the global peak
   const ArenaCounterTable& counters_at_global_peak() const { return _counters_at_global_peak; }
   const FootprintTimeline& timeline() const                { return _timeline; }

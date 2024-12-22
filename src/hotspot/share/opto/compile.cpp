@@ -3025,15 +3025,7 @@ void Compile::Code_Gen() {
 
 #ifdef ASSERT
   {
-    // Don't mind me, just testing the compiler memory statistic
-    TracePhase tp(_t_testTimer);
-    // We allocate some RA, then release part of it. Note that to make a blip on the radar, sizes
-    // must be large enough to force a new arena chunk to be allocated.
-    NEW_RESOURCE_ARRAY(char, Chunk::max_default_size * 3);
-    {
-      ResourceMark rm;
-      NEW_RESOURCE_ARRAY(char, Chunk::max_default_size * 3);
-    }
+    CompilationMemoryStatistic::do_test_allocations();
   }
 #endif
 

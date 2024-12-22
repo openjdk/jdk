@@ -80,6 +80,8 @@ public:
 
   // For compilers
   static const char* failure_reason_memlimit();
+
+  DEBUG_ONLY(static void do_test_allocations();)
 };
 
 // RAII object to wrap one compilation
