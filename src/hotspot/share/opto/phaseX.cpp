@@ -137,9 +137,19 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   while( 1 ) {                  // While probing hash table
     if( k->req() == req &&      // Same count of inputs
         k->Opcode() == op ) {   // Same Opcode
-      for( uint i=0; i<req; i++ )
-        if( n->in(i)!=k->in(i)) // Different inputs?
-          goto collision;       // "goto" is a speed hack...
+      // For commutative operation with same controlling edges
+      // perform order agnostic input edge comparison to promote
+      // node sharing.
+      if (n->is_commutative_operation() && k->in(0) == n->in(0) && req == 3) {
+        if (!((n->in(1) == k->in(1) && n->in(2) == k->in(2)) ||
+              (n->in(1) == k->in(2) && n->in(2) == k->in(1)))) {
+          goto collision;
+        }
+      } else {
+        for( uint i=0; i<req; i++ )
+          if( n->in(i)!=k->in(i)) // Different inputs?
+            goto collision;       // "goto" is a speed hack...
+      }
       if( n->cmp(*k) ) {        // Check for any special bits
         NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
