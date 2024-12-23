@@ -46,9 +46,9 @@ import java.awt.event.WindowFocusListener;
 
 public class ActiveAWTWindowTest {
 
-    private volatile Frame frame, frame2;
-    private volatile Button button, button2;
-    private volatile TextField textField, textField2;
+    private Frame frame, frame2;
+    private Button button, button2;
+    private TextField textField, textField2;
     private volatile int eventType;
     private final Object lock1 = new Object();
     private final Object lock2 = new Object();
