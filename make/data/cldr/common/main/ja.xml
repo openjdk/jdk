@@ -6152,7 +6152,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>コロンビア ペソ</displayName>
 			</currency>
 			<currency type="COU">
-				<displayName>コロンビア レアル （UVR)</displayName>
+				<displayName>コロンビア レアル (UVR)</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName>コスタリカ コロン</displayName>

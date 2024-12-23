@@ -5018,7 +5018,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="MXP">
 				<displayName>peso mexican de argint (1861–1992)</displayName>
 				<displayName count="one">peso mexican de argint (1861–1992)</displayName>
-				<displayName count="few">pesos mexicani de argint (1861–1992</displayName>
+				<displayName count="few">pesos mexicani de argint (1861–1992)</displayName>
 				<displayName count="other">pesos mexicani de argint (1861–1992)</displayName>
 			</currency>
 			<currency type="MYR">

@@ -5838,7 +5838,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ZWR">
 				<displayName>dòllaru zimbabweanu (2008)</displayName>
-				<displayName count="one">dòllaru zimbabweanu (2008</displayName>
+				<displayName count="one">dòllaru zimbabweanu (2008)</displayName>
 				<displayName count="other">dòllaros zimbabweanos (2008)</displayName>
 			</currency>
 		</currencies>

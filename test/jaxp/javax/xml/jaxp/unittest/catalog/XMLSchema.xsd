@@ -3,7 +3,7 @@
 <!-- Note this schema is NOT the normative structures schema. -->
 <!-- The prose copy in the structures REC is the normative -->
 <!-- version (which shouldn't differ from this one except for -->
-<!-- this comment and entity expansions, but just in case -->
+<!-- this comment and entity expansions, but just in case) -->
 <!DOCTYPE xs:schema PUBLIC "-//W3C//DTD XMLSCHEMA 200102//EN" "pathto/XMLSchema.dtd" [
 
 <!-- provide ID type information even for parsers which only read the

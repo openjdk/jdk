@@ -44,7 +44,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="en_GB">Kiingereza cha Uingereza</language>
 			<language type="en_GB" alt="short">Kiingereza cha Uingereza</language>
 			<language type="en_US">Kiingereza cha Marekani</language>
-			<language type="en_US" alt="short">Kiingereza cha Marekani)</language>
+			<language type="en_US" alt="short">Kiingereza cha Marekani</language>
 			<language type="es_419">Kihispania cha Amerika Kusini</language>
 			<language type="es_ES">Kihispania cha Ulaya</language>
 			<language type="es_MX">Kihispania cha Meksiko</language>

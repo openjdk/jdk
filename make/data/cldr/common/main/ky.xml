@@ -891,7 +891,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="arab">Араб-индус сандары</type>
 			<type key="numbers" type="arabext">Кеңейтилген араб-индус сандары</type>
 			<type key="numbers" type="armn">Армян сандары</type>
-			<type key="numbers" type="armnlow">Армян сандары (кичинекей тамга менен))</type>
+			<type key="numbers" type="armnlow">Армян сандары (кичинекей тамга менен)</type>
 			<type key="numbers" type="beng">Бенгали сандары</type>
 			<type key="numbers" type="cakm">Чакма сандары</type>
 			<type key="numbers" type="deva">Деванагари сандары</type>
@@ -899,7 +899,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="fullwide">Толук эндүү сандар</type>
 			<type key="numbers" type="geor">Грузин сандары</type>
 			<type key="numbers" type="grek">Грек сандары</type>
-			<type key="numbers" type="greklow">Грек сандары (кичинекей тамга менен))</type>
+			<type key="numbers" type="greklow">Грек сандары (кичинекей тамга менен)</type>
 			<type key="numbers" type="gujr">Гужарати сандары</type>
 			<type key="numbers" type="guru">Гужарати сандары</type>
 			<type key="numbers" type="hanidec">Кытай ондук сандары</type>

@@ -1261,7 +1261,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<long>
 					<generic>CT (waxtu sàntaral)</generic>
 					<standard>CST (waxtu estàndaaru sàntaraal)</standard>
-					<daylight>CDT (waxtu bëccëgu sàntaraal</daylight>
+					<daylight>CDT (waxtu bëccëgu sàntaraal)</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
@@ -1510,7 +1510,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>WET (waxtu ëroop u sowwu-jant</generic>
+					<generic>WET (waxtu ëroop u sowwu-jant)</generic>
 					<standard>WEST (waxtu estàndaaru ëroop u sowwu-jant)</standard>
 					<daylight>WEST (waxtu ete wu ëroop u sowwu-jant)</daylight>
 				</long>

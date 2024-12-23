@@ -551,7 +551,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
             <!-- scripts -->
             <scriptAlias type="Qaai" replacement="Zinh" reason="deprecated"/>
-            <!-- deprecated ISO territories in 3066 + CLDR ones (older deprecated ISO codes -->
+            <!-- deprecated ISO territories in 3066 + CLDR ones (older deprecated ISO codes) -->
             <territoryAlias type="AN" replacement="CW SX BQ" reason="deprecated"/> <!-- Netherlands Antilles Curaçao largest, then Sint Martin, then BQ -->
             <territoryAlias type="BU" replacement="MM" reason="deprecated"/> <!-- Burma -->
             <territoryAlias type="CS" replacement="RS ME" reason="deprecated"/> <!-- Serbia & Montenegro -->
