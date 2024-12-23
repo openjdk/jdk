@@ -25,22 +25,20 @@ package jdk.jpackage.internal.model;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 
 public class ApplicationLayoutTest {
 
-    @Rule
-    public final TemporaryFolder tempFolder = new TemporaryFolder();
-
-    public void test(boolean move) throws IOException {
-        final var srcAppImageRoot = tempFolder.newFolder("src").toPath();
+    public void test(boolean move, Path tempDir) throws IOException {
+        final var srcAppImageRoot = tempDir.resolve("src");
+        Files.createDirectories(srcAppImageRoot);
 
         final var appImageCopyFiles = List.of("bin/Foo", "lib/app/Foo.cfg", "lib/app/hello.jar", "runtime/bin/java");
         final var appImageCopyDirs = List.of("lib/app/hello");
@@ -63,7 +61,8 @@ public class ApplicationLayoutTest {
                 .runtimeDirectory("runtime")
                 .create();
 
-        final var dstAppImageRoot = tempFolder.newFolder("dst").toPath();
+        final var dstAppImageRoot = tempDir.resolve("dst");
+        Files.createDirectories(dstAppImageRoot);
 
         final var srcPathGroup = AppImageLayout.toPathGroup(layout.resolveAt(srcAppImageRoot));
         final var dstPathGroup = AppImageLayout.toPathGroup(layout.resolveAt(dstAppImageRoot));
@@ -99,12 +98,12 @@ public class ApplicationLayoutTest {
     }
 
     @Test
-    public void testMove() throws IOException {
-        test(true);
+    public void testMove(@TempDir Path tempDir) throws IOException {
+        test(true, tempDir);
     }
 
     @Test
-    public void testCopy() throws IOException {
-        test(false);
+    public void testCopy(@TempDir Path tempDir) throws IOException {
+        test(false, tempDir);
     }
 }
