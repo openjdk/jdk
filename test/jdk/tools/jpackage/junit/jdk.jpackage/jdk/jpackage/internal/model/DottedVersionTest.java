@@ -115,7 +115,7 @@ public class DottedVersionTest {
     @ParameterizedTest
     @MethodSource
     public void testInvalid(String str) {
-        assertThrowsExactly(IllegalArgumentException.class, () -> new DottedVersion(str));
+        assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(str));
     }
 
     private static Stream<String> testInvalid() {
