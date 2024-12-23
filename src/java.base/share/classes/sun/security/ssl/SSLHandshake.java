@@ -373,7 +373,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
     COMPRESSED_CERTIFICATE      ((byte)0x19, "compressed_certificate"),
 
     // RFC 8870 - Encrypted Key Transport for DTLS/Secure RTP
-    EKT_KEY                     ((byte)0x19, "ekt_key"),
+    EKT_KEY                     ((byte)0x20, "ekt_key"),
 
     MESSAGE_HASH                ((byte)0xFE, "message_hash"),
     NOT_APPLICABLE              ((byte)0xFF, "not_applicable");
