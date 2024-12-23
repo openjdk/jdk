@@ -53,7 +53,7 @@ public enum ClassFileFormatVersion {
     /**
      * The original version.
      *
-     * The format described in <cite>The Java Virtual Specification,
+     * The format described in <cite>The Java Virtual Machine Specification,
      * First Edition</cite>.
      */
     RELEASE_0(45),
