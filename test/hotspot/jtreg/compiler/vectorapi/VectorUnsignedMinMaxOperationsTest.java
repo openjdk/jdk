@@ -117,7 +117,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umax_byte")
+    @Check(test = "umax_byte", when = CheckAt.COMPILED)
     public void umax_byte_verify() {
         for (int i = 0; i < COUNT; i++) {
             byte actual = byte_out[i];
@@ -140,7 +140,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umax_short")
+    @Check(test = "umax_short", when = CheckAt.COMPILED)
     public void umax_short_verify() {
         for (int i = 0; i < COUNT; i++) {
             short actual = short_out[i];
@@ -163,7 +163,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umax_int")
+    @Check(test = "umax_int", when = CheckAt.COMPILED)
     public void umax_int_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
@@ -186,7 +186,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umax_long")
+    @Check(test = "umax_long", when = CheckAt.COMPILED)
     public void umax_long_verify() {
         for (int i = 0; i < COUNT; i++) {
             long actual = long_out[i];
@@ -209,7 +209,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umin_byte")
+    @Check(test = "umin_byte", when = CheckAt.COMPILED)
     public void umin_byte_verify() {
         for (int i = 0; i < COUNT; i++) {
             byte actual = byte_out[i];
@@ -232,7 +232,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umin_short")
+    @Check(test = "umin_short", when = CheckAt.COMPILED)
     public void umin_short_verify() {
         for (int i = 0; i < COUNT; i++) {
             short actual = short_out[i];
@@ -255,7 +255,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umin_int")
+    @Check(test = "umin_int", when = CheckAt.COMPILED)
     public void umin_int_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
@@ -301,7 +301,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umin_ir_transform1")
+    @Check(test = "umin_ir_transform1", when = CheckAt.COMPILED)
     public void umin_ir_transform1_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
@@ -324,7 +324,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umax_ir_transform1")
+    @Check(test = "umax_ir_transform1", when = CheckAt.COMPILED)
     public void umax_ir_transform1_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
@@ -350,7 +350,7 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umin_max_ir_transform1")
+    @Check(test = "umin_max_ir_transform1", when = CheckAt.COMPILED)
     public void umin_max_ir_transform1_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
@@ -377,8 +377,89 @@ public class VectorUnsignedMinMaxOperationsTest {
         }
     }
 
-    @Check(test = "umin_max_ir_transform2")
+    @Check(test = "umin_max_ir_transform2", when = CheckAt.COMPILED)
     public void umin_max_ir_transform2_verify() {
+        for (int i = 0; i < COUNT; i++) {
+            int actual = int_out[i];
+            int expected = VectorMath.maxUnsigned(VectorMath.minUnsigned(int_in1[i], int_in2[i]),
+                                                  VectorMath.maxUnsigned(int_in1[i], int_in2[i]));
+            if (actual != expected) {
+                throw new AssertionError("Result Mismatch : actual (" +  actual + ") !=  expected (" + expected  + ")");
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.UMAX_VI, " 0 ", IRNode.UMIN_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @Warmup(value = 10000)
+    public void umin_max_ir_transform3() {
+        for (int i = 0; i < COUNT; i += ispec.length()) {
+            IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
+            IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
+            // UMaxV (UMinV vec1, vec2) (UMinV vec1, vec2) => UMinV vec1 vec2
+            vec1.lanewise(VectorOperators.UMIN, vec2)
+                .lanewise(VectorOperators.UMAX,
+                          vec1.lanewise(VectorOperators.UMIN, vec2))
+                .intoArray(int_out, i);
+        }
+    }
+
+    @Check(test = "umin_max_ir_transform3", when = CheckAt.COMPILED)
+    public void umin_max_ir_transform3_verify() {
+        for (int i = 0; i < COUNT; i++) {
+            int actual = int_out[i];
+            int expected = VectorMath.maxUnsigned(VectorMath.minUnsigned(int_in1[i], int_in2[i]),
+                                                  VectorMath.minUnsigned(int_in1[i], int_in2[i]));
+            if (actual != expected) {
+                throw new AssertionError("Result Mismatch : actual (" +  actual + ") !=  expected (" + expected  + ")");
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @Warmup(value = 10000)
+    public void umin_max_ir_transform4() {
+        for (int i = 0; i < COUNT; i += ispec.length()) {
+            IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
+            IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
+            // UMinV (UMaxV vec1, vec2) (UMaxV vec1, vec2) => UMaxV vec1 vec2
+            vec1.lanewise(VectorOperators.UMAX, vec2)
+                .lanewise(VectorOperators.UMIN,
+                          vec1.lanewise(VectorOperators.UMAX, vec2))
+                .intoArray(int_out, i);
+        }
+    }
+
+    @Check(test = "umin_max_ir_transform4", when = CheckAt.COMPILED)
+    public void umin_max_ir_transform4_verify() {
+        for (int i = 0; i < COUNT; i++) {
+            int actual = int_out[i];
+            int expected = VectorMath.minUnsigned(VectorMath.maxUnsigned(int_in1[i], int_in2[i]),
+                                                  VectorMath.maxUnsigned(int_in1[i], int_in2[i]));
+            if (actual != expected) {
+                throw new AssertionError("Result Mismatch : actual (" +  actual + ") !=  expected (" + expected  + ")");
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.UMIN_VI, " 0 ", IRNode.UMAX_VI, " >0 "}, applyIf = {"UseAVX", " >0 "})
+    @Warmup(value = 10000)
+    public void umin_max_ir_transform5() {
+        for (int i = 0; i < COUNT; i += ispec.length()) {
+            IntVector vec1 = IntVector.fromArray(ispec, int_in1, i);
+            IntVector vec2 = IntVector.fromArray(ispec, int_in2, i);
+            // UMinV (UMinV vec1, vec2) (UMaxV vec1, vec2) => UMinV vec1 vec2
+            vec1.lanewise(VectorOperators.UMIN, vec2)
+                .lanewise(VectorOperators.UMAX,
+                          vec1.lanewise(VectorOperators.UMAX, vec2))
+                .intoArray(int_out, i);
+        }
+    }
+
+    @Check(test = "umin_max_ir_transform5", when = CheckAt.COMPILED)
+    public void umin_max_ir_transform5_verify() {
         for (int i = 0; i < COUNT; i++) {
             int actual = int_out[i];
             int expected = VectorMath.maxUnsigned(VectorMath.minUnsigned(int_in1[i], int_in2[i]),

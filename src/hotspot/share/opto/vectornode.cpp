@@ -2132,18 +2132,44 @@ bool MulVLNode::has_uint_inputs() const {
          has_vector_elements_fit_uint(in(2));
 }
 
-Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  bool match1 = in(1)->Opcode() == Op_UMinV || in(1)->Opcode() == Op_UMaxV;
-  bool match2 = in(2)->Opcode() == Op_UMinV || in(2)->Opcode() == Op_UMaxV;
+static Node* unsigned_min_max_xform(Node* n) {
+  int vopc = n->Opcode();
+  assert(vopc == Op_UMinV || vopc == Op_UMaxV, "Unexpected opcode");
+
+  Node* umin = nullptr;
+  Node* umax = nullptr;
+  int lopc = n->in(1)->Opcode();
+  int ropc = n->in(2)->Opcode();
+
+  if (lopc == Op_UMinV && ropc == Op_UMaxV) {
+    umin = n->in(1);
+    umax = n->in(2);
+  }
+  else if (lopc == Op_UMaxV && ropc == Op_UMinV) {
+    umin = n->in(2);
+    umax = n->in(1);
+  }
+
   // UMin (UMin(a, b), UMax(a, b))  => UMin(a, b)
-  // UMin (UMin(a, b), UMax(b, a))  => UMin(a, b)
-  if (match1 && match2) {
-    if ((in(1)->in(1) == in(2)->in(1) && in(1)->in(2) == in(2)->in(2)) ||
-         (in(1)->in(2) == in(2)->in(1) && in(1)->in(1) == in(2)->in(2))) {
-      return new UMinVNode(in(1)->in(1), in(1)->in(2), vect_type());
+  // UMin (UMax(a, b), UMin(b, a))  => UMin(a, b)
+  // UMax (UMin(a, b), UMax(a, b))  => UMax(a, b)
+  // UMax (UMax(a, b), UMin(b, a))  => UMax(a, b)
+  if (umin && umax) {
+    if ((umin->in(1) == umax->in(1) && umin->in(2) == umax->in(2)) ||
+         (umin->in(2) == umax->in(1) && umin->in(1) == umax->in(2))) {
+      if (vopc == Op_UMinV) {
+        return new UMinVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
+      } else {
+        return new UMaxVNode(umax->in(1), umax->in(2), n->bottom_type()->is_vect());
+      }
     }
   }
+
   return nullptr;
+}
+
+Node* UMinVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return unsigned_min_max_xform(this);
 }
 
 Node* UMinVNode::Identity(PhaseGVN* phase) {
@@ -2155,17 +2181,7 @@ Node* UMinVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* UMaxVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  bool match1 = in(1)->Opcode() == Op_UMinV || in(1)->Opcode() == Op_UMaxV;
-  bool match2 = in(2)->Opcode() == Op_UMinV || in(2)->Opcode() == Op_UMaxV;
-  // UMax (UMin(a, b), UMax(a, b))  => UMax(a, b)
-  // UMax (UMin(a, b), UMax(b, a))  => UMax(a, b)
-  if (match1 && match2) {
-    if ((in(1)->in(1) == in(2)->in(1) && in(1)->in(2) == in(2)->in(2)) ||
-         (in(1)->in(2) == in(2)->in(1) && in(1)->in(1) == in(2)->in(2))) {
-      return new UMaxVNode(in(1)->in(1), in(1)->in(2), vect_type());
-    }
-  }
-  return nullptr;
+  return unsigned_min_max_xform(this);
 }
 
 Node* UMaxVNode::Identity(PhaseGVN* phase) {
