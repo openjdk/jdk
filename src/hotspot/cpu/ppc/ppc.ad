@@ -12087,13 +12087,13 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 // for. The second, far more common, is used when we do know: this is
 // used for instanceof, checkcast, and any case where C2 can determine
 // it by constant propagation.
-instruct partialSubtypeCheckVarSuper(rarg3RegP sub, rarg2RegP super, rarg6RegP result,
-                                     rarg1RegP tempR1, rarg5RegP tempR2, rarg4RegP tempR3, rscratch1RegP tempR4,
+instruct partialSubtypeCheckVarSuper(iRegPsrc sub, iRegPsrc super, iRegPdst result,
+                                     iRegPdst tempR1, iRegPdst tempR2, iRegPdst tempR3, iRegPdst tempR4,
                                      flagsRegCR0 cr0, regCTR ctr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
   predicate(UseSecondarySupersTable);
-  effect(KILL cr0, KILL ctr, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP tempR4);
+  effect(KILL cr0, KILL ctr, TEMP_DEF result, TEMP tempR1, TEMP tempR2, TEMP tempR3, TEMP tempR4);
 
   ins_cost(DEFAULT_COST * 10);  // slightly larger than the next version
   format %{ "partialSubtypeCheck $result, $sub, $super" %}

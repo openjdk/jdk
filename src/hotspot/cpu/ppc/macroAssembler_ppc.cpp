@@ -2107,12 +2107,12 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 #undef FINAL_JUMP
 }
 
-void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
-                                                   Register super_klass,
-                                                   Register temp1_reg,
-                                                   Register temp2_reg,
-                                                   Label* L_success,
-                                                   Register result_reg) {
+void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
+                                                          Register super_klass,
+                                                          Register temp1_reg,
+                                                          Register temp2_reg,
+                                                          Label* L_success,
+                                                          Register result_reg) {
   const Register array_ptr = temp1_reg; // current value from cache array
   const Register temp      = temp2_reg;
 
@@ -2154,6 +2154,96 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   else if (result_reg == noreg) { blr(); } // return with CR0.eq if neither label nor result reg provided
 
   bind(fallthru);
+  if (L_success != nullptr && result_reg == noreg) {
+    crandc(CCR0, Assembler::equal, CCR0, Assembler::equal); // failed: CR0.ne
+  }
+}
+
+Register MacroAssembler::allocate_if_noreg(Register r,
+                                  RegSetIterator<Register> &available_regs,
+                                  RegSet &regs_to_push) {
+  if (!r->is_valid()) {
+    r = *available_regs++;
+    regs_to_push += r;
+  }
+  return r;
+}
+
+void MacroAssembler::push_set(RegSet set)
+{
+  int spill_offset = 0;
+  for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
+    spill_offset += wordSize;
+    std(*it, -spill_offset, R1_SP);
+  }
+}
+
+void MacroAssembler::pop_set(RegSet set)
+{
+  int spill_offset = 0;
+  for (RegSetIterator<Register> it = set.begin(); *it != noreg; ++it) {
+    spill_offset += wordSize;
+    ld(*it, -spill_offset, R1_SP);
+  }
+}
+
+void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
+                                                         Register super_klass,
+                                                         Register temp1_reg,
+                                                         Register temp2_reg,
+                                                         Label* L_success,
+                                                         Register result_reg) {
+  RegSet temps = RegSet::of(temp1_reg, temp2_reg);
+
+  assert_different_registers(sub_klass, super_klass, temp1_reg, temp2_reg, result_reg, R0);
+
+  Register temp3_reg = noreg, temp4_reg = noreg;
+  bool result_reg_provided = (result_reg != noreg); // otherwise, result will be in CR0
+
+  BLOCK_COMMENT("check_klass_subtype_slow_path_table");
+
+  RegSetIterator<Register> available_regs
+    = (RegSet::range(R2, R12) - temps - sub_klass - super_klass).begin();
+
+  RegSet pushed_regs;
+
+  temp1_reg = allocate_if_noreg(temp1_reg, available_regs, pushed_regs);
+  temp2_reg = allocate_if_noreg(temp2_reg, available_regs, pushed_regs);
+  temp3_reg = allocate_if_noreg(temp3_reg, available_regs, pushed_regs);
+  temp4_reg = allocate_if_noreg(temp4_reg, available_regs, pushed_regs);
+  result_reg = allocate_if_noreg(result_reg, available_regs, pushed_regs);
+
+  push_set(pushed_regs);
+
+  lookup_secondary_supers_table_var(sub_klass, super_klass,
+                                    temp1_reg, temp2_reg, temp3_reg, temp4_reg,
+                                    result_reg);
+
+  if (L_success != nullptr || !result_reg_provided) {
+    // result_reg may get overwritten by pop_set
+    cmpdi(CCR0, result_reg, 0);
+  }
+
+  // Unspill the temp. registers:
+  pop_set(pushed_regs);
+
+  if (L_success != nullptr) {
+    beq(CCR0, *L_success);
+  }
+}
+
+void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+                                                   Register super_klass,
+                                                   Register temp1_reg,
+                                                   Register temp2_reg,
+                                                   Label* L_success,
+                                                   Register result_reg) {
+  if (UseSecondarySupersTable) {
+    check_klass_subtype_slow_path_table(sub_klass, super_klass, temp1_reg, temp2_reg, L_success, result_reg);
+  } else {
+    if (temp2_reg == noreg) temp2_reg = R0;
+    check_klass_subtype_slow_path_linear(sub_klass, super_klass, temp1_reg, temp2_reg, L_success, result_reg);
+  }
 }
 
 // Try fast path, then go to slow one if not successful
@@ -2228,7 +2318,7 @@ void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
     r_array_index  = temp3,
     r_bitmap       = temp4;
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
+  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS; // Required for stub call below.
 
   ld(r_bitmap, in_bytes(Klass::secondary_supers_bitmap_offset()), r_sub_klass);
 
@@ -2396,8 +2486,6 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
     r_array_length = temp1,
     r_sub_klass    = noreg;
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
-
   Label L_done;
 
   // Load the array length.
@@ -2488,8 +2576,6 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     r_array_index  = temp3,
     r_bitmap       = noreg; // unused
 
-  LOOKUP_SECONDARY_SUPERS_TABLE_REGISTERS;
-
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
   Label passed, failure;
@@ -2516,13 +2602,17 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   cmpd(CCR0, result, linear_result);
   beq(CCR0, passed);
 
-  assert_different_registers(R3_ARG1, r_sub_klass, linear_result, result);
-  mr_if_needed(R3_ARG1, r_super_klass);
-  assert_different_registers(R4_ARG2, linear_result, result);
-  mr_if_needed(R4_ARG2, r_sub_klass);
-  assert_different_registers(R5_ARG3, result);
-  neg(R5_ARG3, linear_result);
-  neg(R6_ARG4, result);
+  // report fatal error and terminate VM
+
+  // Argument shuffle. Using stack to avoid clashes.
+  std(r_super_klass, -8, R1_SP);
+  std(r_sub_klass, -16, R1_SP);
+  std(linear_result, -24, R1_SP);
+  mr_if_needed(R6_ARG4, result);
+  ld(R3_ARG1, -8, R1_SP);
+  ld(R4_ARG2, -16, R1_SP);
+  ld(R5_ARG3, -24, R1_SP);
+
   const char* msg = "mismatch";
   load_const_optimized(R7_ARG5, (intptr_t)msg, R0);
   call_VM_leaf(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure));

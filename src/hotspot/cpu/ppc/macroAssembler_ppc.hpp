@@ -612,6 +612,20 @@ class MacroAssembler: public Assembler {
   // The temp_reg can be noreg, if no temps are available.
   // It can also be sub_klass or super_klass, meaning it's OK to kill that one.
   // Updates the sub's secondary super cache as necessary.
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp1_reg,
+                                            Register temp2_reg,
+                                            Label* L_success = nullptr,
+                                            Register result_reg = noreg);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp1_reg,
+                                           Register temp2_reg,
+                                           Label* L_success = nullptr,
+                                           Register result_reg = noreg);
+
   void check_klass_subtype_slow_path(Register sub_klass,
                                      Register super_klass,
                                      Register temp1_reg,
@@ -626,6 +640,17 @@ class MacroAssembler: public Assembler {
                                          Register temp3,
                                          Register temp4,
                                          Register result);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Frameless register spills (negative offset from SP)
+  void push_set(RegSet set);
+  void pop_set(RegSet set);
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
