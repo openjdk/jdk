@@ -24,6 +24,7 @@
  */
 package jdk.internal.constant;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.constant.ClassDesc;
@@ -31,8 +32,6 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import jdk.internal.access.JavaLangAccess;
@@ -50,6 +49,7 @@ public final class ConstantUtils {
     public static final ClassDesc[] EMPTY_CLASSDESC = new ClassDesc[0];
     public static final int MAX_ARRAY_TYPE_DESC_DIMENSIONS = 255;
     public static final ClassDesc CD_module_info = binaryNameToDesc("module-info");
+    public static @Stable ClassDesc CD_Object_array; // set from ConstantDescs, avoid circular initialization
 
     private static final Set<String> pointyNames = Set.of(ConstantDescs.INIT_NAME, ConstantDescs.CLASS_INIT_NAME);
 
@@ -70,7 +70,18 @@ public final class ConstantUtils {
      * @param binaryName a binary name
      */
     public static ClassDesc binaryNameToDesc(String binaryName) {
-        return ReferenceClassDescImpl.ofValidated(concat("L", binaryToInternal(binaryName), ";"));
+        return internalNameToDesc(binaryToInternal(binaryName));
+    }
+
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated internal name
+     * for a class or interface type. Validated version of {@link
+     * ClassDesc#ofInternalName(String)}.
+     *
+     * @param internalName a binary name
+     */
+    public static ClassDesc internalNameToDesc(String internalName) {
+        return ClassOrInterfaceDescImpl.ofValidated(concat("L", internalName, ";"));
     }
 
     /**
@@ -91,7 +102,21 @@ public final class ConstantUtils {
      * class or interface or an array type with a non-hidden component type.
      */
     public static ClassDesc referenceClassDesc(Class<?> type) {
-        return ReferenceClassDescImpl.ofValidated(type.descriptorString());
+        return referenceClassDesc(type.descriptorString());
+    }
+
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated descriptor string
+     * for a class or interface type or an array type.
+     *
+     * @param descriptor a field descriptor string for a class or interface type
+     * @jvms 4.3.2 Field Descriptors
+     */
+    public static ClassDesc referenceClassDesc(String descriptor) {
+        if (descriptor.charAt(0) == '[') {
+            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
+        }
+        return ClassOrInterfaceDescImpl.ofValidated(descriptor);
     }
 
     /**
@@ -129,8 +154,72 @@ public final class ConstantUtils {
     }
 
     /**
-     * Validates the correctness of a binary class name. In particular checks for the presence of
-     * invalid characters in the name.
+     * Creates a {@linkplain ClassDesc} from a descriptor string for a class or
+     * interface type or an array type.
+     *
+     * @param descriptor a field descriptor string for a class or interface type
+     * @throws IllegalArgumentException if the descriptor string is not a valid
+     * field descriptor string, or does not describe a class or interface type
+     * @jvms 4.3.2 Field Descriptors
+     */
+    public static ClassDesc parseReferenceTypeDesc(String descriptor) {
+        int dLen = descriptor.length();
+        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen);
+        if (len <= 1 || len != dLen)
+            throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
+        if (descriptor.charAt(0) == '[') {
+            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
+        }
+        return ClassOrInterfaceDescImpl.ofValidated(descriptor);
+    }
+
+    /**
+     * Validates the correctness of a class or interface name or a package name.
+     * In particular checks for the presence of invalid characters,
+     * consecutive, leading, or trailing separator char, for both non-internal
+     * and internal forms, and the empty string for class or interface names.
+     *
+     * @param name the name
+     * @param slashSeparator {@code true} means {@code /} is the separator char
+     *     (internal form); otherwise {@code .} is the separator char
+     * @param allowEmpty {@code true} means the empty string is a valid name
+     * @return the name passed if valid
+     * @throws IllegalArgumentException if the name is invalid
+     * @throws NullPointerException if name is {@code null}
+     */
+    private static String validateClassOrPackageName(String name, boolean slashSeparator, boolean allowEmpty) {
+        int len = name.length();  // implicit null check
+        // empty name special rule
+        if (allowEmpty && len == 0)
+            return name;
+        // state variable for detection of illegal states of
+        // empty name, consecutive, leading, or trailing separators
+        int afterSeparator = 0;
+        for (int i = 0; i < len; i++) {
+            char ch = name.charAt(i);
+            // reject ';' or '['
+            if (ch == ';' || ch == '[')
+                throw invalidClassName(name);
+            // encounter a separator
+            boolean foundSlash = ch == '/';
+            if (foundSlash || ch == '.') {
+                // reject the other separator char
+                // reject consecutive or leading separators
+                if (foundSlash != slashSeparator || i == afterSeparator)
+                    throw invalidClassName(name);
+                afterSeparator = i + 1;
+            }
+        }
+        // reject empty name or trailing separators
+        if (len == afterSeparator)
+            throw invalidClassName(name);
+        return name;
+    }
+
+    /**
+     * Validates the correctness of a binary class name.
+     * In particular checks for the presence of invalid characters, empty
+     * name, consecutive, leading, or trailing {@code .}.
      *
      * @param name the class name
      * @return the class name passed if valid
@@ -138,17 +227,13 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateBinaryClassName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/')
-                throw new IllegalArgumentException("Invalid class name: " + name);
-        }
-        return name;
+        return validateClassOrPackageName(name, false, false);
     }
 
     /**
      * Validates the correctness of an internal class name.
-     * In particular checks for the presence of invalid characters in the name.
+     * In particular checks for the presence of invalid characters, empty
+     * name, consecutive, leading, or trailing {@code /}.
      *
      * @param name the class name
      * @return the class name passed if valid
@@ -156,18 +241,13 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateInternalClassName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.')
-                throw new IllegalArgumentException("Invalid class name: " + name);
-        }
-        return name;
+        return validateClassOrPackageName(name, true, false);
     }
 
     /**
      * Validates the correctness of a binary package name.
-     * In particular checks for the presence of invalid characters in the name.
-     * Empty package name is allowed.
+     * In particular checks for the presence of invalid characters, consecutive,
+     * leading, or trailing {@code .}.  Allows empty strings for the unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -175,18 +255,13 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateBinaryPackageName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
+        return validateClassOrPackageName(name, false, true);
     }
 
     /**
      * Validates the correctness of an internal package name.
-     * In particular checks for the presence of invalid characters in the name.
-     * Empty package name is allowed.
+     * In particular checks for the presence of invalid characters, consecutive,
+     * leading, or trailing {@code /}.  Allows empty strings for the unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -194,12 +269,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateInternalPackageName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
+        return validateClassOrPackageName(name, true, true);
     }
 
     /**
@@ -256,10 +326,24 @@ public final class ConstantUtils {
             throw new IllegalArgumentException("not a class or interface type: " + classDesc);
     }
 
-    public static int arrayDepth(String descriptorString) {
+    public static void validateArrayRank(int rank) {
+        // array rank must be representable with u1 and nonzero
+        if (rank == 0 || (rank & ~0xFF) != 0) {
+            throw new IllegalArgumentException(invalidArrayRankMessage(rank));
+        }
+    }
+
+    /**
+     * Retrieves the array depth on a trusted descriptor.
+     * Uses a simple loop with the assumption that most descriptors have
+     * 0 or very low array depths.
+     */
+    public static int arrayDepth(String descriptorString, int off) {
         int depth = 0;
-        while (descriptorString.charAt(depth) == '[')
+        while (descriptorString.charAt(off) == '[') {
             depth++;
+            off++;
+        }
         return depth;
     }
 
@@ -296,7 +380,22 @@ public final class ConstantUtils {
         }
 
         // Pre-verified in MethodTypeDescImpl#ofDescriptor; avoid redundant verification
-        return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));
+        int arrayDepth = arrayDepth(descriptor, start);
+        if (arrayDepth == 0) {
+            return ClassOrInterfaceDescImpl.ofValidated(descriptor.substring(start, start + len));
+        } else if (arrayDepth + 1 == len) {
+            return ArrayClassDescImpl.ofValidated(forPrimitiveType(descriptor, start + arrayDepth), arrayDepth);
+        } else {
+            return ArrayClassDescImpl.ofValidated(ClassOrInterfaceDescImpl.ofValidated(descriptor.substring(start + arrayDepth, start + len)), arrayDepth);
+        }
+    }
+
+    static String invalidArrayRankMessage(int rank) {
+        return "Array rank must be within [1, 255]: " + rank;
+    }
+
+    static IllegalArgumentException invalidClassName(String className) {
+        return new IllegalArgumentException("Invalid class name: ".concat(className));
     }
 
     static IllegalArgumentException badMethodDescriptor(String descriptor) {
@@ -347,26 +446,22 @@ public final class ConstantUtils {
                 case JVM_SIGNATURE_DOUBLE:
                     return index - start;
                 case JVM_SIGNATURE_CLASS:
-                    // state variable for detection of illegal states, such as:
-                    // empty unqualified name, '//', leading '/', or trailing '/'
-                    boolean legal = false;
+                    // state variable for detection of illegal states of
+                    // empty name, '//', leading '/', or trailing '/'
+                    int afterSeparator = index + 1; // start of internal name
                     while (index < end) {
-                        switch (descriptor.charAt(index++)) {
-                            case ';' -> {
-                                // illegal state on parser exit indicates empty unqualified name or trailing '/'
-                                return legal ? index - start : 0;
-                            }
-                            case '.', '[' -> {
-                                // do not permit '.' or '['
+                        ch = descriptor.charAt(index++);
+                        if (ch == ';')
+                            // reject empty name or trailing '/'
+                            return index == afterSeparator ? 0 : index - start;
+                        // reject '.' or '['
+                        if (ch == '.' || ch == '[')
+                            return 0;
+                        if (ch == '/') {
+                            // reject '//' or leading '/'
+                            if (index == afterSeparator)
                                 return 0;
-                            }
-                            case '/' -> {
-                                // illegal state when received '/' indicates '//' or leading '/'
-                                if (!legal) return 0;
-                                legal = false;
-                            }
-                            default ->
-                                legal = true;
+                            afterSeparator = index + 1;
                         }
                     }
                     break;

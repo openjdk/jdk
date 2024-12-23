@@ -40,6 +40,8 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.frame.SettingsFrame;
+
+import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_CONNECTION_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_WINDOW_SIZE;
 import static jdk.internal.net.http.frame.SettingsFrame.ENABLE_PUSH;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
@@ -291,9 +293,13 @@ class Http2ClientImpl {
         // and the connection window size.
         int defaultValue = Math.max(streamWindow, K*K*32);
 
+        // The min value is the max between the streamWindow and
+        // the initial connection window size
+        int minValue = Math.max(INITIAL_CONNECTION_WINDOW_SIZE, streamWindow);
+
         return getParameter(
                 "jdk.httpclient.connectionWindowSize",
-                streamWindow, Integer.MAX_VALUE, defaultValue);
+                minValue, Integer.MAX_VALUE, defaultValue);
     }
 
     /**

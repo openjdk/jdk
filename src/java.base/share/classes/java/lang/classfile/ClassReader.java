@@ -29,11 +29,10 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.ClassReaderImpl;
-
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.internal.javac.PreviewFeature;
+
+import jdk.internal.classfile.impl.ClassReaderImpl;
 
 /**
  * Supports reading from a classfile.  Methods are provided to read data of
@@ -42,9 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  * Encapsulates additional reading context such as mappers for custom attributes
  * and processing options.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassReader extends ConstantPool
         permits ClassReaderImpl {
 
@@ -122,7 +120,6 @@ public sealed interface ClassReader extends ConstantPool
      * @param cls the entry type
      * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero, or the entry is not of the given type
-     * @since 23
      */
     <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls);
 

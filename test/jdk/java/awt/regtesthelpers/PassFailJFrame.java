@@ -184,21 +184,23 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *
  * <p id="jtregTagsForTest">
  * Add the following jtreg tags before the test class declaration
- * {@snippet :
+ * <pre><code>
  * /*
- *  * @test
+ *  * &#64;test
  *  * @summary Sample manual test
  *  * @library /java/awt/regtesthelpers
  *  * @build PassFailJFrame
  *  * @run main/manual SampleManualTest
- * }
- * and the closing comment tag <code>*&#47;</code>.
+ *  *&#47;
+ * </code></pre>
  * <p>
  * The {@code @library} tag points to the location of the
  * {@code PassFailJFrame} class in the source code;
  * the {@code @build} tag makes jtreg compile the {@code PassFailJFrame} class,
  * and finally the {@code @run} tag specifies it is a manual
  * test and the class to run.
+ * <p>
+ * Don't forget to update the name of the class to run in the {@code @run} tag.
  *
  * <h2 id="usingBuilder">Using {@code Builder}</h2>
  * Use methods of the {@link Builder Builder} class to set or change

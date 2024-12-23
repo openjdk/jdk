@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,6 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         if (config.avoidUnalignedAccesses) {
             flags.add(RISCV64.Flag.AvoidUnalignedAccesses);
         }
-        if (config.nearCpool) {
-            flags.add(RISCV64.Flag.NearCpool);
-        }
         if (config.traceTraps) {
             flags.add(RISCV64.Flag.TraceTraps);
         }
@@ -78,9 +75,6 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         }
         if (config.useZbb) {
             flags.add(RISCV64.Flag.UseZbb);
-        }
-        if (config.useRVVForBigIntegerShiftIntrinsics) {
-            flags.add(RISCV64.Flag.UseRVVForBigIntegerShiftIntrinsics);
         }
 
         return flags;

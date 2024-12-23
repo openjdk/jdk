@@ -24,13 +24,17 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import java.lang.classfile.*;
-import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class FieldImpl
         extends AbstractElement

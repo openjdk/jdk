@@ -2248,7 +2248,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="110">𞤑𞤫𞤲𞥆𞤭𞤲 (𞥑𞥒𞥐𞥑-𞥑𞥒𞥐𞥔)</era>
 						<era type="111">𞤘𞤫𞤲𞤳𞤭𞤴𞤵𞥅 (𞥑𞥒𞥐𞥔-𞥑𞥒𞥐𞥖)</era>
 						<era type="112">𞤑𞤫𞤲𞥇𞤫𞤴 (𞥑𞥒𞥐𞥖-𞥑𞥒𞥐𞥗)</era>
-						<era type="113">𞤔𞤮𞥅𞤺𞤫𞤲 (𞥙𞥗𞥖-𞥙𞥗𞥘)</era>
+						<era type="113">𞤔𞤮𞥅𞤺𞤫𞤲 (𞥑𞥒𞥐𞥗-𞥑𞥒𞥑𞥑)</era>
 						<era type="114">𞤑𞤫𞤲𞤪𞤭𞤴𞤢𞤳𞤵 (𞥑𞥒𞥑𞥑-𞥑𞥒𞥑𞥓)</era>
 						<era type="115">𞤑𞤫𞤥𞤨𞤮𞥅 (𞥑𞥒𞥑𞥓-𞥑𞥒𞥑𞥙)</era>
 						<era type="116">𞤔𞤮𞥅𞤳𞤭𞤴𞤵𞥅 (𞥑𞥒𞥑𞥙-𞥑𞥒𞥒𞥒)</era>
@@ -3267,6 +3267,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<regionFormat>{0} 𞤑𞤭𞤶𞤮𞥅𞤪𞤫</regionFormat>
 			<regionFormat type="daylight">{0} 𞤐𞤶𞤢𞤥𞤲𞤣𞤭 𞤕𞤫𞥅𞤯𞤵</regionFormat>
 			<regionFormat type="standard">{0} 𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>𞤑𞤖𞤖</generic>
+					<standard>𞤑𞤖𞤖</standard>
+					<daylight>𞤑𞤕𞤖</daylight>
+				</short>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤭𞤤𞥆𞤢𞤲𞤳𞤮𞥅𞤪𞤫 𞤊𞤮𞤲𞤣𞤢𞥄𞤲𞤣𞤫</standard>
@@ -4007,9 +4014,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>𞤓𞤤𞤢𞤲𞤦𞤢𞤼𞤢𞤪</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>𞤕𞤮𞤴𞤦𞤢𞤤𞤧𞤢𞤲</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>𞤃𞤢𞤳𞤢𞤱𞤮</exemplarCity>
 			</zone>
@@ -4406,13 +4410,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Nome">
 				<exemplarCity>𞤐𞤮𞤱𞤥𞤵</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>𞤑𞤖𞤖</generic>
-					<standard>𞤑𞤖𞤖</standard>
-					<daylight>𞤑𞤕𞤖</daylight>
-				</short>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>𞤀𞤲𞤧𞤮𞤪𞤢𞥄𞤶𞤵</exemplarCity>
 			</zone>
@@ -4795,13 +4792,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤢𞤴𞤲𞤢</generic>
 					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤵𞤲𞥋𞤣𞤫 𞤕𞤢𞤴𞤲𞤢</standard>
 					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤕𞤢𞤴𞤲𞤢</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤅𞤮𞤴𞤦𞤢𞤤𞤧𞤢𞤲</generic>
-					<standard>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤖𞤢𞤱𞤪𞤭𞤼𞤵𞤲𞥋𞤣𞤫 𞤅𞤮𞤴𞤦𞤢𞤤𞤧𞤢𞤲</standard>
-					<daylight>𞤑𞤭𞤶𞤮𞥅𞤪𞤫 𞤕𞤫𞥅𞤯𞤵 𞤅𞤮𞤴𞤦𞤢𞤤𞤧𞤢𞤲</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

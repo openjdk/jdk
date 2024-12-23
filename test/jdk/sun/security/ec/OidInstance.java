@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import java.security.KeyPairGenerator;
 public class OidInstance {
     public static void main(String[] args) throws Exception {
         String oid = KnownOIDs.EC.value();
-        KeyFactory.getInstance(oid, "SunEC");
-        KeyPairGenerator.getInstance(oid, "SunEC");
-        AlgorithmParameters.getInstance(oid, "SunEC");
+        KeyFactory.getInstance(oid, System.getProperty("test.provider.name", "SunEC"));
+        KeyPairGenerator.getInstance(oid, System.getProperty("test.provider.name", "SunEC"));
+        AlgorithmParameters.getInstance(oid, System.getProperty("test.provider.name", "SunEC"));
     }
 }

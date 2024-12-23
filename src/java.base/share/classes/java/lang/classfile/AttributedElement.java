@@ -24,14 +24,13 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.RecordComponentInfo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.AbstractUnboundModel;
-import jdk.internal.javac.PreviewFeature;
 
 import static java.util.Objects.requireNonNull;
 
@@ -40,9 +39,8 @@ import static java.util.Objects.requireNonNull;
  * as a class, field, method, code attribute, or record component.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AttributedElement extends ClassFileElement
         permits ClassModel, CodeModel, FieldModel, MethodModel,
                 RecordComponentInfo, AbstractUnboundModel {

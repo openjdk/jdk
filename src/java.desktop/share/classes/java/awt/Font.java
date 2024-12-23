@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
@@ -44,8 +43,6 @@ import java.io.OutputStream;
 import java.io.Serial;
 import java.lang.ref.SoftReference;
 import java.nio.file.Files;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.text.CharacterIterator;
 import java.util.EventListener;
@@ -896,23 +893,8 @@ public class Font implements java.io.Serializable
      * If a thread can create temp files anyway, no point in counting
      * font bytes.
      */
-    @SuppressWarnings("removal")
     private static boolean hasTempPermission() {
-
-        if (System.getSecurityManager() == null) {
-            return true;
-        }
-        File f = null;
-        boolean hasPerm = false;
-        try {
-            f = Files.createTempFile("+~JT", ".tmp").toFile();
-            f.delete();
-            f = null;
-            hasPerm = true;
-        } catch (Throwable t) {
-            /* inc. any kind of SecurityException */
-        }
-        return hasPerm;
+        return true;
     }
 
 
@@ -1095,7 +1077,6 @@ public class Font implements java.io.Serializable
         }
     }
 
-    @SuppressWarnings("removal")
     private static Font[] createFont0(int fontFormat, InputStream fontStream,
                                       boolean allFonts,
                                       CreatedFontTracker tracker)
@@ -1107,27 +1088,14 @@ public class Font implements java.io.Serializable
         }
         boolean copiedFontData = false;
         try {
-            final File tFile = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<File>() {
-                    public File run() throws IOException {
-                        return Files.createTempFile("+~JF", ".tmp").toFile();
-                    }
-                }
-            );
+            final File tFile = Files.createTempFile("+~JF", ".tmp").toFile();
             if (tracker != null) {
                 tracker.add(tFile);
             }
 
             int totalSize = 0;
             try {
-                final OutputStream outStream =
-                    AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<OutputStream>() {
-                            public OutputStream run() throws IOException {
-                                return new FileOutputStream(tFile);
-                            }
-                        }
-                    );
+                final OutputStream outStream = new FileOutputStream(tFile);
                 if (tracker != null) {
                     tracker.set(tFile, outStream);
                 }
@@ -1181,14 +1149,7 @@ public class Font implements java.io.Serializable
                     if (tracker != null) {
                         tracker.subBytes(totalSize);
                     }
-                    AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Void>() {
-                            public Void run() {
-                                tFile.delete();
-                                return null;
-                            }
-                        }
-                    );
+                    tFile.delete();
                 }
             }
         } catch (Throwable t) {
@@ -1235,8 +1196,6 @@ public class Font implements java.io.Serializable
      * @throws IOException if the {@code fontFile} cannot be read.
      * @throws FontFormatException if {@code fontFile} does
      *     not contain the required font tables for the specified format.
-     * @throws SecurityException if the executing code does not have
-     * permission to read from the file.
      * @see GraphicsEnvironment#registerFont(Font)
      * @since 1.5
      */
@@ -1255,13 +1214,6 @@ public class Font implements java.io.Serializable
         if (fontFormat != Font.TRUETYPE_FONT &&
             fontFormat != Font.TYPE1_FONT) {
             throw new IllegalArgumentException ("font format not recognized");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            FilePermission filePermission =
-                new FilePermission(fontFile.getPath(), "read");
-            sm.checkPermission(filePermission);
         }
         if (!fontFile.canRead()) {
             throw new IOException("Can't read " + fontFile);
@@ -1612,8 +1564,7 @@ public class Font implements java.io.Serializable
      * obtained.  The {@code String} value of this property is then
      * interpreted as a {@code Font} object according to the
      * specification of {@code Font.decode(String)}
-     * If the specified property is not found, or the executing code does
-     * not have permission to read the property, null is returned instead.
+     * If the specified property is not found, null is returned instead.
      *
      * @param nm the property name
      * @return a {@code Font} object that the property name
@@ -1781,8 +1732,7 @@ public class Font implements java.io.Serializable
      * <p>
      * The property value should be one of the forms accepted by
      * {@code Font.decode(String)}
-     * If the specified property is not found, or the executing code does not
-     * have permission to read the property, the {@code font}
+     * If the specified property is not found, the {@code font}
      * argument is returned instead.
      * @param nm the case-insensitive property name
      * @param font a default {@code Font} to return if property
@@ -1792,11 +1742,7 @@ public class Font implements java.io.Serializable
      * @see #decode(String)
      */
     public static Font getFont(String nm, Font font) {
-        String str = null;
-        try {
-            str =System.getProperty(nm);
-        } catch(SecurityException e) {
-        }
+        String str = System.getProperty(nm);
         if (str == null) {
             return font;
         }

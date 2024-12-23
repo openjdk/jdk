@@ -60,7 +60,7 @@ import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.TestBase;
 import nsk.share.test.Tests;
-import vm.share.InMemoryJavaCompiler;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 /**
  * Test checks that static fields will be initialized in new loaded class. Test performs in loop the following routine:
@@ -210,9 +210,7 @@ public class StaticReferences extends GCTestBase {
     }
 
     private byte[] generateAndCompile(int[] fieldQuantities) {
-        Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
-        sources.put("A", generateSource(fieldQuantities));
-        return InMemoryJavaCompiler.compile(sources).values().iterator().next();
+        return InMemoryJavaCompiler.compile("A", generateSource(fieldQuantities));
     }
 
     private StringBuffer generateSource(int[] fieldQuantities) {

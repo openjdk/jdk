@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,15 +35,17 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
-import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.WINDOWS;
 
 public final class LauncherAsServiceVerifier {
 
-    public final static class Builder {
+    public static final class Builder {
 
         public Builder setExpectedValue(String v) {
             expectedValue = v;
@@ -187,7 +189,7 @@ public final class LauncherAsServiceVerifier {
         }
 
         AdditionalLauncher.forEachAdditionalLauncher(cmd,
-                Functional.ThrowingBiConsumer.toBiConsumer(
+                ThrowingBiConsumer.toBiConsumer(
                         (launcherName, propFilePath) -> {
                             if (Files.readAllLines(propFilePath).stream().anyMatch(
                                     line -> {
@@ -215,7 +217,7 @@ public final class LauncherAsServiceVerifier {
         if (cmd.isPackageUnpacked(msg) || cmd.isFakeRuntime(msg)) {
             return false;
         }
-        var cfgFile = CfgFile.readFromFile(cmd.appLauncherCfgPath(launcherName));
+        var cfgFile = CfgFile.load(cmd.appLauncherCfgPath(launcherName));
         if (!expectedValue.equals(cfgFile.getValueUnchecked("ArgOptions",
                 "arguments"))) {
             TKit.trace(String.format(
@@ -335,14 +337,14 @@ public final class LauncherAsServiceVerifier {
         TKit.assertEquals(installedLauncherPath.toString(), args.get(0),
                 "Check path to launcher in 'ProgramArguments' property in the property file");
 
-        var expectedLabel = IOUtils.replaceSuffix(servicePlistFile.getFileName(), "").toString();
+        var expectedLabel = PathUtils.replaceSuffix(servicePlistFile.getFileName(), "").toString();
         TKit.assertEquals(expectedLabel, servicePlist.queryValue("Label"),
                 "Check value of 'Label' property in the property file");
     }
 
     private static void delayInstallVerify() {
         // Sleep a bit to let system launch the service
-        Functional.ThrowingRunnable.toRunnable(() -> Thread.sleep(5 * 1000)).run();
+        ThrowingRunnable.toRunnable(() -> Thread.sleep(5 * 1000)).run();
     }
 
     private Path appOutputFilePathInitialize() {
@@ -368,6 +370,6 @@ public final class LauncherAsServiceVerifier {
     private final Path appOutputFileName;
     private final Consumer<AdditionalLauncher> additionalLauncherCallback;
 
-    final static Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
+    static final Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
             Set.of(MAC_PKG)).flatMap(x -> x.stream()).collect(Collectors.toSet());
 }

@@ -30,7 +30,10 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.attribute.StackMapFrameInfo;
-import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.attribute.StackMapFrameInfo.ObjectVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.SimpleVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.UninitializedVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -40,7 +43,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo.*;
 import static java.util.Objects.requireNonNull;
 

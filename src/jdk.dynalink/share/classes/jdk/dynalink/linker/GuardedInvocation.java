@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,10 +431,10 @@ public class GuardedInvocation {
      * Composes the invocation, guard, switch points, and the exception into a
      * composite method handle that knows how to fall back when the guard fails
      * or the invocation is invalidated.
-     * @param switchpointFallback the fallback method handle in case a switch
-     * point is invalidated.
      * @param guardFallback the fallback method handle in case guard returns
      * false.
+     * @param switchpointFallback the fallback method handle in case a switch
+     * point is invalidated.
      * @param catchFallback the fallback method in case the exception handler
      * triggers.
      * @return a composite method handle.

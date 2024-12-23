@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,26 +480,12 @@ class AbstractAssembler : public ResourceObj  {
     }
     return ptr;
   }
-  address array_constant(BasicType bt, GrowableArray<jvalue>* c, int alignment) {
+  address array_constant(const GrowableArray<jbyte>* c, int alignment) {
     CodeSection* c1 = _code_section;
-    int len = c->length();
-    int size = type2aelembytes(bt) * len;
-    address ptr = start_a_const(size, alignment);
+    address ptr = start_a_const(c->length(), alignment);
     if (ptr != nullptr) {
-      for (int i = 0; i < len; i++) {
-        jvalue e = c->at(i);
-        switch(bt) {
-          case T_BOOLEAN: emit_int8(e.z);   break;
-          case T_BYTE:    emit_int8(e.b);   break;
-          case T_CHAR:    emit_int16(e.c);  break;
-          case T_SHORT:   emit_int16(e.s);  break;
-          case T_INT:     emit_int32(e.i);  break;
-          case T_LONG:    emit_int64(e.j);  break;
-          case T_FLOAT:   emit_float(e.f);  break;
-          case T_DOUBLE:  emit_double(e.d); break;
-          default:
-            ShouldNotReachHere();
-        }
+      for (int i = 0; i < c->length(); i++) {
+        emit_int8(c->at(i));
       }
       end_a_const(c1);
     }

@@ -27,13 +27,16 @@ package com.sun.tools.javac.code;
 
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
+import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.Log;
@@ -133,11 +136,25 @@ public class Preview {
             return true;
         }
 
+        return participatesInPreview(syms, s.packge().modle);
+    }
+
+    /**
+     * Returns true if module {@code m} is deemed to participate in the preview, and
+     * therefore no warnings or errors will be produced.
+     *
+     * @param syms the symbol table
+     * @param m the module to check
+     * @return true if {@code m} is participating in the preview of {@code previewSymbol}
+     */
+    public boolean participatesInPreview(Symtab syms, ModuleSymbol m) {
         // If java.base's jdk.internal.javac package is exported to s's module then
         // s participates in the preview API
         return syms.java_base.exports.stream()
                 .filter(ed -> ed.packge.fullname == names.jdk_internal_javac)
-                .anyMatch(ed -> ed.modules.contains(s.packge().modle));
+                .anyMatch(ed -> ed.modules.contains(m)) ||
+               //the specification lists the java.se module as participating in preview:
+               m.name == names.java_se;
     }
 
     /**
@@ -162,8 +179,8 @@ public class Preview {
         if (!lint.isSuppressed(LintCategory.PREVIEW)) {
             sourcesWithPreviewFeatures.add(log.currentSourceFile());
             previewHandler.report(pos, feature.isPlural() ?
-                    Warnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-                    Warnings.PreviewFeatureUse(feature.nameFragment()));
+                    LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
+                    LintWarnings.PreviewFeatureUse(feature.nameFragment()));
         }
     }
 
@@ -175,8 +192,8 @@ public class Preview {
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
         if (lint.isEnabled(LintCategory.PREVIEW)) {
-            log.mandatoryWarning(LintCategory.PREVIEW, null,
-                    Warnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
+            log.mandatoryWarning(null,
+                    LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
     }
 
@@ -184,7 +201,7 @@ public class Preview {
         sourcesWithPreviewFeatures.add(log.currentSourceFile());
     }
 
-    public void reportPreviewWarning(DiagnosticPosition pos, Warning warnKey) {
+    public void reportPreviewWarning(DiagnosticPosition pos, LintWarning warnKey) {
         previewHandler.report(pos, warnKey);
     }
 
@@ -211,6 +228,7 @@ public class Preview {
             case FLEXIBLE_CONSTRUCTORS -> true;
             case PRIMITIVE_PATTERNS -> true;
             case MODULE_IMPORTS -> true;
+            case JAVA_BASE_TRANSITIVE -> true;
             //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
             //When real preview features will be added, this method can be implemented to return 'true'
             //for those selected features, and 'false' for all the others.
