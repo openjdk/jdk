@@ -53,16 +53,31 @@ public class TestFloat16ScalarOperations {
     private static final Float16 MAX_HALF_ULP = Float16.valueOf(16.0f);
     private static final Float16 SIGNALING_NAN = shortBitsToFloat16((short)31807);
 
+    private static Random r = jdk.test.lib.Utils.getRandomInstance();
+
+    private static final Float16 RANDOM1 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
+    private static final Float16 RANDOM2 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
+    private static final Float16 RANDOM3 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
+    private static final Float16 RANDOM4 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
+    private static final Float16 RANDOM5 = Float16.valueOf(r.nextFloat() * MAX_VALUE.floatValue());
+
+    private static Float16 RANDOM1_VAR = RANDOM1;
+    private static Float16 RANDOM2_VAR = RANDOM2;
+    private static Float16 RANDOM3_VAR = RANDOM3;
+    private static Float16 RANDOM4_VAR = RANDOM4;
+    private static Float16 RANDOM5_VAR = RANDOM5;
+
     public static void main(String args[]) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+        Scenario s0 = new Scenario(0, "--add-modules=jdk.incubator.vector", "-Xint");
+        Scenario s1 = new Scenario(1, "--add-modules=jdk.incubator.vector");
+        new TestFramework().addScenarios(s1).start();
     }
 
     public TestFloat16ScalarOperations() {
         src = new short[count];
         dst = new short[count];
-        Random r = jdk.test.lib.Utils.getRandomInstance();
         for (int i = 0; i < count; i++) {
-            src[i] = Float.floatToFloat16(r.nextFloat());
+            src[i] = Float.floatToFloat16(r.nextFloat() * MAX_VALUE.floatValue());
         }
     }
 
@@ -213,24 +228,17 @@ public class TestFloat16ScalarOperations {
     @IR(counts = {IRNode.MUL_HF, " >0 ", IRNode.REINTERPRET_S2HF, " >0 ", IRNode.REINTERPRET_HF2S, " >0 "},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     public void testDivByPOT() {
-        Float16 actual = valueOf(0.0f);
+        Float16 res = valueOf(0.0f);
         for (int i = 0; i < 50; i++) {
             Float16 divisor = valueOf(8.0f);
             Float16 dividend = shortBitsToFloat16(src[i]);
-            actual = add(actual, divide(dividend, divisor));
+            res = add(res, divide(dividend, divisor));
             divisor = valueOf(16.0f);
-            actual = add(actual, divide(dividend, divisor));
+            res = add(res, divide(dividend, divisor));
             divisor = valueOf(32.0f);
-            actual = add(actual, divide(dividend, divisor));
+            res = add(res, divide(dividend, divisor));
         }
-        float expected = 0.0f;
-        for (int i = 0; i < 50; i++) {
-            float dividend = Float.float16ToFloat(src[i]);
-            expected += dividend / 8.0f;
-            expected += dividend / 16.0f;
-            expected += dividend / 32.0f;
-        }
-        assertResult(Math.round(actual.floatValue()), Math.round(expected), "testDivByPOT");
+        dst[0] = float16ToRawShortBits(res);
     }
 
     @Test
@@ -496,5 +504,82 @@ public class TestFloat16ScalarOperations {
         assertResult(fma(Float16.POSITIVE_INFINITY, valueOf(2.0f), valueOf(3.0f)).floatValue(), Float.POSITIVE_INFINITY, "testFMAConstantFolding");
         assertResult(fma(Float16.NEGATIVE_INFINITY, valueOf(2.0f), valueOf(3.0f)).floatValue(), Float.NEGATIVE_INFINITY, "testFMAConstantFolding");
         assertResult(fma(valueOf(1.0f), valueOf(2.0f), valueOf(3.0f)).floatValue(), 1.0f * 2.0f + 3.0f, "testFMAConstantFolding");
+    }
+
+    @Test
+    @IR(failOn = {IRNode.ADD_HF, IRNode.SUB_HF, IRNode.MUL_HF, IRNode.DIV_HF, IRNode.SQRT_HF, IRNode.FMA_HF},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testRounding1() {
+        dst[0] = float16ToRawShortBits(add(RANDOM1, RANDOM2));
+        dst[1] = float16ToRawShortBits(subtract(RANDOM2, RANDOM3));
+        dst[2] = float16ToRawShortBits(multiply(RANDOM4, RANDOM5));
+        dst[3] = float16ToRawShortBits(sqrt(RANDOM2));
+        dst[4] = float16ToRawShortBits(fma(RANDOM3, RANDOM4, RANDOM5));
+        dst[5] = float16ToRawShortBits(divide(RANDOM5, RANDOM4));
+    }
+
+    @Check(test = "testRounding1", when = CheckAt.COMPILED)
+    public void checkRounding1() {
+        assertResult(dst[0], Float.floatToFloat16(RANDOM1.floatValue() + RANDOM2.floatValue()),
+                     "testRounding1 case1a");
+        assertResult(dst[0], float16ToRawShortBits(add(RANDOM1, RANDOM2)), "testRounding1 case1b");
+
+        assertResult(dst[1], Float.floatToFloat16(RANDOM2.floatValue() - RANDOM3.floatValue()),
+                     "testRounding1 case2a");
+        assertResult(dst[1], float16ToRawShortBits(subtract(RANDOM2, RANDOM3)), "testRounding1 case2b");
+
+        assertResult(dst[2], Float.floatToFloat16(RANDOM4.floatValue() * RANDOM5.floatValue()),
+                     "testRounding1 case3a");
+        assertResult(dst[2], float16ToRawShortBits(multiply(RANDOM4, RANDOM5)), "testRounding1 cast3b");
+
+        assertResult(dst[3], Float.floatToFloat16((float)Math.sqrt(RANDOM2.floatValue())), "testRounding1 case4a");
+        assertResult(dst[3], float16ToRawShortBits(sqrt(RANDOM2)), "testRounding1 case4a");
+
+        assertResult(dst[4], Float.floatToFloat16(Math.fma(RANDOM3.floatValue(), RANDOM4.floatValue(),
+                     RANDOM5.floatValue())), "testRounding1 case5a");
+        assertResult(dst[4], float16ToRawShortBits(fma(RANDOM3, RANDOM4, RANDOM5)), "testRounding1 case5b");
+
+        assertResult(dst[5], Float.floatToFloat16(RANDOM5.floatValue() / RANDOM4.floatValue()),
+                     "testRounding1 case6a");
+        assertResult(dst[5], float16ToRawShortBits(divide(RANDOM5, RANDOM4)), "testRounding1 case6b");
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ",
+                  IRNode.DIV_HF, " >0 ", IRNode.SQRT_HF, " >0 ", IRNode.FMA_HF, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testRounding2() {
+        dst[0] = float16ToRawShortBits(add(RANDOM1_VAR, RANDOM2_VAR));
+        dst[1] = float16ToRawShortBits(subtract(RANDOM2_VAR, RANDOM3_VAR));
+        dst[2] = float16ToRawShortBits(multiply(RANDOM4_VAR, RANDOM5_VAR));
+        dst[3] = float16ToRawShortBits(sqrt(RANDOM2_VAR));
+        dst[4] = float16ToRawShortBits(fma(RANDOM3_VAR, RANDOM4_VAR, RANDOM5_VAR));
+        dst[5] = float16ToRawShortBits(divide(RANDOM5_VAR, RANDOM4_VAR));
+    }
+
+    @Check(test = "testRounding2", when = CheckAt.COMPILED)
+    public void checkRounding2() {
+        assertResult(dst[0], Float.floatToFloat16(RANDOM1_VAR.floatValue() + RANDOM2_VAR.floatValue()),
+                     "testRounding2 case1a");
+        assertResult(dst[0], float16ToRawShortBits(add(RANDOM1_VAR, RANDOM2_VAR)), "testRounding2 case1b");
+
+        assertResult(dst[1], Float.floatToFloat16(RANDOM2_VAR.floatValue() - RANDOM3_VAR.floatValue()),
+                     "testRounding2 case2a");
+        assertResult(dst[1], float16ToRawShortBits(subtract(RANDOM2_VAR, RANDOM3_VAR)), "testRounding2 case2b");
+
+        assertResult(dst[2], Float.floatToFloat16(RANDOM4_VAR.floatValue() * RANDOM5_VAR.floatValue()),
+                     "testRounding2 case3a");
+        assertResult(dst[2], float16ToRawShortBits(multiply(RANDOM4_VAR, RANDOM5_VAR)), "testRounding2 cast3b");
+
+        assertResult(dst[3], Float.floatToFloat16((float)Math.sqrt(RANDOM2_VAR.floatValue())), "testRounding2 case4a");
+        assertResult(dst[3], float16ToRawShortBits(sqrt(RANDOM2_VAR)), "testRounding2 case4a");
+
+        assertResult(dst[4], Float.floatToFloat16(Math.fma(RANDOM3_VAR.floatValue(), RANDOM4_VAR.floatValue(),
+                     RANDOM5_VAR.floatValue())), "testRounding2 case5a");
+        assertResult(dst[4], float16ToRawShortBits(fma(RANDOM3_VAR, RANDOM4_VAR, RANDOM5_VAR)), "testRounding2 case5b");
+
+        assertResult(dst[5], Float.floatToFloat16(RANDOM5_VAR.floatValue() / RANDOM4_VAR.floatValue()),
+                     "testRounding2 case6a");
+        assertResult(dst[5], float16ToRawShortBits(divide(RANDOM5_VAR, RANDOM4_VAR)), "testRounding2 case6b");
     }
 }

@@ -1526,7 +1526,7 @@ bool TypeH::eq(const Type *t) const {
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypeH::hash(void) const {
-  return *(uint*)(&_f);
+  return *(jshort*)(&_f);
 }
 
 //------------------------------is_finite--------------------------------------

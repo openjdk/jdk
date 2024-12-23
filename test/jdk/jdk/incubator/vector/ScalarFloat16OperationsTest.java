@@ -219,7 +219,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = isInfinite(farr[i]);
             }
         }
-        assertArraysEquals(res, farr, (fp16) ->  Float.isInfinite(fp16.floatValue()));
+        assertArraysEquals(res, farr, (fp16) -> Float.isInfinite(fp16.floatValue()));
     }
 
     @Test(dataProvider = "unaryOpProvider")
@@ -231,7 +231,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = isFinite(farr[i]);
             }
         }
-        assertArraysEquals(res, farr, (fp16) ->  Float.isFinite(fp16.floatValue()));
+        assertArraysEquals(res, farr, (fp16) -> Float.isFinite(fp16.floatValue()));
     }
 
     @Test(dataProvider = "unaryOpProvider")
@@ -243,7 +243,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = isNaN(farr[i]);
             }
         }
-        assertArraysEquals(res, farr, (fp16) ->  Float.isNaN(fp16.floatValue()));
+        assertArraysEquals(res, farr, (fp16) -> Float.isNaN(fp16.floatValue()));
     }
 
     @Test(dataProvider = "binaryOpProvider")
@@ -257,7 +257,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = add(farr1[i], farr2[i]);
             }
         }
-        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) ->  valueOf(fp16_val1.floatValue() + fp16_val2.floatValue()));
+        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) -> valueOf(fp16_val1.floatValue() + fp16_val2.floatValue()));
     }
 
     @Test(dataProvider = "binaryOpProvider")
@@ -271,7 +271,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = subtract(farr1[i], farr2[i]);
             }
         }
-        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) ->  valueOf(fp16_val1.floatValue() - fp16_val2.floatValue()));
+        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) -> valueOf(fp16_val1.floatValue() - fp16_val2.floatValue()));
     }
 
     @Test(dataProvider = "binaryOpProvider")
@@ -285,7 +285,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = multiply(farr1[i], farr2[i]);
             }
         }
-        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) ->  valueOf(fp16_val1.floatValue() * fp16_val2.floatValue()));
+        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) -> valueOf(fp16_val1.floatValue() * fp16_val2.floatValue()));
     }
 
     @Test(dataProvider = "binaryOpProvider")
@@ -299,7 +299,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = divide(farr1[i], farr2[i]);
             }
         }
-        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) ->  valueOf(fp16_val1.floatValue() / fp16_val2.floatValue()));
+        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) -> valueOf(fp16_val1.floatValue() / fp16_val2.floatValue()));
     }
 
     @Test(dataProvider = "binaryOpProvider")
@@ -313,7 +313,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = max(farr1[i], farr2[i]);
             }
         }
-        assertArraysEquals(res, farr1, farr2,  (fp16_val1, fp16_val2) ->  valueOf(Float.max(fp16_val1.floatValue(), fp16_val2.floatValue())));
+        assertArraysEquals(res, farr1, farr2,  (fp16_val1, fp16_val2) -> valueOf(Float.max(fp16_val1.floatValue(), fp16_val2.floatValue())));
     }
 
     @Test(dataProvider = "binaryOpProvider")
@@ -327,7 +327,7 @@ public class ScalarFloat16OperationsTest {
                 res[i] = min(farr1[i], farr2[i]);
             }
         }
-        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) ->  valueOf(Float.min(fp16_val1.floatValue(), fp16_val2.floatValue())));
+        assertArraysEquals(res, farr1, farr2, (fp16_val1, fp16_val2) -> valueOf(Float.min(fp16_val1.floatValue(), fp16_val2.floatValue())));
     }
 
     @Test(dataProvider = "ternaryOpProvider")
@@ -342,6 +342,6 @@ public class ScalarFloat16OperationsTest {
                 res[i] = fma(farr1[i], farr2[i], farr3[i]);
             }
         }
-        assertArraysEquals(res, farr1, farr2, farr3, (fp16_val1, fp16_val2, fp16_val3) ->  valueOf(Math.fma(fp16_val1.floatValue(), fp16_val2.floatValue(), fp16_val3.floatValue())));
+        assertArraysEquals(res, farr1, farr2, farr3, (fp16_val1, fp16_val2, fp16_val3) -> valueOf(Math.fma(fp16_val1.floatValue(), fp16_val2.floatValue(), fp16_val3.floatValue())));
     }
 }
