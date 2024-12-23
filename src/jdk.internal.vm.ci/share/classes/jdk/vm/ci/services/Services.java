@@ -22,13 +22,10 @@
  */
 package jdk.vm.ci.services;
 
-import java.util.ArrayList;
-import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -43,13 +40,6 @@ import jdk.internal.util.OperatingSystem;
  * Provides utilities needed by JVMCI clients.
  */
 public final class Services {
-
-    /**
-     * Guards code that should be run when building an JVMCI shared library but should be excluded
-     * from (being compiled into) the library. Such code must be directly guarded by an {@code if}
-     * statement on this field - the guard cannot be behind a method call.
-     */
-    public static final boolean IS_BUILDING_NATIVE_IMAGE = Boolean.parseBoolean(VM.getSavedProperty("jdk.vm.ci.services.aot"));
 
     /**
      * Guards code that should only be run in a JVMCI shared library. Such code must be directly
@@ -131,34 +121,6 @@ public final class Services {
         }
     }
 
-    private static final Map<Class<?>, List<?>> servicesCache = IS_BUILDING_NATIVE_IMAGE ? new HashMap<>() : null;
-
-    @SuppressWarnings("unchecked")
-    private static <S> Iterable<S> load0(Class<S> service) {
-        if (IS_IN_NATIVE_IMAGE || IS_BUILDING_NATIVE_IMAGE) {
-            List<?> list = servicesCache.get(service);
-            if (list != null) {
-                return (Iterable<S>) list;
-            }
-            if (IS_IN_NATIVE_IMAGE) {
-                throw new InternalError(String.format("No %s providers found when building native image", service.getName()));
-            }
-        }
-
-        Iterable<S> providers = ServiceLoader.load(service, ClassLoader.getSystemClassLoader());
-        if (IS_BUILDING_NATIVE_IMAGE) {
-            synchronized (servicesCache) {
-                ArrayList<S> providersList = new ArrayList<>();
-                for (S provider : providers) {
-                    providersList.add(provider);
-                }
-                servicesCache.put(service, providersList);
-                providers = providersList;
-            }
-        }
-        return providers;
-    }
-
     /**
      * Opens all JVMCI packages to {@code otherModule}.
      */
@@ -173,57 +135,6 @@ public final class Services {
                 }
             }
         }
-    }
-
-    /**
-     * Gets an {@link Iterable} of the JVMCI providers available for a given service.
-     *
-     * @throws SecurityException if a security manager is present and it denies <tt>
-     *             {@link RuntimePermission}("jvmci")</tt>
-     */
-    public static <S> Iterable<S> load(Class<S> service) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        return load0(service);
-    }
-
-    /**
-     * Gets the JVMCI provider for a given service for which at most one provider must be available.
-     *
-     * @param service the service whose provider is being requested
-     * @param required specifies if an {@link InternalError} should be thrown if no provider of
-     *            {@code service} is available
-     * @throws SecurityException if a security manager is present and it denies <tt>
-     *             {@link RuntimePermission}("jvmci")</tt>
-     */
-    public static <S> S loadSingle(Class<S> service, boolean required) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new JVMCIPermission());
-        }
-        Iterable<S> providers = load0(service);
-
-        S singleProvider = null;
-        for (S provider : providers) {
-            if (singleProvider != null) {
-                throw new InternalError(String.format("Multiple %s providers found: %s, %s", service.getName(), singleProvider.getClass().getName(), provider.getClass().getName()));
-            }
-            singleProvider = provider;
-        }
-        if (singleProvider == null && required) {
-            String javaHome = Services.getSavedProperty("java.home");
-            String vmName = Services.getSavedProperty("java.vm.name");
-            Formatter errorMessage = new Formatter();
-            errorMessage.format("The VM does not expose required service %s.%n", service.getName());
-            errorMessage.format("Currently used Java home directory is %s.%n", javaHome);
-            errorMessage.format("Currently used VM configuration is: %s", vmName);
-            throw new UnsupportedOperationException(errorMessage.toString());
-        }
-        return singleProvider;
     }
 
     /**
