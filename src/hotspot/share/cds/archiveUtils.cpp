@@ -45,6 +45,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinYield.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
@@ -399,27 +400,16 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
   return _base_offset + seg_idx * _max_size_in_bytes;
 }
 
-ArchiveWorkers ArchiveWorkers::_workers;
-
 ArchiveWorkers::ArchiveWorkers() :
-        _start_semaphore(0),
         _end_semaphore(0),
-        _num_workers(0),
+        _num_workers(max_workers()),
         _started_workers(0),
-        _waiting_workers(0),
-        _running_workers(0),
-        _state(NOT_READY),
-        _task(nullptr) {
-}
+        _finish_tokens(0),
+        _state(UNUSED),
+        _task(nullptr) {}
 
-void ArchiveWorkers::initialize() {
-  assert(Atomic::load(&_state) == NOT_READY, "Should be");
-
-  Atomic::store(&_num_workers, max_workers());
-  Atomic::store(&_state, READY);
-
-  // Kick off pool startup by creating a single worker.
-  start_worker_if_needed();
+ArchiveWorkers::~ArchiveWorkers() {
+  assert(Atomic::load(&_state) != WORKING, "Should not be working");
 }
 
 int ArchiveWorkers::max_workers() {
@@ -432,22 +422,6 @@ int ArchiveWorkers::max_workers() {
 
 bool ArchiveWorkers::is_parallel() {
   return _num_workers > 0;
-}
-
-void ArchiveWorkers::shutdown() {
-  while (true) {
-    State state = Atomic::load(&_state);
-    if (state == SHUTDOWN) {
-      // Already shut down.
-      return;
-    }
-    if (Atomic::cmpxchg(&_state, state, SHUTDOWN, memory_order_relaxed) == state) {
-      if (is_parallel()) {
-        // Execute a shutdown task and block until all workers respond.
-        run_task(&_shutdown_task);
-      }
-    }
-  }
 }
 
 void ArchiveWorkers::start_worker_if_needed() {
@@ -463,30 +437,19 @@ void ArchiveWorkers::start_worker_if_needed() {
   }
 }
 
-void ArchiveWorkers::signal_worker_if_needed() {
-  while (true) {
-    int cur = Atomic::load(&_waiting_workers);
-    if (cur == 0) {
-      return;
-    }
-    if (Atomic::cmpxchg(&_waiting_workers, cur, cur - 1, memory_order_relaxed) == cur) {
-      _start_semaphore.signal(1);
-      return;
-    }
-  }
-}
-
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
-  assert((Atomic::load(&_state) == READY) ||
-         ((Atomic::load(&_state) == SHUTDOWN) && (task == &_shutdown_task)),
-         "Should be in correct state");
+  assert(Atomic::load(&_state) == UNUSED, "Should be unused yet");
   assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
+  Atomic::store(&_state, WORKING);
 
   if (is_parallel()) {
     run_task_multi(task);
   } else {
     run_task_single(task);
   }
+
+  assert(Atomic::load(&_state) == WORKING, "Should be working");
+  Atomic::store(&_state, SHUTDOWN);
 }
 
 void ArchiveWorkers::run_task_single(ArchiveWorkerTask* task) {
@@ -501,27 +464,54 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   // Multiple threads can work with multiple chunks.
   task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
 
-  // Set up the run and publish the task.
-  Atomic::store(&_waiting_workers, _num_workers);
-  Atomic::store(&_running_workers, _num_workers);
+  // Set up the run and publish the task. Issue one additional finish token
+  // to cover the semaphore shutdown path, see below.
+  Atomic::store(&_finish_tokens, _num_workers + 1);
   Atomic::release_store(&_task, task);
 
-  // Kick off pool wakeup by signaling a single worker, and proceed
+  // Kick off pool startup by starting a single worker, and proceed
   // immediately to executing the task locally.
-  signal_worker_if_needed();
+  start_worker_if_needed();
 
   // Execute the task ourselves, while workers are catching up.
   // This allows us to hide parts of task handoff latency.
   task->run();
 
-  // Done executing task locally, wait for any remaining workers to complete,
-  // and then do the final housekeeping.
+  // Done executing task locally, wait for any remaining workers to complete.
+  // Once all workers report, we can proceed to termination. To do this safely,
+  // we need to make sure every worker has left. A spin-wait alone would suffice,
+  // but we do not want to burn cycles on it. A semaphore alone would not be safe,
+  // since workers can still be inside it as we proceed from wait here. So we block
+  // on semaphore first, and then spin-wait for all workers to terminate.
   _end_semaphore.wait();
-  Atomic::store(&_task, (ArchiveWorkerTask *) nullptr);
+  SpinYield spin;
+  while (Atomic::load(&_finish_tokens) != 0) {
+    spin.wait();
+  }
+
   OrderAccess::fence();
 
-  assert(Atomic::load(&_waiting_workers) == 0, "All workers were signaled");
-  assert(Atomic::load(&_running_workers) == 0, "No workers are running");
+  assert(Atomic::load(&_finish_tokens) == 0, "All tokens are consumed");
+}
+
+void ArchiveWorkers::run_as_worker() {
+  assert(is_parallel(), "Should be in parallel mode");
+
+  ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
+  task->run();
+
+  // All work done in threads should be visible to caller.
+  OrderAccess::fence();
+
+  // Signal the pool the work is complete, and we are exiting.
+  // Worker cannot do anything else with the pool after this.
+  if (Atomic::sub(&_finish_tokens, 1, memory_order_relaxed) == 1) {
+    // Last worker leaving. Notify the pool it can unblock to spin-wait.
+    // Then consume the last token and leave.
+    _end_semaphore.signal();
+    int last = Atomic::sub(&_finish_tokens, 1, memory_order_relaxed);
+    assert(last == 0, "Should be");
+  }
 }
 
 void ArchiveWorkerTask::run() {
@@ -543,44 +533,29 @@ void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
   }
 }
 
-bool ArchiveWorkers::run_as_worker() {
-  assert(is_parallel(), "Should be in parallel mode");
-  _start_semaphore.wait();
-
-  // Avalanche wakeups: each worker signals two others.
-  signal_worker_if_needed();
-  signal_worker_if_needed();
-
-  ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
-  task->run();
-
-  // All work done in threads should be visible to caller.
-  OrderAccess::fence();
-
-  // Signal the pool the tasks are complete, if this is the last worker.
-  if (Atomic::sub(&_running_workers, 1, memory_order_relaxed) == 0) {
-    _end_semaphore.signal();
-  }
-
-  // Continue if task was not a termination task.
-  return (task != &_shutdown_task);
-}
-
 ArchiveWorkerThread::ArchiveWorkerThread(ArchiveWorkers* pool) : NamedThread(), _pool(pool) {
   set_name("ArchiveWorkerThread");
-  os::create_thread(this, os::os_thread);
-  os::start_thread(this);
+  if (os::create_thread(this, os::os_thread)) {
+    os::start_thread(this);
+  } else {
+    vm_exit_during_initialization("Unable to create archive worker",
+                                  os::native_thread_creation_failed_msg());
+  }
 }
 
 void ArchiveWorkerThread::run() {
-  // Avalanche thread startup: each starting worker starts two others.
+  // Avalanche startup: each worker starts two others.
   _pool->start_worker_if_needed();
   _pool->start_worker_if_needed();
 
   // Set ourselves up.
   os::set_priority(this, NearMaxPriority);
 
-  while (_pool->run_as_worker()) {
-    // Work until terminated.
-  }
+  // Work.
+  _pool->run_as_worker();
+}
+
+void ArchiveWorkerThread::post_run() {
+  this->NamedThread::post_run();
+  delete this;
 }

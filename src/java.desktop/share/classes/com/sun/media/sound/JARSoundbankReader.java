@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import java.util.Objects;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.spi.SoundbankReader;
-
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * JarSoundbankReader is used to read soundbank object from jar files.
@@ -95,7 +93,6 @@ public final class JARSoundbankReader extends SoundbankReader {
                     try {
                         Class<?> c = Class.forName(line.trim(), false, ucl);
                         if (Soundbank.class.isAssignableFrom(c)) {
-                            ReflectUtil.checkPackageAccess(c);
                             Object o = c.newInstance();
                             soundbanks.add((Soundbank) o);
                         }

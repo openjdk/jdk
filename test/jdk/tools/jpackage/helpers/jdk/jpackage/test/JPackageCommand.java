@@ -217,7 +217,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     public String name() {
         String appImage = getArgumentValue("--app-image");
         if (appImage != null) {
-            String name =  AppImageFile.load(Path.of(appImage)).mainLauncherName();
+            String name = AppImageFile.load(Path.of(appImage)).mainLauncherName();
             // can be null if using foreign app-image
             return ((name != null) ? name : getArgumentValue("--name"));
         }
@@ -229,7 +229,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         String installerName = getArgumentValue("--name",
                 () -> getArgumentValue("--main-class", () -> null));
         if (installerName == null) {
-            String appImage = getArgumentValue("--app-image", () -> null);
+            String appImage = getArgumentValue("--app-image");
             if (appImage != null) {
                 installerName = AppImageFile.load(Path.of(appImage)).mainLauncherName();
             }
