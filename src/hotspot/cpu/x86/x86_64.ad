@@ -4364,7 +4364,7 @@ instruct loadNKlass(rRegN dst, memory mem)
 
 instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
 %{
-  predicate(UseCompactObjectHeaders);
+  predicate(!UseAPX && UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
   effect(KILL cr);
   ins_cost(125); // XXX
@@ -4375,6 +4375,21 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   ins_encode %{
     __ movl($dst$$Register, $mem$$Address);
     __ shrl($dst$$Register, markWord::klass_shift_at_offset);
+  %}
+  ins_pipe(ialu_reg_mem); // XXX
+%}
+
+instruct loadNKlassCompactHeaders_ndd(rRegN dst, memory mem)
+%{
+  predicate(UseAPX && UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+
+  ins_cost(125); // XXX
+  format %{
+    "eshrl    $dst, $mem, markWord::klass_shift_at_offset\t# compressed klass ptr, shifted (ndd)\n\t"
+  %}
+  ins_encode %{
+    __ eshrl($dst$$Register, $mem$$Address, markWord::klass_shift_at_offset, true);
   %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -9105,7 +9120,7 @@ instruct shrI_rReg_CL_ndd(rRegI dst, rRegI src, rcx_RegI shift)
 
   format %{ "eshrl    $dst, $src, $shift\t# int (ndd)" %}
   ins_encode %{
-    __ eshrl($dst$$Register, $dst$$Register, true);
+    __ eshrl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg_reg);
 %}

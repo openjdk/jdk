@@ -33,15 +33,6 @@ public class TestLongMem {
         return  Long.bitCount(a[i]);
     }
 
-    public static long testRor(int a, int b) {
-        return  Long.rotateRight(a, 8);
-    }
-
-    public static long testRol(int a, int b) {
-        return  Long.rotateLeft(b, 7); // getting mapped to Ror 25
-    }
-
-
     public static long testShrVar(int a, int b) {
         return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
     }

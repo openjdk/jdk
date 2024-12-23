@@ -52,15 +52,6 @@ public class TestIntMem {
         return  Integer.bitCount(a[i]);
     }
 
-    public static int testRor(int a, int b) {
-        return  Integer.rotateRight(a, 8);
-    }
-
-    public static int testRol(int a, int b) {
-        return  Integer.rotateLeft(b, 7); // getting mapped to Ror 25
-    }
-
-
     public static int testShrVar(int a, int b) {
         return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
     }
