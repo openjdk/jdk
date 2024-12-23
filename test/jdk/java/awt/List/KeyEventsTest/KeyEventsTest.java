@@ -305,7 +305,7 @@ class TestState {
     private final boolean scrollMoved;
     private final int keyID;
     private final boolean template;
-    private boolean action;
+    private volatile boolean action;
 
     public TestState(boolean multiple, boolean selectedMoved, boolean scrollMoved, int keyID, boolean template){
         this.multiple = multiple;
