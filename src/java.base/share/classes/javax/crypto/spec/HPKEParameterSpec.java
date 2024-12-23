@@ -159,22 +159,22 @@ import java.util.Objects;
  *     <th scope="col">{@code aead_id}
  * </thead>
  * <tbody>
- * <tr><td scope="row">EC (secp256r1)
- *     <td scope="row">0x10<br>DHKEM(P-256, HKDF-SHA256)
- *     <td scope="row">0x1<br>HKDF-SHA256
- *     <td scope="row" rowspan="5">0x2<br>AES-256-GCM
- * <tr><td scope="row">EC (secp384r1)
- *     <td scope="row">0x11<br>DHKEM(P-384, HKDF-SHA384)
- *     <td scope="row">0x2<br>HKDF-SHA384
- * <tr><td scope="row">EC (secp521r1)
- *     <td scope="row">0x12<br>DHKEM(P-521, HKDF-SHA512)
- *     <td scope="row">0x3<br>HKDF-SHA512
- * <tr><td scope="row">XDH (X25519)
- *     <td scope="row">0x20<br>DHKEM(X25519, HKDF-SHA256)
- *     <td scope="row">0x1<br>HKDF-SHA256
- * <tr><td scope="row">XDH (X448)
- *     <td scope="row">0x21<br>DHKEM(X448, HKDF-SHA512)
- *     <td scope="row">0x3<br>HKDF-SHA512
+ * <tr><td>EC (secp256r1)
+ *     <td>0x10<br>DHKEM(P-256, HKDF-SHA256)
+ *     <td>0x1<br>HKDF-SHA256
+ *     <td rowspan="5">0x2<br>AES-256-GCM
+ * <tr><td>EC (secp384r1)
+ *     <td>0x11<br>DHKEM(P-384, HKDF-SHA384)
+ *     <td>0x2<br>HKDF-SHA384
+ * <tr><td>EC (secp521r1)
+ *     <td>0x12<br>DHKEM(P-521, HKDF-SHA512)
+ *     <td>0x3<br>HKDF-SHA512
+ * <tr><td>XDH (X25519)
+ *     <td>0x20<br>DHKEM(X25519, HKDF-SHA256)
+ *     <td>0x1<br>HKDF-SHA256
+ * <tr><td>XDH (X448)
+ *     <td>0x21<br>DHKEM(X448, HKDF-SHA512)
+ *     <td>0x3<br>HKDF-SHA512
  * </tbody>
  * </table>
  * No other keys are supported.
