@@ -28,7 +28,7 @@
  * @key headful
  * @run main bug4490179
  */
-
+//test
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
