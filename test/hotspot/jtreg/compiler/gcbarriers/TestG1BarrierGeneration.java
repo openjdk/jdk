@@ -290,6 +290,28 @@ public class TestG1BarrierGeneration {
     }
 
     @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, ANY},
+        phase = CompilePhase.FINAL_CODE)
+    public static Outer testStoreOnNewObjectAfterException(Object o1, boolean c) throws Exception {
+        Outer o = new Outer();
+        if (c) {
+            throw new Exception("");
+        }
+        o.f = o1;
+        return o;
+    }
+
+    @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
         counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
         phase = CompilePhase.FINAL_CODE)
@@ -314,6 +336,7 @@ public class TestG1BarrierGeneration {
                  "testStoreNotNullOnNewObject",
                  "testStoreOnNewObjectInTwoPaths",
                  "testStoreConditionallyOnNewObject",
+                 "testStoreOnNewObjectAfterException",
                  "testStoreOnNewObjectAfterCall"})
     public void runStoreTests() {
         {
@@ -377,6 +400,13 @@ public class TestG1BarrierGeneration {
             boolean c = ThreadLocalRandom.current().nextBoolean();
             Outer o = testStoreConditionallyOnNewObject(o1, c);
             Asserts.assertTrue(o.f == (c ? o1 : null));
+        }
+        {
+            Object o1 = new Object();
+            boolean c = ThreadLocalRandom.current().nextBoolean();
+            try {
+                Outer o = testStoreOnNewObjectAfterException(o1, c);
+            } catch (Exception e) {}
         }
         {
             Object o1 = new Object();
