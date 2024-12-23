@@ -42,20 +42,17 @@ public final class MimeTable implements FileNameMap {
     /** Hash mark introducing a URI fragment */
     private static final int HASH_MARK = '#';
 
-    /** Keyed by content type, returns MimeEntries */
-    private final Hashtable<String, MimeEntry> entries = new Hashtable<>();
-
     /** Keyed by file extension (with the .), returns MimeEntries */
     private final Hashtable<String, MimeEntry> extensionMap = new Hashtable<>();
 
-    MimeTable() {
+    private MimeTable() {
         load();
     }
 
-    private static class DefaultInstanceHolder {
-        static final MimeTable defaultInstance = getDefaultInstance();
+    private static final class DefaultInstanceHolder {
+        private static final MimeTable defaultInstance = getDefaultInstance();
 
-        static MimeTable getDefaultInstance() {
+        private static MimeTable getDefaultInstance() {
             final MimeTable instance = new MimeTable();
             URLConnection.setFileNameMap(instance);
             return instance;
@@ -70,14 +67,6 @@ public final class MimeTable implements FileNameMap {
         return DefaultInstanceHolder.defaultInstance;
     }
 
-    public static FileNameMap loadTable() {
-        return getDefaultTable();
-    }
-
-    public synchronized int getSize() {
-        return entries.size();
-    }
-
     public synchronized String getContentTypeFor(String fileName) {
         MimeEntry entry = findByFileName(fileName);
         if (entry != null) {
@@ -87,9 +76,7 @@ public final class MimeTable implements FileNameMap {
         }
     }
 
-    public synchronized void add(MimeEntry m) {
-        entries.put(m.getType(), m);
-
+    private void add(MimeEntry m) {
         String[] exts = m.getExtensions();
         if (exts == null) {
             return;
@@ -100,42 +87,10 @@ public final class MimeTable implements FileNameMap {
         }
     }
 
-    public synchronized MimeEntry remove(String type) {
-        MimeEntry entry = entries.get(type);
-        return remove(entry);
-    }
-
-    public synchronized MimeEntry remove(MimeEntry entry) {
-        String[] extensionKeys = entry.getExtensions();
-        if (extensionKeys != null) {
-            for (String extensionKey : extensionKeys) {
-                extensionMap.remove(extensionKey);
-            }
-        }
-
-        return entries.remove(entry.getType());
-    }
-
-    public synchronized MimeEntry find(String type) {
-        MimeEntry entry = entries.get(type);
-        if (entry == null) {
-            // try a wildcard lookup
-            Enumeration<MimeEntry> e = entries.elements();
-            while (e.hasMoreElements()) {
-                MimeEntry wild = e.nextElement();
-                if (wild.matches(type)) {
-                    return wild;
-                }
-            }
-        }
-
-        return entry;
-    }
-
     /**
      * Extracts the file extension and uses it to look up the entry.
      */
-    private MimeEntry findViaFileExtension(String fname) {
+    private MimeEntry findByFileExtension(String fname) {
         int i = fname.lastIndexOf('.');
         // REMIND: OS specific delimiters appear here
         i = Math.max(i, fname.lastIndexOf('/'));
@@ -146,7 +101,8 @@ public final class MimeTable implements FileNameMap {
             ext = fname.substring(i).toLowerCase(Locale.ROOT);
         }
 
-        return findByExt(ext);
+        return extensionMap.get(ext);
+
     }
 
     /**
@@ -157,13 +113,13 @@ public final class MimeTable implements FileNameMap {
      *
      * @return the MIME entry associated with the file name or {@code null}
      */
-    public MimeEntry findByFileName(String fname) {
+    private MimeEntry findByFileName(String fname) {
 
         // If an optional fragment introduced by a hash mark is
         // present, then strip it and use the prefix
         int hashIndex = fname.lastIndexOf(HASH_MARK);
         if (hashIndex > 0) {
-            MimeEntry entry = findViaFileExtension(fname.substring(0, hashIndex));
+            MimeEntry entry = findByFileExtension(fname.substring(0, hashIndex));
             if (entry != null) {
                 return entry;
             }
@@ -171,23 +127,11 @@ public final class MimeTable implements FileNameMap {
 
         // If either no optional fragment was present, or the entry was not
         // found with the fragment stripped, then try again with the full name
-        return findViaFileExtension(fname);
+        return findByFileExtension(fname);
 
     }
 
-    /**
-     * Locate a MimeEntry by the file extension that has been associated
-     * with it.
-     */
-    public synchronized MimeEntry findByExt(String fileExtension) {
-        return extensionMap.get(fileExtension);
-    }
-
-    public synchronized Enumeration<MimeEntry> elements() {
-        return entries.elements();
-    }
-
-    public synchronized void load() {
+    private synchronized void load() {
         Properties entries = new Properties();
         File file;
         InputStream in;
@@ -216,7 +160,7 @@ public final class MimeTable implements FileNameMap {
         parse(entries);
     }
 
-    void parse(Properties entries) {
+    private void parse(Properties entries) {
         // first, strip out the platform-specific temp file template
         String tempFileTemplate = (String)entries.get("temp.file.template");
         if (tempFileTemplate != null) {
@@ -259,7 +203,7 @@ public final class MimeTable implements FileNameMap {
     // associated with.
     //
 
-    void parse(String type, String attrs) {
+    private void parse(String type, String attrs) {
         MimeEntry newEntry = new MimeEntry(type);
 
         // REMIND handle embedded ';' and '|' and literal '"'
@@ -272,7 +216,7 @@ public final class MimeTable implements FileNameMap {
         add(newEntry);
     }
 
-    void parse(String pair, MimeEntry entry) {
+    private static void parse(String pair, MimeEntry entry) {
         // REMIND add exception handling...
         String name = null;
         String value = null;
@@ -292,7 +236,7 @@ public final class MimeTable implements FileNameMap {
         fill(entry, name, value);
     }
 
-    void fill(MimeEntry entry, String name, String value) {
+    private static void fill(MimeEntry entry, String name, String value) {
         if ("description".equalsIgnoreCase(name)) {
             entry.setDescription(value);
         }
@@ -312,7 +256,7 @@ public final class MimeTable implements FileNameMap {
         // else illegal name exception
     }
 
-    int getActionCode(String action) {
+    private static int getActionCode(String action) {
         for (int i = 0; i < MimeEntry.actionKeywords.length; i++) {
             if (action.equalsIgnoreCase(MimeEntry.actionKeywords[i])) {
                 return i;
