@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940
+ * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940 8331467
  * @modules jdk.jartool jdk.jlink
  * @library /test/lib
  * @build testfsp/* testapp/*
@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.BeforeAll;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -124,7 +123,6 @@ class SetDefaultProvider {
     /**
      * Test file system provider linked into run-time image.
      */
-    @Disabled
     @Test
     void testFspInRuntimeImage() throws Exception {
         String image = "image";

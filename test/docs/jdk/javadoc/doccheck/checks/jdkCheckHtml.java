@@ -23,22 +23,9 @@
 
 /*
  * @test
- * @library /test/lib ../../tools/tester
- * @build jtreg.SkippedException
- * @summary example of a test on the generated documentation
- * @run main TestDocs
+ * @bug 8337109
+ * @summary Check the html in the generated documentation
+ * @library /test/langtools/tools/lib ../../doccheck /test/lib ../../../../tools/tester
+ * @build DocTester toolbox.TestRunner
+ * @run main/othervm -Ddoccheck.checks=html DocCheck
  */
-
-import java.nio.file.Files;
-
-public class TestDocs {
-    public static void main(String... args) throws Exception {
-        var docs = DocTester.resolveDocs();
-        System.err.println("Path to the docs is: " + docs);
-        System.err.println("Do docs exits?");
-        System.err.println(Files.exists(docs));
-        System.err.println("tidy location");
-        System.err.println(System.getProperty("tidy"));
-        System.err.println("End of test");
-    }
-}

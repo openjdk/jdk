@@ -277,14 +277,6 @@ public class JlinkTask {
                 return EXIT_OK;
             }
 
-            if (options.modulePath.isEmpty()) {
-                // no --module-path specified - try to set $JAVA_HOME/jmods if that exists
-                Path jmods = getDefaultModulePath();
-                if (jmods != null) {
-                    options.modulePath.add(jmods);
-                }
-            }
-
             JlinkConfiguration config = initJlinkConfig();
             outputPath = config.getOutput();
             if (options.suggestProviders) {
@@ -377,8 +369,13 @@ public class JlinkTask {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
+        // Empty module path not allowed with ALL-MODULE-PATH in --add-modules
+        if (options.addMods.contains(ALL_MODULE_PATH) && options.modulePath.isEmpty()) {
+            throw taskHelper.newBadArgs("err.no.module.path");
+        }
         ModuleFinder appModuleFinder = newModuleFinder(options.modulePath);
         ModuleFinder finder = appModuleFinder;
+
         boolean isLinkFromRuntime = false;
         if (!appModuleFinder.find("java.base").isPresent()) {
             // If the application module finder doesn't contain the
@@ -393,8 +390,9 @@ public class JlinkTask {
             // include the java.base module.
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
-                options.modulePath.add(defModPath);
-                finder = newModuleFinder(options.modulePath);
+                List<Path> combinedPaths = new ArrayList<>(options.modulePath);
+                combinedPaths.add(defModPath);
+                finder = newModuleFinder(combinedPaths);
             }
             // We've just added the default module path ('jmods'). If we still
             // don't find java.base, we must resolve JDK modules from the
@@ -419,8 +417,31 @@ public class JlinkTask {
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
-                ModuleFinder mf = newLimitedFinder(finder, options.limitMods,
-                                              Set.of());
+                // Using --limit-modules with ALL-MODULE-PATH is an error
+                if (!options.limitMods.isEmpty()) {
+                    throw taskHelper.newBadArgs("err.limit.modules");
+                }
+                // all observable modules in the app module path are roots
+                Set<String> initialRoots = appModuleFinder.findAll()
+                        .stream()
+                        .map(ModuleReference::descriptor)
+                        .map(ModuleDescriptor::name)
+                        .collect(Collectors.toSet());
+
+                // Error if no module is found on the app module path
+                if (initialRoots.isEmpty()) {
+                    String modPath = options.modulePath.stream()
+                            .map(a -> a.toString())
+                            .collect(Collectors.joining(", "));
+                    throw taskHelper.newBadArgs("err.empty.module.path", modPath);
+                }
+
+                // Use a module finder with limited observability, as determined
+                // by initialRoots, to find the observable modules from the
+                // application module path (--module-path option) only. We must
+                // not include JDK modules from the default module path or the
+                // run-time image.
+                ModuleFinder mf = limitFinder(finder, initialRoots, Set.of());
                 mf.findAll()
                   .stream()
                   .map(ModuleReference::descriptor)
@@ -430,7 +451,7 @@ public class JlinkTask {
                 roots.add(mod);
             }
         }
-        finder = newLimitedFinder(finder, options.limitMods, roots);
+        finder = limitFinder(finder, options.limitMods, roots);
 
         // --keep-packaged-modules doesn't make sense as we are not linking
         // from packaged modules to begin with.
@@ -497,7 +518,7 @@ public class JlinkTask {
      * specified in {@code limitMods} plus other modules specified in the
      * {@code roots} set.
      */
-    public static ModuleFinder newLimitedFinder(ModuleFinder finder,
+    public static ModuleFinder limitFinder(ModuleFinder finder,
                                            Set<String> limitMods,
                                            Set<String> roots) {
         // if limitMods is specified then limit the universe
