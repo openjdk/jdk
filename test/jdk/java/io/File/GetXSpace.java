@@ -412,12 +412,11 @@ public class GetXSpace {
 
     private static native boolean isCDDrive(String root);
 
-    private static void getCDDriveSpace(String root, long[] sizes) throws IOException {
-        String cmd = "df -k -P " + root;
+    private static void getCDDriveSpace(String root, long[] sizes)
+        throws IOException {
+        String[] cmd = new String[] {"df", "-k", "-P", root};
+        Process p = Runtime.getRuntime().exec(cmd);
         StringBuilder sb = new StringBuilder();
-        ProcessBuilder pb = new ProcessBuilder("bash", "-c", cmd);;
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
 
         try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String s;
