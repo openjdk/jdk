@@ -47,6 +47,7 @@ public enum StandardPackageType implements PackageType {
             return pt.suffix().substring(1).equals(type);
         }).findAny().get();
     }
-    final String suffix;
 
+
+    private final String suffix;
 }
