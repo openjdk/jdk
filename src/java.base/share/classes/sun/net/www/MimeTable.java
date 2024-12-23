@@ -37,7 +37,7 @@ import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
-public class MimeTable implements FileNameMap {
+public final class MimeTable implements FileNameMap {
 
     /** Hash mark introducing a URI fragment */
     private static final int HASH_MARK = '#';
