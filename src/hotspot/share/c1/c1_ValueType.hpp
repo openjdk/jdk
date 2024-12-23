@@ -26,8 +26,6 @@
 #define SHARE_C1_C1_VALUETYPE_HPP
 
 #include "c1/c1_Compilation.hpp"
-#include "ci/ciConstant.hpp"
-#include "ci/ciMethodData.hpp"
 
 // type hierarchy
 class ValueType;
