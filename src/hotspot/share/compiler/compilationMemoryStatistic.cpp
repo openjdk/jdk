@@ -389,8 +389,55 @@ public:
   }
 };
 
-// Note: not mtCompiler since we don't want to change what we measure
-class MemStatEntry : public CHeapObj<mtInternal /* (sic) */> {
+struct DetailStats {
+  ArenaCounterTable counters_at_global_peak;
+  FootprintTimeline timeline;
+};
+
+class DetailStatsBackingStore {
+  static constexpr int max = 32;
+  DetailStats _table[max];
+  size_t _sizes[max];
+  DetailStats** _referees[max];
+
+public:
+  DetailStatsBackingStore() {
+    memset(_sizes, 0, sizeof(_sizes));
+    memset(_referees, 0, sizeof(_referees));
+  }
+
+  // Given a size, find a slot representing a compilation with a smaller size; if multiple matches,
+  // chose the largest one. Reuse that slot.
+  bool try_alloc_slot(size_t size, DetailStats** referee) {
+    int candidate_slot = -1;
+    size_t candidate_size = -1;
+    // Find smallest existing referee
+    for (int i = 0; i < max; i++) {
+      const size_t s = _sizes[i];
+      if (s < candidate_size) {
+        candidate_slot = i;
+        candidate_size = s;
+        if (s == 0) {
+          break; // can't get any better
+        }
+      }
+    }
+    if (candidate_size < size) { // found one
+      _sizes[candidate_slot] = size;
+      if (_referees[candidate_slot] != nullptr) {
+        *(_referees[candidate_slot]) = nullptr; // clear out old referee
+      }
+      _referees[candidate_slot] = referee;      // set new referee
+      (*referee) = &(_table[candidate_slot]);   // return slot address
+      return true;
+    }
+    // Found none
+    (*referee) = nullptr;
+    return false;
+  }
+};
+
+class MemStatEntry : public CHeapObj<mtCompiler> {
   const FullMethodName _method;
   CompilerType _comp_type;
   int _comp_id;
@@ -412,12 +459,7 @@ class MemStatEntry : public CHeapObj<mtInternal /* (sic) */> {
   // Number of live nodes at global peak (C2 only)
   unsigned _live_nodes_at_global_peak;
 
-  struct PerPhaseCounters {
-    // Bytes at global peak broken down on per phase and per arena type
-    ArenaCounterTable counters_at_global_peak;
-    FootprintTimeline timeline;
-  };
-  PerPhaseCounters* _per_phase_counters; // we only carry these if needed
+  DetailStats* _detail_stats; // we only carry these if needed
 
   MemStatEntry(const MemStatEntry& e); // deny
 
@@ -427,12 +469,12 @@ public:
     : _method(method), _comp_type(compiler_none), _comp_id(-1),
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
       _result(nullptr), _code_size(0), _peak(0), _live_nodes_at_global_peak(0),
-      _per_phase_counters(nullptr) {
+      _detail_stats(nullptr) {
   }
 
   ~MemStatEntry() {
-    if (_per_phase_counters != nullptr) {
-      FREE_C_HEAP_ARRAY(PerPhaseCounters, _per_phase_counters);
+    if (_detail_stats != nullptr) {
+      FREE_C_HEAP_ARRAY(DetailStats, _detail_stats);
     }
   }
 
@@ -443,7 +485,7 @@ public:
   void set_limit(size_t limit) { _limit = limit; }
   void inc_recompilation() { _num_recomp++; }
 
-  void set_from_state(const ArenaState* state) {
+  void set_from_state(const ArenaState* state, DetailStatsBackingStore& detail_store) {
     _comp_type = state->comp_type();
     _comp_id = state->comp_id();
     _limit = state->limit();
@@ -452,17 +494,13 @@ public:
     state->counters_at_global_peak().summarize(_peak_composition_per_arena_tag);
 #ifdef COMPILER2
     if (_comp_type == CompilerType::compiler_c2 && state->collect_details()) {
-      if (_per_phase_counters == nullptr) {
-        _per_phase_counters = NEW_C_HEAP_OBJ(PerPhaseCounters, mtCompiler);
+      if (detail_store.try_alloc_slot(_peak, &_detail_stats)) {
+        _detail_stats->counters_at_global_peak.copy_from(state->counters_at_global_peak());
+        _detail_stats->timeline.copy_from(state->timeline());
+      } else {
+        // compilation footprint was smaller than any of the old ones, and no unused slot available.
+        assert(_detail_stats == nullptr, "Should be null now");
       }
-      _per_phase_counters->counters_at_global_peak.copy_from(state->counters_at_global_peak());
-      _per_phase_counters->timeline.copy_from(state->timeline());
-    } else {
-      // theoretically impossible, since directive don't change and entry is bound to
-      // (comp_type+method). It only gets reused after recompilation with the same compiler.
-      // Just being defensive here.
-      FREE_C_HEAP_OBJ(_per_phase_counters);
-      _per_phase_counters = nullptr;
     }
 #endif // COMPILER2
   }
@@ -580,11 +618,11 @@ public:
     // If we have detail information, print two additional tables in the next lines:
     // One containing the counter composition at global peak, one containing the phase-local
     // counters
-    if (_per_phase_counters != nullptr && verbose) {
+    if (_detail_stats != nullptr && verbose) {
       st->print_cr("----- Peak composition, accumulated by phase and arena type ------");
-      _per_phase_counters->counters_at_global_peak.print_on(st);
+      _detail_stats->counters_at_global_peak.print_on(st);
       st->print_cr("------Allocation timelime by phase, last %u phases ---------------", FootprintTimeline::max_num_phases);
-      _per_phase_counters->timeline.print_on(st);
+      _detail_stats->timeline.print_on(st);
       st->print_cr("------------------------------------------------------------------");
     }
   }
@@ -623,6 +661,8 @@ class MemStatTable :
     public ResourceHashtable<MemStatTableKey, MemStatEntry*, 7919, AnyObj::C_HEAP,
                              mtInternal, MemStatTableKey::compute_hash>
 {
+  DetailStatsBackingStore _detail_backing_store;
+
 public:
 
   void add(const FullMethodName& fmn, const ArenaState* state, size_t code_size, const char* result) {
@@ -635,6 +675,9 @@ public:
       put(key, e);
     } else {
       // Update existing entry
+      if (UseNewCode) {
+        tty->print_cr("Update after recompilation");
+      }
       e = *pe;
       assert(e != nullptr, "Sanity");
     }
@@ -644,7 +687,7 @@ public:
     e->set_result(result);
     e->set_code_size(code_size);
 
-    e->set_from_state(state);
+    e->set_from_state(state, _detail_backing_store);
   }
 
   // Returns a C-heap-allocated SortMe array containing all entries from the table,
@@ -945,6 +988,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
       for (int i = 0; i < num; i ++) {
         filtered[i]->print_on(st, human_readable, verbose);
       }
+      st->print_cr("Total: %d compilations.", num);
     } else {
       st->print_cr("No entries.");
     }
@@ -964,22 +1008,29 @@ const char* CompilationMemoryStatistic::failure_reason_memlimit() {
 #ifdef ASSERT
 static bool is_compiling_jtreg_test(CompilerThread* th) {
   CompileTask* const task = th->task();
-  const Method* const m = th->task()->method();
-  FullMethodName fmn(m);
-  char tmp[1024];
-  fmn.as_C_string(tmp, sizeof(tmp));
-#define TEST_METHOD_PREFIX "compiler/print/CompileCommandPrintMemStat$TestMain::method"
-  return strncmp(tmp, TEST_METHOD_PREFIX, sizeof(TEST_METHOD_PREFIX) - 1) == 0;
-#undef TEST_METHOD_PREFIX
+  // Todo: why are task, method null when doing tests below?
+  // Todo2: store FullMethodName in arena stat when compilation starts
+  if (task != nullptr) {
+    const Method* const m = th->task()->method();
+    if (m != nullptr) {
+      FullMethodName fmn(m);
+      char tmp[1024];
+      fmn.as_C_string(tmp, sizeof(tmp));
+    #define TEST_METHOD_PREFIX "compiler/print/CompileCommandPrintMemStat$TestMain::method"
+      return strncmp(tmp, TEST_METHOD_PREFIX, sizeof(TEST_METHOD_PREFIX) - 1) == 0;
+    #undef TEST_METHOD_PREFIX
+    }
+  }
+  return false;
 }
 
 void CompilationMemoryStatistic::do_test_allocations() {
-#ifdef COMPILER2
   // For jtreg tests
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   if (!is_compiling_jtreg_test(th)) {
     return;
   }
+#ifdef COMPILER2
   // Allocate large amounts - large enough to (comfortably) cause new arena chunks to be
   // allocated, as well as large enough to trigger a new peak that is the highest peak that
   // would happend during compilation of the very small test methods.
