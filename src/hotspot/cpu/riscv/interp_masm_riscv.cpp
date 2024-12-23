@@ -1752,7 +1752,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       profile_obj_type(tmp, mdo_arg_addr, t1);
 
       int to_add = in_bytes(TypeStackSlotEntries::per_arg_size());
-      add(off_to_args, off_to_args, to_add);
+      addi(off_to_args, off_to_args, to_add);
 
       // increment index by 1
       addi(index, index, 1);
@@ -1849,7 +1849,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     // mdo start + parameters offset + array length - 1
     add(mdp, mdp, tmp1);
     ld(tmp1, Address(mdp, ArrayData::array_len_offset()));
-    sub(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
 
     Label loop;
     bind(loop);
@@ -1875,7 +1875,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     profile_obj_type(tmp2, arg_type, tmp3);
 
     // go to next parameter
-    sub(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
     bgez(tmp1, loop);
 
     bind(profile_continue);

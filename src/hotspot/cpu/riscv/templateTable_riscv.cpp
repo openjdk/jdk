@@ -197,7 +197,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
     Label L_fast_patch;
     // if a breakpoint is present we can't rewrite the stream directly
     __ load_unsigned_byte(temp_reg, at_bcp(0));
-    __ sub(temp_reg, temp_reg, Bytecodes::_breakpoint); // temp_reg is temporary register.
+    __ subi(temp_reg, temp_reg, Bytecodes::_breakpoint); // temp_reg is temporary register.
     __ bnez(temp_reg, L_fast_patch);
     // Let breakpoint table handling rewrite to quicker bytecode
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::set_original_bytecode_at), xmethod, xbcp, bc_reg);
@@ -209,7 +209,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   Label L_okay;
   __ load_unsigned_byte(temp_reg, at_bcp(0));
   __ beq(temp_reg, bc_reg, L_okay);
-  __ sub(temp_reg, temp_reg, (int)Bytecodes::java_code(bc));
+  __ subi(temp_reg, temp_reg, (int)Bytecodes::java_code(bc));
   __ beqz(temp_reg, L_okay);
   __ stop("patching the wrong bytecode");
   __ bind(L_okay);
