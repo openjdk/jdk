@@ -61,7 +61,7 @@ import jdk.tools.jlink.internal.Snippets.*;
  * @run junit SnippetsTest
  */
 public class SnippetsTest {
-    private static final boolean WRITE_CLASS_FILE = Boolean.parseBoolean(System.getProperty("DumpArraySnippetsTestClasses", "true"));
+    private static final boolean WRITE_CLASS_FILE = Boolean.parseBoolean(System.getProperty("DumpArraySnippetsTestClasses", "false"));
 
     @ParameterizedTest
     @ValueSource(ints = { 10, 75, 90, 120, 200, 399, 400, 401})
@@ -229,14 +229,14 @@ public class SnippetsTest {
         var methodType = MethodType.methodType(elementType.arrayType(), elementType.arrayType());
         if (pageCount <= 0) {
             try {
-                lookup().findStatic(testClass, methodNamePrefix + 0, methodType);
+                lookup().findStatic(testClass, methodNamePrefix + "_0", methodType);
                 fail("Unexpected paginate helper function");
             } catch (Exception ex) {}
         }
 
         for (int i = 0; i < pageCount; i++) {
             try {
-                lookup().findStatic(testClass, methodNamePrefix + i, methodType);
+                lookup().findStatic(testClass, methodNamePrefix + "_" + i, methodType);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }

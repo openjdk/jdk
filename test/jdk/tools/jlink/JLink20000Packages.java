@@ -62,6 +62,7 @@ public class JLink20000Packages {
 
     public static void main(String[] args) throws Exception {
         Path src = Paths.get("bug8321413");
+        Path imageDir = src.resolve("out-jlink");
         Path mainModulePath = src.resolve("bug8321413x");
 
         StringJoiner mainModuleInfoContent = new StringJoiner(";\n  exports ", "module bug8321413x {\n  exports ", ";\n}");
@@ -106,12 +107,12 @@ public class JLink20000Packages {
 
         JImageGenerator.getJLinkTask()
                 .modulePath(out)
-                .output(src.resolve("out-jlink"))
+                .output(imageDir)
                 .addMods("bug8321413x")
                 .call()
                 .assertSuccess();
 
-        Path binDir = src.resolve("out-jlink").resolve("bin").toAbsolutePath();
+        Path binDir = imageDir.resolve("bin").toAbsolutePath();
         Path bin = binDir.resolve("java");
 
         ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),

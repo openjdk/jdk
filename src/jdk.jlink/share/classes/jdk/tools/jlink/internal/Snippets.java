@@ -93,7 +93,7 @@ public class Snippets {
     }
 
     /**
-     * Describe a operand that can be load onto the operand stack.
+     * Describe an operand that can be load onto the operand stack.
      * For example, an array of string can be described as a Loadable.
      *
      * @param classDesc The type of the operand
@@ -172,12 +172,12 @@ public class Snippets {
      */
     public static abstract class CollectionSnippetBuilder {
         /**
-         * Tested page size of string array
+         * Default page size of string array
          */
         public static final int STRING_PAGE_SIZE = 8000;
 
         /**
-         * Tested page size of enum array
+         * Default page size of enum array
          */
         public static final int ENUM_PAGE_SIZE = 5000;
 
@@ -187,7 +187,7 @@ public class Snippets {
         public static final int DEFAULT_PAGE_SIZE = 2000;
 
         /**
-         * Arbitary default values based on 15K code size on ~30 bytes per element
+         * Default threshold based on 15K code size on ~30 bytes per element
          */
         protected static final int DEFAULT_THRESHOLD = 512;
 
@@ -195,9 +195,9 @@ public class Snippets {
         protected ClassDesc ownerClassDesc;
         protected ClassBuilder clb;
 
-        // Default values enable pagination by default
-        protected String methodNamePrefix = "csb" + Integer.toHexString(hashCode()) + "Page";
-        protected int activatePagingThreshold = DEFAULT_THRESHOLD;
+        // Default values, disable pagination by default
+        protected String methodNamePrefix = null;
+        protected int activatePagingThreshold = -1;
         protected int pageSize = DEFAULT_PAGE_SIZE;
 
         /**
@@ -275,6 +275,9 @@ public class Snippets {
          */
         public CollectionSnippetBuilder methodNamePrefix(String methodNamePrefix) {
             this.methodNamePrefix = Objects.requireNonNull(methodNamePrefix);
+            if (methodNamePrefix.isBlank()) {
+                throw new IllegalArgumentException();
+            }
             return this;
         }
 
@@ -304,7 +307,7 @@ public class Snippets {
         }
 
         protected boolean shouldPaginate(int length) {
-            return activatePagingThreshold > 0 && length > activatePagingThreshold;
+            return methodNamePrefix != null && activatePagingThreshold > 0 && length > activatePagingThreshold;
         }
 
         /**
@@ -332,10 +335,10 @@ public class Snippets {
      * Each pagination method will assign value to the corresponding page and chain calling next page.
      *
      * Effectively as
-     *   methodNamePrefix0(new T[elements.size()]);
+     *   methodNamePrefix_0(new T[elements.size()]);
      *
      * where
-     *   T[] methodNamePrefix0(T[] ar) {
+     *   T[] methodNamePrefix_0(T[] ar) {
      *      ar[0] = elements[0];
      *      ar[1] = elements[1];
      *      ...
@@ -369,7 +372,7 @@ public class Snippets {
             // Invoke the first page, which will call next page until fulfilled
             cob.loadConstant(loadElementSnippets.length)
                .anewarray(elementType)
-               .invokestatic(ownerClassDesc, methodNamePrefix + "0", MTD_PageHelper);
+               .invokestatic(ownerClassDesc, methodNamePrefix + "_0", MTD_PageHelper);
         }
 
         private void newArray(CodeBuilder cob) {
@@ -396,7 +399,7 @@ public class Snippets {
         private void genFillPageHelper(int pageNo, boolean hasNextPage) {
             var fromIndex = pageSize * pageNo;
             var toIndex = hasNextPage ? (fromIndex + pageSize) : loadElementSnippets.length;
-            clb.withMethodBody(methodNamePrefix + pageNo,
+            clb.withMethodBody(methodNamePrefix + "_" + pageNo,
                     MTD_PageHelper,
                     ACC_STATIC,
                     cob -> {
@@ -405,7 +408,7 @@ public class Snippets {
                         if (hasNextPage) {
                             cob.invokestatic(
                                     ownerClassDesc,
-                                    methodNamePrefix + (pageNo + 1),
+                                    methodNamePrefix + "_" + (pageNo + 1),
                                     MTD_PageHelper);
                         }
                         cob.return_(TypeKind.from(classDesc));

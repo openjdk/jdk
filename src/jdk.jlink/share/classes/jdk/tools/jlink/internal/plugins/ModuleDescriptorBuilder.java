@@ -45,7 +45,7 @@ import static jdk.tools.jlink.internal.Snippets.*;
 import static jdk.tools.jlink.internal.Snippets.CollectionSnippetBuilder.STRING_PAGE_SIZE;
 
 import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.ModuleInfo;
-import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.SystemModulesClassGenerator.DedupSet;
+import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.SystemModulesClassGenerator.DedupSnippets;
 
 /**
  * Build a Snippet to load a ModuleDescriptor onto the operand stack.
@@ -56,13 +56,13 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
     private static final ClassDesc CD_MODULE_BUILDER =
         ClassDesc.ofInternalName("jdk/internal/module/Builder");
 
-    private final DedupSet dedupSet;
+    private final DedupSnippets dedupSnippets;
     private final ClassDesc ownerClassDesc;
     private final ClassBuilder clb;
 
-    ModuleDescriptorBuilder(ClassBuilder clb, DedupSet dedupSet, ClassDesc ownerClassDesc) {
+    ModuleDescriptorBuilder(ClassBuilder clb, DedupSnippets dedupSnippets, ClassDesc ownerClassDesc) {
         this.clb = clb;
-        this.dedupSet = dedupSet;
+        this.dedupSnippets = dedupSnippets;
         this.ownerClassDesc = ownerClassDesc;
     }
 
@@ -145,7 +145,7 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
          */
         Snippet loadRequire(Requires require) {
             return cob -> {
-                dedupSet.requiresModifiersSets().get(require.modifiers()).emit(cob);
+                dedupSnippets.requiresModifiersSets().get(require.modifiers()).emit(cob);
                 cob.loadConstant(require.name());
                 if (require.compiledVersion().isPresent()) {
                     cob.loadConstant(require.compiledVersion().get().toString())
@@ -181,11 +181,11 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
          */
         Snippet loadExports(Exports export) {
             return cob -> {
-                dedupSet.exportsModifiersSets().get(export.modifiers()).emit(cob);
+                dedupSnippets.exportsModifiersSets().get(export.modifiers()).emit(cob);
                 cob.loadConstant(export.source());
                 var targets = export.targets();
                 if (!targets.isEmpty()) {
-                    dedupSet.stringSets().get(targets).emit(cob);
+                    dedupSnippets.stringSets().get(targets).emit(cob);
                     cob.invokestatic(CD_MODULE_BUILDER,
                                     "newExports",
                                     MTD_EXPORTS_MODIFIER_SET_STRING_SET);
@@ -219,11 +219,11 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
          */
         Snippet loadOpens(Opens open) {
             return cob -> {
-                dedupSet.opensModifiersSets().get(open.modifiers()).emit(cob);
+                dedupSnippets.opensModifiersSets().get(open.modifiers()).emit(cob);
                 cob.loadConstant(open.source());
                 var targets = open.targets();
                 if (!targets.isEmpty()) {
-                    dedupSet.stringSets().get(targets).emit(cob);
+                    dedupSnippets.stringSets().get(targets).emit(cob);
                     cob.invokestatic(CD_MODULE_BUILDER,
                                     "newOpens",
                                     MTD_OPENS_MODIFIER_SET_STRING_SET);
@@ -327,7 +327,7 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
                               MTD_OPENS_ARRAY);
 
             // uses
-            dedupSet.stringSets().get(md.uses()).emit(cob);
+            dedupSnippets.stringSets().get(md.uses()).emit(cob);
             cob.invokevirtual(CD_MODULE_BUILDER,
                               "uses",
                               MTD_SET);
