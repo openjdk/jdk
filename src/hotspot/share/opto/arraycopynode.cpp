@@ -33,7 +33,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-const TypeFunc* ArrayCopyNode::_arraycopy_type_tf = nullptr;
+const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM),

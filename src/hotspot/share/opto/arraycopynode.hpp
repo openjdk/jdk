@@ -31,7 +31,7 @@
 class GraphKit;
 
 class ArrayCopyNode : public CallNode {
-  static const TypeFunc* _arraycopy_type_tf;
+  static const TypeFunc* _arraycopy_type_Type;
 private:
 
   // What kind of arraycopy variant is this?
@@ -69,12 +69,12 @@ private:
 public:
 
   static const TypeFunc* arraycopy_type() {
-    assert(_arraycopy_type_tf != nullptr, "should be initialized");
-    return _arraycopy_type_tf;
+    assert(_arraycopy_type_Type != nullptr, "should be initialized");
+    return _arraycopy_type_Type;
   }
 
   static void arraycopy_type_init() {
-    assert(_arraycopy_type_tf == nullptr, "should be");
+    assert(_arraycopy_type_Type == nullptr, "should be");
     const Type** fields = TypeTuple::fields(ParmLimit - TypeFunc::Parms);
     fields[Src]       = TypeInstPtr::BOTTOM;
     fields[SrcPos]    = TypeInt::INT;
@@ -92,7 +92,7 @@ public:
 
     const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
-    _arraycopy_type_tf =  TypeFunc::make(domain, range);
+    _arraycopy_type_Type =  TypeFunc::make(domain, range);
   }
 
 private:
