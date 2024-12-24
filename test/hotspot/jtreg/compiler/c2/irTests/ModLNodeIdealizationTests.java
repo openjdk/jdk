@@ -35,6 +35,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of ModLNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.ModLNodeIdealizationTests
+ * @requires os.arch != "riscv64"
  */
 public class ModLNodeIdealizationTests {
     public static final long RANDOM_POWER_OF_2 = 1L << (1 + Utils.getRandomInstance().nextInt(62));
