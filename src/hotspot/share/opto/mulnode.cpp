@@ -2121,9 +2121,6 @@ static bool AndIL_is_zero_element(const PhaseGVN* phase, const Node* expr, const
 Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
   Node* add = in(1);
   Node* mask = in(2);
-  if (add == nullptr || mask == nullptr) {
-    return nullptr;
-  }
   int addidx = 0;
   if (add->Opcode() == Op_Add(bt)) {
     addidx = 1;
@@ -2135,14 +2132,12 @@ Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
   if (addidx > 0) {
     Node* add1 = add->in(1);
     Node* add2 = add->in(2);
-    if (add1 != nullptr && add2 != nullptr) {
-      if (AndIL_is_zero_element(phase, add1, mask, bt)) {
-        set_req_X(addidx, add2, phase);
-        return this;
-      } else if (AndIL_is_zero_element(phase, add2, mask, bt)) {
-        set_req_X(addidx, add1, phase);
-        return this;
-      }
+    if (AndIL_is_zero_element(phase, add1, mask, bt)) {
+      set_req_X(addidx, add2, phase);
+      return this;
+    } else if (AndIL_is_zero_element(phase, add2, mask, bt)) {
+      set_req_X(addidx, add1, phase);
+      return this;
     }
   }
   return nullptr;
