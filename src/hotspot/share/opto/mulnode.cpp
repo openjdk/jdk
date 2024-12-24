@@ -2057,40 +2057,7 @@ const Type* RotateRightNode::Value(PhaseGVN* phase) const {
   }
 }
 
-// Given an expression (AndX (AddX v1 v2) mask)
-// determine if the AndX must always produce (AndX v1 mask),
-// because v2 is zero wrt addition under mask.
-// Because the AddX operands can come in either
-// order, we check for both orders.
-Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
-  Node* add = in(1);
-  Node* mask = in(2);
-  if (add == nullptr || mask == nullptr) {
-    return nullptr;
-  }
-  int addidx = 0;
-  if (add->Opcode() == Op_Add(bt)) {
-    addidx = 1;
-  } else if (mask->Opcode() == Op_Add(bt)) {
-    mask = add;
-    addidx = 2;
-    add = in(addidx);
-  }
-  if (addidx > 0) {
-    Node* add1 = add->in(1);
-    Node* add2 = add->in(2);
-    if (add1 != nullptr && add2 != nullptr) {
-      if (AndIL_is_zero_element(phase, add1, mask, bt)) {
-        set_req_X(addidx, add2, phase);
-        return this;
-      } else if (AndIL_is_zero_element(phase, add2, mask, bt)) {
-        set_req_X(addidx, add1, phase);
-        return this;
-      }
-    }
-  }
-  return nullptr;
-}
+//------------------------------ Sum & Mask ------------------------------
 
 // Returns a lower bound on the number of trailing zeros in expr.
 static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, BasicType bt) {
@@ -2144,4 +2111,39 @@ static bool AndIL_is_zero_element(const PhaseGVN* phase, const Node* expr, const
 
   jint zeros = AndIL_min_trailing_zeros(phase, expr, bt);
   return zeros > 0 && ((((jlong)1) << zeros) > mask_t->hi_as_long() && mask_t->lo_as_long() >= 0);
+}
+
+// Given an expression (AndX (AddX v1 v2) mask)
+// determine if the AndX must always produce (AndX v1 mask),
+// because v2 is zero wrt addition under mask.
+// Because the AddX operands can come in either
+// order, we check for both orders.
+Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
+  Node* add = in(1);
+  Node* mask = in(2);
+  if (add == nullptr || mask == nullptr) {
+    return nullptr;
+  }
+  int addidx = 0;
+  if (add->Opcode() == Op_Add(bt)) {
+    addidx = 1;
+  } else if (mask->Opcode() == Op_Add(bt)) {
+    mask = add;
+    addidx = 2;
+    add = in(addidx);
+  }
+  if (addidx > 0) {
+    Node* add1 = add->in(1);
+    Node* add2 = add->in(2);
+    if (add1 != nullptr && add2 != nullptr) {
+      if (AndIL_is_zero_element(phase, add1, mask, bt)) {
+        set_req_X(addidx, add2, phase);
+        return this;
+      } else if (AndIL_is_zero_element(phase, add2, mask, bt)) {
+        set_req_X(addidx, add1, phase);
+        return this;
+      }
+    }
+  }
+  return nullptr;
 }
