@@ -29,7 +29,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
-#include "opto/convertnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -321,76 +320,78 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
   return array;
 }
 
-// arr = new int[size1][size2]
-// -->
-// arr = new[size1][]; for (int i=0; i<size1; i++) { arr[i] = new int[size2]; }
-Node* Parse::expand_multianewarray2(ciArrayKlass* array_klass, Node* *lengths, int nargs) {
-  Node* length1 = lengths[0];
-  Node* length2 = lengths[1];
-  assert(length1 != nullptr && length2 != nullptr, "");
+// Initialize the graph, equivalent to the following Java code:
+//
+// for (int index = 0; index < length1; index++) {
+//   multi_array[index] = new array_klass[length2];
+// }
+//
+void Parse::init_multiarray(Node* multi_array,
+                            ciArrayKlass* array_klass,
+                            Node* length1, Node* length2) {
 
-  Node* array = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, nargs);
-
-  // for (int index = 0; index < length1; i++) {
-  //   array[index] = new int[length2];
-  // }
-
-  //add_parse_predicates(); //must have enough JVMS stack to execute multianewarray: sp=0, inputs=2
   C->set_has_loops(true);
 
-  RegionNode* loop = new RegionNode(3);
-  _gvn.set_type(loop, Type::CONTROL);
-  Node* index = new PhiNode(loop, TypeInt::INT);
+  // iff_init = if (length1 > 0)
+  Node* i_init = _gvn.intcon(0);
+  Node* cmp_init = _gvn.transform(new CmpINode(length1, i_init));
+  Node* bool_init = _gvn.transform(new BoolNode(cmp_init, BoolTest::gt));
+  IfNode* iff_init = create_and_map_if(control(), bool_init, PROB_FAIR, COUNT_UNKNOWN);
+
+  Node* skip_ctrl = IfFalse(iff_init); // skip the loop
+  Node* enter_ctrl = IfTrue(iff_init); // enter the loop
+
+  // RegionNode is the head of the loop with inputs:
+  //   1: pre-loop input enter_ctrl
+  //   2: loop back-edge
+  RegionNode* head = new RegionNode(3);
+  head->init_req(1, control());
+  _gvn.set_type(head, Type::CONTROL);
+  record_for_igvn(head);
+
+  // int index = 0
+  PhiNode* index = new PhiNode(head, TypeInt::INT);
+  index->init_req(1, i_init);
   _gvn.set_type(index, TypeInt::INT);
+  record_for_igvn(index);
 
-  loop->init_req(1, control());
-  index->init_req(1, _gvn.intcon(0));
-  set_control(loop);
+  PhiNode* mem_phi = PhiNode::make(head, memory(TypeAryPtr::BYTES),
+                                   Type::MEMORY, TypeAryPtr::BYTES);
+  record_for_igvn(mem_phi);
 
-  // loop body:
-  {
-    ciArrayKlass* array_klass_1 = array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
-    Node* klass_node = makecon(TypeKlassPtr::make(array_klass_1, Type::trust_interfaces));
-    Node* elem = new_array(klass_node, length2, nargs);
+  set_control(head);
+  set_memory(mem_phi, TypeAryPtr::OOPS);
 
-    Node* offset = _gvn.transform(new AddLNode(
-      _gvn.longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
-      _gvn.transform(new ConvI2LNode(
-        _gvn.transform(new MulINode(index, _gvn.intcon(4)))
-      ))));
-    Node* eaddr = basic_plus_adr(array, offset);
+  // The loop body: array allocation + store
+  ciArrayKlass* array_klass_1 =
+      array_klass->as_obj_array_klass()->element_klass()->as_array_klass();
+  Node* klass_node = makecon(TypeKlassPtr::make(array_klass_1, Type::trust_interfaces));
 
-    const TypePtr* adr_type = TypeAryPtr::OOPS;
-    const TypeOopPtr* elemtype = _gvn.type(array)->is_aryptr()->elem()->make_oopptr();
-    Node *store = access_store_at(array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
+  Node* array = _gvn.transform(new_array(klass_node, length2, false));
 
-    // issue. ^^access_store_at slips out of the loop. why? workaround is to add something after that:
-    new_array(klass_node, length2, nargs);
-  }
+  // multi_array[index] = array
+  Node* st = store_to_memory(control(),
+                             array_element_address(multi_array, index, T_OBJECT),
+                             array,
+                             T_OBJECT, TypeAryPtr::OOPS, MemNode::unordered, false, false, true);
 
-  Node* limit = _gvn.transform(new CmpINode(index,
-    // Workaround. in fact we have post-check loop: { .. } while (++i < limit)
-    _gvn.transform(new AddINode(length1, _gvn.intcon(-1)))
-  ));
+  // iff = if (index++ < length1)
+  Node* new_i = _gvn.transform(new AddINode(index, _gvn.intcon(1)));
+  Node* cmp = _gvn.transform(new CmpINode(new_i, length1));
+  Node* bool_cmp = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+  IfNode* iff = create_and_map_if(control(), bool_cmp, PROB_FAIR, COUNT_UNKNOWN);
 
-  Node* limitb = _gvn.transform(new BoolNode(limit, BoolTest::lt));
-  IfNode* iff2 = create_and_map_if(control(), limitb, PROB_MIN, COUNT_UNKNOWN);
-  Node* limit_less = _gvn.transform(new IfTrueNode(iff2));
-  set_control(limit_less);
+  head->init_req(2, IfTrue(iff)); // Back-edge: IfTrue -> go back to head
+  index->init_req(2, new_i);
+  mem_phi->init_req(2, st);
 
-  loop->init_req(2, control());
-  index->init_req(2, _gvn.transform(new AddINode(index, _gvn.intcon(1))));
+  // Exit from the loop
+  set_control(IfFalse(iff));
+  set_memory(st, TypeAryPtr::OOPS);
 
-  RegionNode* final_merge = new RegionNode(3);
-  _gvn.set_type(final_merge, Type::CONTROL);
-  final_merge->init_req(1, _gvn.transform(new IfFalseNode(iff2)));
-  set_control(final_merge);
-
-  C->record_for_igvn(final_merge);
-  C->record_for_igvn(loop);
-  C->record_for_igvn(index);
-
-  return array;
+  RegionNode* exit_region = new RegionNode(2);
+  exit_region->init_req(1, skip_ctrl);
+  record_for_igvn(exit_region);
 }
 
 void Parse::do_multianewarray() {
@@ -451,8 +452,16 @@ void Parse::do_multianewarray() {
   }
 
   if (ndimensions == 2) {
-    // PreserveReexecuteState?
-    Node* obj = expand_multianewarray2(array_klass, &length[0], 0);
+    Node* obj = nullptr;
+    { PreserveReexecuteState preexecs(this);
+      inc_sp(ndimensions);
+
+      Node* length1 = length[0];
+      Node* length2 = length[1];
+      assert(length1 != nullptr && length2 != nullptr, "");
+      obj = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, false);
+      init_multiarray(obj, array_klass, length1, length2);
+    }
     push(obj);
     return;
   }
