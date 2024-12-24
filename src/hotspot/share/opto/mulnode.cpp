@@ -2089,9 +2089,9 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
   return 0;
 }
 
-// Given an expression (AndX X+expr mask), determine
+// Given an expression (AndX T+expr mask), determine
 // whether expr is neutral wrt addition under mask
-// and hence the result is always equivalent to (AndX X mask),
+// and hence the result is always equivalent to (AndX T mask),
 // The X in AndX must be I or L, depending on bt.
 // Specifically, this holds for the following cases,
 // when the shift value N is large enough to zero out
