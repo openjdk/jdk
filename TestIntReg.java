@@ -15,108 +15,109 @@ public class TestIntReg {
     }
 
     public static int testCmovMin(int a, int b) {
-        return Math.min(a, b);
+        return Math.min(a, b); // correctness verified
     }
 
     public static int testCmovMax(int a, int b) {
-        return Math.max(a, b);
+        return Math.max(a, b); // correctness verified
     }
 
     public static int testCmov(int a, int b) {
-        return a > 5 ? b : a;
+        return a > 5 ? b : a; // correctness verified
     }
 
     public static int testCmovU(int a, int b) {
-        return Integer.compareUnsigned(a, b) > 0 ? b : a;
+        return Integer.compareUnsigned(a, b) > 0 ? b : a; // correctness verified
     }
 
     public static int testTzcnt(int a, int b) {
-        return  Integer.numberOfTrailingZeros(a);
+        return  Integer.numberOfTrailingZeros(a); // correctness verified
     }
 
     public static int testLzcnt(int a, int b) {
-        return  Integer.numberOfLeadingZeros(b);
+        return  Integer.numberOfLeadingZeros(b); // correctness verified
     }
 
     public static int testPopcnt(int a, int b) {
-        return  Integer.bitCount(a);
+        return  Integer.bitCount(a); // correctness verified
     }
 
     public static int testRor(int a, int b) {
-        return  Integer.rotateRight(a, 8);
+        return  Integer.rotateRight(a, 8); // correctness verified
     }
 
     public static int testRol(int a, int b) {
-        return  Integer.rotateLeft(b, 7); // getting mapped to Ror 25
+        // TODO: getting mapped to erorl 25
+        return  Integer.rotateLeft(a, 7); // correctness verified
     }
 
-
     public static int testShrVar(int a, int b) {
-        return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
+        return  a >>> (b >>> 28) ; // TODO: generates shrxl UseBMI2Instructions
     }
 
     public static int testShr(int a, int b) {
-        return  a >>> 6 ;
+        return  a >>> 6 ; // correctness verified
     }
 
     public static int testSal(int a, int b) {
-        return  a << 5 ;
+        return  a << 5 ; // correctness verified
     }
 
     public static int testSar(int a, int b) {
-        return  b >> 4 ;
+        return  a >> 4 ; // correctness verified
     }
 
     public static int testDec(int a, int b) {
-        return  b - 1 ;
+        return  b - 1 ; // correctness verified
     }
 
     public static int testInc(int a, int b) {
-        return  a + 1 ;
+        return  a + 1 ; // correctness verified
     }
 
     public static int testNeg(int a, int b) {
-        return  -b;
-    }
-
-    public static int testXorImm1(int a, int b) {
-        return a ^ 7;
-    }
-
-    public static int testXorImm2(int a, int b) {
-        return 5 ^ b;
+        return  -b; // correctness verified
     }
 
     public static int testXorM1(int a, int b) {
-        return a ^ -1;
+        // generates enotl
+        return a ^ -1; // correctness verified
+    }
+
+    public static int testXorImm1(int a, int b) {
+        return a ^ 7; // correctness verified
+    }
+
+    public static int testXorImm2(int a, int b) {
+        return 5 ^ b; // correctness verified
     }
 
     public static int testXor(int a, int b) {
-        return a ^ b;
+        return a ^ b; // correctness verified
     }
 
     public static int testOrImm1(int a, int b) {
-        return a | 7;
+        return a | 7; // correctness verified
     }
 
     public static int testOrImm2(int a, int b) {
-        return 5 | b;
+        return 5 | b; // correctness verified
     }
 
     public static int testOr(int a, int b) {
-        return a | b;
+        return a | b; // correctness verified
     }
 
     public static int testAndImm1(int a, int b) {
-        return a & 7;
+        return a & 7; // correctness verified
     }
 
     public static int testAndImm2(int a, int b) {
-        return 5 & b;
+        return 5 & b; //correctness verified
     }
 
     public static int testAnd(int a, int b) {
-        return a & b;
+        return a & b; //correctness verified
     }
 
     public static int testCount(int a, int b) {
@@ -124,15 +125,15 @@ public class TestIntReg {
     }
 
     public static int testMul(int a, int b) {
-        return a * b;
+        return a * b; //correctness verified
     }
 
     public static int testSub(int a, int b) {
-        return a - b;
+        return a - b; //correctness verified
     }
 
     public static int testAdd(int a, int b) {
-        return a + b;
+        return a + b; //correctness verified
     }
 
     public static void main(String[] args) {
@@ -140,6 +141,8 @@ public class TestIntReg {
         try {
 
             int iters = Integer.parseInt(args[0]);
+            Method method = TestIntReg.class.getMethod("test" + args[1], int.class, int.class);
+
             int factor = 10_000;
             int size = factor * iters;
             int[] a = new int[size];
@@ -147,11 +150,9 @@ public class TestIntReg {
             int[] c = new int[size];
             Random rand = new Random(0);
             for (int i = 0; i < a.length; i++) {
-                a[i] = rand.nextInt();
-                b[i] = rand.nextInt();
+                a[i] = i == 0 ? Integer.parseInt(args[2]) : rand.nextInt();
+                b[i] = i == 0 ? Integer.parseInt(args[3]) : rand.nextInt();
             }
-
-            Method method = TestIntReg.class.getMethod("test" + args[1], int.class, int.class);
 
             // warmup
             for (int i = 0; i < factor; i++) {
@@ -164,7 +165,9 @@ public class TestIntReg {
             for (int i = 0; i < factor * iters; i++) {
                 c[i] = (int) method.invoke(null, a[i], b[i]);
             }
-            System.out.println("------------- MAIN DONE ----------------");
+
+            System.out.println("\n ------------- MAIN DONE: " + "test" + args[1] + "(" + a[0] + "," + b[0] + ") = " + c[0]);
+            assert c[0] == Integer.parseInt(args[4]) : "APX NDD test failed; expected = " + args[4];
 
         } catch (Exception e) {
             e.printStackTrace();
