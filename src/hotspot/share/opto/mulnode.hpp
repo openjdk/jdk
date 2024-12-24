@@ -83,8 +83,7 @@ public:
 
   static MulNode* make(Node* in1, Node* in2, BasicType bt);
 
-  static jint AndIL_min_trailing_zeros(PhaseGVN* phase, Node* addend, BasicType bt);
-  static bool AndIL_is_always_zero(PhaseGVN* phase, Node* expr, Node* mask, BasicType bt, bool check_reverse);
+protected:
   Node* AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt);
 };
 
