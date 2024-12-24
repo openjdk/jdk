@@ -2068,7 +2068,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
   }
 
   if (type->is_con()) {
-    long con = type->get_con_as_long(type->basic_type());
+    long con = type->get_con_as_long(bt);
     return con == 0L ? (type2aelembytes(bt) * BitsPerByte) : count_trailing_zeros(con);
   }
 
@@ -2078,7 +2078,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
     type = phase->type(expr)->isa_int();
   }
 
-  if (expr->Opcode() == Op_LShift(type->basic_type())) {
+  if (expr->Opcode() == Op_LShift(bt)) {
     const TypeInt* rhs_t = phase->type(expr->in(2))->isa_int();
     if (rhs_t == nullptr || !rhs_t->is_con()) {
       return 0;
