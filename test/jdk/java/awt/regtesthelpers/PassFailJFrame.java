@@ -450,73 +450,12 @@ public final class PassFailJFrame {
                           long testTimeOut,
                           int rows, int columns)
             throws InterruptedException, InvocationTargetException {
-        this(title, instructions, testTimeOut, rows, columns, false);
-    }
-
-    /**
-     * Constructs a frame which displays test instructions and
-     * the <i>Pass</i> / <i>Fail</i> buttons
-     * as well as supporting UI components with the given title, instructions,
-     * timeout, number of rows and columns,
-     * and screen capture functionality.
-     * All the UI components are created on the EDT, so it is safe to call
-     * the constructor on the main thread.
-     * <p>
-     * After you create a test UI window, register the window using
-     * {@link #addTestWindow(Window) addTestWindow} for disposal, and
-     * position it close to the instruction frame using
-     * {@link #positionTestWindow(Window, Position) positionTestWindow}.
-     * As the last step, make your test UI window visible.
-     * <p>
-     * Call the {@link #awaitAndCheck() awaitAndCheck} method on the instance
-     * of {@code PassFailJFrame} when you set up the testing environment.
-     * <p>
-     * If the tester clicks the <i>Fail</i> button, a dialog prompting for
-     * a description of the problem is displayed, and then an exception
-     * is thrown which fails the test.
-     * If the tester clicks the <i>Pass</i> button, the test completes
-     * successfully.
-     * If the timeout occurs or the instruction frame is closed,
-     * the test fails.
-     * <p>
-     * The {@code rows} and {@code columns} parameters control
-     * the size of a text component which displays the instructions.
-     * The preferred size of the instructions is calculated by
-     * creating {@code new JTextArea(rows, columns)}.
-     * <p>
-     * If you enable screenshots by setting the {@code screenCapture}
-     * parameter to {@code true}, a <i>Screenshot</i> button is added.
-     * Clicking the <i>Screenshot</i> button takes screenshots of
-     * all the monitors or all the windows registered with
-     * {@code PassFailJFrame}.
-     *
-     * @param title        the title of the instruction frame
-     * @param instructions the instructions for the tester
-     * @param testTimeOut  the test timeout in minutes
-     * @param rows         the number of rows for the text component
-     *                     which displays test instructions
-     * @param columns      the number of columns for the text component
-     *                     which displays test instructions
-     * @param screenCapture if set to {@code true}, enables screen capture
-     *                      functionality
-     *
-     * @throws InterruptedException if the current thread is interrupted
-     *              while waiting for EDT to finish creating UI components
-     * @throws InvocationTargetException if an exception is thrown while
-     *              creating UI components on EDT
-     *
-     * @see JTextArea#JTextArea(int,int) JTextArea(int rows, int columns)
-     * @see Builder Builder
-     */
-    public PassFailJFrame(String title, String instructions,
-                          long testTimeOut,
-                          int rows, int columns,
-                          boolean screenCapture)
-            throws InterruptedException, InvocationTargetException {
-        invokeOnEDT(() -> createUI(title, instructions,
-                                   testTimeOut,
-                                   rows, columns,
-                                   screenCapture));
+        if (isEventDispatchThread()) {
+            createUI(title, instructions, testTimeOut, rows, columns);
+        } else {
+            invokeAndWait(() -> createUI(title, instructions, testTimeOut,
+                    rows, columns));
+        }
     }
 
     /**
@@ -613,8 +552,7 @@ public final class PassFailJFrame {
     }
 
     private static void createUI(String title, String instructions,
-                                 long testTimeOut, int rows, int columns,
-                                 boolean enableScreenCapture) {
+                                 long testTimeOut, int rows, int columns) {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
@@ -623,7 +561,7 @@ public final class PassFailJFrame {
         frame.add(createInstructionUIPanel(instructions,
                                            testTimeOut,
                                            rows, columns,
-                                           enableScreenCapture,
+                                           false,
                                            false, 0),
                   BorderLayout.CENTER);
         frame.pack();
