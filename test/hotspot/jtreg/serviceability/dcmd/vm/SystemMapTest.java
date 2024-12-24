@@ -29,6 +29,18 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
+ * @summary Test of diagnostic command System.map using ZGC
+ * @library /test/lib
+ * @requires (os.family == "linux" | os.family == "windows" | os.family == "mac")
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -XX:+UsePerfData -XX:+UseZGC SystemMapTest
+ */
+
+/*
+ * @test
  * @summary Test of diagnostic command System.map
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "windows" | os.family == "mac")
