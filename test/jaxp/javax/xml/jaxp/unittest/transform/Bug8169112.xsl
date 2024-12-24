@@ -61,6 +61,8 @@
           .landscapeArea { page: land; width: 1010px; page-break-before: always; }
 
           @page { margin: 0.1in; }
+
+          }
         </style>
     </head>
     <body style="font-family: arial">
