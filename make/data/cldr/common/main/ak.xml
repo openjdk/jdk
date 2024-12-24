@@ -113,7 +113,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nds">Gyaaman kasa a ɛwɔ fam</language>
 			<language type="ne">Nɛpal kasa</language>
 			<language type="nl">Dɛɛkye</language>
-			<language type="nl_BE">Dɛɛkye (Bɛɛgyiɔm)</language>
+			<language type="nl_BE">Dɛɛkye (Bɛɛgyiɔm</language>
 			<language type="nn">Nɔwefoɔ Ninɔso</language>
 			<language type="no">Nɔwefoɔ kasa</language>
 			<language type="nqo">Nko</language>
@@ -567,7 +567,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Gregorian Kalɛnna</type>
 			<type key="calendar" type="hebrew">Hibri Kalɛnda</type>
 			<type key="calendar" type="islamic">Higyiri Kalɛnda</type>
-			<type key="calendar" type="islamic-civil">Higyiri Kalɛnda (tabula, sivil epokyi)</type>
+			<type key="calendar" type="islamic-civil">Higyiri Kalɛnda (tabula, sivil epokyi</type>
 			<type key="calendar" type="islamic-umalqura">Higyiri Kalɛnda (Ummm al-Kura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 Kalɛnna</type>
 			<type key="calendar" type="japanese">Gyapanfoɔ Kalɛnda</type>
@@ -579,7 +579,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="search">Daa-Botaeɛ Adehwehwɛ</type>
 			<type key="collation" type="standard">Nyiyie Kwan Susudua</type>
 			<type key="hc" type="h11">Nnɔnhwere 12 Sestɛm (0–11)</type>
-			<type key="hc" type="h12">Nnɔnhwere 12 Sestɛm (1–12)</type>
+			<type key="hc" type="h12">Nnɔnhwere 12 Sestɛm (1–12</type>
 			<type key="hc" type="h23">Nnɔnhwere 24 Sestɛm (0–23)</type>
 			<type key="hc" type="h24">Nnɔnhwere 24 Sestɛm (0–24)</type>
 			<type key="lb" type="loose">Line Break Nhyehyɛeɛ a Emu Yɛ Mmrɛ</type>

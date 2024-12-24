@@ -4669,7 +4669,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currency type="AOK">
 				<displayName>അംഗോളൻ ‍ക്വാൻസ (1977–1990)</displayName>
 				<displayName count="one">അംഗോളൻ ക്വാൻസാ (AOK)</displayName>
-				<displayName count="other">അംഗോളൻ ക്വാൻസാസ് (AOK)</displayName>
+				<displayName count="other">അംഗോളൻ ക്വാൻസാസ് (AOK</displayName>
 			</currency>
 			<currency type="AON">
 				<displayName>അംഗോളൻ ‍ന്യൂ ക്വാൻസ (1990–2000)</displayName>

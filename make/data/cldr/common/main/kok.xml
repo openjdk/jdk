@@ -6528,7 +6528,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="han_characters">हॅन वर्ण</characterLabel>
 		<characterLabel type="han_radicals">हॅन रेडिकल</characterLabel>
 		<characterLabel type="hanja">हांजा</characterLabel>
-		<characterLabel type="hanzi_simplified">हांजी (सोंपी केल्लीझ)</characterLabel>
+		<characterLabel type="hanzi_simplified">हांजी (सोंपी केल्लीझ</characterLabel>
 		<characterLabel type="hanzi_traditional">हांजी (पारंपारीक)</characterLabel>
 		<characterLabel type="heart">काळीज</characterLabel>
 		<characterLabel type="historic_scripts">इतिहासीक लिपी</characterLabel>

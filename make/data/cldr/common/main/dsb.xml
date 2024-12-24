@@ -6934,7 +6934,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<characterLabel type="half_width_form_variant">warianty w połojcnej šyrokosći</characterLabel>
 		<characterLabel type="han_characters">han-znamuško</characterLabel>
 		<characterLabel type="han_radicals">han- radikale</characterLabel>
-		<characterLabel type="hanzi_simplified">hanzi (zjadnorjone)</characterLabel>
+		<characterLabel type="hanzi_simplified">hanzi (zjadnorjone))</characterLabel>
 		<characterLabel type="hanzi_traditional">hanzi (tradicionelne)</characterLabel>
 		<characterLabel type="heart">wutšoba</characterLabel>
 		<characterLabel type="historic_scripts">historiske pisma</characterLabel>
