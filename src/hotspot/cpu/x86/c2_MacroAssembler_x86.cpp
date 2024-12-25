@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -836,6 +836,42 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 #endif
   // C2 uses the value of ZF to determine the continuation.
 }
+
+#ifdef ASSERT
+void C2_MacroAssembler::checked_cast_int(const TypeInt* type, Register dst) {
+  Label fail;
+  Label succeed;
+  cmpl(dst, type->_lo);
+  jccb(Assembler::less, fail);
+  cmpl(dst, type->_hi);
+  jccb(Assembler::lessEqual, succeed);
+  bind(fail);
+  stop("Invalid CastII");
+  bind(succeed);
+}
+
+void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register dst, Register tmp) {
+  Label fail;
+  Label succeed;
+  if (is_simm32(type->_lo)) {
+    cmpq(dst, checked_cast<int>(type->_lo));
+  } else {
+    mov64(tmp, type->_lo);
+    cmpq(dst, tmp);
+  }
+  jccb(Assembler::less, fail);
+  if (is_simm32(type->_hi)) {
+    cmpq(dst, checked_cast<int>(type->_hi));
+  } else {
+    mov64(tmp, type->_hi);
+    cmpq(dst, tmp);
+  }
+  jccb(Assembler::lessEqual, succeed);
+  bind(fail);
+  stop("Invalid CastLL");
+  bind(succeed);
+}
+#endif // ASSERT
 
 //-------------------------------------------------------------------------------------------
 // Generic instructions support for use in .ad files C2 code generation

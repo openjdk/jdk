@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,11 @@ public:
   void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
                              Register t, Register thread);
   void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
+
+#ifdef ASSERT
+  void checked_cast_int(const TypeInt* type, Register dst);
+  void checked_cast_long(const TypeLong* type, Register dst, Register tmp);
+#endif
 
   // Generic instructions support for use in .ad files C2 code generation
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src);

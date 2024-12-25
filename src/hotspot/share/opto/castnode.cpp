@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -506,6 +506,12 @@ const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* re
   if (!phase->C->post_loop_opts_phase()) {
     return res;
   }
+
+  // Keep these casts for verification
+  if (VerifyConstraintCasts) {
+    return res;
+  }
+
   const TypeInteger* this_type = res->is_integer(bt);
   const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
   if (in_type != nullptr &&

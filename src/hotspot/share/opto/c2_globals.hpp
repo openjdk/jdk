@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -659,6 +659,10 @@
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
+                                                                            \
+  develop(bool, VerifyConstraintCasts, false,                               \
+          "perform runtime check to verify the value of a "                 \
+          "ConstraintCast lies inside its type")                            \
                                                                             \
   product(intx, MaxInlineLevel, 15,                                         \
           "maximum number of nested calls that are inlined by high tier "   \

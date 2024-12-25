@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -6991,6 +6991,7 @@ instruct castPP(rRegP dst)
 
 instruct castII(rRegI dst)
 %{
+  predicate(!VerifyConstraintCasts);
   match(Set dst (CastII dst));
 
   size(0);
@@ -7000,8 +7001,22 @@ instruct castII(rRegI dst)
   ins_pipe(empty);
 %}
 
+instruct castII_checked(rRegI dst, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts);
+  match(Set dst (CastII dst));
+
+  effect(KILL cr);
+  format %{ "# checked_cast_II $dst" %}
+  ins_encode %{
+    DEBUG_ONLY(__ checked_cast_int(bottom_type()->is_int(), $dst$$Register));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct castLL(rRegL dst)
 %{
+  predicate(!VerifyConstraintCasts);
   match(Set dst (CastLL dst));
 
   size(0);
@@ -7009,6 +7024,19 @@ instruct castLL(rRegL dst)
   ins_encode(/* empty encoding */);
   ins_cost(0);
   ins_pipe(empty);
+%}
+
+instruct castLL_checked(rRegL dst, rRegL tmp, rFlagsReg cr)
+%{
+  predicate(VerifyConstraintCasts);
+  match(Set dst (CastLL dst));
+
+  effect(KILL cr, TEMP tmp);
+  format %{ "# checked_cast_LL $dst" %}
+  ins_encode %{
+    DEBUG_ONLY(__ checked_cast_long(bottom_type()->is_long(), $dst$$Register, $tmp$$Register));
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 instruct castFF(regF dst)
