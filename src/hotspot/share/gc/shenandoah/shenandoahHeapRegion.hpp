@@ -266,7 +266,7 @@ private:
 
   ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
-  bool _need_bitmap_reset;
+  bool _needs_bitmap_reset;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -480,15 +480,15 @@ public:
   CENSUS_NOISE(void clear_youth() { _youth = 0; })
 
   inline bool need_bitmap_reset() const {
-    return _need_bitmap_reset;
+    return _needs_bitmap_reset;
   }
 
-  inline void set_need_bitmap_reset() {
-    _need_bitmap_reset = true;
+  inline void set_needs_bitmap_reset() {
+    _needs_bitmap_reset = true;
   }
 
-  inline void unset_need_bitmap_reset() {
-    _need_bitmap_reset = false;
+  inline void unset_needs_bitmap_reset() {
+    _needs_bitmap_reset = false;
   }
 
 private:

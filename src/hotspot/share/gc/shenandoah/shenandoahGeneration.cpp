@@ -41,7 +41,7 @@
 
 #include "utilities/quickSort.hpp"
 
-template <bool PREPARE_FOR_CURRENT_CYCLE>
+template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC = false>
 class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahHeap*           _heap;
@@ -57,10 +57,10 @@ public:
       if (region->need_bitmap_reset() && _heap->is_bitmap_slice_committed(region)) {
         _ctx->clear_bitmap(region);
       } else {
-        region->set_need_bitmap_reset();
+        region->set_needs_bitmap_reset();
       }
       // Capture Top At Mark Start for this generation.
-      if (region->is_active()) {
+      if (FULL_GC || region->is_active()) {
         // Reset live data and set TAMS optimistically. We would recheck these under the pause
         // anyway to capture any updates that happened since now.
         _ctx->capture_top_at_mark_start(region);
@@ -69,9 +69,9 @@ public:
     } else {
       if (_heap->is_bitmap_slice_committed(region)) {
         _ctx->clear_bitmap(region);
-        region->unset_need_bitmap_reset();
+        region->unset_needs_bitmap_reset();
       } else {
-        region->set_need_bitmap_reset();
+        region->set_needs_bitmap_reset();
       }
     }
   }
@@ -213,19 +213,20 @@ void ShenandoahGeneration::log_status(const char *msg) const {
                    byte_size_in_proper_unit(v_available),         proper_unit_for_byte_size(v_available));
 }
 
-template <bool PREPARE_FOR_CURRENT_CYCLE>
+template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC>
 void ShenandoahGeneration::reset_mark_bitmap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
   set_mark_incomplete();
 
-  ShenandoahResetBitmapClosure<PREPARE_FOR_CURRENT_CYCLE> closure;
+  ShenandoahResetBitmapClosure<PREPARE_FOR_CURRENT_CYCLE, FULL_GC> closure;
   parallel_heap_region_iterate_free(&closure);
 }
 // Explicit specializations
-template void ShenandoahGeneration::reset_mark_bitmap<true>();
-template void ShenandoahGeneration::reset_mark_bitmap<false>();
+template void ShenandoahGeneration::reset_mark_bitmap<true, false>();
+template void ShenandoahGeneration::reset_mark_bitmap<true, true>();
+template void ShenandoahGeneration::reset_mark_bitmap<false, false>();
 
 // The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
 // However, limitations in the implementation of the mutator write-barrier make it difficult to simply change the
