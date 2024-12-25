@@ -44,6 +44,9 @@ hotspot_compiler_resourcehogs = \
 hotspot_gc = \
   gc
 
+hotspot_null_check = \
+  sources
+
 # By design this group should include ALL tests under runtime sub-directory
 hotspot_runtime = \
   runtime
@@ -221,7 +224,8 @@ tier1_compiler_3 = \
   -compiler/intrinsics/bigInteger/TestMultiplyToLen.java \
   -compiler/intrinsics/zip/TestAdler32.java \
   -compiler/loopopts/Test7052494.java \
-  -compiler/runtime/Test6826736.java
+  -compiler/runtime/Test6826736.java \
+  sources
 
 tier2_compiler = \
   compiler/allocation/ \
