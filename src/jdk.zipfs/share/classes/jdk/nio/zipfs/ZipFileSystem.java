@@ -65,6 +65,7 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.NOT_INTERRUPTIBLE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -166,7 +167,7 @@ class ZipFileSystem extends FileSystem {
         this.readOnly = !writeable;
         this.zc = ZipCoder.get(nameEncoding);
         this.rootdir = new ZipPath(this, new byte[]{'/'});
-        this.ch = Files.newByteChannel(zfpath, READ);
+        this.ch = Files.newByteChannel(zfpath, READ, NOT_INTERRUPTIBLE);
         try {
             this.cen = initCEN();
         } catch (IOException x) {

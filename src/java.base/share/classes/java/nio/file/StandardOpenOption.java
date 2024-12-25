@@ -121,5 +121,14 @@ public enum StandardOpenOption implements OpenOption {
      *
      * @see <a href="package-summary.html#integrity">Synchronized I/O file integrity</a>
      */
-    DSYNC;
+    DSYNC,
+
+    /**
+     * Prevents blocking operations on this file from interacting with the
+     * {@link Thread#interrupt} system. This also prevents the file from being
+     * closed when a blocking operation is interrupted.
+     *
+     * @since 25
+     */
+    NOT_INTERRUPTIBLE;
 }

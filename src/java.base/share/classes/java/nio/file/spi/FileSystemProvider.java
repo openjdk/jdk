@@ -28,9 +28,7 @@ package java.nio.file.spi;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.AccessMode;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -67,8 +65,6 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-
-import sun.nio.ch.FileChannelImpl;
 
 /**
  * Service-provider class for file systems. The methods defined by the {@link
@@ -335,6 +331,9 @@ public abstract class FileSystemProvider {
         throw new UnsupportedOperationException();
     }
 
+    private static final Set<OpenOption> DEFAULT_INPUT_OPTIONS =
+            Set.of(StandardOpenOption.NOT_INTERRUPTIBLE);
+
     /**
      * Opens a file, returning an input stream to read from the file. This
      * method works in exactly the manner specified by the {@link
@@ -362,22 +361,26 @@ public abstract class FileSystemProvider {
     public InputStream newInputStream(Path path, OpenOption... options)
         throws IOException
     {
-        for (OpenOption opt : options) {
-            // All OpenOption values except for APPEND and WRITE are allowed
-            if (opt == StandardOpenOption.APPEND ||
-                opt == StandardOpenOption.WRITE)
-                throw new UnsupportedOperationException("'" + opt + "' not allowed");
+        Set<OpenOption> opts;
+        if (options.length == 0) {
+            opts = DEFAULT_INPUT_OPTIONS;
+        } else {
+            opts = new HashSet<>();
+            for (OpenOption opt : options) {
+                // All OpenOption values except for APPEND and WRITE are allowed
+                if (opt == StandardOpenOption.APPEND ||
+                        opt == StandardOpenOption.WRITE)
+                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
+                opts.add(opt);
+            }
+            opts.add(StandardOpenOption.NOT_INTERRUPTIBLE);
         }
-        ReadableByteChannel rbc = Files.newByteChannel(path, options);
-        if (rbc instanceof FileChannelImpl) {
-            ((FileChannelImpl) rbc).setUninterruptible();
-        }
-        return Channels.newInputStream(rbc);
+        return Channels.newInputStream(Files.newByteChannel(path, opts));
     }
 
-    private static final Set<OpenOption> DEFAULT_OPEN_OPTIONS =
+    private static final Set<OpenOption> DEFAULT_OUTPUT_OPTIONS =
         Set.of(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
-            StandardOpenOption.WRITE);
+            StandardOpenOption.WRITE, StandardOpenOption.NOT_INTERRUPTIBLE);
 
     /**
      * Opens or creates a file, returning an output stream that may be used to
@@ -413,7 +416,7 @@ public abstract class FileSystemProvider {
         int len = options.length;
         Set<OpenOption> opts ;
         if (len == 0) {
-            opts = DEFAULT_OPEN_OPTIONS;
+            opts = DEFAULT_OUTPUT_OPTIONS;
         } else {
             opts = new HashSet<>();
             for (OpenOption opt: options) {
@@ -422,12 +425,9 @@ public abstract class FileSystemProvider {
                 opts.add(opt);
             }
             opts.add(StandardOpenOption.WRITE);
+            opts.add(StandardOpenOption.NOT_INTERRUPTIBLE);
         }
-        WritableByteChannel wbc = newByteChannel(path, opts);
-        if (wbc instanceof FileChannelImpl) {
-            ((FileChannelImpl) wbc).setUninterruptible();
-        }
-        return Channels.newOutputStream(wbc);
+        return Channels.newOutputStream(newByteChannel(path, opts));
     }
 
     /**

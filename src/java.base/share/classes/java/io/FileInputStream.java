@@ -560,7 +560,7 @@ public class FileInputStream extends InputStream
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    fc = FileChannelImpl.open(fd, path, true, false, false, false, this);
+                    fc = FileChannelImpl.open(fd, path, true, false, false, false, false, this);
                     this.channel = fc;
                     if (closed) {
                         try {

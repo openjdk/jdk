@@ -65,6 +65,7 @@ class UnixChannelFactory {
         boolean sync;
         boolean dsync;
         boolean direct;
+        boolean uninterruptible;
 
         static Flags toFlags(Set<? extends OpenOption> options) {
             Flags flags = new Flags();
@@ -81,6 +82,7 @@ class UnixChannelFactory {
                         case SPARSE : /* ignore */ break;
                         case SYNC : flags.sync = true; break;
                         case DSYNC : flags.dsync = true; break;
+                        case NOT_INTERRUPTIBLE : flags.uninterruptible = true; break;
                         default: throw new UnsupportedOperationException();
                     }
                     continue;
@@ -131,7 +133,7 @@ class UnixChannelFactory {
 
         FileDescriptor fdObj = open(dfd, path, flags, mode);
         return FileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write,
-                (flags.sync || flags.dsync), flags.direct, null);
+                (flags.sync || flags.dsync), flags.direct, flags.uninterruptible, null);
     }
 
     /**

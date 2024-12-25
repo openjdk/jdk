@@ -33,11 +33,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.IntStream;
 import jdk.internal.jimage.decompressor.Decompressor;
 
@@ -103,7 +106,24 @@ public class BasicImageReader implements AutoCloseable {
         if (map != null && MAP_ALL) {
             channel = null;
         } else {
-            channel = FileChannel.open(imagePath, StandardOpenOption.READ);
+            Set<OpenOption> opts = new HashSet<>();
+            opts.add(StandardOpenOption.READ);
+            // No lambdas during bootstrap
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                @Override
+                public Void run() {
+                    try {
+                        opts.add((OpenOption) StandardOpenOption.class.getField("NOT_INTERRUPTIBLE").get(null));
+                    } catch (NoSuchFieldException |
+                            IllegalAccessException ex) {
+                        // fall through - will happen on pre-25 JDKs
+                    }
+
+                    return null;
+                }
+            });
+
+            channel = FileChannel.open(imagePath, opts);
             // No lambdas during bootstrap
             AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 @Override
@@ -120,7 +140,8 @@ public class BasicImageReader implements AutoCloseable {
                                  IllegalAccessException |
                                  InvocationTargetException ex) {
                             // fall thru - will only happen on JDK-8 systems where this code
-                            // is only used by tools using jrt-fs (non-critical.)
+                            // is only used by tools using jrt-fs (non-critical),
+                            // or on JDK-25+ systems where NOT_INTERRUPTIBLE is available.
                         }
                     }
 
