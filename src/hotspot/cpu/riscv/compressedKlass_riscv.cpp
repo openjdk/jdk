@@ -31,7 +31,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   char* result = nullptr;
 
-  // RiscV loads a 64-bit immediate in up to four separate steps, splitting it into four different sections
+  // RISC-V loads a 64-bit immediate in up to four separate steps, splitting it into four different sections
   // (two 32-bit sections, each split into two subsections of 20/12 bits).
   //
   // 63 ....... 44 43 ... 32 31 ....... 12 11 ... 0
@@ -51,15 +51,9 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   //   with one instruction (2)
   result = reserve_address_space_for_unscaled_encoding(size, aslr);
 
-  // Failing that, attempt to reserve for base=zero shift>0
-  if (result == nullptr && optimize_for_zero_base) {
-    result = reserve_address_space_for_zerobased_encoding(size, aslr);
-  }
-
   // Failing that, optimize for case (3) - a base with only bits set between [32-44)
   if (result == nullptr) {
-    const uintptr_t from = nth_bit(32 +
-                    (optimize_for_zero_base ? CompressedKlassPointers::max_shift() : 0));
+    const uintptr_t from = nth_bit(32)
     constexpr uintptr_t to = nth_bit(44);
     constexpr size_t alignment = nth_bit(32);
     result = reserve_address_space_X(from, to, size, alignment, aslr);
