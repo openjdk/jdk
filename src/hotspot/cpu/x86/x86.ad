@@ -1876,8 +1876,6 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_VectorCastL2X:
       if (is_integral_type(bt) && size_in_bits == 256 && UseAVX < 2) {
         return false;
-      } else if (!is_integral_type(bt) && !VM_Version::supports_avx512dq()) {
-        return false;
       }
       break;
     case Op_VectorCastF2X: {
@@ -1890,10 +1888,6 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
         }
       }
       // fallthrough
-    case Op_VectorCastD2X:
-      if (bt == T_LONG && !VM_Version::supports_avx512dq()) {
-        return false;
-      }
       break;
     case Op_VectorCastF2HF:
     case Op_VectorCastHF2F:
