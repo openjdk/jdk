@@ -190,6 +190,13 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
                                 final TerminationCause terminationCause) {
         assert closeFrame != null : "connection close frame is null";
         assert keySpace != null : "keyspace is null";
+        final String logMsg = terminationCause.getLogMsg();
+        // if the connection has already been closed (for example: through silent termination)
+        // then the local state of the connection is already discarded and thus
+        // there's nothing more we can do with the connection.
+        if (connection.stateHandle().isMarked(CLOSED)) {
+            return;
+        }
         // switch to closing state
         if (!markClosing(terminationCause)) {
             // has previously already gone into closing state
@@ -199,7 +206,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         // management for a closing connection
         connection.idleTimeoutManager.shutdown();
 
-        final String logMsg = terminationCause.getLogMsg();
         // TODO: review this
         // TODO: does this need some lock?
         if (connection.stateHandle().draining()) {
@@ -254,6 +260,12 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
     }
 
     private void drain(final ConnectionCloseFrame incomingFrame) {
+        // if the connection has already been closed (for example: through silent termination)
+        // then the local state of the connection is already discarded and thus
+        // there's nothing more we can do with the connection.
+        if (connection.stateHandle().isMarked(CLOSED)) {
+            return;
+        }
         final boolean isAppLayerClose = incomingFrame.variant();
         final String closeCodeHex = (isAppLayerClose ? "(app layer) " : "") +
                 "0x" + Long.toHexString(incomingFrame.errorCode());
