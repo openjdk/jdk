@@ -27,15 +27,10 @@ package sun.print;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.LinearGradientPaint;
-import java.awt.Paint;
-import java.awt.RadialGradientPaint;
 import java.awt.Shape;
-import java.awt.TexturePaint;
 import java.awt.Transparency;
 
 import java.awt.font.FontRenderContext;
@@ -69,8 +64,6 @@ class PSPathGraphics extends PathGraphics {
      * resolution is 72dpi.
      */
     private static final int DEFAULT_USER_RES = 72;
-
-    private final BufferedImage colorConverterImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 
     PSPathGraphics(Graphics2D graphics, PrinterJob printerJob,
                    Printable painter, PageFormat pageFormat, int pageIndex,
@@ -789,91 +782,6 @@ class PSPathGraphics extends PathGraphics {
      * not an abstract method there.
      */
     protected void deviceClip(PathIterator pathIter) {
-    }
-
-    @Override
-    public void setColor(Color c) {
-        PSPrinterJob psPrinterJob = (PSPrinterJob) getPrinterJob();
-        if (psPrinterJob.monochrome) {
-            super.setColor(getGrayscaleColor(c));
-        }
-        super.setColor(c);
-    }
-
-    @Override
-    public void setPaint(Paint paint) {
-        PSPrinterJob psPrinterJob = (PSPrinterJob) getPrinterJob();
-        if (!psPrinterJob.monochrome) {
-            super.setPaint(paint);
-            return;
-        }
-        if (paint instanceof Color color) {
-            super.setPaint(getGrayscaleColor(color));
-        } else if (paint instanceof TexturePaint texturePaint) {
-            super.setPaint(new TexturePaint(getGrayscaleImage(texturePaint.getImage()), texturePaint.getAnchorRect()));
-        } else if (paint instanceof GradientPaint gradientPaint) {
-            super.setPaint(new GradientPaint(gradientPaint.getPoint1(),
-                    getGrayscaleColor(gradientPaint.getColor1()),
-                    gradientPaint.getPoint2(),
-                    getGrayscaleColor(gradientPaint.getColor2()),
-                    gradientPaint.isCyclic()));
-        } else if (paint instanceof LinearGradientPaint linearGradientPaint) {
-            Color[] colors = new Color[linearGradientPaint.getColors().length];
-            Color[] oldColors = linearGradientPaint.getColors();
-            for (int i = 0; i < colors.length; i++) {
-                colors[i] = getGrayscaleColor(oldColors[i]);
-            }
-            super.setPaint(new LinearGradientPaint(linearGradientPaint.getStartPoint(),
-                    linearGradientPaint.getEndPoint(),
-                    linearGradientPaint.getFractions(),
-                    colors,
-                    linearGradientPaint.getCycleMethod(),
-                    linearGradientPaint.getColorSpace(),
-                    linearGradientPaint.getTransform()
-            ));
-        } else if (paint instanceof RadialGradientPaint radialGradientPaint) {
-            Color[] colors = new Color[radialGradientPaint.getColors().length];
-            Color[] oldColors = radialGradientPaint.getColors();
-            for (int i = 0; i < colors.length; i++) {
-                colors[i] = getGrayscaleColor(oldColors[i]);
-            }
-            super.setPaint(new RadialGradientPaint(radialGradientPaint.getCenterPoint(),
-                    radialGradientPaint.getRadius(),
-                    radialGradientPaint.getFocusPoint(),
-                    radialGradientPaint.getFractions(),
-                    colors,
-                    radialGradientPaint.getCycleMethod(),
-                    radialGradientPaint.getColorSpace(),
-                    radialGradientPaint.getTransform()));
-        } else {
-            super.setPaint(paint);
-        }
-    }
-
-    /**
-     * Converts Image to a grayscale
-     * @param img colored image
-     * @return grayscale BufferedImage
-     */
-    private BufferedImage getGrayscaleImage(Image img) {
-        BufferedImage grayImage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-        Graphics grayGraphics = grayImage.getGraphics();
-        grayGraphics.drawImage(img, 0, 0, null);
-        grayGraphics.dispose();
-        ((PSPrinterJob)getPrinterJob()).monochromeConverter.filter(grayImage, grayImage);
-        return grayImage;
-    }
-
-    /**
-     * Returns grayscale variant of the input Color
-     * @param color color to transform to grayscale
-     * @return grayscale color
-     */
-    private Color getGrayscaleColor(Color color) {
-        colorConverterImg.setRGB(0, 0, color.getRGB());
-        ((PSPrinterJob)getPrinterJob()).monochromeConverter.filter(colorConverterImg, colorConverterImg);
-        int[] data = colorConverterImg.getData().getPixel(0, 0, new int[3]);
-        return new Color(data[0], data[1], data[2]);
     }
 
 }
