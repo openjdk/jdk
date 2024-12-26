@@ -59,7 +59,7 @@ import java.util.Arrays;
  * @test
  * @bug 8315113
  * @key printer
- * @requires (os.family == "linux" | os.family == "mac")
+ * @requires (os.family == "mac")
  * @summary javax.print: Support monochrome printing
  */
 

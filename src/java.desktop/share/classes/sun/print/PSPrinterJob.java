@@ -1054,9 +1054,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                                             BufferedImage.TYPE_INT_RGB);
             Graphics2D bufferedGraphics = bufferedImage.createGraphics();
             boolean canRedraw = peekGraphics.getAWTDrawingOnly() == false;
-            if (monochrome) {
-                bufferedGraphics = new GrayscaleProxyGraphics2D(bufferedGraphics, printerJob);
-            }
+
             pathGraphics =  new PSPathGraphics(bufferedGraphics, printerJob,
                                                painter, pageFormat, pageIndex,
                                                canRedraw);

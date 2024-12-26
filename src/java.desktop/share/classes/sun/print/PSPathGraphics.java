@@ -567,9 +567,6 @@ class PSPathGraphics extends PathGraphics {
                                             srcX, srcY,
                                             srcX + srcWidth, srcY + srcHeight,
                                             bgcolor, null);
-                    if (psPrinterJob.monochrome) {
-                        psPrinterJob.monochromeConverter.filter(deepImage, deepImage);
-                    }
 
                     /* In PSPrinterJob images are printed in device space
                      * and therefore we need to set a device space clip.
@@ -721,9 +718,7 @@ class PSPathGraphics extends PathGraphics {
          * and pass it along to PS.
          */
         ByteComponentRaster tile = (ByteComponentRaster)deepImage.getRaster();
-        if (psPrinterJob.monochrome) {
-            psPrinterJob.monochromeConverter.filter(deepImage, deepImage);
-        }
+
         psPrinterJob.drawImageBGR(tile.getDataStorage(),
                             scaledBounds.x, scaledBounds.y,
                             scaledBounds.width,

@@ -37,33 +37,19 @@ import java.awt.Paint;
 import java.awt.RadialGradientPaint;
 import java.awt.TexturePaint;
 import java.awt.color.ColorSpace;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorConvertOp;
+import java.awt.image.BufferedImageOp;
+import java.awt.image.ImageObserver;
+import java.awt.image.RenderedImage;
 import java.awt.print.PrinterJob;
 
 /**
  * Proxy class to print with grayscale.
- * Override methods:
- * <ul>
- *     <li>{@link #setColor(Color)}</li>
- *     <li>{@link #setPaint(Paint)}</li>
- * </ul>
- * and change input Colors and Paints to grayscale.
- * It uses {@link ColorConvertOp} to convert income colors and images to grayscale.
+ * Convert input Colors, Paints and Images to the grayscale.
  *
  */
 public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {
-
-    /**
-     * Color converter
-     */
-    private final ColorConvertOp monochromeConverter =
-            new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
-
-    /**
-     * buffered image is used to convert colors
-     */
-    private final BufferedImage monochromeImg = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 
     /**
      * The new ProxyGraphics2D will forward all graphics
@@ -74,6 +60,12 @@ public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {
      */
     public GrayscaleProxyGraphics2D(Graphics2D graphics, PrinterJob printerJob) {
         super(graphics, printerJob);
+    }
+
+    @Override
+    public void setBackground(Color color) {
+        Color gcolor = getGrayscaleColor(color);
+        super.setBackground(gcolor);
     }
 
     @Override
@@ -122,9 +114,63 @@ public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {
                     radialGradientPaint.getCycleMethod(),
                     radialGradientPaint.getColorSpace(),
                     radialGradientPaint.getTransform()));
-        } else {
+        } else if (paint == null) {
             super.setPaint(paint);
+        } else {
+            throw new IllegalArgumentException("Unsupported Paint");
         }
+    }
+
+    @Override
+    public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
+        BufferedImage grayImage = new BufferedImage(img.getWidth() + img.getTileWidth(),
+                img.getHeight() + img.getTileHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        Graphics2D g2 = grayImage.createGraphics();
+        g2.drawRenderedImage(img, new AffineTransform());
+        g2.dispose();
+        super.drawRenderedImage(getGrayscaleImage(grayImage), xform);
+    }
+
+    @Override
+    public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2,
+                             Color bgcolor, ImageObserver observer) {
+        return super.drawImage(getGrayscaleImage(img), dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
+    }
+
+    @Override
+    public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2,
+                             ImageObserver observer) {
+        return super.drawImage(getGrayscaleImage(img), dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
+    }
+
+    @Override
+    public boolean drawImage(Image img, int x, int y, int width, int height, Color bgcolor, ImageObserver observer) {
+        return super.drawImage(getGrayscaleImage(img), x, y, width, height, bgcolor, observer);
+    }
+
+    @Override
+    public boolean drawImage(Image img, int x, int y, Color bgcolor, ImageObserver observer) {
+        return super.drawImage(getGrayscaleImage(img), x, y, bgcolor, observer);
+    }
+
+    @Override
+    public boolean drawImage(Image img, int x, int y, int width, int height, ImageObserver observer) {
+        return super.drawImage(getGrayscaleImage(img), x, y, width, height, observer);
+    }
+
+    @Override
+    public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
+        return super.drawImage(getGrayscaleImage(img), x, y, observer);
+    }
+
+    @Override
+    public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) {
+        super.drawImage(getGrayscaleImage(img), op, x, y);
+    }
+
+    @Override
+    public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) {
+        return super.drawImage(getGrayscaleImage(img), xform, obs);
     }
 
     /**
@@ -133,31 +179,33 @@ public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {
      * @return grayscale color
      */
     private Color getGrayscaleColor(Color color) {
-        monochromeImg.setRGB(0, 0, color.getRGB());
-        convertToMonochrome(monochromeImg);
-        int[] data = monochromeImg.getData().getPixel(0, 0, new int[3]);
-        Color grayColor = new Color(data[0], data[1], data[2]);
-        return grayColor;
+        if (color == null) {
+            return null;
+        }
+        float[] gcolor = color.getComponents(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
+        return switch (gcolor.length) {
+            case 1 -> new Color(gcolor[0], gcolor[0], gcolor[0]);
+            case 2 -> new Color(gcolor[0], gcolor[0], gcolor[0], gcolor[1]);
+            default -> throw new IllegalArgumentException("Unknown grayscale color. " +
+                    "Expected 1 or 2 components, received " + gcolor.length + " components.");
+        };
     }
+
     /**
      * Converts Image to a grayscale
      * @param img colored image
      * @return grayscale BufferedImage
      */
     private BufferedImage getGrayscaleImage(Image img) {
-        BufferedImage grayImage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        if (img == null) {
+            return null;
+        }
+        BufferedImage grayImage = new BufferedImage(img.getWidth(null), img.getHeight(null),
+                BufferedImage.TYPE_BYTE_GRAY);
         Graphics grayGraphics = grayImage.getGraphics();
         grayGraphics.drawImage(img, 0, 0, null);
         grayGraphics.dispose();
-        convertToMonochrome(grayImage);
         return grayImage;
     }
 
-    /**
-     * Convert provided colored BufferdImage to the grayscale image
-     * @param img image to be converted
-     */
-    private void convertToMonochrome(BufferedImage img) {
-        monochromeConverter.filter(img, img);
-    }
 }

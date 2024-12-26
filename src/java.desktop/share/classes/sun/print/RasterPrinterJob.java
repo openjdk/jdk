@@ -25,9 +25,6 @@
 
 package sun.print;
 
-import java.awt.color.ColorSpace;
-import java.awt.image.ColorConvertOp;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -70,7 +67,6 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.Size2DSyntax;
-import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.DialogTypeSelection;
@@ -290,8 +286,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * communicate state
      */
     protected PrintRequestAttributeSet attributes = null;
-    protected boolean monochrome;
-    protected ColorConvertOp monochromeConverter;
 
     /**
      * Class to keep state information for redrawing areas
@@ -1170,11 +1164,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
                                           attrset));
     }
 
-    protected boolean isAttributeCategorySupported(Class<? extends Attribute> category) {
-        PrintService ps = getPrintService();
-        return category != null && ps != null && ps.isAttributeCategorySupported(category);
-    }
-
     /**
      * Set the device resolution.
      * Overridden and used only by the postscript code.
@@ -1415,11 +1404,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
             this.attributes = attributes;
         }
 
-        Attribute attr = attributes.get(Chromaticity.class);
-        monochrome = attr == Chromaticity.MONOCHROME && isAttributeCategorySupported(Chromaticity.class);
-        if (monochrome && monochromeConverter == null) {
-            monochromeConverter = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
-        }
     }
 
     /*
@@ -2409,9 +2393,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
                         painterGraphics.setDelegate((Graphics2D) bandGraphics.create());
                         painter.print(painterGraphics, origPage, pageIndex);
                         painterGraphics.dispose();
-                        if (monochrome) {
-                            monochromeConverter.filter(band, band);
-                        }
                         printBand(data, bandX, bandTop + bandY, bandWidth, bandHeight);
                     }
                 }
