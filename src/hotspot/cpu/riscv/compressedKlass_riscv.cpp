@@ -53,7 +53,7 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   // Failing that, optimize for case (3) - a base with only bits set between [32-44)
   if (result == nullptr) {
-    const uintptr_t from = nth_bit(32)
+    const uintptr_t from = nth_bit(32);
     constexpr uintptr_t to = nth_bit(44);
     constexpr size_t alignment = nth_bit(32);
     result = reserve_address_space_X(from, to, size, alignment, aslr);
