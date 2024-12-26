@@ -46,7 +46,7 @@ import java.awt.print.PrinterJob;
 
 /**
  * Proxy class to print with grayscale.
- * Convert input Colors, Paints and Images to the grayscale.
+ * Convert Colors, Paints and Images to the grayscale.
  *
  */
 public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {
