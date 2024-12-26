@@ -139,7 +139,6 @@ public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {
         Color grayColor = new Color(data[0], data[1], data[2]);
         return grayColor;
     }
-
     /**
      * Converts Image to a grayscale
      * @param img colored image
@@ -161,5 +160,4 @@ public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {
     private void convertToMonochrome(BufferedImage img) {
         monochromeConverter.filter(img, img);
     }
-
 }

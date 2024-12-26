@@ -349,6 +349,6 @@ public class MonochromePrintTest {
             }
             return bufferedImage;
         }
-
     }
+
 }
