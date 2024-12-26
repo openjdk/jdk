@@ -49,7 +49,7 @@ import java.awt.print.PrinterJob;
  *     <li>{@link #setPaint(Paint)}</li>
  * </ul>
  * and change input Colors and Paints to grayscale.
- * It uses {@link ColorConvertOp} to convert colors and images to grayscale.
+ * It uses {@link ColorConvertOp} to convert income colors and images to grayscale.
  *
  */
 public class GrayscaleProxyGraphics2D extends ProxyGraphics2D {

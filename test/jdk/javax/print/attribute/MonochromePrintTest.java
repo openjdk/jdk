@@ -144,7 +144,7 @@ public class MonochromePrintTest {
                 "The test fails if the page is not printed with required color apearance.",
         };
 
-        String title = String.format("Print with %s chromaticity test: %d from %d", chromaticity, testCount + 1, testTotalCount);
+        String title = String.format("Print with %s chromacity test: %d from %d", chromaticity, testCount + 1, testTotalCount);
         final JDialog dialog = new JDialog(null, title, Dialog.ModalityType.DOCUMENT_MODAL);
         JTextArea textArea = new JTextArea(String.join("\n", instructions));
         textArea.setEditable(false);
@@ -205,7 +205,7 @@ public class MonochromePrintTest {
 
         PrinterJob job = PrinterJob.getPrinterJob();
         job.setJobName("Print with " + chromaticity);
-        job.setPrintable(new ChromaticityAttributePrintable(chromaticity));
+        job.setPrintable(new ChromacityAttributePrintable(chromaticity));
 
         if (job.printDialog(attr)) {
             job.print();
@@ -228,8 +228,8 @@ public class MonochromePrintTest {
         testSkipped = true;
     }
 
-    private static void fail(Chromaticity chromaticity) {
-        System.out.printf("Failed test: %s", chromaticity.toString());
+    private static void fail(Chromaticity chromacity) {
+        System.out.printf("Failed test: %s", chromacity.toString());
         testPassed = false;
     }
 
@@ -267,12 +267,12 @@ public class MonochromePrintTest {
     }
 
 
-    private static class ChromaticityAttributePrintable implements Printable {
+    private static class ChromacityAttributePrintable implements Printable {
 
-        private final Chromaticity chromaticity;
+        private final Chromaticity chromacity;
 
-        public ChromaticityAttributePrintable(Chromaticity chromaticity) {
-            this.chromaticity = chromaticity;
+        public ChromacityAttributePrintable(Chromaticity chromacity) {
+            this.chromacity = chromacity;
         }
 
         @Override
@@ -315,7 +315,7 @@ public class MonochromePrintTest {
 
             g.setStroke(new BasicStroke(5));
             g.setColor(Color.PINK);
-            g.drawString("Chromaticity: " + chromaticity, sx, imh + 30);
+            g.drawString("Chromacity: " + chromacity, sx, imh + 30);
 
             return PAGE_EXISTS;
         }
