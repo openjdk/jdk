@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,16 +232,9 @@ public final class HashedPasswordManager {
      * SHA3-512 hash
      *
      * @throws IOException If unable to access the file
-     * @throws SecurityException If read/write file permissions are not granted
      */
     public synchronized void loadPasswords()
-            throws IOException, SecurityException {
-
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(passwordFile);
-        }
+            throws IOException {
 
         AtomicBoolean hasClearPasswords = new AtomicBoolean(false);
         StringBuilder sbuf = new StringBuilder();

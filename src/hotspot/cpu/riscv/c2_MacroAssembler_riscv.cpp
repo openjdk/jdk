@@ -116,10 +116,10 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  // Try to CAS owner (no owner => current thread's _lock_id).
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value));
   Register tid = tmp4Reg;
-  ld(tid, Address(xthread, JavaThread::lock_id_offset()));
+  ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
   cmpxchg(/*memory address*/tmp, /*expected value*/zr, /*new value*/tid, Assembler::int64,
           Assembler::aq, Assembler::rl, /*result*/tmp3Reg); // cas succeeds if tmp3Reg == zr(expected)
 
@@ -400,9 +400,9 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
     // Compute owner address.
     la(tmp2_owner_addr, owner_address);
 
-    // Try to CAS owner (no owner => current thread's _lock_id).
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     Register tid = tmp4;
-    ld(tid, Address(xthread, JavaThread::lock_id_offset()));
+    ld(tid, Address(xthread, JavaThread::monitor_owner_id_offset()));
     cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
@@ -787,7 +787,8 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   j(NOMATCH);
 
   bind(HIT);
-  ctzc_bit(trailing_char, match_mask, isL, ch1, result);
+  // count bits of trailing zero chars
+  ctzc_bits(trailing_char, match_mask, isL, ch1, result);
   srli(trailing_char, trailing_char, 3);
   addi(cnt1, cnt1, 8);
   ble(cnt1, trailing_char, NOMATCH);
@@ -1027,7 +1028,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     srli(ch2, ch2, XLEN - 8); // pattern[m-2], 0x0000000b
     slli(ch1, tmp6, XLEN - 16);
     srli(ch1, ch1, XLEN - 8); // pattern[m-3], 0x0000000c
-    andi(tmp6, tmp6, 0xff); // pattern[m-4], 0x0000000d
+    zext(tmp6, tmp6, 8); // pattern[m-4], 0x0000000d
     slli(ch2, ch2, 16);
     orr(ch2, ch2, ch1); // 0x00000b0c
     slli(result, tmp3, 48); // use result as temp register
@@ -1536,15 +1537,16 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     // compute their difference.
     bind(DIFFERENCE);
     xorr(tmp3, tmp1, tmp2);
-    ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
+    // count bits of trailing zero chars
+    ctzc_bits(result, tmp3, isLL);
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
     if (isLL) {
-      andi(tmp1, tmp1, 0xFF);
-      andi(tmp2, tmp2, 0xFF);
+      zext(tmp1, tmp1, 8);
+      zext(tmp2, tmp2, 8);
     } else {
-      andi(tmp1, tmp1, 0xFFFF);
-      andi(tmp2, tmp2, 0xFFFF);
+      zext(tmp1, tmp1, 16);
+      zext(tmp2, tmp2, 16);
     }
     sub(result, tmp1, tmp2);
     j(DONE);
@@ -2003,10 +2005,48 @@ void C2_MacroAssembler::enc_cmpEqNe_imm0_branch(int cmpFlag, Register op1, Label
 }
 
 void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Register dst, Register src) {
-  Label L;
-  cmp_branch(cmpFlag ^ (1 << neg_cond_bits), op1, op2, L);
-  mv(dst, src);
-  bind(L);
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_eq(op1, op2, dst, src);
+      break;
+    case BoolTest::ne:
+      cmov_ne(op1, op2, dst, src);
+      break;
+    case BoolTest::le:
+      if (is_unsigned) {
+        cmov_leu(op1, op2, dst, src);
+      } else {
+        cmov_le(op1, op2, dst, src);
+      }
+      break;
+    case BoolTest::ge:
+      if (is_unsigned) {
+        cmov_geu(op1, op2, dst, src);
+      } else {
+        cmov_ge(op1, op2, dst, src);
+      }
+      break;
+    case BoolTest::lt:
+      if (is_unsigned) {
+        cmov_ltu(op1, op2, dst, src);
+      } else {
+        cmov_lt(op1, op2, dst, src);
+      }
+      break;
+    case BoolTest::gt:
+      if (is_unsigned) {
+        cmov_gtu(op1, op2, dst, src);
+      } else {
+        cmov_gt(op1, op2, dst, src);
+      }
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
 }
 
 // Set dst to NaN if any NaN input.

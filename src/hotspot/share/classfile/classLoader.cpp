@@ -303,10 +303,11 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
 }
 
 ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name,
-                                     bool is_boot_append, bool from_class_path_attr) : ClassPathEntry() {
+                                     bool is_boot_append, bool from_class_path_attr, bool multi_release) : ClassPathEntry() {
   _zip = zip;
   _zip_name = copy_path(zip_name);
   _from_class_path_attr = from_class_path_attr;
+  _multi_release = multi_release;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -750,7 +751,8 @@ jzfile* ClassLoader::open_zip_file(const char* canonical_path, char** error_msg,
 ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
                                                      const char *path, const struct stat* st,
                                                      bool is_boot_append,
-                                                     bool from_class_path_attr) {
+                                                     bool from_class_path_attr,
+                                                     bool is_multi_release) {
   ClassPathEntry* new_entry = nullptr;
   if ((st->st_mode & S_IFMT) == S_IFREG) {
     ResourceMark rm(current);
@@ -763,7 +765,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
     char* error_msg = nullptr;
     jzfile* zip = open_zip_file(canonical_path, &error_msg, current);
     if (zip != nullptr && error_msg == nullptr) {
-      new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
+      new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr, is_multi_release);
     } else {
 #if INCLUDE_CDS
       ClassLoaderExt::set_has_non_jar_in_classpath();
@@ -796,7 +798,7 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
         jzfile* zip = open_zip_file(canonical_path, &error_msg, thread);
         if (zip != nullptr && error_msg == nullptr) {
           // create using canonical path
-          return new ClassPathZipEntry(zip, canonical_path, is_boot_append, false);
+          return new ClassPathZipEntry(zip, canonical_path, is_boot_append, false, false);
         }
       }
     }
@@ -949,16 +951,35 @@ void* ClassLoader::dll_lookup(void* lib, const char* name, const char* path) {
 
 void ClassLoader::load_java_library() {
   assert(CanonicalizeEntry == nullptr, "should not load java library twice");
+  if (is_vm_statically_linked()) {
+    CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, os::lookup_function("JDK_Canonicalize"));
+    assert(CanonicalizeEntry != nullptr, "could not lookup JDK_Canonicalize");
+    return;
+  }
+
   void *javalib_handle = os::native_java_library();
   if (javalib_handle == nullptr) {
     vm_exit_during_initialization("Unable to load java library", nullptr);
   }
 
   CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, dll_lookup(javalib_handle, "JDK_Canonicalize", nullptr));
+  assert(CanonicalizeEntry != nullptr, "could not lookup JDK_Canonicalize in java library");
 }
 
 void ClassLoader::load_jimage_library() {
   assert(JImageOpen == nullptr, "should not load jimage library twice");
+
+  if (is_vm_statically_linked()) {
+      JImageOpen = CAST_TO_FN_PTR(JImageOpen_t, os::lookup_function("JIMAGE_Open"));
+      JImageClose = CAST_TO_FN_PTR(JImageClose_t, os::lookup_function("JIMAGE_Close"));
+      JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, os::lookup_function("JIMAGE_FindResource"));
+      JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, os::lookup_function("JIMAGE_GetResource"));
+      assert(JImageOpen != nullptr && JImageClose != nullptr &&
+            JImageFindResource != nullptr && JImageGetResource != nullptr,
+            "could not lookup all jimage library functions");
+      return;
+    }
+
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
   void* handle = nullptr;
@@ -973,6 +994,9 @@ void ClassLoader::load_jimage_library() {
   JImageClose = CAST_TO_FN_PTR(JImageClose_t, dll_lookup(handle, "JIMAGE_Close", path));
   JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, dll_lookup(handle, "JIMAGE_FindResource", path));
   JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, dll_lookup(handle, "JIMAGE_GetResource", path));
+  assert(JImageOpen != nullptr && JImageClose != nullptr &&
+        JImageFindResource != nullptr && JImageGetResource != nullptr,
+        "could not lookup all jimage library functions in jimage library");
 }
 
 int ClassLoader::crc32(int crc, const char* buf, int len) {
