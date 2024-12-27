@@ -120,16 +120,36 @@ public class TestIntReg {
         return a & b; //correctness verified
     }
 
-    public static int testCount(int a, int b) {
-        return Integer.bitCount(a) + Integer.numberOfLeadingZeros(b) + Integer.numberOfTrailingZeros(a-b);
+    public static int testMulImm2(int a, int b) {
+        return 8600 * b; //correctness verified
+    }
+
+    public static int testMulImm1(int a, int b) {
+        return a * 7900; //correctness verified
     }
 
     public static int testMul(int a, int b) {
         return a * b; //correctness verified
     }
 
+    public static int testSubImm2(int a, int b) {
+        return 1557280266 - b; // TODO: maps to esubq(Reg, Reg, Reg)
+    }
+
+    public static int testSubImm1(int a, int b) {
+        return a - -1557280266; // TODO: maps to leal
+    }
+
     public static int testSub(int a, int b) {
         return a - b; //correctness verified
+    }
+
+    public static int testAddImm2(int a, int b) {
+        return -27 + b; // TODO: maps to leal
+    }
+
+    public static int testAddImm1(int a, int b) {
+        return a + 27; // TODO: SDE gives illegal instruction error TODO:
     }
 
     public static int testAdd(int a, int b) {

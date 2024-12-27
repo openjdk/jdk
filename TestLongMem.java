@@ -109,42 +109,62 @@ public class TestLongMem {
         return x & b[i];
     }
 
-    public static long testCount(int a, int b) {
-        return Long.bitCount(a) + Long.numberOfLeadingZeros(b) + Long.numberOfTrailingZeros(a-b);
+    public static long testMulImm2(long x, int i) {
+        return a[i] * 5971; //CV
+    }
+
+    public static long testMulImm1(long x, int i) {
+        return 487 * b[i]; //CV
     }
 
     public static long testMul2(long x, int i) {
-        return b[i] * x;
+        return b[i] * x; //CV
     }
 
     public static long testMul1(long x, int i) {
-        return x * b[i];
+        return x * b[i]; //CV
+    }
+
+    public static long testSubImm2(long x, int i) {
+        return a[i] - 99; //TODO: maps to eaddq(Reg, Memm, Imm)
+    }
+
+    public static long testSubImm1(long x, int i) {
+        return 11 - b[i]; //TODO: maps to esubq(Reg, Reg, Mem)
     }
 
     public static long testSub2(long x, int i) {
-        return b[i] - x;
+        return a[i] - x; //CV
     }
 
     public static long testSub1(long x, int i) {
-        return x - b[i];
+        return x - b[i]; //CV
+    }
+
+    public static long testAddImm2(long x, int i) {
+        return -75 + b[i]; //CV
+    }
+
+    public static long testAddImm1(long x, int i) {
+        return a[i] + 75; //CV
     }
 
     public static long testAdd2(long x, int i) {
-        return b[i] + x;
+        return b[i] + x; //CV
     }
 
     public static long testAdd1(long x, int i) {
-        return x + b[i];
+        return x + b[i]; //CV
     }
 
-    public static void init(int size) {
+    public static void init(int size, long a0, long b0) {
         a = new long[size];
         b = new long[size];
         c = new long[size];
         Random rand = new Random(0);
         for (int i = 0; i < a.length; i++) {
-            a[i] = rand.nextLong();
-            b[i] = rand.nextLong();
+            a[i] = i == 0 ? a0 : rand.nextLong();
+            b[i] = i == 0 ? b0 : rand.nextLong();
         }
     }
 
@@ -153,11 +173,10 @@ public class TestLongMem {
         try {
 
             int iters = Integer.parseInt(args[0]);
+            Method method = TestLongMem.class.getMethod("test" + args[1], long.class, int.class);
             int factor = 10_000;
             int size = factor * iters;
-            init(size);
-
-            Method method = TestLongMem.class.getMethod("test" + args[1], long.class, int.class);
+            init(size, Long.parseLong(args[2]), Long.parseLong(args[3]));
 
             // warmup
             for (int i = 0; i < factor; i++) {
@@ -167,9 +186,11 @@ public class TestLongMem {
 
             // main iter
             for (int i = 0; i < factor * iters; i++) {
-                c[i] = (int) method.invoke(null, a[i], i);
+                c[i] = (long) method.invoke(null, a[i], i);
             }
-            System.out.println("------------- MAIN DONE ----------------");
+
+            System.out.println("\n ------------- MAIN DONE: " + "test" + args[1] + "(" + a[0] + "," + b[0] + ") = " + c[0]);
+            assert c[0] == Long.parseLong(args[4]) : "APX NDD test failed; expected = " + args[4];
 
         } catch (Exception e) {
             e.printStackTrace();

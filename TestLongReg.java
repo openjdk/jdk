@@ -19,120 +19,139 @@ public class TestLongReg {
     }
 
     public static long testCmovMax(long a, long b) {
-        return Math.max(a, b);
+        return Math.max(a, b); //CV
     }
 
     public static long testCmov(long a, long b) {
-        return a < 5 ? b : a;
+        return a < 5 ? b : a; //CV
     }
 
     public static long testCmovU(long a, long b) {
-        return Long.compareUnsigned(a, b) < 0 ? b : a;
+        return Long.compareUnsigned(a, b) < 0 ? b : a; //CV
     }
 
     public static long testTzcnt(long a, long b) {
-        return  Long.numberOfTrailingZeros(a);
+        return  Long.numberOfTrailingZeros(a); //CV
     }
 
     public static long testLzcnt(long a, long b) {
-        return  Long.numberOfLeadingZeros(b);
+        return  Long.numberOfLeadingZeros(a); //CV
     }
 
     public static long testPopcnt(long a, long b) {
-        return  Long.bitCount(a);
+        return  Long.bitCount(a); //CV
     }
 
     public static long testRor(long a, long b) {
-        return  Long.rotateRight(a, 8); // TODO: mapped to Rorxq
+        return  Long.rotateRight(a, 8); // TODO: maps to rorxq
     }
 
     public static long testRol(long a, long b) {
-        return  Long.rotateLeft(b, 7); // TODO: getting mapped to Rorxq 25
+        return  Long.rotateLeft(a, 7); // TODO: maps to rorxq 25
     }
-
 
     public static long testShrVar(long a, long b) {
         return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
     }
 
     public static long testShr(long a, long b) {
-        return  a >>> 6 ;
+        return  a >>> 6 ; //CV
     }
 
     public static long testSal(long a, long b) {
-        return  a << 5 ;
+        return  a << 5 ; //CV
     }
 
     public static long testSar(long a, long b) {
-        return  b >> 4 ;
+        return  b >> 4 ; //CV
     }
 
     public static long testDec(long a, long b) {
-        return  b - 1 ;
+        return  b - 1 ; //CV
     }
 
     public static long testInc(long a, long b) {
-        return  a + 1 ; // no ndd
+        return  a + 1 ; // TODO: maps to eaddq(Reg, Reg, Imm#1)
     }
 
     public static long testNeg(long a, long b) {
-        return  -b;
+        return  -b; //CV
     }
 
     public static long testXorImm1(long a, long b) {
-        return a ^ 9;
+        return a ^ 9; //CV
     }
 
     public static long testXorImm2(long a, long b) {
-        return 11 ^ b;
+        return 11 ^ b; //CV
     }
 
     public static long testXorM1(long a, long b) {
-        return -1 ^ b ;
+        return -1 ^ b ; //CV
     }
 
     public static long testXor(long a, long b) {
-        return a ^ b;
+        return a ^ b; //CV
     }
 
     public static long testOrImm1(long a, long b) {
-        return a | 9;
+        return a | 9; //CV
     }
 
     public static long testOrImm2(long a, long b) {
-        return 11 | b;
+        return 11 | b; //CV
     }
 
     public static long testOr(long a, long b) {
-        return a | b;
+        return a | b; //CV
     }
 
     public static long testAndImm1(long a, long b) {
-        return a & 9;
+        return a & 9; //CV
     }
 
     public static long testAndImm2(long a, long b) {
-        return 11 & b;
+        return 11 & b; //CV
     }
 
     public static long testAnd(long a, long b) {
-        return a & b;
+        return a & b; //CV
     }
 
-    public static long testCount(long a, long b) {
-        return Long.bitCount(a) + Long.numberOfLeadingZeros(b) + Long.numberOfTrailingZeros(a-b);
+    public static long testMulImm2(long a, long b) {
+        return a * 775; //CV
+    }
+
+    public static long testMulImm1(long a, long b) {
+        return 896 * b; //CV
     }
 
     public static long testMul(long a, long b) {
-        return a * b;
+        return a * b; //CV
+    }
+
+    public static long testSubImm2(long a, long b) {
+        return 1557280266 - b; // TODO: maps to esubq(Reg, Reg, Reg)
+    }
+
+    public static long testSubImm1(long a, long b) {
+        return a - 1557280266; // TODO: maps to eaddq(Reg, Reg, Imm)
     }
 
     public static long testSub(long a, long b) {
-        return a - b;
+        return a - b; //CV
+    }
+
+    public static long testAddImm2(long a, long b) {
+        return 9 + b; //CV
+    }
+
+    public static long testAddImm1(long a, long b) {
+        return a + 7; //CV
     }
 
     public static long testAdd(long a, long b) {
-        return a + b;
+        return a + b; //CV
     }
 
     public static void main(String[] args) {
@@ -140,6 +159,8 @@ public class TestLongReg {
         try {
 
             int iters = Integer.parseInt(args[0]);
+            Method method = TestLongReg.class.getMethod("test" + args[1], long.class, long.class);
+
             int factor = 10_000;
             int size = factor * iters;
             long[] a = new long[size];
@@ -147,11 +168,9 @@ public class TestLongReg {
             long[] c = new long[size];
             Random rand = new Random(0);
             for (int i = 0; i < a.length; i++) {
-                a[i] = rand.nextLong();
-                b[i] = rand.nextLong();
+                a[i] = i == 0 ? Long.parseLong(args[2]) : rand.nextInt();
+                b[i] = i == 0 ? Long.parseLong(args[3]) : rand.nextInt();
             }
-
-            Method method = TestLongReg.class.getMethod("test" + args[1], long.class, long.class);
 
             // warmup
             for (int i = 0; i < factor; i++) {
@@ -164,7 +183,9 @@ public class TestLongReg {
             for (int i = 0; i < factor * iters; i++) {
                 c[i] = (long) method.invoke(null, a[i], b[i]);
             }
-            System.out.println("------------- MAIN DONE ----------------");
+
+            System.out.println("\n ------------- MAIN DONE: " + "test" + args[1] + "(" + a[0] + "," + b[0] + ") = " + c[0]);
+            assert c[0] == Long.parseLong(args[4]) : "APX NDD test failed; expected = " + args[4];
 
         } catch (Exception e) {
             e.printStackTrace();

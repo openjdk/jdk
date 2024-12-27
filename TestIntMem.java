@@ -41,125 +41,145 @@ public class TestIntMem {
     }
 
     public static int testTzcnt(int x, int i) {
-        return  Integer.numberOfTrailingZeros(a[i]);
+        return  Integer.numberOfTrailingZeros(b[i]); //correctness verified
     }
 
     public static int testLzcnt(int x, int i) {
-        return  Integer.numberOfLeadingZeros(b[i]);
+        return  Integer.numberOfLeadingZeros(b[i]); //correctness verified
     }
 
     public static int testPopcnt(int x, int i) {
-        return  Integer.bitCount(a[i]);
-    }
-
-    public static int testShrVar(int a, int b) {
-        return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
+        return  Integer.bitCount(b[i]); //correctness verified
     }
 
     public static int testShr(int x, int i) {
-        return  b[i] >>> 6 ;
+        return  a[i] >>> 6 ; //correctness verified
     }
 
     public static int testSal(int x, int i) {
-        return  a[i] << 5 ;
+        return  a[i] << 5 ; //correctness verified
     }
 
     public static int testSar(int x, int i) {
-        return  b[i] >> 4 ;
+        return  a[i] >> 4 ; //correctness verified
     }
 
     public static int testDec(int x, int i) {
-        return  b[i] - 1 ;
+        return  b[i] - 1 ; //correctness verified
     }
 
     public static int testInc(int x, int i) {
-        return  a[i] + 1 ;
+        return  a[i] + 1 ; //correctness verified
     }
 
     public static int testNeg(int x, int i) {
-        return  -b[i];
+        return  -b[i]; //correctness verified
     }
 
     public static int testXorImm1(int x, int i) {
-        return b[i] ^ 9;
+        return a[i] ^ 9; //correctness verified
     }
 
     public static int testXorImm2(int x, int i) {
-        return 11 ^ a[i];
+        return 11 ^ b[i]; //correctness verified
     }
 
     public static int testXor1(int x, int i) {
-        return b[i] ^ x;
+        return b[i] ^ x; //correctness verified
     }
 
     public static int testXor2(int x, int i) {
-        return x ^ b[i];
+        return x ^ b[i]; //correctness verified
     }
 
     public static int testOrImm1(int x, int i) {
-        return b[i] | 9;
+        return a[i] | 9; //correctness verified
     }
 
     public static int testOrImm2(int x, int i) {
-        return 11 | a[i];
+        return 11 | b[i]; //correctness verified
     }
 
     public static int testOr1(int x, int i) {
-        return b[i] | x;
+        return b[i] | x; //correctness verified
     }
 
     public static int testOr2(int x, int i) {
-        return x | b[i];
+        return x | b[i]; //correctness verified
     }
 
     public static int testAndImm1(int x, int i) {
-        return b[i] & 9;
+        return a[i] & 9; //correctness verified
     }
 
     public static int testAndImm2(int x, int i) {
-        return 11 & a[i];
+        return 11 & b[i]; //correctness verified
     }
 
     public static int testAnd1(int x, int i) {
-        return b[i] & x;
+        return b[i] & x; //correctness verified
     }
 
     public static int testAnd2(int x, int i) {
-        return x & b[i];
+        return x & b[i];  //correctness verified
+    }
+
+    public static int testMulImm1(int x, int i) {
+        return a[i] * 5971; //correctness verified
+    }
+
+    public static int testMulImm2(int x, int i) {
+        return 487 * b[i]; //correctness verified
     }
 
     public static int testMul2(int x, int i) {
-        return b[i] * x;
+        return b[i] * x; //correctness verified
     }
 
     public static int testMul1(int x, int i) {
-        return x * b[i];
+        return x * b[i]; //correctness verified
+    }
+
+    public static  int testSubImm2(int x, int i) {
+        return 97 - b[i]; //TODO: maps to esubl(Reg, Reg, Mem)
+    }
+
+    public static  int testSubImm1(int x, int i) {
+        return a[i] - 47; //TODO: maps to eaddl(Reg, Mem, Imm)
     }
 
     public static  int testSub2(int x, int i) {
-        return b[i] - x;
+        return b[i] - x; //correctness verified
     }
 
     public static int testSub1(int x, int i) {
-        return x - b[i];
+        return x - b[i]; //correctness verified
+    }
+
+    public static int testAddImm2(int x, int i) {
+        return 19 + b[i]; //correctness verified
+    }
+
+    public static int testAddImm1(int x, int i) {
+        return a[i] + 27; //correctness verified
     }
 
     public static int testAdd2(int x, int i) {
-        return b[i] + x;
+        return b[i] + x; //correctness verified
     }
 
     public static int testAdd1(int x, int i) {
-        return x + b[i];
+        return x + b[i]; //correctness verified
     }
 
-    public static void init(int size) {
+    public static void init(int size, int a0, int b0) {
         a = new int[size];
         b = new int[size];
         c = new int[size];
         Random rand = new Random(0);
         for (int i = 0; i < a.length; i++) {
-            a[i] = rand.nextInt();
-            b[i] = rand.nextInt();
+            a[i] = i == 0 ? a0 : rand.nextInt();
+            b[i] = i == 0 ? b0 : rand.nextInt();
         }
     }
 
@@ -168,23 +188,26 @@ public class TestIntMem {
         try {
 
             int iters = Integer.parseInt(args[0]);
-            int factor = 10_000;
-            int size = factor * iters;
-            init(size);
-
             Method method = TestIntMem.class.getMethod("test" + args[1], int.class, int.class);
 
+            int factor = 10_000;
+            int size = factor * iters;
+            init(size, Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+
             // warmup
-            for (int i = 0; i < factor; i++) {
+            for (int i = 0; i < size; i++) {
                 c[i] = (int) method.invoke(null, a[i], i);
             }
             System.out.println("Warmup done>");
 
             // main iter
-            for (int i = 0; i < factor * iters; i++) {
+            for (int i = 0; i < size; i++) {
                 c[i] = (int) method.invoke(null, a[i], i);
             }
-            System.out.println("------------- MAIN DONE ----------------");
+
+            System.out.println("\n ------------- MAIN DONE: " + "test" + args[1] + "(" + a[0] + "," + b[0] + ") = " + c[0]);
+            assert c[0] == Integer.parseInt(args[4]) : "APX NDD test failed; expected = " + args[4];
+
 
         } catch (Exception e) {
             e.printStackTrace();
