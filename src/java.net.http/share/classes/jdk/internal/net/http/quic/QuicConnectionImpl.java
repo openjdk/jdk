@@ -4032,7 +4032,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param streamId the stream id
      */
     public void streamDataAvailableForSending(long streamId) {
-        streams.selectForSending(streamId);
+        streams.enqueueForSending(streamId);
         packetSpaces.app.runTransmitter();
     }
 

@@ -26,8 +26,6 @@ package jdk.internal.net.http.quic.streams;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -960,13 +958,12 @@ public final class QuicConnectionStreams {
     }
 
     /**
-     * This method is called by QuicConnectionImpl when a stream
-     * has data available for sending. See {@link
-     * QuicConnectionImpl#streamDataAvailableForSending(long)} and
-     * {@link QuicSenderStreamImpl}.
+     * This method is called by when a stream has data available for sending.
+     *
      * @param streamId the stream id of the stream which is ready
+     * @see QuicConnectionImpl#streamDataAvailableForSending
      */
-    public void selectForSending(long streamId) {
+    public void enqueueForSending(long streamId) {
         var stream = streams.get(streamId);
         if (stream == null) {
             if (debug.on())
@@ -974,11 +971,11 @@ public final class QuicConnectionStreams {
             return;
         }
         if (stream instanceof QuicSenderStream sender) {
-            // In fact there is no guarantee that the stream will not already
-            // be in the queue, since the scheduler loop can also put it back
-            // if it e.g. not everything could fit in the quic packet
-            // assert !sendersReady.contains(sender) :
-            //        "stream %s is already selected for sending".formatted(streamId);
+            // No need to check/assert the presence of this sender in the queue.
+            // In fact there is no guarantee that the sender isn't already in the
+            // queue, since the scheduler loop can also put it back into the queue,
+            // if for example, not everything that the sender wanted to send could
+            // fit in the quic packet.
             sendersReady.add(sender);
         } else {
             if (debug.on()) {
@@ -1365,7 +1362,7 @@ public final class QuicConnectionStreams {
                     if (stillReady) {
                         if (debug.on())
                             debug.log("stream:%s is still ready", streamId);
-                        sendersReady.add(sender);
+                        enqueueForSending(streamId);
                     } else {
                         if (debug.on())
                             debug.log("stream:%s is no longer ready", streamId);
