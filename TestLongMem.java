@@ -22,15 +22,15 @@ public class TestLongMem {
     }
 
     public static long testTzcnt(long x, int i) {
-        return  Long.numberOfTrailingZeros(a[i]);
+        return  Long.numberOfTrailingZeros(a[i]); //CV
     }
 
     public static long testLzcnt(long x, int i) {
-        return  Long.numberOfLeadingZeros(b[i]);
+        return  Long.numberOfLeadingZeros(b[i]); //CV
     }
 
     public static long testPopcnt(long x, int i) {
-        return  Long.bitCount(a[i]);
+        return  Long.bitCount(a[i]); //CV
     }
 
     public static long testShrVar(int a, int b) {
@@ -38,75 +38,75 @@ public class TestLongMem {
     }
 
     public static long testShr(long x, int i) {
-        return  a[i] >>> 6 ;
+        return  a[i] >>> 6 ; //CV
     }
 
     public static long testSal(long x, int i) {
-        return  b[i] << 5 ;
+        return  a[i] << 5 ; //CV
     }
 
     public static long testSar(long x, int i) {
-        return  a[i] >> 63 ;
+        return  a[i] >> 63 ; //CV
     }
 
     public static long testDec(long x, int i) {
-        return  b[i] - 1 ;
+        return  b[i] - 1 ; //CV
     }
 
     public static long testInc(long x, int i) {
-        return  a[i] + 1 ;
+        return  a[i] + 1 ; //CV
     }
 
     public static long testNeg(long x, int i) {
-        return  -b[i];
+        return  -b[i]; //CV
     }
 
     public static long testXorImm1(long x, int i) {
-        return b[i] ^ 9;
+        return b[i] ^ 9; //CV
     }
 
     public static long testXorImm2(long x, int i) {
-        return 11 ^ a[i];
+        return 11 ^ a[i]; //CV
     }
 
     public static long testXor2(long x, int i) {
-        return b[i] ^ x;
+        return b[i] ^ x; //CV
     }
 
     public static long testXor1(long x, int i) {
-        return x ^ b[i];
+        return x ^ b[i]; //CV
     }
 
     public static long testOrImm1(long x, int i) {
-        return b[i] | 9;
+        return b[i] | 9; //CV
     }
 
     public static long testOrImm2(long x, int i) {
-        return 11 | a[i];
+        return 11 | a[i]; //CV
     }
 
     public static long testOr2(long x, int i) {
-        return b[i] | x;
+        return b[i] | x; //CV
     }
 
     public static long testOr1(long x, int i) {
-        return x | b[i];
+        return x | b[i]; //CV
     }
 
     public static long testAndImm1(long x, int i) {
-        return b[i] & 9;
+        return b[i] & 9; //CV
     }
 
     public static long testAndImm2(long x, int i) {
-        return 11 & a[i];
+        return 11 & a[i]; //CV
     }
 
     public static long testAnd2(long x, int i) {
-        return b[i] & x;
+        return b[i] & x; //CV
     }
 
     public static long testAnd1(long x, int i) {
-        return x & b[i];
+        return x & b[i]; //CV
     }
 
     public static long testMulImm2(long x, int i) {
