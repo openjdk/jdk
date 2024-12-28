@@ -2958,13 +2958,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         //       instead of a single packet?
         final ByteBuffer datagram = protectionRecord.datagram();
         final int firstPacketOffset = protectionRecord.firstPacketOffset();
-        final int packetOffset = protectionRecord.packetOffset();
-
         // flip the datagram
         datagram.limit(datagram.position());
         datagram.position(firstPacketOffset);
         if (debug.on()) {
             final PacketType packetType = protectionRecord.packet().packetType();
+            final int packetOffset = protectionRecord.packetOffset();
             if (packetOffset == firstPacketOffset) {
                 debug.log("Pushing datagram([%s(%d)], %d)", packetType, packetNumber,
                         datagram.remaining());
@@ -4202,6 +4201,31 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     + ", unreleased:" + bbUnreleased.get());
         }
         datagramReleased(datagram);
+    }
+
+    /**
+     * Returns a {@link jdk.internal.net.http.quic.QuicEndpoint.Datagram} which contains
+     * an encrypted QUIC packet containing
+     * a {@linkplain ConnectionCloseFrame CONNECTION_CLOSE frame}. The CONNECTION_CLOSE
+     * frame will have a frame type of {@code 0x1c} and error code of {@code NO_ERROR}.
+     * <p>
+     * This method should only be invoked when the {@link QuicEndpoint} is being closed
+     * and the endpoint wants to send out a {@code CONNECTION_CLOSE} frame on a best-effort
+     * basis (in a fire and forget manner).
+     *
+     * @return  the datagram containing the QUIC packet with a CONNECTION_CLOSE frame or
+     *          an {@linkplain Optional#empty() empty Optional} if the datagram couldn't
+     *          be constructed.
+     */
+    final Optional<QuicEndpoint.Datagram> connectionCloseDatagram() {
+        try {
+            final ByteBuffer quicPktPayload = this.terminator.makeConnectionCloseDatagram();
+            return Optional.of(new QuicDatagram(this, peerAddress, quicPktPayload));
+        } catch (Exception e) {
+            // ignore any exception because providing the connection close datagram
+            // when the endpoint is being closed, is on best-effort basis
+            return Optional.empty();
+        }
     }
 
     /**

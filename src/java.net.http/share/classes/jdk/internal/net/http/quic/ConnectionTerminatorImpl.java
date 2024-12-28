@@ -24,11 +24,13 @@
  */
 package jdk.internal.net.http.quic;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
@@ -39,6 +41,7 @@ import jdk.internal.net.http.quic.TerminationCause.AppLayerClose;
 import jdk.internal.net.http.quic.TerminationCause.SilentTermination;
 import jdk.internal.net.http.quic.TerminationCause.TransportError;
 import jdk.internal.net.http.quic.frames.ConnectionCloseFrame;
+import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicTLSEngine.KeySpace;
@@ -422,5 +425,42 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         // while sending the packet containing the CONNECTION_CLOSE frame, the pushDatagram will
         // remap (or remove) the QuicConnectionImpl in QuicEndpoint.
         connection.pushDatagram(protectionRecord);
+    }
+
+    /**
+     * Returns a {@link ByteBuffer} which contains an encrypted QUIC packet containing
+     * a {@linkplain ConnectionCloseFrame CONNECTION_CLOSE frame}. The CONNECTION_CLOSE
+     * frame will have a frame type of {@code 0x1c} and error code of {@code NO_ERROR}.
+     * <p>
+     * This method should only be invoked when the {@link QuicEndpoint} is being closed
+     * and the endpoint wants to send out a {@code CONNECTION_CLOSE} frame on a best-effort
+     * basis (in a fire and forget manner).
+     *
+     * @return the datagram containing the QUIC packet with a CONNECTION_CLOSE frame
+     * @throws QuicKeyUnavailableException
+     * @throws QuicTransportException
+     */
+    ByteBuffer makeConnectionCloseDatagram()
+            throws QuicKeyUnavailableException, QuicTransportException {
+        // in theory we don't need this assert, but given the knowledge that this method
+        // should only be invoked by a closing QuicEndpoint, we have this assert here to
+        // prevent misuse of this makeConnectionCloseDatagram() method
+        assert connection.endpoint.isClosed() : "QUIC endpoint isn't closed";
+        final ConnectionCloseFrame connCloseFrame = new ConnectionCloseFrame(NO_ERROR.code(),
+                QuicFrame.CONNECTION_CLOSE, null);
+        final KeySpace keySpace = connection.getTLSEngine().getCurrentSendKeySpace();
+        // we don't want the connection's ByteBuffer pooling infrastructure
+        // (through the QuicConnectionImpl::allocateDatagramForEncryption) for
+        // this packet, so we use a simple custom allocator.
+        final Function<QuicPacket, ByteBuffer> allocator = (pkt) -> ByteBuffer.allocate(pkt.size());
+        final QuicPacket packet = connection.newQuicPacket(keySpace, List.of(connCloseFrame));
+        final ProtectionRecord encrypted = ProtectionRecord.single(packet, allocator)
+                .encrypt(connection.codingContext());
+        final ByteBuffer datagram = encrypted.datagram();
+        final int firstPacketOffset = encrypted.firstPacketOffset();
+        // flip the datagram
+        datagram.limit(datagram.position());
+        datagram.position(firstPacketOffset);
+        return datagram;
     }
 }

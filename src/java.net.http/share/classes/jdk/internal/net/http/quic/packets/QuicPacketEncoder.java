@@ -35,6 +35,7 @@ import java.util.function.Consumer;
 
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.quic.frames.ConnectionCloseFrame;
 import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicTransportException;
 import jdk.internal.net.quic.QuicVersion;
@@ -561,6 +562,7 @@ public class QuicPacketEncoder {
         final byte[] encodedPacketNumber;
         final List<QuicFrame> frames;
         final int payloadSize;
+        private final boolean containsConnClose;
         private int tagSize;
 
         OutgoingHandshakePacket(QuicConnectionId sourceId,
@@ -573,6 +575,14 @@ public class QuicPacketEncoder {
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
+            boolean hasConnClose = false;
+            for (var f : this.frames) {
+                if (f instanceof ConnectionCloseFrame) {
+                    hasConnClose = true;
+                    break;
+                }
+            }
+            this.containsConnClose = hasConnClose;
             this.payloadSize = frames.stream().mapToInt(QuicFrame::size).reduce(0, Math::addExact);
             this.tagSize = tagSize;
             this.length = computeLength(payloadSize, encodedPacketNumber.length, tagSize);
@@ -617,6 +627,11 @@ public class QuicPacketEncoder {
         @Override
         public int payloadSize() {
             return payloadSize;
+        }
+
+        @Override
+        public boolean containsConnectionClose() {
+            return this.containsConnClose;
         }
 
         /**
@@ -795,6 +810,7 @@ public class QuicPacketEncoder {
         final List<QuicFrame> frames;
         private int tagSize;
         final int payloadSize;
+        private final boolean containsConnClose;
 
         OutgoingOneRttPacket(QuicConnectionId destinationId,
                              long packetNumber,
@@ -804,6 +820,14 @@ public class QuicPacketEncoder {
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
+            boolean hasConnClose = false;
+            for (var f : this.frames) {
+                if (f instanceof ConnectionCloseFrame) {
+                    hasConnClose = true;
+                    break;
+                }
+            }
+            this.containsConnClose = hasConnClose;
             this.tagSize = tagSize;
             this.payloadSize = this.frames.stream().mapToInt(QuicFrame::size)
                     .reduce(0, Math::addExact);
@@ -836,6 +860,11 @@ public class QuicPacketEncoder {
         @Override
         public int size() {
             return size;
+        }
+
+        @Override
+        public boolean containsConnectionClose() {
+            return this.containsConnClose;
         }
 
         /**
@@ -885,6 +914,7 @@ public class QuicPacketEncoder {
         final List<QuicFrame> frames;
         private int tagSize;
         final int payloadSize;
+        private final boolean containsConnClose;
 
         private record InitialPacketVariableComponents(int length, byte[] token, QuicConnectionId sourceId,
                                                        QuicConnectionId destinationId) {
@@ -903,6 +933,14 @@ public class QuicPacketEncoder {
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
+            boolean hasConnClose = false;
+            for (var f : this.frames) {
+                if (f instanceof ConnectionCloseFrame) {
+                    hasConnClose = true;
+                    break;
+                }
+            }
+            this.containsConnClose = hasConnClose;
             this.tagSize = tagSize;
             this.payloadSize = this.frames.stream()
                     .mapToInt(QuicFrame::size)
@@ -945,6 +983,11 @@ public class QuicPacketEncoder {
 
         @Override
         public int size() { return size; }
+
+        @Override
+        public boolean containsConnectionClose() {
+            return this.containsConnClose;
+        }
 
         /**
          * Computes the value for the packet length field.

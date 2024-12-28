@@ -39,10 +39,12 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -1283,6 +1285,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     }
 
     volatile boolean expectExceptions;
+
     @Override
     public void close() {
         if (closed) return;
@@ -1291,16 +1294,29 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             if (closed) return;
             closed = true;
         }
-        assert closed;
         try {
             while (!connections.isEmpty()) {
-                if (debug.on())
+                if (debug.on()) {
                     debug.log("closing %d connections", connections.size());
+                }
+                final Set<QuicConnectionImpl> connCloseSent = new HashSet<>();
                 for (var cid : connections.keySet()) {
-                    // endpoint is closing, so we silently terminate the connection
-                    // since there's no point sending (and receiving) packets when the
-                    // endpoint itself won't be around for dealing with the packets.
-                    silentTerminateConnection(connections.remove(cid));
+                    // endpoint is closing, so (on a best-effort basis) we send out a datagram
+                    // containing a QUIC packet with a CONNECTION_CLOSE frame to the peer.
+                    // Immediately after that, we silently terminate the connection since
+                    // there's no point maintaining the connection's infrastructure for
+                    // sending (or receiving) additional packets when the endpoint itself
+                    // won't be around for dealing with the packets.
+                    final QuicPacketReceiver rcvr = connections.remove(cid);
+                    if (rcvr instanceof QuicConnectionImpl quicConn) {
+                        final boolean shouldSendConnClose = connCloseSent.add(quicConn);
+                        // send the datagram containing the CONNECTION_CLOSE frame only once
+                        // per connection
+                        if (shouldSendConnClose) {
+                            sendConnectionCloseQuietly(quicConn);
+                        }
+                    }
+                    silentTerminateConnection(rcvr);
                 }
             }
         } finally {
@@ -1323,6 +1339,27 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             } catch (IOException io) {
                 if (debug.on())
                     debug.log("Failed to detach and close channel: " + io);
+            }
+        }
+    }
+
+    // sends a datagram with a CONNECTION_CLOSE frame for the connection and ignores
+    // any exceptions that may occur while trying to do so.
+    private void sendConnectionCloseQuietly(final QuicConnectionImpl quicConn) {
+        try {
+            final Optional<Datagram> datagram = quicConn.connectionCloseDatagram();
+            if (datagram.isEmpty()) {
+                return;
+            }
+            if (debug.on()) {
+                debug.log("sending CONNECTION_CLOSE datagram for connection %s", quicConn);
+            }
+            send(datagram.get().payload(), datagram.get().address());
+        } catch (Exception e) {
+            // ignore
+            if (debug.on()) {
+                debug.log("failed to send CONNECTION_CLOSE datagram for" +
+                        " connection %s due to %s", quicConn, e);
             }
         }
     }
