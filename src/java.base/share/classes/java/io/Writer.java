@@ -150,6 +150,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * {@code Appendable}. The writer is initially open and writing appends
      * after the last character in the builder.
      *
+     * <p> If the appendable is a {code Writer}, it is returned.
+     *
      * <p> The resulting writer is not safe for use by multiple
      * concurrent threads. If the writer is to be used by more than one
      * thread it should be controlled by appropriate synchronization.
@@ -158,13 +160,17 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * changes, the behavior is undefined.
      *
      * @param a {@code Appendable} consuming the character stream.
-     * @return a {@code Writer} which writes characters into {@code a}
+     * @return a {@code Writer} which writes characters into {@code a}, or
+     *         {@code a} if it is a {@code Writer}.
      * @throws NullPointerException if {@code a} is {@code null}
      *
      * @since 25
      */
     public static Writer of(final Appendable a) {
         Objects.requireNonNull(a);
+
+        if (a instanceof Writer w)
+            return w;
 
         return new Writer() {
             private boolean isClosed;
@@ -178,10 +184,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
             @Override
             public void write(int c) throws IOException {
                 ensureOpen();
-                switch (a) {
-                    case Writer w -> w.write(c);
-                    default -> a.append((char) c);
-                }
+                a.append((char) c);
             }
 
             @Override
@@ -195,7 +198,6 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
                     case StringBuilder sb -> sb.append(cbuf, off, len);
                     case StringBuffer sb -> sb.append(cbuf, off, len);
                     case CharBuffer cb -> cb.put(cbuf, off, len);
-                    case Writer w -> w.write(cbuf, off, len);
                     default -> {
                         for (int i = 0; i < len; i++)
                             a.append(cbuf[off + i]);
@@ -210,7 +212,6 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
                     case StringBuilder sb -> sb.append(str);
                     case StringBuffer sb -> sb.append(str);
                     case CharBuffer cb -> cb.put(str);
-                    case Writer w -> w.write(str);
                     default -> a.append(str);
                 }
             }
@@ -218,10 +219,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
             @Override
             public void write(String str, int off, int len) throws IOException {
                 ensureOpen();
-                switch (a) {
-                    case Writer w -> w.write(str, off, len);
-                    default -> a.append(str, off, off + len);
-                }
+                a.append(str, off, off + len);
             }
 
             @Override
