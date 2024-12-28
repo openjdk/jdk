@@ -248,10 +248,21 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
             @Override
             public void flush() throws IOException {
                 ensureOpen();
+                implFlush();
+            }
+
+            private void implFlush() throws IOException {
+                if (a instanceof Flushable f)
+                    f.flush();
             }
 
             @Override
             public void close() throws IOException {
+                if (isClosed)
+                    return;
+                implFlush();
+                if (a instanceof Closable c)
+                    c.close();
                 isClosed = true;
             }
         };
