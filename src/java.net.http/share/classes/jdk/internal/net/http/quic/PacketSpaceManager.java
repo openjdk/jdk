@@ -37,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -91,7 +92,8 @@ import jdk.internal.net.quic.QuicTransportException;
 //        and there are missing packets between that packet and this
 //        packet. [...]
 public sealed class PacketSpaceManager implements PacketSpace
-        permits PacketSpaceManager.OneRttPacketSpaceManager {
+        permits PacketSpaceManager.OneRttPacketSpaceManager,
+                PacketSpaceManager.HandshakePacketSpaceManager {
 
     private final QuicCongestionController congestionController;
     private volatile boolean blockedByCC;
@@ -140,7 +142,7 @@ public sealed class PacketSpaceManager implements PacketSpace
     // https://www.rfc-editor.org/rfc/rfc9000#name-limiting-ranges-by-tracking
     public static final int MAX_ACKRANGE_COUNT_BEFORE_PING = 10;
 
-    private final Logger debug;
+    protected final Logger debug;
     private final Supplier<String> debugStrSupplier;
     private final PacketNumberSpace packetNumberSpace;
     private final PacketEmitter packetEmitter;
@@ -2321,6 +2323,43 @@ public sealed class PacketSpaceManager implements PacketSpace
 
         OneRttPacketSpaceManager(final QuicConnectionImpl connection) {
             super(connection, PacketNumberSpace.APPLICATION);
+        }
+    }
+
+    static final class HandshakePacketSpaceManager extends PacketSpaceManager {
+        private final PacketSpaceManager initialPktSpaceMgr;
+        private final boolean isClientConnection;
+        private final AtomicBoolean firstPktSent = new AtomicBoolean();
+
+        HandshakePacketSpaceManager(final QuicConnectionImpl connection,
+                                    final PacketSpaceManager initialPktSpaceManager) {
+            super(connection, PacketNumberSpace.HANDSHAKE);
+            this.isClientConnection = connection.isClientConnection();
+            this.initialPktSpaceMgr = initialPktSpaceManager;
+        }
+
+        @Override
+        public void packetSent(QuicPacket packet, long previousPacketNumber, long packetNumber) {
+            super.packetSent(packet, previousPacketNumber, packetNumber);
+            if (!isClientConnection) {
+                // nothing additional to be done for server connections
+                return;
+            }
+            if (firstPktSent.compareAndSet(false, true)) {
+                // if this is the first packet we sent in the HANDSHAKE keyspace
+                // then we close the INITIAL space discard the INITIAL keys.
+                // RFC-9000, section 17.2.2.1:
+                // A client stops both sending and processing Initial packets when it sends
+                // its first Handshake packet. ... Though packets might still be in flight or
+                // awaiting acknowledgment, no further Initial packets need to be exchanged
+                // beyond this point. Initial packet protection keys are discarded along with
+                // any loss recovery and congestion control state
+                if (debug.on()) {
+                    debug.log("first handshake packet sent by client, initiating close of" +
+                            " INITIAL packet space");
+                }
+                this.initialPktSpaceMgr.close();
+            }
         }
     }
 }

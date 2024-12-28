@@ -481,7 +481,7 @@ public class PacketEncodingTest {
         return List.copyOf(frames);
     }
 
-    private ByteBuffer toByteBuffer(QuicPacketEncoder encoder, OutgoingQuicPacket outgoingQuicPacket, CodingContext context)
+    private ByteBuffer toByteBuffer(QuicPacketEncoder encoder, QuicPacket outgoingQuicPacket, CodingContext context)
             throws Exception {
         int size = outgoingQuicPacket.size();
         ByteBuffer buffer = ByteBuffer.allocate(size);
@@ -1152,21 +1152,18 @@ public class PacketEncodingTest {
         System.out.printf("testOneRTTPacket.encode(payload:%d, padded:%d, destid.length: %d)%n",
                 payloadSize, paddedPayLoadSize, destid.length);
         int expectedSize = 1 + destid.length + paddedPayLoadSize + packetNumberLength;
-        // Create an initial packet
-        var packet = encoder.newOneRttPacket(destConnectionId,
+        // Create an 1-RTT packet
+        OneRttPacket packet = encoder.newOneRttPacket(destConnectionId,
                 packetNumber,
                 largestAcked,
                 frames,
                 context);
 
-        // Check created packet
-        assertTrue(packet instanceof OneRttPacket);
-        var oneRttPacket = (OneRttPacket) packet;
-        checkShortHeaderPacket(oneRttPacket, PacketType.ONERTT,
+        checkShortHeaderPacket(packet, PacketType.ONERTT,
                 PacketNumberSpace.APPLICATION, packetNumber,
                 destConnectionId, frames, context);
-        assertEquals(oneRttPacket.hasLength(), false);
-        assertEquals(oneRttPacket.size(), expectedSize);
+        assertEquals(packet.hasLength(), false);
+        assertEquals(packet.size(), expectedSize);
 
         // Check that peeking at the encoded packet returns correct information
         ByteBuffer encoded = toByteBuffer(encoder, packet, context);

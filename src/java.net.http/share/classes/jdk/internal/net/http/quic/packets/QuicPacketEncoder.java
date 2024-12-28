@@ -1239,7 +1239,7 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new one RTT packet
      */
-    public OutgoingQuicPacket newOneRttPacket(QuicConnectionId destination,
+    public OneRttPacket newOneRttPacket(QuicConnectionId destination,
                                               long packetNumber,
                                               long ackedPacketNumber,
                                               List<? extends QuicFrame> frames,
@@ -1304,11 +1304,14 @@ public class QuicPacketEncoder {
                     assert !frames.stream().anyMatch(f -> !f.isValidIn(PacketType.ONERTT))
                             : "%s contains frames not valid in %s"
                             .formatted(frames, keySpace);
-                    yield newOneRttPacket(destinationId,
+                    final OneRttPacket oneRttPacket = newOneRttPacket(destinationId,
                             newPacketNumber,
                             largestAckedPN,
                             frames,
                             codingContext);
+                    assert oneRttPacket instanceof OutgoingOneRttPacket :
+                            "unexpected 1-RTT packet type: " + oneRttPacket.getClass();
+                    yield (OutgoingQuicPacket) oneRttPacket;
                 }
             }
             case HANDSHAKE -> {

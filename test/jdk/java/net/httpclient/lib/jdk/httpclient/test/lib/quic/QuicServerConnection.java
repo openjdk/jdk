@@ -56,10 +56,10 @@ import jdk.internal.net.http.quic.frames.HandshakeDoneFrame;
 import jdk.internal.net.http.quic.frames.NewTokenFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.packets.InitialPacket;
+import jdk.internal.net.http.quic.packets.OneRttPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
-import jdk.internal.net.http.quic.packets.QuicPacketEncoder.OutgoingQuicPacket;
 import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTLSEngine.HandshakeState;
@@ -277,7 +277,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                 // HANDSHAKE_DONE frame (see sendStreamData)
                 packetSpace(PacketNumberSpace.HANDSHAKE).runTransmitter();
                 engine.tryMarkHandshakeDone();
-                sendFrame(new HandshakeDoneFrame());
+                enqueue1RTTFrame(new HandshakeDoneFrame());
                 debug.log("Adding HandshakeDoneFrame");
                 completeHandshakeCF();
                 packetSpace(PacketNumberSpace.APPLICATION).runTransmitter();
@@ -291,7 +291,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     }
 
     @Override
-    protected void sendStreamData(OutgoingQuicPacket packet)
+    protected void send1RTTPacket(final OneRttPacket packet)
             throws QuicKeyUnavailableException, QuicTransportException {
         boolean closeHandshake = false;
         var handshakeSpace = packetNumberSpaces().handshake();
@@ -300,7 +300,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                     .stream()
                     .anyMatch(HandshakeDoneFrame.class::isInstance);
         }
-        super.sendStreamData(packet);
+        super.send1RTTPacket(packet);
         if (closeHandshake) {
             // close handshake space after sending
             // HANDSHAKE_DONE
@@ -524,7 +524,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     private void sendNewToken() {
         final byte[] token = server.buildNewToken();
         final QuicFrame newTokenFrame = new NewTokenFrame(ByteBuffer.wrap(token));
-        sendFrame(newTokenFrame);
+        enqueue1RTTFrame(newTokenFrame);
     }
 
     @Override

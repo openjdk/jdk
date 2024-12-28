@@ -254,7 +254,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final OneRttFlowControlledReceivingQueue oneRttRcvQueue =
             new OneRttFlowControlledReceivingQueue(this::logTag);
     protected final QuicConnectionStreams streams;
-    protected final Queue<QuicFrame> outgoingFrames = new ConcurrentLinkedQueue<>();
+    protected final Queue<QuicFrame> outgoing1RTTFrames = new ConcurrentLinkedQueue<>();
     // for one-rtt crypto data (session tickets)
     private final CryptoDataFlow peerCryptoFlow = new CryptoDataFlow();
     private final CryptoWriterQueue localCryptoFlow = new CryptoWriterQueue();
@@ -344,7 +344,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         engine.setSSLParameters(sslParameters);
         this.quicTLSEngine = engine;
         quicTLSEngine.setRemoteQuicTransportParametersConsumer(this::consumeQuicParameters);
-        packetSpaces = new PacketSpaces(this);
+        packetSpaces = PacketSpaces.forConnection(this);
         quicTLSEngine.setOneRttContext(packetSpaces.getOneRttContext());
         streams = new QuicConnectionStreams(this, debug);
         if (quicInstance instanceof QuicClient quicClient) {
@@ -647,9 +647,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return (QuicOneRttContext) appPacketSpaceMgr;
         }
 
-        public PacketSpaces(QuicConnectionImpl connection) {
-            this(new PacketSpaceManager(connection, PacketNumberSpace.INITIAL),
-                    new PacketSpaceManager(connection, PacketNumberSpace.HANDSHAKE),
+        public static PacketSpaces forConnection(final QuicConnectionImpl connection) {
+            final var initialPktSpaceMgr = new PacketSpaceManager(connection, PacketNumberSpace.INITIAL);
+            return new PacketSpaces(initialPktSpaceMgr,
+                    new PacketSpaceManager.HandshakePacketSpaceManager(connection, initialPktSpaceMgr),
                     new PacketSpaceManager.OneRttPacketSpaceManager(connection));
         }
 
@@ -801,24 +802,15 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      *     <li>{@link #LAST_PACKET}: should be used in conjunction with {@link #COALESCED}
      *         to indicate that the packet being protected is the last that will be
      *         added to the datagram</li>
-     *     <li>{@link #CLOSING}: indicate that the packet contains a CONNECTION_CLOSE
-     *         frame</li>
-     *     <li>{@link #CLOSED}: indicate that the packet acknowledges a CONNECTION_CLOSE
-     *         frame</li>
      * </ul>
      *
      * @apiNote
-     * Flag values can be combined, but some combinations - like
-     * {@code CLOSING | CLOSED} do not make sense. A single packet
-     * can also be identified as any packet that doesn't have the
-     * {@code COALESCED} bit on. The flag is used to convey information
-     * to the {@link #processDecrypted(QuicPacket)} method which
-     * will process the protection record when it comes out of the
-     * protection loop. It may be used to figure out whether to send
-     * the datagram right away, or whether to wait for more packet
-     * to be coalesced inside it, and whether additional actions should
-     * be taken after sending the datagram to the network (e.g. the
-     * connection may be closed after a CLOSED packet has been sent).
+     * Flag values can be combined, but some combinations
+     * may not make sense. A single packet can also be identified as any
+     * packet that doesn't have the {@code COALESCED} bit on.
+     * The flag is used to convey information that may be used to figure
+     * out whether to send the datagram right away, or whether to wait for
+     * more packet to be coalesced inside it.
      *
      * @param packet the packet to encrypt
      * @param datagram the datagram in which the encrypted packet should be written
@@ -848,18 +840,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
          * has been encrypted.
          */
         public static final int LAST_PACKET = 2;
-        /**
-         * The packet contains a CLOSE_CONNECTION frame - and / or
-         * is the last packet that will be sent through this connection.
-         * The connection can be closed after the acknowledgement for
-         * that packet has been received.
-         */
-        public static final int CLOSING = 4;
-        /**
-         * The packet contains a single CLOSE_CONNECTION frame
-         * emitted in the draining state.
-         */
-        public static final int CLOSED = 8;
 
         // indicate that the packet is not retransmitted
         private static final long NOT_RETRANSMITTED = -1L;
@@ -872,12 +852,15 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     packetOffset, retransmittedPacketNumber, flags);
         }
 
-        public boolean closed() {
-            return (flags & CLOSED) == CLOSED;
-        }
-
-        public boolean closing() {
-            return (flags & CLOSING) == CLOSING;
+        public ProtectionRecord encrypt(final CodingContext codingContext)
+                throws QuicKeyUnavailableException, QuicTransportException {
+            final PacketType packetType = packet.packetType();
+            assert packetType != PacketType.VERSIONS;
+            // keep track of position before encryption
+            final int preEncryptPos = datagram.position();
+            codingContext.writePacket(packet, datagram);
+            final ProtectionRecord encrypted = withOffset(preEncryptPos);
+            return encrypted;
         }
 
         /**
@@ -948,40 +931,14 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return new ProtectionRecord(packet, datagram, firstPacketOffset,
                     datagram.position(), NOT_RETRANSMITTED, LAST_PACKET | COALESCED);
         }
+    }
 
-        /**
-         * Records the intent of protecting a packet that contains a
-         * CONNECTION_CLOSE frame. This should be the last packet sent by the
-         * connection (except possibly some non ACK-eliciting packets containing
-         * ack frames). The connection will be closed after acknowledgement for
-         * that packet has been received.
-         *
-         * @param packet     the packet to protect
-         * @param allocator  an allocator to allocate the datagram
-         * @return a protection record to submit for packet protection
-         */
-        public static ProtectionRecord closing(QuicPacket packet,
-                                               Function<QuicPacket, ByteBuffer> allocator) {
-            ByteBuffer datagram = allocator.apply(packet);
-            return new ProtectionRecord(packet, datagram, 0, datagram.position(),
-                    NOT_RETRANSMITTED, CLOSING);
-        }
-
-        /**
-         * Records the intent of protecting a packet that contains the acknowledgement
-         * of a CONNECTION_CLOSE frame. This should be the last packet sent by the
-         * connection. The connection can be closed immediately after that.
-         *
-         * @param packet     the packet to protect
-         * @param allocator  an allocator to allocate the datagram
-         * @return a protection record to submit for packet protection
-         */
-        public static ProtectionRecord closed(QuicPacket packet,
-                                               Function<QuicPacket, ByteBuffer> allocator) {
-            ByteBuffer datagram = allocator.apply(packet);
-            return new ProtectionRecord(packet, datagram, 0, datagram.position(),
-                    NOT_RETRANSMITTED, CLOSED);
-        }
+    final QuicPacket newQuicPacket(final KeySpace keySpace, final List<QuicFrame> frames) {
+        final PacketSpace packetSpace = packetSpaces.get(PacketNumberSpace.of(keySpace));
+        return encoder.newOutgoingPacket(keySpace, packetSpace,
+                localConnectionId(), peerConnectionId(), initialToken(),
+                frames,
+                codingContext);
     }
 
     /**
@@ -994,49 +951,45 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param protectionRecord a record containing a quic packet to encrypt,
      *                         a destination byte buffer, and various offset information.
      */
-    void encrypt(final ProtectionRecord protectionRecord)
+    final void pushDatagram(final ProtectionRecord protectionRecord)
             throws QuicKeyUnavailableException, QuicTransportException {
-        // Processes an outgoing unencrypted packet that needs to be
-        // encrypted before being packaged in a datagram.
-        var datagram = protectionRecord.datagram();
-        var available = datagram.remaining();
-        var pos = datagram.position();
-        var packet = protectionRecord.packet();
-        var packetType = packet.packetType();
+        final QuicPacket packet = protectionRecord.packet();
         if (debug.on()) {
-            debug.log("scheduleForEncryption %s(pos=%d, remaining=%d)",
-                    packetType, pos, available);
-        }
-        assert packetType != PacketType.VERSIONS;
-        if (debug.on()) {
-            debug.log("writing packet to datagram %s(pn:%s, %s)", packetType,
+            debug.log("encrypting packet into datagram %s(pn:%s, %s)", packet.packetType(),
                     packet.packetNumber(), packet.frames());
         }
-        if (Log.quicPacketOut(packet)) {
-            Log.logQuicPacketOut(logTag(), packet);
-        }
+        // Processes an outgoing unencrypted packet that needs to be
+        // encrypted before being packaged in a datagram.
+        final ProtectionRecord encrypted;
         try {
-            assert packetType != PacketType.VERSIONS;
-            codingContext.writePacket(packet, datagram);
-        } catch (Throwable error) {
-            datagramDiscarded(new QuicDatagram(this, peerAddress, datagram));
+            encrypted = protectionRecord.encrypt(codingContext);
+        } catch (Throwable e) {
+            // release the datagram ByteBuffer on failure to encrypt
+            datagramDiscarded(new QuicDatagram(this, peerAddress, protectionRecord.datagram()));
             if (Log.errors()) {
-                Log.logError("Failed to encrypt packet: " + error);
+                Log.logError("Failed to encrypt packet: " + e);
                 // certain failures like key not being available are OK
                 // in some situations. log the stacktrace only if this
                 // was an unexpected failure.
                 boolean skipStackTrace = false;
-                if (error instanceof QuicKeyUnavailableException) {
-                    final PacketSpace packetSpace = packetSpace(packet.numberSpace());
+                if (e instanceof QuicKeyUnavailableException) {
+                    final PacketSpace packetSpace = packetSpace(protectionRecord.packet().numberSpace());
                     skipStackTrace = packetSpace.isClosed();
                 }
                 if (!skipStackTrace) {
-                    Log.logError(error);
+                    Log.logError(e);
                 }
             }
-            throw error;
+            throw e;
         }
-        processEncrypted(protectionRecord.withOffset(pos));
+        // we currently don't support a ProtectionRecord with more than one QuicPacket
+        assert (encrypted.flags & ProtectionRecord.COALESCED) == 0 : "coalesced packets not supported";
+        // encryption of the datagram is complete, now push the encrypted
+        // datagram through the endpoint
+        if (Log.quicPacketOut(packet)) {
+            Log.logQuicPacketOut(logTag(), packet);
+        }
+        pushEncryptedDatagram(encrypted);
     }
 
     protected void completeHandshakeCF() {
@@ -1238,10 +1191,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
 
         // implementation of the sending loop.
-        private boolean sendStreamData() {
+        private boolean send1RTTData() {
             Throwable failure;
             try {
-                return sendStreamData0();
+                return doSend1RTTData();
             } catch (Throwable t) {
                 failure = t;
             }
@@ -1268,7 +1221,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return false;
         }
 
-        private boolean sendStreamData0() throws QuicKeyUnavailableException, QuicTransportException {
+        private boolean doSend1RTTData() throws QuicKeyUnavailableException, QuicTransportException {
             // Loop over all sending streams to see if data is available - include
             // as much data as possible in the quic packet before sending it.
             // The QuicConnectionStreams make sure that streams are polled in a fair
@@ -1304,9 +1257,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // only from the sending loop, and this is the only place where we
             // mutate dataProcessed.
             dataProcessed += produced;
-            OutgoingQuicPacket packet = encoder.newOneRttPacket(peerConnectionId,
+            final OneRttPacket packet = encoder.newOneRttPacket(peerConnectionId,
                     packetNumber, largestPeerAckedPN, frames, codingContext);
-            QuicConnectionImpl.this.sendStreamData(packet);
+            QuicConnectionImpl.this.send1RTTPacket(packet);
             return true;
         }
 
@@ -1324,10 +1277,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             int added = 0;
             int remaining = maxAllowedBytes;
             QuicFrame f;
-            while ((f = outgoingFrames.peek()) != null) {
+            while ((f = outgoing1RTTFrames.peek()) != null) {
                 final int frameSize = f.size();
                 if (frameSize <= remaining) {
-                    outgoingFrames.remove();
+                    outgoing1RTTFrames.remove();
                     frames.add(f);
                     added += frameSize;
                     remaining -= frameSize;
@@ -1439,11 +1392,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * to close the HANDSHAKE space only after sending the
      * HANDSHAKE_DONE frame.
      *
-     * @param packet The packet to send.
+     * @param packet The ONERTT packet to send.
      */
-    protected void sendStreamData(final OutgoingQuicPacket packet)
+    protected void send1RTTPacket(final OneRttPacket packet)
             throws QuicKeyUnavailableException, QuicTransportException {
-        encrypt(ProtectionRecord.single(packet,
+        pushDatagram(ProtectionRecord.single(packet,
                 QuicConnectionImpl.this::allocateDatagramForEncryption));
     }
 
@@ -1463,18 +1416,20 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param frame frame to send
      * @throws IllegalArgumentException if frame is larger than 1000 bytes
      */
-    protected void sendFrame(QuicFrame frame) {
+    protected void enqueue1RTTFrame(final QuicFrame frame) {
         if (frame.size() > 1000) {
             throw new IllegalArgumentException("Frame too big");
         }
-        outgoingFrames.add(frame);
+        assert frame.isValidIn(PacketType.ONERTT) : "frame " + frame + " is not" +
+                " eligible in 1-RTT space";
+        outgoing1RTTFrames.add(frame);
     }
 
     /**
      * {@return true if queued frames are available for sending}
      */
-    protected boolean hasQueuedFrames() {
-        return !outgoingFrames.isEmpty();
+    private boolean hasQueuedFrames() {
+        return !outgoing1RTTFrames.isEmpty();
     }
 
     protected QuicPacketEncoder encoder() { return encoder;}
@@ -2484,15 +2439,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return this.handshakeFlow.handshakeReachedPeerCF;
     }
 
-    final QuicPacket makeConnectionClosePacket(final ConnectionCloseFrame frame,
-                                               final KeySpace keySpace) {
-        final PacketSpace packetSpace = packetSpaces.get(PacketNumberSpace.of(keySpace));
-        return encoder.newOutgoingPacket(keySpace, packetSpace,
-                localConnectionId(), peerConnectionId(), initialToken(),
-                List.of(frame),
-                codingContext);
-    }
-
     /**
      * Process the payload of an incoming initial packet
      * @param packet   the incoming packet
@@ -2942,60 +2888,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * This method is called when a packet has been encrypted.
-     * The protection record indicates the packet that has been encrypted,
-     * and at which position it starts in the record's datagram.
-     * The protection record also indicates the position of the first
-     * encrypted packet in the datagram.
-     * The datagram position indicates where the next packet should
-     * be written, if any other packet needs to be coalesced in that
-     * datagram.
-     *
-     * @param protectionRecord the protection record which has been encrypted
-     */
-    private void processEncrypted(final ProtectionRecord protectionRecord) {
-        // TODO: revisit this: we need to figure out how best to emit coalesced packet,
-        //       and having one protection record per packet may not be the the best.
-        //       Maybe a protection record should have a list of coalesced packets
-        //       instead of a single packet?
-        long retransmittedPacketNumber = protectionRecord.retransmittedPacketNumber();
-        long packetNumber = protectionRecord.packet().packetNumber();
-        assert packetNumber > retransmittedPacketNumber;
-        if (packetNumber >= 0) {
-            final QuicPacket packet = protectionRecord.packet();
-            final PacketSpace packetSpace = packetSpace(packet.numberSpace());
-            packetSpace.packetSent(packet, retransmittedPacketNumber, packetNumber);
-            if (packetNumber == 0
-                    && isClientConnection()
-                    && packetSpace.packetNumberSpace() == PacketNumberSpace.HANDSHAKE) {
-                // if this is the first packet we sent in the HANDSHAKE keyspace
-                // then we close the INITIAL space discard the INITIAL keys.
-                // RFC-9000, section 17.2.2.1:
-                // A client stops both sending and processing Initial packets when it sends
-                // its first Handshake packet. ... Though packets might still be in flight or
-                // awaiting acknowledgment, no further Initial packets need to be exchanged
-                // beyond this point. Initial packet protection keys are discarded along with
-                // any loss recovery and congestion control state
-                if (debug.on()) {
-                    debug.log("first handshake packet being sent by client, initiating close of" +
-                            " INITIAL packet space");
-                }
-                packetSpaces.initial().close();
-            }
-        }
-        if (isDatagramComplete(protectionRecord)) {
-            var datagram = protectionRecord.datagram();
-            var packetType = protectionRecord.packet().packetType();
-            var bytes = datagram.position() - protectionRecord.firstPacketOffset();
-            if (debug.on()) {
-                debug.log("Scheduling datagram for sending (bytes=%d, last=%s)",
-                        bytes, packetType);
-            }
-            scheduleForSending(protectionRecord);
-        }
-    }
-
-    /**
      * {@return a boolean value telling whether the datagram in the
      * protection record is complete}
      * The datagram is complete when no other packet need to be coalesced
@@ -3036,15 +2928,21 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Schedule a datagram to be sent through the endpoint.
-     * @param protectionRecord the protection record containing the datagram
-     *                         to send.
+     * Pushes the {@linkplain ProtectionRecord#datagram() datagram} contained in
+     * the {@code protectionRecord}, through the {@linkplain QuicEndpoint endpoint}.
+     *
+     * @param protectionRecord the ProtectionRecord containing the datagram
      */
-    protected void scheduleForSending(ProtectionRecord protectionRecord) {
-        // Note: the code that schedules a packet for retransmission
-        //       is triggered from processDecrypted(), from which
-        //       scheduleForSending is called.
-        if (!isOpen() && !protectionRecord.closed() && !protectionRecord.closing()) {
+    private void pushEncryptedDatagram(final ProtectionRecord protectionRecord) {
+        final long packetNumber = protectionRecord.packet().packetNumber();
+        assert packetNumber >= 0 : "unexpected packet number: " + packetNumber;
+        final long retransmittedPacketNumber = protectionRecord.retransmittedPacketNumber();
+        assert packetNumber > retransmittedPacketNumber : "packet number: " + packetNumber
+                + " was expected to be greater than packet the packet being retransmitted: "
+                + retransmittedPacketNumber;
+        // if the connection isn't open then except for the packet containing a CONNECTION_CLOSE
+        // frame, we don't push any other packets.
+        if (!isOpen() && !protectionRecord.packet().containsConnectionClose()) {
             if (debug.on()) {
                 debug.log("connection isn't open - ignoring %s(pn:%s): frames:%s",
                         protectionRecord.packet.packetType(),
@@ -3054,18 +2952,19 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             datagramDropped(new QuicDatagram(this, peerAddress, protectionRecord.datagram));
             return;
         }
-
-        ByteBuffer datagram = protectionRecord.datagram();
-        int firstPacketOffset = protectionRecord.firstPacketOffset();
-        int packetOffset = protectionRecord.packetOffset();
+        // TODO: revisit this: we need to figure out how best to emit coalesced packet,
+        //       and having one protection record per packet may not be the the best.
+        //       Maybe a protection record should have a list of coalesced packets
+        //       instead of a single packet?
+        final ByteBuffer datagram = protectionRecord.datagram();
+        final int firstPacketOffset = protectionRecord.firstPacketOffset();
+        final int packetOffset = protectionRecord.packetOffset();
 
         // flip the datagram
         datagram.limit(datagram.position());
         datagram.position(firstPacketOffset);
-        final PacketType packetType = protectionRecord.packet().packetType();
-        final long packetNumber = protectionRecord.packet().packetNumber();
-
         if (debug.on()) {
+            final PacketType packetType = protectionRecord.packet().packetType();
             if (packetOffset == firstPacketOffset) {
                 debug.log("Pushing datagram([%s(%d)], %d)", packetType, packetNumber,
                         datagram.remaining());
@@ -3074,13 +2973,34 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         packetType, packetNumber, datagram.remaining());
             }
         }
-        if (protectionRecord.closing()) {
-            endpoint.pushClosingDatagram(this, peerAddress(), datagram);
-        } else if (protectionRecord.closed()) {
-            endpoint.pushClosedDatagram(this, peerAddress(), datagram);
+        // if we are sending a packet containing a CONNECTION_CLOSE frame, then we
+        // also switch/remove the current connection instance in the endpoint.
+        if (protectionRecord.packet().containsConnectionClose()) {
+            if (stateHandle.isMarked(QuicConnectionState.DRAINING)) {
+                // a CONNECTION_CLOSE frame is being sent to the peer when the local
+                // connection state is in DRAINING. This implies that the local endpoint
+                // is responding to an incoming CONNECTION_CLOSE frame from the peer.
+                // we remove the connection from the endpoint for such cases.
+                endpoint.pushClosedDatagram(this, peerAddress(), datagram);
+            } else if (stateHandle.isMarked(QuicConnectionState.CLOSING)) {
+                // a CONNECTION_CLOSE frame is being sent to the peer when the local
+                // connection state is in CLOSING. For such cases, we switch this
+                // connection in the endpoint to one which responds with
+                // CONNECTION_CLOSE frame for any subsequent incoming packets
+                // from the peer.
+                endpoint.pushClosingDatagram(this, peerAddress(), datagram);
+            } else {
+                // should not happen
+                throw new IllegalStateException("connection is neither draining nor closing," +
+                        " cannot send a connection close frame");
+            }
         } else {
             pushDatagram(peerAddress(), datagram);
         }
+        // upon successful sending of the datagram, notify that the packet was sent
+        final QuicPacket packet = protectionRecord.packet();
+        final PacketSpace packetSpace = packetSpace(packet.numberSpace());
+        packetSpace.packetSent(packet, retransmittedPacketNumber, packetNumber);
     }
 
     /**
@@ -3424,16 +3344,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // We need to lock to make sure that the method is not run concurrently.
             handshakeLock.lock();
             try {
-                return sendHandshakeData0(packetNumberSpace);
+                return sendInitialOrHandshakeData(packetNumberSpace);
             } finally {
                 handshakeLock.unlock();
             }
         } else {
-            return oneRttSndQueue.sendStreamData();
+            return oneRttSndQueue.send1RTTData();
         }
     }
 
-    private boolean sendHandshakeData0(PacketNumberSpace packetNumberSpace)
+    private boolean sendInitialOrHandshakeData(final PacketNumberSpace packetNumberSpace)
             throws QuicKeyUnavailableException, QuicTransportException {
         if (Log.quicCrypto()) {
             Log.logQuic(String.format("%s: Send %s data", logTag(), packetNumberSpace));
@@ -3497,7 +3417,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 debug.log("protecting initial quic hello packet for %s(%s) - %d bytes",
                         this.negotiatedAlpn, peerAddress(), packet.size());
             }
-            encrypt(ProtectionRecord.single(packet, this::allocateDatagramForEncryption));
+            pushDatagram(ProtectionRecord.single(packet, this::allocateDatagramForEncryption));
             if (flow.localHandshake.remaining() > 0) {
                 if (Log.quicCrypto()) {
                     Log.logQuic(String.format("%s: local handshake has remaining, starting HANDSHAKE transmitter", logTag()));
@@ -3546,7 +3466,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 debug.log("protecting handshake quic hello packet for %s(%s) - %d bytes",
                         this.negotiatedAlpn, peerAddress(), packet.size());
             }
-            encrypt(ProtectionRecord.single(packet, this::allocateDatagramForEncryption));
+            pushDatagram(ProtectionRecord.single(packet, this::allocateDatagramForEncryption));
             var handshakeState = quicTLSEngine.getHandshakeState();
             if (debug.on()) {
                 debug.log("Handshake state is now: %s", handshakeState);
@@ -3832,7 +3752,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         final QuicPacket ackpacket = encoder.newOutgoingPacket(keySpace,
                 packetSpaceManager, localConnectionId(),
                 peerConnectionId(), initialToken(), frames, codingContext);
-        encrypt(ProtectionRecord.single(ackpacket, this::allocateDatagramForEncryption));
+        pushDatagram(ProtectionRecord.single(ackpacket, this::allocateDatagramForEncryption));
         return ackpacket.packetNumber();
     }
 
@@ -3925,7 +3845,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             Log.logQuic("%s OUT: retransmitting packet [%s] pn:%s as pn:%s".formatted(
                     logTag(), packet.packetType(), oldPacketNumber, newPacketNumber));
         }
-        encrypt(ProtectionRecord.retransmitting(retransmitted,
+        pushDatagram(ProtectionRecord.retransmitting(retransmitted,
                 oldPacketNumber,
                 this::allocateDatagramForEncryption));
     }

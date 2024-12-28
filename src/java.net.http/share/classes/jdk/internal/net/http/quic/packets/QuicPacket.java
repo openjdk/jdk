@@ -32,6 +32,7 @@ import java.util.Optional;
 import jdk.internal.net.http.quic.PeerConnectionId;
 import jdk.internal.net.http.quic.QuicConnectionId;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
+import jdk.internal.net.http.quic.frames.ConnectionCloseFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.quic.QuicTLSEngine.KeySpace;
 
@@ -240,6 +241,18 @@ public interface QuicPacket {
         return frames.stream()
                 .mapToInt(QuicFrame::size)
                 .reduce(0, Math::addExact);
+    }
+
+    /**
+     * {@return true if the packet contains a CONNECTION_CLOSE frame, false otherwise}
+     */
+    default boolean containsConnectionClose() {
+        for (QuicFrame frame : frames()) {
+            if (frame instanceof ConnectionCloseFrame) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

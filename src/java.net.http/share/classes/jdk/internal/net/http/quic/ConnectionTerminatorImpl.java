@@ -24,6 +24,7 @@
  */
 package jdk.internal.net.http.quic;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -39,9 +40,10 @@ import jdk.internal.net.http.quic.TerminationCause.SilentTermination;
 import jdk.internal.net.http.quic.TerminationCause.TransportError;
 import jdk.internal.net.http.quic.frames.ConnectionCloseFrame;
 import jdk.internal.net.http.quic.packets.QuicPacket;
-import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
+import jdk.internal.net.quic.QuicKeyUnavailableException;
 import jdk.internal.net.quic.QuicTLSEngine.KeySpace;
 import jdk.internal.net.quic.QuicTransportErrors;
+import jdk.internal.net.quic.QuicTransportException;
 import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.CLOSED;
 import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.CLOSING;
 import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.DRAINING;
@@ -115,9 +117,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             // TODO: review this
             keySpace = connection.getTLSEngine().getCurrentSendKeySpace();
         }
-        // TODO: flush packets on streams that are ready for sending
-        // (don't allow new streams etc) before entering
-        // immediate close
         immediateClose(frame, keySpace, cause);
     }
 
@@ -206,8 +205,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         // management for a closing connection
         connection.idleTimeoutManager.shutdown();
 
-        // TODO: review this
-        // TODO: does this need some lock?
         if (connection.stateHandle().draining()) {
             if (Log.quic()) {
                 Log.logQuic("{0} skipping immediate close, since connection is already" +
@@ -227,14 +224,7 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             } else if (debug.on()) {
                 debug.log("entering closing state, code " + closeCodeHex + " - " + logMsg);
             }
-            final PacketNumberSpace pktSpace = PacketNumberSpace.of(keySpace);
-            final ConnectionCloseFrame adaptedFrame = adaptCloseFrame(pktSpace, closeFrame);
-            final QuicPacket packet = connection.makeConnectionClosePacket(adaptedFrame, keySpace);
-            final ProtectionRecord protectionRecord = ProtectionRecord.closing(packet,
-                    connection::allocateDatagramForEncryption);
-            // a successful encrypt will remap the QuicConnectionImpl in QuicEndpoint to a
-            // closing connection
-            connection.encrypt(protectionRecord);
+            pushConnectionCloseFrame(keySpace, closeFrame);
         } catch (Exception e) {
             if (Log.errors()) {
                 Log.logError("{0} removing connection from endpoint after failure to send" +
@@ -320,11 +310,8 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
                 }
                 final ConnectionCloseFrame outgoingFrame =
                         new ConnectionCloseFrame(NO_ERROR.code(), incomingFrame.getTypeField(), null);
-                final KeySpace keySpace = connection.getTLSEngine().getCurrentSendKeySpace();
-                final QuicPacket packet = connection.makeConnectionClosePacket(outgoingFrame, keySpace);
-                final ProtectionRecord protectionRecord = ProtectionRecord.closed(packet,
-                        connection::allocateDatagramForEncryption);
-                connection.encrypt(protectionRecord);
+                final KeySpace currentKeySpace = connection.getTLSEngine().getCurrentSendKeySpace();
+                pushConnectionCloseFrame(currentKeySpace, outgoingFrame);
             } catch (Exception e) {
                 // just log and ignore, since sending the CONNECTION_CLOSE when entering
                 // draining state is optional
@@ -356,25 +343,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         connection.packetNumberSpaces().close();
         // close the incoming packets buffered queue
         connection.closeIncoming();
-    }
-
-    /**
-     * From RFC 9000 - section 10.2.3:
-     * <quote>
-     * A CONNECTION_CLOSE of type 0x1d MUST be replaced by a CONNECTION_CLOSE
-     * of type 0x1c when sending the frame in Initial or Handshake packets.
-     * Otherwise, information about the application state might be revealed.
-     * Endpoints MUST clear the value of the Reason Phrase field and SHOULD
-     * use the APPLICATION_ERROR code when converting to a CONNECTION_CLOSE
-     * of type 0x1c.
-     * </quote>
-     */
-    private static ConnectionCloseFrame adaptCloseFrame(final PacketNumberSpace pktSpace,
-                                                        final ConnectionCloseFrame closeFrame) {
-        return switch (pktSpace) {
-            case APPLICATION -> closeFrame;
-            default -> closeFrame.clearApplicationState();
-        };
     }
 
     private void failHandshakeCFs() {
@@ -411,5 +379,48 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
             this.futureTC.completeAsync(() -> cause, connection.quicInstance().executor());
         }
         return marked;
+    }
+
+    /**
+     * CONNECTION_CLOSE frame is not congestion controlled (RFC-9002 section 3
+     * and RFC-9000 section 12.4, table 3), nor is it queued or scheduled for sending.
+     * This method constructs a {@link QuicPacket} containing the {@code frame} and immediately
+     * {@link QuicConnectionImpl#pushDatagram(ProtectionRecord) pushes the datagram} through
+     * the connection.
+     *
+     * @param keySpace the KeySpace to use for sending the packet
+     * @param frame    the CONNECTION_CLOSE frame
+     * @throws QuicKeyUnavailableException if the keys for the KeySpace aren't available
+     * @throws QuicTransportException      for any QUIC transport exception when sending the packet
+     */
+    private void pushConnectionCloseFrame(final KeySpace keySpace,
+                                          final ConnectionCloseFrame frame)
+            throws QuicKeyUnavailableException, QuicTransportException {
+        // ConnectionClose frame is allowed in Initial, Handshake, 0-RTT, 1-RTT spaces.
+        // for Initial and Handshake space, the frame is expected to be of type 0x1c.
+        // see RFC-9000, section 12.4, Table 3 for additional details
+        final ConnectionCloseFrame toSend = switch (keySpace) {
+            case ONE_RTT, ZERO_RTT -> frame;
+            case INITIAL, HANDSHAKE -> {
+                // RFC 9000 - section 10.2.3:
+                // A CONNECTION_CLOSE of type 0x1d MUST be replaced by a CONNECTION_CLOSE
+                // of type 0x1c when sending the frame in Initial or Handshake packets.
+                // Otherwise, information about the application state might be revealed.
+                // Endpoints MUST clear the value of the Reason Phrase field and SHOULD
+                // use the APPLICATION_ERROR code when converting to a CONNECTION_CLOSE
+                // of type 0x1c.
+                yield frame.clearApplicationState();
+            }
+            default -> {
+                throw new IllegalStateException("cannot send a connection close frame" +
+                        " in keyspace: " + keySpace);
+            }
+        };
+        final QuicPacket packet = connection.newQuicPacket(keySpace, List.of(toSend));
+        final ProtectionRecord protectionRecord = ProtectionRecord.single(packet,
+                connection::allocateDatagramForEncryption);
+        // while sending the packet containing the CONNECTION_CLOSE frame, the pushDatagram will
+        // remap (or remove) the QuicConnectionImpl in QuicEndpoint.
+        connection.pushDatagram(protectionRecord);
     }
 }
