@@ -389,55 +389,8 @@ public:
   }
 };
 
-struct DetailStats {
-  ArenaCounterTable counters_at_global_peak;
-  FootprintTimeline timeline;
-};
-
-class DetailStatsBackingStore {
-  static constexpr int max = 4;
-  DetailStats _table[max];
-  size_t _sizes[max];
-  DetailStats** _referees[max];
-
-public:
-  DetailStatsBackingStore() {
-    memset(_sizes, 0, sizeof(_sizes));
-    memset(_referees, 0, sizeof(_referees));
-  }
-
-  // Given a size, find a slot representing a compilation with a smaller size; if multiple matches,
-  // chose the largest one. Reuse that slot.
-  bool try_alloc_slot(size_t size, DetailStats** referee) {
-    int candidate_slot = -1;
-    size_t candidate_size = -1;
-    // Find smallest existing referee
-    for (int i = 0; i < max; i++) {
-      const size_t s = _sizes[i];
-      if (s < candidate_size) {
-        candidate_slot = i;
-        candidate_size = s;
-        if (s == 0) {
-          break; // can't get any better
-        }
-      }
-    }
-    if (candidate_size < size) { // found one
-      _sizes[candidate_slot] = size;
-      if (_referees[candidate_slot] != nullptr) {
-        *(_referees[candidate_slot]) = nullptr; // clear out old referee
-      }
-      _referees[candidate_slot] = referee;      // set new referee
-      (*referee) = &(_table[candidate_slot]);   // return slot address
-      return true;
-    }
-    // Found none
-    (*referee) = nullptr;
-    return false;
-  }
-};
-
 class MemStatEntry : public CHeapObj<mtCompiler> {
+
   const FullMethodName _method;
   CompilerType _comp_type;
   int _comp_id;
@@ -459,7 +412,13 @@ class MemStatEntry : public CHeapObj<mtCompiler> {
   // Number of live nodes at global peak (C2 only)
   unsigned _live_nodes_at_global_peak;
 
-  DetailStats* _detail_stats; // we only carry these if needed
+  struct Details {
+    MemStatEntry* parent;
+    ArenaCounterTable counters_at_global_peak;
+    FootprintTimeline timeline;
+  };
+
+  Details* _detail_stats;
 
   MemStatEntry(const MemStatEntry& e); // deny
 
@@ -473,10 +432,7 @@ public:
   }
 
   ~MemStatEntry() {
-    if (_detail_stats != nullptr) {
-      // TODO!
- //      FREE_C_HEAP_ARRAY(DetailStats, _detail_stats);
-    }
+    clean_details();
   }
 
   void set_comp_id(int comp_id) { _comp_id = comp_id; }
@@ -486,7 +442,7 @@ public:
   void set_limit(size_t limit) { _limit = limit; }
   void inc_recompilation() { _num_recomp++; }
 
-  void set_from_state(const ArenaState* state, DetailStatsBackingStore& detail_store) {
+  void set_from_state(const ArenaState* state, bool store_details) {
     _comp_type = state->comp_type();
     _comp_id = state->comp_id();
     _limit = state->limit();
@@ -494,16 +450,21 @@ public:
     _live_nodes_at_global_peak = state->live_nodes_at_global_peak();
     state->counters_at_global_peak().summarize(_peak_composition_per_arena_tag);
 #ifdef COMPILER2
-    if (_comp_type == CompilerType::compiler_c2 /* && state->collect_details() */) {
-      if (detail_store.try_alloc_slot(_peak, &_detail_stats)) {
-        _detail_stats->counters_at_global_peak.copy_from(state->counters_at_global_peak());
-        _detail_stats->timeline.copy_from(state->timeline());
-      } else {
-        // compilation footprint was smaller than any of the old ones, and no unused slot available.
-        assert(_detail_stats == nullptr, "Should be null now");
-      }
+    if (store_details) {
+      _detail_stats = NEW_C_HEAP_OBJ(Details, mtCompiler);
+      _detail_stats->counters_at_global_peak.copy_from(state->counters_at_global_peak());
+      _detail_stats->timeline.copy_from(state->timeline());
+    } else {
+      clean_details();
     }
 #endif // COMPILER2
+  }
+
+  void clean_details() {
+    if (_detail_stats != nullptr) {
+      FREE_C_HEAP_ARRAY(Details, _detail_stats);
+      _detail_stats = nullptr;
+    }
   }
 
   void set_result(const char* s) { _result = s; }
@@ -635,6 +596,62 @@ public:
   }
 };
 
+template <int max>
+class TopNArray {
+  unsigned _sizes[max]; // for fast linear search.
+  MemStatEntry* _entries[max];
+
+  MemStatEntry* push_elems_down(int vacate_pos) {
+    MemStatEntry* pushed_out = _entries[max - 1];
+    if (vacate_pos < max - 1) {
+      memmove(_sizes + vacate_pos + 1, _sizes + vacate_pos, sizeof(_sizes[0]) * (max - 1 - vacate_pos));
+      memmove(_entries + vacate_pos + 1, _entries + vacate_pos, sizeof(_entries[0]) * (max - 1 - vacate_pos));
+    }
+    return pushed_out;
+  }
+
+  void pull_elems_up(int into_pos) {
+    if (into_pos < max - 1) {
+      memmove(_sizes + into_pos + 1, _sizes + into_pos, sizeof(_sizes[0]) * (max - 1 - into_pos));
+      memmove(_entries + into_pos + 1, _entries + into_pos, sizeof(_entries[0]) * (max - 1 - into_pos));
+    }
+    _sizes[max - 1] = 0;
+    _entries[max - 1] = nullptr;
+  }
+
+public:
+
+  TopNArray() {
+    memset(_sizes, 0, sizeof(_sizes));
+    memset(_entries, 0, sizeof(_entries));
+  }
+
+  bool try_add(MemStatEntry* e, MemStatEntry** pushed_out, size_t total) {
+    const unsigned total_capped = total > UINT_MAX ? UINT_MAX : total;
+    (*pushed_out) = nullptr;
+    int insert_before = 0;
+    while (insert_before < max && _sizes[insert_before] > total_capped) {
+      insert_before ++;
+    }
+    if (insert_before < max) {
+      (*pushed_out) = push_elems_down(insert_before);
+      _sizes[insert_before] = total_capped;
+      _entries[insert_before] = e;
+      return true;
+    }
+    return false;
+  }
+
+  void remove(MemStatEntry* e) {
+    int remove_at = 0;
+    while (remove_at < max && _entries[remove_at] != e) {
+      remove_at++;
+    }
+    assert(remove_at < max, "not found");
+    pull_elems_up(remove_at);
+  }
+};
+
 // The MemStatTable contains records of memory usage of all compilations. It is printed,
 // as memory summary, either with jcmd Compiler.memory, or - if the "print" suboption has
 // been given with the MemStat compile command - as summary printout at VM exit.
@@ -662,7 +679,7 @@ class MemStatTable :
     public ResourceHashtable<MemStatTableKey, MemStatEntry*, 7919, AnyObj::C_HEAP,
                              mtCompiler, MemStatTableKey::compute_hash>
 {
-  DetailStatsBackingStore _detail_backing_store;
+  TopNArray<4> _topn;
 
 public:
 
@@ -685,7 +702,14 @@ public:
     e->set_result(result);
     e->set_code_size(code_size);
 
-    e->set_from_state(state, _detail_backing_store);
+    const size_t total = state->peak();
+    MemStatEntry* pushed_out = nullptr;
+    bool save_details = _topn.try_add(e, &pushed_out, total);
+    if (pushed_out != nullptr) {
+      assert(save_details, "Sanity");
+      pushed_out->clean_details();
+    }
+    e->set_from_state(state, save_details);
   }
 
   // Returns a C-heap-allocated SortMe array containing all entries from the table,
