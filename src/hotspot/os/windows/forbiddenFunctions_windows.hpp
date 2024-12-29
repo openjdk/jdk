@@ -31,4 +31,7 @@
 // _fullpath with a null first argument mallocs a string for the result.
 FORBID_IMPORTED_C_FUNCTION(char* _fullpath(char*, const char*, size_t), "use os::realpath");
 
+// _snprintf does NOT null terminate if the output would exceed the buffer size.
+FORBID_C_FUNCTION(int _snprintf(char*, size_t, const char*, ...), "use os::snprintf");
+
 #endif // OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
