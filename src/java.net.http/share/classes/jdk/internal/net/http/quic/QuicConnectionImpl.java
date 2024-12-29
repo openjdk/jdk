@@ -41,12 +41,15 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -303,6 +306,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final String logTag;
     // incoming PATH_CHALLENGE frames waiting for PATH_RESPONSE
     private final Queue<PathChallengeFrame> pathChallengeFrameQueue = new ConcurrentLinkedQueue<>();
+    private final Set<Long> flowControlBlockedStreams = Collections.synchronizedSet(new HashSet<>());
 
     private MaxInitialTimer maxInitialTimer;
 
@@ -3999,6 +4003,26 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         streams.scheduleStopSendingFrame(new StopSendingFrame(streamId, errorCode));
         packetSpaces.app.runTransmitter();
     }
+
+    public final boolean hasBlockedStreams() {
+        return !this.flowControlBlockedStreams.isEmpty();
+    }
+
+    public final void streamBlocked(final long streamId) {
+        this.flowControlBlockedStreams.add(streamId);
+    }
+
+    public final void streamUnblocked(final long streamId) {
+        this.flowControlBlockedStreams.remove(streamId);
+    }
+
+    public final void sendStreamDataBlocked() {
+        final Set<Long> blockedStreams = this.flowControlBlockedStreams;
+        for (final long streamId : blockedStreams) {
+            streamDataAvailableForSending(streamId);
+        }
+    }
+
 
     /**
      * Called to request sending of a MAX_STREAM_DATA frame.

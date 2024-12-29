@@ -1305,9 +1305,12 @@ public final class QuicConnectionStreams {
                                 }
                                 var blocked = sender.isBlocked();
                                 if (blocked) {
+                                    // track this stream as blocked due to flow control
+                                    connection.streamBlocked(streamId);
+                                    final var dataBlocked = new StreamDataBlockedFrame(streamId, sender.dataSent());
                                     // This might produce multiple StreamDataBlocked frames
-                                    // if the stream was added to sendersReady multiple times.
-                                    var dataBlocked = new StreamDataBlockedFrame(streamId, sender.dataSent());
+                                    // if the stream was added to sendersReady multiple times, so
+                                    // we check before actually sending a STREAM_DATA_BLOCKED frame
                                     if (!frames.contains(dataBlocked)) {
                                         var fdbSize = dataBlocked.size();
                                         if (dataBlocked.size() > remaining) {

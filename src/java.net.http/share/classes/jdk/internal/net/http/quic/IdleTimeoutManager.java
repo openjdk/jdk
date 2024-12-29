@@ -311,8 +311,26 @@ public final class IdleTimeoutManager {
             final long inactivityMs = MILLISECONDS.convert((currentNanos - lastActiveNanos),
                     NANOSECONDS);
             if (inactivityMs >= expectedIdleDurationMs) {
-                // has been idle long enough
-                return null;
+                if (!connection.hasBlockedStreams()) {
+                    // has been idle long enough and there aren't any streams that could have
+                    // generated traffic on the connection but couldn't due to being blocked by
+                    // flow control limits.
+                    return null;
+                }
+                // has been idle long enough, but there are streams that are blocked due to
+                // flow control limits and that could have lead to the idleness.
+                // trigger sending a STREAM_DATA_BLOCKED frame for the streams
+                // to try and have their limits increased by the peer. also, postpone
+                // the idle timeout deadline to give the connection a chance to be active
+                // again.
+                connection.sendStreamDataBlocked();
+                final Deadline next = timeLine().instant().plusMillis(expectedIdleDurationMs);
+                if (debug.on()) {
+                    debug.log("streams blocked due to flow control limits, postponing "
+                            + " timeout event: " + this + " to fire in " + expectedIdleDurationMs
+                            + " milli seconds, deadline: " + next);
+                }
+                return next;
             }
             // not idle long enough, compute the deadline when it's expected to reach
             // idle timeout

@@ -35,6 +35,7 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.http3.Http3Error;
+import jdk.internal.net.http.quic.QuicClient;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.internal.net.http.quic.TerminationCause;
 
@@ -146,7 +147,14 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
      * @return the max stream data
      */
     public long setMaxStreamData(long maxData) {
-        return queue.setMaxStreamData(maxData);
+        final long updatedVal = queue.setMaxStreamData(maxData);
+        if (!queue.consumerBlocked()) {
+            // if the connection was tracking this stream as blocked due to flow control
+            // and if this new MAX_STREAM_DATA limit unblocked this stream, then
+            // stop tracking the stream.
+            connection().streamUnblocked(streamId());
+        }
+        return updatedVal;
     }
 
     /**
@@ -263,11 +271,13 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
 
         @Override
         protected void wakeupConsumer() {
-            // Notify the connection impl that data is available
-            // for writing on this stream. The connection should
+            // Notify the connection impl that either the data is available
+            // for writing or the stream is blocked and the peer needs to be
+            // made aware. The connection should
             // eventually call QuicSenderStreamImpl::poll to
-            // get the data available for writing & package it
-            // a StreamFrame embedded in a Quic OneRTT packet.
+            // get the data available for writing and package it
+            // in a StreamFrame or notice that the stream is blocked and send a
+            // STREAM_DATA_BLOCKED frame.
             connection().streamDataAvailableForSending(streamId());
         }
 
