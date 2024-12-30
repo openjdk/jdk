@@ -23,6 +23,7 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
@@ -49,7 +50,7 @@ import jdk.jpackage.test.Executor;
 
 public class RuntimeImageSymbolicLinksTest {
 
-    @Test
+    @Test(ifNotOS = WINDOWS)
     public static void test() throws Exception {
         final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
