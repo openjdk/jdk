@@ -135,10 +135,11 @@ public class JpegExifThumbnailTest {
                 1998,12,1,14,22,36,
                 new Dimension(80, 60)).run();
 
-        // this includes Exif data, but only a JFIF thumbnail
-        new JpegExifThumbnailTest("jdk_8160327-jfif-jfif-and-exif-thumbnail-sharpshot-iphone.jpg",
-                2010,2,11,20,41,27,
-                new Dimension(131, 122)).run();
+        // this includes Exif data, but the `compression` tag is 0x60000 instead of 0x6,
+        // also it doesn't include any date
+        new JpegExifThumbnailTest("jdk_8160327-plastic-wrap.jpg",
+                -1, -1, -1, -1, -1, -1,
+                new Dimension(200, 132)).run();
     }
 
     final String filename;
@@ -201,22 +202,35 @@ public class JpegExifThumbnailTest {
         Node docNode = findChild(root, "Document");
         Node timeNode = findChild(docNode, "ImageCreationTime");
 
-        StringBuilder sb = new StringBuilder();
-        for (int b = 0; b < timeNode.getAttributes().getLength(); b++) {
-            sb.append(timeNode.getAttributes().item(b).getNodeName() + "=" +
-                    timeNode.getAttributes().item(b).getNodeValue() + " ");
-        }
-        System.out.println("\tImageCreationTime: " + sb.toString().trim());
+        if (timeNode == null) {
+            // this is OK, it means there's no ImageCreationTime
+            assertEquals(-1, year);
+            assertEquals(-1, month);
+            assertEquals(-1, day);
+            assertEquals(-1, hour);
+            assertEquals(-1, minute);
+            assertEquals(-1, second);
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (int b = 0; b < timeNode.getAttributes().getLength(); b++) {
+                sb.append(timeNode.getAttributes().item(b).getNodeName() + "=" +
+                        timeNode.getAttributes().item(b).getNodeValue() + " ");
+            }
+            System.out.println("\tImageCreationTime: " + sb.toString().trim());
 
-        assertEquals(timeNode, "year", year);
-        assertEquals(timeNode, "month", month);
-        assertEquals(timeNode, "day", day);
-        assertEquals(timeNode, "hour", hour);
-        assertEquals(timeNode, "minute", minute);
-        assertEquals(timeNode, "second", second);
+            assertEquals(timeNode, "year", year);
+            assertEquals(timeNode, "month", month);
+            assertEquals(timeNode, "day", day);
+            assertEquals(timeNode, "hour", hour);
+            assertEquals(timeNode, "minute", minute);
+            assertEquals(timeNode, "second", second);
+        }
     }
 
     private static Node findChild(Node node, String nodeName) {
+        if (node == null) {
+            return null;
+        }
         Node child = node.getFirstChild();
         while (child != null) {
             if (child.getNodeName().equals(nodeName))

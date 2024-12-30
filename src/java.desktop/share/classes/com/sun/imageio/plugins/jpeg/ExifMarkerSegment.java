@@ -113,7 +113,6 @@ class ExifMarkerSegment extends MarkerSegment {
     private static final int TIFF_TYPE_SHORT = 3;
     private static final int TAG_IMAGE_WIDTH = 256;
     private static final int TAG_IMAGE_HEIGHT = 257;
-    private static final int TAG_COMPRESSION = 259;
     private static final int TAG_DATE_TIME = 306;
     private static final int TAG_JPEG_INTERCHANGE_FORMAT = 513;
     private static final int TAG_JPEG_INTERCHANGE_FORMAT_LENGTH = 514;
@@ -164,13 +163,17 @@ class ExifMarkerSegment extends MarkerSegment {
         if (imageFileDirectories.size() == 2) {
             // the thumbnail should always be described in the 2nd IFD (if it exists at all)
             ImageFileDirectory ifd2 = imageFileDirectories.get(1);
-            thumbnailCompressionType = ifd2.getTagValueAsInt(TAG_COMPRESSION);
 
-            if (thumbnailCompressionType == 6) {
-                thumbnailPos = ifd2.getTagValueAsInt(TAG_JPEG_INTERCHANGE_FORMAT);
-                thumbnailLength = ifd2.getTagValueAsInt(TAG_JPEG_INTERCHANGE_FORMAT_LENGTH);
+            thumbnailPos = ifd2.getTagValueAsInt(TAG_JPEG_INTERCHANGE_FORMAT);
+            thumbnailLength = ifd2.getTagValueAsInt(TAG_JPEG_INTERCHANGE_FORMAT_LENGTH);
+            if (thumbnailPos != NO_VALUE && thumbnailLength != NO_VALUE) {
+                // The `compression` tag (259) should also help inform whether we read this
+                // image as a JPEG or TIFF. But in practice this is tricky: the docs say
+                // the value for a JPEG encoding is 0x6, but the `jdk_8160327-plastic-wrap.jpg`
+                // file shows it can also sometimes be 0x60000. Similarly the same tag should
+                // be 0x1 for TIFFs, but sometimes its 0x10000.
                 isThumbnailJPEG = true;
-            } else if (thumbnailCompressionType == 65536) {
+            } else {
                 thumbnailWidth = ifd2.getTagValueAsInt(TAG_IMAGE_WIDTH);
                 thumbnailHeight = ifd2.getTagValueAsInt(TAG_IMAGE_HEIGHT);
                 thumbnailPos = 0;
