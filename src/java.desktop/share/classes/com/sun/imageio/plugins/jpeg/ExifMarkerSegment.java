@@ -155,8 +155,10 @@ class ExifMarkerSegment extends MarkerSegment {
             int dateTimeOffset = ifd.getTagValueAsInt(TAG_DATE_TIME);
             if (dateTimeOffset != NO_VALUE) {
                 String dateTime = new String(data, dateTimeOffset + 6, 19, "US-ASCII");
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss");
-                imageCreationTime = LocalDateTime.parse(dateTime, formatter);
+                if (!dateTime.startsWith("0000:")) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss");
+                    imageCreationTime = LocalDateTime.parse(dateTime, formatter);
+                }
             }
         }
 
@@ -170,7 +172,8 @@ class ExifMarkerSegment extends MarkerSegment {
                 // The `compression` tag (259) should also help inform whether we read this
                 // image as a JPEG or TIFF. But in practice this is tricky: the docs say
                 // the value for a JPEG encoding is 0x6, but the `jdk_8160327-plastic-wrap.jpg`
-                // file shows it can also sometimes be 0x60000. Similarly the same tag should
+                // file shows it can also sometimes be 0x60000. I've also observed a case where
+                // that tag is undefined (but it's still a JPEG). Similarly the same tag should
                 // be 0x1 for TIFFs, but sometimes its 0x10000.
                 isThumbnailJPEG = true;
             } else {

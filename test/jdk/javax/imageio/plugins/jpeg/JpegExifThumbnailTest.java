@@ -140,6 +140,11 @@ public class JpegExifThumbnailTest {
         new JpegExifThumbnailTest("jdk_8160327-plastic-wrap.jpg",
                 -1, -1, -1, -1, -1, -1,
                 new Dimension(200, 132)).run();
+
+        // here the timestamp is "0000:00:00 00:00:00", which we'll ignore
+        new JpegExifThumbnailTest("jdk_8160327-zeroed-timestamp.jpg",
+                -1, -1, -1, -1, -1, -1,
+                new Dimension(160, 120)).run();
     }
 
     final String filename;
