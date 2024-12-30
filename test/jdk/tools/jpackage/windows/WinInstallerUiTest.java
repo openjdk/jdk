@@ -122,13 +122,13 @@ public class WinInstallerUiTest {
         StringBuilder sb = new StringBuilder(cmd.name());
         sb.append("With");
         if (withDirChooser) {
-            sb.append("DirChooser");
+            sb.append("Dc"); // DirChooser
         }
         if (withShortcutPrompt) {
-            sb.append("ShortcutPrompt");
+            sb.append("Sp"); // ShortcutPrompt
         }
         if (withLicense) {
-            sb.append("License");
+            sb.append("L"); // License
         }
         cmd.setArgumentValue("--name", sb.toString());
     }
