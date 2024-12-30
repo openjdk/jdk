@@ -35,7 +35,6 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.http3.Http3Error;
-import jdk.internal.net.http.quic.QuicClient;
 import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.internal.net.http.quic.TerminationCause;
 
@@ -152,7 +151,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
             // if the connection was tracking this stream as blocked due to flow control
             // and if this new MAX_STREAM_DATA limit unblocked this stream, then
             // stop tracking the stream.
-            connection().streamUnblocked(streamId());
+            connection().untrackBlockedStream(streamId());
         }
         return updatedVal;
     }

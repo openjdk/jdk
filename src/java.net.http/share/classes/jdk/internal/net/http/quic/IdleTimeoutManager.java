@@ -323,7 +323,7 @@ public final class IdleTimeoutManager {
                 // to try and have their limits increased by the peer. also, postpone
                 // the idle timeout deadline to give the connection a chance to be active
                 // again.
-                connection.sendStreamDataBlocked();
+                connection.enqueueStreamDataBlocked();
                 final Deadline next = timeLine().instant().plusMillis(expectedIdleDurationMs);
                 if (debug.on()) {
                     debug.log("streams blocked due to flow control limits, postponing "

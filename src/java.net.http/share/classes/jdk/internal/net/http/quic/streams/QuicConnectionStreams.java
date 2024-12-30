@@ -1039,6 +1039,14 @@ public final class QuicConnectionStreams {
         receiver.processIncomingResetFrame(frame);
     }
 
+    public void processIncomingFrame(final QuicStream stream, final StreamDataBlockedFrame frame) {
+        assert stream.streamId() == frame.streamId() : "unexpected stream id " + frame.streamId()
+                + " in frame, expected " + stream.streamId();
+        final QuicReceiverStreamImpl rcvrStream = receiverImpl(stream);
+        assert rcvrStream != null : "missing receiver stream for stream " + stream.streamId();
+        rcvrStream.processIncomingFrame(frame);
+    }
+
     public boolean tryIncreaseStreamLimit(final MaxStreamsFrame maxStreamsFrame) {
         final StreamCreationPermit permit = maxStreamsFrame.isBidi()
                 ? localBidiMaxStreamLimit : localUniMaxStreamLimit;
@@ -1306,7 +1314,7 @@ public final class QuicConnectionStreams {
                                 var blocked = sender.isBlocked();
                                 if (blocked) {
                                     // track this stream as blocked due to flow control
-                                    connection.streamBlocked(streamId);
+                                    connection.trackBlockedStream(streamId);
                                     final var dataBlocked = new StreamDataBlockedFrame(streamId, sender.dataSent());
                                     // This might produce multiple StreamDataBlocked frames
                                     // if the stream was added to sendersReady multiple times, so

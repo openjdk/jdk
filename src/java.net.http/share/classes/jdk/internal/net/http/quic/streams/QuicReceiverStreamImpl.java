@@ -32,6 +32,7 @@ import jdk.internal.net.http.quic.QuicConnectionImpl;
 import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.http.quic.frames.ConnectionCloseFrame;
 import jdk.internal.net.http.quic.frames.ResetStreamFrame;
+import jdk.internal.net.http.quic.frames.StreamDataBlockedFrame;
 import jdk.internal.net.http.quic.frames.StreamFrame;
 import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTransportErrors;
@@ -177,6 +178,10 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                     // otherwise do nothing
                 }
             } finally {
+                // if the stream was being tracked as blocked due to flow control limits,
+                // then stop tracking it since it's no longer expecting any more data
+                // to be received.
+                connection().untrackBlockedStream(streamId());
                 // RFC-9000, section 3.5: "If an application is no longer interested in the data it is
                 // receiving on a stream, it can abort reading the stream and specify an application
                 // error code."
@@ -240,6 +245,33 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             // wakeup reader, then throw exception.
             QuicStreamReaderImpl reader = this.reader;
             if (reader != null) reader.wakeup();
+        }
+    }
+
+    void processIncomingFrame(final StreamDataBlockedFrame streamDataBlocked) {
+        assert streamDataBlocked.streamId() == streamId() : "unexpected stream id";
+        final long peerBlockedOn = streamDataBlocked.maxStreamData();
+        final long currentLimit = this.maxStreamData;
+        if (peerBlockedOn > currentLimit) {
+            // shouldn't have happened. ignore and don't increase the limit.
+            return;
+        }
+        // the peer has stated that the stream is blocked due to flow control limit that we have
+        // imposed and has requested for increasing the limit. we approve that request
+        // and increase the limit only if the amount of received data that we have received and
+        // processed on this stream is more than 1/4 of the credit window.
+        if (!requestedStopSending
+                && currentLimit - processed < (desiredBufferSize - desiredBufferSize / 4)) {
+            this.reader.demand(desiredBufferSize);
+        } else {
+            // don't increase the limit, but send (again)
+            // a MAX_STREAM_DATA frame with the current limit, just in case the peer hasn't
+            // refreshed its local state with an accurate limit.
+            connection().requestSendMaxStreamData(streamId(), currentLimit);
+            if (debug.on()) {
+                debug.log("ignoring STREAM_DATA_BLOCKED frame %s," +
+                        " since current limit %d is large enough", streamDataBlocked, currentLimit);
+            }
         }
     }
 
@@ -620,9 +652,8 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 increaseProcessedData(received);
                 return EOF;
             }
-            // if the amount of data we know to have been already delivered has
-            // consumed more than 1/4 of the credit window then send
-            // a MaxStreamData frame.
+            // if the amount of received data that has been processed on this stream is
+            // more than 1/4 of the credit window then send a MaxStreamData frame.
             if (!requestedStopSending && maxStreamData - processed < desiredBufferSize - desiredBufferSize / 4) {
                 demand(desiredBufferSize);
             }
@@ -673,12 +704,12 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             return buffer;
         }
 
-        private void demand(long demand) {
-            assert demand > 0 && demand < MAX_VL_INTEGER : "invalid demand: " + demand;
+        private void demand(final long additional) {
+            assert additional > 0 && additional < MAX_VL_INTEGER : "invalid demand: " + additional;
             var received = dataReceived();
             var maxStreamData = maxStreamData();
 
-            long newMax = Math.clamp(received + demand, maxStreamData, MAX_VL_INTEGER);
+            final long newMax = Math.clamp(received + additional, maxStreamData, MAX_VL_INTEGER);
             if (newMax > maxStreamData) {
                 connection().requestSendMaxStreamData(streamId(), newMax);
                 updateMaxStreamData(newMax);

@@ -123,7 +123,7 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         immediateClose(frame, keySpace, cause);
     }
 
-    void incomingConnectionCloseFrame(final QuicPacket packet, final ConnectionCloseFrame frame) {
+    void incomingConnectionCloseFrame(final ConnectionCloseFrame frame) {
         Objects.requireNonNull(frame);
         if (debug.on()) {
             debug.log("Received close frame: %s", frame);

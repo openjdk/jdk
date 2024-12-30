@@ -78,6 +78,7 @@ import static jdk.internal.net.http.quic.QuicTransportParameters.ParameterId.ori
 import static jdk.internal.net.http.quic.QuicTransportParameters.ParameterId.retry_source_connection_id;
 import static jdk.internal.net.http.quic.QuicTransportParameters.ParameterId.stateless_reset_token;
 import static jdk.internal.net.http.quic.QuicTransportParameters.ParameterId.version_information;
+import static jdk.internal.net.quic.QuicTransportErrors.PROTOCOL_VIOLATION;
 
 public final class QuicServerConnection extends QuicConnectionImpl {
     private static final AtomicLong CONNECTIONS = new AtomicLong();
@@ -209,7 +210,28 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         }
     }
 
-        @Override
+    @Override
+    protected void incoming1RTTFrame(HandshakeDoneFrame frame) throws QuicTransportException {
+        // RFC-9000, section 19.20: A HANDSHAKE_DONE frame can only be sent by
+        // the server. ... A server MUST treat receipt of a HANDSHAKE_DONE frame
+        // as a connection error of type PROTOCOL_VIOLATION
+        throw new QuicTransportException("HANDSHAKE_DONE frame isn't allowed from clients",
+                null,
+                frame.getTypeField(), PROTOCOL_VIOLATION);
+    }
+
+    @Override
+    protected void incoming1RTTFrame(NewTokenFrame frame) throws QuicTransportException {
+        // This is a server connection and as per RFC-9000, section 19.7, clients
+        // aren't supposed to send NEW_TOKEN frames and if a server receives such
+        // a frame then it is considered a connection error
+        // of type PROTOCOL_VIOLATION.
+        throw new QuicTransportException("NEW_TOKEN frame isn't allowed from clients",
+                null,
+                frame.getTypeField(), PROTOCOL_VIOLATION);
+    }
+
+    @Override
     protected void pushDatagram(final SocketAddress destination, final ByteBuffer datagram) {
         final QuicPacket.HeadersType headersType = QuicPacket.peekHeaderType(datagram,
                 datagram.position());
