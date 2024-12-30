@@ -593,7 +593,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public boolean isFakeRuntime(String msg) {
-        if (isFakeRuntime()) {
+        if (isFakeRuntime(appRuntimeDirectory())) {
             // Fake runtime
             Path runtimeDir = appRuntimeDirectory();
             TKit.trace(String.format(
@@ -604,7 +604,7 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
         return false;
     }
 
-    private boolean isFakeRuntime() {
+    private static boolean isFakeRuntime(Path runtimeDir) {
         final Collection<Path> criticalRuntimeFiles;
         if (TKit.isWindows()) {
             criticalRuntimeFiles = WindowsHelper.CRITICAL_RUNTIME_FILES;
@@ -616,7 +616,6 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
             throw TKit.throwUnknownPlatformError();
         }
 
-        Path runtimeDir = appRuntimeDirectory();
         return !criticalRuntimeFiles.stream().map(runtimeDir::resolve).allMatch(
                 Files::exists);
     }
@@ -690,10 +689,8 @@ public final class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public JPackageCommand ignoreFakeRuntime() {
-        if (isFakeRuntime()) {
-            ignoreDefaultRuntime(true);
-        }
-        return this;
+        return ignoreDefaultRuntime(Optional.ofNullable(DEFAULT_RUNTIME_IMAGE)
+                .map(JPackageCommand::isFakeRuntime).orElse(false));
     }
 
     public JPackageCommand ignoreDefaultVerbose(boolean v) {
