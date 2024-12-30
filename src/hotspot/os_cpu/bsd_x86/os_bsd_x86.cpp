@@ -799,47 +799,28 @@ void os::print_context(outputStream *st, const void *context) {
 
   st->print_cr("Registers:");
 #ifdef AMD64
-  st->print(  "RAX=" INTPTR_FORMAT, (intptr_t)uc->context_rax);
-  st->print(", RBX=" INTPTR_FORMAT, (intptr_t)uc->context_rbx);
-  st->print(", RCX=" INTPTR_FORMAT, (intptr_t)uc->context_rcx);
-  st->print(", RDX=" INTPTR_FORMAT, (intptr_t)uc->context_rdx);
+  print_reg(st, "RAX=", (intptr_t)uc->context_rax);
+  print_reg(st, "RBX=", (intptr_t)uc->context_rbx);
+  print_reg(st, "RCX=", (intptr_t)uc->context_rcx);
+  print_reg(st, "RDX=", (intptr_t)uc->context_rdx);
+  print_reg(st, "RSP=", (intptr_t)uc->context_rsp);
+  print_reg(st, "RBP=", (intptr_t)uc->context_rbp);
+  print_reg(st, "RSI=", (intptr_t)uc->context_rsi);
+  print_reg(st, "RDI=", (intptr_t)uc->context_rdi);
+  print_reg(st, "R8 =", (intptr_t)uc->context_r8);
+  print_reg(st, "R9 =", (intptr_t)uc->context_r9);
+  print_reg(st, "R10=", (intptr_t)uc->context_r10);
+  print_reg(st, "R11=", (intptr_t)uc->context_r11);
+  print_reg(st, "R12=", (intptr_t)uc->context_r12);
+  print_reg(st, "R13=", (intptr_t)uc->context_r13);
+  print_reg(st, "R14=", (intptr_t)uc->context_r14);
+  print_reg(st, "R15=", (intptr_t)uc->context_r15);
+  print_reg(st, "RIP=", (intptr_t)uc->context_rip);
+  print_reg(st, "EFLAGS=",(intptr_t)uc->context_flags);
+  print_reg(st, "ERR=", (intptr_t)uc->context_err);
+  print_reg(st, "TRAPNO=", (intptr_t)uc->context_trapno);
   st->cr();
-  st->print(  "RSP=" INTPTR_FORMAT, (intptr_t)uc->context_rsp);
-  st->print(", RBP=" INTPTR_FORMAT, (intptr_t)uc->context_rbp);
-  st->print(", RSI=" INTPTR_FORMAT, (intptr_t)uc->context_rsi);
-  st->print(", RDI=" INTPTR_FORMAT, (intptr_t)uc->context_rdi);
-  st->cr();
-  st->print(  "R8 =" INTPTR_FORMAT, (intptr_t)uc->context_r8);
-  st->print(", R9 =" INTPTR_FORMAT, (intptr_t)uc->context_r9);
-  st->print(", R10=" INTPTR_FORMAT, (intptr_t)uc->context_r10);
-  st->print(", R11=" INTPTR_FORMAT, (intptr_t)uc->context_r11);
-  st->cr();
-  st->print(  "R12=" INTPTR_FORMAT, (intptr_t)uc->context_r12);
-  st->print(", R13=" INTPTR_FORMAT, (intptr_t)uc->context_r13);
-  st->print(", R14=" INTPTR_FORMAT, (intptr_t)uc->context_r14);
-  st->print(", R15=" INTPTR_FORMAT, (intptr_t)uc->context_r15);
-  st->cr();
-  st->print(  "RIP=" INTPTR_FORMAT, (intptr_t)uc->context_rip);
-  st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->context_flags);
-  st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->context_err);
-  st->cr();
-  st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->context_trapno);
-#else
-  st->print(  "EAX=" INTPTR_FORMAT, (intptr_t)uc->context_eax);
-  st->print(", EBX=" INTPTR_FORMAT, (intptr_t)uc->context_ebx);
-  st->print(", ECX=" INTPTR_FORMAT, (intptr_t)uc->context_ecx);
-  st->print(", EDX=" INTPTR_FORMAT, (intptr_t)uc->context_edx);
-  st->cr();
-  st->print(  "ESP=" INTPTR_FORMAT, (intptr_t)uc->context_esp);
-  st->print(", EBP=" INTPTR_FORMAT, (intptr_t)uc->context_ebp);
-  st->print(", ESI=" INTPTR_FORMAT, (intptr_t)uc->context_esi);
-  st->print(", EDI=" INTPTR_FORMAT, (intptr_t)uc->context_edi);
-  st->cr();
-  st->print(  "EIP=" INTPTR_FORMAT, (intptr_t)uc->context_eip);
-  st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->context_eflags);
-#endif // AMD64
-  st->cr();
-  st->cr();
+#endif
 }
 
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {

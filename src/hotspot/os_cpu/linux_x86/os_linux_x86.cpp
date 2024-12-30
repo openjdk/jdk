@@ -516,36 +516,31 @@ void os::print_context(outputStream *st, const void *context) {
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
+  st->cr();
   st->print_cr("Registers:");
 #ifdef AMD64
-  st->print(  "RAX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RAX]);
-  st->print(", RBX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RBX]);
-  st->print(", RCX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RCX]);
-  st->print(", RDX=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RDX]);
-  st->cr();
-  st->print(  "RSP=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RSP]);
-  st->print(", RBP=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RBP]);
-  st->print(", RSI=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RSI]);
-  st->print(", RDI=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RDI]);
-  st->cr();
-  st->print(  "R8 =" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R8]);
-  st->print(", R9 =" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R9]);
-  st->print(", R10=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R10]);
-  st->print(", R11=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R11]);
-  st->cr();
-  st->print(  "R12=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R12]);
-  st->print(", R13=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R13]);
-  st->print(", R14=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R14]);
-  st->print(", R15=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_R15]);
-  st->cr();
-  st->print(  "RIP=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_RIP]);
-  st->print(", EFLAGS=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_EFL]);
-  st->print(", CSGSFS=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_CSGSFS]);
-  st->print(", ERR=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_ERR]);
-  st->cr();
-  st->print("  TRAPNO=" INTPTR_FORMAT, (intptr_t)uc->uc_mcontext.gregs[REG_TRAPNO]);
+  print_reg(st, "RAX=", (intptr_t)uc->uc_mcontext.gregs[REG_RAX]);
+  print_reg(st, "RBX=", (intptr_t)uc->uc_mcontext.gregs[REG_RBX]);
+  print_reg(st, "RCX=", (intptr_t)uc->uc_mcontext.gregs[REG_RCX]);
+  print_reg(st, "RDX=", (intptr_t)uc->uc_mcontext.gregs[REG_RDX]);
+  print_reg(st, "RSP=", (intptr_t)uc->uc_mcontext.gregs[REG_RSP]);
+  print_reg(st, "RBP=", (intptr_t)uc->uc_mcontext.gregs[REG_RBP]);
+  print_reg(st, "RSI=", (intptr_t)uc->uc_mcontext.gregs[REG_RSI]);
+  print_reg(st, "RDI=", (intptr_t)uc->uc_mcontext.gregs[REG_RDI]);
+  print_reg(st, "R8 =", (intptr_t)uc->uc_mcontext.gregs[REG_R8]);
+  print_reg(st, "R9 =", (intptr_t)uc->uc_mcontext.gregs[REG_R9]);
+  print_reg(st, "R10=", (intptr_t)uc->uc_mcontext.gregs[REG_R10]);
+  print_reg(st, "R11=", (intptr_t)uc->uc_mcontext.gregs[REG_R11]);
+  print_reg(st, "R12=", (intptr_t)uc->uc_mcontext.gregs[REG_R12]);
+  print_reg(st, "R13=", (intptr_t)uc->uc_mcontext.gregs[REG_R13]);
+  print_reg(st, "R14=", (intptr_t)uc->uc_mcontext.gregs[REG_R14]);
+  print_reg(st, "R15=", (intptr_t)uc->uc_mcontext.gregs[REG_R15]);
+  print_reg(st, "RIP=", (intptr_t)uc->uc_mcontext.gregs[REG_RIP]);
+  print_reg(st, "EFLAGS=", (intptr_t)uc->uc_mcontext.gregs[REG_EFL]);
+  print_reg(st, "CSGSFS=", (intptr_t)uc->uc_mcontext.gregs[REG_CSGSFS]);
+  print_reg(st, "ERR=", (intptr_t)uc->uc_mcontext.gregs[REG_ERR]);
+  print_reg(st, "TRAPNO=", (intptr_t)uc->uc_mcontext.gregs[REG_TRAPNO]);
   // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
-  st->cr();
   st->cr();
   // Sanity check: fpregs should point into the context.
   if ((address)uc->uc_mcontext.fpregs < (address)uc ||
@@ -557,24 +552,21 @@ void os::print_context(outputStream *st, const void *context) {
       const int64_t* xmm_val_addr = (int64_t*)&(uc->uc_mcontext.fpregs->_xmm[i]);
       st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT, i, xmm_val_addr[1], xmm_val_addr[0]);
     }
-    st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
+    st->print_cr("  MXCSR=" UINT32_FORMAT_X_0, uc->uc_mcontext.fpregs->mxcsr);
   }
 #else
-  st->print(  "EAX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EAX]);
-  st->print(", EBX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBX]);
-  st->print(", ECX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ECX]);
-  st->print(", EDX=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EDX]);
-  st->cr();
-  st->print(  "ESP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_UESP]);
-  st->print(", EBP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EBP]);
-  st->print(", ESI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_ESI]);
-  st->print(", EDI=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EDI]);
-  st->cr();
-  st->print(  "EIP=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EIP]);
-  st->print(", EFLAGS=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_EFL]);
-  st->print(", CR2=" UINT64_FORMAT_X_0, (uint64_t)uc->uc_mcontext.cr2);
+  print_reg(st, "EAX=", (intptr_t) uc->uc_mcontext.gregs[REG_EAX]);
+  print_reg(st, "EBX=", (intptr_t) uc->uc_mcontext.gregs[REG_EBX]);
+  print_reg(st, "ECX=", (intptr_t) uc->uc_mcontext.gregs[REG_ECX]);
+  print_reg(st, "EDX=", (intptr_t) uc->uc_mcontext.gregs[REG_EDX]);
+  print_reg(st, "ESP=", (intptr_t) uc->uc_mcontext.gregs[REG_UESP]);
+  print_reg(st, "EBP=", (intptr_t) uc->uc_mcontext.gregs[REG_EBP]);
+  print_reg(st, "ESI=", (intptr_t) uc->uc_mcontext.gregs[REG_ESI]);
+  print_reg(st, "EDI=", (intptr_t) uc->uc_mcontext.gregs[REG_EDI]);
+  print_reg(st, "EIP=", (intptr_t) uc->uc_mcontext.gregs[REG_EIP]);
+  print_reg(st, "EFLAGS=", (intptr_t) uc->uc_mcontext.gregs[REG_EFL]);
+  st->print_cr("CR2=" UINT64_FORMAT_X_0, (uint64_t)uc->uc_mcontext.cr2);
 #endif // AMD64
-  st->cr();
   st->cr();
 }
 

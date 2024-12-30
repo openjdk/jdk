@@ -349,7 +349,9 @@ void os::print_context(outputStream *st, const void *context) {
 
   st->print_cr("Registers:");
   for (int r = 0; r < 31; r++) {
-    st->print_cr(  "R%d=" INTPTR_FORMAT, r, (uintptr_t)uc->uc_mcontext.regs[r]);
+    char regname[6] = {0};
+    snprintf(regname, sizeof(regname), "R%d=", r);
+    print_reg(st, regname, uc->uc_mcontext.regs[r]);
   }
   st->cr();
 }

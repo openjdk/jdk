@@ -143,6 +143,7 @@ public class TestDwarf {
 
             // Check all stack entries after the line starting with "Native frames" in the hs_err_file until an empty line
             // is found which denotes the end of the stack frames.
+            // ATTENTION - register printing lines might start with CSGSFS ('C') so add a empty line before Register printing
             while ((line = reader.readLine()) != null) {
                 if (foundNativeFrames) {
                     if (line.isEmpty()) {

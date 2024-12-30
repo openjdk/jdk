@@ -403,48 +403,16 @@ void os::print_context(outputStream *st, const void *context) {
   const ucontext_t *uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
-  st->print( " x0=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 0]);
-  st->print("  x1=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 1]);
-  st->print("  x2=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 2]);
-  st->print("  x3=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 3]);
-  st->cr();
-  st->print( " x4=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 4]);
-  st->print("  x5=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 5]);
-  st->print("  x6=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 6]);
-  st->print("  x7=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 7]);
-  st->cr();
-  st->print( " x8=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 8]);
-  st->print("  x9=" INTPTR_FORMAT, (intptr_t)uc->context_x[ 9]);
-  st->print(" x10=" INTPTR_FORMAT, (intptr_t)uc->context_x[10]);
-  st->print(" x11=" INTPTR_FORMAT, (intptr_t)uc->context_x[11]);
-  st->cr();
-  st->print( "x12=" INTPTR_FORMAT, (intptr_t)uc->context_x[12]);
-  st->print(" x13=" INTPTR_FORMAT, (intptr_t)uc->context_x[13]);
-  st->print(" x14=" INTPTR_FORMAT, (intptr_t)uc->context_x[14]);
-  st->print(" x15=" INTPTR_FORMAT, (intptr_t)uc->context_x[15]);
-  st->cr();
-  st->print( "x16=" INTPTR_FORMAT, (intptr_t)uc->context_x[16]);
-  st->print(" x17=" INTPTR_FORMAT, (intptr_t)uc->context_x[17]);
-  st->print(" x18=" INTPTR_FORMAT, (intptr_t)uc->context_x[18]);
-  st->print(" x19=" INTPTR_FORMAT, (intptr_t)uc->context_x[19]);
-  st->cr();
-  st->print( "x20=" INTPTR_FORMAT, (intptr_t)uc->context_x[20]);
-  st->print(" x21=" INTPTR_FORMAT, (intptr_t)uc->context_x[21]);
-  st->print(" x22=" INTPTR_FORMAT, (intptr_t)uc->context_x[22]);
-  st->print(" x23=" INTPTR_FORMAT, (intptr_t)uc->context_x[23]);
-  st->cr();
-  st->print( "x24=" INTPTR_FORMAT, (intptr_t)uc->context_x[24]);
-  st->print(" x25=" INTPTR_FORMAT, (intptr_t)uc->context_x[25]);
-  st->print(" x26=" INTPTR_FORMAT, (intptr_t)uc->context_x[26]);
-  st->print(" x27=" INTPTR_FORMAT, (intptr_t)uc->context_x[27]);
-  st->cr();
-  st->print( "x28=" INTPTR_FORMAT, (intptr_t)uc->context_x[28]);
-  st->print("  fp=" INTPTR_FORMAT, (intptr_t)uc->context_fp);
-  st->print("  lr=" INTPTR_FORMAT, (intptr_t)uc->context_lr);
-  st->print("  sp=" INTPTR_FORMAT, (intptr_t)uc->context_sp);
-  st->cr();
-  st->print(  "pc=" INTPTR_FORMAT,  (intptr_t)uc->context_pc);
-  st->print(" cpsr=" INTPTR_FORMAT, (intptr_t)uc->context_cpsr);
+  for (int r = 0; r < 29; r++) {
+    char regname[6] = {0};
+    snprintf(regname, sizeof(regname), "x%-2d=", r);
+    print_reg(st, regname, uc->context_x[r]);
+  }
+  print_reg(st, "fp=", (intptr_t)uc->context_fp);
+  print_reg(st, "lr=", (intptr_t)uc->context_lr);
+  print_reg(st, "sp=", (intptr_t)uc->context_sp);
+  print_reg(st, "pc=", (intptr_t)uc->context_pc);
+  print_reg(st, "cpsr=", (intptr_t)uc->context_cpsr);
   st->cr();
 }
 

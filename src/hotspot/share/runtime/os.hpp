@@ -834,6 +834,7 @@ class os: AllStatic {
   static void print_dhm(outputStream* st, const char* startStr, long sec);
 
   static void print_location(outputStream* st, intptr_t x, bool verbose = false);
+  static void print_reg(outputStream *st, const char* reg, intptr_t val);
   static size_t lasterror(char *buf, size_t len);
   static int get_last_error();
 

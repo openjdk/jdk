@@ -1388,6 +1388,10 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
 }
 
+void os::print_reg(outputStream *st, const char* reg, intptr_t val) {
+  st->print_cr("%s" INTPTR_FORMAT, reg, val);
+}
+
 static bool is_pointer_bad(intptr_t* ptr) {
   return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
 }

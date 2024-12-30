@@ -348,39 +348,34 @@ void os::print_context(outputStream *st, const void *context) {
 
   const CONTEXT* uc = (const CONTEXT*)context;
 
+  st->cr();
   st->print_cr("Registers:");
-  st->print(  "RAX=" INTPTR_FORMAT, uc->Rax);
-  st->print(", RBX=" INTPTR_FORMAT, uc->Rbx);
-  st->print(", RCX=" INTPTR_FORMAT, uc->Rcx);
-  st->print(", RDX=" INTPTR_FORMAT, uc->Rdx);
-  st->cr();
-  st->print(  "RSP=" INTPTR_FORMAT, uc->Rsp);
-  st->print(", RBP=" INTPTR_FORMAT, uc->Rbp);
-  st->print(", RSI=" INTPTR_FORMAT, uc->Rsi);
-  st->print(", RDI=" INTPTR_FORMAT, uc->Rdi);
-  st->cr();
-  st->print(  "R8 =" INTPTR_FORMAT, uc->R8);
-  st->print(", R9 =" INTPTR_FORMAT, uc->R9);
-  st->print(", R10=" INTPTR_FORMAT, uc->R10);
-  st->print(", R11=" INTPTR_FORMAT, uc->R11);
-  st->cr();
-  st->print(  "R12=" INTPTR_FORMAT, uc->R12);
-  st->print(", R13=" INTPTR_FORMAT, uc->R13);
-  st->print(", R14=" INTPTR_FORMAT, uc->R14);
-  st->print(", R15=" INTPTR_FORMAT, uc->R15);
-  st->cr();
-  st->print(  "RIP=" INTPTR_FORMAT, uc->Rip);
-  st->print(", EFLAGS=" INTPTR_FORMAT, uc->EFlags);
+  print_reg(st, "RAX=", uc->Rax);
+  print_reg(st, "RBX=", uc->Rbx);
+  print_reg(st, "RCX=", uc->Rcx);
+  print_reg(st, "RDX=", uc->Rdx);
+  print_reg(st, "RSP=", uc->Rsp);
+  print_reg(st, "RBP=", uc->Rbp);
+  print_reg(st, "RSI=", uc->Rsi);
+  print_reg(st, "RDI=", uc->Rdi);
+  print_reg(st, "R8 =", uc->R8);
+  print_reg(st, "R9 =", uc->R9);
+  print_reg(st, "R10=", uc->R10);
+  print_reg(st, "R11=", uc->R11);
+  print_reg(st, "R12=", uc->R12);
+  print_reg(st, "R13=", uc->R13);
+  print_reg(st, "R14=", uc->R14);
+  print_reg(st, "R15=", uc->R15);
+  print_reg(st, "RIP=", uc->Rip);
+  print_reg(st, "EFLAGS=", uc->EFlags);
   // Add XMM registers + MXCSR. Note that C2 uses XMM to spill GPR values including pointers.
-  st->cr();
   st->cr();
   for (int i = 0; i < 16; ++i) {
     const uint64_t *xmm = ((const uint64_t*)&(uc->Xmm0)) + 2 * i;
     st->print_cr("XMM[%d]=" INTPTR_FORMAT " " INTPTR_FORMAT,
                  i, xmm[1], xmm[0]);
   }
-  st->print("  MXCSR=" UINT32_FORMAT_X_0, uc->MxCsr);
-  st->cr();
+  st->print_cr("  MXCSR=" UINT32_FORMAT_X_0, uc->MxCsr);
   st->cr();
 }
 
