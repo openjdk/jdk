@@ -30,6 +30,8 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameters;
 import java.util.List;
+import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
+import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
 
 /**
  * Test --resource-dir option. The test should set --resource-dir to point to
@@ -83,11 +85,18 @@ public class WinResourceTest {
         .addBundleVerifier((cmd, result) -> {
             // Assert jpackage picked custom main.wxs and failed as expected by
             // examining its output
+            final String expectedWixErrorMsg;
+            if (getWixTypeFromVerboseJPackageOutput(result) == WIX3) {
+                expectedWixErrorMsg = "error CNDL0104 : Not a valid source file";
+            } else {
+                expectedWixErrorMsg = "error WIX0104: Not a valid source file";
+            }
+
             TKit.assertTextStream(expectedLogMessage)
                     .predicate(String::startsWith)
                     .apply(JPackageCommand.stripTimestamps(
                             result.getOutput().stream()));
-            TKit.assertTextStream("error CNDL0104 : Not a valid source file")
+            TKit.assertTextStream(expectedWixErrorMsg)
                     .apply(result.getOutput().stream());
         })
         .setExpectedExitCode(1)
