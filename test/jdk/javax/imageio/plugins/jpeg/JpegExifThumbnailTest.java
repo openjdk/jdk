@@ -30,42 +30,133 @@
  */
 
 
+import org.w3c.dom.Node;
+
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.event.IIOReadProgressListener;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.stream.ImageInputStream;
 
 public class JpegExifThumbnailTest {
+
+    private static void assertBoolean(boolean b, String errorMsg) {
+        if (!b) {
+            throw new Error(errorMsg);
+        }
+    }
+
+    private static void assertEquals(int expected, int observed) {
+        if (expected != observed) {
+            throw new Error("expected " + expected + ", but observed " + observed);
+        }
+    }
+
+    private static void assertEquals(Node node, String attributeName, int expectedAttributeValue) {
+        String s = node.getAttributes().getNamedItem(attributeName).getNodeValue();
+        if (!Integer.toString(expectedAttributeValue).equals(s))
+            throw new Error("expected \"" + attributeName + "\" to be " + expectedAttributeValue + ", but observed " + s);
+    }
+
+    static class MyListener implements IIOReadProgressListener {
+
+        boolean thumbnailStarted = false;
+        boolean thumbnailCompleted = false;
+        float thumbnailPercent = -1;
+
+        @Override
+        public void sequenceStarted(ImageReader source, int minIndex) {
+            throw new Error("sequenceStarted should not be called");
+        }
+
+        @Override
+        public void sequenceComplete(ImageReader source) {
+            throw new Error("sequenceComplete should not be called");
+        }
+
+        @Override
+        public void imageStarted(ImageReader source, int imageIndex) {
+            throw new Error("imageStarted should not be called");
+        }
+
+        @Override
+        public void imageProgress(ImageReader source, float percentageDone) {
+            throw new Error("imageProgress should not be called");
+        }
+
+        @Override
+        public void imageComplete(ImageReader source) {
+            throw new Error("imageComplete should not be called");
+        }
+
+        @Override
+        public void thumbnailStarted(ImageReader source, int imageIndex, int thumbnailIndex) {
+            if (thumbnailStarted || thumbnailCompleted || thumbnailPercent >= 0)
+                throw new Error();
+            thumbnailStarted = true;
+        }
+
+        @Override
+        public void thumbnailProgress(ImageReader source, float percentageDone) {
+            if (!thumbnailStarted || thumbnailCompleted || thumbnailPercent >= percentageDone)
+                throw new Error();
+            thumbnailPercent = percentageDone;
+        }
+
+        @Override
+        public void thumbnailComplete(ImageReader source) {
+            if (!thumbnailStarted || thumbnailCompleted)
+                throw new Error();
+            thumbnailCompleted = true;
+        }
+
+        @Override
+        public void readAborted(ImageReader source) {
+            throw new Error("readAborted should not be called");
+        }
+    }
+
     public static void main (String[] args) throws IOException {
+        // all the timestamps were verified in a 3rd party app (such as Preview on Mac)
+
         // this is little endian, and uses a compression type 0x00000006
         new JpegExifThumbnailTest("jdk_8160327-SV650.jpg",
+                2015,6,24,10,3,55,
                 new Dimension(160, 120)).run();
 
         // this is big endian, and uses a compression type 0x00010000
         new JpegExifThumbnailTest("jdk_8160327-exif-rgb-thumbnail-sony-d700.jpg",
+                1998,12,1,14,22,36,
                 new Dimension(80, 60)).run();
 
-        // this includes Exif & JFIF data, but only a JFIF thumbnail
+        // this includes Exif data, but only a JFIF thumbnail
         new JpegExifThumbnailTest("jdk_8160327-jfif-jfif-and-exif-thumbnail-sharpshot-iphone.jpg",
+                2010,2,11,20,41,27,
                 new Dimension(131, 122)).run();
     }
 
-    boolean listener_thumbnailStarted;
-    boolean listener_thumbnailCompleted;
-    float listener_thumbnailPercent = - 1;
-
     final String filename;
     final Dimension[] thumbnailSizes;
+    final int year, month, day, hour, minute, second;
 
-    JpegExifThumbnailTest(String filename, Dimension... thumbnailSizes) throws IOException {
+    JpegExifThumbnailTest(String filename,
+                          int year, int month, int day,
+                          int hour, int minute, int second,
+                          Dimension... thumbnailSizes) {
         this.filename = filename;
         this.thumbnailSizes = thumbnailSizes;
+        this.year = year;
+        this.month = month;
+        this.day = day;
+        this.hour = hour;
+        this.minute = minute;
+        this.second = second;
     }
 
     public void run() throws IOException {
@@ -76,94 +167,70 @@ public class JpegExifThumbnailTest {
 
         System.out.println("Testing " + file.getPath());
 
-        ImageReader reader = getImageReader("JPEG");
+        ImageReader reader = getJPEGImageReader();
         ImageInputStream stream = ImageIO.createImageInputStream(file);
         reader.setInput(stream);
-        reader.addIIOReadProgressListener(new IIOReadProgressListener() {
-            @Override
-            public void sequenceStarted(ImageReader source, int minIndex) {
-                throw new Error("sequenceStarted should not be called");
-            }
-
-            @Override
-            public void sequenceComplete(ImageReader source) {
-                throw new Error("sequenceComplete should not be called");
-            }
-
-            @Override
-            public void imageStarted(ImageReader source, int imageIndex) {
-                throw new Error("imageStarted should not be called");
-            }
-
-            @Override
-            public void imageProgress(ImageReader source, float percentageDone) {
-                throw new Error("imageProgress should not be called");
-            }
-
-            @Override
-            public void imageComplete(ImageReader source) {
-                throw new Error("imageComplete should not be called");
-            }
-
-            @Override
-            public void thumbnailStarted(ImageReader source, int imageIndex, int thumbnailIndex) {
-                if (listener_thumbnailStarted || listener_thumbnailCompleted || listener_thumbnailPercent >= 0)
-                    throw new Error();
-                listener_thumbnailStarted = true;
-            }
-
-            @Override
-            public void thumbnailProgress(ImageReader source, float percentageDone) {
-                if (!listener_thumbnailStarted || listener_thumbnailCompleted || listener_thumbnailPercent >= percentageDone)
-                    throw new Error();
-                listener_thumbnailPercent = percentageDone;
-            }
-
-            @Override
-            public void thumbnailComplete(ImageReader source) {
-                if (!listener_thumbnailStarted || listener_thumbnailCompleted)
-                    throw new Error();
-                listener_thumbnailCompleted = true;
-            }
-
-            @Override
-            public void readAborted(ImageReader source) {
-                throw new Error("readAborted should not be called");
-            }
-        });
 
         int thumbnailCount = reader.getNumThumbnails(0);
         if (thumbnailCount != thumbnailSizes.length)
             throw new Error("expected " + thumbnailSizes.length + " thumbnails, but observed " + thumbnailCount);
 
         for (int a = 0; a < thumbnailSizes.length; a++) {
-            int w = reader.getThumbnailWidth(0, a);
-            int h = reader.getThumbnailHeight(0, a);
+            MyListener listener = new MyListener();
+            reader.addIIOReadProgressListener(listener);
+            try {
+                int w = reader.getThumbnailWidth(0, a);
+                int h = reader.getThumbnailHeight(0, a);
+                System.out.println("\tthumbnail: " + w + "x" + h);
+                assertEquals(thumbnailSizes[a].width, w);
+                assertEquals(thumbnailSizes[a].height, h);
 
-            if (w != thumbnailSizes[a].width)
-                throw new Error("expected " + thumbnailSizes[a].width + " width, but observed " + w);
-            if (h != thumbnailSizes[a].height)
-                throw new Error("expected " + thumbnailSizes[a].height + " height, but observed " + h);
+                BufferedImage bi = reader.readThumbnail(0, a);
+                assertEquals(thumbnailSizes[a].width, bi.getWidth());
+                assertEquals(thumbnailSizes[a].height, bi.getHeight());
 
-            BufferedImage bi = reader.readThumbnail(0, a);
-
-            if (bi.getWidth() != thumbnailSizes[a].width)
-                throw new Error("expected " + thumbnailSizes[a].width + " width, but observed " + bi.getWidth());
-            if (bi.getHeight() != thumbnailSizes[a].height)
-                throw new Error("expected " + thumbnailSizes[a].height + " height, but observed " + bi.getHeight());
-
-            if (!listener_thumbnailStarted)
-                throw new Error("the IIOReadProgressListener was not notified that the thumbnail started");
-            if (!listener_thumbnailCompleted)
-                throw new Error("the IIOReadProgressListener was not notified that the thumbnail completed");
+                assertBoolean(listener.thumbnailStarted, "the IIOReadProgressListener was not notified that the thumbnail started");
+                assertBoolean(listener.thumbnailCompleted, "the IIOReadProgressListener was not notified that the thumbnail completed");
+            } finally {
+                reader.removeIIOReadProgressListener(listener);
+            }
         }
+
+        IIOMetadata metadata = reader.getImageMetadata(0);
+        Node root = metadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
+        Node docNode = findChild(root, "Document");
+        Node timeNode = findChild(docNode, "ImageCreationTime");
+
+        StringBuilder sb = new StringBuilder();
+        for (int b = 0; b < timeNode.getAttributes().getLength(); b++) {
+            sb.append(timeNode.getAttributes().item(b).getNodeName() + "=" +
+                    timeNode.getAttributes().item(b).getNodeValue() + " ");
+        }
+        System.out.println("\tImageCreationTime: " + sb.toString().trim());
+
+        assertEquals(timeNode, "year", year);
+        assertEquals(timeNode, "month", month);
+        assertEquals(timeNode, "day", day);
+        assertEquals(timeNode, "hour", hour);
+        assertEquals(timeNode, "minute", minute);
+        assertEquals(timeNode, "second", second);
     }
 
-    private static ImageReader getImageReader(String fileType) {
-        Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName(fileType);
-        ImageReader reader = null;
+    private static Node findChild(Node node, String nodeName) {
+        Node child = node.getFirstChild();
+        while (child != null) {
+            if (child.getNodeName().equals(nodeName))
+                return child;
+            child = child.getNextSibling();
+        }
+        return null;
+    }
+
+    private static ImageReader getJPEGImageReader() {
+        Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("jpeg");
+        ImageReader reader;
         while(readers.hasNext()) {
-            reader = (ImageReader) readers.next();
+            reader = readers.next();
             if(reader.canReadRaster()) {
                 return reader;
             }
