@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
+import static jdk.jpackage.test.HelloApp.configureEnvironment;
 import jdk.jpackage.test.TKit;
 
 /**
@@ -53,6 +54,7 @@ public class AppLauncherEnvTest {
 
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage(TEST_APP_JAVA + "*Hello")
+                .ignoreFakeRuntime()
                 .addArguments("--java-options", "-D" + testAddDirProp
                         + "=$APPDIR");
 
@@ -62,7 +64,7 @@ public class AppLauncherEnvTest {
 
         final int attempts = 3;
         final int waitBetweenAttemptsSeconds = 5;
-        List<String> output = new Executor()
+        List<String> output = configureEnvironment(new Executor())
                 .saveOutput()
                 .setExecutable(cmd.appLauncherPath().toAbsolutePath())
                 .addArguments("--print-env-var=" + envVarName)
