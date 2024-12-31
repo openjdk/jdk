@@ -42,7 +42,7 @@ import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 public interface AppImageLayout {
 
     /**
-     * Path to Java run-time directory.
+     * Path to Java runtime directory.
      */
     Path runtimeDirectory();
 
