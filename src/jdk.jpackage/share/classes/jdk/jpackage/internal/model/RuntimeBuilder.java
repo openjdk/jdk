@@ -24,13 +24,12 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
 public interface RuntimeBuilder {
 
-    public void createRuntime(AppImageLayout appImageLayout) throws PackagerException, IOException;
+    void createRuntime(AppImageLayout appImageLayout) throws PackagerException;
 
     public static List<Path> getDefaultModulePath() {
         return List.of(
