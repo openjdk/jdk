@@ -28,12 +28,16 @@ package com.sun.tools.javac.code;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 
@@ -359,8 +363,14 @@ public class Lint
             map.put(option, this);
         }
 
-        static LintCategory get(String option) {
-            return map.get(option);
+        /**
+         * Get the {@link LintCategory} having the given command line option.
+         *
+         * @param option lint category option string
+         * @return corresponding {@link LintCategory}, or empty if none exists
+         */
+        public static Optional<LintCategory> get(String option) {
+            return Optional.ofNullable(map.get(option));
         }
 
         public final String option;
@@ -383,6 +393,15 @@ public class Lint
      */
     public boolean isSuppressed(LintCategory lc) {
         return suppressedValues.contains(lc);
+    }
+
+    /**
+     * Helper method. Log a lint warning if its lint category is enabled.
+     */
+    public void logIfEnabled(Log log, DiagnosticPosition pos, LintWarning warning) {
+        if (isEnabled(warning.getLintCategory())) {
+            log.warning(pos, warning);
+        }
     }
 
     protected static class AugmentVisitor implements Attribute.Visitor {
@@ -429,9 +448,8 @@ public class Lint
 
         public void visitConstant(Attribute.Constant value) {
             if (value.type.tsym == syms.stringType.tsym) {
-                LintCategory lc = LintCategory.get((String) (value.value));
-                if (lc != null)
-                    suppress(lc);
+                LintCategory.get((String)value.value)
+                  .ifPresent(this::suppress);
             }
         }
 

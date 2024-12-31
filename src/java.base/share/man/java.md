@@ -1292,10 +1292,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
 `-XX:OnOutOfMemoryError=`*string*
 :   Sets a custom command or a series of semicolon-separated commands to run
-    when an `OutOfMemoryError` exception is first thrown. If the string
+    when an `OutOfMemoryError` exception is first thrown by the JVM.
+    If the string
     contains spaces, then it must be enclosed in quotation marks. For an
     example of a command string, see the description of the `-XX:OnError`
     option.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:+PrintCommandLineFlags`
 :   Enables printing of ergonomically selected JVM flags that appeared on the
@@ -2189,10 +2194,14 @@ perform extensive debugging.
 `-XX:+HeapDumpOnOutOfMemoryError`
 :   Enables the dumping of the Java heap to a file in the current directory by
     using the heap profiler (HPROF) when a `java.lang.OutOfMemoryError`
-    exception is thrown. You can explicitly set the heap dump file path and
+    exception is thrown by the JVM. You can explicitly set the heap dump file path and
     name using the `-XX:HeapDumpPath` option. By default, this option is
     disabled and the heap isn't dumped when an `OutOfMemoryError` exception is
     thrown.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:HeapDumpPath=`*path*
 :   Sets the path and file name for writing the heap dump provided by the heap
