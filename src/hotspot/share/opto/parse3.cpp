@@ -326,9 +326,9 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
 //   multi_array[index] = new array_klass[length2];
 // }
 //
-void Parse::init_multiarray(Node* multi_array,
-                            ciArrayKlass* array_klass,
-                            Node* length1, Node* length2) {
+void Parse::init_array2d(Node* multi_array,
+                         ciArrayKlass* array_klass,
+                         Node* length1, Node* length2) {
 
   C->set_has_loops(true);
 
@@ -340,6 +340,7 @@ void Parse::init_multiarray(Node* multi_array,
 
   Node* skip_ctrl = IfFalse(iff_init); // skip the loop
   Node* enter_ctrl = IfTrue(iff_init); // enter the loop
+  set_control(enter_ctrl);
 
   // RegionNode is the head of the loop with inputs:
   //   1: pre-loop input enter_ctrl
@@ -460,7 +461,7 @@ void Parse::do_multianewarray() {
       Node* length2 = length[1];
       assert(length1 != nullptr && length2 != nullptr, "");
       obj = new_array(makecon(TypeKlassPtr::make(array_klass, Type::trust_interfaces)), length1, false);
-      init_multiarray(obj, array_klass, length1, length2);
+      init_array2d(obj, array_klass, length1, length2);
     }
     push(obj);
     return;
