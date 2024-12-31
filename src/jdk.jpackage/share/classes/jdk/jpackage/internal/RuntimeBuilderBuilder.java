@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -110,21 +112,25 @@ final class RuntimeBuilderBuilder {
         }
 
         return appImageLayout -> {
-            // copy whole runtime, need to skip jmods and src.zip
-            final List<Path> excludes = List.of(Path.of("jmods"), Path.of("src.zip"));
-            FileUtils.copyRecursive(runtimeDir,
-                    appImageLayout.runtimeDirectory(),
-                    excludes,
-                    LinkOption.NOFOLLOW_LINKS);
+            try {
+                // copy whole runtime, need to skip jmods and src.zip
+                final List<Path> excludes = List.of(Path.of("jmods"), Path.of("src.zip"));
+                FileUtils.copyRecursive(runtimeDir,
+                        appImageLayout.runtimeDirectory(),
+                        excludes,
+                        LinkOption.NOFOLLOW_LINKS);
 
-            // if module-path given - copy modules to appDir/mods
-            List<Path> defaultModulePath = getDefaultModulePath();
-            Path dest = ((ApplicationLayout)appImageLayout).appModsDirectory();
+                // if module-path given - copy modules to appDir/mods
+                List<Path> defaultModulePath = getDefaultModulePath();
+                Path dest = ((ApplicationLayout)appImageLayout).appModsDirectory();
 
-            for (Path mp : modulePath) {
-                if (!defaultModulePath.contains(mp.toAbsolutePath())) {
-                    FileUtils.copyRecursive(mp, dest);
+                for (Path mp : modulePath) {
+                    if (!defaultModulePath.contains(mp.toAbsolutePath())) {
+                        FileUtils.copyRecursive(mp, dest);
+                    }
                 }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
             }
         };
     }
