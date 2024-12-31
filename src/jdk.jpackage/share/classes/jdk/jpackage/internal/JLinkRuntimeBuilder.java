@@ -62,7 +62,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     @Override
-    public void createRuntime(AppImageLayout appImageLayout) throws PackagerException, IOException {
+    public void createRuntime(AppImageLayout appImageLayout) throws PackagerException {
         var args = new ArrayList<String>();
         args.add("--output");
         args.add(appImageLayout.runtimeDirectory().toString());
