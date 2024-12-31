@@ -22,13 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal.model;
 
-
 public final class AppImagePackageType implements PackageType {
-    private AppImagePackageType() {
 
+    private AppImagePackageType() {
     }
 
     public final static AppImagePackageType APP_IMAGE = new AppImagePackageType();
