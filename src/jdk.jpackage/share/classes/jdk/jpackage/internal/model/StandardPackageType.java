@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 public enum StandardPackageType implements PackageType {
@@ -43,6 +44,7 @@ public enum StandardPackageType implements PackageType {
     }
 
     public static StandardPackageType fromCmdLineType(String type) {
+        Objects.requireNonNull(type);
         return Stream.of(values()).filter(pt -> {
             return pt.suffix().substring(1).equals(type);
         }).findAny().get();
