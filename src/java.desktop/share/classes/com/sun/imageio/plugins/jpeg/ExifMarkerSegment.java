@@ -185,7 +185,7 @@ class ExifMarkerSegment extends MarkerSegment {
                 // image as a JPEG or TIFF. But in reality this is tricky: the docs say
                 // the value for a JPEG encoding is 0x0006, but the `jdk_8160327-plastic-wrap.jpg`
                 // file shows it can also sometimes be 0x60000. I've also observed it to be
-                // undefined, 0x0007, or several variations of 0x????00006. Similarly the same
+                // undefined, 0x0007, or several variations of 0x????0006. Similarly the same
                 // tag should be 0x0001 for TIFFs, but I also observed a case where it as 0x10000.
                 isThumbnailJPEG = true;
             } else {
