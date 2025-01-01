@@ -83,7 +83,7 @@ class ExifMarkerSegment extends MarkerSegment {
                         ", fieldValue: " + fieldValue + "]";
             }
         }
-        static final int[] bytesPerComponent = new int[] {-1, 1, 1, 2, 4, 8, 1};
+        static final int[] bytesPerComponent = new int[] {1, 1, 1, 2, 4, 8, 1};
 
         Map<Integer, Entry> entriesByTag = new LinkedHashMap<>();
         long nextIFD;
@@ -104,7 +104,10 @@ class ExifMarkerSegment extends MarkerSegment {
 
             long streamPos = in.getStreamPosition();
             for (Entry e : entriesByTag.values()) {
-                int byteLength = (int) (e.componentCount * bytesPerComponent[e.dataFormat]);
+                int byteLength = e.dataFormat < bytesPerComponent.length ?
+                        (int) (e.componentCount * bytesPerComponent[e.dataFormat]) :
+                        // this is an unknown data format, so let's just assume its 1 byte
+                        1;
                 if (byteLength > 4) {
                     long valuePos = e.fieldValue;
                     if (valuePos <= streamPos) {
