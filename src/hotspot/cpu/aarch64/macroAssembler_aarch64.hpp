@@ -1173,6 +1173,7 @@ public:
 
   // Arithmetics
 
+  // Clobber: rscratch2
   void addptr(const Address &dst, int32_t src);
   void cmpptr(Register src1, Address src2);
 

@@ -1215,18 +1215,33 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
+auto receiver_offset = ReceiverTypeData::receiver_offset;
+auto receiver_count_offset = ReceiverTypeData::receiver_count_offset;
+
+template<typename T>
+Address md_at(MacroAssembler *masm, Register scratch, Register mdo, ciMethodData *md,
+               ciProfileData *data, T offset, int i) {
+  return masm->form_address(scratch, mdo,
+                            md->byte_offset_of_slot(data, offset(i)),
+                            LogBytesPerWord);
+}
+
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv, Label* update_done) {
+  Register scratch = rscratch2;
+
+  auto data_at = [=](ByteSize (*offset)(uint), uint i) -> Address {
+    return md_at(_masm, scratch, mdo, md, data, offset, i);
+  };
+
   for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
     Label next_test;
     // See if the receiver is receiver[n].
-    __ lea(rscratch2, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
-    __ ldr(rscratch1, Address(rscratch2));
+    __ ldr(rscratch1, data_at(ReceiverTypeData::receiver_offset, i));
     __ cmp(recv, rscratch1);
     __ br(Assembler::NE, next_test);
-    Address data_addr(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i)));
-    __ addptr(data_addr, DataLayout::counter_increment);
+    __ addptr(data_at(ReceiverTypeData::receiver_count_offset, i), DataLayout::counter_increment);
     __ b(*update_done);
     __ bind(next_test);
   }
@@ -1234,15 +1249,14 @@ void LIR_Assembler::type_profile_helper(Register mdo,
   // Didn't find receiver; find next empty slot and fill it in
   for (uint i = 0; i < ReceiverTypeData::row_limit(); i++) {
     Label next_test;
-    __ lea(rscratch2,
-           Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_offset(i))));
-    Address recv_addr(rscratch2);
-    __ ldr(rscratch1, recv_addr);
-    __ cbnz(rscratch1, next_test);
-    __ str(recv, recv_addr);
+    {
+      Address recv_addr(data_at(ReceiverTypeData::receiver_offset, i));
+      __ ldr(rscratch1, recv_addr);
+      __ cbnz(rscratch1, next_test);
+      __ str(recv, recv_addr);
+    }
     __ mov(rscratch1, DataLayout::counter_increment);
-    __ lea(rscratch2, Address(mdo, md->byte_offset_of_slot(data, ReceiverTypeData::receiver_count_offset(i))));
-    __ str(rscratch1, Address(rscratch2));
+    __ str(rscratch1, data_at(ReceiverTypeData::receiver_count_offset, i));
     __ b(*update_done);
     __ bind(next_test);
   }
@@ -1414,8 +1428,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       // Object is null; update MDO and exit
       Address data_addr
         = __ form_address(rscratch2, mdo,
-                          md->byte_offset_of_slot(data, DataLayout::flags_offset()),
-                          0);
+                          md->byte_offset_of_slot(data, DataLayout::flags_offset()), 0);
       __ ldrb(rscratch1, data_addr);
       __ orr(rscratch1, rscratch1, BitData::null_seen_byte_constant());
       __ strb(rscratch1, data_addr);
@@ -2518,6 +2531,8 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj);
 }
 
+using ::VirtualCallData;
+
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
@@ -2566,10 +2581,11 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
       for (i = 0; i < VirtualCallData::row_limit(); i++) {
         ciKlass* receiver = vc_data->receiver(i);
         if (receiver == nullptr) {
-          Address recv_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)));
           __ mov_metadata(rscratch1, known_klass->constant_encoding());
-          __ lea(rscratch2, recv_addr);
-          __ str(rscratch1, Address(rscratch2));
+          Address recv_addr
+            = __ form_address(rscratch2, mdo,
+                              md->byte_offset_of_slot(data, VirtualCallData::receiver_offset(i)), LogBytesPerWord);
+          __ str(rscratch1, recv_addr);
           Address data_addr(mdo, md->byte_offset_of_slot(data, VirtualCallData::receiver_count_offset(i)));
           __ addptr(data_addr, DataLayout::counter_increment);
           return;
