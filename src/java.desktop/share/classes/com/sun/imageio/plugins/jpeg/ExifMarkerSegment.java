@@ -117,8 +117,6 @@ class ExifMarkerSegment extends MarkerSegment {
     private static final int TAG_JPEG_INTERCHANGE_FORMAT = 513;
     private static final int TAG_JPEG_INTERCHANGE_FORMAT_LENGTH = 514;
 
-    private LocalDateTime imageCreationTime = null;
-
     int thumbnailPos = -1;
     int thumbnailLength = -1;
     int thumbnailCompressionType = -1;
@@ -151,15 +149,6 @@ class ExifMarkerSegment extends MarkerSegment {
             ImageFileDirectory ifd = new ImageFileDirectory(input, ifdOffset);
             imageFileDirectories.add(ifd);
             ifdOffset = ifd.nextIFD;
-
-            int dateTimeOffset = ifd.getTagValueAsInt(TAG_DATE_TIME);
-            if (dateTimeOffset != NO_VALUE) {
-                String dateTime = new String(data, dateTimeOffset + 6, 19, "US-ASCII");
-                if (!dateTime.startsWith("0000:")) {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss");
-                    imageCreationTime = LocalDateTime.parse(dateTime, formatter);
-                }
-            }
         }
 
         if (imageFileDirectories.size() == 2) {
@@ -187,6 +176,22 @@ class ExifMarkerSegment extends MarkerSegment {
     }
 
     LocalDateTime getImageCreationTime() {
+        LocalDateTime imageCreationTime = null;
+
+        if (!imageFileDirectories.isEmpty()) {
+            ImageFileDirectory ifd = imageFileDirectories.get(0);
+            int dateTimeOffset = ifd.getTagValueAsInt(TAG_DATE_TIME);
+            if (dateTimeOffset != NO_VALUE) {
+                try {
+                    String dateTime = new String(data, dateTimeOffset + 6, 19, "US-ASCII");
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu:MM:dd HH:mm:ss");
+                    imageCreationTime = LocalDateTime.parse(dateTime, formatter);
+                } catch(Exception e) {
+                    // intentionally empty
+                }
+            }
+        }
+
         return imageCreationTime;
     }
 

@@ -141,10 +141,9 @@ public class JpegExifThumbnailTest {
                 -1, -1, -1, -1, -1, -1,
                 new Dimension(200, 132)).run();
 
-        // here the timestamp is "0000:00:00 00:00:00", which we'll ignore
-        new JpegExifThumbnailTest("jdk_8160327-zeroed-timestamp.jpg",
-                -1, -1, -1, -1, -1, -1,
-                new Dimension(160, 120)).run();
+        // here the timestamp doesn't match our parser, so we'll ignore it
+        new JpegExifThumbnailTest("jdk_8160327-bad-timestamp.jpg",
+                -1, -1, -1, -1, -1, -1).run();
     }
 
     final String filename;
