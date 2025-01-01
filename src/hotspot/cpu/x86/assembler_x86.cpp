@@ -333,6 +333,20 @@ void Assembler::emit_arith(int op1, int op2, Register dst, int32_t imm32) {
   }
 }
 
+void Assembler::emit_arith_ndd(int op1, int op2, Register dst, int32_t imm32) {
+  assert(isByte(op1) && isByte(op2), "wrong opcode");
+  assert(op1 == 0x81, "Unexpected opcode");
+  if (is8bit(imm32)) {
+    emit_int24(op1 | 0x02,        // set sign bit
+               op2 | encode(dst),
+               imm32 & 0xFF);
+  }
+  else {
+    emit_int16(op1, (op2 | encode(dst)));
+    emit_int32(imm32);
+  }
+}
+
 // Force generation of a 4 byte immediate value even if it fits into 8bit
 void Assembler::emit_arith_imm32(int op1, int op2, Register dst, int32_t imm32) {
   assert(isByte(op1) && isByte(op2), "wrong opcode");
@@ -1462,7 +1476,7 @@ void Assembler::addl(Register dst, int32_t imm32) {
 void Assembler::eaddl(Register dst, Register src, int32_t imm32, bool no_flags) {
   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   (void) evex_prefix_and_encode_ndd(0, dst->encoding(), src->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_arith(0x81, 0xC0, src, imm32);
+  emit_arith_ndd(0x81, 0xC0, src, imm32);
 }
 
 void Assembler::addl(Register dst, Address src) {

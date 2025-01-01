@@ -7009,7 +7009,7 @@ instruct addI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 
 instruct addI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (AddI dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
@@ -7021,7 +7021,6 @@ instruct addI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe( ialu_reg );
 %}
 
-/*
 instruct addI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
 %{
   //TODO: SDE causing Illegal instruction
@@ -7033,7 +7032,7 @@ instruct addI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
     __ eaddl($dst$$Register, $src1$$Register, $src2$$constant, true);
   %}
   ins_pipe( ialu_reg );
-%}*/
+%}
 
 instruct addI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2)
 %{
