@@ -83,6 +83,7 @@ class ExifMarkerSegment extends MarkerSegment {
                         ", fieldValue: " + fieldValue + "]";
             }
         }
+        static final int[] bytesPerComponent = new int[] {-1, 1, 1, 2, 4, 8, 1};
 
         Map<Integer, Entry> entriesByTag = new LinkedHashMap<>();
         long nextIFD;
@@ -94,6 +95,25 @@ class ExifMarkerSegment extends MarkerSegment {
                 Entry e = new Entry(in);
                 entriesByTag.put(e.tagNumber, e);
             }
+
+            // The next 4 bytes SHOULD be the position of the next IFD.
+
+            // However in rare cases: the position of the next IFD header is missing. We can detect
+            // this by checking to see if any of the IFD entries we just read appear where the
+            // next IFD position *should* be:
+
+            long streamPos = in.getStreamPosition();
+            for (Entry e : entriesByTag.values()) {
+                int byteLength = (int) (e.componentCount * bytesPerComponent[e.dataFormat]);
+                if (byteLength > 4) {
+                    long valuePos = e.fieldValue;
+                    if (valuePos <= streamPos) {
+                        nextIFD = 0;
+                        return;
+                    }
+                }
+            }
+
             nextIFD = in.readUnsignedInt();
         }
 

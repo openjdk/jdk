@@ -144,6 +144,11 @@ public class JpegExifThumbnailTest {
         // here the timestamp doesn't match our parser, so we'll ignore it
         new JpegExifThumbnailTest("jdk_8160327-bad-timestamp.jpg",
                 -1, -1, -1, -1, -1, -1).run();
+
+        // this ImageFileDirectory doesn't terminate like it should. We need to
+        // not fail with an EOFException in this case:
+        new JpegExifThumbnailTest("jdk_8160327-unusual-ImageFileDirectory.jpeg",
+                2007, 11, 10, 21, 23, 4).run();
     }
 
     final String filename;
@@ -170,6 +175,8 @@ public class JpegExifThumbnailTest {
         String filePath = dir+sep+filename;
         File file = new File(filePath);
 
+        if (!file.exists())
+            throw new IOException("missing test file: " + file.getPath());
         System.out.println("Testing " + file.getPath());
 
         ImageReader reader = getJPEGImageReader();
