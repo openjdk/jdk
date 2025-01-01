@@ -109,7 +109,7 @@ public class TestIntReg {
     }
 
     public static int testAndImm1(int a, int b) {
-        return a & 7; // correctness verified
+        return a & 779; // correctness verified
     }
 
     public static int testAndImm2(int a, int b) {
@@ -149,7 +149,7 @@ public class TestIntReg {
     }
 
     public static int testAddImm1(int a, int b) {
-        return a + 27; // TODO: SDE gives illegal instruction error TODO:
+        return a + 27; //
     }
 
     public static int testAdd(int a, int b) {
