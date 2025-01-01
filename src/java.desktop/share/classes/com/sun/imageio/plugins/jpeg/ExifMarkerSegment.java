@@ -142,7 +142,6 @@ class ExifMarkerSegment extends MarkerSegment {
 
     int thumbnailPos = -1;
     int thumbnailLength = -1;
-    int thumbnailCompressionType = -1;
     boolean isThumbnailJPEG;
 
     int thumbnailWidth = -1;
