@@ -232,7 +232,7 @@ class ExifMarkerSegment extends MarkerSegment {
     }
 
     int getNumThumbnails() {
-        return thumbnailPos >= 0 && thumbnailLength >= 0 ? 1 : 0;
+        return thumbnailPos > 0 && thumbnailLength > 0 ? 1 : 0;
     }
 
     int getThumbnailWidth() throws IOException {
