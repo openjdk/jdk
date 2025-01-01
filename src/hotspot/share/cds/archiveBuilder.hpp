@@ -29,6 +29,8 @@
 #include "cds/dumpAllocStats.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/reservedSpace.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
