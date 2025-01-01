@@ -170,11 +170,11 @@ class ExifMarkerSegment extends MarkerSegment {
             thumbnailLength = ifd2.getTagValueAsInt(TAG_JPEG_INTERCHANGE_FORMAT_LENGTH);
             if (thumbnailPos != NO_VALUE && thumbnailLength != NO_VALUE) {
                 // The `compression` tag (259) should also help inform whether we read this
-                // image as a JPEG or TIFF. But in practice this is tricky: the docs say
-                // the value for a JPEG encoding is 0x6, but the `jdk_8160327-plastic-wrap.jpg`
-                // file shows it can also sometimes be 0x60000. I've also observed a case where
-                // that tag is undefined (but it's still a JPEG). Similarly the same tag should
-                // be 0x1 for TIFFs, but sometimes its 0x10000.
+                // image as a JPEG or TIFF. But in reality this is tricky: the docs say
+                // the value for a JPEG encoding is 0x0006, but the `jdk_8160327-plastic-wrap.jpg`
+                // file shows it can also sometimes be 0x60000. I've also observed it to be
+                // undefined, 0x0007, or several variations of 0x????00006. Similarly the same
+                // tag should be 0x0001 for TIFFs, but I also observed a case where it as 0x10000.
                 isThumbnailJPEG = true;
             } else {
                 thumbnailWidth = ifd2.getTagValueAsInt(TAG_IMAGE_WIDTH);
