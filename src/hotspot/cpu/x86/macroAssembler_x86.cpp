@@ -1197,7 +1197,7 @@ void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register rscratc
   if (UseAVX > 2 &&
       (!VM_Version::supports_avx512dq() || !VM_Version::supports_avx512vl()) &&
       (dst->encoding() >= 16)) {
-    vandpd(dst, dst, src, AVX_512bit, rscratch);
+    vpand(dst, dst, src, AVX_512bit, rscratch);
   } else if (reachable(src)) {
     Assembler::andpd(dst, as_Address(src));
   } else {
