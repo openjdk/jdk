@@ -2412,6 +2412,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     <S extends VectorShuffle<Integer>>
     IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, int.class, length(),
             this, shuffle, null,
@@ -2437,7 +2438,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, int.class, length(),
@@ -2853,6 +2854,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (int) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) Math.max(a, b)));
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (int) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (int) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((int)-1, m, (i, a, b) -> (int)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
