@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -1919,6 +1920,20 @@ public abstract class ClassLoader {
     // The system class loader
     // @GuardedBy("ClassLoader.class")
     private static volatile ClassLoader scl;
+
+    /**
+     * Register a module layer to search for service providers when
+     * {@linkplain ServiceLoader#load(Class, ClassLoader) loading services by class loader}.
+     * The layer will then be searched in addition to any layers defined to this
+     * class loader.
+     *
+     * @param layer the module layer to register (must not be {@code null})
+     *
+     * @since 25
+     */
+    protected void registerModuleLayer(ModuleLayer layer) {
+        layer.bindToLoader(this);
+    }
 
     // -- Package --
 
