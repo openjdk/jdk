@@ -25,7 +25,8 @@
  * @test
  * @bug 8332827
  * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
- *
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "s390x") |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run driver TestVectorizationNegativeScale
  *
