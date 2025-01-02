@@ -3972,10 +3972,7 @@ public final class AccessBridge {
 
         keyCode = keyStroke.getKeyCode();
         debugString("[INFO]:   Shortcut is: " + Integer.toHexString(keyCode));
-        if (keyCode != 0) {
-            return (char) keyCode;
-        }
-        return 0;
+        return (char) keyCode;
     }
 
     /*

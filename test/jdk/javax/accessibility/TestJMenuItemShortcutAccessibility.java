@@ -33,6 +33,7 @@ import javax.swing.KeyStroke;
  * @test
  * @bug 8339728
  * @summary Tests that JAWS announce the shortcuts for JMenuItems.
+ * @requires os.family == "windows"
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TestJMenuItemShortcutAccessibility
