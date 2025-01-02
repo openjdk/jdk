@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,9 +81,6 @@ public class MaskedLogicOpts {
     VectorSpecies<Long> lspecies;
 
     int int512_arr_idx;
-    int int256_arr_idx;
-    int int128_arr_idx;
-    int long256_arr_idx;
     int long512_arr_idx;
 
     private Random r = new Random();
@@ -91,9 +88,6 @@ public class MaskedLogicOpts {
     @Setup(Level.Trial)
     public void init() {
         int512_arr_idx = 0;
-        int256_arr_idx = 0;
-        int128_arr_idx = 0;
-        long256_arr_idx = 0;
         long512_arr_idx = 0;
         i1 = new int[ARRAYLEN];
         i2 = new int[ARRAYLEN];
@@ -126,10 +120,7 @@ public class MaskedLogicOpts {
     @Setup(Level.Invocation)
     public void init_per_invoc() {
         int512_arr_idx = (int512_arr_idx + 16) & (ARRAYLEN-1);
-        int256_arr_idx = (int256_arr_idx + 8) & (ARRAYLEN-1);
-        int128_arr_idx = (int128_arr_idx + 4) & (ARRAYLEN-1);
         long512_arr_idx = (long512_arr_idx + 8) & (ARRAYLEN-1);
-        long256_arr_idx = (long256_arr_idx + 4) & (ARRAYLEN-1);
     }
 
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -243,10 +234,10 @@ public class MaskedLogicOpts {
     @CompilerControl(CompilerControl.Mode.INLINE)
     public void maskedLogicOperationsLongKernel(VectorSpecies<Long> SPECIES) {
        lmask = VectorMask.fromArray(SPECIES, mask_arr, 0);
-       lv2 = LongVector.fromArray(SPECIES, l2, long256_arr_idx);
-       lv3 = LongVector.fromArray(SPECIES, l3, long256_arr_idx);
-       lv4 = LongVector.fromArray(SPECIES, l4, long256_arr_idx);
-       lv5 = LongVector.fromArray(SPECIES, l5, long256_arr_idx);
+       lv2 = LongVector.fromArray(SPECIES, l2, long512_arr_idx);
+       lv3 = LongVector.fromArray(SPECIES, l3, long512_arr_idx);
+       lv4 = LongVector.fromArray(SPECIES, l4, long512_arr_idx);
+       lv5 = LongVector.fromArray(SPECIES, l5, long512_arr_idx);
        for(int i = 0; i < INVOC_COUNTER; i++) {
            for(int j = 0 ; j < ARRAYLEN; j+= SPECIES.length()) {
                LongVector.fromArray(SPECIES, l1, j)
