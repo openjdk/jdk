@@ -2568,7 +2568,8 @@ class StubGenerator: public StubCodeGenerator {
       // Find the first different characters in the longwords and
       // compute their difference.
     __ bind(CALCULATE_DIFFERENCE);
-      __ ctzc_bit(tmp4, tmp3);
+      // count bits of trailing zero chars
+      __ ctzc_bits(tmp4, tmp3);
       __ srl(tmp1, tmp1, tmp4);
       __ srl(tmp2, tmp2, tmp4);
       __ zext(tmp1, tmp1, 16);
@@ -2703,7 +2704,8 @@ class StubGenerator: public StubCodeGenerator {
       // Find the first different characters in the longwords and
       // compute their difference.
     __ bind(DIFF2);
-      __ ctzc_bit(tmp3, tmp4, isLL); // count zero from lsb to msb
+      // count bits of trailing zero chars
+      __ ctzc_bits(tmp3, tmp4, isLL);
       __ srl(tmp5, tmp5, tmp3);
       __ srl(cnt1, cnt1, tmp3);
       if (isLL) {
@@ -2716,7 +2718,8 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(result, tmp5, cnt1);
       __ j(LENGTH_DIFF);
     __ bind(DIFF);
-      __ ctzc_bit(tmp3, tmp4, isLL); // count zero from lsb to msb
+      // count bits of trailing zero chars
+      __ ctzc_bits(tmp3, tmp4, isLL);
       __ srl(tmp1, tmp1, tmp3);
       __ srl(tmp2, tmp2, tmp3);
       if (isLL) {
@@ -2862,7 +2865,8 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(match_mask, NOMATCH);
 
     __ bind(L_SMALL_HAS_ZERO_LOOP);
-    __ ctzc_bit(trailing_zeros, match_mask, haystack_isL, ch2, tmp); // count trailing zeros
+    // count bits of trailing zero chars
+    __ ctzc_bits(trailing_zeros, match_mask, haystack_isL, ch2, tmp);
     __ addi(trailing_zeros, trailing_zeros, haystack_isL ? 7 : 15);
     __ mv(ch2, wordSize / haystack_chr_size);
     __ ble(needle_len, ch2, L_SMALL_CMP_LOOP_LAST_CMP2);
@@ -2881,7 +2885,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_SMALL_CMP_LOOP_NOMATCH);
     __ beqz(match_mask, NOMATCH);
-    __ ctzc_bit(trailing_zeros, match_mask, haystack_isL, tmp, ch2);
+    // count bits of trailing zero chars
+    __ ctzc_bits(trailing_zeros, match_mask, haystack_isL, tmp, ch2);
     __ addi(trailing_zeros, trailing_zeros, haystack_isL ? 7 : 15);
     __ add(result, result, 1);
     __ add(haystack, haystack, haystack_chr_size);
@@ -2900,7 +2905,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(OptoLoopAlignment);
     __ bind(L_HAS_ZERO);
-    __ ctzc_bit(trailing_zeros, match_mask, haystack_isL, tmp, ch2);
+    // count bits of trailing zero chars
+    __ ctzc_bits(trailing_zeros, match_mask, haystack_isL, tmp, ch2);
     __ addi(trailing_zeros, trailing_zeros, haystack_isL ? 7 : 15);
     __ slli(needle_len, needle_len, BitsPerByte * wordSize / 2);
     __ orr(haystack_len, haystack_len, needle_len); // restore needle_len(32bits)
@@ -2929,7 +2935,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ bind(L_CMP_LOOP_NOMATCH);
     __ beqz(match_mask, L_HAS_ZERO_LOOP_NOMATCH);
-    __ ctzc_bit(trailing_zeros, match_mask, haystack_isL, needle_len, ch2); // find next "first" char index
+    // count bits of trailing zero chars
+    __ ctzc_bits(trailing_zeros, match_mask, haystack_isL, needle_len, ch2);
     __ addi(trailing_zeros, trailing_zeros, haystack_isL ? 7 : 15);
     __ add(haystack, haystack, haystack_chr_size);
     __ j(L_HAS_ZERO_LOOP);

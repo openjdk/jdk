@@ -47,7 +47,7 @@ LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/process \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
     $(TESTLIBRARY_DIR)/jtreg \
-    -maxdepth 1 -name '*.java'))
+    -maxdepth 1 -name '*.java')
 WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/compiler $(TESTLIBRARY_DIR)/jdk/test/whitebox -name '*.java')
 WB_CLASS_FILES := $(subst $(TESTLIBRARY_DIR)/,,$(WB_SRC_FILES))
 WB_CLASS_FILES := $(patsubst %.java,%.class,$(WB_CLASS_FILES))
