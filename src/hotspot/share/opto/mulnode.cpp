@@ -2095,13 +2095,13 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 // The X in AndX must be I or L, depending on bt.
 // Specifically, this holds for the following cases,
 // when the shift value N is large enough to zero out
-// all the set positions of the and-mask M.
-//   (AndI (LShiftI _ #N) #M) => #0
-//   (AndL (LShiftL _ #N) #M) => #0
-//   (AndL (ConvI2L (LShiftI _ #N)) #M) => #0
-//   as well as for constant operands:
-//   (AndI (ConI [+-] _ << #N) #M) => #0
-//   (AndL (ConL [+-] _ << #N) #M) => #0
+// all the set positions of the and-mask M:
+//   (AndI (LShiftI _ #N) #M)
+//   (AndL (LShiftL _ #N) #M)
+//   (AndL (ConvI2L (LShiftI _ #N)) #M)
+// including constant operands:
+//   (AndI (ConI (_ << #N)) #M)
+//   (AndL (ConL (_ << #N)) #M)
 // The M and N values must satisfy ((-1 << N) & M) == 0.
 static bool AndIL_is_zero_element(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
