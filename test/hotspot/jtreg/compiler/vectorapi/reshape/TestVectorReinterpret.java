@@ -39,6 +39,8 @@ import jdk.incubator.vector.VectorSpecies;
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector reinterpret intrinsics work as intended.
+ * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "s390x") |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run main compiler.vectorapi.reshape.TestVectorReinterpret
  */
