@@ -19,26 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @library /test/lib ../../tools/tester
- * @build jtreg.SkippedException
- * @summary example of a test on the generated documentation
- * @run main TestDocs
- */
+#include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
+#include "gc/shared/partialArrayState.hpp"
+#include "utilities/macros.hpp"
 
-import java.nio.file.Files;
+PartialArraySplitter::PartialArraySplitter(PartialArrayStateManager* manager,
+                                           uint num_workers)
+  : _allocator(manager),
+    _stepper(num_workers, ParGCArrayScanChunk)
+    TASKQUEUE_STATS_ONLY(COMMA _stats())
+{}
 
-public class TestDocs {
-    public static void main(String... args) throws Exception {
-        var docs = DocTester.resolveDocs();
-        System.err.println("Path to the docs is: " + docs);
-        System.err.println("Do docs exits?");
-        System.err.println(Files.exists(docs));
-        System.err.println("tidy location");
-        System.err.println(System.getProperty("tidy"));
-        System.err.println("End of test");
-    }
+#if TASKQUEUE_STATS
+PartialArrayTaskStats* PartialArraySplitter::stats() {
+  return &_stats;
 }
+#endif // TASKQUEUE_STATS
