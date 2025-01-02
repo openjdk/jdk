@@ -1162,8 +1162,7 @@ void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
                              const RegisterMap* map, bool use_interpreter_oop_map_cache) const {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
-  if (CrashGCForDumpingJavaThread)
-    guarantee(!CrashGCForDumpingJavaThread, "");
+  guarantee(!CrashGCForDumpingJavaThread, "");
 #endif
   if (is_interpreted_frame()) {
     oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
