@@ -198,6 +198,14 @@ size_t G1HeapSizingPolicy::young_collection_expansion_amount() {
 }
 
 static size_t target_heap_capacity(size_t used_bytes, uintx free_ratio) {
+  assert(free_ratio <= 100, "precondition");
+  if (free_ratio == 100) {
+    // If 100 then below calculations will divide by zero and return min of
+    // resulting infinity and MaxHeapSize.  Avoid issues of UB vs is_iec559
+    // and ubsan warnings, and just immediately return MaxHeapSize.
+    return MaxHeapSize;
+  }
+
   const double desired_free_percentage = (double) free_ratio / 100.0;
   const double desired_used_percentage = 1.0 - desired_free_percentage;
 
