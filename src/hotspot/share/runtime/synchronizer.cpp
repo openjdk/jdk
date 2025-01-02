@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1278,16 +1278,16 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
     bool status = true;
 
-    // Check if we it's time to adjust the in_use_list_ceiling up, due
+    // Check if it's time to adjust the in_use_list_ceiling up, due
     // to too many async deflation attempts without any progress.
     if (NoAsyncDeflationProgressMax != 0 &&
         _no_progress_cnt >= NoAsyncDeflationProgressMax) {
       double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
-      size_t new_ceiling = ceiling + (size_t)((double)ceiling * remainder) + 1;
+      size_t delta = (size_t)((double)ceiling * remainder) + 1;
+      size_t new_ceiling = (ceiling > SIZE_MAX - delta)
+        ? SIZE_MAX         // Overflow, let's clamp new_ceiling.
+        : ceiling + delta;
 
-      if (new_ceiling < old_ceiling) {
-        new_ceiling = SIZE_MAX; // Wrap around, let's clamp new_ceiling.
-      }
       ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
       log_info(monitorinflation)("Too many deflations without progress; "
                                  "bumping in_use_list_ceiling from " SIZE_FORMAT
