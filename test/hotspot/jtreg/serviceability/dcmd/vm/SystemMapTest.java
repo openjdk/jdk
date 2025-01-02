@@ -28,7 +28,9 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
- * @test
+ * @test id=zgc
+ * @bug 8346717
+ * @requires vm.gc.Z
  * @summary Test of diagnostic command System.map using ZGC
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "windows" | os.family == "mac")
@@ -40,7 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 
 /*
- * @test
+ * @test id=normal
  * @summary Test of diagnostic command System.map
  * @library /test/lib
  * @requires (os.family == "linux" | os.family == "windows" | os.family == "mac")
