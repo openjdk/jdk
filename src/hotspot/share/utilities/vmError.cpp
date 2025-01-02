@@ -1207,6 +1207,12 @@ void VMError::report(outputStream* st, bool _verbose) {
     os::print_dll_info(st);
     st->cr();
 
+#if INCLUDE_JVMTI
+  STEP_IF("printing jvmti agent info", _verbose)
+    os::print_jvmti_agent_info(st);
+    st->cr();
+#endif
+
   STEP_IF("printing native decoder state", _verbose)
     Decoder::print_state_on(st);
     st->cr();
@@ -1384,6 +1390,11 @@ void VMError::print_vm_info(outputStream* st) {
   // dynamic libraries, or memory map
   os::print_dll_info(st);
   st->cr();
+
+#if INCLUDE_JVMTI
+  os::print_jvmti_agent_info(st);
+  st->cr();
+#endif
 
   // STEP("printing VM options")
 
