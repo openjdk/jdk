@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_tanh:
     // TODO: Implement intrinsic
     break;
   default:
@@ -456,6 +457,10 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   __ ldrb(R3_bytecode, Address(Rbcp));
   __ dispatch_only_normal(vtos);
   return entry;
+}
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
 }
 
 

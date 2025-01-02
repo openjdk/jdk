@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -870,10 +870,12 @@ public class ElementsTable {
 
     private ModuleSymbol findModuleOfPackageName(String packageName) {
             Name pack = names.fromString(packageName);
-            for (ModuleSymbol msym : modules.allModules()) {
-                PackageSymbol p = syms.getPackage(msym, pack);
-                if (p != null && !p.members().isEmpty()) {
-                    return msym;
+            if (modules.modulesInitialized()) {
+                for (ModuleSymbol msym : modules.allModules()) {
+                    PackageSymbol p = syms.getPackage(msym, pack);
+                    if (p != null && !p.members().isEmpty()) {
+                        return msym;
+                    }
                 }
             }
             return null;

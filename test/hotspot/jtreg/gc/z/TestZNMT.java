@@ -26,8 +26,8 @@ package gc.z;
 /**
  * @test TestZNMT
  * @bug 8310743
- * @requires vm.gc.ZGenerational & vm.debug
- * @summary Test NMT and ZGenerational heap reservation / commits interactions.
+ * @requires vm.gc.Z & vm.debug
+ * @summary Test NMT and ZGC heap reservation / commits interactions.
  * @library / /test/lib
  * @run driver gc.z.TestZNMT
  */
@@ -70,7 +70,6 @@ public class TestZNMT {
         final int XmsInM = Math.min(16 * XmxInM / (zForceDiscontiguousHeapReservations + 1), XmxInM);
         OutputAnalyzer oa = ProcessTools.executeTestJava(
             "-XX:+UseZGC",
-            "-XX:+ZGenerational",
             "-Xms" + XmsInM + "M",
             "-Xmx" + XmxInM + "M",
             "-Xlog:gc,gc+init",

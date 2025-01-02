@@ -66,7 +66,8 @@ public final class PBAMac extends PKCS11Test {
         AnonymousPBEKey,
     }
 
-    private static Provider sunJCE = Security.getProvider("SunJCE");
+    private static Provider sunJCE = Security.getProvider(
+            System.getProperty("test.provider.name", "SunJCE"));
 
     private record AssertionData(String pbeHmacAlgo, String hmacAlgo,
             BigInteger expectedMac) {}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,8 @@ public class GetMaxAllowed {
         // decide if the installed jurisdiction policy file is the
         // unlimited version
         boolean isUnlimited = true;
-        Cipher c = Cipher.getInstance("AES", "SunJCE");
+        Cipher c = Cipher.getInstance("AES",
+                System.getProperty("test.provider.name", "SunJCE"));
         try {
             c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(new byte[24], "AES"));
         } catch (InvalidKeyException ike) {

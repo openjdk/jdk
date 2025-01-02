@@ -27,7 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="da" draft="unconfirmed">Se-dutch</language>
 			<language type="de" draft="unconfirmed">Se-jeremane</language>
 			<language type="el" draft="unconfirmed">Se-greek</language>
-			<language type="en" draft="unconfirmed">Senyesemane</language>
+			<language type="en">Senyesemane</language>
 			<language type="eo" draft="unconfirmed">Se-esperanto</language>
 			<language type="es" draft="unconfirmed">Sespain</language>
 			<language type="et" draft="unconfirmed">Se-estonia</language>
@@ -85,7 +85,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sl" draft="unconfirmed">Se-slovania</language>
 			<language type="sq" draft="unconfirmed">Se-albanian</language>
 			<language type="sr" draft="unconfirmed">Se-serbian</language>
-			<language type="st" draft="contributed">Sesotho</language>
+			<language type="st">Sesotho</language>
 			<language type="su" draft="unconfirmed">Se-sundanese</language>
 			<language type="sv" draft="unconfirmed">Se-sweden</language>
 			<language type="sw" draft="unconfirmed">Se-swahili</language>
@@ -105,17 +105,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="yi" draft="unconfirmed">Yiddish</language>
 			<language type="zu" draft="unconfirmed">se Zulu</language>
 		</languages>
+		<scripts>
+			<script type="Latn">Selatine</script>
+		</scripts>
+		<territories>
+			<territory type="LS">Lesotho</territory>
+			<territory type="ZA">Afrika Borwa</territory>
+		</territories>
+		<codePatterns>
+			<codePattern type="language">Puo: {0}</codePattern>
+			<codePattern type="script">Skripte: {0}</codePattern>
+			<codePattern type="territory">Tikoloho: {0}</codePattern>
+		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b d e f g h i j k l m n o p q r s t u w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c v x z]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
-		<quotationStart draft="unconfirmed">‘</quotationStart>
-		<quotationEnd draft="unconfirmed">’</quotationEnd>
-		<alternateQuotationStart draft="unconfirmed">“</alternateQuotationStart>
-		<alternateQuotationEnd draft="unconfirmed">”</alternateQuotationEnd>
+		<quotationEnd>’</quotationEnd>
+		<alternateQuotationStart>“</alternateQuotationStart>
+		<alternateQuotationEnd>”</alternateQuotationEnd>
 	</delimiters>
 	<dates>
 		<calendars>
@@ -137,17 +149,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12">Tsh</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">Phesekgong</month>
+							<month type="1">Pherekgong</month>
 							<month type="2">Hlakola</month>
 							<month type="3">Hlakubele</month>
-							<month type="4">Mmese</month>
+							<month type="4">Mmesa</month>
 							<month type="5">Motsheanong</month>
 							<month type="6">Phupjane</month>
 							<month type="7">Phupu</month>
-							<month type="8">Phata</month>
-							<month type="9">Leotshe</month>
+							<month type="8">Phato</month>
+							<month type="9">Lwetse</month>
 							<month type="10">Mphalane</month>
-							<month type="11">Pundungwane</month>
+							<month type="11">Pudungwana</month>
 							<month type="12">Tshitwe</month>
 						</monthWidth>
 					</monthContext>
@@ -165,15 +177,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Sontaha</day>
-							<day type="mon">Mmantaha</day>
+							<day type="mon">Mantaha</day>
 							<day type="tue">Labobedi</day>
-							<day type="wed">Laboraru</day>
+							<day type="wed">Laboraro</day>
 							<day type="thu">Labone</day>
-							<day type="fri">Labohlane</day>
+							<day type="fri">Labohlano</day>
 							<day type="sat">Moqebelo</day>
 						</dayWidth>
 					</dayContext>
 				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">Hoseng</dayPeriod>
+							<dayPeriod type="pm">Thapama</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
@@ -253,12 +273,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<timeZoneNames>
+			<regionFormat>{0} Nako</regionFormat>
+			<regionFormat type="daylight">{0} Nako ya Motshehare</regionFormat>
+			<regionFormat type="standard">{0} Nako ya Tlwaelo</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard>Greenwich Mean Time</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal>,</decimal>
-			<group> </group>
-		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">

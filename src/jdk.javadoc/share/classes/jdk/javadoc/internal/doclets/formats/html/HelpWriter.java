@@ -105,11 +105,11 @@ public class HelpWriter extends HtmlDocletWriter {
         tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading);
         tableOfContents.pushNestedList();
         content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title, mainHeading))
-                .add(new HtmlTree(HtmlTag.HR))
+                .add(HtmlTree.HR())
                 .add(getNavigationSection())
-                .add(new HtmlTree(HtmlTag.HR))
+                .add(HtmlTree.HR())
                 .add(getPageKindSection())
-                .add(new HtmlTree(HtmlTag.HR))
+                .add(HtmlTree.HR())
                 .add(HtmlTree.SPAN(HtmlStyles.helpFootnote,
                         getContent("doclet.help.footnote")));
         tableOfContents.popNestedList();
@@ -183,7 +183,7 @@ public class HelpWriter extends HtmlDocletWriter {
      * <li>Declaration pages: module, package, classes
      * <li>Derived info for declarations: use and tree
      * <li>General summary info: deprecated, preview
-     * <li>Detailed summary info: constant values, serialized form, system properties
+     * <li>Detailed summary info: constant values, search tags, serialized form, system properties
      * <li>Index info: all packages, all classes, full index
      * </ul>
      *
@@ -255,7 +255,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         getContent("doclet.help.class_interface.implementations"),
                         getContent("doclet.help.class_interface.declaration"),
                         getContent("doclet.help.class_interface.description")))
-                .add(new HtmlTree(HtmlTag.BR))
+                .add(HtmlTree.BR())
                 .add(newHelpSectionList(
                         contents.nestedClassSummary,
                         contents.enumConstantSummary,
@@ -265,7 +265,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         contents.methodSummary,
                         contents.annotateTypeRequiredMemberSummaryLabel,
                         contents.annotateTypeOptionalMemberSummaryLabel))
-                .add(new HtmlTree(HtmlTag.BR))
+                .add(HtmlTree.BR())
                 .add(newHelpSectionList(
                         contents.enumConstantDetailLabel,
                         contents.fieldDetailsLabel,
@@ -343,6 +343,15 @@ public class HelpWriter extends HtmlDocletWriter {
             Content constantsBody = getContent("doclet.help.constants.body",
                     links.createLink(DocPaths.CONSTANT_VALUES, resources.getText("doclet.Constants_Summary")));
             section.add(HtmlTree.P(constantsBody));
+            pageKindsSection.add(section);
+        }
+
+        // Search Tags
+        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.SEARCH_TAGS)) {
+            section = newHelpSection(contents.searchTagsLabel, PageMode.SEARCH_TAGS);
+            Content searchTagsBody = getContent("doclet.help.searchTags.body",
+                    links.createLink(DocPaths.SEARCH_TAGS, resources.getText("doclet.searchTags")));
+            section.add(HtmlTree.P(searchTagsBody));
             pageKindsSection.add(section);
         }
 

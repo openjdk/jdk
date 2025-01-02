@@ -24,12 +24,12 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.MethodTypeDesc;
-import java.util.function.Consumer;
-
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.function.Consumer;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ChainedClassBuilder
         implements ClassBuilder, Consumer<ClassElement> {
@@ -47,7 +47,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder with(ClassElement element) {
-        consumer.accept(element);
+        consumer.accept(requireNonNull(element));
         return this;
     }
 
@@ -76,15 +76,6 @@ public final class ChainedClassBuilder
                                                          name, descriptor, flags, null)
                                        .run(handler)
                                        .toModel());
-        return this;
-    }
-
-    @Override
-    public ClassBuilder withMethod(String name, MethodTypeDesc descriptor, int flags, Consumer<? super MethodBuilder> handler) {
-        var mb = new BufferedMethodBuilder(terminal.constantPool, terminal.context,
-                constantPool().utf8Entry(name), constantPool().utf8Entry(descriptor), flags, null);
-        mb.mDesc = descriptor;
-        consumer.accept(mb.run(handler).toModel());
         return this;
     }
 

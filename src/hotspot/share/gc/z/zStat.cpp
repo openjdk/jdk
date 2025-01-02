@@ -46,6 +46,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
 
+#include <limits>
+
 #define ZSIZE_FMT                       SIZE_FORMAT "M(%.0f%%)"
 #define ZSIZE_ARGS_WITH_MAX(size, max)  ((size) / M), (percent_of(size, max))
 #define ZSIZE_ARGS(size)                ZSIZE_ARGS_WITH_MAX(size, ZStatHeap::max_capacity())
@@ -1019,7 +1021,7 @@ ZStatMutatorAllocRateStats ZStatMutatorAllocRate::stats() {
 // Stat thread
 //
 ZStat::ZStat()
-  : _metronome(sample_hz) {
+  : _metronome(SampleHz) {
   set_name("ZStat");
   create_and_start();
   ZStatMutatorAllocRate::initialize();
@@ -1098,11 +1100,11 @@ void ZStat::terminate() {
 //
 class ZStatTablePrinter {
 private:
-  static const size_t _buffer_size = 256;
+  static const size_t BufferSize = 256;
 
   const size_t _column0_width;
   const size_t _columnN_width;
-  char         _buffer[_buffer_size];
+  char         _buffer[BufferSize];
 
 public:
   class ZColumn {
@@ -1119,7 +1121,7 @@ public:
     }
 
     size_t print(size_t position, const char* fmt, va_list va) {
-      const int res = jio_vsnprintf(_buffer + position, _buffer_size - position, fmt, va);
+      const int res = jio_vsnprintf(_buffer + position, BufferSize - position, fmt, va);
       if (res < 0) {
         return 0;
       }
@@ -1849,8 +1851,9 @@ void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_st
   }
 }
 
-size_t ZStatHeap::reclaimed_avg() {
-  return (size_t)_reclaimed_bytes.davg();
+double ZStatHeap::reclaimed_avg() {
+  // Make sure the reclaimed average is greater than 0.0 to avoid division by zero.
+  return _reclaimed_bytes.davg() + std::numeric_limits<double>::denorm_min();
 }
 
 size_t ZStatHeap::max_capacity() {

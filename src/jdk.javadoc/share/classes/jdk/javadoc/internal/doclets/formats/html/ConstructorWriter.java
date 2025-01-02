@@ -300,7 +300,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     @Override
     protected void addSummaryType(Element member, Content content) {
         if (threeColumnSummary()) {
-            var code = new HtmlTree(HtmlTag.CODE);
+            var code = HtmlTree.CODE();
             if (utils.isProtected(member)) {
                 code.add("protected ");
             } else if (utils.isPrivate(member)) {

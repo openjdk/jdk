@@ -36,7 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -67,7 +66,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import jdk.jpackage.internal.WixToolset.WixToolsetType;
+import jdk.jpackage.internal.util.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -334,14 +333,7 @@ public class WinMsiBundler  extends AbstractBundler {
 
             FileAssociation.verify(FileAssociation.fetchFrom(params));
 
-            var serviceInstallerResource = initServiceInstallerResource(params);
-            if (serviceInstallerResource != null) {
-                if (!Files.exists(serviceInstallerResource.getExternalPath())) {
-                    throw new ConfigException(I18N.getString(
-                            "error.missing-service-installer"), I18N.getString(
-                                    "error.missing-service-installer.advice"));
-                }
-            }
+            initServiceInstallerResource(params);
 
             return true;
         } catch (RuntimeException re) {
@@ -367,7 +359,7 @@ public class WinMsiBundler  extends AbstractBundler {
         if (appImage != null) {
             appDir = MSI_IMAGE_DIR.fetchFrom(params).resolve(appName);
             // copy everything from appImage dir into appDir/name
-            IOUtils.copyRecursive(appImage, appDir);
+            FileUtils.copyRecursive(appImage, appDir);
         } else {
             appDir = appImageBundler.execute(params, MSI_IMAGE_DIR.fetchFrom(
                     params));
@@ -408,11 +400,15 @@ public class WinMsiBundler  extends AbstractBundler {
             ensureByMutationFileIsRTF(destFile);
         }
 
-        var serviceInstallerResource = initServiceInstallerResource(params);
-        if (serviceInstallerResource != null) {
-            var serviceInstallerPath = serviceInstallerResource.getExternalPath();
-            params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
-                    serviceInstallerPath, serviceInstallerPath.getFileName()));
+        try {
+            var serviceInstallerResource = initServiceInstallerResource(params);
+            if (serviceInstallerResource != null) {
+                var serviceInstallerPath = serviceInstallerResource.getExternalPath();
+                params.put(SERVICE_INSTALLER.getID(), new InstallableFile(
+                        serviceInstallerPath, serviceInstallerPath.getFileName()));
+            }
+        } catch (ConfigException ex) {
+            throw new PackagerException(ex);
         }
     }
 
@@ -527,9 +523,10 @@ public class WinMsiBundler  extends AbstractBundler {
                 "message.preparing-msi-config"), msiOut.toAbsolutePath()
                         .toString()));
 
-        WixPipeline wixPipeline = new WixPipeline()
-                .setToolset(wixToolset)
-                .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
+        var wixObjDir = TEMP_ROOT.fetchFrom(params).resolve("wixobj");
+
+        var wixPipeline = WixPipeline.build()
+                .setWixObjDir(wixObjDir)
                 .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
                 .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
                         wixVars);
@@ -606,13 +603,13 @@ public class WinMsiBundler  extends AbstractBundler {
         // Cultures from custom files and a single primary Culture are
         // included into "-cultures" list
         for (var wxl : primaryWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
         }
 
         List<String> cultures = new ArrayList<>();
         for (var wxl : customWxlFiles) {
             wxl = configDir.resolve(wxl.getFileName());
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }
 
@@ -639,7 +636,8 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
-        wixPipeline.buildMsi(msiOut.toAbsolutePath());
+        Files.createDirectories(wixObjDir);
+        wixPipeline.create(wixToolset).buildMsi(msiOut.toAbsolutePath());
 
         return msiOut;
     }
@@ -679,14 +677,14 @@ public class WinMsiBundler  extends AbstractBundler {
             if (nodes.getLength() != 1) {
                 throw new IOException(MessageFormat.format(I18N.getString(
                         "error.extract-culture-from-wix-l10n-file"),
-                        wxlPath.toAbsolutePath()));
+                        wxlPath.toAbsolutePath().normalize()));
             }
 
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
             throw new IOException(MessageFormat.format(I18N.getString(
-                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath()), ex);
+                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath().normalize()), ex);
         }
     }
 
@@ -762,7 +760,7 @@ public class WinMsiBundler  extends AbstractBundler {
     }
 
     private static OverridableResource initServiceInstallerResource(
-            Map<String, ? super Object> params) {
+            Map<String, ? super Object> params) throws ConfigException {
         if (StandardBundlerParam.isRuntimeInstaller(params)) {
             // Runtime installer doesn't install launchers,
             // service installer not needed
@@ -780,12 +778,16 @@ public class WinMsiBundler  extends AbstractBundler {
         var result = createResource(null, params)
                 .setPublicName("service-installer.exe")
                 .setSourceOrder(OverridableResource.Source.External);
-        if (result.getResourceDir() == null) {
-            return null;
+        if (result.getResourceDir() != null) {
+            result.setExternal(result.getResourceDir().resolve(result.getPublicName()));
+
+            if (Files.exists(result.getExternalPath())) {
+                return result;
+            }
         }
 
-        return result.setExternal(result.getResourceDir().resolve(
-                result.getPublicName()));
+        throw new ConfigException(I18N.getString("error.missing-service-installer"),
+                I18N.getString("error.missing-service-installer.advice"));
     }
 
     private Path installerIcon;

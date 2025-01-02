@@ -57,7 +57,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -77,6 +76,9 @@ public class ClassWriter extends SubWriterHolderWriter {
                      "java.lang.constant.Constable",
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
+
+    /* Length threshold to determine whether to insert whitespace between type parameters */
+    protected static final int LONG_TYPE_PARAM = 8;
 
     protected final TypeElement typeElement;
 
@@ -165,7 +167,7 @@ public class ClassWriter extends SubWriterHolderWriter {
         buildInterfaceUsageInfo(c);
         buildNestedClassInfo(c);
         buildFunctionalInterfaceInfo(c);
-        c.add(new HtmlTree(HtmlTag.HR));
+        c.add(HtmlTree.HR());
         var div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         buildClassSignature(div);
         buildDeprecationInfo(div);
@@ -459,9 +461,16 @@ public class ClassWriter extends SubWriterHolderWriter {
                     .linkToSelf(false);  // Let's not link to ourselves in the header
             content.add("<");
             var first = true;
+            boolean longTypeParams = typeParams.stream()
+                    .map(t -> getLink(linkInfo.forType(t.asType())))
+                    .anyMatch(t -> t.charCount() > ClassWriter.LONG_TYPE_PARAM);
             for (TypeParameterElement t : typeParams) {
                 if (!first) {
-                    content.add(",").add(new HtmlTree(HtmlTag.WBR));
+                    if (longTypeParams) {
+                        content.add(", ");
+                    } else {
+                        content.add(",").add(HtmlTree.WBR());
+                    }
                 }
                 var typeParamLink = getLink(linkInfo.forType(t.asType()));
                 content.add(needsId
@@ -689,11 +698,9 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addFunctionalInterfaceInfo (Content target) {
         if (utils.isFunctionalInterface(typeElement)) {
-            var dl = HtmlTree.DL(HtmlStyles.notes);
-            dl.add(HtmlTree.DT(contents.functionalInterface));
-            var dd = new HtmlTree(HtmlTag.DD);
-            dd.add(contents.functionalInterfaceMessage);
-            dl.add(dd);
+            var dl = HtmlTree.DL(HtmlStyles.notes)
+                .add(HtmlTree.DT(contents.functionalInterface))
+                .add(HtmlTree.DD(contents.functionalInterfaceMessage));
             target.add(dl);
         }
     }
@@ -733,16 +740,14 @@ public class ClassWriter extends SubWriterHolderWriter {
             }
             // TODO: should we simply split this method up to avoid instanceof ?
             if (type instanceof TypeElement te) {
-                Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, te));
-                content.add(HtmlTree.CODE(link));
+                content.add(getLink(
+                        new HtmlLinkInfo(configuration, context, te)));
             } else {
-                Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, ((TypeMirror)type)));
-                content.add(HtmlTree.CODE(link));
+                content.add(getLink(
+                        new HtmlLinkInfo(configuration, context, ((TypeMirror)type))));
             }
         }
-        return content;
+        return HtmlTree.CODE(content);
     }
 
     /**

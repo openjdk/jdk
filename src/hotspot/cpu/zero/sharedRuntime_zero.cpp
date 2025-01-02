@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -85,6 +85,11 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
+}
+
 JRT_LEAF(void, zero_stub())
   ShouldNotCallThis();
 JRT_END
@@ -105,15 +110,15 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = generate_empty_deopt_blob();
 }
 
-SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
   return generate_empty_safepoint_blob();
 }
 
-RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   return generate_empty_runtime_stub();
 }
 
-RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
   return generate_empty_runtime_stub();
 }
 

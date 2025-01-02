@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         Script script = new Script("window.location.replace(")
                 .appendStringLiteral(targetPath, '\'')
                 .append(")");
-        var metaRefresh = new HtmlTree(HtmlTag.META)
+        var metaRefresh = HtmlTree.of(HtmlTag.META)
                 .put(HtmlAttr.HTTP_EQUIV, "Refresh")
                 .put(HtmlAttr.CONTENT, "0;" + targetPath);
         head.addContent(script.asContent(), HtmlTree.NOSCRIPT(metaRefresh));
@@ -103,9 +103,8 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
         bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, Text.of(targetPath))));
 
-        var body = new HtmlTree(HtmlTag.BODY).setStyle(HtmlStyles.indexRedirectPage);
-        var main = HtmlTree.MAIN(bodyContent);
-        body.add(main);
+        var body = HtmlTree.BODY(HtmlStyles.indexRedirectPage)
+                .add(HtmlTree.MAIN(bodyContent));
 
         HtmlDocument htmlDocument = new HtmlDocument(
                 HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));

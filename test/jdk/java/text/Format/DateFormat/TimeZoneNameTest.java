@@ -75,7 +75,7 @@ public class TimeZoneNameTest
         "N", "GMT", "GMT", "Greenwich Mean Time", "GMT", "Greenwich Mean Time",
         "N", "Europe/London", "GMT", "Greenwich Mean Time", "BST", "British Summer Time",
         "N", "Europe/Paris", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
-        "N", "WET", "WET", "GMT", "WEST", "GMT+01:00",
+        "N", "WET", "WET", "Western European Standard Time", "WEST", "Western European Summer Time",
         "N", "Europe/Berlin", "CET", "Central European Standard Time", "CEST", "Central European Summer Time",
         "N", "Asia/Jerusalem", "IST", "Israel Standard Time", "IDT", "Israel Daylight Time",
         "N", "Europe/Helsinki", "EET", "Eastern European Standard Time", "EEST", "Eastern European Summer Time",

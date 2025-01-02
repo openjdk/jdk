@@ -240,8 +240,9 @@ class Zoneinfo {
                     continue;
                 }
                 String token = tokens.nextToken();
+                int len = token.length();
 
-                if (continued || "Zone".equals(token)) {
+                if (continued || token.regionMatches(true, 0, "Zone", 0, len)){
                     if (zone == null) {
                         if (!tokens.hasMoreTokens()) {
                             panic("syntax error: zone no more token");
@@ -268,7 +269,7 @@ class Zoneinfo {
                         }
                         zone = null;
                     }
-                } else if ("Rule".equals(token)) {
+                } else if (token.regionMatches(true, 0, "Rule", 0, len)) {
                     if (!tokens.hasMoreTokens()) {
                         panic("syntax error: rule no more token");
                     }
@@ -281,7 +282,7 @@ class Zoneinfo {
                     RuleRec rrec = RuleRec.parse(tokens);
                     rrec.setLine(line);
                     rule.add(rrec);
-                } else if ("Link".equals(token)) {
+                } else if (token.regionMatches(true, 0, "Link", 0, len)) {
                     // Link <newname> <oldname>
                     try {
                         String name1 = tokens.nextToken();

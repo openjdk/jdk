@@ -33,7 +33,7 @@ import sun.java2d.DisposerRecord;
  * @test
  * @bug 8289208
  * @summary Verifies Disposer robustness in a multi-threaded environment.
- * @run main/othervm -mx128m TestDisposerRace
+ * @run main/othervm -Xmx128m TestDisposerRace
  * @modules java.desktop/sun.java2d
  */
 public final class TestDisposerRace {

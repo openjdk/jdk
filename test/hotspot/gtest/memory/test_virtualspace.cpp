@@ -64,7 +64,7 @@ namespace {
   static void test_reserved_size(size_t size) {
     ASSERT_PRED2(is_size_aligned, size, os::vm_allocation_granularity());
 
-    ReservedSpace rs(size);
+    ReservedSpace rs(size, mtTest);
     MemoryReleaser releaser(&rs);
 
     EXPECT_TRUE(rs.base() != nullptr) << "rs.special: " << rs.special();
@@ -215,7 +215,7 @@ namespace {
       default:
       case Default:
       case Reserve:
-        return ReservedSpace(reserve_size_aligned);
+        return ReservedSpace(reserve_size_aligned, mtTest);
       case Disable:
       case Commit:
         return ReservedSpace(reserve_size_aligned,
@@ -387,7 +387,7 @@ class TestReservedSpace : AllStatic {
   static void test_reserved_space2(size_t size) {
     ASSERT_TRUE(is_aligned(size, os::vm_allocation_granularity())) << "Must be at least AG aligned";
 
-    ReservedSpace rs(size);
+    ReservedSpace rs(size, mtTest);
 
     EXPECT_TRUE(rs.base() != nullptr);
     EXPECT_EQ(rs.size(), size) <<  "rs.size: " << rs.size();
@@ -516,7 +516,7 @@ class TestVirtualSpace : AllStatic {
     default:
     case Default:
     case Reserve:
-      return ReservedSpace(reserve_size_aligned);
+      return ReservedSpace(reserve_size_aligned, mtTest);
     case Disable:
     case Commit:
       return ReservedSpace(reserve_size_aligned,

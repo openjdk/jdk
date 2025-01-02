@@ -87,8 +87,9 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         RESTRICTED,
-        SERIALIZED_FORM,
         SEARCH,
+        SEARCH_TAGS,
+        SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
         USE
@@ -274,6 +275,7 @@ public class Navigation {
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
             case RESTRICTED:
+            case SEARCH_TAGS:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);
@@ -516,14 +518,14 @@ public class Navigation {
         }
         var navigationBar = HtmlTree.NAV();
 
-        var navContent = new HtmlTree(HtmlTag.DIV);
+        var navContent = HtmlTree.DIV(HtmlStyles.navContent);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
         // The mobile menu button uses three empty spans to produce its animated icon
         HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyles.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
-        navContent.setStyle(HtmlStyles.navContent).add(HtmlTree.DIV(HtmlStyles.navMenuButton,
-                        new HtmlTree(HtmlTag.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
+        navContent.add(HtmlTree.DIV(HtmlStyles.navMenuButton,
+                        HtmlTree.BUTTON(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                                 .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                                 .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                                 .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
@@ -535,9 +537,7 @@ public class Navigation {
                                 skipNavLinks.toString())));
         Content aboutContent = userHeader;
 
-        var navList = new HtmlTree(HtmlTag.UL)
-                .setId(HtmlIds.NAVBAR_TOP_FIRSTROW)
-                .setStyle(HtmlStyles.navList)
+        var navList = HtmlTree.UL(HtmlIds.NAVBAR_TOP_FIRSTROW, HtmlStyles.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navContent.add(navList);

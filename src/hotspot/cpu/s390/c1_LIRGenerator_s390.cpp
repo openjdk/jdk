@@ -227,18 +227,24 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 }
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
+  juint u_value = (juint)c;
   if (tmp->is_valid()) {
-    if (is_power_of_2(c + 1)) {
+    if (is_power_of_2(u_value + 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2i_exact(c + 1), left);
+      __ shift_left(left, log2i_exact(u_value + 1), left);
       __ sub(left, tmp, result);
       return true;
-    } else if (is_power_of_2(c - 1)) {
+    } else if (is_power_of_2(u_value - 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2i_exact(c - 1), left);
+      __ shift_left(left, log2i_exact(u_value - 1), left);
       __ add(left, tmp, result);
       return true;
     }
+  }
+
+  if (c == -1) {
+    __ negate(left, result);
+    return true;
   }
   return false;
 }
@@ -496,8 +502,8 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     if (x->op() == Bytecodes::_imul) {
       bool use_tmp = false;
       if (right_arg->is_constant()) {
-        int iconst = right_arg->get_jint_constant();
-        if (is_power_of_2(iconst - 1) || is_power_of_2(iconst + 1)) {
+        juint u_const = (juint)right_arg->get_jint_constant();
+        if (is_power_of_2(u_const - 1) || is_power_of_2(u_const + 1)) {
           use_tmp = true;
         }
       }
@@ -885,7 +891,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   LIR_Opr reg = result_register_for (x->type());
-  __ call_runtime(Runtime1::entry_for (Runtime1::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for (C1StubId::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -916,14 +922,14 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
     stub = new DeoptimizeStub(info_for_exception,
                               Deoptimization::Reason_class_check,
                               Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp1 = new_register(objectType);
