@@ -69,7 +69,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
   // Split string on commas
-  for (char *comma_pos = copy, *cur = copy; success && comma_pos != nullptr; cur = comma_pos + 1) {
+  for (char *comma_pos = copy, *cur = copy; success; cur = comma_pos + 1) {
     if (_nselections == MaxSelections) {
       if (errstream != nullptr) {
         errstream->print_cr("Can not have more than " SIZE_FORMAT " log selections in a single configuration.",
