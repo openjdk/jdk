@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -146,7 +146,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     //       "MethodDesc._access_flags == MethodDesc._access_flags._flags");
     // _access_flags must be a 16 bit value.
     assert(sizeof(AccessFlags) == 2, "wrong size");
-    __ lha(R11_scratch1/*access_flags*/, method_(access_flags));
+    __ lhz(R11_scratch1/*access_flags*/, method_(access_flags));
     // testbit with condition register.
     __ testbitdi(CCR0, R0, R11_scratch1/*access_flags*/, JVM_ACC_STATIC_BIT);
     __ btrue(CCR0, L);
