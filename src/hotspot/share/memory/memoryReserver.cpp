@@ -437,7 +437,7 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
 
   // Try attach points from top to bottom.
   for (char* attach_point = highest_start;
-       attach_point >= lowest_start;  // Avoid wrap around.
+       attach_point >= lowest_start;
        attach_point -= stepsize) {
     ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, attach_point);
 
@@ -451,8 +451,9 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
       release(reserved);
     }
 
-    if (p2u(attach_point) <= stepsize)
-      break;  // Make sanizier silent and avoid warp around.
+    if (p2u(attach_point) <= stepsize) {
+      break;  // Avoid pointer underflow
+    }
   }
 
   // Failed
