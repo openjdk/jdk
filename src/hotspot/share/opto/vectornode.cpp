@@ -1731,19 +1731,13 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
 
-        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+        bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         if (is_vector_mask) {
           // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
           return new VectorMaskCastNode(value, vmask_type);
-        } else if (is_vector_shuffle) {
-          if (!is_shuffle_to_vector()) {
-            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
-            return new VectorLoadShuffleNode(value, out_vt);
-          }
         } else {
-          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
+          // Vector type mismatch is only supported for masks, but sometimes it happens in pathological cases.
         }
       } else {
         // Vector length mismatch.

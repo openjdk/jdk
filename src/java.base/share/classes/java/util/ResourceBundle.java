@@ -3653,8 +3653,7 @@ public abstract class ResourceBundle {
 
     }
 
-    private static final boolean TRACE_ON = Boolean.getBoolean(
-        System.getProperty("resource.bundle.debug", "false"));
+    private static final boolean TRACE_ON = Boolean.getBoolean("resource.bundle.debug");
 
     private static void trace(String format, Object... params) {
         if (TRACE_ON)
