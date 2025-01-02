@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,15 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import javax.net.ssl.SSLException;
 
+/**
+ * An enum of the defined TLS handshake message types.
+ * <p>
+ * These are defined in the IANA TLS Parameters.
+ * https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-7
+ * <p>
+ * Most of these come from the SLS/TLS specs in RFCs 6601/2246/4346/8446 and
+ * friends.  Others are called out where defined.
+ */
 enum SSLHandshake implements SSLConsumer, HandshakeProducer {
     @SuppressWarnings({"unchecked", "rawtypes"})
     HELLO_REQUEST ((byte)0x00, "hello_request",
@@ -81,6 +90,10 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                     )
             }),
 
+    // Even though there is a TLS HandshakeType entry for
+    // hello_retry_request_RESERVED (0x06), the TLSv1.3 (RFC 8446)
+    // HelloRetryRequest is actually a ServerHello with a specific Random value
+    // (Section 4.1.3).
     @SuppressWarnings({"unchecked", "rawtypes"})
     HELLO_RETRY_REQUEST ((byte)0x02, "hello_retry_request",
             new Map.Entry[] {
@@ -130,6 +143,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                             ProtocolVersion.PROTOCOLS_TO_12
                     )
             }),
+
     END_OF_EARLY_DATA           ((byte)0x05, "end_of_early_data"),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -146,6 +160,10 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                             ProtocolVersion.PROTOCOLS_OF_13
                     )
             }),
+
+    // RFC 9147 - DTLS 1.3
+    REQUEST_CONNECTION_ID       ((byte)0x09, "request_connection_id"),
+    NEW_CONNECTION_ID           ((byte)0x0a, "new_connection_id"),
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     CERTIFICATE                 ((byte)0x0B, "certificate",
@@ -285,6 +303,9 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                     )
             }),
 
+    // RFC 9261 - Exported Authenticators
+    CLIENT_CERTIFICATE_REQUEST  ((byte)0x11, "client_certificate_request"),
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     FINISHED                    ((byte)0x14, "finished",
             new Map.Entry[] {
@@ -347,6 +368,13 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
                             ProtocolVersion.PROTOCOLS_OF_13
                     )
             }),
+
+    // RFC 8879 - TLS Certificate Compression
+    COMPRESSED_CERTIFICATE      ((byte)0x19, "compressed_certificate"),
+
+    // RFC 8870 - Encrypted Key Transport for DTLS/Secure RTP
+    EKT_KEY                     ((byte)0x1A, "ekt_key"),
+
     MESSAGE_HASH                ((byte)0xFE, "message_hash"),
     NOT_APPLICABLE              ((byte)0xFF, "not_applicable");
 
