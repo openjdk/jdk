@@ -34,35 +34,15 @@
  * @run driver CreateAOTCacheVerifyError
  */
 
-import java.io.File;
-import java.io.FileWriter;
-
-import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class CreateAOTCacheVerifyError {
-    static String appJar = ClassFileInstaller.getJarPath("badlookupswitch.jar");
-    static String aotCacheFile = "badlookup.aot";
 
     public static void main(String[] args) throws Exception {
-        // Create aotconf file
-        String tempDir = CDSTestUtils.getOutputDir();
-        File aotConf = new File(tempDir + File.separator + "badlookup.aotconf");
-        FileWriter fw = new FileWriter(aotConf);
-        fw.write(BadLookupSwitch.class.getName());
-        System.out.println("aotconf file: " + aotConf.getAbsolutePath());
-        fw.close();
-
-        // Create aot cache
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-XX:AOTMode=create",
-            "-XX:AOTConfiguration=" + aotConf.getAbsolutePath(),
-            "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:cds",
-            "-cp", appJar);
-        OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "asm-aot-cache");
+        String appJar = ClassFileInstaller.getJarPath("badlookupswitch.jar");
+        String classList[] = { BadLookupSwitch.class.getName() };
+        OutputAnalyzer out = TestCommon.testDump(appJar, classList);
         out.shouldContain("Preload Warning: Verification failed for BadLookupSwitch");
         out.shouldHaveExitValue(0);
     }
