@@ -25,7 +25,9 @@
 package javax.swing.plaf.synth;
 
 import sun.swing.DefaultLookup;
+
 import javax.swing.JComponent;
+import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 
 /**
@@ -35,6 +37,12 @@ import javax.swing.plaf.ComponentUI;
  */
 class SynthDefaultLookup extends DefaultLookup {
     public Object getDefault(JComponent c, ComponentUI ui, String key) {
+        if (ui instanceof SynthOptionPaneUI) {
+            Object value = UIManager.get(key, c.getLocale());
+            if (value != null) {
+                return value;
+            }
+        }
         if (!(ui instanceof SynthUI)) {
             Object value = super.getDefault(c, ui, key);
             return value;
