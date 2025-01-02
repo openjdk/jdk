@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -87,9 +88,12 @@ public class ClassGenerator {
         FACTORY_METHOD_DECL("factory.decl.method"),
         FACTORY_METHOD_ARG("factory.decl.method.arg"),
         FACTORY_METHOD_BODY("factory.decl.method.body"),
+        FACTORY_METHOD_BODY_LINT("factory.decl.method.body.lint"),
         FACTORY_FIELD("factory.decl.field"),
+        FACTORY_FIELD_LINT("factory.decl.field.lint"),
         WILDCARDS_EXTENDS("wildcards.extends"),
-        SUPPRESS_WARNINGS("suppress.warnings");
+        SUPPRESS_WARNINGS("suppress.warnings"),
+        LINT_CATEGORY("lint.category");
 
         /** stub key (as it appears in the property file) */
         String key;
@@ -114,6 +118,7 @@ public class ClassGenerator {
     enum FactoryKind {
         ERR("err", "Error", "Errors"),
         WARN("warn", "Warning", "Warnings"),
+        LINT_WARN("warn", "LintWarning", "LintWarnings"),
         NOTE("note", "Note", "Notes"),
         MISC("misc", "Fragment", "Fragments"),
         OTHER(null, null, null);
@@ -136,13 +141,24 @@ public class ClassGenerator {
         /**
          * Utility method for parsing a factory kind from a resource key prefix.
          */
-        static FactoryKind parseFrom(String prefix) {
+        static FactoryKind of(Entry<String, Message> messageEntry) {
+            String prefix = messageEntry.getKey().split("\\.")[1];
+            FactoryKind selected = null;
             for (FactoryKind k : FactoryKind.values()) {
                 if (k.prefix == null || k.prefix.equals(prefix)) {
-                    return k;
+                    selected = k;
+                    break;
                 }
             }
-            return null;
+            if (selected == WARN) {
+                for (MessageLine line : messageEntry.getValue().getLines(false)) {
+                    if (line.isLint()) {
+                        selected = LINT_WARN;
+                        break;
+                    }
+                }
+            }
+            return selected;
         }
     }
 
@@ -155,7 +171,7 @@ public class ClassGenerator {
                 messageFile.messages.entrySet().stream()
                         .collect(
                                 Collectors.groupingBy(
-                                        e -> FactoryKind.parseFrom(e.getKey().split("\\.")[1]),
+                                        FactoryKind::of,
                                         TreeMap::new,
                                         toList()));
         //generate nested classes
@@ -165,7 +181,7 @@ public class ClassGenerator {
             if (entry.getKey() == FactoryKind.OTHER) continue;
             //emit members
             String members = entry.getValue().stream()
-                    .flatMap(e -> generateFactoryMethodsAndFields(e.getKey(), e.getValue()).stream())
+                    .flatMap(e -> generateFactoryMethodsAndFields(entry.getKey(), e.getKey(), e.getValue()).stream())
                     .collect(Collectors.joining("\n\n"));
             //emit nested class
             String factoryDecl =
@@ -230,7 +246,7 @@ public class ClassGenerator {
     /**
      * Generate a list of factory methods/fields to be added to a given factory nested class.
      */
-    List<String> generateFactoryMethodsAndFields(String key, Message msg) {
+    List<String> generateFactoryMethodsAndFields(FactoryKind k, String key, Message msg) {
         MessageInfo msgInfo = msg.getMessageInfo();
         List<MessageLine> lines = msg.getLines(false);
         String javadoc = lines.stream()
@@ -238,14 +254,27 @@ public class ClassGenerator {
                 .map(ml -> ml.text)
                 .collect(Collectors.joining("\n *"));
         String[] keyParts = key.split("\\.");
-        FactoryKind k = FactoryKind.parseFrom(keyParts[1]);
+        String lintCategory = lines.stream()
+                .filter(MessageLine::isLint)
+                .map(MessageLine::lintCategory)
+                .findFirst().orElse(null);
+        //System.out.println("category for " + key + " = " + lintCategory);
         String factoryName = factoryName(key);
         if (msgInfo.getTypes().isEmpty()) {
             //generate field
-            String factoryField = StubKind.FACTORY_FIELD.format(k.keyClazz, factoryName,
-                    "\"" + keyParts[0] + "\"",
-                    "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
-                    javadoc);
+            String factoryField;
+            if (lintCategory == null) {
+                factoryField = StubKind.FACTORY_FIELD.format(k.keyClazz, factoryName,
+                        "\"" + keyParts[0] + "\"",
+                        "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
+                        javadoc);
+            } else {
+                factoryField = StubKind.FACTORY_FIELD_LINT.format(k.keyClazz, factoryName,
+                        StubKind.LINT_CATEGORY.format("\"" + lintCategory + "\""),
+                        "\"" + keyParts[0] + "\"",
+                        "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
+                        javadoc);
+            }
             return Collections.singletonList(factoryField);
         } else {
             //generate method
@@ -255,12 +284,22 @@ public class ClassGenerator {
                 List<String> argNames = argNames(types.size());
                 String suppressionString = needsSuppressWarnings(msgTypes) ?
                         StubKind.SUPPRESS_WARNINGS.format() : "";
+                String methodBody;
+                if (lintCategory == null) {
+                    methodBody = StubKind.FACTORY_METHOD_BODY.format(k.keyClazz,
+                            "\"" + keyParts[0] + "\"",
+                            "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
+                            argNames.stream().collect(Collectors.joining(", ")));
+                } else {
+                    methodBody = StubKind.FACTORY_METHOD_BODY_LINT.format(k.keyClazz,
+                            StubKind.LINT_CATEGORY.format("\"" + lintCategory + "\""),
+                            "\"" + keyParts[0] + "\"",
+                            "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
+                            argNames.stream().collect(Collectors.joining(", ")));
+                }
                 String factoryMethod = StubKind.FACTORY_METHOD_DECL.format(suppressionString, k.keyClazz,
                         factoryName, argDecls(types, argNames).stream().collect(Collectors.joining(", ")),
-                        indent(StubKind.FACTORY_METHOD_BODY.format(k.keyClazz,
-                                "\"" + keyParts[0] + "\"",
-                                "\"" + Stream.of(keyParts).skip(2).collect(Collectors.joining(".")) + "\"",
-                                argNames.stream().collect(Collectors.joining(", "))), 1),
+                        indent(methodBody, 1),
                         javadoc);
                 factoryMethods.add(factoryMethod);
             }

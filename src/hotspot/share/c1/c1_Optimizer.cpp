@@ -23,9 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Optimizer.hpp"
-#include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueSet.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "memory/resourceArea.hpp"
