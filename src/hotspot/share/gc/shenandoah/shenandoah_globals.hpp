@@ -53,7 +53,7 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 10, EXPERIMENTAL,     \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 10, EXPERIMENTAL,    \
           "In selected ShenandoahControlIntervals (e.g. one out of three), "\
           "we compute the allocation rate since the previous control "      \
           "interval.  This many samples are analyzed to determine whether " \
@@ -67,12 +67,13 @@
           "triggering excess collections.")                                 \
                                                                             \
   product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
-          5, EXPERIMENTAL,                                                  \
-          "In selected ShenandoahControlIntervals (e.g. one out of three), "\
-          "we compute the allocation rate since the previous control "      \
-          "interval.  The average of this many most recent samples "        \
-          "is compared against current allocation runway and anticipated "  \
-          "GC time to determine whether a spike in allocation rate "        \
+          10, EXPERIMENTAL,                                                 \
+          "In selected ShenandoahControlIntervals (e.g. one out of two), "  \
+          "we compute the allocation rate since the previous momentary "    \
+          "allocation rate calculation.  The weighted average of this "     \
+          "many most recent momentary allocation rate samples is compared " \
+          "against current allocation runway and anticipated GC time to "   \
+          "determine whether a spike in momentary allocation rate "         \
           "justifies an early GC trigger.  Momentary allocation spike "     \
           "detection is in addition to previously implemented "             \
           "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \

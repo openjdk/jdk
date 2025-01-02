@@ -240,6 +240,7 @@ protected:
   // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
   // typical to experience a small spike following end of GC cycle, as mutator threads refresh their TLABs.  But
   // there is generally an abundance of memory at this time as well, so this will not generally trigger GC.
+  uint _spike_acceleration_buffer_size;
   uint _spike_acceleration_first_sample_index;
   uint _spike_acceleration_num_samples;
   double* const _spike_acceleration_rate_samples; // holds rates in words/second

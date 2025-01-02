@@ -114,10 +114,11 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* 
   _gc_time_m(0.0),
   _gc_time_b(0.0),
   _gc_time_sd(0.0),
+  _spike_acceleration_buffer_size(MAX2(ShenandoahRateAccelerationSampleSize, 1+ShenandoahMomentaryAllocationRateSpikeSampleSize)),
   _spike_acceleration_first_sample_index(0),
   _spike_acceleration_num_samples(0),
-  _spike_acceleration_rate_samples(NEW_C_HEAP_ARRAY(double, ShenandoahRateAccelerationSampleSize, mtGC)),
-  _spike_acceleration_rate_timestamps(NEW_C_HEAP_ARRAY(double, ShenandoahRateAccelerationSampleSize, mtGC)),
+  _spike_acceleration_rate_samples(NEW_C_HEAP_ARRAY(double, _spike_acceleration_buffer_size, mtGC)),
+  _spike_acceleration_rate_timestamps(NEW_C_HEAP_ARRAY(double, _spike_acceleration_buffer_size, mtGC)),
 #ifdef KELVIN_DEPRECATE
   _most_recent_headroom_at_start_of_idle(0),
   _acceleration_goodness_ratio(ShenandoahInitialAcceleratedAllocationRateGoodnessRatio),
@@ -215,7 +216,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   assert(_is_generational || !strcmp(_space_info->name(), ""), "Assumed global (unnamed) space, but got: %s", _space_info->name());
   log_info(gc)("At start or resumption of idle gc span for %s, mutator available set to: " SIZE_FORMAT "%s"
                " after adjusting for spike_headroom: " SIZE_FORMAT "%s"
-               " and penalties: " SIZE_FORMAT "%s", _space_info->name(),
+               " and penalties: " SIZE_FORMAT "%s", _is_generational? _space_info->name(): "Global",
                byte_size_in_proper_unit(mutator_available),   proper_unit_for_byte_size(mutator_available),
                byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties));
@@ -434,12 +435,12 @@ double ShenandoahAdaptiveHeuristics::predict_gc_time(double timestamp_at_start) 
 
 void ShenandoahAdaptiveHeuristics::add_rate_to_acceleration_history(double timestamp, double rate) {
   uint new_sample_index =
-    (_spike_acceleration_first_sample_index + _spike_acceleration_num_samples) % ShenandoahRateAccelerationSampleSize;
+    (_spike_acceleration_first_sample_index + _spike_acceleration_num_samples) % _spike_acceleration_buffer_size;
   _spike_acceleration_rate_timestamps[new_sample_index] = timestamp;
   _spike_acceleration_rate_samples[new_sample_index] = rate;
-  if (_spike_acceleration_num_samples == ShenandoahRateAccelerationSampleSize) {
+  if (_spike_acceleration_num_samples == _spike_acceleration_buffer_size) {
     _spike_acceleration_first_sample_index++;
-    if (_spike_acceleration_first_sample_index == ShenandoahRateAccelerationSampleSize) {
+    if (_spike_acceleration_first_sample_index == _spike_acceleration_buffer_size) {
       _spike_acceleration_first_sample_index = 0;
     }
   } else {
@@ -779,17 +780,29 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     // spanning 15ms of execution.
 
     if (consumption_accelerated > allocatable_words) {
-      size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
       size_t size_t_alloc_rate = (size_t) instantaneous_rate_words_per_second * HeapWordSize;
-      log_trigger("Accelerated consumption (" SIZE_FORMAT "%s) exceeds free headroom (" SIZE_FORMAT "%s) at "
-                  "current rate (" SIZE_FORMAT "%s/s) with acceleration (" SIZE_FORMAT
-                  "%s/s/s) for planned %s GC time (%.2f ms)",
-                  byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
-                  byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
-                  byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
-                  byte_size_in_proper_unit(size_t_acceleration), proper_unit_for_byte_size(size_t_acceleration),
-                  future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
-                  future_accelerated_planned_gc_time * 1000);
+      if (acceleration > 0) {
+        size_t size_t_acceleration = (size_t) acceleration * HeapWordSize;
+        log_trigger("Accelerated consumption (" SIZE_FORMAT "%s) exceeds free headroom (" SIZE_FORMAT "%s) at "
+                    "current rate (" SIZE_FORMAT "%s/s) with acceleration (" SIZE_FORMAT
+                    "%s/s/s) for planned %s GC time (%.2f ms)",
+                    byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
+                    byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
+                    byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
+                    byte_size_in_proper_unit(size_t_acceleration), proper_unit_for_byte_size(size_t_acceleration),
+                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
+                    future_accelerated_planned_gc_time * 1000);
+      } else {
+        log_trigger("Momentary spike consumption (" SIZE_FORMAT "%s) exceeds free headroom (" SIZE_FORMAT "%s) at "
+                    "current rate (" SIZE_FORMAT "%s/s) for planned %s GC time (%.2f ms)",
+                    byte_size_in_proper_unit(consumption_accelerated * HeapWordSize), proper_unit_for_byte_size(consumption_accelerated * HeapWordSize),
+                    byte_size_in_proper_unit(allocatable_words * HeapWordSize), proper_unit_for_byte_size(allocatable_words * HeapWordSize),
+                    byte_size_in_proper_unit(size_t_alloc_rate), proper_unit_for_byte_size(size_t_alloc_rate),
+                    future_accelerated_planned_gc_time_is_average? "(from average)": "(by linear prediction)",
+                    future_accelerated_planned_gc_time * 1000);
+
+
+      }
 #undef KELVIN_VERBOSITY
 #ifdef KELVIN_VERBOSITY
       log_info(gc)(" avg_alloc_rate is: %0.3f MB/s", avg_alloc_rate / (1024 * 1024));
@@ -920,55 +933,60 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
   double *y_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
   double x_sum = 0.0;
   double y_sum = 0.0;
-  double y_avg;
 
   assert(_spike_acceleration_num_samples > 0, "At minimum, we should have sample from this period");
 
-  double largest_rate_seen = 0.0;
-  double weighted_y_sum = 0;
-  double total_weight = 0;
-  double previous_x = 0;
-  for (uint i = 0; i < _spike_acceleration_num_samples; i++) {
-    uint index = (_spike_acceleration_first_sample_index + i) % ShenandoahRateAccelerationSampleSize;
+  double weighted_average_alloc;
+  if (_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize) {
+    double weighted_y_sum = 0;
+    double total_weight = 0;
+    double previous_x = 0;
+    uint delta = _spike_acceleration_num_samples - ShenandoahRateAccelerationSampleSize;
+    for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
+      uint index = (_spike_acceleration_first_sample_index + delta + i) % _spike_acceleration_buffer_size;
 #ifdef KELVIN_NEEDS_TO_SEE
-    log_info(gc)(" accel_consumption[%u] @%0.6f s: %0.6f MB/s", i, _spike_acceleration_rate_timestamps[index],
-                 _spike_acceleration_rate_samples[index] * HeapWordSize / (1024 * 1024));
+      log_info(gc)(" accel_consumption[%u] @%0.6f s: %0.6f MB/s", i, _spike_acceleration_rate_timestamps[index],
+                   _spike_acceleration_rate_samples[index] * HeapWordSize / (1024 * 1024));
 #endif
-    x_array[i] = _spike_acceleration_rate_timestamps[index];
-    x_sum += x_array[i];
-    y_array[i] = _spike_acceleration_rate_samples[index];
-    if (i > 0) {
-      // first sample not included in weighted average because it has no weight.
-      double sample_weight = x_array[i] - x_array[i-1];
-      weighted_y_sum = y_array[i] * sample_weight;
-      total_weight += sample_weight;
+      x_array[i] = _spike_acceleration_rate_timestamps[index];
+      x_sum += x_array[i];
+      y_array[i] = _spike_acceleration_rate_samples[index];
+      if (i > 0) {
+        // first sample not included in weighted average because it has no weight.
+        double sample_weight = x_array[i] - x_array[i-1];
+        weighted_y_sum = y_array[i] * sample_weight;
+        total_weight += sample_weight;
+      }
+      y_sum += y_array[i];
     }
-    if (y_array[i] > largest_rate_seen) {
-      largest_rate_seen = y_array[i];
-    }
-    y_sum += y_array[i];
-  }
-  double weighted_average_alloc = (total_weight > 0)? weighted_y_sum / total_weight: 0;
-
-  weighted_y_sum = 0;
-  total_weight = 0;
-  if (_spike_acceleration_num_samples > ShenandoahMomentaryAllocationRateSpikeSampleSize) {
-    double sum_for_average = 0.0;
-    for (uint i = _spike_acceleration_num_samples - ShenandoahMomentaryAllocationRateSpikeSampleSize;
-         i < _spike_acceleration_num_samples; i++) {
-      double sample_weight = x_array[i] - x_array[i-1];
-      weighted_y_sum += y_array[i] * sample_weight;
-      total_weight += sample_weight;
-    }
-    y_avg = weighted_y_sum / total_weight;
+    weighted_average_alloc = (total_weight > 0)? weighted_y_sum / total_weight: 0;
   } else {
-    y_avg = 0.0;
+    weighted_average_alloc = 0;
   }
 
-  // By default, use y_avg for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
-  current_rate = y_avg;
-  acceleration = 0.0;
+  double momentary_rate;
+  if (_spike_acceleration_num_samples > ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+    // Num samples must be strictly greater than sample size, because we need one extra sample to compute rate and weights
+    double weighted_y_sum = 0;
+    double total_weight = 0;
+    double sum_for_average = 0.0;
+    uint delta = _spike_acceleration_num_samples - ShenandoahMomentaryAllocationRateSpikeSampleSize;
+    for (uint i = 0; i < ShenandoahMomentaryAllocationRateSpikeSampleSize; i++) {
+      uint sample_index = (_spike_acceleration_first_sample_index + delta + i) % _spike_acceleration_buffer_size;
+      uint preceding_index = (sample_index == 0)? _spike_acceleration_buffer_size - 1: sample_index - 1;
+      double sample_weight = (_spike_acceleration_rate_timestamps[sample_index]
+                              - _spike_acceleration_rate_timestamps[preceding_index]);
+      weighted_y_sum += _spike_acceleration_rate_samples[sample_index];
+      total_weight += sample_weight;
+    }
+    momentary_rate = weighted_y_sum / total_weight;
+  } else {
+    momentary_rate = 0.0;
+  }
 
+  // By default, use momentary_rate for current rate and zero acceleration. Overwrite iff best-fit line has positive slope.
+  current_rate = momentary_rate;
+  acceleration = 0.0;
   if ((_spike_acceleration_num_samples >= ShenandoahRateAccelerationSampleSize)
       && (weighted_average_alloc >= avg_alloc_rate_words_per_second))  {
     // If the average rate across the acceleration samples is below the overall average, this sample is not eligible to
@@ -978,6 +996,7 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     double *x2_array = (double *) alloca(ShenandoahRateAccelerationSampleSize * sizeof(double));
     double xy_sum = 0.0;
     double x2_sum = 0.0;
+    uint excess = _spike_acceleration_num_samples - ShenandoahRateAccelerationSampleSize;
     for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
       xy_array[i] = x_array[i] * y_array[i];
       xy_sum += xy_array[i];
@@ -988,47 +1007,18 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     double m;                 /* slope */
     double b;                 /* y-intercept */
 
-    m = ((ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum)
-         / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum));
-    b = (y_sum - m * x_sum) / ShenandoahRateAccelerationSampleSize;
+    m = ((_spike_acceleration_buffer_size * xy_sum - x_sum * y_sum)
+         / (_spike_acceleration_buffer_size * x2_sum - x_sum * x_sum));
+    b = (y_sum - m * x_sum) / _spike_acceleration_buffer_size;
 
     if (m > 0) {
-      double proposed_current_rate = m * x_array[ShenandoahRateAccelerationSampleSize - 1] + b;
+      double proposed_current_rate = m * x_array[_spike_acceleration_buffer_size - 1] + b;
 
 #ifdef KELVIN_NEEDS_TO_SEE
       log_info(gc)("Calculating acceleration to be %.3f, with current rate: %.3f", m, proposed_current_rate);
 #endif
-#ifdef KELVIN_DEPRECATE_GOODNESS
-      // Measure goodness of fit
-      double sum_of_squared_differences = 0;
-      for (size_t i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
-        double t = x_array[i];
-        double measured = y_array[i];
-        double predicted = m * t + b;
-        double delta = predicted - measured;
-        sum_of_squared_differences += delta * delta;
-#ifdef KELVIN_NEEDS_TO_SEE
-        log_info(gc)("@ time: %.3f, rate: %.3f, predicted rate: %.3f", t, measured, predicted);
-#endif
-      }
-      // This representation of goodness is not exactly standard deviation or chi-square value, but is similar.
-      double goodness = sqrt(sum_of_squared_differences / ShenandoahRateAccelerationSampleSize);
-      assert(goodness / proposed_current_rate > 0, "proposed_current_rate should be positive because m is positive");
-      bool is_good_predictor = (goodness / proposed_current_rate) <= _acceleration_goodness_ratio;
-#ifdef KELVIN_NEEDS_TO_SEE
-      log_info(gc)("goodness is: %.3f which is %s predictor because ratio is %.1f out of proposed rate: %.3f",
-                   goodness, is_good_predictor? "good": "not good", (goodness / proposed_current_rate), proposed_current_rate);
-#endif
-
-      if (is_good_predictor) {
-        acceleration = m;
-        current_rate = proposed_current_rate;
-      }
-      // else, leave current_rate = y_max, acceleration = 0
-#else
       acceleration = m;
       current_rate = proposed_current_rate;
-#endif
     }
     // else, leave current_rate = y_max, acceleration = 0
   }
