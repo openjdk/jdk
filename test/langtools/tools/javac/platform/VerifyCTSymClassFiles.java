@@ -25,7 +25,6 @@
  * @test
  * @bug 8331027
  * @summary Verify classfile inside ct.sym
- * @enablePreview
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main

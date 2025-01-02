@@ -49,7 +49,6 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter

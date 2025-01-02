@@ -1686,6 +1686,15 @@ public abstract class ClassLoader {
     }
 
     /**
+     * Called by VM for reading class bytes.
+     */
+    private byte[] getResourceAsByteArray(String name) throws IOException {
+        Objects.requireNonNull(name);
+        InputStream is = getResourceAsStream(name);
+        return is != null ? is.readAllBytes() : null;
+    }
+
+    /**
      * Open for reading, a resource of the specified name from the search path
      * used to load classes.  This method locates the resource through the
      * system class loader (see {@link #getSystemClassLoader()}).
