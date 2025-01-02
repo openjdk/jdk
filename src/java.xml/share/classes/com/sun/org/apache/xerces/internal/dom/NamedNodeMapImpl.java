@@ -56,7 +56,7 @@ import org.w3c.dom.Node;
  * @xerces.internal
  *
  * @since  PR-DOM-Level-1-19980818.
- * @LastModified: June 2022
+ * @LastModified: Jan 2025
  */
 public class NamedNodeMapImpl
     implements NamedNodeMap, Serializable {

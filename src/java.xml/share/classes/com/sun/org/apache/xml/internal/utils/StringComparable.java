@@ -29,7 +29,7 @@ import java.util.Locale;
 /**
 * International friendly string comparison with case-order
  * @author Igor Hersht, igorh@ca.ibm.com
- * @LastModified: Oct 2017
+ * @LastModified: Jan 2025
 */
 public class StringComparable implements Comparable<StringComparable>  {
 

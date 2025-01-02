@@ -65,7 +65,7 @@ import jdk.xml.internal.JdkConstants;
  * @author G. Todd Millerj
  * @author Jochen Cordes <Jochen.Cordes@t-online.de>
  * @author Santiago Pericas-Geertsen
- * @LastModified: Nov 2024
+ * @LastModified: Jan 2025
  */
 public final class TemplatesImpl implements Templates, Serializable {
     static final long serialVersionUID = 673094361519270707L;

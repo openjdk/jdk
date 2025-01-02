@@ -131,7 +131,7 @@ import org.xml.sax.XMLReader;
  * @author Neil Graham, IBM
  * @author Pavani Mukthipudi, Sun Microsystems
  *
- * @LastModified: July 2023
+ * @LastModified: Jan 2025
  */
 public class XSDHandler {
 

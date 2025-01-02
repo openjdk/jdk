@@ -43,7 +43,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
  * @author Santiago Pericas-Geertsen
  * @author G. Todd Miller
  *
- * @LastModified: July 2023
+ * @LastModified: Jan 2025
  */
 public class TrAXFilter extends XMLFilterImpl {
     private Templates              _templates;

@@ -100,7 +100,7 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Morten Jorgensen
  * @author G. Todd Miller
  * @author Santiago Pericas-Geertsen
- * @LastModified: Dec 2024
+ * @LastModified: Jan 2025
  */
 public final class TransformerImpl extends Transformer
     implements DOMCache

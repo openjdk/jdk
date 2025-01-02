@@ -30,7 +30,7 @@ import java.util.Locale;
 /**
  * Base class for sort records containing application specific sort keys
  *
- * @LastModified: May 2019
+ * @LastModified: Jan 2025
  */
 public abstract class NodeSortRecord {
     public static final int COMPARE_STRING     = 0;

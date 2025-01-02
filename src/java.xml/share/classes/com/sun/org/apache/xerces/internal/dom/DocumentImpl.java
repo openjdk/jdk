@@ -84,7 +84,7 @@ import org.w3c.dom.traversal.TreeWalker;
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
  * @since  PR-DOM-Level-1-19980818.
- * @LastModified: Nov 2017
+ * @LastModified: Jan 2025
  */
 public class DocumentImpl
     extends CoreDocumentImpl

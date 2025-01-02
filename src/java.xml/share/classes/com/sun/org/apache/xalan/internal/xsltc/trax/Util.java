@@ -50,7 +50,7 @@ import org.xml.sax.XMLReader;
  *
  * Added Catalog Support for URI resolution
  *
- * @LastModified: Nov 2024
+ * @LastModified: Jan 2025
  */
 public final class Util {
     private static final String property = "org.xml.sax.driver";
