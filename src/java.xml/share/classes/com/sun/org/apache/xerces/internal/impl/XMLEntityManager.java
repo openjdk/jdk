@@ -1209,11 +1209,12 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // Step 1: custom Entity resolver
         XMLInputSource xmlInputSource = null;
-
+        boolean resolveByResolver = false;
         if (fEntityResolver != null) {
             resourceIdentifier.setBaseSystemId(baseSystemId);
             resourceIdentifier.setExpandedSystemId(expandedSystemId);
             xmlInputSource = fEntityResolver.resolveEntity(resourceIdentifier);
+            resolveByResolver = xmlInputSource != null;
         }
 
         // Step 2: custom catalog if specified
@@ -1229,7 +1230,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // Step 3: use the default JDK Catalog Resolver if Step 2's resolve is continue
-        if (xmlInputSource == null
+        if ((xmlInputSource == null || (!resolveByResolver && xmlInputSource.getSystemId() != null
+                && xmlInputSource.getSystemId().equals(literalSystemId)))
                 && (publicId != null || literalSystemId != null)
                 && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
             initJdkCatalogResolver();

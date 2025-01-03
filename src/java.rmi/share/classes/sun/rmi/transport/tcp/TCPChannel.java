@@ -37,7 +37,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import sun.rmi.runtime.Log;
-import sun.rmi.runtime.NewThreadAction;
 import sun.rmi.runtime.RuntimeUtil;
 import sun.rmi.transport.Channel;
 import sun.rmi.transport.Connection;
@@ -401,9 +400,9 @@ class ConnectionAcceptor implements Runnable {
      * Start a new thread to accept connections.
      */
     public void startNewAcceptor() {
-        Thread t = new NewThreadAction(ConnectionAcceptor.this,
-                                       "TCPChannel Accept-" + ++ threadNum,
-                                       true).run();
+        Thread t = RuntimeUtil.newSystemThread(ConnectionAcceptor.this,
+                                               "TCPChannel Accept-" + ++ threadNum,
+                                               true);
         t.start();
     }
 

@@ -54,11 +54,6 @@ class PhaseCFG;
 #define DEBUG_ARG(x)
 #endif
 
-// Define the initial sizes for allocation of the resizable code buffer
-enum {
-  initial_const_capacity =   4 * 1024
-};
-
 class BufferSizingData {
 public:
   int _stub;
