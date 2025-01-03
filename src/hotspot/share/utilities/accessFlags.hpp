@@ -64,11 +64,6 @@ class AccessFlags {
   // get as integral value
   u2 as_unsigned_short() const         { return _flags; }
 
-  // Initialization
-  void set_field_flags(u2 flags)      {
-    assert((flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == flags, "only recognized flags");
-    _flags = (flags & JVM_RECOGNIZED_FIELD_MODIFIERS);
-  }
   void set_flags(u2 flags)            { _flags = flags; }
 
  private:
@@ -83,9 +78,20 @@ class AccessFlags {
  public:
   inline friend AccessFlags accessFlags_from(u2 flags);
 
-  u2 as_method_flags() const { return _flags & JVM_RECOGNIZED_METHOD_MODIFIERS; }
-  u2 as_field_flags() const  { return _flags & JVM_RECOGNIZED_FIELD_MODIFIERS; }
-  u2 as_class_flags() const  { return _flags & JVM_RECOGNIZED_CLASS_MODIFIERS; }
+  u2 as_method_flags() const {
+    assert((_flags & JVM_RECOGNIZED_METHOD_MODIFIERS) == _flags, "only recognized flags");
+    return _flags;
+  }
+
+  u2 as_field_flags() const  {
+    assert((_flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == _flags, "only recognized flags");
+    return _flags;
+  }
+
+  u2 as_class_flags() const  {
+    assert((_flags & JVM_RECOGNIZED_CLASS_MODIFIERS) == _flags, "only recognized flags");
+    return _flags;
+  }
 
   // Printing/debugging
 #if INCLUDE_JVMTI

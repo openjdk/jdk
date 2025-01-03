@@ -1653,7 +1653,7 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
     return;
   }
 
-  u2 flags = access_flags().as_unsigned_short();
+  u2 flags = access_flags().as_method_flags();
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
   if (id != vmIntrinsics::_none) {
     set_intrinsic_id(id);

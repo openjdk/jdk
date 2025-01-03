@@ -1005,8 +1005,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   }
 
   // Check whether class modifiers are the same.
-  u2 old_flags = the_class->access_flags().as_unsigned_short();
-  u2 new_flags = scratch_class->access_flags().as_unsigned_short();
+  u2 old_flags = the_class->access_flags().as_class_flags();
+  u2 new_flags = scratch_class->access_flags().as_class_flags();
   if (old_flags != new_flags) {
     log_info(redefine, class, normalize)
         ("redefined class %s modifiers change error: modifiers changed from %d to %d.",
@@ -1147,8 +1147,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
     switch (method_was) {
     case matched:
       // methods match, be sure modifiers do too
-      old_flags = k_old_method->access_flags().as_unsigned_short();
-      new_flags = k_new_method->access_flags().as_unsigned_short();
+      old_flags = k_old_method->access_flags().as_method_flags();
+      new_flags = k_new_method->access_flags().as_method_flags();
       if ((old_flags ^ new_flags) & ~(JVM_ACC_NATIVE)) {
         log_info(redefine, class, normalize)
           ("redefined class %s  method %s modifiers error: modifiers changed from %d to %d",

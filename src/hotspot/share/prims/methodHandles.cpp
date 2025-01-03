@@ -404,7 +404,7 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   Method* m = iklass->find_method(name, poly_sig);
   if (m != nullptr) {
     int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
-    int flags = m->access_flags().as_unsigned_short();
+    int flags = m->access_flags().as_method_flags();
     if ((flags & required) == required) {
       return true;
     }
@@ -417,7 +417,7 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   for (; ms < me; ms++) {
     Method* m = iklass->methods()->at(ms);
     int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
-    int flags = m->access_flags().as_unsigned_short();
+    int flags = m->access_flags().as_method_flags();
     if ((flags & required) == required && ArgumentCount(m->signature()).size() == 1) {
       return true;
     }
@@ -522,7 +522,7 @@ bool MethodHandles::is_signature_polymorphic_public_name(Klass* klass, Symbol* n
     for (; ms < me; ms++) {
       Method* m = iklass->methods()->at(ms);
       int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS | JVM_ACC_PUBLIC;
-      int flags = m->access_flags().as_unsigned_short();
+      int flags = m->access_flags().as_method_flags();
       if ((flags & required) == required && ArgumentCount(m->signature()).size() == 1) {
         return true;
       }
