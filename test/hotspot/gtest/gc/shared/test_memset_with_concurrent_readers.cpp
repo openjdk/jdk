@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-#include "utilities/vmassert_uninstall.hpp"
-#include <iomanip>
-#include <string.h>
-#include <sstream>
-#include "utilities/vmassert_reinstall.hpp"
-
+#include "utilities/ostream.hpp"
 #include "unittest.hpp"
 
 static unsigned line_byte(const char* line, size_t i) {
@@ -71,29 +65,31 @@ TEST(gc, memset_with_concurrent_readers) {
         bool middle_set = !memcmp(set_block, block + set_start, set_size);
         bool tail_clear = !memcmp(clear_block, block + set_end, block_size - set_end);
         if (!(head_clear && middle_set && tail_clear)) {
-          std::ostringstream err_stream;
-          err_stream << "*** memset_with_concurrent_readers failed: set start "
-                     << set_start << ", set end " << set_end << std::endl;
+          stringStream err_stream{};
+          err_stream.print_cr("*** memset_with_concurrent_readers failed: "
+                              "set start %zu, set end %zu",
+                              set_start, set_end);
           for (unsigned chunk = 0; chunk < (block_size / chunk_size); ++chunk) {
             for (unsigned line = 0; line < (chunk_size / BytesPerWord); ++line) {
 
               const char* lp = &block[chunk * chunk_size + line * BytesPerWord];
 
-              err_stream << std::dec << chunk << "," << line << ": " << std::hex
-                         << std::setw(2) << line_byte(lp, 0) << " "
-                         << std::setw(2) << line_byte(lp, 1) << "  "
-                         << std::setw(2) << line_byte(lp, 2) << " "
-                         << std::setw(2) << line_byte(lp, 3) << "  "
-                         << std::setw(2) << line_byte(lp, 4) << " "
-                         << std::setw(2) << line_byte(lp, 5) << "  "
-                         << std::setw(2) << line_byte(lp, 6) << " "
-                         << std::setw(2) << line_byte(lp, 7) << std::endl;
+              err_stream.print_cr("%u, %u: "
+                                  "%02x %02x  "
+                                  "%02x %02x  "
+                                  "%02x %02x  "
+                                  "%02x %02x",
+                                  chunk, line,
+                                  line_byte(lp, 0), line_byte(lp, 1),
+                                  line_byte(lp, 2), line_byte(lp, 3),
+                                  line_byte(lp, 4), line_byte(lp, 5),
+                                  line_byte(lp, 6), line_byte(lp, 7));
             }
           }
           EXPECT_TRUE(head_clear) << "leading byte not clear";
           EXPECT_TRUE(middle_set) << "memset byte not set";
           EXPECT_TRUE(tail_clear) << "trailing bye not clear";
-          ASSERT_TRUE(head_clear && middle_set && tail_clear) << err_stream.str();
+          ASSERT_TRUE(head_clear && middle_set && tail_clear) << err_stream.freeze();
         }
       }
     }

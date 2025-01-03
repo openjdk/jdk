@@ -605,10 +605,10 @@ public:
   // such an object as unreachable.
   inline bool is_in_old_during_young_collection(oop obj) const;
 
-  inline ShenandoahAffiliation region_affiliation(const ShenandoahHeapRegion* r);
+  inline ShenandoahAffiliation region_affiliation(const ShenandoahHeapRegion* r) const;
   inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
 
-  inline ShenandoahAffiliation region_affiliation(size_t index);
+  inline ShenandoahAffiliation region_affiliation(size_t index) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
 

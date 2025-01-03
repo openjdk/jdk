@@ -79,6 +79,7 @@ class OopClosure;
 class ShenandoahParallelCodeHeapIterator;
 class NativePostCallNop;
 class DeoptimizationScope;
+class ReservedSpace;
 
 #ifdef LINUX
 #define DEFAULT_PERFMAP_FILENAME "/tmp/perf-%p.map"
@@ -122,7 +123,7 @@ class CodeCache : AllStatic {
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
-  static ReservedCodeSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
+  static ReservedSpace reserve_heap_memory(size_t size, size_t rs_ps); // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap

@@ -45,6 +45,7 @@
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/instanceMirrorKlass.hpp"

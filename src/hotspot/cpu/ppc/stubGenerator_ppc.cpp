@@ -622,7 +622,7 @@ class StubGenerator: public StubCodeGenerator {
   // Don't generate, rather use C++ code.
   address generate_verify_oop() {
     // this is actually a `FunctionDescriptor*'.
-    address start = 0;
+    address start = nullptr;
 
 #if !defined(PRODUCT)
     start = CAST_FROM_FN_PTR(address, verify_oop_helper);

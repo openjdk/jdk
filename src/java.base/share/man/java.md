@@ -1292,10 +1292,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
 `-XX:OnOutOfMemoryError=`*string*
 :   Sets a custom command or a series of semicolon-separated commands to run
-    when an `OutOfMemoryError` exception is first thrown. If the string
+    when an `OutOfMemoryError` exception is first thrown by the JVM.
+    If the string
     contains spaces, then it must be enclosed in quotation marks. For an
     example of a command string, see the description of the `-XX:OnError`
     option.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:+PrintCommandLineFlags`
 :   Enables printing of ergonomically selected JVM flags that appeared on the
@@ -2189,10 +2194,14 @@ perform extensive debugging.
 `-XX:+HeapDumpOnOutOfMemoryError`
 :   Enables the dumping of the Java heap to a file in the current directory by
     using the heap profiler (HPROF) when a `java.lang.OutOfMemoryError`
-    exception is thrown. You can explicitly set the heap dump file path and
+    exception is thrown by the JVM. You can explicitly set the heap dump file path and
     name using the `-XX:HeapDumpPath` option. By default, this option is
     disabled and the heap isn't dumped when an `OutOfMemoryError` exception is
     thrown.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:HeapDumpPath=`*path*
 :   Sets the path and file name for writing the heap dump provided by the heap
@@ -2895,6 +2904,12 @@ when they're used.
     396](https://openjdk.org/jeps/396) and made obsolete in JDK 17
     by [JEP 403](https://openjdk.org/jeps/403).
 
+## Removed Java Options
+
+These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
+
+>   `Unrecognized VM option` *option-name*
+
 `-XX:RTMAbortRatio=`*abort\_ratio*
 :   Specifies the RTM abort ratio is specified as a percentage (%) of all
     executed RTM transactions. If a number of aborted transactions becomes
@@ -2954,57 +2969,9 @@ when they're used.
     processors, which forces them to read from main memory instead of their
     cache.
 
-## Removed Java Options
-
-These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
-
->   `Unrecognized VM option` *option-name*
-
-`-XX:InitialRAMFraction=`*ratio*
-:   Sets the initial amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a ratio of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is
-    64.
-
-    Use the option `-XX:InitialRAMPercentage` instead.
-
-`-XX:MaxRAMFraction=`*ratio*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a fraction of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is 4.
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    Use the option `-XX:MaxRAMPercentage` instead.
-
-`-XX:MinRAMFraction=`*ratio*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a fraction of the maximum amount
-    determined as described in the `-XX:MaxRAM` option for small heaps. A small
-    heap is a heap of approximately 125 MB. The default value is 2.
-
-    Use the option `-XX:MinRAMPercentage` instead.
-
-`-XX:+ScavengeBeforeFullGC`
-:   Enables GC of the young generation before each full GC. This option is
-    enabled by default. It is recommended that you *don't* disable it, because
-    scavenging the young generation before a full GC can reduce the number of
-    objects reachable from the old generation space into the young generation
-    space. To disable GC of the young generation before each full GC, specify
-    the option `-XX:-ScavengeBeforeFullGC`.
-
-`-Xfuture`
-:   Enables strict class-file format checks that enforce close conformance to
-    the class-file format specification. Developers should use this flag when
-    developing new code. Stricter checks may become the default in future
-    releases.
-
-    Use the option `-Xverify:all` instead.
-
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 24](https://docs.oracle.com/en/java/javase/24/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 23](https://docs.oracle.com/en/java/javase/23/docs/specs/man/java.html)
 

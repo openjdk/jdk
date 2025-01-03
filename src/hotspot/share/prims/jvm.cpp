@@ -3299,7 +3299,7 @@ JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
   return ForeignGlobals::is_foreign_linker_supported() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, JVM_IsStaticallyLinked(void))
+JVM_LEAF(jboolean, JVM_IsStaticallyLinked(void))
   return is_vm_statically_linked() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
@@ -3319,8 +3319,9 @@ JVM_END
 // VM Raw monitors (not to be confused with JvmtiRawMonitors) are a simple mutual exclusion
 // lock (not actually monitors: no wait/notify) that is exported by the VM for use by JDK
 // library code. They may be used by JavaThreads and non-JavaThreads and do not participate
-// in the safepoint protocol, thread suspension, thread interruption, or anything of that
-// nature. JavaThreads will be "in native" when using this API from JDK code.
+// in the safepoint protocol, thread suspension, thread interruption, or most things of that
+// nature, except JavaThreads will be blocked by VM_Exit::block_if_vm_exited if the VM has
+// shutdown. JavaThreads will be "in native" when using this API from JDK code.
 
 
 JNIEXPORT void* JNICALL JVM_RawMonitorCreate(void) {
