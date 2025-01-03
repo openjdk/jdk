@@ -450,7 +450,6 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
 
       release(reserved);
     }
-
   }
 
   // Failed
