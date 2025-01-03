@@ -123,57 +123,43 @@ PhaseIdStack::PhaseIdStack() : _depth(0) {
 // was larger than this threshold, we report it.
 static constexpr size_t significant_peak_threshold = M;
 
-
 FootprintTimeline::FootprintTimeline() {
-  _pos = 0;
-  _entries[0]._bytes.init(0);
-  _entries[0]._live_nodes.init(0);
-  _entries[0].phase_trc_id = phase_trc_id_default; // "outside phase"
+  Entry& e = _fifo.at(0);
+  e._bytes.init(0);
+  e._live_nodes.init(0);
+  e.phase_trc_id = phase_trc_id_default; // "outside phase"
 }
 
 void FootprintTimeline::copy_from(const FootprintTimeline& other) {
-  memcpy(_entries, other._entries, sizeof(_entries));
-  _pos = other._pos;
-}
-
-void FootprintTimeline::print_entry_on(outputStream* st, unsigned pos) const {
-  const Entry& e = at(pos);
-  check_phase_trace_id(e.phase_trc_id);
-  st->print("%2u %24s: ", pos, phase_trc_id_to_string(e.phase_trc_id));
-#ifdef DEBUG_OUTPUT_RAW
-  st->print("%zu -> zu peak: zu / %u -> %u peak %u",
-    e._bytes.start, e._bytes.cur, e._bytes.peak,
-    e._live_nodes.start, e._live_nodes.cur, e._live_nodes.peak
-  );
-#else
-  st->fill_to(30);
-  st->print("%9zu ", e._bytes.cur); // end
-  st->fill_to(40);
-  st->print("%+9zd ", e._bytes.end_delta()); // delta end
-  st->fill_to(55);
-  st->print("%6u ", e._live_nodes.cur); // end
-  st->fill_to(62);
-  st->print("%+6zd ", e._live_nodes.end_delta()); // end
-  if (e._bytes.peak_size() > significant_peak_threshold) {
-    st->fill_to(80);
-    st->print(" significant temporary peak: %zu (%+zd)", e._bytes.peak, (ssize_t)e._bytes.peak - e._bytes.start); // peak
-  }
-#endif
-  st->cr();
+  _fifo.copy_from(other._fifo);
 }
 
 void FootprintTimeline::print_on(outputStream* st) const {
-  if (_pos > 0) {
+  if (!_fifo.empty()) {
                // .123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789
     st->print_cr("                                      bytes               #nodes");
     unsigned from = 0;
-    if (_pos > max_num_phases) {
-      st->print_cr("         (%u older entries lost)", _pos - max_num_phases);
-      from = _pos - max_num_phases;
+    if (_fifo.lost() > 0) {
+      st->print_cr("         (" UINT64_FORMAT " older entries lost)", _fifo.lost());
     }
-    for (unsigned i = from; i < _pos; i++) {
-      print_entry_on(st, i);
-    }
+    auto printer = [&](const Entry& e) {
+      check_phase_trace_id(e.phase_trc_id);
+      st->print("%24s: ", phase_trc_id_to_string(e.phase_trc_id));
+      st->fill_to(30);
+      st->print("%9zu ", e._bytes.cur); // end
+      st->fill_to(40);
+      st->print("%+9zd ", e._bytes.end_delta()); // delta end
+      st->fill_to(55);
+      st->print("%6u ", e._live_nodes.cur); // end
+      st->fill_to(62);
+      st->print("%+6zd ", e._live_nodes.end_delta()); // end
+      if (e._bytes.peak_size() > significant_peak_threshold) {
+        st->fill_to(80);
+        st->print(" significant temporary peak: %zu (%+zd)", e._bytes.peak, (ssize_t)e._bytes.peak - e._bytes.start); // peak
+      }
+      st->cr();
+    };
+    _fifo.iterate_all(printer);
   }
 }
 
@@ -188,19 +174,19 @@ void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigne
   // An "interesting" phase is one that causes a footprint change (end != start),
   // and/or one that has a local peak that significantly raises above either starting
   // or ending footprint.
-  const Entry& old = at(_pos);
+  const Entry& old = _fifo.current();
   if (old._bytes.end_delta() != 0 || old._bytes.peak_size() > significant_peak_threshold) {
-    _pos++;
+    _fifo.advance();
   }
-  Entry& e = at(_pos);
+  Entry& e = _fifo.current();
   e._bytes.start = e._bytes.cur = e._bytes.peak = cur_abs;
   e._live_nodes.start = e._live_nodes.cur = e._live_nodes.peak = cur_nodes;
   e.phase_trc_id = phase_trc_id;
 }
 
-ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit, bool collect_details) :
+ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit) :
     _current(0), _peak(0), _live_nodes_current(0), _live_nodes_at_global_peak(0),
-    _limit(limit), _hit_limit(false), _limit_in_process(false), _collect_details(collect_details),
+    _limit(limit), _hit_limit(false), _limit_in_process(false),
     _comp_type(comp_type), _comp_id(comp_id)
 {}
 
@@ -335,17 +321,6 @@ void ArenaState::verify() const {
 }
 #endif // ASSERT
 
-//////////////////////////
-// Backend
-
-// The backend is a hashtable.
-//
-// Key is a combination of method name (see FullMethodName) and compiler type. So, for each
-// compiler type, we keep information about the last compilation of a given method
-// (and if you need to know footprint of previous compilations, use Memstat print option).
-//
-// Value is a collection of various information
-
 class FullMethodName {
   Symbol* const _k;
   Symbol* const _m;
@@ -413,7 +388,6 @@ class MemStatEntry : public CHeapObj<mtCompiler> {
   unsigned _live_nodes_at_global_peak;
 
   struct Details {
-    MemStatEntry* parent;
     ArenaCounterTable counters_at_global_peak;
     FootprintTimeline timeline;
   };
@@ -467,6 +441,15 @@ public:
     }
   }
 
+  void reset() {
+    clean_details();
+    _comp_type = CompilerType::compiler_none;
+    _comp_id = -1;
+    _limit = _peak = 0;
+    _live_nodes_at_global_peak = 0;
+    memset(_peak_composition_per_arena_tag, 0, sizeof(_peak_composition_per_arena_tag));
+  }
+
   void set_result(const char* s) { _result = s; }
   void set_code_size(size_t s)   { _code_size = s; }
 
@@ -507,7 +490,7 @@ public:
     st->print_cr("");
   }
 
-  void print_on(outputStream* st, bool human_readable, bool verbose) const {
+  void print_on(outputStream* st, bool verbose) const {
     int col = 0;
 
     // Type
@@ -516,20 +499,12 @@ public:
 
     // Total
     size_t v = _peak;
-    if (human_readable) {
-      st->print(PROPERFMT " ", PROPERFMTARGS(v));
-    } else {
-      st->print("%zu ", v);
-    }
+    st->print("%zu ", v);
     col += 10; st->fill_to(col);
 
     for (int tag = 0; tag < arena_tag_max; tag++) {
       v = _peak_composition_per_arena_tag[tag];
-      if (human_readable) {
-        st->print(PROPERFMT " ", PROPERFMTARGS(v));
-      } else {
-        st->print("%zu ", v);
-      }
+      st->print("%zu ", v);
       col += 10; st->fill_to(col);
     }
 
@@ -596,105 +571,28 @@ public:
   }
 };
 
-template <int max>
-class TopNArray {
-  unsigned _sizes[max]; // for fast linear search.
-  MemStatEntry* _entries[max];
+static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
+  return e1->compare_by_size(e2);
+}
 
-  MemStatEntry* push_elems_down(int vacate_pos) {
-    MemStatEntry* pushed_out = _entries[max - 1];
-    if (vacate_pos < max - 1) {
-      memmove(_sizes + vacate_pos + 1, _sizes + vacate_pos, sizeof(_sizes[0]) * (max - 1 - vacate_pos));
-      memmove(_entries + vacate_pos + 1, _entries + vacate_pos, sizeof(_entries[0]) * (max - 1 - vacate_pos));
-    }
-    return pushed_out;
-  }
+class MemStatTable : public CHeapObj<mtCompiler> {
 
-  void pull_elems_up(int into_pos) {
-    if (into_pos < max - 1) {
-      memmove(_sizes + into_pos + 1, _sizes + into_pos, sizeof(_sizes[0]) * (max - 1 - into_pos));
-      memmove(_entries + into_pos + 1, _entries + into_pos, sizeof(_entries[0]) * (max - 1 - into_pos));
-    }
-    _sizes[max - 1] = 0;
-    _entries[max - 1] = nullptr;
-  }
+  // Total number of entries. Reaching this limit, we discard oldest first.
+  static constexpr int max_entries = 512 * K;
+  SimpleFifo<MemStatEntry*, max_entries> _entries;
 
-public:
-
-  TopNArray() {
-    memset(_sizes, 0, sizeof(_sizes));
-    memset(_entries, 0, sizeof(_entries));
-  }
-
-  bool try_add(MemStatEntry* e, MemStatEntry** pushed_out, size_t total) {
-    const unsigned total_capped = total > UINT_MAX ? UINT_MAX : total;
-    (*pushed_out) = nullptr;
-    int insert_before = 0;
-    while (insert_before < max && _sizes[insert_before] > total_capped) {
-      insert_before ++;
-    }
-    if (insert_before < max) {
-      (*pushed_out) = push_elems_down(insert_before);
-      _sizes[insert_before] = total_capped;
-      _entries[insert_before] = e;
-      return true;
-    }
-    return false;
-  }
-
-  void remove(MemStatEntry* e) {
-    int remove_at = 0;
-    while (remove_at < max && _entries[remove_at] != e) {
-      remove_at++;
-    }
-    assert(remove_at < max, "not found");
-    pull_elems_up(remove_at);
-  }
-};
-
-// The MemStatTable contains records of memory usage of all compilations. It is printed,
-// as memory summary, either with jcmd Compiler.memory, or - if the "print" suboption has
-// been given with the MemStat compile command - as summary printout at VM exit.
-// For any given compiled method, we only keep the memory statistics of the most recent
-// compilation, but on a per-compiler basis. If one needs statistics of prior compilations,
-// one needs to look into the log produced by the "print" suboption.
-
-class MemStatTableKey {
-  const FullMethodName _fmn;
-  const CompilerType _comptype;
-public:
-  MemStatTableKey(FullMethodName fmn, CompilerType comptype) :
-    _fmn(fmn), _comptype(comptype) {}
-  MemStatTableKey(const MemStatTableKey& o) :
-    _fmn(o._fmn), _comptype(o._comptype) {}
-  bool operator== (const MemStatTableKey& other) const {
-    return _fmn == other._fmn && _comptype == other._comptype;
-  }
-  static unsigned compute_hash(const MemStatTableKey& n) {
-    return FullMethodName::compute_hash(n._fmn) + (unsigned)n._comptype;
-  }
-};
-
-class MemStatTable :
-    public ResourceHashtable<MemStatTableKey, MemStatEntry*, 7919, AnyObj::C_HEAP,
-                             mtCompiler, MemStatTableKey::compute_hash>
-{
-  TopNArray<4> _topn;
+  // Size threshold - below this threshold we don't bother keeping detailed information
+  static constexpr size_t detail_threshold = 2 * M;
 
 public:
 
   void add(const FullMethodName& fmn, const ArenaState* state, size_t code_size, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-    MemStatTableKey key(fmn, state->comp_type());
-    MemStatEntry** pe = get(key);
-    MemStatEntry* e = nullptr;
-    if (pe == nullptr) {
-      e = new MemStatEntry(fmn);
-      put(key, e);
+    MemStatEntry*& e = _entries.current();
+    if (_entries.wrapped()) { // Reuse entry
+      e->reset();
     } else {
-      // Update existing entry
-      e = *pe;
-      assert(e != nullptr, "Sanity");
+      e = new MemStatEntry(fmn);
     }
     e->set_current_time();
     e->set_current_thread();
@@ -702,40 +600,61 @@ public:
     e->set_result(result);
     e->set_code_size(code_size);
 
-    const size_t total = state->peak();
-    MemStatEntry* pushed_out = nullptr;
-    bool save_details = _topn.try_add(e, &pushed_out, total);
-    if (pushed_out != nullptr) {
-      assert(save_details, "Sanity");
-      pushed_out->clean_details();
-    }
+    const bool save_details = state->peak() >= detail_threshold;
     e->set_from_state(state, save_details);
+
+    // advance position
+    _entries.advance();
   }
 
-  // Returns a C-heap-allocated SortMe array containing all entries from the table,
-  // optionally filtered by entry size
-  MemStatEntry** calc_flat_array(int& num, size_t min_size) {
+  void print_entries(outputStream* st, bool sorted, bool print_details, size_t threshold) const {
     assert_lock_strong(NMTCompilationCostHistory_lock);
 
-    const int num_all = number_of_entries();
-    MemStatEntry** flat = NEW_C_HEAP_ARRAY(MemStatEntry*, num_all, mtCompiler);
-    int i = 0;
-    auto do_f = [&] (const MemStatTableKey& ignored, MemStatEntry* e) {
-      if (e->peak() >= min_size) {
-        flat[i] = e;
-        assert(i < num_all, "Sanity");
-        i ++;
+    const int num_all = _entries.size();
+    int num_filtered = 0;
+    if (sorted) {
+      const MemStatEntry** filtered = NEW_C_HEAP_ARRAY(const MemStatEntry*, num_all, mtCompiler);
+      auto copy_to_flat_array = [&](const MemStatEntry* e) {
+        if (e->peak() >= threshold) {
+          filtered[num_filtered] = e;
+          num_filtered ++;
+        }
+      };
+      _entries.iterate_all(copy_to_flat_array);
+      assert(num_filtered <= num_all, "Sanity");
+      if (num_filtered > 0) {
+        QuickSort::sort(filtered, num_filtered, diff_entries_by_size);
+        for (int i = 0; i < num_filtered; i ++) {
+          DEBUG_ONLY(st->print("%d  ", i);)
+          filtered[i]->print_on(st, print_details);
+        }
       }
-    };
-    iterate_all(do_f);
-    if (min_size == 0) {
-      assert(i == num_all, "Sanity");
+      FREE_C_HEAP_ARRAY(MemStatEntry, filtered);
     } else {
-      assert(i <= num_all, "Sanity");
+      auto print = [&](const MemStatEntry* e) {
+        if (e->peak() >= threshold) {
+          e->print_on(st, print_details);
+          num_filtered ++;
+        }
+      };
+      _entries.iterate_all(print);
     }
-    num = i;
-    return flat;
+
+    if (num_filtered > 0) {
+      st->print_cr("Total: %d compilations ", num_filtered);
+    } else {
+      st->print_cr("No entries.");
+    }
+    if (num_filtered < num_all) {
+      st->print_cr(" (%d compilations smaller than threshold=%zu omitted)", num_all - num_filtered, threshold);
+    }
+    if (_entries.lost() > 0) {
+      st->print_cr(" (%zu old compilations lost - use method filters on the memstat CompileCommand to "
+                   "reduce the amount of information gathered)", _entries.lost());
+    }
   }
+
+  int size() const { return _entries.size(); }
 };
 
 bool CompilationMemoryStatistic::_enabled = false;
@@ -744,7 +663,7 @@ static MemStatTable* _the_table = nullptr;
 
 void CompilationMemoryStatistic::initialize() {
   assert(_enabled == false && _the_table == nullptr, "Only once");
-  _the_table = new (mtCompiler) MemStatTable;
+  _the_table = new MemStatTable;
   _enabled = true;
   log_info(compilation, alloc)("Compilation memory statistic enabled");
 }
@@ -757,8 +676,7 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   const CompilerType comp_type = task->compiler()->type();
   const int comp_id = task->compile_id();
   const size_t limit = directive->mem_limit();
-  const bool collect_details = directive->should_collect_memstat_details();
-  ArenaState* const arena_stat = new ArenaState(comp_type, comp_id, limit, collect_details);
+  ArenaState* const arena_stat = new ArenaState(comp_type, comp_id, limit);
   th->set_arenastat(arena_stat);
 }
 
@@ -963,11 +881,7 @@ void CompilationMemoryStatistic::on_phase_end_0(int phase_trc_id) {
   arena_stat->on_phase_end(phase_trc_id);
 }
 
-static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
-  return e1->compare_by_size(e2);
-}
-
-void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_readable, bool verbose, size_t min_size) {
+void CompilationMemoryStatistic::print_all(outputStream* st, bool sorted, bool verbose, size_t min_size) {
 
   MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
@@ -978,48 +892,28 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   }
 
   st->cr();
-  st->print_cr("Compilation memory statistics");
-  st->cr();
-
-  if (verbose && !CompilerOracle::memstat_detail_suboption_active()) {
-    st->print_cr("*** Note: Verbose mode specified, but no detail statistics have been collected. ***");
-    st->print_cr("    (Start JVM with -XX:CompileCommand=memstat,...,details)");
+  if (sorted) {
+    st->print_cr("Compilation memory statistics, by allocation size");
+  } else {
+    st->print_cr("Compilation memory statistics, in order of compilation");
   }
+  st->cr();
 
   MemStatEntry::print_legend(st);
   st->cr();
 
   if (min_size > 0) {
-    st->print_cr(" (cutoff: %zu bytes)", min_size);
+    st->print_cr(" (threshold: %zu bytes)", min_size);
   }
   st->cr();
   MemStatEntry::print_header(st);
 
-  MemStatEntry** filtered = nullptr;
+  const MemStatEntry** filtered = nullptr;
 
   if (_the_table != nullptr) {
-    // We sort with quicksort
-    int num = 0;
-    filtered = _the_table->calc_flat_array(num, min_size);
-    if (min_size > 0) {
-      st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
-    }
-    if (num > 0) {
-      QuickSort::sort(filtered, num, diff_entries_by_size);
-      // Now print. Has to happen under lock protection too, since entries may be changed.
-      for (int i = 0; i < num; i ++) {
-        filtered[i]->print_on(st, human_readable, verbose);
-      }
-      st->print_cr("Total: %d compilations.", num);
-    } else {
-      st->print_cr("No entries.");
-    }
-  } else {
-    st->print_cr("Not initialized.");
+    _the_table->print_entries(st, sorted, verbose, min_size);
   }
   st->cr();
-
-  FREE_C_HEAP_ARRAY(Entry, filtered);
 }
 
 const char* CompilationMemoryStatistic::failure_reason_memlimit() {

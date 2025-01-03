@@ -26,7 +26,9 @@
 #define SHARE_COMPILER_COMPILERDIRECTIVES_HPP
 
 #include "classfile/vmIntrinsics.hpp"
+#include "ci/ciMetadata.hpp"
 #include "ci/ciMethod.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/methodMatcher.hpp"
 #include "opto/phasetype.hpp"
 #include "utilities/bitMap.hpp"
@@ -152,7 +154,6 @@ public:
   bool is_c1(CompilerDirectives* directive) const;
   bool is_c2(CompilerDirectives* directive) const;
   bool should_collect_memstat() const;
-  bool should_collect_memstat_details() const;
   bool should_print_memstat() const;
   size_t mem_limit() const;
   bool should_crash_at_mem_limit() const; // true: crash false: stop compilation

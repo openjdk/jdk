@@ -74,7 +74,7 @@ inline void ArenaCounterTable::sub(size_t size, int phase_trc_id, int arena_tag)
 }
 
 inline void FootprintTimeline::on_footprint_change(size_t cur_abs, unsigned cur_nodes) {
-  Entry& e = at(_pos);
+  Entry& e = _fifo.current();
   e._bytes.update(cur_abs);
   e._live_nodes.update(cur_nodes);
 }

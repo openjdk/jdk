@@ -205,19 +205,11 @@ bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
 
 bool DirectiveSet::should_collect_memstat() const {
   // MemLimit requires the memory statistic to be active
-  // Note: in debug builds memlimits are enabled by default, so this almost always fires unless
-  // memlimit had been deactivated with -XX:CompileCommand,...,0
   return MemStatOption > 0 || MemLimitOption != 0;
 }
 
-bool DirectiveSet::should_collect_memstat_details() const {
-  // Guards collecting information that may take more time or memory
-  // to keep around
-  return MemStatOption & (uintx)MemStatFlags::collect_details;
-}
-
 bool DirectiveSet::should_print_memstat() const {
-  return MemStatOption & (uintx)MemStatFlags::print;
+  return MemStatOption == (uintx)MemStatAction::print;
 }
 
 size_t DirectiveSet::mem_limit() const {

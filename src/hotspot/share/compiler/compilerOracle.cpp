@@ -121,7 +121,7 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
-static uintx all_memstat_options_superimposed = 0; // if a suboption is set on any method, it is set here
+static bool print_final_memstat_report = false;
 
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommandEnum::Unknown) + 1] = { 0 };
@@ -483,13 +483,7 @@ bool CompilerOracle::should_collect_memstat() {
 }
 
 bool CompilerOracle::should_print_final_memstat_report() {
-  // We print a report if printing is enabled for any method
-  return all_memstat_options_superimposed & (uintx)MemStatFlags::print;
-}
-
-bool CompilerOracle::memstat_detail_suboption_active() {
-  // We warn about details not being switched if someone wants detail informations
-  return all_memstat_options_superimposed & (uintx)MemStatFlags::collect_details;
+  return print_final_memstat_report;
 }
 
 bool CompilerOracle::should_log(const methodHandle& method) {
@@ -704,34 +698,26 @@ static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* 
 }
 
 static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
-  // A "+" separated list of memstat sub commands
-  // e.g. "print" or "details+print" or "collect+print+details"
-  value = (uintx)MemStatFlags::collect; // set implicitly
-  int n = 0;
-  while(line[n]) {
-    if (strncasecmp(line + n, "collect", 7) == 0) {
-      n += 7; // ignore, already set
-    } else if (strncasecmp(line + n, "print", 5) == 0) {
-      n += 5;
-      value |= (uintx)MemStatFlags::print;
-    } else if (strncasecmp(line + n, "details", 7) == 0) {
-      n += 7;
-      value |= (uintx)MemStatFlags::collect_details;
-    } else {
-      jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
-      return false;
-    }
 
-    all_memstat_options_superimposed |= value;
-
-    // swallow "+"
-    if (line[n] == '+') {
-      n ++;
-    }
+#define IF_ENUM_STRING(S, CMD)                \
+  if (strncasecmp(line, S, strlen(S)) == 0) { \
+    bytes_read += (int)strlen(S);             \
+    CMD                                       \
+    return true;                              \
   }
-  bytes_read += n;
 
-  return true;
+  IF_ENUM_STRING("collect", {
+    value = (uintx)MemStatAction::collect;
+  });
+  IF_ENUM_STRING("print", {
+    value = (uintx)MemStatAction::print;
+    print_final_memstat_report = true;
+  });
+#undef IF_ENUM_STRING
+
+  jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
+
+  return false;
 }
 
 static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
@@ -1065,7 +1051,7 @@ bool CompilerOracle::parse_from_line(char* line) {
         return true;
       } else if (option == CompileCommandEnum::MemStat) {
         // MemStat default action is to collect data but to not print
-        register_command(matcher, option, (uintx)MemStatFlags::collect);
+        register_command(matcher, option, (uintx)MemStatAction::collect);
         return true;
       } else {
         jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));

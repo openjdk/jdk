@@ -76,6 +76,62 @@ public:
   inline int top() const;
 };
 
+template <typename T, int max>
+class SimpleFifo {
+  STATIC_ASSERT((max * 2) < INT_MAX);
+  T _v[max];
+  int _pos;
+  uint64_t _lost;
+
+  // [first_pos, current_pos)
+  int first_pos() const   { return MAX2(0, _pos - max); }
+  int current_pos() const { return _pos; }
+  static int pos_to_index(int pos) { return pos % max; }
+  T* slot_at(int pos)             { return _v + pos_to_index(pos); }
+  const T* slot_at(int pos) const { return _v + pos_to_index(pos); }
+
+public:
+
+  SimpleFifo() : _pos(0), _lost(0UL) {}
+
+  const T* raw() const            { return _v; }
+  T& at(int pos)                  { return *slot_at(pos); }
+  const T& at(int pos) const      { return *slot_at(pos); }
+  T& current()                    { return at(current_pos()); }
+  const T& current() const        { return at(current_pos()); }
+
+  bool empty() const { return _pos == 0; }
+  bool wrapped() const { return _pos >= max; }
+  int size() const { return MIN2(max, _pos); }
+  uint64_t lost() const { return _lost; }
+
+  void advance() {
+    _pos ++;
+    if (_pos == max * 2) {
+      _pos -= max;
+    }
+    if (_pos >= max) {
+      _lost ++;
+    }
+  }
+
+  template<typename F>
+  void iterate_all(F f) const {
+    const int start = first_pos();
+    const int end = current_pos();
+    for (int pos = start; pos < end; pos++) {
+      const int index = pos_to_index(pos);
+      f(_v[index]);
+    }
+  }
+
+  void copy_from(const SimpleFifo& other) {
+    memcpy(_v, other._v, sizeof(_v));
+    _pos = other._pos;
+    _lost = other._lost;
+  }
+};
+
 // Holds a table of n entries; each entry keeping start->end footprints when
 // a phase started and ended; each entry also keeping the phase-local peak (if
 // a phase caused a temporary spike in footprint that vanished before the phase
@@ -103,11 +159,7 @@ private:
     C<unsigned, ssize_t> _live_nodes;
     bool has_significant_local_peak() const { return _bytes.peak_size() > M; }
   };
-  Entry _entries[max_num_phases];
-  unsigned _pos;
-  Entry& at(unsigned pos)             { return _entries[pos % max_num_phases]; }
-  const Entry& at(unsigned pos) const { return _entries[pos % max_num_phases]; }
-  void print_entry_on(outputStream* st, unsigned pos) const;
+  SimpleFifo<Entry, max_num_phases> _fifo;
 public:
   FootprintTimeline();
   void copy_from(const FootprintTimeline& other);
@@ -140,8 +192,6 @@ class ArenaState : public CHeapObj<mtCompiler> {
   bool _hit_limit;
   bool _limit_in_process;
 
-  const bool _collect_details;
-
   // Keep track of current C2 phase
   PhaseIdStack _phase_id_stack;
 
@@ -156,7 +206,7 @@ class ArenaState : public CHeapObj<mtCompiler> {
   DEBUG_ONLY(void verify() const;)
 
 public:
-  ArenaState(CompilerType comp_type, int comp_id, size_t limit, bool collect_details);
+  ArenaState(CompilerType comp_type, int comp_id, size_t limit);
 
   void on_phase_start(int phase_trc_id);
   void on_phase_end(int phase_trc_id);
@@ -173,8 +223,6 @@ public:
   bool   hit_limit() const          { return _hit_limit; }
   bool   limit_in_process() const     { return _limit_in_process; }
   void   set_limit_in_process(bool v) { _limit_in_process = v; }
-
-  bool collect_details() const      { return _collect_details; }
 
   CompilerType comp_type() const { return _comp_type; }
   int comp_id() const { return _comp_id; }
