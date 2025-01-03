@@ -35,10 +35,6 @@ public class AdaptNull extends AbstractCorpusBenchmark {
 
     @Param({
 //            "ARRAYCOPY",
-            "ASM_1",
-            "ASM_3",
-            "ASM_UNSHARED_3",
-//            "ASM_TREE",
             "SHARED_1",
             "SHARED_2",
             "SHARED_3",
