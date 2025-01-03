@@ -59,7 +59,7 @@ public class TestWithGeneratorsIRAndVerify {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("p.xyz.InnerTest", generate());
+        comp.addJavaSourceCode("p.xyz.InnerTest", generate(comp));
 
         // Compile the source file.
         comp.compile();
@@ -70,7 +70,7 @@ public class TestWithGeneratorsIRAndVerify {
     }
 
     // Generate a source Java file as String
-    public static String generate() {
+    public static String generate(CompileFramework comp) {
         // We need to import all the used classes.
         HashSet<String> imports = new HashSet<String>();
         imports.add("compiler.lib.ir_framework.*");
@@ -81,17 +81,20 @@ public class TestWithGeneratorsIRAndVerify {
 
         Template mainTemplate = new Template("my_example_main",
             """
-            // TODO TestFramework.run();
+            TestFramework framework = new TestFramework(InnerTest.class);
+            framework.addFlags("-classpath", "#classpath");
+            framework.start();
             """
         );
-        instantiator.add(null, mainTemplate, null);
+        instantiator.where("classpath", comp.getEscapedClassPathOfCompiledClasses())
+                    .add(null, mainTemplate, null);
 
         Template staticsTemplate = new Template("my_example_statics",
             """
             // $statics with length #{size:int_con(lo=10000,hi=20000)}
             private static int[] $INPUT_A = new int[#{size}];
             static {
-                // TODO Generators
+                Generators.ints().fill($INPUT_A, Integer.MIN_VALUE, Integer.MAX_VALUE);
             }
 
             private static int $INPUT_B = #{:int_con};
@@ -100,13 +103,24 @@ public class TestWithGeneratorsIRAndVerify {
         );
         Template testTemplate = new Template("my_example_test",
             """
-            // $test
+            @Setup
+            public static Object[] $setup() {
+                // Must make sure to clone input arrays, if it is mutated in the test.
+                return new Object[] {$INPUT_A.clone(), $INPUT_B};
+            }
 
+            @Test
+            @Arguments(setup = "$setup")
             public static Object $test(int[] a, int b) {
                 for (int i = 0; i < a.length; i++) {
                     a[i] = a[i] + b;
                 }
                 return a;
+            }
+
+            @Check(test = "$test")
+            public static void $check(Object result) {
+                Verify.checkEQ(result, $GOLD);
             }
             """
         );

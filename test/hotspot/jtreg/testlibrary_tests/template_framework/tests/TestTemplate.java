@@ -192,7 +192,6 @@ public class TestTemplate {
         String expected =
             """
             package p.xyz;
-
             public class InnerTest {
                 static abc xyz
 
@@ -533,7 +532,6 @@ public class TestTemplate {
         String expected =
             """
             package p.xyz;
-
             public class InnerTest {
                 gen1 abc
                 gen2 123
