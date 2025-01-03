@@ -73,16 +73,42 @@
 #define PRAGMA_DEPRECATED_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wdeprecated-declarations")
 
-// This variant of FORBID_C_FUNCTION overrides the default variant.  Clang
-// seems to make a distinction between [[noreturn]] and the old-style noreturn
-// attribute.  For example, if <stdlib.h> has already been included, using
-// [[noreturn]] when forbidding exit(int) gives "error: 'noreturn' attribute
-// does not appear on the first declaration", with the previous declaration
-// reported as being "void exit(int) __dead2;". __dead2 is an old-style
-// noreturn attribute.
+// This macro is used by the NORETURN variants of FORBID_C_FUNCTION.
+//
+// The [[noreturn]] attribute requires that the first declaration of a
+// function has it if any have it.  clang does not treat an old-style noreturn
+// attribute on the first declaration as meeting that requirement.  But some
+// libraries use old-style noreturn attributes.  So if we use [[noreturn]] in
+// the forbidding declaration, but the library header for the function has
+// already been included, we get a compiler error.  Similarly, if we use an
+// old-style noreturn attribute and the library header is included after the
+// forbidding declaration.
+//
+// For now, we're only going to worry about the standard library, and not
+// noreturn functions in some other library that we might want to forbid in
+// the future.  If there's more than one library to be accounted for, then
+// things may get more complicated.
+//
+// There are several ways we could deal with this.
+//
+// Probably the most robust is to use the same style of noreturn attribute as
+// is used by the library providing the function.  That way it doesn't matter
+// in which order the inclusion of the library header and the forbidding are
+// performed.  We could use configure to determine which to use and provide a
+// macro to select on here.
+//
+// Another approach is to always use the old-style attribute in the forbidding
+// declaration, but ensure the relevant library header has been included
+// before the forbidding declaration.  Since there are currently only a couple
+// of affected functions, this is easier to implement.  So this is the
+// approach being taken for now.
+//
+// And remember, all of this is because clang treats an old-style noreturn
+// attribute as not counting toward the [[noreturn]] requirement that the
+// first declaration must have a noreturn attribute.
+
 #ifdef __clang__
-#define FORBID_NORETURN_C_FUNCTION(Signature, Alternative) \
-  FORBID_C_FUNCTION(__attribute__((__noreturn__)) Signature, Alternative)
+#define FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE __attribute__((__noreturn__))
 #endif // __clang__
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP

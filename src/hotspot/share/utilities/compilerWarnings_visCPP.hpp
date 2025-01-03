@@ -32,17 +32,15 @@
 
 #define PRAGMA_DEPRECATED_IGNORED PRAGMA_DISABLE_MSVC_WARNING(4996)
 
-// These variants of FORBID_C_FUNCTION override the default definitions.  They
-// add `__declspec(dllimport)` to the signature.  Failure to do so where
-// needed leads to "redefinition; different linkage" errors for the forbidding
-// declaration. Including a dllimport specifier here if not present in the
-// compiler's header leads to the same errors.  It seems one just must know
+// This macro is used by the IMPORTED variants of FORBID_C_FUNCTION.
+//
+// Some, but not all, functions we want to forbid using must include a
+// `__declspec(dllimport)` in the declaration.  Failure to do so where needed
+// leads to "redefinition; different linkage" errors for the forbidding
+// declaration. But including a dllimport specifier if not present in the
+// compiler's header leads to the same errors.  It seems one must just know
 // which are imported and which are not, and use the specifier accordingly.
 
-#define FORBID_IMPORTED_C_FUNCTION(Signature, Alternative) \
-  FORBID_C_FUNCTION(__declspec(dllimport) Signature, Alternative)
-
-#define FORBID_IMPORTED_NORETURN_C_FUNCTION(Signature, Alternative) \
-  FORBID_NORETURN_C_FUNCTION(__declspec(dllimport) Signature, Alternative)
+#define FORBIDDEN_FUNCTION_IMPORT_SPEC __declspec(dllimport)
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP

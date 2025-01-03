@@ -97,32 +97,34 @@
 // Declares the C-linkage function designated by Signature to be deprecated,
 // using the `deprecated` attribute with Alternative as an argument.
 //
-// The variants with IMPORTED in the name are to deal with Windows requirements.
-// See the Visual Studio definitions for more details.  The default definitions
-// provided here don't do anything additional and just expand to a non-IMPORTED
-// variant.
+// The variants with IMPORTED in the name are to deal with Windows
+// requirements, using FORBIDDEN_FUNCTION_IMPORT_SPEC.  See the Visual
+// Studio definition of that macro for more details.  The default has
+// an empty expansion.  The potentially added spec must precede the
+// base signature but follow all attributes.
 //
 // FORBID_NORETURN_C_FUNCTION deals with a clang issue.  See the clang
-// definition for more details.  The default definition provided here expands
-// to the non-NORETURN variant with a `[[noreturn]]` attribute added to the
-// signature.
+// definition of FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE for more
+// details.  The default expands to `[[noreturn]]`.
 #define FORBID_C_FUNCTION(Signature, Alternative) \
   extern "C" { [[deprecated(Alternative)]] Signature; }
 
-#ifndef FORBID_IMPORTED_C_FUNCTION
+#ifndef FORBIDDEN_FUNCTION_IMPORT_SPEC
+#define FORBIDDEN_FUNCTION_IMPORT_SPEC
+#endif
+
+#ifndef FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE
+#define FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE [[noreturn]]
+#endif
+
 #define FORBID_IMPORTED_C_FUNCTION(Signature, Alternative) \
-  FORBID_C_FUNCTION(Signature, Alternative)
-#endif
+  FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_IMPORT_SPEC Signature, Alternative)
 
-#ifndef FORBID_NORETURN_C_FUNCTION
 #define FORBID_NORETURN_C_FUNCTION(Signature, Alternative) \
-  FORBID_C_FUNCTION([[noreturn]] Signature, Alternative)
-#endif
+  FORBID_C_FUNCTION(FORBIDDEN_FUNCTION_NORETURN_ATTRIBUTE Signature, Alternative)
 
-#ifndef FORBID_IMPORTED_NORETURN_C_FUNCTION
 #define FORBID_IMPORTED_NORETURN_C_FUNCTION(Signature, Alternative) \
-  FORBID_NORETURN_C_FUNCTION(Signature, Alternative)
-#endif
+  FORBID_NORETURN_C_FUNCTION(FORBIDDEN_FUNCTION_IMPORT_SPEC Signature, Alternative)
 
 // A BEGIN/END_ALLOW_FORBIDDEN_FUNCTIONS pair establishes a scope in which the
 // deprecation warnings used to forbid the use of certain functions are
