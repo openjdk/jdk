@@ -451,9 +451,6 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
       release(reserved);
     }
 
-    if (p2u(attach_point) <= stepsize) {
-      break;  // Avoid pointer underflow
-    }
   }
 
   // Failed
