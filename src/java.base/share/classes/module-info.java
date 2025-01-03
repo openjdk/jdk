@@ -197,14 +197,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.org.objectweb.asm to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.util to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.commons to
-        jdk.jfr;
     exports jdk.internal.org.xml.sax to
         jdk.jfr;
     exports jdk.internal.org.xml.sax.helpers to
