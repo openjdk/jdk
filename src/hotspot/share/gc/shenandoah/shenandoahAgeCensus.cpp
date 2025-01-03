@@ -247,7 +247,7 @@ void ShenandoahAgeCensus::update_tenuring_threshold() {
     _tenuring_threshold[_epoch] = tt;
   }
   print();
-  log_trace(gc, age)("New tenuring threshold " UINTX_FORMAT " (min " UINTX_FORMAT ", max " UINTX_FORMAT")",
+  log_trace(gc, age)("New tenuring threshold %zu (min %zu, max %zu)",
     (uintx) _tenuring_threshold[_epoch], ShenandoahGenerationalMinTenuringAge, ShenandoahGenerationalMaxTenuringAge);
 }
 

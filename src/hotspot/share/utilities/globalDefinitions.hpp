@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,18 +144,6 @@ class oopDesc;
 #define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif
 #define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-
-#define INTX_FORMAT              "%"          PRIdPTR
-#define INTX_FORMAT_X            "0x%"        PRIxPTR
-#define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
-#define UINTX_FORMAT             "%"          PRIuPTR
-#define UINTX_FORMAT_X           "0x%"        PRIxPTR
-#ifdef _LP64
-#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
-#else
-#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
-#endif
-#define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT

@@ -48,7 +48,7 @@ class ThreadTimeAccumulator : public ThreadClosure {
   size_t total_time;
   ThreadTimeAccumulator() : total_time(0) {}
   void do_thread(Thread* thread) override {
-    assert(!thread->has_terminated(), "Cannot get cpu time for terminated thread: " UINTX_FORMAT, thread->osthread()->thread_id_for_printing());
+    assert(!thread->has_terminated(), "Cannot get cpu time for terminated thread: %zu", thread->osthread()->thread_id_for_printing());
     total_time += os::thread_cpu_time(thread);
   }
 };

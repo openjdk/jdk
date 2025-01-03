@@ -801,7 +801,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
   // Avoid side-effect of changing workers' active thread count, but bypass concurrent/parallel protocol check
   ShenandoahPushWorkerScope verify_worker_scope(_heap->workers(), _heap->max_workers(), false /*bypass check*/);
 
-  log_info(gc,start)("Verify %s, Level " INTX_FORMAT, label, ShenandoahVerifyLevel);
+  log_info(gc,start)("Verify %s, Level %zd", label, ShenandoahVerifyLevel);
 
   // GC state checks
   {
@@ -1034,7 +1034,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
   log_debug(gc)("Safepoint verification finished accumulation of liveness data");
 
 
-  log_info(gc)("Verify %s, Level " INTX_FORMAT " (" SIZE_FORMAT " reachable, " SIZE_FORMAT " marked)",
+  log_info(gc)("Verify %s, Level %zd (" SIZE_FORMAT " reachable, " SIZE_FORMAT " marked)",
                label, ShenandoahVerifyLevel, count_reachable, count_marked);
 
   FREE_C_HEAP_ARRAY(ShenandoahLivenessData, ld);

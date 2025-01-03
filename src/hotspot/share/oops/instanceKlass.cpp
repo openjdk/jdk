@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3654,7 +3654,7 @@ void InstanceKlass::print_on(outputStream* st) const {
       st->print("   ");
     }
   }
-  if (n >= MaxSubklassPrintSize) st->print("(" INTX_FORMAT " more klasses...)", n - MaxSubklassPrintSize);
+  if (n >= MaxSubklassPrintSize) st->print("(%zd more klasses...)", n - MaxSubklassPrintSize);
   st->cr();
 
   if (is_interface()) {
@@ -3692,7 +3692,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
 
   st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
-  st->print(BULLET"secondary bitmap: " UINTX_FORMAT_X_0, _secondary_supers_bitmap); st->cr();
+  st->print(BULLET"secondary bitmap: " LP64_ONLY("0x%016zu") NOT_LP64("0x%08zu"), _secondary_supers_bitmap); st->cr();
 
   if (secondary_supers() != nullptr) {
     if (Verbose) {

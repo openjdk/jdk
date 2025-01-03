@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -195,7 +195,7 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
   // avoid commas and spaces in output to ease post-processing via awk
   char tmp[64];
   stringStream ss(tmp, sizeof(tmp));
-  ss.print(":" UINTX_FORMAT "-%s", (uintx)thread_id, name);
+  ss.print(":%zu-%s", (uintx)thread_id, name);
   for (int i = 0; tmp[i] != '\0'; i++) {
     if (!isalnum(tmp[i])) {
       tmp[i] = '-';
