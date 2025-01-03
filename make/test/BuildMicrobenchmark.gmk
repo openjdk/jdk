@@ -47,6 +47,7 @@ MICROBENCHMARK_JAR := $(MICROBENCHMARK_IMAGE_DIR)/benchmarks.jar
 
 MICROBENCHMARK_OUTPUT := $(SUPPORT_OUTPUTDIR)/test/micro
 MICROBENCHMARK_CLASSES := $(MICROBENCHMARK_OUTPUT)/classes
+MICROBENCHMARK_GENSRC := $(MICROBENCHMARK_OUTPUT)/gensrc
 MICROBENCHMARK_JAR_BIN := $(MICROBENCHMARK_OUTPUT)/jar
 
 MICROBENCHMARK_TOOLS_CLASSES := $(MICROBENCHMARK_OUTPUT)/tools-classes
@@ -104,7 +105,8 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/sun.security.util.math.intpoly=ALL-UNNAMED \
         --enable-preview \
         -XDsuppressNotes \
-        -processor org.openjdk.jmh.generators.BenchmarkProcessor, \
+        -processor org.openjdk.jmh.generators.BenchmarkProcessor \
+        -s $(MICROBENCHMARK_GENSRC), \
     JAVA_FLAGS := \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --add-modules jdk.unsupported \
