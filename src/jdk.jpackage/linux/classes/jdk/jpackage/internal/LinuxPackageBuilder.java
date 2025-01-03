@@ -53,9 +53,12 @@ final class LinuxPackageBuilder {
             pkgBuilder.name(pkgBuilder.create().packageName().toLowerCase().replaceAll("[ _]", "-"));
         }
 
-        var pkg = pkgBuilder.create();
+        final var pkg = pkgBuilder.create();
 
-        validatePackageName(pkg.packageName(), pkg.asStandardPackageType());
+        final var stdPkgType = pkg.asStandardPackageType();
+        if (stdPkgType.isPresent()) {
+            validatePackageName(pkg.packageName(), stdPkgType.orElseThrow());
+        }
 
         var reply = create(pkg, pkg.packageLayout());
         if (reply.isInstallDirInUsrTree()) {
@@ -70,9 +73,9 @@ final class LinuxPackageBuilder {
                 pkgLayout,
                 Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
                 Optional.ofNullable(category).orElseGet(DEFAULTS::category),
-                additionalDependencies,
+                Optional.ofNullable(additionalDependencies),
                 Optional.ofNullable(release).orElseGet(DEFAULTS::release),
-                LinuxPackageArch.getValue(pkg.asStandardPackageType())));
+                pkg.asStandardPackageType().map(LinuxPackageArch::getValue).orElseThrow()));
     }
 
     LinuxPackageBuilder directName(String v) {

@@ -59,9 +59,12 @@ import org.xml.sax.SAXException;
 final class AppImageFile2 {
 
     AppImageFile2(Application app) {
+
+        final var mainLauncher = app.mainLauncher().orElseThrow();
+
         appVersion = app.version();
-        launcherName = app.mainLauncher().name();
-        mainClass = app.mainLauncher().startupInfo().qualifiedClassName();
+        launcherName = mainLauncher.name();
+        mainClass = mainLauncher.startupInfo().orElseThrow().qualifiedClassName();
         extra = app.extraAppImageFileData();
         creatorVersion = getVersion();
         creatorPlatform = getPlatform();
@@ -202,16 +205,16 @@ final class AppImageFile2 {
                 }
 
                 @Override
-                public LauncherStartupInfo startupInfo() {
+                public Optional<LauncherStartupInfo> startupInfo() {
                     return startupInfo;
                 }
 
-                private final LauncherStartupInfo startupInfo = new LauncherStartupInfo.Unsupported() {
+                private final Optional<LauncherStartupInfo> startupInfo = Optional.of(new LauncherStartupInfo.Unsupported() {
                     @Override
                     public String qualifiedClassName() {
                         return props.get("main-class");
                     }
-                };
+                });
             };
 
             List<Launcher> additionalLaunchers = AppImageProperties.launchers(doc, xPath).stream().map(launcherProps -> {
@@ -336,10 +339,6 @@ final class AppImageFile2 {
             if (name == null || name.isBlank()) {
                 throw new InavlidAppImageFileException();
             }
-        }
-
-        Launcher asLauncher() {
-            return new Launcher.Stub(name, null, null, service, null, null);
         }
     }
 

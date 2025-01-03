@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import jdk.jpackage.internal.model.ConfigException;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.Optional;
 import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.resources.ResourceLocator;
@@ -56,8 +57,7 @@ final class BuildEnvBuilder {
             }
         }
 
-        return BuildEnv.withAppImageDir(BuildEnv.create(root, resourceDir,
-                ResourceLocator.class), appImageDir);
+        return BuildEnv.withAppImageDir(BuildEnv.create(root, Optional.ofNullable(resourceDir), ResourceLocator.class), appImageDir);
     }
 
     BuildEnvBuilder resourceDir(Path v) {

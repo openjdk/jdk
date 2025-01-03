@@ -33,11 +33,11 @@ public interface Package {
 
     PackageType type();
 
-    default StandardPackageType asStandardPackageType() {
+    default Optional<StandardPackageType> asStandardPackageType() {
         if (type() instanceof StandardPackageType stdType) {
-            return stdType;
+            return Optional.of(stdType);
         } else {
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -53,11 +53,11 @@ public interface Package {
 
     String version();
 
-    String aboutURL();
+    Optional<String> aboutURL();
 
-    Path licenseFile();
+    Optional<Path> licenseFile();
 
-    Path predefinedAppImage();
+    Optional<Path> predefinedAppImage();
 
     /**
      * Returns source app image layout.
@@ -66,7 +66,7 @@ public interface Package {
         return app().imageLayout();
     }
 
-    default ApplicationLayout asApplicationLayout() {
+    default Optional<ApplicationLayout> asApplicationLayout() {
         return app().asApplicationLayout();
     }
 
@@ -77,37 +77,41 @@ public interface Package {
         return appImageLayout().resolveAt(relativeInstallDir());
     }
 
-    default ApplicationLayout asPackageApplicationLayout() {
+    default Optional<ApplicationLayout> asPackageApplicationLayout() {
         if (packageLayout() instanceof ApplicationLayout layout) {
-            return layout;
+            return Optional.of(layout);
         } else {
-            throw new UnsupportedOperationException();
+            return Optional.empty();
         }
     }
 
     /**
      * Returns app image layout of the installed package.
      */
-    default AppImageLayout installedPackageLayout() {
-        if (type() instanceof StandardPackageType type) {
-            switch (type) {
+    default Optional<AppImageLayout> installedPackageLayout() {
+        return asStandardPackageType().map(stdType -> {
+            switch (stdType) {
                 case LINUX_DEB, LINUX_RPM, MAC_DMG, MAC_PKG -> {
                     return packageLayout().resolveAt(Path.of("/"));
                 }
                 case WIN_EXE, WIN_MSI -> {
                     return packageLayout();
                 }
+                default -> {
+                    throw new UnsupportedOperationException();
+                }
             }
-        }
-        throw new UnsupportedOperationException();
+        });
     }
 
-    default ApplicationLayout asInstalledPackageApplicationLayout() {
-        if (installedPackageLayout() instanceof ApplicationLayout layout) {
-            return layout;
-        } else {
-            throw new UnsupportedOperationException();
-        }
+    default Optional<ApplicationLayout> asInstalledPackageApplicationLayout() {
+        return installedPackageLayout().map(layout -> {
+            if (layout instanceof ApplicationLayout appLayout) {
+                return appLayout;
+            } else {
+                return (ApplicationLayout)null;
+            }
+        });
     }
 
     /**
@@ -117,16 +121,12 @@ public interface Package {
         return String.format("%s-%s", packageName(), version());
     }
 
-    default String packageFileSuffix() {
-        if (type() instanceof StandardPackageType type) {
-            return type.suffix();
-        } else {
-            throw new UnsupportedOperationException();
-        }
+    default Optional<String> packageFileSuffix() {
+        return asStandardPackageType().map(StandardPackageType::suffix);
     }
 
     default String packageFileNameWithSuffix() {
-        return packageFileName() + Optional.ofNullable(packageFileSuffix()).orElse("");
+        return packageFileName() + packageFileSuffix().orElse("");
     }
 
     default boolean isRuntimeInstaller() {
@@ -142,8 +142,9 @@ public interface Package {
     Path relativeInstallDir();
 
     record Stub(Application app, PackageType type, String packageName,
-            String description, String version, String aboutURL, Path licenseFile,
-            Path predefinedAppImage, Path relativeInstallDir) implements Package {
+            String description, String version, Optional<String> aboutURL,
+            Optional<Path> licenseFile, Optional<Path> predefinedAppImage,
+            Path relativeInstallDir) implements Package {
     }
 
     class Unsupported implements Package {
@@ -174,17 +175,17 @@ public interface Package {
         }
 
         @Override
-        public String aboutURL() {
+        public Optional<String> aboutURL() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Path licenseFile() {
+        public Optional<Path> licenseFile() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Path predefinedAppImage() {
+        public Optional<Path> predefinedAppImage() {
             throw new UnsupportedOperationException();
         }
 

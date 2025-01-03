@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -49,6 +50,7 @@ import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.FileAssociation;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 final class MacAppImageBuilder2 {
@@ -114,7 +116,7 @@ final class MacAppImageBuilder2 {
         Map<String, String> data = new HashMap<>();
         data.put("DEPLOY_ICON_FILE", ApplicationIcon.getPath(app, appLayout).getFileName().toString());
         data.put("DEPLOY_BUNDLE_COPYRIGHT", app.copyright());
-        data.put("DEPLOY_LAUNCHER_NAME", app.mainLauncher().executableNameWithSuffix());
+        data.put("DEPLOY_LAUNCHER_NAME", app.mainLauncher().orElseThrow().executableNameWithSuffix());
         data.put("DEPLOY_BUNDLE_SHORT_VERSION", macApp.shortVersion().toString());
         data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", app.version());
         data.put("DEPLOY_BUNDLE_NAME", macApp.bundleName());
@@ -159,10 +161,9 @@ final class MacAppImageBuilder2 {
 
     private static void faWriteIcon(XMLStreamWriter xml, String key, FileAssociation fa)
             throws XMLStreamException {
-        var icon = fa.icon();
-        if (icon != null) {
-            writeString(xml, key, fa.icon().getFileName());
-        }
+        fa.icon().ifPresent(ThrowingConsumer.toConsumer(icon -> {
+            writeString(xml, key, icon.getFileName());
+        }));
     }
 
     private static void addFaToCFBundleDocumentTypes(XMLStreamWriter xml,
@@ -217,7 +218,10 @@ final class MacAppImageBuilder2 {
 
     private static void writeFileAssociationIcons(BuildEnv env, Application app,
             ApplicationLayout appLayout) throws IOException {
-        for (var faIcon : app.fileAssociations().filter(FileAssociation::hasIcon).map(FileAssociation::icon).toList()) {
+        for (var faIcon : app.fileAssociations()
+                .filter(FileAssociation::hasIcon)
+                .map(FileAssociation::icon)
+                .map(Optional::get).toList()) {
             Files.copy(faIcon, appLayout.destktopIntegrationDirectory().resolve(faIcon.getFileName()));
         }
     }

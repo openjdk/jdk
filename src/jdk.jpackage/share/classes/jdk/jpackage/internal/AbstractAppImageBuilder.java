@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
@@ -78,7 +79,7 @@ public abstract class AbstractAppImageBuilder {
             }
         }, new Launcher.Unsupported() {
             @Override
-            public LauncherStartupInfo startupInfo() {
+            public Optional<LauncherStartupInfo> startupInfo() {
                 return toSupplier(() -> new LauncherFromParams().create(params).startupInfo()).get();
             }
 

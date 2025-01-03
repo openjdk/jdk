@@ -36,11 +36,6 @@ public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
         }).orElseGet(Map::of);
     }
 
-    @Override
-    default String defaultIconResourceName() {
-        return "JavaApp.png";
-    }
-
     public static LinuxLauncher create(Launcher launcher, LinuxLauncherMixin mixin) {
         return CompositeProxy.create(LinuxLauncher.class, launcher, mixin);
     }

@@ -45,7 +45,7 @@ import java.util.stream.Stream;
  */
 final class CfgFile {
     CfgFile(Application app, Launcher launcher) {
-        startupInfo = launcher.startupInfo();
+        startupInfo = launcher.startupInfo().orElseThrow();
         outputFileName = launcher.executableName() + ".cfg";
         version = app.version();
     }

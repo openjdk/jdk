@@ -45,15 +45,28 @@ import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
+import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.LauncherIcon;
 
 final class LauncherBuilder {
 
     Launcher create() throws ConfigException {
-        validateIcon(icon);
-        var fa = toFunction(this::createFileAssociations).apply(faSources.stream()).toList();
-        return new Stub(name, startupInfo, fa, isService, description, icon);
+        try {
+            CustomLauncherIcon.fromLauncherIcon(icon)
+                    .map(CustomLauncherIcon::path)
+                    .ifPresent(toConsumer(LauncherBuilder::validateIcon));
+
+            var fa = createFileAssociations(faSources.stream()).toList();
+
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(description);
+            Objects.requireNonNull(defaultIconResourceName);
+
+            return new Stub(name, Optional.ofNullable(startupInfo), fa, isService, description, Optional.ofNullable(icon), defaultIconResourceName);
+        } catch (RuntimeException ex) {
+            throw ConfigException.rethrowConfigException(ex);
+        }
     }
 
     LauncherBuilder name(String v) {
@@ -86,8 +99,13 @@ final class LauncherBuilder {
         return this;
     }
 
-    LauncherBuilder icon(Path v) {
+    LauncherBuilder icon(LauncherIcon v) {
         icon = v;
+        return this;
+    }
+
+    LauncherBuilder defaultIconResourceName(String v) {
+        defaultIconResourceName = v;
         return this;
     }
 
@@ -98,10 +116,6 @@ final class LauncherBuilder {
     }
 
     static void validateIcon(Path icon) throws ConfigException {
-        if (icon == null || icon.toString().isEmpty()) {
-            return;
-        }
-
         switch (OperatingSystem.current()) {
             case WINDOWS -> {
                 if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
@@ -185,5 +199,6 @@ final class LauncherBuilder {
     private Predicate<FileAssociation> faPrediacate = LauncherBuilder::isFileAssociationValid;
     private boolean isService;
     private String description;
-    private Path icon;
+    private LauncherIcon icon;
+    private String defaultIconResourceName;
 }

@@ -41,8 +41,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.CustomLauncherIcon;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 
@@ -140,18 +143,15 @@ final class AppImageBuilder {
 
     private AppImageBuilder(Application app, List<Path> excludeCopyDirs,
             Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
-        this(app, app.asApplicationLayout(), excludeCopyDirs, true,
-                customAppImageItemGroups);
+        this(app, app.asApplicationLayout().orElseThrow(), excludeCopyDirs, true, customAppImageItemGroups);
     }
 
     private AppImageBuilder(Package pkg, List<Path> excludeCopyDirs,
             Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
-        this(pkg.app(), pkg.asPackageApplicationLayout(), excludeCopyDirs, false,
-                customAppImageItemGroups);
+        this(pkg.app(), pkg.asPackageApplicationLayout().orElseThrow(), excludeCopyDirs, false, customAppImageItemGroups);
     }
 
-    private static void copyRecursive(Path srcDir, Path dstDir,
-            List<Path> excludeDirs) throws IOException {
+    private static void copyRecursive(Path srcDir, Path dstDir, List<Path> excludeDirs) throws IOException {
         srcDir = srcDir.toAbsolutePath();
 
         List<Path> excludes = new ArrayList<>();
@@ -169,48 +169,55 @@ final class AppImageBuilder {
 
     void execute(BuildEnv env) throws IOException, PackagerException {
         var resolvedAppLayout = appLayout.resolveAt(env.appImageDir());
-        for (var group : AppImageItemGroup.values()) {
-            for (var appImageItem : Optional.ofNullable(appImageItemGroups.get(group)).orElseGet(List::of)) {
-                appImageItem.write(env, app, resolvedAppLayout);
-            }
+        try {
+            Stream.of(AppImageItemGroup.values())
+                    .map(appImageItemGroups::get)
+                    .filter(Objects::nonNull)
+                    .flatMap(List::stream)
+                    .forEachOrdered(toConsumer(appImageItem -> {
+                        appImageItem.write(env, app, resolvedAppLayout);
+                    }));
+        } catch (ExceptionBox ex) {
+            throw ExceptionBox.rethrowUnchecked(ex);
         }
     }
 
-    static OverridableResource createLauncherIconResource(Application app,
+    static Optional<OverridableResource> createLauncherIconResource(Application app,
             Launcher launcher,
             Function<String, OverridableResource> resourceSupplier) {
         final String defaultIconName = launcher.defaultIconResourceName();
-        final String resourcePublicName = launcher.executableName() + PathUtils.getSuffix(Path.of(
-                defaultIconName));
+        final String resourcePublicName = launcher.executableName() + PathUtils.getSuffix(Path.of(defaultIconName));
 
-        var iconType = IconType.getLauncherIconType(launcher.icon());
-        if (iconType == IconType.NO_ICON) {
-            return null;
+        if (!launcher.hasIcon()) {
+            return Optional.empty();
         }
 
         OverridableResource resource = resourceSupplier.apply(defaultIconName)
                 .setCategory("icon")
-                .setExternal(launcher.icon())
                 .setPublicName(resourcePublicName);
 
-        if (iconType == IconType.DEFAULT_OR_RESOURCEDIR_ICON && app.mainLauncher() != launcher) {
+        launcher.icon().flatMap(CustomLauncherIcon::fromLauncherIcon).map(CustomLauncherIcon::path).ifPresent(resource::setExternal);
+
+        if (launcher.hasDefaultIcon() && app.mainLauncher().orElseThrow() != launcher) {
             // No icon explicitly configured for this launcher.
             // Dry-run resource creation to figure out its source.
             final Path nullPath = null;
             if (toSupplier(() -> resource.saveToFile(nullPath)).get() != OverridableResource.Source.ResourceDir) {
                 // No icon in resource dir for this launcher, inherit icon
                 // configured for the main launcher.
-                return createLauncherIconResource(app, app.mainLauncher(),
-                        resourceSupplier).setLogPublicName(resourcePublicName);
+                return createLauncherIconResource(
+                        app, app.mainLauncher().orElseThrow(),
+                        resourceSupplier
+                ).map(r -> r.setLogPublicName(resourcePublicName));
             }
         }
 
-        return resource;
+        return Optional.of(resource);
     }
 
     private static AppImageItem createRuntimeAppImageItem() {
         return (env, app, appLayout) -> {
-            app.runtimeBuilder().createRuntime(appLayout);
+            app.runtimeBuilder().ifPresent(toConsumer(runtimeBuilder -> runtimeBuilder.createRuntime(appLayout)));
         };
     }
 
@@ -227,11 +234,11 @@ final class AppImageBuilder {
                     Stream.of(env.buildRoot(), env.appImageDir())
             ).map(Path::toAbsolutePath).toList();
 
-            if (app.srcDir() != null) {
-                copyRecursive(app.srcDir(), appLayout.appDirectory(), excludeCandidates);
-            }
+            app.srcDir().ifPresent(toConsumer(srcDir -> {
+                copyRecursive(srcDir, appLayout.appDirectory(), excludeCandidates);
+            }));
 
-            for (var srcDir : Optional.ofNullable(app.contentDirs()).orElseGet(List::of)) {
+            for (var srcDir : app.contentDirs()) {
                 copyRecursive(srcDir,
                         appLayout.contentDirectory().resolve(srcDir.getFileName()),
                         excludeCandidates);
@@ -256,20 +263,6 @@ final class AppImageBuilder {
                 executableFile.toFile().setExecutable(true);
             }
         };
-    }
-
-    private enum IconType {
-        DEFAULT_OR_RESOURCEDIR_ICON, CUSTOM_ICON, NO_ICON;
-
-        public static IconType getLauncherIconType(Path iconPath) {
-            if (iconPath == null) {
-                return DEFAULT_OR_RESOURCEDIR_ICON;
-            }
-            if (iconPath.toFile().getName().isEmpty()) {
-                return NO_ICON;
-            }
-            return CUSTOM_ICON;
-        }
     }
 
     private final Application app;

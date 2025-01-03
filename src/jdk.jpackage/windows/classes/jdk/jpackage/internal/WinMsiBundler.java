@@ -30,6 +30,7 @@ import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
@@ -42,7 +43,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -56,7 +56,6 @@ import javax.xml.xpath.XPathFactory;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.RuntimeLayout;
-import jdk.jpackage.internal.util.FileUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -209,24 +208,23 @@ public class WinMsiBundler  extends AbstractBundler {
         AppImageLayout appImageLayout;
 
         // we either have an application image or need to build one
-        if (pkg.app().runtimeBuilder() != null) {
+        if (pkg.app().runtimeBuilder().isPresent()) {
             // Runtime builder is present, build app image.
             WinAppImageBuilder.build()
                     .excludeDirFromCopying(msiOutputDir)
                     .create(pkg.app()).execute(env);
             appImageLayout = pkg.appImageLayout().resolveAt(env.appImageDir());
         } else {
-            Path srcAppImageDir = pkg.predefinedAppImage();
-            if (srcAppImageDir == null) {
+            Path srcAppImageDir = pkg.predefinedAppImage().orElseGet(() -> {
                 // No predefined app image and no runtime builder.
                 // This should be runtime packaging.
                 if (pkg.isRuntimeInstaller()) {
-                    srcAppImageDir = env.appImageDir();
+                    return env.appImageDir();
                 } else {
                     // Can't create app image without runtime builder.
                     throw new UnsupportedOperationException();
                 }
-            }
+            });
 
             appImageLayout = pkg.appImageLayout().resolveAt(srcAppImageDir);
         }
@@ -240,20 +238,23 @@ public class WinMsiBundler  extends AbstractBundler {
             installerIcon = runtimeLayout.runtimeDirectory().resolve(Path.of("bin", "java.exe"));
         } else if (appImageLayout instanceof ApplicationLayout appLayout) {
             installerIcon = appLayout.launchersDirectory().resolve(
-                    pkg.app().mainLauncher().executableNameWithSuffix());
+                    pkg.app().mainLauncher().orElseThrow().executableNameWithSuffix());
         }
         installerIcon = installerIcon.toAbsolutePath();
 
-        Path licenseFile = pkg.licenseFile();
-        if (licenseFile != null) {
+        pkg.licenseFile().ifPresent(licenseFile -> {
             // need to copy license file to the working directory
             // and convert to rtf if needed
             Path destFile = env.configDir().resolve(licenseFile.getFileName());
 
-            IOUtils.copyFile(licenseFile, destFile);
+            try {
+                IOUtils.copyFile(licenseFile, destFile);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
             destFile.toFile().setWritable(true);
             ensureByMutationFileIsRTF(destFile);
-        }
+        });
     }
 
     @Override
@@ -312,15 +313,15 @@ public class WinMsiBundler  extends AbstractBundler {
             data.put("JpIcon", installerIcon.toString());
         }
 
-        Optional.ofNullable(pkg.helpURL()).ifPresent(value -> {
+        pkg.helpURL().ifPresent(value -> {
             data.put("JpHelpURL", value);
         });
 
-        Optional.ofNullable(pkg.updateURL()).ifPresent(value -> {
+        pkg.updateURL().ifPresent(value -> {
             data.put("JpUpdateURL", value);
         });
 
-        Optional.ofNullable(pkg.aboutURL()).ifPresent(value -> {
+        pkg.aboutURL().ifPresent(value -> {
             data.put("JpAboutURL", value);
         });
 
@@ -397,7 +398,10 @@ public class WinMsiBundler  extends AbstractBundler {
         // Filter out custom l10n files that were already used to
         // override primary l10n files. Ignore case filename comparison,
         // both lists are expected to be short.
-        List<Path> customWxlFiles = getWxlFilesFromDir(env.resourceDir()).stream()
+        List<Path> customWxlFiles = env.resourceDir()
+                .map(WinMsiBundler::getWxlFilesFromDir)
+                .orElseGet(Collections::emptyList)
+                .stream()
                 .filter(custom -> primaryWxlFiles.stream().noneMatch(primary ->
                         primary.getFileName().toString().equalsIgnoreCase(
                                 custom.getFileName().toString())))
@@ -460,11 +464,7 @@ public class WinMsiBundler  extends AbstractBundler {
         return msiOut;
     }
 
-    private static List<Path> getWxlFilesFromDir(Path dir) throws IOException {
-        if (dir == null) {
-            return Collections.emptyList();
-        }
-
+    private static List<Path> getWxlFilesFromDir(Path dir) {
         final String glob = "glob:**/*.wxl";
         final PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher(
                 glob);
@@ -475,10 +475,12 @@ public class WinMsiBundler  extends AbstractBundler {
                     .filter(pathMatcher::matches)
                     .sorted((a, b) -> a.getFileName().toString().compareToIgnoreCase(b.getFileName().toString()))
                     .toList();
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
-    private static String getCultureFromWxlFile(Path wxlPath) throws IOException {
+    private static String getCultureFromWxlFile(Path wxlPath) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(false);
@@ -498,8 +500,10 @@ public class WinMsiBundler  extends AbstractBundler {
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
-            throw new IOException(I18N.format("error.read-wix-l10n-file",
-                    wxlPath.toAbsolutePath().normalize()), ex);
+            throw new UncheckedIOException(new IOException(
+                    I18N.format("error.read-wix-l10n-file", wxlPath.toAbsolutePath().normalize()), ex));
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 

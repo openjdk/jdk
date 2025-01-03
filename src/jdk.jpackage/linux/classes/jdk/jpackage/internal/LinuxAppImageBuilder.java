@@ -26,6 +26,7 @@ package jdk.jpackage.internal;
 
 import jdk.jpackage.internal.model.Application;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.jpackage.internal.AppImageBuilder.AppImageItemGroup;
@@ -54,12 +55,15 @@ final class LinuxAppImageBuilder {
     private static void writeLauncherIcons(BuildEnv env, Application app,
             ApplicationLayout appLayout) throws IOException {
         for (var launcher : app.launchers()) {
-            var iconResource = createLauncherIconResource(app, launcher, env::createResource);
-            if (iconResource != null) {
+            createLauncherIconResource(app, launcher, env::createResource).ifPresent(iconResource -> {
                 String iconFileName = launcher.executableName() + ".png";
                 Path iconTarget = appLayout.destktopIntegrationDirectory().resolve(iconFileName);
-                iconResource.saveToFile(iconTarget);
-            }
+                try {
+                    iconResource.saveToFile(iconTarget);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            });
         }
     }
 

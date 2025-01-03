@@ -33,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -84,7 +85,7 @@ final class ExecutableRebrander {
         this.props.put("ORIGINAL_FILENAME", props.executableName);
     }
 
-    void execute(BuildEnv env, Path target, Path icon) throws IOException {
+    void execute(BuildEnv env, Path target, Optional<Path> icon) {
         String[] propsArray = toStringArray(propertiesFileResource, props);
 
         UpdateResourceAction versionSwapper = resourceLock -> {
@@ -94,20 +95,26 @@ final class ExecutableRebrander {
             }
         };
 
-        final var absIcon = Optional.ofNullable(icon)
+        Optional<UpdateResourceAction> updateIcon = icon
                 .map(Path::toAbsolutePath)
                 .map(ShortPathUtils::adjustPath)
-                .orElse(null);
-        if (absIcon == null) {
-            rebrandExecutable(env, target, versionSwapper);
-        } else {
-            rebrandExecutable(env, target, versionSwapper,
-                    resourceLock -> {
+                .map(absIcon -> {
+                    return resourceLock -> {
                         if (iconSwap(resourceLock, absIcon.toString()) != 0) {
                             throw new RuntimeException(MessageFormat.format(
                                     I18N.getString("error.icon-swap"), absIcon));
                         }
-                    });
+                    };
+                });
+
+        try {
+            if (updateIcon.isEmpty()) {
+                rebrandExecutable(env, target, versionSwapper);
+            } else {
+                rebrandExecutable(env, target, versionSwapper, updateIcon.orElseThrow());
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
@@ -176,13 +183,17 @@ final class ExecutableRebrander {
 
     private static String[] toStringArray(
             OverridableResource propertiesFileResource,
-            Map<String, String> props) throws IOException {
+            Map<String, String> props) {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        propertiesFileResource
-                .setSubstitutionData(props)
-                .setCategory(I18N.getString(
-                        "resource.executable-properties-template"))
-                .saveToStream(buffer);
+        try {
+            propertiesFileResource
+                    .setSubstitutionData(props)
+                    .setCategory(I18N.getString(
+                            "resource.executable-properties-template"))
+                    .saveToStream(buffer);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
 
         try (Reader reader = new InputStreamReader(new ByteArrayInputStream(
                 buffer.toByteArray()), StandardCharsets.UTF_8)) {
@@ -191,6 +202,8 @@ final class ExecutableRebrander {
             return configProp.entrySet().stream().flatMap(e -> Stream.of(
                     e.getKey().toString(), e.getValue().toString())).toArray(
                     String[]::new);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 

@@ -72,7 +72,8 @@ final class ApplicationBuilder {
                 Optional.ofNullable(version).orElseGet(DEFAULTS::version),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
-                srcDir, contentDirs, appImageLayout, runtimeBuilder, launchersAsList);
+                Optional.ofNullable(srcDir),
+                contentDirs, appImageLayout, Optional.ofNullable(runtimeBuilder), launchersAsList);
     }
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {

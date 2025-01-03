@@ -25,6 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface WinMsiPackageMixin {
@@ -33,9 +34,9 @@ public interface WinMsiPackageMixin {
 
     boolean withShortcutPrompt();
 
-    String helpURL();
+    Optional<String> helpURL();
 
-    String updateURL();
+    Optional<String> updateURL();
 
     String startMenuGroupName();
 
@@ -45,10 +46,10 @@ public interface WinMsiPackageMixin {
 
     UUID productCode();
 
-    Path serviceInstaller();
+    Optional<Path> serviceInstaller();
 
     record Stub(boolean withInstallDirChooser, boolean withShortcutPrompt,
-            String helpURL, String updateURL, String startMenuGroupName,
+            Optional<String> helpURL, Optional<String> updateURL, String startMenuGroupName,
             boolean isSystemWideInstall, UUID upgradeCode, UUID productCode,
-            Path serviceInstaller) implements WinMsiPackageMixin {}
+            Optional<Path> serviceInstaller) implements WinMsiPackageMixin {}
 }

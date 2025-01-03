@@ -35,8 +35,8 @@ import jdk.jpackage.internal.util.CompositeProxy;
 public interface WinLauncher extends Launcher, WinLauncherMixin {
 
     @Override
-    default String executableSuffix() {
-        return ".exe";
+    default Optional<String> executableSuffix() {
+        return Optional.of(".exe");
     }
 
     @Override
@@ -49,11 +49,6 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
     default Map<String, String> extraAppImageFileData() {
         return Optional.ofNullable(shortcuts()).orElseGet(Set::of).stream().collect(
                 toMap(WinShortcut::name, v -> Boolean.toString(true)));
-    }
-
-    @Override
-    default String defaultIconResourceName() {
-        return "JavaApp.ico";
     }
 
     public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {

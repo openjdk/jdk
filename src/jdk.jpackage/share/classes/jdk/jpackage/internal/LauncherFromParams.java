@@ -24,12 +24,17 @@
  */
 package jdk.jpackage.internal;
 
+import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.internal.model.Launcher;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import jdk.internal.util.OperatingSystem;
+import static jdk.internal.util.OperatingSystem.LINUX;
+import static jdk.internal.util.OperatingSystem.MACOS;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
@@ -43,7 +48,10 @@ import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.LauncherIcon;
 
 record LauncherFromParams(Predicate<FileAssociation> faPredicate) {
 
@@ -58,9 +66,10 @@ record LauncherFromParams(Predicate<FileAssociation> faPredicate) {
     Launcher create(Map<String, ? super Object> params) throws ConfigException {
         var builder = new LauncherBuilder()
                 .description(DESCRIPTION.fetchFrom(params))
-                .icon(ICON.fetchFrom(params))
+                .icon(toLauncherIcon(ICON.fetchFrom(params)))
                 .isService(LAUNCHER_AS_SERVICE.fetchFrom(params))
                 .name(APP_NAME.fetchFrom(params))
+                .defaultIconResourceName(defaultIconResourceName())
                 .faPrediacate(faPredicate);
 
         if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
@@ -82,5 +91,32 @@ record LauncherFromParams(Predicate<FileAssociation> faPredicate) {
         }).toList();
 
         return builder.faSources(faSources).create();
+    }
+
+    private static LauncherIcon toLauncherIcon(Path launcherIconPath) {
+        if (launcherIconPath == null) {
+            return DefaultLauncherIcon.INSTANCE;
+        } else if (launcherIconPath.toString().isEmpty()) {
+            return null;
+        } else {
+            return CustomLauncherIcon.create(launcherIconPath);
+        }
+    }
+
+    private static String defaultIconResourceName() {
+        switch (OperatingSystem.current()) {
+            case WINDOWS -> {
+                return "JavaApp.ico";
+            }
+            case LINUX -> {
+                return "JavaApp.png";
+            }
+            case MACOS -> {
+                return "JavaApp.icns";
+            }
+            default -> {
+                throw new UnsupportedOperationException();
+            }
+        }
     }
 }

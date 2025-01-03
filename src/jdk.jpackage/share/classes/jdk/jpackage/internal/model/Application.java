@@ -25,6 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,21 +43,21 @@ public interface Application {
 
     String copyright();
 
-    Path srcDir();
+    Optional<Path> srcDir();
 
     List<Path> contentDirs();
 
     AppImageLayout imageLayout();
 
-    default ApplicationLayout asApplicationLayout() {
+    default Optional<ApplicationLayout> asApplicationLayout() {
         if (imageLayout() instanceof ApplicationLayout layout) {
-            return layout;
+            return Optional.of(layout);
         } else {
-            throw new UnsupportedOperationException();
+            return Optional.empty();
         }
     }
 
-    RuntimeBuilder runtimeBuilder();
+    Optional<RuntimeBuilder> runtimeBuilder();
 
     default Path appImageDirName() {
         return Path.of(name());
@@ -64,12 +65,12 @@ public interface Application {
 
     List<Launcher> launchers();
 
-    default Launcher mainLauncher() {
-        return ApplicationLaunchers.fromList(launchers()).mainLauncher();
+    default Optional<Launcher> mainLauncher() {
+        return ApplicationLaunchers.fromList(launchers()).map(ApplicationLaunchers::mainLauncher);
     }
 
     default List<Launcher> additionalLaunchers() {
-        return ApplicationLaunchers.fromList(launchers()).additionalLaunchers();
+        return ApplicationLaunchers.fromList(launchers()).map(ApplicationLaunchers::additionalLaunchers).orElseGet(Collections::emptyList);
     }
 
     default boolean isRuntime() {
@@ -90,8 +91,8 @@ public interface Application {
     }
 
     record Stub(String name, String description, String version, String vendor,
-            String copyright, Path srcDir, List<Path> contentDirs,
-            AppImageLayout imageLayout, RuntimeBuilder runtimeBuilder,
+            String copyright, Optional<Path> srcDir, List<Path> contentDirs,
+            AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
             List<Launcher> launchers) implements Application {
     }
 
@@ -123,7 +124,7 @@ public interface Application {
         }
 
         @Override
-        public Path srcDir() {
+        public Optional<Path> srcDir() {
             throw new UnsupportedOperationException();
         }
 
@@ -138,7 +139,7 @@ public interface Application {
         }
 
         @Override
-        public RuntimeBuilder runtimeBuilder() {
+        public Optional<RuntimeBuilder> runtimeBuilder() {
             throw new UnsupportedOperationException();
         }
 

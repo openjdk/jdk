@@ -340,7 +340,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     protected Map<String, String> createReplacementData(BuildEnv env, LinuxPackage pkg) throws IOException {
         Map<String, String> data = new HashMap<>();
 
-        String licenseText = Optional.ofNullable(pkg.licenseFile()).map(toFunction(Files::readString)).orElse("Unknown");
+        String licenseText = pkg.licenseFile().map(toFunction(Files::readString)).orElse("Unknown");
 
         data.put("APPLICATION_MAINTAINER", ((LinuxDebPackage) pkg).maintainer());
         data.put("APPLICATION_SECTION", pkg.category());
@@ -350,7 +350,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
         data.put("APPLICATION_INSTALLED_SIZE", Long.toString(
                 AppImageLayout.toPathGroup(pkg.packageLayout().resolveAt(
                         env.appImageDir())).sizeInBytes() >> 10));
-        data.put("APPLICATION_HOMEPAGE", Optional.ofNullable(pkg.aboutURL()).map(
+        data.put("APPLICATION_HOMEPAGE", pkg.aboutURL().map(
                 value -> "Homepage: " + value).orElse(""));
         data.put("APPLICATION_VERSION_WITH_RELEASE", ((LinuxDebPackage) pkg).versionWithRelease());
 

@@ -105,7 +105,9 @@ final class FromParams {
             if (predefinedRuntimeImage != null) {
                 runtimeBuilderBuilder.forRuntime(predefinedRuntimeImage);
             } else {
-                var startupInfos = launchers.asList().stream().map(Launcher::startupInfo).toList();
+                var startupInfos = launchers.asList().stream()
+                        .map(Launcher::startupInfo)
+                        .map(Optional::orElseThrow).toList();
                 runtimeBuilderBuilder.forNewRuntime(startupInfos)
                         .addModules(ADD_MODULES.fetchFrom(params))
                         .limitModules(LIMIT_MODULES.fetchFrom(params))

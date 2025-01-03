@@ -53,10 +53,9 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
     void initFromParams(BuildEnv env, WinMsiPackage pkg) {
         super.initFromParams(env, pkg);
 
-        Path licenseFile = pkg.licenseFile();
-        withLicenseDlg = licenseFile != null;
+        withLicenseDlg = pkg.licenseFile().isPresent();
         if (withLicenseDlg) {
-            Path licenseFileName = IOUtils.getFileName(licenseFile);
+            Path licenseFileName = pkg.licenseFile().orElseThrow().getFileName();
             Path destFile = getConfigRoot().resolve(licenseFileName);
             setWixVariable("JpLicenseRtf", destFile.toAbsolutePath().toString());
         }
