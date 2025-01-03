@@ -185,6 +185,11 @@ inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
 }
 
+// Convert pointer to uintptr_t
+inline uintptr_t p2u(const volatile void* p) {
+  return (uintptr_t) p;
+}
+
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
 //----------------------------------------------------------------------------------------------------

@@ -2029,8 +2029,6 @@
   /* HotSpot specific JVM_ACC constants from global anon enum */          \
   /************************************************************/          \
                                                                           \
-  declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
-                                                                          \
   declare_constant(JVM_CONSTANT_Utf8)                                     \
   declare_constant(JVM_CONSTANT_Unicode)                                  \
   declare_constant(JVM_CONSTANT_Integer)                                  \
