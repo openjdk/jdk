@@ -433,7 +433,7 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
   const uint64_t num_attempts_to_try   = MIN2((uint64_t)HeapSearchSteps, num_attempts_possible);
 
   const size_t stepsize = (attach_range == 0) ? // Only one try.
-    (size_t) highest_start : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
+    1 : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
 
   // Try reserve memory from top to bottom.
   for (size_t offset = attach_range;
