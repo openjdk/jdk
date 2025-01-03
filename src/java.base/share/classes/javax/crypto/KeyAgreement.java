@@ -666,7 +666,7 @@ public class KeyAgreement {
      *      Java Security Standard Algorithm Names Specification</a>
      *      for information about standard secret key algorithm names.
      *      Use "Generic" if the output will be used as the input keying
-     *      material of a {@link javax.crypto.KDF}.
+     *      material of a key derivation function (KDF).
      *
      * @return the shared secret key. The length of the key material
      *      may be adjusted to be compatible with the specified algorithm,

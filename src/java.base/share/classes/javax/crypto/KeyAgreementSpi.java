@@ -205,11 +205,14 @@ public abstract class KeyAgreementSpi {
      * {@code generateSecret} to change the private information used in
      * subsequent operations.
      *
-     * @param algorithm the requested secret-key algorithm. This is
-     *      different from the {@code KeyAgreement} algorithm provided
-     *      to the {@code getInstance} method. Use "Generic" if
-     *      the output will be used as the input keying material of a
-     *      {@link javax.crypto.KDF}.
+     * @param algorithm the requested secret-key algorithm. This is different
+     *      from the {@code KeyAgreement} algorithm provided to the
+     *      {@code getInstance} method. See the SecretKey Algorithms section in the
+     *      <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     *      Java Security Standard Algorithm Names Specification</a>
+     *      for information about standard secret key algorithm names.
+     *      Use "Generic" if the output will be used as the input keying
+     *      material of a key derivation function (KDF).
      *
      * @return the shared secret key. The length of the key material
      *      may be adjusted to be compatible with the specified algorithm,
