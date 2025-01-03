@@ -25,7 +25,7 @@
  * @test
  * @bug 8189441
  * @library /test/lib /test/jdk/sun/security/pkcs11
- * @summary make sure Generic is accepted by all KeyAgreement
+ * @summary make sure Generic is accepted by all KeyAgreement implementations
  */
 import javax.crypto.KeyAgreement;
 import java.security.KeyPairGenerator;

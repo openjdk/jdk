@@ -420,8 +420,8 @@ extends KeyAgreementSpi {
             }
             return skey;
         } else if (KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
-            // remove leading zero bytes per RFC 5246 Section 8.1.2
             if (algorithm.equalsIgnoreCase("TlsPremasterSecret")) {
+                // remove leading zero bytes per RFC 5246 Section 8.1.2
                 return new SecretKeySpec(
                         KeyUtil.trimZeroes(secret), "TlsPremasterSecret");
             } else {
