@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * The {@link TestClassInstantiator} is a utility class, which generates a class, and allows instantiating
@@ -62,16 +63,46 @@ public final class TestClassInstantiator {
      * @param codeGeneratorLibrary The library to be used for finding CodeGenerators in recursive instantiations.
      */
     public TestClassInstantiator(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary) {
-        // Open the base scope, and open the class.
+        this(packageName, className, codeGeneratorLibrary, new HashSet<String>());
+    }
+
+    /**
+     * Create a new {@link TestClassInstantiator} for a specific class, using the specified library and
+     * with a set of classes to import.
+     *
+     * @param packageName Name of the package for the class.
+     * @param className Name of the class.
+     * @param codeGeneratorLibrary The library to be used for finding CodeGenerators in recursive instantiations.
+     * @param imports Set of imported classes.
+     */
+    public TestClassInstantiator(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary, HashSet<String> imports) {
+        // Open the base scope.
         baseScope = new BaseScope(codeGeneratorLibrary);
         baseScope.setDebugContext("for TestClassInstantiator", null);
-        new Template("test_class_instantiator_open",
+
+        // package
+        new Template("test_class_instantiator_package",
             """
             package #{packageName};
+            """
+        ).where("packageName", packageName).instantiate(baseScope);
 
+        // import
+        Template importTemplate = new Template("test_class_instantiator_import",
+            """
+            import #{name};
+            """
+        );
+        for (String name : imports) {
+            importTemplate.where("name", name).instantiate(baseScope);
+        }
+
+        // Open class
+        new Template("test_class_instantiator_open",
+            """
             public class #{className} {
             """
-        ).where("packageName", packageName).where("className", className).instantiate(baseScope);
+        ).where("className", className).instantiate(baseScope);
         baseScope.stream.indent();
 
         // Open the class scope

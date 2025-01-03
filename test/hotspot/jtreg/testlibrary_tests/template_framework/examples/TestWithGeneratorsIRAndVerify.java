@@ -27,6 +27,8 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
+ * @compile ../../../compiler/lib/generators/Generators.java
+ * @compile ../../../compiler/lib/verify/Verify.java
  * @run driver template_framework.examples.TestWithGeneratorsIRAndVerify
  */
 
@@ -36,6 +38,8 @@ import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
 import compiler.lib.verify.*;
 import compiler.lib.ir_framework.*; // TODO maybe
+
+import java.util.HashSet;
 
 /**
  * TODO adjust this comment.
@@ -67,9 +71,13 @@ public class TestWithGeneratorsIRAndVerify {
 
     // Generate a source Java file as String
     public static String generate() {
-        TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest");
-
-        // TODO import!
+        // We need to import all the used classes.
+        HashSet<String> imports = new HashSet<String>();
+        imports.add("compiler.lib.ir_framework.*");
+        imports.add("compiler.lib.generators.*");
+        imports.add("compiler.lib.verify.*");
+        CodeGeneratorLibrary library = CodeGeneratorLibrary.standard();
+        TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest", library, imports);
 
         Template mainTemplate = new Template("my_example_main",
             """
