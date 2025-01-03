@@ -787,7 +787,8 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   j(NOMATCH);
 
   bind(HIT);
-  ctzc_bit(trailing_char, match_mask, isL, ch1, result);
+  // count bits of trailing zero chars
+  ctzc_bits(trailing_char, match_mask, isL, ch1, result);
   srli(trailing_char, trailing_char, 3);
   addi(cnt1, cnt1, 8);
   ble(cnt1, trailing_char, NOMATCH);
@@ -1027,7 +1028,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     srli(ch2, ch2, XLEN - 8); // pattern[m-2], 0x0000000b
     slli(ch1, tmp6, XLEN - 16);
     srli(ch1, ch1, XLEN - 8); // pattern[m-3], 0x0000000c
-    andi(tmp6, tmp6, 0xff); // pattern[m-4], 0x0000000d
+    zext(tmp6, tmp6, 8); // pattern[m-4], 0x0000000d
     slli(ch2, ch2, 16);
     orr(ch2, ch2, ch1); // 0x00000b0c
     slli(result, tmp3, 48); // use result as temp register
@@ -1536,15 +1537,16 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     // compute their difference.
     bind(DIFFERENCE);
     xorr(tmp3, tmp1, tmp2);
-    ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
+    // count bits of trailing zero chars
+    ctzc_bits(result, tmp3, isLL);
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
     if (isLL) {
-      andi(tmp1, tmp1, 0xFF);
-      andi(tmp2, tmp2, 0xFF);
+      zext(tmp1, tmp1, 8);
+      zext(tmp2, tmp2, 8);
     } else {
-      andi(tmp1, tmp1, 0xFFFF);
-      andi(tmp2, tmp2, 0xFFFF);
+      zext(tmp1, tmp1, 16);
+      zext(tmp2, tmp2, 16);
     }
     sub(result, tmp1, tmp2);
     j(DONE);

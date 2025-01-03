@@ -331,10 +331,11 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
   }
 }
 
-inline void PSPromotionManager::process_popped_location_depth(ScannerTask task) {
+inline void PSPromotionManager::process_popped_location_depth(ScannerTask task,
+                                                              bool stolen) {
   if (task.is_partial_array_state()) {
     assert(PSChunkLargeArrays, "invariant");
-    process_array_chunk(task.to_partial_array_state());
+    process_array_chunk(task.to_partial_array_state(), stolen);
   } else {
     if (task.is_narrow_oop_ptr()) {
       assert(UseCompressedOops, "Error");
@@ -348,13 +349,5 @@ inline void PSPromotionManager::process_popped_location_depth(ScannerTask task) 
 inline bool PSPromotionManager::steal_depth(int queue_num, ScannerTask& t) {
   return stack_array_depth()->steal(queue_num, t);
 }
-
-#if TASKQUEUE_STATS
-void PSPromotionManager::record_steal(ScannerTask task) {
-  if (task.is_partial_array_state()) {
-    ++_array_chunk_steals;
-  }
-}
-#endif // TASKQUEUE_STATS
 
 #endif // SHARE_GC_PARALLEL_PSPROMOTIONMANAGER_INLINE_HPP
