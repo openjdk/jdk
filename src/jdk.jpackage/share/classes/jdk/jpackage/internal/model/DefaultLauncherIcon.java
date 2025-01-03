@@ -24,14 +24,17 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
-public interface WinExePackageMixin {
+public interface DefaultLauncherIcon extends LauncherIcon {
 
-    WinMsiPackage msiPackage();
+    public static Optional<DefaultLauncherIcon> fromLauncherIcon(LauncherIcon icon) {
+        if (icon instanceof DefaultLauncherIcon defaultIcon) {
+            return Optional.of(defaultIcon);
+        } else {
+            return Optional.empty();
+        }
+    }
 
-    Optional<Path> icon();
-
-    record Stub(WinMsiPackage msiPackage, Optional<Path> icon) implements WinExePackageMixin {}
+    public static DefaultLauncherIcon INSTANCE = new DefaultLauncherIcon() {};
 }

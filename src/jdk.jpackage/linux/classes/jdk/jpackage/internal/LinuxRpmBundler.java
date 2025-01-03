@@ -125,13 +125,13 @@ public class LinuxRpmBundler extends LinuxPackageBundler {
         data.put("APPLICATION_SUMMARY", pkg.packageName());
         data.put("APPLICATION_LICENSE_TYPE", ((LinuxRpmPackage)pkg).licenseType());
 
-        String licenseFile = Optional.ofNullable(pkg.licenseFile()).map(v -> {
+        String licenseFile = pkg.licenseFile().map(v -> {
             return v.toAbsolutePath().normalize().toString();
         }).orElse(null);
         data.put("APPLICATION_LICENSE_FILE", licenseFile);
         data.put("APPLICATION_GROUP", pkg.category());
 
-        data.put("APPLICATION_URL", Optional.ofNullable(pkg.aboutURL()).orElse(""));
+        data.put("APPLICATION_URL", pkg.aboutURL().orElse(""));
 
         return data;
     }

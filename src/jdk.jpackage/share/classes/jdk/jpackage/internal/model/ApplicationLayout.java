@@ -25,6 +25,7 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import jdk.jpackage.internal.util.CompositeProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
@@ -64,6 +65,14 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         }
 
         public ApplicationLayout create() {
+
+            Objects.requireNonNull(runtimeDirectory);
+            Objects.requireNonNull(launchersDirectory);
+            Objects.requireNonNull(appDirectory);
+            Objects.requireNonNull(appModsDirectory);
+            Objects.requireNonNull(destktopIntegrationDirectory);
+            Objects.requireNonNull(contentDirectory);
+
             return ApplicationLayout.create(new AppImageLayout.Stub(
                     runtimeDirectory), new ApplicationLayoutMixin.Stub(
                     launchersDirectory, appDirectory, appModsDirectory,

@@ -25,12 +25,14 @@
 package jdk.jpackage.internal;
 
 import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
 
 interface BuildEnv {
 
     Path buildRoot();
 
-    Path resourceDir();
+    Optional<Path> resourceDir();
 
     /**
      * Returns path to application image directory.
@@ -57,7 +59,7 @@ interface BuildEnv {
         };
     }
 
-    static BuildEnv create(Path buildRoot, Path resourceDir, Class<?> resourceLocator) {
+    static BuildEnv create(Path buildRoot, Optional<Path> resourceDir, Class<?> resourceLocator) {
         return new BuildEnv() {
             @Override
             public Path buildRoot() {
@@ -65,7 +67,7 @@ interface BuildEnv {
             }
 
             @Override
-            public Path resourceDir() {
+            public Optional<Path> resourceDir() {
                 return resourceDir;
             }
 
@@ -77,7 +79,7 @@ interface BuildEnv {
                 } else {
                     resource = new OverridableResource();
                 }
-                return resource.setResourceDir(resourceDir);
+                return resource.setResourceDir(resourceDir.orElse(null));
             }
         };
     }
@@ -85,7 +87,7 @@ interface BuildEnv {
     static class Proxy implements BuildEnv {
 
         Proxy(BuildEnv target) {
-            this.target = target;
+            this.target = Objects.requireNonNull(target);
         }
 
         @Override
@@ -94,7 +96,7 @@ interface BuildEnv {
         }
 
         @Override
-        final public Path resourceDir() {
+        final public Optional<Path> resourceDir() {
             return target.resourceDir();
         }
 

@@ -24,14 +24,5 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.nio.file.Path;
-import java.util.Optional;
-
-public interface WinExePackageMixin {
-
-    WinMsiPackage msiPackage();
-
-    Optional<Path> icon();
-
-    record Stub(WinMsiPackage msiPackage, Optional<Path> icon) implements WinExePackageMixin {}
+public interface LauncherIcon {
 }

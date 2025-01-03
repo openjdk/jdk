@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal.model;
 
+import java.util.Optional;
+
 public interface LinuxPackageMixin {
 
     AppImageLayout packageLayout();
@@ -32,14 +34,14 @@ public interface LinuxPackageMixin {
 
     String category();
 
-    String additionalDependencies();
+    Optional<String> additionalDependencies();
 
     String release();
 
     String arch();
 
     record Stub(AppImageLayout packageLayout, String menuGroupName,
-            String category, String additionalDependencies, String release,
+            String category, Optional<String> additionalDependencies, String release,
             String arch) implements LinuxPackageMixin {
     }
 }

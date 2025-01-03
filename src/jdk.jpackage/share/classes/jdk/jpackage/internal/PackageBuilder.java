@@ -91,9 +91,9 @@ final class PackageBuilder {
                 effectiveName,
                 Optional.ofNullable(description).orElseGet(app::description),
                 version = Optional.ofNullable(version).orElseGet(app::version),
-                aboutURL,
-                licenseFile,
-                predefinedAppImage,
+                Optional.ofNullable(aboutURL),
+                Optional.ofNullable(licenseFile),
+                Optional.ofNullable(predefinedAppImage),
                 relativeInstallDir);
     }
 

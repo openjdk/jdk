@@ -25,20 +25,15 @@
 package jdk.jpackage.internal.model;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-public record ApplicationLaunchers(Launcher mainLauncher,
-        List<Launcher> additionalLaunchers) {
+public record ApplicationLaunchers(Launcher mainLauncher, List<Launcher> additionalLaunchers) {
 
     public ApplicationLaunchers  {
-        if (mainLauncher == null && additionalLaunchers != null) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    public ApplicationLaunchers() {
-        this(null, null);
+        Objects.requireNonNull(mainLauncher);
+        Objects.requireNonNull(additionalLaunchers);
     }
 
     public ApplicationLaunchers(Launcher mainLauncher) {
@@ -51,12 +46,12 @@ public record ApplicationLaunchers(Launcher mainLauncher,
         }).orElseGet(List::of);
     }
 
-    public static ApplicationLaunchers fromList(List<Launcher> launchers) {
+    public static Optional<ApplicationLaunchers> fromList(List<Launcher> launchers) {
         if (launchers == null || launchers.isEmpty()) {
-            return new ApplicationLaunchers();
+            return Optional.empty();
         } else {
-            return new ApplicationLaunchers(launchers.getFirst(),
-                    launchers.subList(1, launchers.size()));
+            return Optional.of(new ApplicationLaunchers(launchers.getFirst(),
+                    launchers.subList(1, launchers.size())));
         }
     }
 }

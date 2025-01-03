@@ -81,13 +81,13 @@ final class DesktopIntegration extends ShellCustomAction {
 
         var curIconResource = createLauncherIconResource(pkg.app(), launcher,
                 env::createResource);
-        if (curIconResource == null) {
+
+        if (curIconResource.isEmpty()) {
             // This is additional launcher with explicit `no icon` configuration.
             withDesktopFile = false;
         } else {
             final Path nullPath = null;
-            if (curIconResource.saveToFile(nullPath)
-                    != OverridableResource.Source.DefaultResource) {
+            if (curIconResource.get().saveToFile(nullPath) != OverridableResource.Source.DefaultResource) {
                 // This launcher has custom icon configured.
                 withDesktopFile = true;
             }
@@ -110,23 +110,23 @@ final class DesktopIntegration extends ShellCustomAction {
         mimeInfoFile = createDesktopFile(mimeInfoFileName);
 
         if (withDesktopFile) {
-            desktopFile = createDesktopFile(desktopFileName);
-            iconFile = createDesktopFile(escapedAppFileName + ".png");
+            desktopFile = Optional.of(createDesktopFile(desktopFileName));
+            iconFile = Optional.of(createDesktopFile(escapedAppFileName + ".png"));
 
-            if (curIconResource == null) {
+            if (curIconResource.isEmpty()) {
                 // Create default icon.
-                curIconResource = createLauncherIconResource(pkg.app(), pkg.app().mainLauncher(), env::createResource);
+                curIconResource = createLauncherIconResource(pkg.app(), pkg.app().mainLauncher().orElseThrow(), env::createResource);
             }
         } else {
-            desktopFile = null;
-            iconFile = null;
+            desktopFile = Optional.empty();
+            iconFile = Optional.empty();
         }
 
         iconResource = curIconResource;
 
         desktopFileData = createDataForDesktopFile();
 
-        if (launcher != pkg.app().mainLauncher()) {
+        if (launcher != pkg.app().mainLauncher().orElseThrow()) {
             nestedIntegrations = List.of();
         } else {
             nestedIntegrations = pkg.app().additionalLaunchers().stream().map(v -> {
@@ -144,7 +144,7 @@ final class DesktopIntegration extends ShellCustomAction {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
         return new DesktopIntegration(env, (LinuxPackage) pkg,
-                (LinuxLauncher) pkg.app().mainLauncher());
+                (LinuxLauncher) pkg.app().mainLauncher().orElseThrow());
     }
 
     @Override
@@ -161,15 +161,15 @@ final class DesktopIntegration extends ShellCustomAction {
 
     @Override
     protected Map<String, String> createImpl() throws IOException {
-        if (iconFile != null) {
+        if (iconFile.isPresent()) {
             // Create application icon file.
-            iconResource.saveToFile(iconFile.srcPath());
+            iconResource.orElseThrow().saveToFile(iconFile.orElseThrow().srcPath());
         }
 
         Map<String, String> data = new HashMap<>(desktopFileData);
 
         final ShellCommands shellCommands;
-        if (desktopFile != null) {
+        if (desktopFile.isPresent()) {
             // Create application desktop description file.
             saveDesktopFile(data);
 
@@ -221,21 +221,18 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     private List<String> requiredPackagesSelf() {
-        if (desktopFile != null) {
-            return List.of("xdg-utils");
-        }
-        return Collections.emptyList();
+        return desktopFile.map(file -> List.of("xdg-utils")).orElseGet(Collections::emptyList);
     }
 
     private Map<String, String> createDataForDesktopFile() {
         Map<String, String> data = new HashMap<>();
         data.put("APPLICATION_NAME", launcher.name());
         data.put("APPLICATION_DESCRIPTION", launcher.description());
-        data.put("APPLICATION_ICON", Optional.ofNullable(iconFile).map(
+        data.put("APPLICATION_ICON", iconFile.map(
                 f -> f.installPath().toString()).orElse(null));
-        data.put("DEPLOY_BUNDLE_CATEGORY", pkg.category());
+        data.put("DEPLOY_BUNDLE_CATEGORY", pkg.menuGroupName());
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
-                pkg.asInstalledPackageApplicationLayout().launchersDirectory().resolve(
+                pkg.asInstalledPackageApplicationLayout().orElseThrow().launchersDirectory().resolve(
                         launcher.executableNameWithSuffix()).toString()));
 
         return data;
@@ -250,12 +247,13 @@ final class DesktopIntegration extends ShellCustomAction {
             registerIconCmds = new ArrayList<>();
             unregisterIconCmds = new ArrayList<>();
 
-            registerDesktopFileCmd = String.join(" ", "xdg-desktop-menu",
-                    "install", desktopFile.installPath().toString());
+            final var desktopFileInstallPath = desktopFile.orElseThrow().installPath().toString();
+
+            registerDesktopFileCmd = String.join(" ",
+                    "xdg-desktop-menu", "install", desktopFileInstallPath);
             unregisterDesktopFileCmd = String.join(" ",
-                    "do_if_file_belongs_to_single_package", desktopFile.
-                            installPath().toString(), "xdg-desktop-menu",
-                    "uninstall", desktopFile.installPath().toString());
+                    "do_if_file_belongs_to_single_package", desktopFileInstallPath,
+                    "xdg-desktop-menu", "uninstall", desktopFileInstallPath);
         }
 
         void setFileAssociations() {
@@ -266,6 +264,8 @@ final class DesktopIntegration extends ShellCustomAction {
                     "do_if_file_belongs_to_single_package", mimeInfoFile.
                             installPath().toString(), "xdg-mime", "uninstall",
                     mimeInfoFile.installPath().toString());
+
+            final var desktopFileInstallPath = desktopFile.orElseThrow().installPath();
 
             //
             // Add manual cleanup of system files to get rid of
@@ -281,11 +281,9 @@ final class DesktopIntegration extends ShellCustomAction {
             // of non-existing desktop file.
             //
             String cleanUpCommand = String.join(" ",
-                    "do_if_file_belongs_to_single_package", desktopFile.
-                            installPath().toString(),
-                    "desktop_uninstall_default_mime_handler", desktopFile.
-                            installPath().getFileName().toString(), String.join(
-                            " ", getMimeTypeNamesFromFileAssociations()));
+                    "do_if_file_belongs_to_single_package", desktopFileInstallPath.toString(),
+                    "desktop_uninstall_default_mime_handler", desktopFileInstallPath.getFileName().toString(),
+                    String.join(" ", getMimeTypeNamesFromFileAssociations()));
 
             unregisterFileAssociationsCmd = stringifyShellCommands(
                     unregisterFileAssociationsCmd, cleanUpCommand);
@@ -336,10 +334,8 @@ final class DesktopIntegration extends ShellCustomAction {
      *  - installPath(): path where it should be installed by package manager;
      */
     private InstallableFile createDesktopFile(String fileName) {
-        var srcPath = pkg.asPackageApplicationLayout().resolveAt(env.appImageDir()).destktopIntegrationDirectory().resolve(
-                fileName);
-        var installPath = pkg.asInstalledPackageApplicationLayout().destktopIntegrationDirectory().resolve(
-                fileName);
+        var srcPath = pkg.asPackageApplicationLayout().orElseThrow().resolveAt(env.appImageDir()).destktopIntegrationDirectory().resolve(fileName);
+        var installPath = pkg.asInstalledPackageApplicationLayout().orElseThrow().destktopIntegrationDirectory().resolve(fileName);
         return new InstallableFile(srcPath, installPath);
     }
 
@@ -349,9 +345,10 @@ final class DesktopIntegration extends ShellCustomAction {
             xml.writeStartElement("mime-type");
             xml.writeAttribute("type", fa.mimeType());
 
-            if (fa.hasNonEmptyDescription()) {
+            final var description = fa.nonEmptyDescription().orElse(null);
+            if (description != null) {
                 xml.writeStartElement("comment");
-                xml.writeCharacters(fa.description());
+                xml.writeCharacters(description);
                 xml.writeEndElement();
             }
 
@@ -392,11 +389,13 @@ final class DesktopIntegration extends ShellCustomAction {
 
             processedMimeTypes.add(mimeType);
 
+            final var faIcon = fa.icon().orElseThrow();
+
             // Create icon name for mime type from mime type.
             var faIconFile = createDesktopFile(mimeType.replace(File.separatorChar,
-                    '-') + PathUtils.getSuffix(fa.icon()));
+                    '-') + PathUtils.getSuffix(faIcon));
 
-            IOUtils.copyFile(fa.icon(), faIconFile.srcPath());
+            IOUtils.copyFile(faIcon, faIconFile.srcPath());
 
             shellCommands.addIcon(mimeType, faIconFile.installPath(), fa.iconSize());
         }
@@ -409,7 +408,7 @@ final class DesktopIntegration extends ShellCustomAction {
         // prepare desktop shortcut
         desktopFileResource
                 .setSubstitutionData(data)
-                .saveToFile(desktopFile.srcPath());
+                .saveToFile(desktopFile.orElseThrow().srcPath());
     }
 
     private List<String> getMimeTypeNamesFromFileAssociations() {
@@ -463,7 +462,7 @@ final class DesktopIntegration extends ShellCustomAction {
             var iconSize = getIconSize(fa);
             if (iconSize <= 0) {
                 // nullify the icon
-                fa = new FileAssociation.Stub(fa.description(), null,
+                fa = new FileAssociation.Stub(fa.description(), Optional.empty(),
                         fa.mimeType(), fa.extension());
             }
             return CompositeProxy.build()
@@ -474,8 +473,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
         private static int getIconSize(FileAssociation fa) {
             return Optional.of(fa)
-                    .filter(FileAssociation::hasIcon)
-                    .map(FileAssociation::icon)
+                    .flatMap(FileAssociation::icon)
                     .map(DesktopIntegration::getSquareSizeOfImage)
                     .orElse(-1);
         }
@@ -487,12 +485,12 @@ final class DesktopIntegration extends ShellCustomAction {
 
     private final List<LinuxFileAssociation> associations;
 
-    private final OverridableResource iconResource;
+    private final Optional<OverridableResource> iconResource;
     private final OverridableResource desktopFileResource;
 
     private final InstallableFile mimeInfoFile;
-    private final InstallableFile desktopFile;
-    private final InstallableFile iconFile;
+    private final Optional<InstallableFile> desktopFile;
+    private final Optional<InstallableFile> iconFile;
 
     private final List<DesktopIntegration> nestedIntegrations;
 

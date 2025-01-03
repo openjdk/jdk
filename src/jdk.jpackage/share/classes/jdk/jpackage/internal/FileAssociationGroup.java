@@ -38,6 +38,10 @@ import java.util.stream.Stream;
 import jdk.jpackage.internal.model.FileAssociation;
 
 final record FileAssociationGroup(List<FileAssociation> items) {
+    FileAssociationGroup {
+        Objects.requireNonNull(items);
+    }
+
     boolean isEmpty() {
         return items.isEmpty();
     }
@@ -67,10 +71,10 @@ final record FileAssociationGroup(List<FileAssociation> items) {
         FileAssociationGroup create() {
             Function<String, Stream<FileAssociation>> forExtension = ext -> {
                 if (mimeTypes.isEmpty()) {
-                    return Stream.of((FileAssociation)new FileAssociation.Stub(description, icon, null, ext));
+                    return Stream.of(createFileAssociation(Optional.empty(), ext));
                 } else {
                     return mimeTypes.stream().map(faMimeType -> {
-                        return (FileAssociation)new FileAssociation.Stub(description, icon, faMimeType, ext);
+                        return createFileAssociation(Optional.of(faMimeType), ext);
                     });
                 }
             };
@@ -108,6 +112,11 @@ final record FileAssociationGroup(List<FileAssociation> items) {
         private static Set<String> conv(Collection<String> col) {
             return Optional.ofNullable(col).map(Collection::stream).orElseGet(
                     Stream::of).collect(toSet());
+        }
+
+        private FileAssociation createFileAssociation(Optional<String> mimeType, String ext) {
+            Objects.requireNonNull(ext);
+            return new FileAssociation.Stub(Optional.ofNullable(description), Optional.ofNullable(icon), mimeType.orElse(null), ext);
         }
 
         private Path icon;

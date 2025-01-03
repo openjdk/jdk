@@ -25,6 +25,8 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
+import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface LinuxPackage extends Package, LinuxPackageMixin {
@@ -34,18 +36,19 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
 
     @Override
     default String packageFileName() {
-        String packageFileNameTemlate;
-        switch (asStandardPackageType()) {
-            case LINUX_DEB -> {
-                packageFileNameTemlate = "%s_%s-%s_%s";
+        String packageFileNameTemlate = asStandardPackageType().map(stdType -> {
+            switch (stdType) {
+                case LINUX_DEB -> {
+                    return "%s_%s-%s_%s";
+                }
+                case LINUX_RPM -> {
+                    return "%s-%s-%s.%s";
+                }
+                default -> {
+                    throw new IllegalStateException();
+                }
             }
-            case LINUX_RPM -> {
-                packageFileNameTemlate = "%s-%s-%s.%s";
-            }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
-        }
+        }).orElseThrow(UnsupportedOperationException::new);
 
         return String.format(packageFileNameTemlate, packageName(), version(), release(), arch());
     }

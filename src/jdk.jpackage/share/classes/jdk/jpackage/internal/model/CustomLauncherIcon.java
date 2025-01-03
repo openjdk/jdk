@@ -25,13 +25,26 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
-public interface WinExePackageMixin {
+public interface CustomLauncherIcon extends LauncherIcon {
 
-    WinMsiPackage msiPackage();
+    Path path();
 
-    Optional<Path> icon();
+    public static Optional<CustomLauncherIcon> fromLauncherIcon(LauncherIcon icon) {
+        if (icon instanceof CustomLauncherIcon customIcon) {
+            return Optional.of(customIcon);
+        } else {
+            return Optional.empty();
+        }
+    }
 
-    record Stub(WinMsiPackage msiPackage, Optional<Path> icon) implements WinExePackageMixin {}
+    public static CustomLauncherIcon create(Path path) {
+        Objects.requireNonNull(path);
+        return new Stub(path);
+    }
+
+    record Stub(Path path) implements CustomLauncherIcon {
+    }
 }

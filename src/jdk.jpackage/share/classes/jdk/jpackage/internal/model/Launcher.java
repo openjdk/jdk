@@ -25,7 +25,6 @@
 package jdk.jpackage.internal.model;
 
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,15 +38,15 @@ public interface Launcher {
         return name();
     }
 
-    default String executableSuffix() {
-        return null;
+    default Optional<String> executableSuffix() {
+        return Optional.empty();
     }
 
     default String executableNameWithSuffix() {
-        return executableName() + Optional.ofNullable(executableSuffix()).orElse("");
+        return executableName() + executableSuffix().orElse("");
     }
 
-    LauncherStartupInfo startupInfo();
+    Optional<LauncherStartupInfo> startupInfo();
 
     List<FileAssociation> fileAssociations();
 
@@ -64,20 +63,28 @@ public interface Launcher {
     }
 
     /**
-     * Returns path to icon to assign for the launcher.
-     *
-     * Null for the default or resource directory icon, empty path for no icon,
-     * other value for custom icon.
+     * Icon for the launcher.
      */
-    Path icon();
+    Optional<LauncherIcon> icon();
 
-    default String defaultIconResourceName() {
-        return null;
+    default boolean hasIcon() {
+        return icon().isPresent();
     }
 
-    record Stub(String name, LauncherStartupInfo startupInfo,
+    default boolean hasDefaultIcon() {
+        return icon().flatMap(DefaultLauncherIcon::fromLauncherIcon).isPresent();
+    }
+
+    default boolean hasCustomIcon() {
+        return icon().flatMap(CustomLauncherIcon::fromLauncherIcon).isPresent();
+    }
+
+    String defaultIconResourceName();
+
+    record Stub(String name, Optional<LauncherStartupInfo> startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
-            String description, Path icon) implements Launcher {
+            String description, Optional<LauncherIcon> icon,
+            String defaultIconResourceName) implements Launcher {
     }
 
     class Unsupported implements Launcher {
@@ -88,7 +95,7 @@ public interface Launcher {
         }
 
         @Override
-        public LauncherStartupInfo startupInfo() {
+        public Optional<LauncherStartupInfo> startupInfo() {
             throw new UnsupportedOperationException();
         }
 
@@ -108,9 +115,13 @@ public interface Launcher {
         }
 
         @Override
-        public Path icon() {
+        public Optional<LauncherIcon> icon() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public String defaultIconResourceName() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

@@ -64,13 +64,13 @@ final class WinMsiPackageBuilder {
         return WinMsiPackage.create(pkg, new WinMsiPackageMixin.Stub(
                 withInstallDirChooser,
                 withShortcutPrompt,
-                helpURL,
-                updateURL,
+                Optional.ofNullable(helpURL),
+                Optional.ofNullable(updateURL),
                 startMenuGroupName,
                 isSystemWideInstall,
                 Optional.ofNullable(upgradeCode).orElseGet(() -> upgradeCode(pkg.app())),
                 productCode(pkg.app(), pkg.version()),
-                serviceInstaller));
+                Optional.ofNullable(serviceInstaller)));
     }
 
     private static UUID upgradeCode(Application app) {

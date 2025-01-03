@@ -111,23 +111,22 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
         try {
             // We either have an application image or need to build one.
-            if (pkg.app().runtimeBuilder() != null) {
+            if (pkg.app().runtimeBuilder().isPresent()) {
                 // Runtime builder is present, build app image.
                 LinuxAppImageBuilder.build()
                         .excludeDirFromCopying(outputParentDir)
                         .create(pkg).execute(pkgEnv);
             } else {
-                Path srcAppImageDir = pkg.predefinedAppImage();
-                if (srcAppImageDir == null) {
+                Path srcAppImageDir = pkg.predefinedAppImage().orElseGet(() -> {
                     // No predefined app image and no runtime builder.
                     // This should be runtime packaging.
                     if (pkg.isRuntimeInstaller()) {
-                        srcAppImageDir = env.appImageDir();
+                        return env.appImageDir();
                     } else {
                         // Can't create app image without runtime builder.
                         throw new UnsupportedOperationException();
                     }
-                }
+                });
 
                 var srcLayout = pkg.appImageLayout().resolveAt(srcAppImageDir);
                 var srcLayoutPathGroup = AppImageLayout.toPathGroup(srcLayout);
@@ -207,7 +206,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
         data.put("APPLICATION_DESCRIPTION", pkg.description());
 
         String defaultDeps = String.join(", ", getListOfNeededPackages(env));
-        String customDeps = Optional.ofNullable(pkg.additionalDependencies()).orElse("");
+        String customDeps = pkg.additionalDependencies().orElse("");
         if (!customDeps.isEmpty() && !defaultDeps.isEmpty()) {
             customDeps = ", " + customDeps;
         }

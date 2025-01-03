@@ -68,6 +68,7 @@ import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.XmlConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import org.w3c.dom.NodeList;
 
 /**
@@ -113,10 +114,11 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         if (!launchersAsServices.isEmpty()) {
             // Service installer tool will be installed in launchers directory
+            final var serviceInstallerPath = pkg.serviceInstaller().orElseThrow();
             serviceInstaller = new InstallableFile(
-                    pkg.serviceInstaller().toAbsolutePath().normalize(),
+                    serviceInstallerPath.toAbsolutePath().normalize(),
                     installedAppImage.launchersDirectory().resolve(
-                            pkg.serviceInstaller().getFileName()));
+                            serviceInstallerPath.getFileName()));
         }
 
         programMenuFolderName = pkg.startMenuGroupName();
@@ -181,10 +183,10 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
                 Launcher::executableNameWithSuffix,
                 WinLauncher::fileAssociations));
 
-        associations.values().stream().flatMap(List::stream).filter(FileAssociation::hasIcon).forEach(fa -> {
+        associations.values().stream().flatMap(List::stream).filter(FileAssociation::hasIcon).toList().forEach(fa -> {
             // Need to add fa icon in the image.
             Object key = new Object();
-            appImagePathGroup.setPath(key, fa.icon().toAbsolutePath().normalize());
+            appImagePathGroup.setPath(key, fa.icon().orElseThrow().toAbsolutePath().normalize());
             installedAppImagePathGroup.setPath(key, getInstalledFaIcoPath(fa));
         });
     }
@@ -523,9 +525,9 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         Path path = INSTALLDIR.resolve(String.format("%s_%s", fa.extension(), launcherExe));
         return addComponent(xml, path, Component.ProgId, unused -> {
-            if (fa.hasNonEmptyDescription()) {
-                xml.writeAttribute("Description", fa.description());
-            }
+            fa.nonEmptyDescription().ifPresent(toConsumer(description -> {
+                xml.writeAttribute("Description", description);
+            }));
 
             if (fa.hasIcon()) {
                 xml.writeAttribute("Icon", Id.File.of(getInstalledFaIcoPath(fa)));
