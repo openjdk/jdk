@@ -64,31 +64,46 @@ public class TestRandomCode {
             """
             #{:my_code}
             #{:my_code}
-            """
+            """, 10
         ));
 
-        codeGenerators.add(new Template("my_loop",
+        codeGenerators.add(new Template("my_int_loop",
             """
             for (int ${i:int:immutable} = 0; $i < 100; $i++) {
                 #{:my_code:$i}
             }
-            """
+            """, 10
         ));
 
-        codeGenerators.add(new Template("my_var", "#{:var(type=int)}", 5));
-        codeGenerators.add(new Template("my_add", "(#{:my_expression} + #{:my_expression})", 5));
-        codeGenerators.add(new Template("my_sub", "(#{:my_expression} - #{:my_expression})", 5));
-        codeGenerators.add(new Template("my_mul", "(#{:my_expression} * #{:my_expression})", 5));
-        codeGenerators.add(new Template("my_and", "(#{:my_expression} & #{:my_expression})", 5));
-        codeGenerators.add(new Template("my_or",  "(#{:my_expression} | #{:my_expression})", 5));
-        codeGenerators.add(new Template("my_xor", "(#{:my_expression} ^ #{:my_expression})", 5));
+        codeGenerators.add(new Template("my_if",
+            """
+            if (#{:my_expr(type=bool)}) {
+                #{:my_code}
+            } else {
+                #{:my_code}
+            }
+            """, 10
+        ));
 
-        SelectorCodeGenerator expression = new SelectorCodeGenerator("my_expression", "int_con");
-        expression.add("int_con", 20);
+        codeGenerators.add(new Template("my_var", "#{:var(type=#type)}", 5));
+        codeGenerators.add(new Template("my_add", "(#{:my_expr(type=#type)} + #{:my_expr(type=#type)})", 5));
+        codeGenerators.add(new Template("my_sub", "(#{:my_expr(type=#type)} - #{:my_expr(type=#type)})", 5));
+        codeGenerators.add(new Template("my_mul", "(#{:my_expr(type=#type)} * #{:my_expr(type=#type)})", 5));
+        codeGenerators.add(new Template("my_and", "(#{:my_expr(type=#type)} & #{:my_expr(type=#type)})", 5));
+        codeGenerators.add(new Template("my_or",  "(#{:my_expr(type=#type)} | #{:my_expr(type=#type)})", 5));
+        codeGenerators.add(new Template("my_xor", "(#{:my_expr(type=#type)} ^ #{:my_expr(type=#type)})", 5));
+
+        SelectorCodeGenerator.Predicate isNumber = (Scope scope, Parameters parameters) -> {
+            String type = parameters.get("type", scope);
+            return type.equals("int") || type.equals("long");
+        };
+
+        SelectorCodeGenerator expression = new SelectorCodeGenerator("my_expr", "con");
+        expression.add("con", 10);
         expression.add("my_var", 20);
-        expression.add("my_add", 20);
-        expression.add("my_sub", 20);
-        expression.add("my_mul", 20);
+        expression.add("my_add", 20, isNumber);
+        expression.add("my_sub", 20, isNumber);
+        expression.add("my_mul", 20, isNumber);
         expression.add("my_and", 20);
         expression.add("my_or",  20);
         expression.add("my_xor", 20);
@@ -96,7 +111,8 @@ public class TestRandomCode {
 
         codeGenerators.add(new Template("my_assign_expression",
             """
-            #{:mutable_var(type=int)} = #{:my_expression};
+            // Assignment with type #{type:choose(from=int|long|bool)}
+            #{:mutable_var(type=#type)} = #{:my_expr(type=#type)};
             #{:my_code}
             """, 2
         ));
@@ -106,8 +122,9 @@ public class TestRandomCode {
         // This is the core of the random code generator: the selector picks a random template from above,
         // and then those templates may call back recursively to this selector.
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("my_code", "my_empty");
-        selectorForCode.add("my_split", 50);
-        selectorForCode.add("my_loop", 50);
+        selectorForCode.add("my_split", 10);
+        selectorForCode.add("my_int_loop", 10);
+        selectorForCode.add("my_if", 10);
         selectorForCode.add("my_assign_expression", 100);
         // TODO add more
         codeGenerators.add(selectorForCode);
@@ -122,11 +139,13 @@ public class TestRandomCode {
                 #open(class)
                 public static int main() {
                     #open(method)
-                    // make sure we have at least 1 mutable int variable.
-                    int ${x:int} = 0;
+                    // make sure we have at least 1 mutable variable per type.
+                    int ${xi:int} = 0;
+                    long ${xl:long} = 0;
+                    boolean ${xb:bool} = false;
                     // Add that variable to available variables, and call my_code.
-                    #{:my_code:$x}
-                    return $x;
+                    #{:my_code:$xi,$xl,$xb}
+                    return $xi;
                     #close(method)
                 }
                 #close(class)

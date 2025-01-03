@@ -35,12 +35,30 @@ import jdk.test.lib.Utils;
  * we first filter the list for {link CodeGenerator}s that have low enough
  * {@link CodeGenerator#fuelCost} for the remaining {@link Scope#fuel}, and if
  * none of them have sufficient fuel, the we take the generator with the
- * {@link defaultGeneratorName}.
+ * {@link defaultGeneratorName}. Optionally, one can also provide {@link Predicate}s
+ * which filter which generators are available, based on the {@link Scope} and
+ * {@link Parameters}.
  */
 public final class SelectorCodeGenerator extends CodeGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    /**
+     * {@link Predicate}s are used to enable / disable choices based on the
+     * state of the {@link Scope} and {@link Parameters}.
+     */
+    public interface Predicate {
+        /**
+         * Checks if the corresponding choice should be available.
+         *
+         * @param scope Scope of the {@link SelectorCodeGenerator}.
+         * @param parameters Parameters that would be passed to the choice's generator.
+         * @return A boolean indicating if the choice is to be available.
+         */
+        public boolean check(Scope scope, Parameters parameters);
+    }
+
     private HashMap<String,Float> choiceWeights;
+    private HashMap<String,Predicate> choicePredicates;
     private String defaultGeneratorName;
 
     /**
@@ -56,6 +74,7 @@ public final class SelectorCodeGenerator extends CodeGenerator {
         super(selectorName, 0);
         this.defaultGeneratorName = defaultGeneratorName;
         this.choiceWeights = new HashMap<String,Float>();
+        this.choicePredicates = new HashMap<String,Predicate>();
     }
 
     /**
@@ -63,8 +82,9 @@ public final class SelectorCodeGenerator extends CodeGenerator {
      *
      * @param name Name of the additional {@link CodeGenerator}.
      * @param weight Weight of the generator, used in random sampling.
+     * @param predicate Predicate that indicates if the choice is to be available.
      */
-    public void add(String name, float weight) {
+    public void add(String name, float weight, Predicate predicate) {
         if (!(0.1 < weight && weight < 10_000)) {
             throw new TemplateFrameworkException("Unreasonable weight " + weight + " for " + name);
 	}
@@ -72,19 +92,33 @@ public final class SelectorCodeGenerator extends CodeGenerator {
             throw new TemplateFrameworkException("Already added before: " + name);
 	}
         choiceWeights.put(name, weight);
+        choicePredicates.put(name, predicate);
+    }
+
+    /**
+     * Add another {@link CodeGenerator} name to the list, with a {@link Predicate} that
+     * always returns true, i.e. makes the choice always available.
+     *
+     * @param name Name of the additional {@link CodeGenerator}.
+     * @param weight Weight of the generator, used in random sampling.
+     */
+    public void add(String name, float weight) {
+        add(name, weight, (_, _) -> { return true; });
     }
 
     /**
      * Randomly sample one of the generators from the list, according to filter and weight.
      */
-    private String choose(Scope scope) {
+    private String choose(Scope scope, Parameters parameters) {
         // Total weight of allowed choices
         double total = 0;
         for (Map.Entry<String,Float> entry : choiceWeights.entrySet()) {
             String name = entry.getKey();
             float weight = entry.getValue().floatValue();
+            Predicate predicate = choicePredicates.get(name);
             CodeGenerator codeGenerator = scope.library().find(name, " in selector");
             if (scope.fuel < codeGenerator.fuelCost) { continue; }
+            if (!predicate.check(scope, parameters)) { continue; }
             total += weight;
         }
 
@@ -99,8 +133,10 @@ public final class SelectorCodeGenerator extends CodeGenerator {
         for (Map.Entry<String,Float> entry : choiceWeights.entrySet()) {
             String name = entry.getKey();
             float weight = entry.getValue().floatValue();
+            Predicate predicate = choicePredicates.get(name);
             CodeGenerator codeGenerator = scope.library().find(name, " in selector");
             if (scope.fuel < codeGenerator.fuelCost) { continue; }
+            if (!predicate.check(scope, parameters)) { continue; }
             total2 += weight;
             if (r <= total2) {
                 return name;
@@ -121,7 +157,7 @@ public final class SelectorCodeGenerator extends CodeGenerator {
     public void instantiate(Scope scope, Parameters parameters) {
         scope.setDebugContext(name, parameters);
         // Sample a generator.
-	String generatorName = choose(scope);
+	String generatorName = choose(scope, parameters);
         CodeGenerator generator = scope.library().find(generatorName, " in selector");
 
         // Dispatch via with new scope, but the same parameters.
