@@ -3337,7 +3337,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
     }
     if (Verbose && PrintMiscellaneous) {
       reserveTimer.stop();
-      tty->print_cr("reserve_memory of %Ix bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
+      tty->print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
                     reserveTimer.milliseconds(), reserveTimer.ticks());
     }
   }
