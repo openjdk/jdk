@@ -93,9 +93,10 @@ public class SecretKeySpec implements KeySpec, SecretKey {
      * the array are copied to protect against subsequent modification.
      * @param algorithm the name of the secret-key algorithm to be associated
      * with the given key material.
-     * See the <a href="{@docRoot}/../specs/security/standard-names.html">
-     * Java Security Standard Algorithm Names</a> document
-     * for information about standard algorithm names.
+     * See the SecretKey Algorithms section in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
+     * Java Security Standard Algorithm Names Specification</a>
+     * for information about standard secret key algorithm names.
      * @exception IllegalArgumentException if <code>algorithm</code>
      * is null or <code>key</code> is null or empty.
      *
