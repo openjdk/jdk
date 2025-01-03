@@ -878,8 +878,14 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
             }
 
             if (tce.trustSettings.isEmpty()) {
-               // If there is no trust settings then trust the certificate
-               tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
+               // If there is no trust settings and the certificate is not self-signed trust the certificate
+               if (!isSelfSigned) {
+                   tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
+               } else {
+                   // Otherwise, return immediately. The certificate is not
+                   // added into entries.
+                   return;
+               }
             } else {
                 List<String> values = new ArrayList<>();
                 for (var oneTrust : tce.trustSettings) {
@@ -897,9 +903,8 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                         return;
                     }
 
-                    // Trust, if explicitly trusted or result is null and certificate is self signed
-                    if ((result == null && isSelfSigned)
-                            || "1".equals(result) || "2".equals(result)) {
+                    // Trust, if explicitly trusted or result is null
+                    if (result == null || "1".equals(result) || "2".equals(result)) {
                         // When no kSecTrustSettingsPolicy, it means everything
                         String oid = oneTrust.getOrDefault("SecPolicyOid",
                                 KnownOIDs.anyExtendedKeyUsage.value());
