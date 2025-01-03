@@ -343,7 +343,7 @@ public class Snippets {
      *      ar[1] = elements[1];
      *      ...
      *      ar[pageSize-1] = elements[pageSize - 1];
-     *      methodNamePrefix1(ar);
+     *      methodNamePrefix_1(ar);
      *      return ar;
      *   }
      * and the last page will stop the chain and can be partial instead of full page size.
@@ -394,7 +394,7 @@ public class Snippets {
             }
         }
 
-        // each helper function is T[] methodNamePrefix{pageNo}(T[])
+        // each helper function is T[] methodNamePrefix_{pageNo}(T[])
         // fill the page portion and chain calling to fill next page
         private void genFillPageHelper(int pageNo, boolean hasNextPage) {
             var fromIndex = pageSize * pageNo;
