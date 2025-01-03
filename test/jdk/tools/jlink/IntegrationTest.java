@@ -157,7 +157,7 @@ public class IntegrationTest {
         boolean linkFromRuntime = false;
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
                 mods,
-                JlinkTask.newLimitedFinder(JlinkTask.newModuleFinder(modulePaths), limits, mods),
+                JlinkTask.limitFinder(JlinkTask.newModuleFinder(modulePaths), limits, mods),
                 linkFromRuntime,
                 false /* ignore modified runtime */,
                 false /* generate run-time image */);
