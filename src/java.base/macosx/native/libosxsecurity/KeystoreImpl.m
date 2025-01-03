@@ -411,15 +411,16 @@ static bool loadTrustSettings(JNIEnv *env,
                               jmethodID jm_listAdd,
                               jobject *inputTrust) {
     CFArrayRef trustSettings;
+    if (*inputTrust == NULL) {
+        *inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+        if (*inputTrust == NULL) {
+            CFRelease(trustSettings);
+            return false;
+        }
+    }
+
     // Load trustSettings into inputTrust
     if (SecTrustSettingsCopyTrustSettings(certRef, domain, &trustSettings) == errSecSuccess && trustSettings != NULL) {
-        if (*inputTrust == NULL) {
-            *inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-            if (*inputTrust == NULL) {
-                CFRelease(trustSettings);
-                return false;
-            }
-        }
         addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, *inputTrust);
         CFRelease(trustSettings);
     }
@@ -490,11 +491,6 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore,
             if (!loadTrustSettings(env, certRef, kSecTrustSettingsDomainAdmin,
                                    jc_arrayListClass, jm_arrayListCons, jm_listAdd, &inputTrust)) {
                 goto errOut;
-            }
-
-            // Only add certificates with trust settings
-            if (inputTrust == NULL) {
-                continue;
             }
 
             // Create java object for certificate with trust settings
