@@ -372,9 +372,7 @@ void
 sendctl(Splash * splash, char code) {
 //    if (splash->isVisible>0) {
     if (splash && splash->controlpipe[1]) {
-        if (write(splash->controlpipe[1], &code, 1) != 1) {
-            fprintf(stderr, "Cannot not write to splash screen control: %s\n", strerror(errno));
-        }
+        (void) write(splash->controlpipe[1], &code, 1);
     }
 }
 
@@ -712,9 +710,7 @@ SplashScreenThread(void *param) {
 //    pthread_setspecific(key, splash);
 
     SplashLock(splash);
-    if (pipe(splash->controlpipe)) {
-        fprintf(stderr, "Error creating pipe for splash screen control: %s\n", strerror(errno));
-    }
+    (void) pipe(splash->controlpipe);
     fcntl(splash->controlpipe[0], F_SETFL,
         fcntl(splash->controlpipe[0], F_GETFL, 0) | O_NONBLOCK);
     splash->time = SplashTime();

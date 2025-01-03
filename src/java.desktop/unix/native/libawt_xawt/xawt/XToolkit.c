@@ -692,9 +692,7 @@ void awt_output_flush() {
 static void wakeUp() {
     static char wakeUp_char = 'p';
     if (!isMainThread() && awt_pipe_inited) {
-        if (write ( AWT_WRITEPIPE, &wakeUp_char, 1 ) != 1) {
-            fprintf(stderr, "Cannot not write to AWT utility control: %s\n", strerror(errno));
-        }
+        (void) write ( AWT_WRITEPIPE, &wakeUp_char, 1 );
     }
 }
 
