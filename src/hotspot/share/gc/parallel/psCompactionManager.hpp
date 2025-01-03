@@ -27,7 +27,9 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
-#include "gc/shared/partialArrayTaskStepper.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
+#include "gc/shared/partialArrayTaskStats.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -41,8 +43,6 @@ class ParCompactionManager;
 class ObjectStartArray;
 class ParallelCompactData;
 class ParMarkBitMap;
-class PartialArrayState;
-class PartialArrayStateAllocator;
 
 class PCMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
   ParCompactionManager* _compaction_manager;
@@ -77,18 +77,11 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static ObjectStartArray*      _start_array;
   static RegionTaskQueueSet*    _region_task_queues;
   static PSOldGen*              _old_gen;
-  static PartialArrayStateAllocator*  _partial_array_state_allocator;
 
-  PartialArrayTaskStepper       _partial_array_stepper;
-  uint                          _partial_array_state_allocator_index;
+  static PartialArrayStateManager*  _partial_array_state_manager;
+  PartialArraySplitter              _partial_array_splitter;
+
   PSMarkTaskQueue               _marking_stack;
-
-#if TASKQUEUE_STATS
-  size_t                        _array_chunk_pushes;
-  size_t                        _array_chunk_steals;
-  size_t                        _arrays_chunked;
-  size_t                        _array_chunks_processed;
-#endif // TASKQUEUE_STATS
 
   size_t                        _next_shadow_region;
 
@@ -159,8 +152,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
 #if TASKQUEUE_STATS
   static void print_and_reset_taskqueue_stats();
-  void print_local_stats(outputStream* const out, uint i) const;
-  void reset_stats();
+  PartialArrayTaskStats* partial_array_task_stats();
 #endif // TASKQUEUE_STATS
 
 public:
@@ -215,11 +207,9 @@ public:
   // Process tasks remaining on any stack
   void drain_region_stacks();
 
-  inline void follow_contents(const ScannerTask& task);
+  inline void follow_contents(const ScannerTask& task, bool stolen);
   inline void follow_array(objArrayOop array, int start, int end);
-  void process_array_chunk(PartialArrayState* state);
-
-  TASKQUEUE_STATS_ONLY(inline void record_steal(ScannerTask task);)
+  void process_array_chunk(PartialArrayState* state, bool stolen);
 
   class FollowStackClosure: public VoidClosure {
    private:

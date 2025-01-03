@@ -126,10 +126,10 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, int start, int e
   }
 }
 
-inline void ParCompactionManager::follow_contents(const ScannerTask& task) {
+inline void ParCompactionManager::follow_contents(const ScannerTask& task, bool stolen) {
   if (task.is_partial_array_state()) {
     assert(PSParallelCompact::mark_bitmap()->is_marked(task.to_partial_array_state()->source()), "should be marked");
-    process_array_chunk(task.to_partial_array_state());
+    process_array_chunk(task.to_partial_array_state(), stolen);
   } else {
     oop obj = task.to_oop();
     assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
@@ -209,13 +209,4 @@ inline void ParCompactionManager::flush_and_destroy_marking_stats_cache() {
   delete _marking_stats_cache;
   _marking_stats_cache = nullptr;
 }
-
-#if TASKQUEUE_STATS
-void ParCompactionManager::record_steal(ScannerTask task) {
-  if (task.is_partial_array_state()) {
-    ++_array_chunk_steals;
-  }
-}
-#endif // TASKQUEUE_STATS
-
 #endif // SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP

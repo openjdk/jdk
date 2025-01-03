@@ -1212,8 +1212,7 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   do {
     ScannerTask task;
     if (ParCompactionManager::steal(worker_id, task)) {
-      TASKQUEUE_STATS_ONLY(cm->record_steal(task));
-      cm->follow_contents(task);
+      cm->follow_contents(task, true);
     }
     cm->follow_marking_stacks();
   } while (!terminator.offer_termination());
