@@ -1462,7 +1462,7 @@ const TypeH* TypeH::make(float f) {
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeH::xmeet( const Type *t ) const {
+const Type* TypeH::xmeet(const Type* t) const {
   // Perform a fast test for common case; meeting the same types together.
   if (this == t) return this;  // Meeting same type-rep?
 
@@ -1511,13 +1511,13 @@ const Type *TypeH::xmeet( const Type *t ) const {
 
 //------------------------------xdual------------------------------------------
 // Dual: symmetric
-const Type *TypeH::xdual() const {
+const Type* TypeH::xdual() const {
   return this;
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
-bool TypeH::eq(const Type *t) const {
+bool TypeH::eq(const Type* t) const {
   // Bitwise comparison to distinguish between +/-0. These values must be treated
   // as different to be consistent with C1 and the interpreter.
   return (_f == t->geth());
@@ -1553,7 +1553,7 @@ bool TypeH::is_nan() const {
 //------------------------------dump2------------------------------------------
 // Dump float constant Type
 #ifndef PRODUCT
-void TypeH::dump2( Dict &d, uint depth, outputStream *st ) const {
+void TypeH::dump2(Dict &d, uint depth, outputStream* st) const {
   Type::dump2(d,depth, st);
   st->print("%f", getf());
 }

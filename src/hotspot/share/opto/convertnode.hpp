@@ -231,7 +231,7 @@ class ReinterpretS2HFNode : public Node {
 // Reinterpret Half Float to Short
 class ReinterpretHF2SNode : public Node {
   public:
-  ReinterpretHF2SNode(Node* in1) : Node(0,in1) {}
+  ReinterpretHF2SNode(Node* in1) : Node(0, in1) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::SHORT; }

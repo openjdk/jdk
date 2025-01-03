@@ -415,11 +415,11 @@ public:
 // Minimum of 2 floats.
 class MinFNode : public MaxNode {
 public:
-  MinFNode(Node* in1, Node* in2) : MaxNode(in1, in2) {}
+  MinFNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual const Type* add_ring(const Type*, const Type*) const;
-  virtual const Type* add_id() const { return TypeF::POS_INF; }
-  virtual const Type* bottom_type() const { return Type::FLOAT; }
+  virtual const Type *add_ring(const Type*, const Type*) const;
+  virtual const Type *add_id() const { return TypeF::POS_INF; }
+  virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   int max_opcode() const { return Op_MaxF; }
   int min_opcode() const { return Op_MinF; }

@@ -710,7 +710,7 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
-const Type *AddHFNode::add_of_identity(const Type* t1, const Type* t2) const {
+const Type* AddHFNode::add_of_identity(const Type* t1, const Type* t2) const {
   return nullptr;
 }
 

@@ -534,22 +534,22 @@ public:
 class TypeH : public Type {
   TypeH(short f) : Type(HalfFloatCon), _f(f) {};
 public:
-  virtual bool eq(const Type *t) const;
+  virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
-  const short _f;               // Half Float constant
+  const short _f;                        // Half Float constant
 
   static const TypeH* make(float f);
   static const TypeH* make(short f);
 
-  virtual bool        is_finite() const;  // Has a finite value
-  virtual bool        is_nan()    const;  // Is not a number (NaN)
+  virtual bool is_finite() const;  // Has a finite value
+  virtual bool is_nan() const;     // Is not a number (NaN)
 
   virtual float getf() const;
-  virtual const Type *xmeet(const Type *t) const;
-  virtual const Type *xdual() const;    // Compute dual right now.
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;    // Compute dual right now.
   // Convenience common pre-built types.
   static const TypeH* MAX;
   static const TypeH* MIN;
@@ -558,7 +558,7 @@ public:
   static const TypeH* POS_INF;
   static const TypeH* NEG_INF;
 #ifndef PRODUCT
-  virtual void dump2(Dict &d, uint depth, outputStream *st) const;
+  virtual void dump2(Dict &d, uint depth, outputStream* st) const;
 #endif
 };
 
@@ -1984,7 +1984,7 @@ inline float Type::getf() const {
 }
 
 inline short Type::geth() const {
-  assert( _base == HalfFloatCon, "Not a HalfFloatCon" );
+  assert(_base == HalfFloatCon, "Not a HalfFloatCon");
   return ((TypeH*)this)->_f;
 }
 
@@ -2032,7 +2032,7 @@ inline const TypeH* Type::is_half_float_constant() const {
 }
 
 inline const TypeH* Type::isa_half_float_constant() const {
-  return ( _base == HalfFloatCon ? (TypeH*)this : nullptr);
+  return (_base == HalfFloatCon ? (TypeH*)this : nullptr);
 }
 
 inline const TypeF *Type::isa_float() const {
