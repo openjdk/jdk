@@ -281,6 +281,37 @@ public final class CodeGeneratorLibrary {
                 long v = longGenerator.nextLong(lo, hi);
                 scope.stream.addCodeToLine(String.valueOf(v) + "L");
         }, 0));
+
+        /**
+         * {@code bool_con} returns a random boolean.
+         *
+         * @return Random boolean: true or false.
+         */
+        codeGenerators.add(new ProgrammaticCodeGenerator("bool_con",
+            (Scope scope, Parameters parameters) -> {
+                parameters.checkOnlyHas(scope);
+                int v = intGenerator.nextInt(0, 1);
+                String bool = (v == 0) ? "false" : "true";
+                scope.stream.addCodeToLine(bool);
+        }, 0));
+
+        /**
+         * {@code con} returns a random constant of a specified type. Internally, the
+         * {@link CodeGenerator} "<type>_con" is called. If a user-defined type has a
+         * correpsonding "<type>_con" generator added to the library, one can call it
+         * via "con(type=<type>)".
+         *
+	 * @param type The type from which the value is to be sampled.
+         * @return Random value from the specified type.
+         */
+        codeGenerators.add(new ProgrammaticCodeGenerator("con",
+            (Scope scope, Parameters parameters) -> {
+                parameters.checkOnlyHas(scope, "type");
+                String type = parameters.get("type", scope);
+                String generatorName = type + "_con";
+                CodeGenerator generator = scope.library().find(generatorName, " for 'con'");
+                generator.instantiate(scope);
+        }, 0));
     }
 
     private static void addBasicOperators(HashSet<CodeGenerator> codeGenerators) {

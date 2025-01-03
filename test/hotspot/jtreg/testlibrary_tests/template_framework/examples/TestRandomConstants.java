@@ -53,6 +53,10 @@ public class TestRandomConstants {
         // Object retL = p.xyz.InnterTest.testLong();
         Object retL = comp.invoke("p.xyz.InnerTest", "testLong", new Object[] {});
         System.out.println("retL: " + retL);
+
+        // Object retBool = p.xyz.InnterTest.testBool();
+        Object retBool = comp.invoke("p.xyz.InnerTest", "testBool", new Object[] {});
+        System.out.println("retBool: " + retBool);
     }
 
     // Generate a source Java file as String
@@ -72,6 +76,8 @@ public class TestRandomConstants {
                     int $con5 = #{:int_con(lo=min_int)};
                     int $con6 = #{:int_con(lo=max_int)};
                     int $con7 = #{:int_con(hi=max_int)};
+
+                    int $con8 = #{:con(type=int)};
 
                     if ($con0 != 123) {
                         throw new RuntimeException("$con0 was not 123");
@@ -104,6 +110,8 @@ public class TestRandomConstants {
                     long $con9  = #{:long_con(lo=max_long)};
                     long $con10 = #{:long_con(hi=max_long)};
 
+                    long $con11 = #{:con(type=long)};
+
                     if ($con0 != 123) {
                         throw new RuntimeException("$con0 was not 123");
                     }
@@ -117,7 +125,19 @@ public class TestRandomConstants {
                         throw new RuntimeException("$con4 was not negative");
                     }
 
-                    return $con0 + $con1 + $con2 + $con3 + $con4;
+                    return $con0 + $con1 + $con2 + $con3 + $con4 + $con11;
+                }
+
+                public static boolean testBool() {
+                    boolean $con0 = true;
+                    boolean $con1 = #{:bool_con};
+                    boolean $con2 = #{:con(type=bool)};
+
+                    if ($con0 != true) {
+                        throw new RuntimeException("$con0 was not true");
+                    }
+
+                    return $con0 && $con1 && $con2;
                 }
             }
             """
