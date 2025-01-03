@@ -283,11 +283,11 @@ public final class CodeGeneratorLibrary {
         }, 0));
 
         /**
-         * {@code bool_con} returns a random boolean.
+         * {@code boolean_con} returns a random boolean.
          *
          * @return Random boolean: true or false.
          */
-        codeGenerators.add(new ProgrammaticCodeGenerator("bool_con",
+        codeGenerators.add(new ProgrammaticCodeGenerator("boolean_con",
             (Scope scope, Parameters parameters) -> {
                 parameters.checkOnlyHas(scope);
                 int v = intGenerator.nextInt(0, 1);

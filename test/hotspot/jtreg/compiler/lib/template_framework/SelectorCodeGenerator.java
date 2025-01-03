@@ -85,7 +85,7 @@ public final class SelectorCodeGenerator extends CodeGenerator {
      * @param predicate Predicate that indicates if the choice is to be available.
      */
     public void add(String name, float weight, Predicate predicate) {
-        if (!(0.1 < weight && weight < 10_000)) {
+        if (!(0.1 < weight && weight <= 10_000)) {
             throw new TemplateFrameworkException("Unreasonable weight " + weight + " for " + name);
 	}
         if (choiceWeights.containsKey(name)) {

@@ -130,8 +130,8 @@ public class TestRandomConstants {
 
                 public static boolean testBool() {
                     boolean $con0 = true;
-                    boolean $con1 = #{:bool_con};
-                    boolean $con2 = #{:con(type=bool)};
+                    boolean $con1 = #{:boolean_con};
+                    boolean $con2 = #{:con(type=boolean)};
 
                     if ($con0 != true) {
                         throw new RuntimeException("$con0 was not true");
