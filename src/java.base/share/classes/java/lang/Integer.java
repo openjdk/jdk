@@ -540,7 +540,7 @@ public final class Integer extends Number
         int i = 1;
         while (i + 1 < len && (isDigit = isDigit((c = value[i]))) && isDigit(c1 = value[i + 1])) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (!(inRange = (result > MULT_MIN_2))) {
+            if (!(inRange = inRange2(result, digit, limit))) {
                 break;
             }
             result = result * 100 - digit;
@@ -552,7 +552,7 @@ public final class Integer extends Number
             }
             if (i != len && isDigit) {
                 digit = c - '0';
-                inRange = result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit));
+                inRange = inRange(result, digit, limit);
                 result = result * 10 - digit;
                 i++;
             }
@@ -561,6 +561,14 @@ public final class Integer extends Number
             }
         }
         throw NumberFormatException.forInputString(s);
+    }
+
+    private static boolean inRange(int result, int digit, int limit) {
+        return result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit));
+    }
+
+    private static boolean inRange2(int result, int digit, int limit) {
+        return result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit));
     }
 
     private static int parseInt0(String s, int radix) {
