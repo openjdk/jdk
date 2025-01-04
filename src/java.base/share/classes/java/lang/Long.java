@@ -555,7 +555,7 @@ public final class Long extends Number
     public static long parseLong(String s, int radix)
                 throws NumberFormatException {
         int len;
-        if (s == null || radix != 10 || (len = s.length()) == 0) {
+        if (s == null || radix != 10 || (len = s.length()) == 0 || !s.isLatin1()) {
             return parseLong0(s, radix);
         }
         int c = s.charAt(0), c1, digit;

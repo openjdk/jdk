@@ -520,7 +520,7 @@ public final class Integer extends Number
     public static int parseInt(String s, int radix)
                 throws NumberFormatException {
         int len;
-        if (s == null || radix != 10 || (len = s.length()) == 0) {
+        if (s == null || radix != 10 || (len = s.length()) == 0 || !s.isLatin1()) {
             return parseInt0(s, radix);
         }
         int result = 0, c = s.charAt(0), c1, digit;
@@ -539,7 +539,7 @@ public final class Integer extends Number
         int i = 1;
         while (i + 1 < len && (isDigit = isDigit((c = s.charAt(i)))) && isDigit(c1 = s.charAt(i + 1))) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (!(inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit))))) {
+            if (!(inRange = (result > MULT_MIN_2))) {
                 break;
             }
             result = result * 100 - digit;
