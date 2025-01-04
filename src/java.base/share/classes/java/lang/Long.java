@@ -89,7 +89,6 @@ public final class Long extends Number
      */
     @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
-    static final long MULT_MIN = -922337203685477580L;
     static final long MULT_MIN_2 = -92233720368547758L;
 
     /**
@@ -576,7 +575,7 @@ public final class Long extends Number
         int i = 1;
         while (i + 1 < len && (isDigit = Integer.isDigit((c = s.charAt(i)))) && Integer.isDigit(c1 = s.charAt(i + 1))) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (!(inRange = inRange2(result, digit, limit))) {
+            if (!(inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit))))) {
                 break;
             }
             result = result * 100 - digit;
@@ -588,23 +587,15 @@ public final class Long extends Number
             }
             if (i != len && isDigit) {
                 digit = c - '0';
-                inRange = isInRange(result, digit, limit);
                 result = result * 10 - digit;
                 i++;
+                // max len is 20, No need to check inRange
             }
             if (i == len && result <= 0) {
                 return neg != 0 ? -result : result;
             }
         }
         throw NumberFormatException.forInputString(s);
-    }
-
-    private static boolean isInRange(long result, int digit, long limit) {
-        return result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit));
-    }
-
-    private static boolean inRange2(long result, int digit, long limit) {
-        return result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit));
     }
 
     private static long parseLong0(String s, int radix) {
