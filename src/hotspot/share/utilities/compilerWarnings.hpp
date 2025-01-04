@@ -86,7 +86,6 @@
 #define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
 #endif
 
-//////////////////////////////////////////////////////////////////////////////
 // Support warnings for use of certain C functions, except where explicitly
 // permitted.
 
