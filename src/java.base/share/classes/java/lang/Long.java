@@ -561,16 +561,16 @@ public final class Long extends Number
         }
         int c = value[0], c1, digit;
         long result = 0;
-        boolean inRange = true, isDigit = false;
+        boolean inRange, isDigit = false;
         int neg = c - '-';
         if (neg != 0
                 && neg + 2 != 0 // firstChar != '+'
         ) {
-            if (Integer.isDigit(c)) {
+            if (inRange = Integer.isDigit(c)) {
                 result = '0' - c;
-            } else {
-                inRange = false;
             }
+        } else {
+            inRange = len != 1;
         }
         long limit = MIN_VALUE + (neg != 0 ? 1L : 0L);
         int i = 1;

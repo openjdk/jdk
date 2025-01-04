@@ -525,16 +525,16 @@ public final class Integer extends Number
             return parseInt0(s, radix);
         }
         int result = 0, c = value[0], c1, digit;
-        boolean inRange = true, isDigit = false;
+        boolean inRange, isDigit = false;
         int neg = c - '-';
         if (neg != 0
                 && neg + 2 != 0 // firstChar != '+'
         ) {
-            if (isDigit(c)) {
+            if (inRange = isDigit(c)) {
                 result = '0' - c;
-            } else {
-                inRange = false;
             }
+        } else {
+            inRange = len != 1;
         }
         int limit = MIN_VALUE + (neg != 0 ? 1 : 0);
         int i = 1;
