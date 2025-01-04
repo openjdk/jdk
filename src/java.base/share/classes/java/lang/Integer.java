@@ -89,6 +89,9 @@ public final class Integer extends Number
      */
     @Native public static final int   MAX_VALUE = 0x7fffffff;
 
+    private static final int MULT_MIN = Integer.MIN_VALUE / 10;
+    private static final int MULT_MIN_2 = Integer.MIN_VALUE / 100;
+
     /**
      * The {@code Class} instance representing the primitive type
      * {@code int}.
@@ -516,52 +519,59 @@ public final class Integer extends Number
      */
     public static int parseInt(String s, int radix)
                 throws NumberFormatException {
-        /*
-         * WARNING: This method may be invoked early during VM initialization
-         * before IntegerCache is initialized. Care must be taken to not use
-         * the valueOf method.
-         */
-
-        if (s == null) {
-            throw new NumberFormatException("Cannot parse null string");
+        int len;
+        if (s == null || radix != 10 || (len = s.length()) == 0) {
+            return parseInt0(s, radix);
         }
-
-        if (radix < Character.MIN_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s less than Character.MIN_RADIX", radix));
-        }
-
-        if (radix > Character.MAX_RADIX) {
-            throw new NumberFormatException(String.format(
-                "radix %s greater than Character.MAX_RADIX", radix));
-        }
-
-        int len = s.length();
-        if (len == 0) {
-            throw NumberFormatException.forInputString("", radix);
-        }
-        int digit = ~0xFF;
         int i = 0;
-        char firstChar = s.charAt(i++);
-        if (firstChar != '-' && firstChar != '+') {
-            digit = digit(firstChar, radix);
+        int neg = s.charAt(0) - '-';
+        if (neg == 0
+                || neg + 2 == 0 // firstChar == '+'
+        ) {
+            i = 1;
         }
-        if (digit >= 0 || digit == ~0xFF && len > 1) {
-            int limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
-            int multmin = limit / radix;
-            int result = -(digit & 0xFF);
-            boolean inRange = true;
-            /* Accumulating negatively avoids surprises near MAX_VALUE */
-            while (i < len && (digit = digit(s.charAt(i++), radix)) >= 0
-                    && (inRange = result > multmin
-                        || result == multmin && digit <= radix * multmin - limit)) {
-                result = radix * result - digit;
+        int limit = MIN_VALUE + (neg != 0 ? 1 : 0);
+        boolean inRange = true, isDigit = false;
+        int result = 0;
+        int c = 0, c1, digit;
+        while (i + 1 < len && (isDigit = isDigit((c = s.charAt(i)))) && isDigit(c1 = s.charAt(i + 1))) {
+            digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
+            if (!(inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit))))) {
+                break;
             }
-            if (inRange && i == len && digit >= 0) {
-                return firstChar != '-' ? -result : result;
+            result = result * 100 - digit;
+            i += 2;
+        }
+        if (inRange) {
+            if (i + 1 == len) {
+                isDigit = isDigit((c = s.charAt(i)));
+            }
+            if (i != len && isDigit) {
+                digit = c - '0';
+                inRange = result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit));
+                result = result * 10 - digit;
+                i++;
+            }
+            if (i == len && result <= 0) {
+                return neg != 0 ? -result : result;
             }
         }
-        throw NumberFormatException.forInputString(s, radix);
+        throw NumberFormatException.forInputString(s);
+    }
+
+    private static int parseInt0(String s, int radix) {
+        if (s == null) {
+            throw NumberFormatException.emptyInput();
+        }
+        int len;
+        if ((len = s.length()) == 0) {
+            throw NumberFormatException.forInputString(s);
+        }
+        return parseInt(s, 0, len, radix);
+    }
+
+    static boolean isDigit(int ch) {
+        return ch >= '0' && ch <= '9';
     }
 
     /**
