@@ -594,7 +594,7 @@ public final class Long extends Number
                 i++;
                 // max len is 20, No need to check inRange
             }
-            if (i == len && result <= 0) {
+            if (i == len) {
                 return neg != 0 ? -result : result;
             }
         }

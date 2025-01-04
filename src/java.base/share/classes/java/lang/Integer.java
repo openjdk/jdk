@@ -559,7 +559,7 @@ public final class Integer extends Number
                 result = result * 10 - digit;
                 i++;
             }
-            if (inRange && i == len && result <= 0) {
+            if (inRange && i == len) {
                 return neg != 0 ? -result : result;
             }
         }
