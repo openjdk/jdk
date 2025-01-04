@@ -538,7 +538,11 @@ public final class Integer extends Number
         }
         int limit = MIN_VALUE + (neg != 0 ? 1 : 0);
         int i = 1;
-        while (i + 1 < len && inRange && (isDigit = isDigit((c = value[i]))) && isDigit(c1 = value[i + 1])) {
+        while (inRange
+                && i + 1 < len
+                && (isDigit = isDigit((c = value[i])))
+                && isDigit(c1 = value[i + 1])
+        ) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             if (inRange = inRange2(result, digit, limit)) {
                 result = result * 100 - digit;

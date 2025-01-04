@@ -559,7 +559,7 @@ public final class Long extends Number
         if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseLong0(s, radix);
         }
-        int c = value[0], c1, digit;
+        int c = value[0], c1;
         long result = 0;
         boolean inRange, isDigit = false;
         int neg = c - '-';
@@ -574,9 +574,13 @@ public final class Long extends Number
         }
         long limit = MIN_VALUE + (neg != 0 ? 1L : 0L);
         int i = 1;
-        while (i + 1 < len && inRange && (isDigit = Integer.isDigit((c = value[i]))) && Integer.isDigit(c1 = value[i + 1])) {
-            digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (inRange = inRange2(result, digit, limit)) {
+        while (inRange
+                && i + 1 < len
+                && (isDigit = Integer.isDigit((c = value[i])))
+                && Integer.isDigit(c1 = value[i + 1])
+        ) {
+            int digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
+            if (inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit)))) {
                 result = result * 100 - digit;
                 i += 2;
             }
@@ -586,8 +590,7 @@ public final class Long extends Number
                 isDigit = Integer.isDigit((c = value[i]));
             }
             if (i != len && isDigit) {
-                digit = c - '0';
-                result = result * 10 - digit;
+                result = result * 10 - (c - '0');
                 i++;
                 // max len is 20, No need to check inRange
             }
@@ -596,10 +599,6 @@ public final class Long extends Number
             }
         }
         throw NumberFormatException.forInputString(s);
-    }
-
-    private static boolean inRange2(long result, int digit, long limit) {
-        return result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit));
     }
 
     private static long parseLong0(String s, int radix) {
