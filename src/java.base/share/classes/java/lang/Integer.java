@@ -520,10 +520,11 @@ public final class Integer extends Number
     public static int parseInt(String s, int radix)
                 throws NumberFormatException {
         int len;
-        if (s == null || radix != 10 || (len = s.length()) == 0 || !s.isLatin1()) {
+        byte[] value;
+        if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseInt0(s, radix);
         }
-        int result = 0, c = s.charAt(0), c1, digit;
+        int result = 0, c = value[0], c1, digit;
         boolean inRange = true, isDigit = false;
         int neg = c - '-';
         if (neg != 0
@@ -537,7 +538,7 @@ public final class Integer extends Number
         }
         int limit = MIN_VALUE + (neg != 0 ? 1 : 0);
         int i = 1;
-        while (i + 1 < len && (isDigit = isDigit((c = s.charAt(i)))) && isDigit(c1 = s.charAt(i + 1))) {
+        while (i + 1 < len && (isDigit = isDigit((c = value[i]))) && isDigit(c1 = value[i + 1])) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             if (!(inRange = (result > MULT_MIN_2))) {
                 break;
@@ -547,7 +548,7 @@ public final class Integer extends Number
         }
         if (inRange) {
             if (i + 1 == len) {
-                isDigit = isDigit((c = s.charAt(i)));
+                isDigit = isDigit((c = value[i]));
             }
             if (i != len && isDigit) {
                 digit = c - '0';

@@ -89,7 +89,7 @@ public final class Long extends Number
      */
     @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
-    static final long MULT_MIN_2 = -92233720368547758L;
+    private static final long MULT_MIN_2 = -92233720368547758L;
 
     /**
      * The {@code Class} instance representing the primitive type
@@ -555,10 +555,11 @@ public final class Long extends Number
     public static long parseLong(String s, int radix)
                 throws NumberFormatException {
         int len;
-        if (s == null || radix != 10 || (len = s.length()) == 0 || !s.isLatin1()) {
+        byte[] value;
+        if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseLong0(s, radix);
         }
-        int c = s.charAt(0), c1, digit;
+        int c = value[0], c1, digit;
         long result = 0;
         boolean inRange = true, isDigit = false;
         int neg = c - '-';
@@ -573,7 +574,7 @@ public final class Long extends Number
         }
         long limit = MIN_VALUE + (neg != 0 ? 1L : 0L);
         int i = 1;
-        while (i + 1 < len && (isDigit = Integer.isDigit((c = s.charAt(i)))) && Integer.isDigit(c1 = s.charAt(i + 1))) {
+        while (i + 1 < len && (isDigit = Integer.isDigit((c = value[i]))) && Integer.isDigit(c1 = value[i + 1])) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             if (!(inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit))))) {
                 break;
@@ -583,7 +584,7 @@ public final class Long extends Number
         }
         if (inRange) {
             if (i + 1 == len) {
-                isDigit = Integer.isDigit((c = s.charAt(i)));
+                isDigit = Integer.isDigit((c = value[i]));
             }
             if (i != len && isDigit) {
                 digit = c - '0';
