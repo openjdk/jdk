@@ -89,8 +89,8 @@ public final class Integer extends Number
      */
     @Native public static final int   MAX_VALUE = 0x7fffffff;
 
-    private static final int MULT_MIN = Integer.MIN_VALUE / 10;
-    private static final int MULT_MIN_2 = Integer.MIN_VALUE / 100;
+    private static final int MULT_MIN_10 = Integer.MIN_VALUE / 10;
+    private static final int MULT_MIN_100 = Integer.MIN_VALUE / 100;
 
     /**
      * The {@code Class} instance representing the primitive type
@@ -544,7 +544,7 @@ public final class Integer extends Number
                 && isDigit(c1 = value[i + 1])
         ) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit)))) {
+            if (inRange = (result > MULT_MIN_100 || (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit)))) {
                 result = result * 100 - digit;
                 i += 2;
             }
@@ -552,20 +552,16 @@ public final class Integer extends Number
         if (inRange) {
             if (i + 1 == len && isDigit((c = value[i]))) {
                 digit = c - '0';
-                if (result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit))) {
+                if (result > MULT_MIN_10 || (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))) {
                     result = result * 10 - digit;
                     i++;
                 }
             }
-            if (inRange && i == len) {
+            if (i == len) {
                 return neg != 0 ? -result : result;
             }
         }
         throw NumberFormatException.forInputString(s);
-    }
-
-    private static boolean inRange(int result, int digit, int limit) {
-        return result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit));
     }
 
     private static int parseInt0(String s, int radix) {

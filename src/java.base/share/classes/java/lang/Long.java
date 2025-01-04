@@ -89,7 +89,8 @@ public final class Long extends Number
      */
     @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
-    private static final long MULT_MIN_2 = -92233720368547758L;
+    private static final long MULT_MIN_10 = MIN_VALUE / 10;
+    private static final long MULT_MIN_100 = MIN_VALUE / 100;
 
     /**
      * The {@code Class} instance representing the primitive type
@@ -580,18 +581,21 @@ public final class Long extends Number
                 && Integer.isDigit(c1 = value[i + 1])
         ) {
             int digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit)))) {
+            if (inRange = (result > MULT_MIN_100 || (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit)))) {
                 result = result * 100 - digit;
                 i += 2;
             }
         }
         if (inRange) {
             if (i + 1 == len && Integer.isDigit((c = value[i]))) {
-                result = result * 10 - (c - '0');
-                i++;
-                // max len is 20, No need to check inRange
+                int digit = c - '0';
+                // // max len is 20, No need to check inRange (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))
+                if (result >= MULT_MIN_10) {
+                    result = result * 10 - digit;
+                    i++;
+                }
             }
-            if (i == len) {
+            if (i == len && result <= 0) {
                 return neg != 0 ? -result : result;
             }
         }
