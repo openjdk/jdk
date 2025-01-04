@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2091,16 +2091,6 @@ inline double Type::getd() const {
   return ((TypeD*)this)->_d;
 }
 
-template <>
-inline const TypeInt* Type::try_cast<TypeInt>() const {
-  return isa_int();
-}
-
-template <>
-inline const TypeLong* Type::try_cast<TypeLong>() const {
-  return isa_long();
-}
-
 inline const TypeInteger *Type::is_integer(BasicType bt) const {
   assert((bt == T_INT && _base == Int) || (bt == T_LONG && _base == Long), "Not an Int");
   return (TypeInteger*)this;
@@ -2331,6 +2321,16 @@ inline const TypeInt* Type::cast<TypeInt>() const {
 template <>
 inline const TypeLong* Type::cast<TypeLong>() const {
   return is_long();
+}
+
+template <>
+inline const TypeInt* Type::try_cast<TypeInt>() const {
+  return isa_int();
+}
+
+template <>
+inline const TypeLong* Type::try_cast<TypeLong>() const {
+  return isa_long();
 }
 
 // ===============================================================
