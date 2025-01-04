@@ -523,17 +523,20 @@ public final class Integer extends Number
         if (s == null || radix != 10 || (len = s.length()) == 0) {
             return parseInt0(s, radix);
         }
-        int i = 0;
-        int neg = s.charAt(0) - '-';
-        if (neg == 0
-                || neg + 2 == 0 // firstChar == '+'
+        int result = 0, c = s.charAt(0), c1, digit;
+        boolean inRange = true, isDigit = false;
+        int neg = c - '-';
+        if (neg != 0
+                && neg + 2 != 0 // firstChar != '+'
         ) {
-            i = 1;
+            if (isDigit(c)) {
+                result = '0' - c;
+            } else {
+                inRange = false;
+            }
         }
         int limit = MIN_VALUE + (neg != 0 ? 1 : 0);
-        boolean inRange = true, isDigit = false;
-        int result = 0;
-        int c = 0, c1, digit;
+        int i = 1;
         while (i + 1 < len && (isDigit = isDigit((c = s.charAt(i)))) && isDigit(c1 = s.charAt(i + 1))) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             if (!(inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit))))) {
