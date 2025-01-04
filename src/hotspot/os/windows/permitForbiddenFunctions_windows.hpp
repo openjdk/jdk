@@ -31,7 +31,7 @@
 // Provide wrappers for some functions otherwise forbidden from use in HotSpot.
 // See forbiddenFunctions.hpp for details.
 
-namespace permit_forbidden_functions {
+namespace permit_forbidden_function {
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 
 // Used by the Windows implementation of os::realpath.
@@ -40,6 +40,6 @@ inline char* _fullpath(char* absPath, const char* relPath, size_t maxLength) {
 }
 
 END_ALLOW_FORBIDDEN_FUNCTIONS
-} // namespace permit_forbidden_functions
+} // namespace permit_forbidden_function
 
 #endif // OS_WINDOWS_PERMITFORBIDDENFUNCTIONS_WINDOWS_HPP

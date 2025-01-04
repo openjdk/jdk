@@ -48,7 +48,7 @@ bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
   if ((result = abi::__cxa_demangle(symbol, nullptr, nullptr, &status)) != nullptr) {
     jio_snprintf(buf, buflen, "%s", result);
     // call c library's free
-    permit_forbidden_functions::free(result);
+    permit_forbidden_function::free(result);
     return true;
   }
   return false;

@@ -194,7 +194,7 @@ static int num_args_to_skip(char* arg) {
 
 static char** remove_test_runner_arguments(int* argcp, char **argv) {
   int argc = *argcp;
-  char** new_argv = (char**)permit_forbidden_functions::malloc(sizeof(char*) * argc);
+  char** new_argv = (char**)permit_forbidden_function::malloc(sizeof(char*) * argc);
   int new_argc = 0;
 
   int i = 0;
@@ -290,7 +290,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   int result = RUN_ALL_TESTS();
 
-  permit_forbidden_functions::free(argv);
+  permit_forbidden_function::free(argv);
 
   // vm_assert and other_vm tests never reach this point as they either abort, or call
   // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have

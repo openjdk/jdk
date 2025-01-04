@@ -931,11 +931,11 @@ ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
 }
 
 void os::exit(int num) {
-  permit_forbidden_functions::exit(num);
+  permit_forbidden_function::exit(num);
 }
 
 void os::_exit(int num) {
-  permit_forbidden_functions::_exit(num);
+  permit_forbidden_function::_exit(num);
 }
 
 void os::naked_yield() {
@@ -992,7 +992,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify null for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  char* p = permit_forbidden_functions::realpath(filename, nullptr);
+  char* p = permit_forbidden_function::realpath(filename, nullptr);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -1000,7 +1000,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    permit_forbidden_functions::free(p); // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -1009,7 +1009,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      p = permit_forbidden_functions::realpath(filename, outbuf);
+      p = permit_forbidden_function::realpath(filename, outbuf);
       if (p != nullptr) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;

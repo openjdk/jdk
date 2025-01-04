@@ -34,9 +34,9 @@
 
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.
-static void* raw_malloc(size_t s)               { return permit_forbidden_functions::malloc(s); }
-static void* raw_realloc(void* old, size_t s)   { return permit_forbidden_functions::realloc(old, s); }
-static void  raw_free(void* p)                  { permit_forbidden_functions::free(p); }
+static void* raw_malloc(size_t s)               { return permit_forbidden_function::malloc(s); }
+static void* raw_realloc(void* old, size_t s)   { return permit_forbidden_function::realloc(old, s); }
+static void  raw_free(void* p)                  { permit_forbidden_function::free(p); }
 
 // To keep matters simple we just raise a fatal error on OOM. Since preinit allocation
 // is just used for pre-VM-initialization mallocs, none of which are optional, we don't

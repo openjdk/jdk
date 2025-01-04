@@ -104,7 +104,7 @@ public:
   virtual void initialize () {
     assert(_p == nullptr && _capacity == 0, "Only call once.");
     const size_t bytes = OPTIMAL_CAPACITY * sizeof(T);
-    T* q = (T*) permit_forbidden_functions::malloc(bytes);
+    T* q = (T*) permit_forbidden_function::malloc(bytes);
     if (q != nullptr) {
       _p = q;
       _capacity = OPTIMAL_CAPACITY;
@@ -120,7 +120,7 @@ public:
   // case, where two buffers need to be of identical capacity.
   void reset_to_fallback_capacity() {
     if (_p != _fallback_buffer) {
-      permit_forbidden_functions::free(_p);
+      permit_forbidden_function::free(_p);
     }
     _p = _fallback_buffer;
     _capacity = (int)(sizeof(_fallback_buffer) / sizeof(T));

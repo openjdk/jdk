@@ -56,7 +56,7 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
     ShouldNotReachHere();
   }
   ::fclose(stream);
-  permit_forbidden_functions::free(buf);
+  permit_forbidden_function::free(buf);
 #else
   _output->print_cr(malloc_info_unavailable);
 #endif // __GLIBC__

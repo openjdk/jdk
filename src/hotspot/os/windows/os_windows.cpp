@@ -4383,9 +4383,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    permit_forbidden_functions::exit(exit_code);
+    permit_forbidden_function::exit(exit_code);
   } else { // EPT_PROCESS_DIE
-    permit_forbidden_functions::_exit(exit_code);
+    permit_forbidden_function::_exit(exit_code);
   }
 
   // Should not reach here
@@ -5148,7 +5148,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  char* p = permit_forbidden_functions::_fullpath(nullptr, filename, 0);
+  char* p = permit_forbidden_function::_fullpath(nullptr, filename, 0);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -5156,7 +5156,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    permit_forbidden_functions::free(p); // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
 }

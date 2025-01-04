@@ -45,7 +45,7 @@
 // these written-out wrapper functions.  All that have been tried don't work
 // for one reason or another.
 
-namespace permit_forbidden_functions {
+namespace permit_forbidden_function {
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 
 [[noreturn]] inline void exit(int status) { ::exit(status); }
@@ -62,7 +62,7 @@ inline void* calloc(size_t nmemb, size_t size) { return ::calloc(nmemb, size); }
 inline void* realloc(void* ptr, size_t size) { return ::realloc(ptr, size); }
 
 END_ALLOW_FORBIDDEN_FUNCTIONS
-} // namespace permit_forbidden_functions
+} // namespace permit_forbidden_function
 
 #endif // SHARE_UTILITIES_PERMITFORBIDDENFUNCTIONS_HPP
 

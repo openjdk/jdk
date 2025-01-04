@@ -251,7 +251,7 @@ bool AixSymbols::get_function_name (
           p_name[namelen-1] = '\0';
         }
         if (demangled_name != nullptr) {
-          permit_forbidden_functions::free(demangled_name);
+          permit_forbidden_function::free(demangled_name);
         }
       }
     } else {
