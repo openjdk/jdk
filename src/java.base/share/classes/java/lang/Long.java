@@ -559,11 +559,11 @@ public final class Long extends Number
         if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseLong0(s, radix);
         }
-        int c = value[0], c1;
+        int c, c1;
         long result = 0;
-        boolean inRange, isDigit = false;
-        int neg = c - '-';
-        if (neg != 0
+        boolean inRange;
+        int neg;
+        if ((neg = (c = value[0]) - '-') != 0
                 && neg + 2 != 0 // firstChar != '+'
         ) {
             if (inRange = Integer.isDigit(c)) {
@@ -576,7 +576,7 @@ public final class Long extends Number
         int i = 1;
         while (inRange
                 && i + 1 < len
-                && (isDigit = Integer.isDigit((c = value[i])))
+                && Integer.isDigit((c = value[i]))
                 && Integer.isDigit(c1 = value[i + 1])
         ) {
             int digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
@@ -586,10 +586,7 @@ public final class Long extends Number
             }
         }
         if (inRange) {
-            if (i + 1 == len) {
-                isDigit = Integer.isDigit((c = value[i]));
-            }
-            if (i != len && isDigit) {
+            if (i + 1 == len && Integer.isDigit((c = value[i]))) {
                 result = result * 10 - (c - '0');
                 i++;
                 // max len is 20, No need to check inRange

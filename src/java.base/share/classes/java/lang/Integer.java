@@ -524,10 +524,10 @@ public final class Integer extends Number
         if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseInt0(s, radix);
         }
-        int result = 0, c = value[0], c1, digit;
-        boolean inRange, isDigit = false;
-        int neg = c - '-';
-        if (neg != 0
+        int result = 0, c, c1, digit;
+        boolean inRange;
+        int neg;
+        if ((neg = (c = value[0]) - '-') != 0
                 && neg + 2 != 0 // firstChar != '+'
         ) {
             if (inRange = isDigit(c)) {
@@ -540,24 +540,22 @@ public final class Integer extends Number
         int i = 1;
         while (inRange
                 && i + 1 < len
-                && (isDigit = isDigit((c = value[i])))
+                && isDigit((c = value[i]))
                 && isDigit(c1 = value[i + 1])
         ) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (inRange = inRange2(result, digit, limit)) {
+            if (inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit)))) {
                 result = result * 100 - digit;
                 i += 2;
             }
         }
         if (inRange) {
-            if (i + 1 == len) {
-                isDigit = isDigit((c = value[i]));
-            }
-            if (i != len && isDigit) {
+            if (i + 1 == len && isDigit((c = value[i]))) {
                 digit = c - '0';
-                inRange = inRange(result, digit, limit);
-                result = result * 10 - digit;
-                i++;
+                if (result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit))) {
+                    result = result * 10 - digit;
+                    i++;
+                }
             }
             if (inRange && i == len) {
                 return neg != 0 ? -result : result;
@@ -568,10 +566,6 @@ public final class Integer extends Number
 
     private static boolean inRange(int result, int digit, int limit) {
         return result > MULT_MIN || (result == MULT_MIN && digit <= (MULT_MIN * 10 - limit));
-    }
-
-    private static boolean inRange2(int result, int digit, int limit) {
-        return result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit));
     }
 
     private static int parseInt0(String s, int radix) {
