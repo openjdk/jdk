@@ -574,13 +574,12 @@ public final class Long extends Number
         }
         long limit = MIN_VALUE + (neg != 0 ? 1L : 0L);
         int i = 1;
-        while (i + 1 < len && (isDigit = Integer.isDigit((c = value[i]))) && Integer.isDigit(c1 = value[i + 1])) {
+        while (i + 1 < len && inRange && (isDigit = Integer.isDigit((c = value[i]))) && Integer.isDigit(c1 = value[i + 1])) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (!(inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit))))) {
-                break;
+            if (inRange = inRange2(result, digit, limit)) {
+                result = result * 100 - digit;
+                i += 2;
             }
-            result = result * 100 - digit;
-            i += 2;
         }
         if (inRange) {
             if (i + 1 == len) {
@@ -597,6 +596,10 @@ public final class Long extends Number
             }
         }
         throw NumberFormatException.forInputString(s);
+    }
+
+    private static boolean inRange2(long result, int digit, long limit) {
+        return result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit));
     }
 
     private static long parseLong0(String s, int radix) {
