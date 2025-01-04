@@ -570,7 +570,7 @@ public final class Long extends Number
         boolean inRange = true, isDigit = false;
         long result = 0;
         int c = 0, c1, digit;
-        while (i + 1 < len && (isDigit = isDigit((c = s.charAt(i)))) && isDigit(c1 = s.charAt(i + 1))) {
+        while (i + 1 < len && (isDigit = Integer.isDigit((c = s.charAt(i)))) && Integer.isDigit(c1 = s.charAt(i + 1))) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             if (!(inRange = (result > MULT_MIN_2 || (result == MULT_MIN_2 && digit <= (MULT_MIN_2 * 100 - limit))))) {
                 break;
@@ -580,7 +580,7 @@ public final class Long extends Number
         }
         if (inRange) {
             if (i + 1 == len) {
-                isDigit = isDigit((c = s.charAt(i)));
+                isDigit = Integer.isDigit((c = s.charAt(i)));
             }
             if (i != len && isDigit) {
                 digit = c - '0';
@@ -604,10 +604,6 @@ public final class Long extends Number
             throw NumberFormatException.forInputString(s);
         }
         return parseLong(s, 0, len, radix);
-    }
-
-    static boolean isDigit(int ch) {
-        return ch >= '0' && ch <= '9';
     }
 
     /**
