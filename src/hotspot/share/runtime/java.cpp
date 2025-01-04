@@ -353,7 +353,7 @@ void print_statistics() {
   }
 
   if (CompilerOracle::should_print_final_memstat_report()) {
-    CompilationMemoryStatistic::print_all(tty, true, false, 0);
+    CompilationMemoryStatistic::print_all(tty, false /* verbose */, 0);
   }
 
   ThreadsSMRSupport::log_statistics();

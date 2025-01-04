@@ -76,7 +76,7 @@ public:
     }
   }
 
-  static void print_all(outputStream* st, bool human_readable, bool verbose, size_t minsize);
+  static void print_all(outputStream* st, bool verbose, size_t minsize);
 
   // For compilers
   static const char* failure_reason_memlimit();

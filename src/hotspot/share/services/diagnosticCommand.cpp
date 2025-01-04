@@ -1146,19 +1146,16 @@ void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _sorted("sorted", "Print entries sorted by allocation size", "BOOLEAN", true, "true"),
   _verbose("verbose", "Print detailed usage information (requires \"-XX:CompileCommand=memstat,...,details\")", "BOOLEAN", false, "false"),
   _minsize("s", "Minimum memory size", "MEMORY SIZE", false, "0") {
-  _dcmdparser.add_dcmd_option(&_sorted);
   _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_minsize);
 }
 
 void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
-  const bool sorted = _sorted.value();
   const bool verbose = _verbose.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
-  CompilationMemoryStatistic::print_all(output(), sorted, verbose, minsize);
+  CompilationMemoryStatistic::print_all(output(), verbose, minsize);
 }
 
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)

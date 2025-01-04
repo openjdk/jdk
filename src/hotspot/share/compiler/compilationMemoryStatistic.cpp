@@ -424,12 +424,11 @@ public:
     _live_nodes_at_global_peak = state->live_nodes_at_global_peak();
     state->counters_at_global_peak().summarize(_peak_composition_per_arena_tag);
 #ifdef COMPILER2
+    assert(_detail_stats == nullptr, "should have been cleaned");
     if (store_details) {
       _detail_stats = NEW_C_HEAP_OBJ(Details, mtCompiler);
       _detail_stats->counters_at_global_peak.copy_from(state->counters_at_global_peak());
       _detail_stats->timeline.copy_from(state->timeline());
-    } else {
-      clean_details();
     }
 #endif // COMPILER2
   }
@@ -607,38 +606,28 @@ public:
     _entries.advance();
   }
 
-  void print_entries(outputStream* st, bool sorted, bool print_details, size_t threshold) const {
+  void print_entries(outputStream* st, bool print_details, size_t minsize) const {
     assert_lock_strong(NMTCompilationCostHistory_lock);
 
     const int num_all = _entries.size();
     int num_filtered = 0;
-    if (sorted) {
-      const MemStatEntry** filtered = NEW_C_HEAP_ARRAY(const MemStatEntry*, num_all, mtCompiler);
-      auto copy_to_flat_array = [&](const MemStatEntry* e) {
-        if (e->peak() >= threshold) {
-          filtered[num_filtered] = e;
-          num_filtered ++;
-        }
-      };
-      _entries.iterate_all(copy_to_flat_array);
-      assert(num_filtered <= num_all, "Sanity");
-      if (num_filtered > 0) {
-        QuickSort::sort(filtered, num_filtered, diff_entries_by_size);
-        for (int i = 0; i < num_filtered; i ++) {
-          DEBUG_ONLY(st->print("%d  ", i);)
-          filtered[i]->print_on(st, print_details);
-        }
+    const MemStatEntry** filtered = NEW_C_HEAP_ARRAY(const MemStatEntry*, num_all, mtCompiler);
+    auto copy_to_flat_array = [&](const MemStatEntry* e) {
+      if (e->peak() >= minsize) {
+        filtered[num_filtered] = e;
+        num_filtered ++;
       }
-      FREE_C_HEAP_ARRAY(MemStatEntry, filtered);
-    } else {
-      auto print = [&](const MemStatEntry* e) {
-        if (e->peak() >= threshold) {
-          e->print_on(st, print_details);
-          num_filtered ++;
-        }
-      };
-      _entries.iterate_all(print);
+    };
+    _entries.iterate_all(copy_to_flat_array);
+    assert(num_filtered <= num_all, "Sanity");
+    if (num_filtered > 0) {
+      QuickSort::sort(filtered, num_filtered, diff_entries_by_size);
+      for (int i = 0; i < num_filtered; i ++) {
+        DEBUG_ONLY(st->print("%d  ", i);)
+        filtered[i]->print_on(st, print_details);
+      }
     }
+    FREE_C_HEAP_ARRAY(MemStatEntry, filtered);
 
     if (num_filtered > 0) {
       st->print_cr("Total: %d compilations ", num_filtered);
@@ -646,7 +635,7 @@ public:
       st->print_cr("No entries.");
     }
     if (num_filtered < num_all) {
-      st->print_cr(" (%d compilations smaller than threshold=%zu omitted)", num_all - num_filtered, threshold);
+      st->print_cr(" (%d compilations smaller than %zu omitted)", num_all - num_filtered, minsize);
     }
     if (_entries.lost() > 0) {
       st->print_cr(" (%zu old compilations lost - use method filters on the memstat CompileCommand to "
@@ -881,7 +870,7 @@ void CompilationMemoryStatistic::on_phase_end_0(int phase_trc_id) {
   arena_stat->on_phase_end(phase_trc_id);
 }
 
-void CompilationMemoryStatistic::print_all(outputStream* st, bool sorted, bool verbose, size_t min_size) {
+void CompilationMemoryStatistic::print_all(outputStream* st, bool verbose, size_t min_size) {
 
   MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
@@ -892,11 +881,7 @@ void CompilationMemoryStatistic::print_all(outputStream* st, bool sorted, bool v
   }
 
   st->cr();
-  if (sorted) {
-    st->print_cr("Compilation memory statistics, by allocation size");
-  } else {
-    st->print_cr("Compilation memory statistics, in order of compilation");
-  }
+  st->print_cr("Compilation memory statistics, by allocation size");
   st->cr();
 
   MemStatEntry::print_legend(st);
@@ -911,7 +896,7 @@ void CompilationMemoryStatistic::print_all(outputStream* st, bool sorted, bool v
   const MemStatEntry** filtered = nullptr;
 
   if (_the_table != nullptr) {
-    _the_table->print_entries(st, sorted, verbose, min_size);
+    _the_table->print_entries(st, verbose, min_size);
   }
   st->cr();
 }

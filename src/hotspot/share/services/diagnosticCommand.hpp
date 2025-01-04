@@ -805,11 +805,10 @@ public:
 
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
 protected:
-  DCmdArgument<bool> _sorted;
   DCmdArgument<bool> _verbose;
   DCmdArgument<MemorySizeArgument> _minsize;
 public:
-  static int num_arguments() { return 3; }
+  static int num_arguments() { return 2; }
   CompilationMemoryStatisticDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.memory";
