@@ -60,6 +60,16 @@ public class NumberFormatException extends IllegalArgumentException {
      *
      * @param   s   the input causing the error
      */
+    static NumberFormatException forInputString(String s) {
+        return forInputString(s, 10);
+    }
+
+    /**
+     * Factory method for making a {@code NumberFormatException}
+     * given the specified input which caused the error.
+     *
+     * @param   s   the input causing the error
+     */
     static NumberFormatException forInputString(String s, int radix) {
         return new NumberFormatException("For input string: \"" + s + "\"" +
                                          (radix == 10 ?
@@ -81,5 +91,9 @@ public class NumberFormatException extends IllegalArgumentException {
         return new NumberFormatException("Error at index "
                 + (errorIndex - beginIndex) + " in: \""
                 + s.subSequence(beginIndex, endIndex) + "\"");
+    }
+
+    static NumberFormatException emptyInput() {
+        return new NumberFormatException("Cannot parse null string");
     }
 }
