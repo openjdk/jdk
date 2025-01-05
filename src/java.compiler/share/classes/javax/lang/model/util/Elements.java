@@ -778,11 +778,11 @@ public interface Elements {
      *                           elements.getTypeElement("I"));
      * }
      *
-     * @apiNote The notion of overriding, by itself, does not involve the
-     * method's return type, listed exceptions, or, to some extent, access
-     * modifiers. These are additional requirements checked by the compiler;
-     * see JLS {@jls 8.4.8.3} for details. An implementation may choose not
-     * to check the additional requirements under some conditions.
+     * @apiNote This method implements the overrides relation as specified in JLS {@jls 8.4.8.1}.
+     * It may not implement the additional compile-time checks that Java compilers follow,
+     * specified in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3}. In particular, the additional constraints
+     * on thrown types, return types and those constraints on method modifiers not directly
+     * bound to the overriding relation as such.
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
