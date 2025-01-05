@@ -25,6 +25,8 @@
 
 package jdk.internal.util;
 
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -33,6 +35,7 @@ import jdk.internal.vm.annotation.Stable;
  * @since 21
  */
 public final class DecimalDigits {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
      * Each element of the array represents the packaging of two ascii characters based on little endian:<p>
@@ -135,5 +138,53 @@ public final class DecimalDigits {
             p = 10 * p;
         }
         return 19 + d;
+    }
+
+    /**
+     * Determine whether the two strings in bytes are both numbers. If they are, return d0 * 10 + d1, otherwise return -1
+     * @param str The input LATIN1 encoded String value
+     * @param offset the offset
+     * @return If both characters are numbers, return d0 * 10 + d1, otherwise return -1
+     */
+    @ForceInline
+    public static int digit2(byte[] str, int offset) {
+        /*
+            Here we are doing a 2-Byte Vector operation on the short type.
+
+            x & 0xF0 != 0xC0
+            ---------------
+            0 0b0011_0000 & 0b1111_0000 = 0b0011_0000
+            1 0b0011_0001 & 0b1111_0000 = 0b0011_0000
+            2 0b0011_0010 & 0b1111_0000 = 0b0011_0000
+            3 0b0011_0011 & 0b1111_0000 = 0b0011_0000
+            4 0b0011_0100 & 0b1111_0000 = 0b0011_0000
+            5 0b0011_0101 & 0b1111_0000 = 0b0011_0000
+            6 0b0011_0110 & 0b1111_0000 = 0b0011_0000
+            7 0b0011_0111 & 0b1111_0000 = 0b0011_0000
+            8 0b0011_1000 & 0b1111_0000 = 0b0011_0000
+            9 0b0011_1001 & 0b1111_0000 = 0b0011_0000
+
+            (((d = x & 0x0F) + 0x06) & 0xF0) != 0
+            ---------------
+            0 ((0b0011_0000) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            1 ((0b0011_0001) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            2 ((0b0011_0010) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            3 ((0b0011_0011) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            4 ((0b0011_0100) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            5 ((0b0011_0101) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            6 ((0b0011_0110) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            7 ((0b0011_0111) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            8 ((0b0011_1000) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+            9 ((0b0011_1001) & 0b0000_1111 + 0b0110_0000) & 0b1111_0000 = 0b0110_0000
+         */
+        int d;
+        short x = UNSAFE.getShortUnaligned(str, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset, false);
+        if ((((x & 0xF0F0) - 0x3030)
+                | (((d = x & 0x0F0F) + 0x0606) & 0xF0F0)) != 0
+        ) {
+            return -1;
+        }
+        return ((d & 0xF) << 3) + ((d & 0xF) << 1)  // (d & 0xF) * 10
+                + (d >> 8);
     }
 }

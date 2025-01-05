@@ -560,7 +560,7 @@ public final class Long extends Number
         if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseLong0(s, radix);
         }
-        int c, c1;
+        int c, digit;
         long result = 0;
         boolean inRange;
         int neg;
@@ -577,10 +577,8 @@ public final class Long extends Number
         int i = 1;
         while (inRange
                 && i + 1 < len
-                && Integer.isDigitLatin1((c = value[i]))
-                && Integer.isDigitLatin1(c1 = value[i + 1])
+                && (digit = DecimalDigits.digit2(value, i)) != -1
         ) {
-            int digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             if (inRange = (result > MULT_MIN_100 || (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit)))) {
                 result = result * 100 - digit;
                 i += 2;
@@ -588,7 +586,7 @@ public final class Long extends Number
         }
         if (inRange) {
             if (i + 1 == len && Integer.isDigitLatin1((c = value[i]))) {
-                int digit = c - '0';
+                digit = c - '0';
                 // max digits is 20, no need to check inRange (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))
                 if (result >= MULT_MIN_10) {
                     result = result * 10 - digit;

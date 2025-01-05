@@ -524,7 +524,7 @@ public final class Integer extends Number
         if (s == null || radix != 10 || (len = (value = s.value()).length) == 0 || !s.isLatin1()) {
             return parseInt0(s, radix);
         }
-        int result = 0, c, c1, digit;
+        int result = 0, c, digit;
         boolean inRange;
         int neg;
         if ((neg = (c = value[0]) - '-') != 0
@@ -540,10 +540,8 @@ public final class Integer extends Number
         int i = 1;
         while (inRange
                 && i + 1 < len
-                && isDigitLatin1((c = value[i]))
-                && isDigitLatin1(c1 = value[i + 1])
+                && (digit = DecimalDigits.digit2(value, i)) != -1
         ) {
-            digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             // max digits is 19, no need to check inRange (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit))
             if (inRange = (result >= MULT_MIN_100)) {
                 result = result * 100 - digit;
@@ -577,6 +575,10 @@ public final class Integer extends Number
     }
 
     static boolean isDigitLatin1(int ch) {
+        return CharacterDataLatin1.instance.isDigit(ch);
+    }
+
+    static boolean isDigitLatin2(int ch) {
         return CharacterDataLatin1.instance.isDigit(ch);
     }
 
