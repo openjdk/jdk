@@ -1276,7 +1276,9 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   // Check if our monitor usage is above the threshold:
   size_t monitor_usage = (monitors_used * 100LL) / ceiling;
   if (int(monitor_usage) > MonitorUsedDeflationThreshold) {
-    bool status = true;
+    // Deflate monitors if over the threshold percentage, unless no
+    // progress on previous deflations.
+    bool is_above_threshold = true;
 
     // Check if it's time to adjust the in_use_list_ceiling up, due
     // to too many async deflation attempts without any progress.
@@ -1297,12 +1299,12 @@ static bool monitors_used_above_threshold(MonitorList* list) {
 
       // Check if our monitor usage is still above the threshold:
       monitor_usage = (monitors_used * 100LL) / ceiling;
-      status = int(monitor_usage) > MonitorUsedDeflationThreshold;
+      is_above_threshold = int(monitor_usage) > MonitorUsedDeflationThreshold;
     }
     log_info(monitorinflation)("monitors_used=" SIZE_FORMAT ", ceiling=" SIZE_FORMAT
                                ", monitor_usage=" SIZE_FORMAT ", threshold=%d",
                                monitors_used, ceiling, monitor_usage, MonitorUsedDeflationThreshold);
-    return status;
+    return is_above_threshold;
   }
 
   return false;
