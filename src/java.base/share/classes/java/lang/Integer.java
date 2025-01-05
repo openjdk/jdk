@@ -544,12 +544,12 @@ public final class Integer extends Number
                 && isDigit(c1 = value[i + 1])
         ) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
-            if (inRange = (result > MULT_MIN_100 || (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit)))) {
+            if (inRange = (result >= MULT_MIN_100)) {
                 result = result * 100 - digit;
                 i += 2;
             }
         }
-        if (inRange) {
+        if (inRange && result <= 0) {
             if (i + 1 == len && isDigit((c = value[i]))) {
                 digit = c - '0';
                 if (result > MULT_MIN_10 || (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))) {
