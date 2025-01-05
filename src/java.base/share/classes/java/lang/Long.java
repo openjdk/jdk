@@ -567,7 +567,7 @@ public final class Long extends Number
         if ((neg = (c = value[0]) - '-') != 0
                 && neg + 2 != 0 // firstChar != '+'
         ) {
-            if (inRange = Integer.isDigit(c)) {
+            if (inRange = Integer.isDigitLatin1(c)) {
                 result = '0' - c;
             }
         } else {
@@ -577,8 +577,8 @@ public final class Long extends Number
         int i = 1;
         while (inRange
                 && i + 1 < len
-                && Integer.isDigit((c = value[i]))
-                && Integer.isDigit(c1 = value[i + 1])
+                && Integer.isDigitLatin1((c = value[i]))
+                && Integer.isDigitLatin1(c1 = value[i + 1])
         ) {
             int digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             if (inRange = (result > MULT_MIN_100 || (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit)))) {
@@ -587,7 +587,7 @@ public final class Long extends Number
             }
         }
         if (inRange) {
-            if (i + 1 == len && Integer.isDigit((c = value[i]))) {
+            if (i + 1 == len && Integer.isDigitLatin1((c = value[i]))) {
                 int digit = c - '0';
                 // max digits is 20, no need to check inRange (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))
                 if (result >= MULT_MIN_10) {

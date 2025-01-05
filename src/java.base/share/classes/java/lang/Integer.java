@@ -530,7 +530,7 @@ public final class Integer extends Number
         if ((neg = (c = value[0]) - '-') != 0
                 && neg + 2 != 0 // firstChar != '+'
         ) {
-            if (inRange = isDigit(c)) {
+            if (inRange = isDigitLatin1(c)) {
                 result = '0' - c;
             }
         } else {
@@ -540,8 +540,8 @@ public final class Integer extends Number
         int i = 1;
         while (inRange
                 && i + 1 < len
-                && isDigit((c = value[i]))
-                && isDigit(c1 = value[i + 1])
+                && isDigitLatin1((c = value[i]))
+                && isDigitLatin1(c1 = value[i + 1])
         ) {
             digit = c * 10 + c1 - 528; // 528 = 48 * 11 = '0' * 10 + '0'
             // max digits is 19, no need to check inRange (result == MULT_MIN_100 && digit <= (MULT_MIN_100 * 100 - limit))
@@ -551,7 +551,7 @@ public final class Integer extends Number
             }
         }
         if (inRange && result <= 0) {
-            if (i + 1 == len && isDigit((c = value[i]))) {
+            if (i + 1 == len && isDigitLatin1((c = value[i]))) {
                 digit = c - '0';
                 if (result > MULT_MIN_10 || (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))) {
                     result = result * 10 - digit;
@@ -576,8 +576,8 @@ public final class Integer extends Number
         return parseInt(s, 0, len, radix);
     }
 
-    static boolean isDigit(int ch) {
-        return ch >= '0' && ch <= '9';
+    static boolean isDigitLatin1(int ch) {
+        return CharacterDataLatin1.instance.isDigit(ch);
     }
 
     /**
