@@ -93,7 +93,7 @@ public class NumberFormatException extends IllegalArgumentException {
                 + s.subSequence(beginIndex, endIndex) + "\"");
     }
 
-    static NumberFormatException emptyInput() {
+    static NumberFormatException nullInput() {
         return new NumberFormatException("Cannot parse null string");
     }
 }

@@ -567,7 +567,7 @@ public final class Integer extends Number
 
     private static int parseInt0(String s, int radix) {
         if (s == null) {
-            throw NumberFormatException.emptyInput();
+            throw NumberFormatException.nullInput();
         }
         int len;
         if ((len = s.length()) == 0) {

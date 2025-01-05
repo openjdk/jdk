@@ -604,7 +604,7 @@ public final class Long extends Number
 
     private static long parseLong0(String s, int radix) {
         if (s == null) {
-            throw NumberFormatException.emptyInput();
+            throw NumberFormatException.nullInput();
         }
         int len;
         if ((len = s.length()) == 0) {
