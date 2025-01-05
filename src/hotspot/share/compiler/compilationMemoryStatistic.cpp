@@ -466,7 +466,7 @@ public:
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "codesz", "Compiled method code size");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "result", "Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "limit", "memory limit, if set");
-    st->print_cr("  " LEGEND_KEY_FMT ": %s", "time", "time taken for last compilation (sec)");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "time", "timestamp");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "id", "compile id");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "rec", "how often recompiled");
     st->print_cr("  " LEGEND_KEY_FMT ": %s", "thread", "compiler thread");
@@ -489,7 +489,7 @@ public:
     st->print_cr("");
   }
 
-  void print_on(outputStream* st, bool verbose) const {
+  void print_brief_oneline(outputStream* st) const {
     int col = 0;
 
     // Type
@@ -549,12 +549,43 @@ public:
     // MethodName
     char buf[1024];
     st->print("%s ", _method.as_C_string(buf, sizeof(buf)));
-    st->cr();
 
-    // If we have detail information, print two additional tables in the next lines:
-    // One containing the counter composition at global peak, one containing the phase-local
-    // counters
-    if (_detail_stats != nullptr && verbose) {
+    st->cr();
+  }
+
+  void print_detailed(outputStream* st) const {
+    int col = 0;
+
+#define INDENT "%30s:"
+
+    char buf[1024];
+    st->print_cr(INDENT " %s", "Method", _method.as_C_string(buf, sizeof(buf)));
+    st->print_cr(INDENT " %2s", "Compiler Type", compilertype2name(_comp_type));
+    st->print_cr(INDENT " %d", "Compile ID", _comp_id);
+    st->print_cr(INDENT " %u", "Number of recompilations", _num_recomp);
+    st->print_cr(INDENT " %s", "Result", _result);
+    st->print(INDENT, "MemLimit");
+    if (_limit > 0) {
+      st->print_cr(" %zu", _limit);
+    } else {
+      st->print_cr(" - ");
+    }
+    st->print_cr(INDENT " %.3f", "Timestamp", _time);
+    st->print_cr(INDENT " " PTR_FORMAT, "Thread", p2i(_thread));
+    st->print(INDENT, "Nodes at global peak");
+    if (_live_nodes_at_global_peak > 0) {
+      st->print_cr(" %u", _live_nodes_at_global_peak);
+    } else {
+      st->print_cr(" - ");
+    }
+    st->print_cr(INDENT " %zu", "Code Size", _code_size);
+    st->print_cr(INDENT " %zu", "** Total Arena Usage, at peak", _peak);
+    st->print_cr("--- Arena Usage by Arena Tag, at peak ---");
+    for (int tag = 0; tag < arena_tag_max; tag++) {
+      const size_t v = _peak_composition_per_arena_tag[tag];
+      st->print_cr(INDENT " %zu ", Arena::tag_desc[tag], v);
+    }
+    if (_detail_stats != nullptr && _comp_type == CompilerType::compiler_c2) {
       st->print_cr("----- Peak composition, accumulated by phase and arena type ------");
       _detail_stats->counters_at_global_peak.print_on(st);
       st->print_cr("------Allocation timelime by phase, last %u phases ---------------", FootprintTimeline::max_num_phases);
@@ -580,16 +611,68 @@ class MemStatTable : public CHeapObj<mtCompiler> {
   static constexpr int max_entries = 512 * K;
   SimpleFifo<MemStatEntry*, max_entries> _entries;
 
-  // Size threshold - below this threshold we don't bother keeping detailed information
+  // (C2) Details structure is hefty. To conserve memory, we only store those for compilations
+  // above a certain size (the vast majority of compilations only consumes a few hundred KB).
   static constexpr size_t detail_threshold = 2 * M;
+
+  template<typename F>
+  int iterate_sorted_filtered(F f, size_t minsize) const {
+    assert_lock_strong(NMTCompilationCostHistory_lock);
+
+    // Build up filtered array
+    const int num_all = _entries.size();
+    const MemStatEntry** filtered = NEW_C_HEAP_ARRAY(const MemStatEntry*, num_all, mtInternal);
+    int num_filtered = 0;
+    auto copy_to_flat_array = [&](const MemStatEntry* e) {
+      if (e->peak() >= minsize) {
+        filtered[num_filtered] = e;
+        assert(num_filtered < num_all, "Sanity");
+        num_filtered++;
+      }
+    };
+    _entries.iterate_all(copy_to_flat_array);
+    assert(num_filtered <= num_all, "Sanity");
+
+    // Sort it by entry size
+    if (num_filtered > 0) {
+      QuickSort::sort(filtered, num_filtered, diff_entries_by_size);
+    }
+
+    // Run
+    for (int i = 0; i < num_filtered; i ++) {
+      f(filtered[i]);
+    }
+
+    // free temp array
+    FREE_C_HEAP_ARRAY(MemStatEntry, filtered);
+
+    return num_filtered;
+  }
+
+  void print_footer(outputStream* st, int printed, size_t minsize) const {
+    const int num_all = _entries.size();
+    if (printed > 0) {
+      st->print_cr("Total: %d compilations ", printed);
+    } else {
+      st->print_cr("No entries.");
+    }
+    const int omitted = num_all - printed;
+    if (omitted > 0) {
+      st->print_cr(" (%d compilations smaller than %zu omitted)", omitted, minsize);
+    }
+    if (_entries.lost() > 0) {
+      st->print_cr(" (%zu old compilations lost - use method filters on the memstat CompileCommand to "
+                   "reduce the amount of information gathered)", _entries.lost());
+    }
+  }
 
 public:
 
   void add(const FullMethodName& fmn, const ArenaState* state, size_t code_size, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     MemStatEntry*& e = _entries.current();
-    if (_entries.wrapped()) { // Reuse entry
-      e->reset();
+    if (_entries.wrapped()) {
+      e->reset(); // Reuse entry
     } else {
       e = new MemStatEntry(fmn);
     }
@@ -606,41 +689,32 @@ public:
     _entries.advance();
   }
 
-  void print_entries(outputStream* st, bool print_details, size_t minsize) const {
+  void print_table(outputStream* st, size_t minsize) const {
     assert_lock_strong(NMTCompilationCostHistory_lock);
 
-    const int num_all = _entries.size();
-    int num_filtered = 0;
-    const MemStatEntry** filtered = NEW_C_HEAP_ARRAY(const MemStatEntry*, num_all, mtCompiler);
-    auto copy_to_flat_array = [&](const MemStatEntry* e) {
-      if (e->peak() >= minsize) {
-        filtered[num_filtered] = e;
-        num_filtered ++;
-      }
-    };
-    _entries.iterate_all(copy_to_flat_array);
-    assert(num_filtered <= num_all, "Sanity");
-    if (num_filtered > 0) {
-      QuickSort::sort(filtered, num_filtered, diff_entries_by_size);
-      for (int i = 0; i < num_filtered; i ++) {
-        DEBUG_ONLY(st->print("%d  ", i);)
-        filtered[i]->print_on(st, print_details);
-      }
-    }
-    FREE_C_HEAP_ARRAY(MemStatEntry, filtered);
+    MemStatEntry::print_legend(st);
+    st->cr();
 
-    if (num_filtered > 0) {
-      st->print_cr("Total: %d compilations ", num_filtered);
-    } else {
-      st->print_cr("No entries.");
-    }
-    if (num_filtered < num_all) {
-      st->print_cr(" (%d compilations smaller than %zu omitted)", num_all - num_filtered, minsize);
-    }
-    if (_entries.lost() > 0) {
-      st->print_cr(" (%zu old compilations lost - use method filters on the memstat CompileCommand to "
-                   "reduce the amount of information gathered)", _entries.lost());
-    }
+    MemStatEntry::print_header(st);
+    st->cr();
+
+    auto printer = [&](const MemStatEntry* e) {
+      e->print_brief_oneline(st);
+    };
+    const int num_printed = iterate_sorted_filtered(printer, minsize);
+
+    print_footer(st, num_printed, minsize);
+  }
+
+  void print_details(outputStream* st, size_t minsize) const {
+    assert_lock_strong(NMTCompilationCostHistory_lock);
+
+    auto printer = [&](const MemStatEntry* e) {
+      e->print_detailed(st);
+    };
+    const int num_printed = iterate_sorted_filtered(printer, minsize);
+
+    print_footer(st, num_printed, minsize);
   }
 
   int size() const { return _entries.size(); }
@@ -870,7 +944,7 @@ void CompilationMemoryStatistic::on_phase_end_0(int phase_trc_id) {
   arena_stat->on_phase_end(phase_trc_id);
 }
 
-void CompilationMemoryStatistic::print_all(outputStream* st, bool verbose, size_t min_size) {
+void CompilationMemoryStatistic::print_all(outputStream* st, bool verbose, size_t minsize) {
 
   MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
@@ -884,20 +958,17 @@ void CompilationMemoryStatistic::print_all(outputStream* st, bool verbose, size_
   st->print_cr("Compilation memory statistics, by allocation size");
   st->cr();
 
-  MemStatEntry::print_legend(st);
-  st->cr();
-
-  if (min_size > 0) {
-    st->print_cr(" (threshold: %zu bytes)", min_size);
+  if (_the_table == nullptr) {
+    st->print_cr("Compilation memory statistics not yet initialized. ");
+    return;
   }
-  st->cr();
-  MemStatEntry::print_header(st);
 
-  const MemStatEntry** filtered = nullptr;
-
-  if (_the_table != nullptr) {
-    _the_table->print_entries(st, verbose, min_size);
+  if (verbose) {
+    _the_table->print_details(st, minsize);
+  } else {
+    _the_table->print_table(st, minsize);
   }
+
   st->cr();
 }
 
@@ -907,54 +978,63 @@ const char* CompilationMemoryStatistic::failure_reason_memlimit() {
 }
 
 #ifdef ASSERT
-static bool is_compiling_jtreg_test(CompilerThread* th) {
-  CompileTask* const task = th->task();
-  // Todo: why are task, method null when doing tests below?
-  // Todo2: store FullMethodName in arena stat when compilation starts
+// JTReg-test code. See
+static bool is_compiling_jtreg_test_method(CompilerType& ctyp) {
+  bool result = false;
+  ctyp = CompilerType::compiler_none;
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+  CompileTask* const task = th == nullptr ? nullptr : th->task();
   if (task != nullptr) {
     const Method* const m = th->task()->method();
     if (m != nullptr) {
       FullMethodName fmn(m);
       char tmp[1024];
       fmn.as_C_string(tmp, sizeof(tmp));
-    #define TEST_METHOD_PREFIX "compiler/print/CompileCommandPrintMemStat$TestMain::method"
+      #define TEST_METHOD_PREFIX "compiler/print/CompileCommandPrintMemStat$TestMain::method"
       return strncmp(tmp, TEST_METHOD_PREFIX, sizeof(TEST_METHOD_PREFIX) - 1) == 0;
-    #undef TEST_METHOD_PREFIX
+      #undef TEST_METHOD_PREFIX
     }
+    ctyp = th->task()->compiler()->type();
+    result = true;
   }
-  return false;
+  return result;
 }
 
 void CompilationMemoryStatistic::do_test_allocations() {
-  // For jtreg tests
-  CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  if (!is_compiling_jtreg_test(th)) {
+  CompilerType ctyp;
+  if (!is_compiling_jtreg_test_method(ctyp)) {
     return;
   }
-#ifdef COMPILER2
+
   // Allocate large amounts - large enough to (comfortably) cause new arena chunks to be
   // allocated, as well as large enough to trigger a new peak that is the highest peak that
   // would happend during compilation of the very small test methods.
   const size_t large_size = MAX3(M * 3, (size_t)Chunk::max_default_size * 2, significant_peak_threshold);
-  Compile::TracePhase tp(Phase::_t_testTimer1);
-  Arena testArena1(MemTag::mtCompiler, Arena::Tag::tag_ra);
-  Arena testArena2(MemTag::mtCompiler, Arena::Tag::tag_regsplit);
-  // The following allocations bring us to a new peak
-  testArena1.Amalloc(large_size);
-  testArena2.Amalloc(large_size);
-  {
-    Compile::TracePhase tp(Phase::_t_testTimer2);
+
+  // 1) memory that "sticks"
+  // Allocate ResouceArea and leak it to the end of the compilation. Since we do this
+  // only for the one jtreg test class, this is fine. This allocation should turn up also in the
+  // non-verbose printout.
+
+  NEW_RESOURCE_ARRAY(char, large_size);
+
+  if (ctyp == CompilerType::compiler_c2) {
+    // For C2 only, cause temporary spikes in test phases with non-RA test arenas. These allocations
+    // won't show up in the non-verbose overview mode, since the spikes will vanish at the end of the
+    // phase. However, they should turn up in both the detailled peak allocation breakdown as well as
+    // the phase allocation timeline.
+    Compile::TracePhase tp(Phase::_t_testTimer1);
+    Arena testArena1(MemTag::mtTest, Arena::Tag::tag_node);
+    Arena testArena2(MemTag::mtTest, Arena::Tag::tag_regsplit);
+    // The following allocations bring us to a new peak
     testArena1.Amalloc(large_size);
     testArena2.Amalloc(large_size);
+    {
+      Compile::TracePhase tp(Phase::_t_testTimer2);
+      testArena1.Amalloc(large_size);
+      testArena2.Amalloc(large_size);
+    }
   }
-  // In the end, this should have happened:
-  // - we should have reached multiple peaks, the last peak with the last Amalloc. It should have given us
-  //   a total peak size of >12MB (3MB * 4), the normal footprint of compilation for such a small
-  //   method.
-  // - we should see both "testTimer1" and "testTimer2" in both the Peak composition printout as well as
-  //   in the footprint timeline;
-  // - footprint timeline should show both test phases as "significant"
-#endif // COMPILER2
 }
 #endif // ASSERT
 

@@ -1146,8 +1146,8 @@ void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _verbose("verbose", "Print detailed usage information (requires \"-XX:CompileCommand=memstat,...,details\")", "BOOLEAN", false, "false"),
-  _minsize("s", "Minimum memory size", "MEMORY SIZE", false, "0") {
+  _verbose("verbose", "Print detailed information", "BOOLEAN", false, "false"),
+  _minsize("minsize", "Minimum memory size", "MEMORY SIZE", false, "0") {
   _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_minsize);
 }

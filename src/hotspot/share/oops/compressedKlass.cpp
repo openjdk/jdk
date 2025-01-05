@@ -150,16 +150,6 @@ void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
   _highest_valid_narrow_klass_id = (narrowKlass) ((uintptr_t)(highest_possible_klass_location - _base) >> _shift);
 }
 
-volatile int XXX = 0;
-
-Klass* DECODE_ME(narrowKlass v) {
-  return CompressedKlassPointers::decode_not_null(v);
-}
-
-narrowKlass ENCODE_ME(Klass* v) {
-  return CompressedKlassPointers::encode_not_null(v);
-}
-
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
 // archived heap objects.
