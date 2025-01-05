@@ -556,41 +556,40 @@ public:
   void print_detailed(outputStream* st) const {
     int col = 0;
 
-#define INDENT "%30s:"
+    constexpr int indent1 = 40;
+    constexpr int indent2 = 50;
 
     char buf[1024];
-    st->print_cr(INDENT " %s", "Method", _method.as_C_string(buf, sizeof(buf)));
-    st->print_cr(INDENT " %2s", "Compiler Type", compilertype2name(_comp_type));
-    st->print_cr(INDENT " %d", "Compile ID", _comp_id);
-    st->print_cr(INDENT " %u", "Number of recompilations", _num_recomp);
-    st->print_cr(INDENT " %s", "Result", _result);
-    st->print(INDENT, "MemLimit");
+    st->print_cr("%*s: %s", indent1, "Method", _method.as_C_string(buf, sizeof(buf)));
+    st->print_cr("%*s: %2s", indent1, "Compiler Type", compilertype2name(_comp_type));
+    st->print_cr("%*s: %d", indent1, "Compile ID", _comp_id);
+    st->print_cr("%*s: %u", indent1, "Number of recompilations", _num_recomp);
+    st->print_cr("%*s: %s", indent1, "Result", _result);
+    st->print("%*s: ", indent1, "MemLimit");
     if (_limit > 0) {
-      st->print_cr(" %zu", _limit);
+      st->print_cr("%zu", _limit);
     } else {
-      st->print_cr(" - ");
+      st->print_cr("-");
     }
-    st->print_cr(INDENT " %.3f", "Timestamp", _time);
-    st->print_cr(INDENT " " PTR_FORMAT, "Thread", p2i(_thread));
-    st->print(INDENT, "Nodes at global peak");
+    st->print_cr("%*s: %.3f", indent1, "Timestamp", _time);
+    st->print_cr("%*s: " PTR_FORMAT, indent1, "Thread", p2i(_thread));
+    st->print("%*s: ", indent1, "Nodes at global peak");
     if (_live_nodes_at_global_peak > 0) {
-      st->print_cr(" %u", _live_nodes_at_global_peak);
+      st->print_cr("%u", _live_nodes_at_global_peak);
     } else {
-      st->print_cr(" - ");
+      st->print_cr("-");
     }
-    st->print_cr(INDENT " %zu", "Code Size", _code_size);
-    st->print_cr(INDENT " %zu", "** Total Arena Usage, at peak", _peak);
-    st->print_cr("--- Arena Usage by Arena Tag, at peak ---");
+    st->print_cr("%*s: %zu", indent1, "Code Size", _code_size);
+    st->print_cr("           ------ Arena Usage by Arena Tag, across all phases, at peak -------------------");
     for (int tag = 0; tag < arena_tag_max; tag++) {
       const size_t v = _peak_composition_per_arena_tag[tag];
-      st->print_cr(INDENT " %zu ", Arena::tag_desc[tag], v);
+      st->print_cr("%*s: %zu ", indent2, Arena::tag_desc[tag], v);
     }
     if (_detail_stats != nullptr && _comp_type == CompilerType::compiler_c2) {
-      st->print_cr("----- Peak composition, accumulated by phase and arena type ------");
+      st->print_cr("          ----- Arena Usage by Arena Tag and compilation phase, at peak ----------------");
       _detail_stats->counters_at_global_peak.print_on(st);
-      st->print_cr("------Allocation timelime by phase, last %u phases ---------------", FootprintTimeline::max_num_phases);
+      st->print_cr("          ------Allocation timelime by phase, last %u compilation phases ---------------", FootprintTimeline::max_num_phases);
       _detail_stats->timeline.print_on(st);
-      st->print_cr("------------------------------------------------------------------");
     }
   }
 
@@ -711,6 +710,7 @@ public:
 
     auto printer = [&](const MemStatEntry* e) {
       e->print_detailed(st);
+      st->print_cr("====================================================================================");
     };
     const int num_printed = iterate_sorted_filtered(printer, minsize);
 
