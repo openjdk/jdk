@@ -589,7 +589,7 @@ public final class Long extends Number
         if (inRange) {
             if (i + 1 == len && Integer.isDigit((c = value[i]))) {
                 int digit = c - '0';
-                // // max len is 20, No need to check inRange (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))
+                // max digits is 20, no need to check inRange (result == MULT_MIN_10 && digit <= (MULT_MIN_10 * 10 - limit))
                 if (result >= MULT_MIN_10) {
                     result = result * 10 - digit;
                     i++;
