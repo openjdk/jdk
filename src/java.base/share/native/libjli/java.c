@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1366,9 +1366,15 @@ ParseArguments(int *pargc, char ***pargv,
          * launcher mode is LM_UNKNOWN. In such cases, we determine the
          * mode as LM_CLASS or LM_SOURCE per the input file. */
         mode = IsSourceFile(arg) ? LM_SOURCE : LM_CLASS;
+        if (mode == LM_SOURCE) {
+            // TODO use feature release number constant or a dedicated flag
+            AddOption("-Djdk.internal.javac.source=25", NULL);
+        }
     } else if (mode == LM_CLASS && IsSourceFile(arg)) {
         /* override LM_CLASS mode if given a source file */
         mode = LM_SOURCE;
+        // TODO use feature release number constant or a dedicated flag
+        AddOption("-Djdk.internal.javac.source=25", NULL);
     }
 
     if (mode == LM_SOURCE) {

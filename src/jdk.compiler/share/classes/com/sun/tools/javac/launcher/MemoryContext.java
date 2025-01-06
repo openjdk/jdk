@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,7 @@ final class MemoryContext {
      * @return class loader object able to find and load the desired class
      * @throws Fault if a modular application class is in the unnamed package
      */
+    @SuppressWarnings("restricted")
     ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws Fault {
         var moduleInfoBytes = inMemoryClasses.get("module-info");
         if (moduleInfoBytes == null) {
@@ -225,6 +226,15 @@ final class MemoryContext {
         var module = memoryLayer.findModule(applicationModule.name()).orElseThrow();
         var mainClassNamePackageName = mainClassName.substring(0, lastDotInMainClassName);
         memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
+
+        // Configure native access for the modular application.
+        // TODO: warn about unknown module(s)
+        // TODO: warn/fail if enableNativeAccess() throws an exception
+        for (var candidate : options.enableNativeAccessForModules()) {
+            if (candidate.equals(applicationModule.name())) {
+                memoryController.enableNativeAccess(module);
+            }
+        }
 
         return memoryLayer.findLoader(applicationModule.name());
     }
