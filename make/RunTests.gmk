@@ -541,7 +541,7 @@ define SetupRunGtestTestBody
 	      '/YOU HAVE [0-9]+ DISABLED TEST/ { \
 	          if (match($$$$0, /[0-9]+/, arr)) { \
 	            print arr[0]; \
-	            found=1 \
+	            found=1; \
 	          } \
 	          if (!found) { print 0; } \
 	      }' \
@@ -667,7 +667,6 @@ define SetupRunMicroTestBody
 	  $$(eval $1_EXIT_CODE := $$(shell $$(CAT) $$($1_EXITCODE))) \
 	  $$(if $$(filter 0, $$($1_EXIT_CODE)), \
 	    $$(eval $1_PASSED := 1) \
-	    $$(eval $1_SKIPPED := 0) \
 	    $$(eval $1_ERROR := 0) \
 	  , \
 	    $$(eval $1_PASSED := 0) \
@@ -678,11 +677,11 @@ define SetupRunMicroTestBody
 	      $$(EXPR) $$($1_PASSED) + $$($1_ERROR))) \
 	, \
 	  $$(eval $1_PASSED := 0) \
-	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_FAILED := 0) \
 	  $$(eval $1_ERROR := 1) \
 	  $$(eval $1_TOTAL := 1) \
 	)
+	$$(eval $1_SKIPPED := 0)
 
   $1: run-test-$1 parse-test-$1
 
