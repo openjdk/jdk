@@ -57,6 +57,10 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   double _last_sample_time;
   size_t _last_sample_value;
   double _interval_sec;
+#define KELVIN_VERBOSE
+#ifdef KELVIN_VERBOSE
+public:
+#endif
   TruncatedSeq _rate;
   TruncatedSeq _rate_avg;
 };

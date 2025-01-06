@@ -24,25 +24,6 @@
  *
  */
 
-#ifdef KELVIN_DEPRECATE
-  product(double, ShenandoahInitialAcceleratedAllocationRateGoodnessRatio,  \
-          0.10, EXPERIMENTAL,                                               \
-          "(Generational mode only) "                                       \
-          "If the allocation rate predicted by an acceleration trend "      \
-          "analysis divided by the most recently measured allocation "      \
-          "rate is less than or equal to this value, consider the trend "   \
-          "analysis to represent a reliable predictor.  Otherwise, reject " \
-          "the trend analysis as unreliable because allocation rate is "    \
-          "not accelerating.  A smaller value makes us less likely to "     \
-          "recognize acceleration trends, and less likely to trigger "      \
-          "collection dues to acceleration.  A larger value may result "    \
-          "excessive triggers.")                                            \
-          range(0,1.0)                                                      \
-                                                                            
-#endif
-
-
-
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 
@@ -53,8 +34,9 @@
                             range,                                          \
                             constraint)                                     \
                                                                             \
-  product(uintx, ShenandoahRateAccelerationSampleSize, 8, EXPERIMENTAL,     \
-          "In selected ShenandoahControlIntervals (e.g. one out of three), "\
+  product(uintx, ShenandoahRateAccelerationSampleSize, 4, EXPERIMENTAL,     \
+          "In selected ShenandoahControlIntervals (if 2 ms has passed "     \
+          "since previous control interval executed), "                     \
           "we compute the allocation rate since the previous control "      \
           "interval.  This many samples are analyzed to determine whether " \
           "allocation rates are accelerating.  Acceleration may occur "     \

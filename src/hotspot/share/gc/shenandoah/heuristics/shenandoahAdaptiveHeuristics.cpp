@@ -945,7 +945,7 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
       uint index = (_spike_acceleration_first_sample_index + delta + i) % _spike_acceleration_buffer_size;
 #ifdef KELVIN_NEEDS_TO_SEE
-      log_info(gc)(" accel_consumption[%u] @%0.6f s: %0.6f MB/s", i, _spike_acceleration_rate_timestamps[index],
+      log_info(gc)(" accel_consumption[%u, index: %u] @%0.6f s: %0.6f MB/s", i, index, _spike_acceleration_rate_timestamps[index],
                    _spike_acceleration_rate_samples[index] * HeapWordSize / (1024 * 1024));
 #endif
       x_array[i] = _spike_acceleration_rate_timestamps[index];
@@ -976,10 +976,27 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
       uint preceding_index = (sample_index == 0)? _spike_acceleration_buffer_size - 1: sample_index - 1;
       double sample_weight = (_spike_acceleration_rate_timestamps[sample_index]
                               - _spike_acceleration_rate_timestamps[preceding_index]);
-      weighted_y_sum += _spike_acceleration_rate_samples[sample_index];
+#ifdef KELVIN_NEEDS_TO_SEE
+      log_info(gc)(" momentary_rate computed from sample[%u] @ index %u, preceding %u with weight %.3f and rate %.3f MB/s",
+                   i, sample_index, preceding_index, sample_weight,
+                   _spike_acceleration_rate_samples[sample_index] * HeapWordSize / (1024 * 1024));
+#endif
+      weighted_y_sum += _spike_acceleration_rate_samples[sample_index] * sample_weight;
       total_weight += sample_weight;
     }
     momentary_rate = weighted_y_sum / total_weight;
+#ifdef KELVIN_NEEDS_TO_SEE
+    log_info(gc)(" momentary_rate final answer: %.3f MB/s", momentary_rate * HeapWordSize / (1024 * 1024));
+#endif
+    bool is_spiking = _allocation_rate.is_spiking(momentary_rate, _spike_threshold_sd);
+#ifdef KELVIN_NEEDS_TO_SEE
+    log_info(gc)(" is_spiking? %s, momentary_rate: %.3f, _spike_threshold_sd: %.3f, average: %.3f, zscore: %.3f",
+                 is_spiking? "yes": "no", momentary_rate, _spike_threshold_sd, _allocation_rate._rate.avg(), (momentary_rate - _allocation_rate._rate.avg()) / _allocation_rate._rate.sd());
+#endif
+    if (!is_spiking) {
+      // Disable momentary spike trigger unless allocation rate delta from average exceeds sd
+      momentary_rate = 0.0;
+    }
   } else {
     momentary_rate = 0.0;
   }
@@ -998,6 +1015,10 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     double x2_sum = 0.0;
     uint excess = _spike_acceleration_num_samples - ShenandoahRateAccelerationSampleSize;
     for (uint i = 0; i < ShenandoahRateAccelerationSampleSize; i++) {
+#ifdef KELVIN_NEEDS_TO_SEE
+      log_info(gc)("Calculating best-fit acceleration from x_array[%u]: %.3f and y_array[%u]: %.3f MB/s",
+                   i, x_array[i], i, (y_array[i] * HeapWordSize) / (1024 * 1024));
+#endif
       xy_array[i] = x_array[i] * y_array[i];
       xy_sum += xy_array[i];
       x2_array[i] = x_array[i] * x_array[i];
@@ -1007,15 +1028,22 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     double m;                 /* slope */
     double b;                 /* y-intercept */
 
-    m = ((_spike_acceleration_buffer_size * xy_sum - x_sum * y_sum)
-         / (_spike_acceleration_buffer_size * x2_sum - x_sum * x_sum));
-    b = (y_sum - m * x_sum) / _spike_acceleration_buffer_size;
-
-    if (m > 0) {
-      double proposed_current_rate = m * x_array[_spike_acceleration_buffer_size - 1] + b;
+    m = ((ShenandoahRateAccelerationSampleSize * xy_sum - x_sum * y_sum)
+         / (ShenandoahRateAccelerationSampleSize * x2_sum - x_sum * x_sum));
+    b = (y_sum - m * x_sum) / ShenandoahRateAccelerationSampleSize;
 
 #ifdef KELVIN_NEEDS_TO_SEE
-      log_info(gc)("Calculating acceleration to be %.3f, with current rate: %.3f", m, proposed_current_rate);
+    log_info(gc)("Calculated acceleration: %.3f MB/s/s, intercept: %.3f MB/s",
+                 (m * HeapWordSize) / (1024 * 1024), (b * HeapWordSize) / (1024 * 1024));
+#endif
+
+
+    if (m > 0) {
+      double proposed_current_rate = m * x_array[ShenandoahRateAccelerationSampleSize - 1] + b;
+
+#ifdef KELVIN_NEEDS_TO_SEE
+      log_info(gc)("Calculating acceleration to be %.3f MB/s/s, with current rate: %.3f MB/s",
+                   (m * HeapWordSize) / (1024 * 1024), (proposed_current_rate * HeapWordSize) / (1024 * 1024));
 #endif
       acceleration = m;
       current_rate = proposed_current_rate;
@@ -1030,8 +1058,8 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
   size_t bytes_to_be_consumed = words_to_be_consumed * HeapWordSize;
   log_info(gc)("Consuming " SIZE_FORMAT "%s @ rate: %0.3f MB/s, accel: %0.3f MB/s/s @ %0.3f s",
                byte_size_in_proper_unit(bytes_to_be_consumed), proper_unit_for_byte_size(bytes_to_be_consumed),
-               current_rate * HeapWordSize / (1024 * 1024),
-               acceleration * HeapWordSize / (1024 * 1024), time_delta);
+               (current_rate * HeapWordSize) / (1024 * 1024),
+               (acceleration * HeapWordSize) / (1024 * 1024), time_delta);
   log_info(gc)("Allocatable bytes: " SIZE_FORMAT ", available: " SIZE_FORMAT ", min_threshold: " SIZE_FORMAT,
                _global_allocatable_words * HeapWordSize, _global_available_bytes, _global_min_threshold);
 #endif
