@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -785,7 +785,6 @@ void JavaThread::thread_main_inner() {
 // Shared teardown for all JavaThreads
 void JavaThread::post_run() {
   this->exit(false);
-  this->unregister_thread_stack_with_NMT();
   // Defer deletion to here to ensure 'this' is still referenceable in call_run
   // for any shared tear-down.
   this->smr_delete();
@@ -1028,6 +1027,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
                                  _timer_exit_phase4.milliseconds());
     os::free(thread_name);
   }
+
+  this->unregister_thread_stack_with_NMT();
 }
 
 void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
