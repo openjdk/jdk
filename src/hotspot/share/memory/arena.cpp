@@ -122,6 +122,16 @@ public:
   static void deallocate_chunk(Chunk* p);
 };
 
+static bool on_compiler_thread() {
+#if defined(COMPILER1) || defined(COMPILER2)
+  Thread* const t = Thread::current();
+  if (t != nullptr && t->is_Compiler_thread()) {
+    return true;
+  }
+#endif // COMPILER1 || COMPILER2
+  return false;
+}
+
 Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode) {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
@@ -165,14 +175,10 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
   // We rely on arena alignment <= malloc alignment.
   assert(is_aligned(chunk, ARENA_AMALLOC_ALIGNMENT), "Chunk start address misaligned.");
 
-  // Inform compilation memstat
-  if (arena->get_mem_tag() == mtCompiler) {
-    Thread* const t = Thread::current();
-    if (t != nullptr && t->is_Compiler_thread()) {
-      uint64_t stamp = 0;
-      CompilationMemoryStatistic::on_arena_chunk_allocation(chunk->length(), (int)arena->get_tag(), &stamp);
-      chunk->set_stamp(stamp);
-    }
+  if (arena->get_mem_tag() == mtCompiler && on_compiler_thread()) {
+    uint64_t stamp = 0;
+    CompilationMemoryStatistic::on_arena_chunk_allocation(chunk->length(), (int)arena->get_tag(), &stamp);
+    chunk->set_stamp(stamp);
   }
 
   return chunk;
@@ -181,13 +187,10 @@ Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType allo
 void ChunkPool::deallocate_chunk(Chunk* c) {
 
   // Inform compilation memstat
-  if (c->stamp() != 0) {
-    assert(CompilationMemoryStatistic::enabled(), "must be");
-    Thread* const t = Thread::current();
-    if (t != nullptr && t->is_Compiler_thread()) {
-      CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());
-      c->set_stamp(0);
-    }
+  if (c->stamp() != 0 && on_compiler_thread()) {
+    assert(CompilationMemoryStatistic::enabled(), "we stamped, so memstat was enabled");
+    CompilationMemoryStatistic::on_arena_chunk_deallocation(c->length(), c->stamp());
+    c->set_stamp(0);
   }
 
   // If this is a standard-sized chunk, return it to its pool; otherwise free it.

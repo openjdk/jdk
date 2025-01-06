@@ -489,6 +489,11 @@ void Compilation::compile_method() {
   if (log() != nullptr) // Print code cache state into compiler log
     log()->code_cache_state();
 
+#ifdef ASSERT
+  if (TestCompilationMemstat) {
+    CompilationMemoryStatistic::do_test_allocations();
+  }
+#endif
 }
 
 

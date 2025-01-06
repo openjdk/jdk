@@ -137,7 +137,7 @@ void FootprintTimeline::copy_from(const FootprintTimeline& other) {
 void FootprintTimeline::print_on(outputStream* st) const {
   if (!_fifo.empty()) {
                // .123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789
-    st->print_cr("                                      bytes               #nodes");
+    st->print_cr("                              bytes at end             nodes at end");
     unsigned from = 0;
     if (_fifo.lost() > 0) {
       st->print_cr("         (" UINT64_FORMAT " older entries lost)", _fifo.lost());
@@ -184,25 +184,25 @@ void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigne
   e.phase_trc_id = phase_trc_id;
 }
 
-ArenaState::ArenaState(CompilerType comp_type, int comp_id, size_t limit) :
+ArenaStatCounter::ArenaStatCounter(CompilerType comp_type, int comp_id, size_t limit) :
     _current(0), _peak(0), _live_nodes_current(0), _live_nodes_at_global_peak(0),
     _limit(limit), _hit_limit(false), _limit_in_process(false),
     _comp_type(comp_type), _comp_id(comp_id)
 {}
 
-void ArenaState::on_phase_start(int phase_trc_id) {
+void ArenaStatCounter::on_phase_start(int phase_trc_id) {
   _phase_id_stack.push(phase_trc_id);
   _live_nodes_current = retrieve_live_node_count();
   _timeline.on_phase_start(phase_trc_id, _current, _live_nodes_current);
 }
 
-void ArenaState::on_phase_end(int phase_trc_id) {
+void ArenaStatCounter::on_phase_end(int phase_trc_id) {
   _phase_id_stack.pop(phase_trc_id);
   _live_nodes_current = retrieve_live_node_count();
   _timeline.on_phase_start(_phase_id_stack.top(), _current, _live_nodes_current); // parent phase "restarts"
 }
 
-int ArenaState::retrieve_live_node_count() const {
+int ArenaStatCounter::retrieve_live_node_count() const {
   int result = 0;
 #ifdef COMPILER2
   if (_comp_type == compiler_c2) {
@@ -218,7 +218,7 @@ int ArenaState::retrieve_live_node_count() const {
 }
 
 // Account an arena allocation. Returns true if new peak reached.
-bool ArenaState::on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t* stamp) {
+bool ArenaStatCounter::on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t* stamp) {
   bool rc = false;
 
   const size_t old_current = _current;
@@ -256,7 +256,7 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arena_tag, uint64_t*
   return rc;
 }
 
-void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
+void ArenaStatCounter::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   assert(_current >= size, "Underflow (%zu %zu)", size, _current);
 
   // Extract tag and phase id from stamp
@@ -275,7 +275,7 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
 }
 
 // Used for logging, not for the report table generated with jcmd Compiler.memory
-void ArenaState::print_peak_state_on(outputStream* st) const {
+void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
   st->print("%zu ", _peak);
   if (_peak > 0) {
     st->print("[");
@@ -307,7 +307,7 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
 }
 
 #ifdef ASSERT
-void ArenaState::verify() const {
+void ArenaStatCounter::verify() const {
   assert(_current <= _peak, "Sanity");
 #ifdef COMPILER2
   size_t sum = 0;
@@ -416,7 +416,7 @@ public:
   void set_limit(size_t limit) { _limit = limit; }
   void inc_recompilation() { _num_recomp++; }
 
-  void set_from_state(const ArenaState* state, bool store_details) {
+  void set_from_state(const ArenaStatCounter* state, bool store_details) {
     _comp_type = state->comp_type();
     _comp_id = state->comp_id();
     _limit = state->limit();
@@ -667,7 +667,7 @@ class MemStatTable : public CHeapObj<mtCompiler> {
 
 public:
 
-  void add(const FullMethodName& fmn, const ArenaState* state, size_t code_size, const char* result) {
+  void add(const FullMethodName& fmn, const ArenaStatCounter* state, size_t code_size, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     MemStatEntry*& e = _entries.current();
     if (_entries.wrapped()) {
@@ -716,8 +716,6 @@ public:
 
     print_footer(st, num_printed, minsize);
   }
-
-  int size() const { return _entries.size(); }
 };
 
 bool CompilationMemoryStatistic::_enabled = false;
@@ -739,14 +737,14 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   const CompilerType comp_type = task->compiler()->type();
   const int comp_id = task->compile_id();
   const size_t limit = directive->mem_limit();
-  ArenaState* const arena_stat = new ArenaState(comp_type, comp_id, limit);
+  ArenaStatCounter* const arena_stat = new ArenaStatCounter(comp_type, comp_id, limit);
   th->set_arenastat(arena_stat);
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaState* const arena_stat = th->arena_stat();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
   if (arena_stat == nullptr) { // not started
     return;
   }
@@ -847,7 +845,7 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation_0(size_t size, int ar
   assert(arena_tag >= 0 && arena_tag < arena_tag_max, "Arena Tag OOB (%d)", arena_tag_max);
 
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaState* const arena_stat = th->arena_stat();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
   if (arena_stat == nullptr) { // not started
     return;
   }
@@ -912,7 +910,7 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation_0(size_t size, int ar
 void CompilationMemoryStatistic::on_arena_chunk_deallocation_0(size_t size, uint64_t stamp) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaState* const arena_stat = th->arena_stat();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
   if (arena_stat == nullptr) { // not started
     return;
   }
@@ -926,7 +924,7 @@ void CompilationMemoryStatistic::on_phase_start_0(int phase_trc_id) {
   assert(enabled(), "Not enabled?");
   assert(phase_trc_id >= 0 && phase_trc_id < phase_trc_id_max, "Phase trace id OOB (%d)", phase_trc_id);
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaState* const arena_stat = th->arena_stat();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
   if (arena_stat == nullptr) { // not started
     return;
   }
@@ -937,14 +935,14 @@ void CompilationMemoryStatistic::on_phase_end_0(int phase_trc_id) {
   assert(enabled(), "Not enabled?");
   assert(phase_trc_id >= 0 && phase_trc_id < phase_trc_id_max, "Phase trace id OOB (%d)", phase_trc_id);
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaState* const arena_stat = th->arena_stat();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
   if (arena_stat == nullptr) { // not started
     return;
   }
   arena_stat->on_phase_end(phase_trc_id);
 }
 
-void CompilationMemoryStatistic::print_all(outputStream* st, bool verbose, size_t minsize) {
+void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool verbose, size_t minsize) {
 
   MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
@@ -978,61 +976,38 @@ const char* CompilationMemoryStatistic::failure_reason_memlimit() {
 }
 
 #ifdef ASSERT
-// JTReg-test code. See
-static bool is_compiling_jtreg_test_method(CompilerType& ctyp) {
-  bool result = false;
-  ctyp = CompilerType::compiler_none;
+void CompilationMemoryStatistic::do_test_allocations() {
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   CompileTask* const task = th == nullptr ? nullptr : th->task();
   if (task != nullptr) {
-    const Method* const m = th->task()->method();
-    if (m != nullptr) {
-      FullMethodName fmn(m);
-      char tmp[1024];
-      fmn.as_C_string(tmp, sizeof(tmp));
-      #define TEST_METHOD_PREFIX "compiler/print/CompileCommandPrintMemStat$TestMain::method"
-      return strncmp(tmp, TEST_METHOD_PREFIX, sizeof(TEST_METHOD_PREFIX) - 1) == 0;
-      #undef TEST_METHOD_PREFIX
-    }
-    ctyp = th->task()->compiler()->type();
-    result = true;
-  }
-  return result;
-}
+    const CompilerType ctyp = th->task()->compiler()->type();
 
-void CompilationMemoryStatistic::do_test_allocations() {
-  CompilerType ctyp;
-  if (!is_compiling_jtreg_test_method(ctyp)) {
-    return;
-  }
+    // Allocation amounts must be large enough to (comfortably) cause new arena chunks to be
+    // allocated, and large enough to trigger a new peak.
+    const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold) * 2;
 
-  // Allocate large amounts - large enough to (comfortably) cause new arena chunks to be
-  // allocated, as well as large enough to trigger a new peak that is the highest peak that
-  // would happend during compilation of the very small test methods.
-  const size_t large_size = MAX3(M * 3, (size_t)Chunk::max_default_size * 2, significant_peak_threshold);
+    // 1) Allocate a large area of ResouceArea and leak it to the end of the compilation. This
+    // shall be large enough to create a new peak. Since we call this test method at the end of
+    // the compilation process, this should remain the highest peak for this compilation, and
+    // the amount allocated here should show up at the end report in the "ra" column.
+    NEW_RESOURCE_ARRAY(char, large_size * 10);
 
-  // 1) memory that "sticks"
-  // Allocate ResouceArea and leak it to the end of the compilation. Since we do this
-  // only for the one jtreg test class, this is fine. This allocation should turn up also in the
-  // non-verbose printout.
-
-  NEW_RESOURCE_ARRAY(char, large_size);
-
-  if (ctyp == CompilerType::compiler_c2) {
-    // For C2 only, cause temporary spikes in test phases with non-RA test arenas. These allocations
-    // won't show up in the non-verbose overview mode, since the spikes will vanish at the end of the
-    // phase. However, they should turn up in both the detailled peak allocation breakdown as well as
-    // the phase allocation timeline.
-    Compile::TracePhase tp(Phase::_t_testTimer1);
-    Arena testArena1(MemTag::mtTest, Arena::Tag::tag_node);
-    Arena testArena2(MemTag::mtTest, Arena::Tag::tag_regsplit);
-    // The following allocations bring us to a new peak
-    testArena1.Amalloc(large_size);
-    testArena2.Amalloc(large_size);
-    {
-      Compile::TracePhase tp(Phase::_t_testTimer2);
+    if (ctyp == CompilerType::compiler_c2) {
+      // For C2 only, cause temporary spikes in test phases with non-RA test arenas. These allocations
+      // won't show up in the non-verbose overview mode, since Arenas get destroyed and therefore the
+      // spikes will vanish at the end of the test phase. However, they should turn up in both the
+      // detailed peak allocation breakdown as well as the phase allocation timeline.
+      Compile::TracePhase tp(Phase::_t_testTimer1);
+      Arena testArena1(MemTag::mtTest, Arena::Tag::tag_node);
+      Arena testArena2(MemTag::mtTest, Arena::Tag::tag_regsplit);
+      // The following allocations bring us to a new peak
       testArena1.Amalloc(large_size);
       testArena2.Amalloc(large_size);
+      {
+        Compile::TracePhase tp(Phase::_t_testTimer2);
+        testArena1.Amalloc(large_size);
+        testArena2.Amalloc(large_size);
+      }
     }
   }
 }

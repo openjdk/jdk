@@ -171,7 +171,7 @@ public:
 // ArenaState is the central data structure holding all statistics and temp data during
 // a single compilation. It is created on demand (if memstat is active) and tied to the
 // CompilerThread.
-class ArenaState : public CHeapObj<mtCompiler> {
+class ArenaStatCounter : public CHeapObj<mtCompiler> {
 
   // Bytes total now
   size_t _current;
@@ -206,7 +206,7 @@ class ArenaState : public CHeapObj<mtCompiler> {
   DEBUG_ONLY(void verify() const;)
 
 public:
-  ArenaState(CompilerType comp_type, int comp_id, size_t limit);
+  ArenaStatCounter(CompilerType comp_type, int comp_id, size_t limit);
 
   void on_phase_start(int phase_trc_id);
   void on_phase_end(int phase_trc_id);

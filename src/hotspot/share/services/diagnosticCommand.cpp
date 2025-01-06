@@ -1155,7 +1155,7 @@ CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* out
 void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   const bool verbose = _verbose.value();
   const size_t minsize = _minsize.has_value() ? _minsize.value()._size : 0;
-  CompilationMemoryStatistic::print_all(output(), verbose, minsize);
+  CompilationMemoryStatistic::print_all_by_size(output(), verbose, minsize);
 }
 
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)

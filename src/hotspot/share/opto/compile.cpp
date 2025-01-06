@@ -3024,7 +3024,9 @@ void Compile::Code_Gen() {
   }
 
 #ifdef ASSERT
-  CompilationMemoryStatistic::do_test_allocations();
+  if (TestCompilationMemstat) {
+    CompilationMemoryStatistic::do_test_allocations();
+  }
 #endif
 
   // He's dead, Jim.
