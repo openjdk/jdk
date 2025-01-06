@@ -1366,12 +1366,9 @@ void os::Linux::capture_initial_stack(size_t max_size) {
         // Skip blank chars
         do { s++; } while (s && isspace((unsigned char) *s));
 
-#define _UFM "%zu"
-#define _DFM "%zd"
-
-        //                                     1   1   1   1   1   1   1   1   1   1   2   2    2    2    2    2    2    2    2
-        //              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1    2    3    4    5    6    7    8
-        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld " _UFM _UFM _DFM _UFM _UFM _UFM _UFM,
+        //                                     1   1   1   1   1   1   1   1   1   1   2   2  2    2   2   2   2   2   2
+        //              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1  2    3   4   5   6   7   8
+        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld %zu %zu %zd %zu %zu %zu %zu",
                    &state,          // 3  %c
                    &ppid,           // 4  %d
                    &pgrp,           // 5  %d
@@ -1399,9 +1396,6 @@ void os::Linux::capture_initial_stack(size_t max_size) {
                    &ecode,          // 27 %zu
                    &stack_start);   // 28 %zu
       }
-
-#undef _UFM
-#undef _DFM
 
       if (i != 28 - 2) {
         assert(false, "Bad conversion from /proc/self/stat");

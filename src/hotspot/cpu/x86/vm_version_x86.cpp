@@ -1722,7 +1722,7 @@ void VM_Version::get_processor_features() {
       if (ArrayOperationPartialInlineSize > MaxVectorSize) {
         ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
         if (ArrayOperationPartialInlineSize) {
-          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize%zd)", MaxVectorSize);
+          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
         } else {
           warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
         }

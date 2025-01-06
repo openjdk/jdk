@@ -35,9 +35,6 @@
 #include "utilities/copy.hpp"
 #include "logging/logStream.hpp"
 
-/* Copyright (c) 1992, 2025, Oracle and/or its affiliates, and Stanford University.
-   See the LICENSE file for license information. */
-
 AgeTable::AgeTable(bool global) : _use_perf_data(UsePerfData && global) {
 
   clear();

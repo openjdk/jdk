@@ -278,12 +278,12 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(SIZE_FORMAT_W(-5),      (size_t)123u,      "123  ");
 
   check_format("%zd",                  (intx)123,         "123");
-  check_format("0x%zx",                (intx)0x123,       "0x123");
+  check_format("%#zx",                 (intx)0x123,       "0x123");
   check_format("%5zd",                 (intx)123,         "  123");
   check_format("%-5zd",                (intx)123,         "123  ");
 
   check_format("%zu",                  (uintx)123u,       "123");
-  check_format("0x%zx",                (uintx)0x123u,     "0x123");
+  check_format("%#zx",                 (uintx)0x123u,     "0x123");
   check_format("%5zu",                 (uintx)123u,       "  123");
   check_format("%-5zu",                (uintx)123u,       "123  ");
 
