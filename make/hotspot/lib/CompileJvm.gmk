@@ -90,7 +90,7 @@ CFLAGS_VM_VERSION := \
 # Disabled warnings
 
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
-    empty-body implicit-fallthrough int-in-bool-context \
+    empty-body format-zero-length implicit-fallthrough int-in-bool-context \
     maybe-uninitialized missing-field-initializers \
     shift-negative-value unknown-pragmas unused-but-set-variable \
     unused-local-typedefs unused-variable
