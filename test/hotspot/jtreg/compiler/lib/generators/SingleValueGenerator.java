@@ -1,7 +1,7 @@
 package compiler.lib.generators;
 
 /**
- * A generator whose next always returns the same value.
+ * A generator which always returns the same value.
  */
 class SingleValueGenerator<T> implements Generator<T> {
     private final T value;
