@@ -460,13 +460,13 @@ static bool createTrustedCertEntry(JNIEnv *env,  jobject keyStore,
 
 static bool validateCertificate(SecCertificateRef certRef) {
     SecTrustRef secTrust = NULL;
-	CFMutableArrayRef subjCerts = CFArrayCreateMutable(NULL, 1, &kCFTypeArrayCallBacks);
+    CFMutableArrayRef subjCerts = CFArrayCreateMutable(NULL, 1, &kCFTypeArrayCallBacks);
     CFArraySetValueAtIndex(subjCerts, 0, certRef);
 
     SecPolicyRef policy = SecPolicyCreateBasicX509();
     OSStatus ortn = SecTrustCreateWithCertificates(subjCerts, policy, &secTrust);
     bool result = false;
-    if(ortn) {
+    if (ortn) {
         /* should never happen */
         cssmPerror("SecTrustCreateWithCertificates", ortn);
         goto errOut;
