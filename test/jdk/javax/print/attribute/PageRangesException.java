@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class PageRangesException {
             System.out.println("OKAY: IllegalArgumentException " + ie);
         }
 
-        //test 4433096
+        // test 4433096
         try {
             int[][] m = null;
             PageRanges pr = new PageRanges(m);
