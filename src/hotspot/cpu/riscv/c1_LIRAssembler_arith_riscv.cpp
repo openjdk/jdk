@@ -64,7 +64,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
         if (Assembler::is_simm12(c - 1)) {
           __ andi(t1, t1, c - 1);
         } else {
-          __ zero_extend(t1, t1, shift);
+          __ zext(t1, t1, shift);
         }
         __ subw(dreg, t1, t0);
       }
@@ -78,7 +78,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
         if (Assembler::is_simm12(c - 1)) {
           __ andi(t0, t0, c - 1);
         } else {
-          __ zero_extend(t0, t0, shift);
+          __ zext(t0, t0, shift);
         }
         __ addw(dreg, t0, lreg);
         __ sraiw(dreg, dreg, shift);
@@ -205,7 +205,7 @@ void LIR_Assembler::arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
           if (Assembler::is_simm12(c - 1)) {
             __ andi(t0, t0, c - 1);
           } else {
-            __ zero_extend(t0, t0, shift);
+            __ zext(t0, t0, shift);
           }
           __ add(dreg, t0, lreg_lo);
           __ srai(dreg, dreg, shift);
@@ -224,7 +224,7 @@ void LIR_Assembler::arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
           if (Assembler::is_simm12(c - 1)) {
             __ andi(t1, t1, c - 1);
           } else {
-            __ zero_extend(t1, t1, shift);
+            __ zext(t1, t1, shift);
           }
           __ sub(dreg, t1, t0);
         }

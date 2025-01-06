@@ -205,21 +205,24 @@ void ShenandoahGeneration::log_status(const char *msg) const {
 
   // Not under a lock here, so read each of these once to make sure
   // byte size in proper unit and proper unit for byte size are consistent.
-  size_t v_used = used();
-  size_t v_used_regions = used_regions_size();
-  size_t v_soft_max_capacity = soft_max_capacity();
-  size_t v_max_capacity = max_capacity();
-  size_t v_available = available();
-  size_t v_humongous_waste = get_humongous_waste();
-  LogGcInfo::print("%s: %s generation used: " SIZE_FORMAT "%s, used regions: " SIZE_FORMAT "%s, "
-                   "humongous waste: " SIZE_FORMAT "%s, soft capacity: " SIZE_FORMAT "%s, max capacity: " SIZE_FORMAT "%s, "
-                   "available: " SIZE_FORMAT "%s", msg, name(),
-                   byte_size_in_proper_unit(v_used),              proper_unit_for_byte_size(v_used),
-                   byte_size_in_proper_unit(v_used_regions),      proper_unit_for_byte_size(v_used_regions),
-                   byte_size_in_proper_unit(v_humongous_waste),   proper_unit_for_byte_size(v_humongous_waste),
-                   byte_size_in_proper_unit(v_soft_max_capacity), proper_unit_for_byte_size(v_soft_max_capacity),
-                   byte_size_in_proper_unit(v_max_capacity),      proper_unit_for_byte_size(v_max_capacity),
-                   byte_size_in_proper_unit(v_available),         proper_unit_for_byte_size(v_available));
+  const size_t v_used = used();
+  const size_t v_used_regions = used_regions_size();
+  const size_t v_soft_max_capacity = soft_max_capacity();
+  const size_t v_max_capacity = max_capacity();
+  const size_t v_available = available();
+  const size_t v_humongous_waste = get_humongous_waste();
+
+  const LogGcInfo target;
+  LogStream ls(target);
+  ls.print("%s: ", msg);
+  if (_type != NON_GEN) {
+    ls.print("%s generation ", name());
+  }
+
+  ls.print_cr("used: " PROPERFMT ", used regions: " PROPERFMT ", humongous waste: " PROPERFMT
+              ", soft capacity: " PROPERFMT ", max capacity: " PROPERFMT ", available: " PROPERFMT,
+              PROPERFMTARGS(v_used), PROPERFMTARGS(v_used_regions), PROPERFMTARGS(v_humongous_waste),
+              PROPERFMTARGS(v_soft_max_capacity), PROPERFMTARGS(v_max_capacity), PROPERFMTARGS(v_available));
 }
 
 void ShenandoahGeneration::reset_mark_bitmap() {
