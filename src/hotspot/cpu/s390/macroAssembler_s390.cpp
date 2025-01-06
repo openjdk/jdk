@@ -4108,7 +4108,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided. (dst == src) also possible.
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
-  bool     need_zero_extend = base != 0;
+  bool     need_zero_extend = base != nullptr;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");

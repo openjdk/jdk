@@ -1002,33 +1002,6 @@ class methodHandle;
                                                "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;")                                         \
    do_name(vector_frombits_coerced_name, "fromBitsCoerced")                                                                                    \
                                                                                                                                                \
-  do_intrinsic(_VectorShuffleIota, jdk_internal_vm_vector_VectorSupport, vector_shuffle_step_iota_name, vector_shuffle_step_iota_sig, F_S)     \
-   do_signature(vector_shuffle_step_iota_sig, "(Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                          \
-                                               "IIII"                                                                                          \
-                                               "Ljdk/internal/vm/vector/VectorSupport$ShuffleIotaOperation;)"                                  \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;")                                         \
-   do_name(vector_shuffle_step_iota_name, "shuffleIota")                                                                                       \
-                                                                                                                                               \
-  do_intrinsic(_VectorShuffleToVector, jdk_internal_vm_vector_VectorSupport, vector_shuffle_to_vector_name, vector_shuffle_to_vector_sig, F_S) \
-   do_signature(vector_shuffle_to_vector_sig, "(Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljava/lang/Class;"                                                                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;"                                          \
-                                               "ILjdk/internal/vm/vector/VectorSupport$ShuffleToVectorOperation;)"                             \
-                                               "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                \
-   do_name(vector_shuffle_to_vector_name, "shuffleToVector")                                                                                   \
-                                                                                                                                               \
-  do_intrinsic(_VectorWrapShuffleIndexes, jdk_internal_vm_vector_VectorSupport, vector_wrap_shuffle_indexes_name,                              \
-                                                                                                         vector_wrap_shuffle_indexes_sig, F_S) \
-   do_signature(vector_wrap_shuffle_indexes_sig, "(Ljava/lang/Class;"                                                                          \
-                                                  "Ljava/lang/Class;"                                                                          \
-                                                  "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;"                                       \
-                                                  "ILjdk/internal/vm/vector/VectorSupport$WrapShuffleIndexesOperation;)"                       \
-                                                  "Ljdk/internal/vm/vector/VectorSupport$VectorShuffle;")                                      \
-   do_name(vector_wrap_shuffle_indexes_name, "wrapShuffleIndexes")                                                                             \
-                                                                                                                                               \
   do_intrinsic(_VectorLoadOp, jdk_internal_vm_vector_VectorSupport, vector_load_op_name, vector_load_op_sig, F_S)                              \
    do_signature(vector_load_op_sig, "(Ljava/lang/Class;"                                                                                       \
                                      "Ljava/lang/Class;"                                                                                       \
