@@ -51,31 +51,37 @@ package java.lang.reflect;
 public enum ClassFileFormatVersion {
     /*
      * Summary of class file format evolution; previews are listed for
-     * convenience, but they are not modeled by this enum
-     *  1: InnerClasses; Synthetic; Deprecated
-     *  2: ACC_STRICT
+     * convenience, but they are not modeled by this enum.
+     *  1: InnerClasses, Synthetic, Deprecated attributes
+     *  2: ACC_STRICT modifier
      *  3: no changes
      *  4: no changes
-     *  5: annotations (Runtime(Inv/V)isible(Parameter)Annotations);
-     *     generics (Signature, LocalVariableTypeTable); EnclosingMethod
-     *  6: verification by type checking (StackMapTable)
-     *  7: verification by type checking enforced (jsr and ret obsolete);
-     *     JSR 292 support (java.lang.invoke) (CONSTANT_MethodHandle,
-     *     CONSTANT_MethodType, CONSTANT_InvokeDynamic, BoostrapMethods);
-     *     <clinit> must be ACC_STATIC
+     *  5: Annotations (Runtime(Inv/V)isible(Parameter)Annotations attributes);
+     *     Generics (Signature, LocalVariableTypeTable attributes);
+     *     EnclosingMethod attribute
+     *  6: Verification by type checking (StackMapTable attribute)
+     *  7: Verification by type checking enforced (jsr and ret opcodes
+     *     obsolete); java.lang.invoke support (JSR 292) (CONSTANT_MethodHandle,
+     *     CONSTANT_MethodType, CONSTANT_InvokeDynamic constant pool entries,
+     *     BoostrapMethods attribute); <clinit> method must be ACC_STATIC
      *  8: private, static, and non-abstract (default) methods in interfaces;
-     *     type annotations (Runtime(Inv/V)isibleTypeAnnotations);
-     *     MethodParameters
-     *  9: modules (Module, ModuleMainClass, ModulePackages, CONSTANT_Module,
-     *     CONSTANT_Package, ACC_MODULE)
+     *     Type Annotations (JEP 104) (Runtime(Inv/V)isibleTypeAnnotations
+     *     attribute); MethodParameters attribute
+     *  9: JSR 376 - modules (JSR 376, JEP 261) (Module, ModuleMainClass,
+     *     ModulePackages attributes, CONSTANT_Module, CONSTANT_Package constant
+     *     pool entries, ACC_MODULE modifier)
      * 10: minor tweak to requires_flags in Module attribute
-     * 11: nestmate (NestHost, NestMembers); CONSTANT_Dynamic
-     * 12: preview features (minor version must be 0 or 65535)
+     * 11: Nest mates (JEP 181) (NestHost, NestMembers attributes);
+     *     CONSTANT_Dynamic (JEP 309) constant pool entry
+     * 12: Preview Features (JEP 12) (minor version must be 0 or 65535)
      * 13: no changes
-     * 14: no changes; (record in preview)
-     * 15: no changes; (record in 2nd preview, sealed classes in preview)
-     * 16: record (Record); (sealed classes in 2nd preview)
-     * 17: sealed classes (PermittedSubclasses); ACC_STRICT obsolete
+     * 14: no changes; (JEP 359 Records in Preview)
+     * 15: no changes; (JEP 384 Records in 2nd Preview, JEP 360 Sealed Classes
+     *     in Preview)
+     * 16: Records (JEP 395) (Record attribute); (JEP 397 Sealed Classes in 2nd
+     *     Preview)
+     * 17: Sealed Classes (JEP 409) (PermittedSubclasses attribute); ACC_STRICT
+     *     modifier obsolete (JEP 306)
      * 18: no changes
      * 19: no changes
      * 20: no changes
