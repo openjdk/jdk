@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,13 @@ import jdk.internal.classfile.impl.BootstrapMethodEntryImpl;
  * attribute, but is modeled by the {@link ConstantPool}, since the bootstrap
  * method table is logically part of the constant pool.
  * <p>
- * Conceptually, a bootstrap method entry is a record:
+ * A bootstrap method entry is composite:
  * {@snippet lang=text :
- * // @link region=1 substring="BootstrapMethodEntry" target="ConstantPoolBuilder#bsmEntry(DirectMethodHandleDesc, List)"
- * // @link substring="DirectMethodHandleDesc" target="#bootstrapMethod" :
- * BootstrapMethodEntry(DirectMethodHandleDesc, List<ConstantDesc>) // @link substring="List<ConstantDesc>" target="#arguments()"
- * // @end region=1
- * }
- * <p>
- * Physically, a bootstrap method entry is a record:
- * {@snippet lang=text :
- * // @link region=1 substring="BootstrapMethodEntry" target="ConstantPoolBuilder#bsmEntry(MethodHandleEntry, List)"
- * // @link substring="MethodHandleEntry" target="#bootstrapMethod" :
- * BootstrapMethodEntry(MethodHandleEntry, List<LoadableConstantEntry>) // @link substring="List<LoadableConstantEntry>" target="#arguments()"
- * // @end region=1
+ * // @link substring="BootstrapMethodEntry" target="ConstantPoolBuilder#bsmEntry(MethodHandleEntry, List)" :
+ * BootstrapMethodEntry(
+ *     MethodHandleEntry bootstrapMethod, // @link substring="bootstrapMethod" target="#bootstrapMethod"
+ *     List<LoadableConstantEntry> arguments // @link substring="arguments" target="#arguments()"
+ * )
  * }
  *
  * @see ConstantPoolBuilder#bsmEntry ConstantPoolBuilder::bsmEntry
@@ -82,20 +75,11 @@ public sealed interface BootstrapMethodEntry
 
     /**
      * {@return the bootstrap method}
-     *
-     * @apiNote
-     * A symbolic descriptor for the bootstrap method is available through
-     * {@link MethodHandleEntry#asSymbol() bootstrapMethod().asSymbol()}.
      */
     MethodHandleEntry bootstrapMethod();
 
     /**
      * {@return the bootstrap arguments}
-     *
-     * @apiNote
-     * A symbolic descriptor for each entry in the returned list is available
-     * via {@link LoadableConstantEntry#constantValue
-     * LoadableConstantEntry::constantValue}.
      */
     List<LoadableConstantEntry> arguments();
 }
