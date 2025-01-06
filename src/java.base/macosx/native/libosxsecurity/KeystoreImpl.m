@@ -480,6 +480,9 @@ errOut:
    if (secTrust) {
        CFRelease(secTrust);
    }
+   if (subjCerts) {
+       CFRelease(subjCerts);
+   }
    return result;
 }
 
