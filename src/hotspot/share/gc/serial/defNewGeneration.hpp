@@ -50,7 +50,6 @@ class STWGCTimer;
 
 class DefNewGeneration: public Generation {
   friend class VMStructs;
-  friend class SerialHeap;
 
   TenuredGeneration* _old_gen;
 
@@ -180,6 +179,7 @@ class DefNewGeneration: public Generation {
   // Return true if the expansion was successful.
   bool expand(size_t bytes);
 
+  STWGCTimer* gc_timer() const { return _gc_timer; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);

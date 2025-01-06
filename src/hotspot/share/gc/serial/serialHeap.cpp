@@ -635,15 +635,15 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
 }
 
 bool SerialHeap::is_long_enough_from_prev_gc_pause_end() const {
-  Ticks young_gc_pause_end = _young_gen->_gc_timer->gc_end();
+  Ticks young_gc_pause_end = _young_gen->gc_timer()->gc_end();
   Ticks full_gc_pause_end = SerialFullGC::gc_timer()->gc_end();
 
   Ticks prev_gc_pause_end;
   Tickspan gc_pause;
-  if (full_gc_pause_end < young_gc_pause_end ) {
+  if (full_gc_pause_end < young_gc_pause_end) {
     // Previous is young-gc
     prev_gc_pause_end = young_gc_pause_end;
-    gc_pause = young_gc_pause_end - _young_gen->_gc_timer->gc_start();
+    gc_pause = young_gc_pause_end - _young_gen->gc_timer()->gc_start();
   } else {
     // Previous is full-gc
     prev_gc_pause_end = full_gc_pause_end;
