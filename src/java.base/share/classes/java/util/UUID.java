@@ -32,6 +32,7 @@ import java.security.*;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -474,9 +475,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         buf[13] = '-';
         buf[18] = '-';
         buf[23] = '-';
-        putHex8(buf, 0, msb >> 32, false);
+        putHex8(buf, 0, msb >>> 32, false);
         putHex8(buf, 9, msb, true);
-        putHex8(buf, 19, lsb >> 32, true);
+        putHex8(buf, 19, lsb >>> 32, true);
         putHex8(buf, 28, lsb, false);
 
         try {
@@ -513,10 +514,10 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 + 0x3030_3030_3030_3030L
                 + (e & 0x0F0F_0F0F_0F0F_0F0FL);
         if (separator) {
-            UNSAFE.putIntUnaligned(bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, (int) x, true);
-            UNSAFE.putIntUnaligned(bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET + off + 5, (int) (x >>> 32), true);
+            UNSAFE.putIntUnaligned(bytes, ARRAY_BYTE_BASE_OFFSET + off    , (int) (x >>> 32), true);
+            UNSAFE.putIntUnaligned(bytes, ARRAY_BYTE_BASE_OFFSET + off + 5, (int) x, true);
         } else {
-            UNSAFE.putLongUnaligned(bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, x, true);
+            UNSAFE.putLongUnaligned(bytes, ARRAY_BYTE_BASE_OFFSET + off, x, true);
         }
     }
 
