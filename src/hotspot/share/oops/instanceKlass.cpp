@@ -3692,7 +3692,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"secondary supers: "); secondary_supers()->print_value_on(st); st->cr();
 
   st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
-  st->print(BULLET"secondary bitmap: " LP64_ONLY("0x%016zu") NOT_LP64("0x%08zu"), _secondary_supers_bitmap); st->cr();
+  st->print(BULLET"secondary bitmap: " INTPTR_FORMAT, _secondary_supers_bitmap); st->cr();
 
   if (secondary_supers() != nullptr) {
     if (Verbose) {
