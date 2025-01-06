@@ -231,6 +231,10 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
 
   address addr = (address)p;
 
+  if (p2u(addr) < MAX2(os::vm_min_address(), (size_t)16 * 0x100000 /* 16 MB */)) {
+    return false; // bail out
+  }
+
   // Carefully feel your way upwards and try to find a malloc header. Then check if
   // we are within the block.
   // We give preference to found live blocks; but if no live block had been found,
@@ -243,7 +247,9 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     if (here == 0) {
       return false; // bail out
     }
-    uintptr_t end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
+    uintptr_t end = (here > (0x1000 + sizeof(MallocHeader)))
+                      ? here - (0x1000 + sizeof(MallocHeader)) // stop searching after 4k
+                      : 0;
     for (; here >= end; here -= smallest_possible_alignment) {
       // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
       if (!os::is_readable_range((void*)here, (void*)(here + sizeof(MallocHeader)))) {
