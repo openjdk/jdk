@@ -66,7 +66,7 @@ public:
 // A stack keeping track of the current compilation phase. For simplicity,
 // fixed-width, since the nesting depth of TracePhase is limited
 class PhaseIdStack {
-  static constexpr int max_depth = 16; // we rarely go beyond 3 layers of nesting
+  static constexpr int max_depth = 16;
   int _depth;
   int _stack[max_depth];
 public:
@@ -160,13 +160,14 @@ private:
     C<unsigned, ssize_t> _live_nodes;
   };
   SimpleFifo<Entry, max_num_phases> _fifo;
+  DEBUG_ONLY(bool _inbetween_phases;)
 public:
   FootprintTimeline();
   void copy_from(const FootprintTimeline& other);
   inline void on_footprint_change(size_t cur_abs, unsigned cur_nodes);
   void print_on(outputStream* st) const;
+  void on_phase_end(int phase_trc_id, size_t cur_abs, unsigned cur_nodes);
   void on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes);
-  void finish_phase();
 };
 
 // ArenaState is the central data structure holding all statistics and temp data during

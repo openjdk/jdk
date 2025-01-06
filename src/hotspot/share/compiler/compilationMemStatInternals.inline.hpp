@@ -29,10 +29,10 @@
 #include "compiler/compilationMemStatInternals.hpp"
 
 
-inline PhaseIdStack::PhaseIdStack() : _depth(0) {
-}
+inline PhaseIdStack::PhaseIdStack() : _depth(0) {}
 
 inline void PhaseIdStack::push(int phase_trc_id) {
+#ifdef ASSERT
   check_phase_trace_id(phase_trc_id);
   if (_depth == 0) {
     assert(phase_trc_id == phase_trc_id_none, "first entry must be none");
@@ -40,24 +40,27 @@ inline void PhaseIdStack::push(int phase_trc_id) {
     assert(phase_trc_id != phase_trc_id_none, "subsequent entries must not be none");
   }
   assert(_depth < max_depth, "Sanity");
-  assert(empty() || top() != phase_trc_id, "Nesting identical phases?");
+#endif // ASSERT
   _stack[_depth] = phase_trc_id;
-  if (_depth < max_depth) { // release builds
+  if (_depth < max_depth) {
     _depth++;
   }
 }
 
 inline void PhaseIdStack::pop(int phase_trc_id) {
+#ifdef ASSERT
   assert(!empty(), "Sanity ");
-  const int old = phase_trc_id;
-  if (_depth > 0) { // release builds
-    _depth--;
-  }
-  assert(old == phase_trc_id, "Mismatched PhaseTraceId pop (%d, expected %d)", phase_trc_id, top());
-  if (_depth == 0) {
-    assert(old == phase_trc_id_none, "first entry must be none");
+  const int to_be_popped = top();
+  assert(to_be_popped == phase_trc_id, "Mismatched PhaseTraceId pop (%d, expected %d)", phase_trc_id, top());
+  if (_depth == 1) {
+    assert(to_be_popped == phase_trc_id_none, "first entry must be none");
   } else {
-    assert(old != phase_trc_id_none, "subsequent entries must not be none");
+    assert(to_be_popped != phase_trc_id_none, "subsequent entries must not be none");
+  }
+#endif // ASSERT
+  const int old = phase_trc_id;
+  if (_depth > 0) {
+    _depth--;
   }
 }
 
@@ -86,6 +89,7 @@ inline void ArenaCounterTable::sub(size_t size, int phase_trc_id, int arena_tag)
 }
 
 inline void FootprintTimeline::on_footprint_change(size_t cur_abs, unsigned cur_nodes) {
+  assert(!_inbetween_phases, "no phase started?");
   Entry& e = _fifo.current();
   e._bytes.update(cur_abs);
   e._live_nodes.update(cur_nodes);

@@ -120,10 +120,7 @@ void ArenaCounterTable::print_on(outputStream* st) const {
 static constexpr size_t significant_peak_threshold = M;
 
 FootprintTimeline::FootprintTimeline() {
-  Entry& e = _fifo.at(0);
-  e._bytes.init(0);
-  e._live_nodes.init(0);
-  e.phase_trc_id = phase_trc_id_none; // "outside phase"
+  DEBUG_ONLY(_inbetween_phases = true;)
 }
 
 void FootprintTimeline::copy_from(const FootprintTimeline& other) {
@@ -133,7 +130,7 @@ void FootprintTimeline::copy_from(const FootprintTimeline& other) {
 void FootprintTimeline::print_on(outputStream* st) const {
   if (!_fifo.empty()) {
                // .123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789
-    st->print_cr("                              bytes at end             nodes at end");
+    st->print_cr("                                bytes at end             nodes at end");
     unsigned from = 0;
     if (_fifo.lost() > 0) {
       st->print_cr("         (" UINT64_FORMAT " older entries lost)", _fifo.lost());
@@ -159,22 +156,37 @@ void FootprintTimeline::print_on(outputStream* st) const {
   }
 }
 
-void FootprintTimeline::finish_phase() {
+void FootprintTimeline::on_phase_end(int phase_trc_id, size_t cur_abs, unsigned cur_nodes) {
+  const Entry& old = _fifo.current();
+  assert(phase_trc_id == old.phase_trc_id, "sanity");
+
+  // One last counter update in old phase:
+  // We see all allocations, so cur_abs given should correspond to our topmost cur.
+  // But the same does not hold for nodes, since we only get updated when node allocation
+  // would cause a new arena chunk to be born. Node allocations that don't cause arena
+  // chunks (the vast majority) fly by us.
+  assert(old._bytes.cur == cur_abs, "miscount");
+  on_footprint_change(cur_abs, cur_nodes);
+
   // Close old, open new entry; but only if the last phase was "interesting".
   // An "interesting" phase is one that causes a footprint change (end != start),
   // and/or one that has a local peak that significantly raises above either starting
   // or ending footprint.
-  const Entry& old = _fifo.current();
   if (old._bytes.end_delta() != 0 || old._bytes.peak_size() > significant_peak_threshold) {
     _fifo.advance();
   }
+
+  DEBUG_ONLY(_inbetween_phases = true;)
 }
 
 void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes) {
+  // seed current entry
   Entry& e = _fifo.current();
   e._bytes.start = e._bytes.cur = e._bytes.peak = cur_abs;
   e._live_nodes.start = e._live_nodes.cur = e._live_nodes.peak = cur_nodes;
   e.phase_trc_id = phase_trc_id;
+
+  DEBUG_ONLY(_inbetween_phases = false;)
 }
 
 ArenaStatCounter::ArenaStatCounter(CompilerType comp_type, int comp_id, size_t limit) :
@@ -184,32 +196,31 @@ ArenaStatCounter::ArenaStatCounter(CompilerType comp_type, int comp_id, size_t l
 {}
 
 void ArenaStatCounter::on_phase_start(int phase_trc_id) {
-  _phase_id_stack.push(phase_trc_id);
+  // Update node counter
   _live_nodes_current = retrieve_live_node_count();
+
+  // For the timeline, when nesting TracePhase happens, we maintain the illusion of a flat succession of
+  // separate phases. Thus, { TracePhase p1; { TracePhase p2; }} will be seen as:
+  // P1 starts -> P1 ends -> P2 starts -> P2 ends -> P1 starts -> P1 ends
+  // In other words, when a child phase interrupts a parent phase, it "ends" the parent phase, which will
+  // be "restarted" when the child phase ends.
+  // This is the only way to get a per-phase timeline that makes any sort of sense.
+  if (!_phase_id_stack.empty()) {
+    const int parent_phase_trc_id = _phase_id_stack.top();
+    _timeline.on_phase_end(parent_phase_trc_id, _current, _live_nodes_current);
+  }
+  _phase_id_stack.push(phase_trc_id);
   _timeline.on_phase_start(phase_trc_id, _current, _live_nodes_current);
 }
 
 void ArenaStatCounter::on_phase_end(int phase_trc_id) {
   _phase_id_stack.pop(phase_trc_id);
   _live_nodes_current = retrieve_live_node_count();
-
-  // last counter update in old phase:
-  // We see all allocations, so cur_abs given should correspond to our topmost cur.
-  // the same does not hold for nodes, since we only see allocations that cause new
-  // arena chunks to be born. Node allocations that don't cause arena chunks are not
-  // registered here. So, cur_nodes may be new to us.
-  _timeline.on_footprint_change(_current, _live_nodes_current);
-
-  // close old phase
-  _timeline.finish_phase();
-
-  // If this was a nested phase under a parent phase, for the footprint timeline we
-  // act as if the parent phase just restarted
-  if (phase_trc_id != phase_trc_id_none) {
-    _timeline.on_phase_start(_phase_id_stack.top(), _current, _live_nodes_current); // parent phase "restarts"
-  } else {
-    // This should have been the final outer phase. Stack should be empty now.
-    assert(_phase_id_stack.empty(), "Sanity");
+  _timeline.on_phase_end(phase_trc_id, _current, _live_nodes_current);
+  // "restart" parent phase in timeline
+  if (!_phase_id_stack.empty()) {
+    const int parent_phase_trc_id = _phase_id_stack.top();
+    _timeline.on_phase_start(parent_phase_trc_id, _current, _live_nodes_current);
   }
 }
 
@@ -305,11 +316,12 @@ void ArenaStatCounter::print_peak_state_on(outputStream* st) const {
     st->print_cr("]");
 #ifdef COMPILER2
     if (_comp_type == CompilerType::compiler_c2) {
-      st->print_cr("----- Peak composition, accumulated by phase and arena type ------");
+      st->print_cr("----- Arena Usage by Arena Tag and compilation phase, at arena usage peak ----------------");
       _counters_at_global_peak.print_on(st);
-      st->print_cr("------Allocation timelime by phase, last %u phases ---------------", FootprintTimeline::max_num_phases);
+      st->print_cr("------Allocation timelime by phase, last %u compilation phases ---------------------------",
+                   FootprintTimeline::max_num_phases);
       _timeline.print_on(st);
-      st->print_cr("------------------------------------------------------------------");
+      st->print_cr("------------------------------------------------------------------------------------------");
     }
 #endif
   } else {
@@ -589,21 +601,16 @@ public:
     if (_comp_type == CompilerType::compiler_c2) {
       st->print("%*s: ", indent1, "Nodes at global peak");
       st->print_cr("%u", _live_nodes_at_global_peak);
-    } else {
-      st->print_cr("-");
     }
 
     if (_detail_stats != nullptr) {
-      st->print_cr("          ----- Arena Usage by Arena Tag and compilation phase, at peak ----------------");
+      st->print_cr("          ----- Arena Usage by Arena Tag and compilation phase, at arena usage peak ----------------");
       _detail_stats->counters_at_global_peak.print_on(st);
-      st->print_cr("          ------Allocation timelime by phase, last %u compilation phases ---------------", FootprintTimeline::max_num_phases);
+      st->print_cr("          ------Allocation timelime by phase, last %u compilation phases ---------------------------",
+                   FootprintTimeline::max_num_phases);
       _detail_stats->timeline.print_on(st);
     } else {
-      if (_comp_type == CompilerType::compiler_c2) {
-        st->print_cr("           ------ Arena Usage by Arena Tag, across all phases, at peak -------------------");
-      } else {
-        st->print_cr("           ------ Arena Usage by Arena Tag, at peak --------------------------------------");
-      }
+      st->print_cr("           ------ Arena Usage by Arena Tag, at arena usage peak ------------------------------------");
       for (int tag = 0; tag < arena_tag_max; tag++) {
         const size_t v = _peak_composition_per_arena_tag[tag];
         st->print_cr("%*s: %zu ", indent2, Arena::tag_desc[tag], v);
@@ -1013,12 +1020,21 @@ void CompilationMemoryStatistic::do_test_allocations() {
   }
   const CompilerType ctyp = th->task()->compiler()->type();
 
-  // Allocation amounts must be large enough to (comfortably) cause new arena chunks to be
-  // allocated, and large enough to trigger a new peak.
-  const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold) * 2;
+#ifdef COMPILER1
+  if (ctyp == CompilerType::compiler_c1) {
+    // Allocate a large area of ResouceArea and leak it to the end of the compilation. This
+    // shall be large enough to create a new peak X. Since we leak, this amount will, from
+    // now on, part of the peak composition of any follow-up peaks to come, and therefore show
+    // up in the final peak-composition printout for C1.
+    NEW_RESOURCE_ARRAY(char, M * 20); // Note: the thread ResourceArray of a CompilerThread runs as "mtCompiler"
+  }
+#endif
 
 #ifdef COMPILER2
   if (ctyp == CompilerType::compiler_c2) {
+    // Allocation amounts must be large enough to (comfortably) cause new arena chunks to be
+    // allocated, and large enough to trigger a new peak.
+    const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold) * 2;
     // A) For C2 only, cause temporary spikes in test phases with non-RA test arenas. In step (B)
     // below we will allocate a large area in ResourceArea, which - since the amount will be larger
     // than the combined amount allocated here in step (A) - will create a new peak that removes
@@ -1026,25 +1042,17 @@ void CompilationMemoryStatistic::do_test_allocations() {
     // these temporary allocations as part of the fooprint timeline as "temporary spikes".
     Compile::TracePhase tp(Phase::_t_testTimer1);
     Arena testArena1(MemTag::mtCompiler /* sic */, Arena::Tag::tag_node);
-    Arena testArena2(MemTag::mtCompiler /* sic */, Arena::Tag::tag_regsplit);
-    // The following allocations bring us to a new peak
     testArena1.Amalloc(large_size); // temp spike, should be gone when phase ends
-    testArena2.Amalloc(large_size); // temp spike, should be gone when phase ends
+    NEW_RESOURCE_ARRAY(char, large_size); // leak till end of compilation.
     {
       Compile::TracePhase tp(Phase::_t_testTimer2);
-      Arena testArena3(MemTag::mtCompiler /* sic */, Arena::Tag::tag_comp);
-      Arena testArena4(MemTag::mtCompiler /* sic */, Arena::Tag::tag_reglive);
-      testArena3.Amalloc(large_size); // temp spike, should be gone when phase ends
-      testArena4.Amalloc(large_size); // temp spike, should be gone when phase ends
+      Arena testArena2(MemTag::mtCompiler /* sic */, Arena::Tag::tag_comp);
+      testArena2.Amalloc(large_size); // temp spike, should be gone when phase ends
     }
+    Arena testArena3(MemTag::mtCompiler /* sic */, Arena::Tag::tag_regsplit);
+    testArena3.Amalloc(large_size); // temp spike, should be gone when phase ends
   }
 #endif // COMPILER2
-
-  // Also allocate a large area of ResouceArea and leak it to the end of the compilation. This
-  // shall be large enough to create a new peak X. Since we leak, this amount will, from
-  // now on, part of the peak composition of any follow-up peaks to come, and therefore show
-  // up in the final peak-composition printout for both C1 and C2.
-  NEW_RESOURCE_ARRAY(char, large_size * 20); // Note: the thread ResourceArray of a CompilerThread runs as "mtCompiler"
 }
 #endif // ASSERT
 
