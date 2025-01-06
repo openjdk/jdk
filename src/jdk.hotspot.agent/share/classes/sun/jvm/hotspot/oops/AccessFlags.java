@@ -75,9 +75,4 @@ public class AccessFlags implements /* imports */ ClassConstants {
     if (isStrict      ()) tty.print("strict "      );
     if (isSynthetic   ()) tty.print("synthetic "   );
   }
-
-  // get flags written to .class files
-  public int getStandardFlags() {
-    return (int)flags;
-  }
 }
