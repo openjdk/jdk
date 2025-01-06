@@ -3024,10 +3024,10 @@ void Compile::Code_Gen() {
   }
 
 #ifdef ASSERT
-  if (TestCompilationMemstat) {
+  if (_directive->is_memstat_test()) {
     CompilationMemoryStatistic::do_test_allocations();
   }
-#endif
+#endif // ASSERT
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);

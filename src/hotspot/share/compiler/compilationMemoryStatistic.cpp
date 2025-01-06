@@ -563,33 +563,40 @@ public:
     st->print_cr("%*s: %s", indent1, "Method", _method.as_C_string(buf, sizeof(buf)));
     st->print_cr("%*s: %2s", indent1, "Compiler Type", compilertype2name(_comp_type));
     st->print_cr("%*s: %d", indent1, "Compile ID", _comp_id);
-    st->print_cr("%*s: %u", indent1, "Number of recompilations", _num_recomp);
-    st->print_cr("%*s: %s", indent1, "Result", _result);
-    st->print("%*s: ", indent1, "MemLimit");
-    if (_limit > 0) {
-      st->print_cr("%zu", _limit);
-    } else {
-      st->print_cr("-");
-    }
+    st->print_cr("%*s: %u", indent1, "Recompilation No.", _num_recomp);
     st->print_cr("%*s: %.3f", indent1, "Timestamp", _time);
     st->print_cr("%*s: " PTR_FORMAT, indent1, "Thread", p2i(_thread));
-    st->print("%*s: ", indent1, "Nodes at global peak");
-    if (_live_nodes_at_global_peak > 0) {
+
+    st->print("%*s: %s", indent1, "Result", _result);
+    if (strcmp(_result, "oom") == 0) {
+      st->print(" (memory limit was: %zu)", _limit);
+    }
+    st->cr();
+
+    st->print_cr("%*s: %zu", indent1, "Arena Peak Usage: ", _peak);
+    st->print_cr("%*s: %zu", indent1, "Code Size", _code_size);
+    if (_comp_type == CompilerType::compiler_c2) {
+      st->print("%*s: ", indent1, "Nodes at global peak");
       st->print_cr("%u", _live_nodes_at_global_peak);
     } else {
       st->print_cr("-");
     }
-    st->print_cr("%*s: %zu", indent1, "Code Size", _code_size);
-    st->print_cr("           ------ Arena Usage by Arena Tag, across all phases, at peak -------------------");
-    for (int tag = 0; tag < arena_tag_max; tag++) {
-      const size_t v = _peak_composition_per_arena_tag[tag];
-      st->print_cr("%*s: %zu ", indent2, Arena::tag_desc[tag], v);
-    }
-    if (_detail_stats != nullptr && _comp_type == CompilerType::compiler_c2) {
+
+    if (_detail_stats != nullptr) {
       st->print_cr("          ----- Arena Usage by Arena Tag and compilation phase, at peak ----------------");
       _detail_stats->counters_at_global_peak.print_on(st);
       st->print_cr("          ------Allocation timelime by phase, last %u compilation phases ---------------", FootprintTimeline::max_num_phases);
       _detail_stats->timeline.print_on(st);
+    } else {
+      if (_comp_type == CompilerType::compiler_c2) {
+        st->print_cr("           ------ Arena Usage by Arena Tag, across all phases, at peak -------------------");
+      } else {
+        st->print_cr("           ------ Arena Usage by Arena Tag, at peak --------------------------------------");
+      }
+      for (int tag = 0; tag < arena_tag_max; tag++) {
+        const size_t v = _peak_composition_per_arena_tag[tag];
+        st->print_cr("%*s: %zu ", indent2, Arena::tag_desc[tag], v);
+      }
     }
   }
 
@@ -681,7 +688,9 @@ public:
     e->set_result(result);
     e->set_code_size(code_size);
 
-    const bool save_details = state->peak() >= detail_threshold;
+    // Since we don't have phases in C1, for now we just avoid saving details for C1.
+    const bool save_details = state->comp_type() == CompilerType::compiler_c2 && state->peak() >= detail_threshold;
+
     e->set_from_state(state, save_details);
 
     // advance position
@@ -917,6 +926,7 @@ void CompilationMemoryStatistic::on_arena_chunk_deallocation_0(size_t size, uint
   if (arena_stat->limit_in_process()) {
     return; // avoid recursion on limit hit
   }
+
   arena_stat->on_arena_chunk_deallocation(size, stamp);
 }
 
@@ -977,39 +987,46 @@ const char* CompilationMemoryStatistic::failure_reason_memlimit() {
 
 #ifdef ASSERT
 void CompilationMemoryStatistic::do_test_allocations() {
+  // This does a number of large predefined allocations that should show up in the
+  // compilation memory statistics.
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  CompileTask* const task = th == nullptr ? nullptr : th->task();
-  if (task != nullptr) {
-    const CompilerType ctyp = th->task()->compiler()->type();
+  ArenaStatCounter* const arena_stat = th->arena_stat();
+  if (arena_stat == nullptr) { // not started
+    return;
+  }
+  const CompilerType ctyp = th->task()->compiler()->type();
 
-    // Allocation amounts must be large enough to (comfortably) cause new arena chunks to be
-    // allocated, and large enough to trigger a new peak.
-    const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold) * 2;
+  // Allocation amounts must be large enough to (comfortably) cause new arena chunks to be
+  // allocated, and large enough to trigger a new peak.
+  const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold) * 2;
 
-    // 1) Allocate a large area of ResouceArea and leak it to the end of the compilation. This
-    // shall be large enough to create a new peak. Since we call this test method at the end of
-    // the compilation process, this should remain the highest peak for this compilation, and
-    // the amount allocated here should show up at the end report in the "ra" column.
-    NEW_RESOURCE_ARRAY(char, large_size * 10);
-
-    if (ctyp == CompilerType::compiler_c2) {
-      // For C2 only, cause temporary spikes in test phases with non-RA test arenas. These allocations
-      // won't show up in the non-verbose overview mode, since Arenas get destroyed and therefore the
-      // spikes will vanish at the end of the test phase. However, they should turn up in both the
-      // detailed peak allocation breakdown as well as the phase allocation timeline.
-      Compile::TracePhase tp(Phase::_t_testTimer1);
-      Arena testArena1(MemTag::mtTest, Arena::Tag::tag_node);
-      Arena testArena2(MemTag::mtTest, Arena::Tag::tag_regsplit);
-      // The following allocations bring us to a new peak
+  // A) Allocate a large area of ResouceArea and leak it to the end of the compilation. This
+  // shall be large enough to create a new peak X. Since we leak, this amount will, from
+  // now on, part of the peak composition of any follow-up peaks to come, and therefore show
+  // up in the final peak-composition printout.
+  NEW_RESOURCE_ARRAY(char, large_size * 10); // Note: ResourceArray on CompilerThread are re-marked as mtCompiler
+#ifdef COMPILER2
+  if (ctyp == CompilerType::compiler_c2) {
+    // For C2 only, cause temporary spikes in test phases with non-RA test arenas. These allocations
+    // won't show up in the non-verbose overview mode, since Arenas get destroyed and therefore the
+    // spikes will vanish at the end of the test phase. So they may or may not be part of the final
+    // peak composition printout. However, they should turn up in both the phase allocation timeline.
+    Compile::TracePhase tp(Phase::_t_testTimer1);
+    Arena testArena1(MemTag::mtCompiler /* sic */, Arena::Tag::tag_node);
+    Arena testArena2(MemTag::mtCompiler /* sic */, Arena::Tag::tag_regsplit);
+    Arena testArena3(MemTag::mtCompiler /* sic */, Arena::Tag::tag_reglive);
+    // The following allocations bring us to a new peak
+    testArena1.Amalloc(large_size);
+    testArena2.Amalloc(large_size);
+    testArena3.Amalloc(large_size);
+    {
+      Compile::TracePhase tp(Phase::_t_testTimer2);
       testArena1.Amalloc(large_size);
       testArena2.Amalloc(large_size);
-      {
-        Compile::TracePhase tp(Phase::_t_testTimer2);
-        testArena1.Amalloc(large_size);
-        testArena2.Amalloc(large_size);
-      }
+      testArena3.Amalloc(large_size);
     }
   }
+#endif // COMPILER2
 }
 #endif // ASSERT
 

@@ -410,6 +410,12 @@ int Compilation::compile_java_method() {
     env()->dump_replay_data(env()->compile_id());
   }
 
+#ifdef ASSERT
+  if (_directive->is_memstat_test()) {
+    CompilationMemoryStatistic::do_test_allocations();
+  }
+#endif // ASSERT
+
   {
     PhaseTraceTime timeit(_t_codeemit);
     return emit_code_body();
@@ -488,12 +494,6 @@ void Compilation::compile_method() {
 
   if (log() != nullptr) // Print code cache state into compiler log
     log()->code_cache_state();
-
-#ifdef ASSERT
-  if (TestCompilationMemstat) {
-    CompilationMemoryStatistic::do_test_allocations();
-  }
-#endif
 }
 
 

@@ -382,9 +382,7 @@
           "If compilation is stopped with an error, capture diagnostic "    \
           "information at the bailout point")                               \
                                                                             \
-  develop(bool, TestCompilationMemstat, trueInDebug,                        \
-          "Do test allocations to test the compilation memory statistic")   \
-                                                                            \
+
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)
