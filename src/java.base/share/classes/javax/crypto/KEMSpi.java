@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,13 +129,7 @@ public interface KEMSpi {
          *          to be returned, inclusive
          * @param to the final index of the shared secret byte array
          *          to be returned, exclusive
-         * @param algorithm the algorithm name for the secret key that is returned.
-         *          See the SecretKey Algorithms section in the
-         *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
-         *          Java Security Standard Algorithm Names Specification</a>
-         *          for information about standard secret key algorithm names.
-         *          Use "Generic" if the output will be used as the input keying
-         *          material of a key derivation function (KDF).
+         * @param algorithm the algorithm name for the secret key that is returned
          * @return an {@link KEM.Encapsulated} object containing a portion of
          *          the shared secret as a key with the specified algorithm,
          *          key encapsulation message, and optional parameters.
@@ -194,13 +188,7 @@ public interface KEMSpi {
          *          to be returned, inclusive
          * @param to the final index of the shared secret byte array
          *          to be returned, exclusive
-         * @param algorithm the algorithm name for the secret key that is returned.
-         *          See the SecretKey Algorithms section in the
-         *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
-         *          Java Security Standard Algorithm Names Specification</a>
-         *          for information about standard secret key algorithm names.
-         *          Use "Generic" if the output will be used as the input keying
-         *          material of a key derivation function (KDF).
+         * @param algorithm the algorithm name for the secret key that is returned
          * @return a portion of the shared secret as a {@code SecretKey} with
          *          the specified algorithm
          * @throws DecapsulateException if an error occurs during the

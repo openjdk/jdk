@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,10 @@ public class X509EncodedKeySpec extends EncodedKeySpec {
      * encoded according to the X.509 standard. The contents of the
      * array are copied to protect against subsequent modification.
      * @param algorithm the algorithm name of the encoded public key
-     * See the AsymmetricKey Algorithms section in the
-     * <a href="{@docRoot}/../specs/security/standard-names.html#asymmetrickey-algorithms">
+     * See the KeyFactory section in the <a href=
+     * "{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
-     * for information about standard asymmetric key algorithm names.
+     * for information about standard algorithm names.
      * @throws NullPointerException if {@code encodedKey}
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
