@@ -336,7 +336,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             int keyLen = (int)lenAttributes[0].getLong();
             SecretKey key = P11Key.secretKey
                         (session, keyID, algorithm, keyLen << 3, attributes);
-            if ("RAW".equals(key.getFormat())) {
+            if ("RAW".equals(key.getFormat())
+                    && algorithm.equalsIgnoreCase("TlsPremasterSecret")) {
                 // Workaround for Solaris bug 6318543.
                 // Strip leading zeroes ourselves if possible (key not sensitive).
                 // This should be removed once the Solaris fix is available
