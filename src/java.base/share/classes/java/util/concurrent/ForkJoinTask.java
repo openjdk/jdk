@@ -43,6 +43,7 @@ import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.concurrent.locks.LockSupport;
 import jdk.internal.misc.Unsafe;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Abstract base class for tasks that run within a {@link ForkJoinPool}.
@@ -1637,6 +1638,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         implements RunnableFuture<T> {
         transient volatile Thread runner;
         abstract T compute() throws Exception;
+        abstract boolean postExec();
         public final boolean exec() {
             Thread.interrupted();
             Thread t = runner = Thread.currentThread();
@@ -1655,7 +1657,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             } finally {
                 runner = null;
             }
-            return true;
+            return postExec();
         }
         public boolean cancel(boolean mayInterruptIfRunning) {
             Thread t;
@@ -1696,6 +1698,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         final T compute() throws Exception { return callable.call(); }
+        final boolean postExec() { return true; }
         final Object adaptee() { return callable; }
         private static final long serialVersionUID = 2838392045355241008L;
     }
@@ -1716,6 +1719,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { }
         final T compute() { runnable.run(); return result; }
+        final boolean postExec() { return true; }
         final Object adaptee() { return runnable; }
         private static final long serialVersionUID = 2838392045355241008L;
     }
@@ -1733,6 +1737,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final Void getRawResult() { return null; }
         public final void setRawResult(Void v) { }
         final Void compute() { runnable.run(); return null; }
+        final boolean postExec() { return true; }
         final Object adaptee() { return runnable; }
         void onAuxExceptionSet(Throwable ex) { // if a handler, invoke it
             Thread t; java.lang.Thread.UncaughtExceptionHandler h;
@@ -1780,6 +1785,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             }
         }
         public final T compute()            { return null; } // never forked
+        final boolean postExec()            { return true; }
         public final T getRawResult()       { return result; }
         public final void setRawResult(T v) { }
 
@@ -1855,6 +1861,66 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         public final Void getRawResult() { return null; }
         public final void setRawResult(Void v) { }
+        final boolean postExec() { return true; }
         final Object adaptee() { return callable; }
+    }
+
+    @SuppressWarnings("serial")
+    static final class DelayedTask<T> extends InterruptibleTask<T>
+        implements ScheduledFuture<T> {
+        final Runnable runnable; // only one of runnable or callable nonnull
+        final Callable<? extends T> callable;
+        final ForkJoinPool pool;
+        T result;
+        DelayedTask<?> nextReady; // for collecting ready tasks
+        final long nextDelay;     // 0: once; <0: fixedDelay; >0: fixedRate
+        long when;                // nanoTime-based trigger time
+        int heapIndex;
+
+        DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
+                    long delay, long nextDelay) {
+            this.runnable = runnable;
+            this.callable = callable;
+            this.pool = pool;
+            this.nextDelay = nextDelay;
+            when = delay + System.nanoTime();
+        }
+        public final T getRawResult() { return result; }
+        public final void setRawResult(T v) { result = v; }
+        final boolean postExec() { // resubmit if fixedDelay
+            long d; ForkJoinPool p; ForkJoinPool.DelayScheduler ds;
+            if ((d = nextDelay) < 0L && status >= 0 && (p = pool) != null &&
+                (ds = p.delayer) != null) {
+                heapIndex = 0;
+                when = -d + System.nanoTime();
+                ds.schedule(this);
+            }
+            return d == 0L;
+        }
+        final T compute() throws Exception {
+            Callable<? extends T> c; Runnable r;
+            T res = null;
+            if ((r = runnable) != null)
+                r.run();
+            else if ((c = callable) != null)
+                res = c.call();
+            return res;
+        }
+        final Object adaptee() { return (runnable != null) ? runnable : callable; }
+        public final boolean cancel(boolean mayInterruptIfRunning) {
+            ForkJoinPool p; ForkJoinPool.DelayScheduler ds; DelayedTask<?> s;
+            boolean stat = super.cancel(mayInterruptIfRunning);
+            if (heapIndex >= 0 && status < 0 && (p = pool) != null &&
+                (ds = p.delayer) != null)
+                ds.schedule(this); // for heap cleanup
+            return stat;
+        }
+        public final long getDelay(TimeUnit unit) {
+            return unit.convert(when - System.nanoTime(), NANOSECONDS);
+        }
+        public int compareTo(Delayed other) {
+            long diff = getDelay(NANOSECONDS) - other.getDelay(NANOSECONDS);
+            return (diff < 0) ? -1 : (diff > 0) ? 1 : 0;
+        }
     }
 }

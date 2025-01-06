@@ -31,13 +31,35 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.stream.Stream;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -216,4 +238,201 @@ public class ForkJoinPool20Test extends JSR166TestCase {
         }
         return worker;
     }
+
+    // additions for ScheduledExecutorService
+
+
+    /**
+     * delayed schedule of callable successfully executes after delay
+     */
+    public void testSchedule1() throws Exception {
+        final ForkJoinPool p = new ForkJoinPool(2);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            final long startTime = System.nanoTime();
+            final CountDownLatch done = new CountDownLatch(1);
+            Callable<Boolean> task = new CheckedCallable<>() {
+                public Boolean realCall() {
+                    done.countDown();
+                    assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+                    return Boolean.TRUE;
+                }};
+            Future<Boolean> f = p.schedule(task, timeoutMillis(), MILLISECONDS);
+            assertSame(Boolean.TRUE, f.get());
+            assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+            assertEquals(0L, done.getCount());
+        }
+    }
+
+    /**
+     * delayed schedule of runnable successfully executes after delay
+     */
+    public void testSchedule3() throws Exception {
+        final ForkJoinPool p = new ForkJoinPool(2);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            final long startTime = System.nanoTime();
+            final CountDownLatch done = new CountDownLatch(1);
+            Runnable task = new CheckedRunnable() {
+                public void realRun() {
+                    done.countDown();
+                    assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+                }};
+            Future<?> f = p.schedule(task, timeoutMillis(), MILLISECONDS);
+            await(done);
+            assertNull(f.get(LONG_DELAY_MS, MILLISECONDS));
+            assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+        }
+    }
+
+    /**
+     * scheduleAtFixedRate executes runnable after given initial delay
+     */
+    public void testSchedule4() throws Exception {
+        final ForkJoinPool p = new ForkJoinPool(2);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            final long startTime = System.nanoTime();
+            final CountDownLatch done = new CountDownLatch(1);
+            Runnable task = new CheckedRunnable() {
+                public void realRun() {
+                    done.countDown();
+                    assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+                }};
+            ScheduledFuture<?> f =
+                p.scheduleAtFixedRate(task, timeoutMillis(),
+                                      LONG_DELAY_MS, MILLISECONDS);
+            await(done);
+            assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+            f.cancel(true);
+        }
+    }
+
+    /**
+     * scheduleWithFixedDelay executes runnable after given initial delay
+     */
+    public void testSchedule5() throws Exception {
+        final ForkJoinPool p = new ForkJoinPool(2);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            final long startTime = System.nanoTime();
+            final CountDownLatch done = new CountDownLatch(1);
+            Runnable task = new CheckedRunnable() {
+                public void realRun() {
+                    done.countDown();
+                    assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+                }};
+            ScheduledFuture<?> f =
+                p.scheduleWithFixedDelay(task, timeoutMillis(),
+                                         LONG_DELAY_MS, MILLISECONDS);
+            await(done);
+            assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+            f.cancel(true);
+        }
+    }
+
+    static class RunnableCounter implements Runnable {
+        AtomicInteger count = new AtomicInteger(0);
+        public void run() { count.getAndIncrement(); }
+    }
+
+    /**
+     * scheduleAtFixedRate executes series of tasks at given rate.
+     * Eventually, it must hold that:
+     *   cycles - 1 <= elapsedMillis/delay < cycles
+     */
+    public void testFixedRateSequence() throws InterruptedException {
+        final ForkJoinPool p = new ForkJoinPool(4);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            for (int delay = 1; delay <= LONG_DELAY_MS; delay *= 3) {
+                final long startTime = System.nanoTime();
+                final int cycles = 8;
+                final CountDownLatch done = new CountDownLatch(cycles);
+                final Runnable task = new CheckedRunnable() {
+                    public void realRun() { done.countDown(); }};
+                final ScheduledFuture<?> periodicTask =
+                    p.scheduleAtFixedRate(task, 0, delay, MILLISECONDS);
+                final int totalDelayMillis = (cycles - 1) * delay;
+                await(done, totalDelayMillis + LONG_DELAY_MS);
+                periodicTask.cancel(true);
+                final long elapsedMillis = millisElapsedSince(startTime);
+                assertTrue(elapsedMillis >= totalDelayMillis);
+                if (elapsedMillis <= cycles * delay)
+                    return;
+                // else retry with longer delay
+            }
+            fail("unexpected execution rate");
+        }
+    }
+
+    /**
+     * Submitting null tasks throws NullPointerException
+     */
+    public void testNullTaskSubmission() {
+        final ForkJoinPool p = new ForkJoinPool(1);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            assertNullTaskSubmissionThrowsNullPointerException(p);
+        }
+    }
+
+    /**
+     * Submitted tasks are rejected when shutdown
+     */
+    public void testSubmittedTasksRejectedWhenShutdown() throws InterruptedException {
+        final ForkJoinPool p = new ForkJoinPool(4);
+        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        final CountDownLatch threadsStarted = new CountDownLatch(p.getParallelism());
+        final CountDownLatch done = new CountDownLatch(1);
+        final Runnable r = () -> {
+            threadsStarted.countDown();
+            for (;;) {
+                try {
+                    done.await();
+                    return;
+                } catch (InterruptedException shutdownNowDeliberatelyIgnored) {}
+            }};
+        final Callable<Boolean> c = () -> {
+            threadsStarted.countDown();
+            for (;;) {
+                try {
+                    done.await();
+                    return Boolean.TRUE;
+                } catch (InterruptedException shutdownNowDeliberatelyIgnored) {}
+            }};
+
+        try (PoolCleaner cleaner = cleaner(p, done)) {
+            for (int i = p.getParallelism(); i--> 0; ) {
+                switch (rnd.nextInt(4)) {
+                case 0: p.execute(r); break;
+                case 1: assertFalse(p.submit(r).isDone()); break;
+                case 2: assertFalse(p.submit(r, Boolean.TRUE).isDone()); break;
+                case 3: assertFalse(p.submit(c).isDone()); break;
+                }
+            }
+
+            await(threadsStarted);
+            p.shutdownNow();
+            done.countDown();   // release blocking tasks
+            assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+
+            //            assertTaskSubmissionsAreRejected(p);
+        }
+    }
+    /**
+     * A fixed delay task with overflowing period should not prevent a
+     * one-shot task from executing.
+     * https://bugs.openjdk.org/browse/JDK-8051859
+     */
+    @SuppressWarnings("FutureReturnValueIgnored")
+    public void testScheduleWithFixedDelay_overflow() throws Exception {
+        final CountDownLatch delayedDone = new CountDownLatch(1);
+        final CountDownLatch immediateDone = new CountDownLatch(1);
+        final ForkJoinPool p = new ForkJoinPool(1);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            final Runnable delayed = () -> {
+                delayedDone.countDown();
+                p.submit(() -> immediateDone.countDown());
+            };
+            p.scheduleWithFixedDelay(delayed, 0L, Long.MAX_VALUE, SECONDS);
+            await(delayedDone);
+            await(immediateDone);
+        }
+    }
+
 }
