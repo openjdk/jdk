@@ -878,14 +878,9 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
             }
 
             if (tce.trustSettings.isEmpty()) {
-               // If there is no trust settings and the certificate is not self-signed trust the certificate
-               if (!isSelfSigned) {
-                   tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
-               } else {
-                   // Otherwise, return immediately. The certificate is not
-                   // added into entries.
-                   return;
-               }
+               // If there is no trust settings then the certificate was verified against other trusted certificates already
+               // or it is self signed
+               tce.trustedKeyUsageValue = KnownOIDs.anyExtendedKeyUsage.value();
             } else {
                 List<String> values = new ArrayList<>();
                 for (var oneTrust : tce.trustSettings) {

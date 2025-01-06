@@ -411,16 +411,15 @@ static bool loadTrustSettings(JNIEnv *env,
                               jmethodID jm_listAdd,
                               jobject *inputTrust) {
     CFArrayRef trustSettings;
-    if (*inputTrust == NULL) {
-        *inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-        if (*inputTrust == NULL) {
-            CFRelease(trustSettings);
-            return false;
-        }
-    }
-
     // Load trustSettings into inputTrust
     if (SecTrustSettingsCopyTrustSettings(certRef, domain, &trustSettings) == errSecSuccess && trustSettings != NULL) {
+        if (*inputTrust == NULL) {
+            *inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+            if (*inputTrust == NULL) {
+                CFRelease(trustSettings);
+                return false;
+            }
+        }
         addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, *inputTrust);
         CFRelease(trustSettings);
     }
@@ -459,6 +458,31 @@ static bool createTrustedCertEntry(JNIEnv *env,  jobject keyStore,
     return true;
 }
 
+static bool validateCertificate(SecCertificateRef certRef) {
+    SecTrustRef secTrust = NULL;
+	CFMutableArrayRef subjCerts = CFArrayCreateMutable(NULL, 1, &kCFTypeArrayCallBacks);
+    CFArraySetValueAtIndex(subjCerts, 0, certRef);
+
+    SecPolicyRef policy = SecPolicyCreateBasicX509();
+    OSStatus ortn = SecTrustCreateWithCertificates(subjCerts, policy, &secTrust);
+    bool result = false;
+    if(ortn) {
+        /* should never happen */
+        cssmPerror("SecTrustCreateWithCertificates", ortn);
+        goto errOut;
+    }
+
+    result = SecTrustEvaluateWithError(secTrust, NULL);
+errOut:
+   if (policy) {
+       CFRelease(policy);
+   }
+   if (secTrust) {
+       CFRelease(secTrust);
+   }
+   return result;
+}
+
 static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore,
                                         jmethodID jm_createTrustedCertEntry,
                                         jclass jc_arrayListClass,
@@ -491,6 +515,16 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore,
             if (!loadTrustSettings(env, certRef, kSecTrustSettingsDomainAdmin,
                                    jc_arrayListClass, jm_arrayListCons, jm_listAdd, &inputTrust)) {
                 goto errOut;
+            }
+
+            // If no trust settings we need to verify the certificate first
+            if (inputTrust == NULL) {
+                bool valid = validateCertificate(certRef);
+                if (valid) {
+                  inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                } else {
+                    continue;
+                }
             }
 
             // Create java object for certificate with trust settings
