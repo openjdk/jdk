@@ -116,7 +116,6 @@ void ArenaCounterTable::print_on(outputStream* st) const {
 }
 
 PhaseIdStack::PhaseIdStack() : _depth(0) {
-  push(phase_trc_id_default); // "outside phase"
 }
 
 // When reporting phase footprint movements, if phase-local peak over start as well over end
@@ -194,12 +193,23 @@ void ArenaStatCounter::on_phase_start(int phase_trc_id) {
   _phase_id_stack.push(phase_trc_id);
   _live_nodes_current = retrieve_live_node_count();
   _timeline.on_phase_start(phase_trc_id, _current, _live_nodes_current);
+
+if (UseNewCode) tty->print_cr("%p ->> %d", Thread::current(), phase_trc_id);
 }
 
 void ArenaStatCounter::on_phase_end(int phase_trc_id) {
   _phase_id_stack.pop(phase_trc_id);
   _live_nodes_current = retrieve_live_node_count();
-  _timeline.on_phase_start(_phase_id_stack.top(), _current, _live_nodes_current); // parent phase "restarts"
+  // If this was a nested phase under a parent phase, for the footprint timeline we
+  // act as if the parent phase just restarted
+  if (phase_trc_id != Phase::PhaseTraceId::_t_none) {
+    _timeline.on_phase_start(_phase_id_stack.top(), _current, _live_nodes_current); // parent phase "restarts"
+  } else {
+    // This should have been the final outer phase. Stack should be empty now.
+    assert(_phase_id_stack.empty(), "Sanity");
+  }
+
+if (UseNewCode) tty->print_cr("%p <<- %d", Thread::current(), phase_trc_id);
 }
 
 int ArenaStatCounter::retrieve_live_node_count() const {
@@ -748,6 +758,7 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   const size_t limit = directive->mem_limit();
   ArenaStatCounter* const arena_stat = new ArenaStatCounter(comp_type, comp_id, limit);
   th->set_arenastat(arena_stat);
+  arena_stat->on_phase_start(Phase::PhaseTraceId::_t_none); // "outside any phase"
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
@@ -757,6 +768,13 @@ void CompilationMemoryStatistic::on_end_compilation() {
   if (arena_stat == nullptr) { // not started
     return;
   }
+
+  // Mark end of compilation by clearing out the arena state object in the CompilerThread.
+  // Do this before the final "phase end".
+  th->set_arenastat(nullptr);
+
+  // End final outer phase.
+  arena_stat->on_phase_end(Phase::PhaseTraceId::_t_none); // "outside any phase"
 
   CompileTask* const task = th->task();
   assert(task->compile_id() == arena_stat->comp_id(), "Different compilation?");
@@ -809,8 +827,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
     tty->print_raw(ss.base());
   }
 
-  // Mark end of compilation by clearing out the arena state object
-  th->set_arenastat(nullptr);
   delete arena_stat;
 }
 
@@ -1000,33 +1016,34 @@ void CompilationMemoryStatistic::do_test_allocations() {
   // allocated, and large enough to trigger a new peak.
   const size_t large_size = MAX2((size_t)Chunk::max_default_size * 2, significant_peak_threshold) * 2;
 
-  // A) Allocate a large area of ResouceArea and leak it to the end of the compilation. This
-  // shall be large enough to create a new peak X. Since we leak, this amount will, from
-  // now on, part of the peak composition of any follow-up peaks to come, and therefore show
-  // up in the final peak-composition printout.
-  NEW_RESOURCE_ARRAY(char, large_size * 10); // Note: ResourceArray on CompilerThread are re-marked as mtCompiler
 #ifdef COMPILER2
   if (ctyp == CompilerType::compiler_c2) {
-    // For C2 only, cause temporary spikes in test phases with non-RA test arenas. These allocations
-    // won't show up in the non-verbose overview mode, since Arenas get destroyed and therefore the
-    // spikes will vanish at the end of the test phase. So they may or may not be part of the final
-    // peak composition printout. However, they should turn up in both the phase allocation timeline.
+    // A) For C2 only, cause temporary spikes in test phases with non-RA test arenas. In step (B)
+    // below we will allocate a large area in ResourceArea, which - since the amount will be larger
+    // than the combined amount allocated here in step (A) - will create a new peak that removes
+    // the (A) allocations from the final peak composition. That is by design - we want to see
+    // these temporary allocations as part of the fooprint timeline as "temporary spikes".
     Compile::TracePhase tp(Phase::_t_testTimer1);
     Arena testArena1(MemTag::mtCompiler /* sic */, Arena::Tag::tag_node);
     Arena testArena2(MemTag::mtCompiler /* sic */, Arena::Tag::tag_regsplit);
-    Arena testArena3(MemTag::mtCompiler /* sic */, Arena::Tag::tag_reglive);
     // The following allocations bring us to a new peak
-    testArena1.Amalloc(large_size);
-    testArena2.Amalloc(large_size);
-    testArena3.Amalloc(large_size);
+    testArena1.Amalloc(large_size); // temp spike, should be gone when phase ends
+    testArena2.Amalloc(large_size); // temp spike, should be gone when phase ends
     {
       Compile::TracePhase tp(Phase::_t_testTimer2);
-      testArena1.Amalloc(large_size);
-      testArena2.Amalloc(large_size);
-      testArena3.Amalloc(large_size);
+      Arena testArena3(MemTag::mtCompiler /* sic */, Arena::Tag::tag_comp);
+      Arena testArena4(MemTag::mtCompiler /* sic */, Arena::Tag::tag_reglive);
+      testArena3.Amalloc(large_size); // temp spike, should be gone when phase ends
+      testArena4.Amalloc(large_size); // temp spike, should be gone when phase ends
     }
   }
 #endif // COMPILER2
+
+  // Also allocate a large area of ResouceArea and leak it to the end of the compilation. This
+  // shall be large enough to create a new peak X. Since we leak, this amount will, from
+  // now on, part of the peak composition of any follow-up peaks to come, and therefore show
+  // up in the final peak-composition printout for both C1 and C2.
+  NEW_RESOURCE_ARRAY(char, large_size * 20); // Note: the thread ResourceArray of a CompilerThread runs as "mtCompiler"
 }
 #endif // ASSERT
 

@@ -71,6 +71,7 @@ class PhaseIdStack {
   int _stack[max_depth];
 public:
   PhaseIdStack();
+  inline bool empty() const { return _depth == 0; }
   inline void push(int phase_trc_id);
   inline void pop(int phase_trc_id);
   inline int top() const;
@@ -157,7 +158,6 @@ private:
     int phase_trc_id;
     C<size_t, ssize_t> _bytes;
     C<unsigned, ssize_t> _live_nodes;
-    bool has_significant_local_peak() const { return _bytes.peak_size() > M; }
   };
   SimpleFifo<Entry, max_num_phases> _fifo;
 public:

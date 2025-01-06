@@ -67,6 +67,17 @@ public class CompileCommandPrintMemStat {
         test(METHOD2, METHOD1, ctyp);
     }
 
+    // By activating "memstattest" compile command, we force the compiler to do some defined (large) test allocations
+    // that should show up in the reports. For details, see CompilationMemoryStatistic::do_test_allocations().
+
+    static final long largeAlloc = 2 * 1024 * 1024;
+
+    // For C1 and C2 both, we allocate (and leak to the end of the compilation) a large amount of resourcearea.
+    static final long resourceAreaLeaked = 10 * largeAlloc;
+
+    // For C2 only, we do some temporary test allocations in two (nested) test phases
+    static final long resourceAreaLeaked = 10 * largeAlloc;
+
     // Example output for a C2 compilation:
     //
     //    CompileCommand: MemStat compiler/print/CompileCommandPrintMemStat$TestMain.method1 uintx MemStat = 3

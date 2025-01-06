@@ -26,6 +26,7 @@
 #ifndef SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_HPP
 #define SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_HPP
 
+#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -33,6 +34,7 @@ class DirectiveSet;
 class outputStream;
 
 class CompilationMemoryStatistic : public AllStatic {
+  friend class CompilationMemoryStatisticMark;
   static bool _enabled; // set to true if memstat is active for any method.
 
   static void on_phase_start_0(int phase_trc_id);
@@ -40,16 +42,16 @@ class CompilationMemoryStatistic : public AllStatic {
   static void on_arena_chunk_allocation_0(size_t size, int arenatag, uint64_t* stamp);
   static void on_arena_chunk_deallocation_0(size_t size, uint64_t stamp);
 
+  // Private, should only be called via CompilationMemoryStatisticMark
+  static void on_start_compilation(const DirectiveSet* directive);
+
+  // Private, should only be called via CompilationMemoryStatisticMark
+  static void on_end_compilation();
+
 public:
   static void initialize();
   // true if CollectMemStat or PrintMemStat has been enabled for any method
   static bool enabled() { return _enabled; }
-  static void on_start_compilation(const DirectiveSet* directive);
-
-  // Called at end of compilation. Records the arena usage peak. Also takes over
-  // status information from ciEnv (compilation failed, oom'ed or went okay). ciEnv::_failure_reason
-  // must be set at this point (so place CompilationMemoryStatisticMark correctly).
-  static void on_end_compilation();
 
   static inline void on_phase_start(int phase_trc_id) {
     if (enabled()) {
@@ -85,7 +87,7 @@ public:
 };
 
 // RAII object to wrap one compilation
-class CompilationMemoryStatisticMark {
+class CompilationMemoryStatisticMark : public StackObj {
   const bool _active;
 public:
   CompilationMemoryStatisticMark(const DirectiveSet* directive);

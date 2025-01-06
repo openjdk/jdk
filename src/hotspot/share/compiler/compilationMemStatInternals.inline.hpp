@@ -40,7 +40,7 @@ inline void PhaseIdStack::push(int phase_trc_id) {
 
 inline void PhaseIdStack::pop(int phase_trc_id) {
   check_phase_trace_id(phase_trc_id);
-  assert(_depth > 1, "Sanity " PTR_FORMAT, p2i(this));
+  assert(_depth > 0, "Sanity " PTR_FORMAT, p2i(Thread::current()));
   assert(top() == phase_trc_id, "Mismatched PhaseTraceId pop (%d, expected %d)", phase_trc_id, top());
   if (_depth > 0) { // release builds
     _depth--;
