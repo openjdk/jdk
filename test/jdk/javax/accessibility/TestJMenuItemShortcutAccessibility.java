@@ -42,11 +42,12 @@ import javax.swing.KeyStroke;
 public class TestJMenuItemShortcutAccessibility {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-                1. Start the JAWS aplication
+                1. Start the JAWS application
                 2. Press Alt + M to open application Menu
                 3. Navigate the Menu Items by using UP / DOWN arrow key
                 4. Press Pass if you are able to hear correct JAWS announcements
-                   for each menu item shortcut else Fail
+                   (JAWS should read full shortcut text and not only the 1st
+                   character of shortcut text for each menu item) else Fail
                 """;
 
         PassFailJFrame.builder()
