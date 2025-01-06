@@ -986,12 +986,15 @@ size_t ShenandoahAdaptiveHeuristics::accelerated_consumption(double& acceleratio
     }
     momentary_rate = weighted_y_sum / total_weight;
 #ifdef KELVIN_NEEDS_TO_SEE
-    log_info(gc)(" momentary_rate final answer: %.3f MB/s", momentary_rate * HeapWordSize / (1024 * 1024));
+    log_info(gc)(" momentary_rate final answer: %.3f MB/s", (momentary_rate * HeapWordSize) / (1024 * 1024));
 #endif
     bool is_spiking = _allocation_rate.is_spiking(momentary_rate, _spike_threshold_sd);
 #ifdef KELVIN_NEEDS_TO_SEE
-    log_info(gc)(" is_spiking? %s, momentary_rate: %.3f, _spike_threshold_sd: %.3f, average: %.3f, zscore: %.3f",
-                 is_spiking? "yes": "no", momentary_rate, _spike_threshold_sd, _allocation_rate._rate.avg(), (momentary_rate - _allocation_rate._rate.avg()) / _allocation_rate._rate.sd());
+    log_info(gc)(" is_spiking? %s, momentary_rate: %.3f, average: %.3f, is zscore: %.3f > threshold: %.3f?",
+                 is_spiking? "yes": "no", (momentary_rate * HeapWordSize) / (1024 * 1024),
+                 (_allocation_rate._rate.avg() * HeapWordSize) / (1024 * 1024),
+                 (momentary_rate - _allocation_rate._rate.avg()) / _allocation_rate._rate.sd(),
+                 _spike_threshold_sd);
 #endif
     if (!is_spiking) {
       // Disable momentary spike trigger unless allocation rate delta from average exceeds sd
