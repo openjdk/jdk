@@ -28,10 +28,19 @@
 
 #include "compiler/compilationMemStatInternals.hpp"
 
+
+inline PhaseIdStack::PhaseIdStack() : _depth(0) {
+}
+
 inline void PhaseIdStack::push(int phase_trc_id) {
   check_phase_trace_id(phase_trc_id);
+  if (_depth == 0) {
+    assert(phase_trc_id == phase_trc_id_none, "first entry must be none");
+  } else {
+    assert(phase_trc_id != phase_trc_id_none, "subsequent entries must not be none");
+  }
   assert(_depth < max_depth, "Sanity");
-  assert(_depth == 0 || top() != phase_trc_id, "Nesting identical phases?");
+  assert(empty() || top() != phase_trc_id, "Nesting identical phases?");
   _stack[_depth] = phase_trc_id;
   if (_depth < max_depth) { // release builds
     _depth++;
@@ -39,16 +48,21 @@ inline void PhaseIdStack::push(int phase_trc_id) {
 }
 
 inline void PhaseIdStack::pop(int phase_trc_id) {
-  check_phase_trace_id(phase_trc_id);
-  assert(_depth > 0, "Sanity " PTR_FORMAT, p2i(Thread::current()));
-  assert(top() == phase_trc_id, "Mismatched PhaseTraceId pop (%d, expected %d)", phase_trc_id, top());
+  assert(!empty(), "Sanity ");
+  const int old = phase_trc_id;
   if (_depth > 0) { // release builds
     _depth--;
+  }
+  assert(old == phase_trc_id, "Mismatched PhaseTraceId pop (%d, expected %d)", phase_trc_id, top());
+  if (_depth == 0) {
+    assert(old == phase_trc_id_none, "first entry must be none");
+  } else {
+    assert(old != phase_trc_id_none, "subsequent entries must not be none");
   }
 }
 
 inline int PhaseIdStack::top() const {
-  assert(_depth > 0, "Sanity");
+  assert(!empty(), "Sanity");
   return _stack[_depth - 1];
 }
 
@@ -59,7 +73,6 @@ inline size_t ArenaCounterTable::at(int phase_trc_id, int arena_tag) const {
 }
 
 inline void ArenaCounterTable::add(size_t size, int phase_trc_id, int arena_tag) {
-  check_phase_trace_id(phase_trc_id);
   check_arena_tag(arena_tag);
   const size_t old = at(phase_trc_id, arena_tag);
   _v[phase_trc_id][arena_tag] += size;
@@ -67,7 +80,6 @@ inline void ArenaCounterTable::add(size_t size, int phase_trc_id, int arena_tag)
 }
 
 inline void ArenaCounterTable::sub(size_t size, int phase_trc_id, int arena_tag) {
-  check_phase_trace_id(phase_trc_id);
   check_arena_tag(arena_tag);
   assert(at(phase_trc_id, arena_tag) >= size, "Underflow (%zu %zu)", at(phase_trc_id, arena_tag), size);
   _v[phase_trc_id][arena_tag] -= size;

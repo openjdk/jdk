@@ -39,11 +39,11 @@ class outputStream;
 
 #ifdef COMPILER2
 constexpr int phase_trc_id_max     = (int)Phase::PhaseTraceId::max_phase_timers;
-constexpr int phase_trc_id_default = (int)Phase::PhaseTraceId::_t_none;
+constexpr int phase_trc_id_none    = (int)Phase::PhaseTraceId::_t_none;
 #else
 // In minimal builds, the ArenaCounterTable is just a single-dimension vector of arena tags (see below)
 constexpr int phase_trc_id_max = 1;
-constexpr int phase_trc_id_default = 0;
+constexpr int phase_trc_id_none = 0;
 #endif
 inline void check_phase_trace_id(int v) { assert(v >= 0 && v < phase_trc_id_max, "OOB (%d)", v); }
 
@@ -70,7 +70,7 @@ class PhaseIdStack {
   int _depth;
   int _stack[max_depth];
 public:
-  PhaseIdStack();
+  inline PhaseIdStack();
   inline bool empty() const { return _depth == 0; }
   inline void push(int phase_trc_id);
   inline void pop(int phase_trc_id);
@@ -166,6 +166,7 @@ public:
   inline void on_footprint_change(size_t cur_abs, unsigned cur_nodes);
   void print_on(outputStream* st) const;
   void on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes);
+  void finish_phase();
 };
 
 // ArenaState is the central data structure holding all statistics and temp data during

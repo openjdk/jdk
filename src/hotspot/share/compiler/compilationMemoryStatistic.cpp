@@ -115,9 +115,6 @@ void ArenaCounterTable::print_on(outputStream* st) const {
   }
 }
 
-PhaseIdStack::PhaseIdStack() : _depth(0) {
-}
-
 // When reporting phase footprint movements, if phase-local peak over start as well over end
 // was larger than this threshold, we report it.
 static constexpr size_t significant_peak_threshold = M;
@@ -126,7 +123,7 @@ FootprintTimeline::FootprintTimeline() {
   Entry& e = _fifo.at(0);
   e._bytes.init(0);
   e._live_nodes.init(0);
-  e.phase_trc_id = phase_trc_id_default; // "outside phase"
+  e.phase_trc_id = phase_trc_id_none; // "outside phase"
 }
 
 void FootprintTimeline::copy_from(const FootprintTimeline& other) {
@@ -162,13 +159,7 @@ void FootprintTimeline::print_on(outputStream* st) const {
   }
 }
 
-void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes) {
-  // Since we see all allocations, cur_abs should correspond to our topmost cur. But the
-  // the same does not hold for nodes, since we only see allocations that cause new arena chunks
-  // to be born. One can allocate a node without causing the arena to expand. So, cur_nodes
-  // may be a new number for us. Just act as if this is a footprint change.
-  on_footprint_change(cur_abs, cur_nodes);
-
+void FootprintTimeline::finish_phase() {
   // Close old, open new entry; but only if the last phase was "interesting".
   // An "interesting" phase is one that causes a footprint change (end != start),
   // and/or one that has a local peak that significantly raises above either starting
@@ -177,6 +168,9 @@ void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigne
   if (old._bytes.end_delta() != 0 || old._bytes.peak_size() > significant_peak_threshold) {
     _fifo.advance();
   }
+}
+
+void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes) {
   Entry& e = _fifo.current();
   e._bytes.start = e._bytes.cur = e._bytes.peak = cur_abs;
   e._live_nodes.start = e._live_nodes.cur = e._live_nodes.peak = cur_nodes;
@@ -193,23 +187,30 @@ void ArenaStatCounter::on_phase_start(int phase_trc_id) {
   _phase_id_stack.push(phase_trc_id);
   _live_nodes_current = retrieve_live_node_count();
   _timeline.on_phase_start(phase_trc_id, _current, _live_nodes_current);
-
-if (UseNewCode) tty->print_cr("%p ->> %d", Thread::current(), phase_trc_id);
 }
 
 void ArenaStatCounter::on_phase_end(int phase_trc_id) {
   _phase_id_stack.pop(phase_trc_id);
   _live_nodes_current = retrieve_live_node_count();
+
+  // last counter update in old phase:
+  // We see all allocations, so cur_abs given should correspond to our topmost cur.
+  // the same does not hold for nodes, since we only see allocations that cause new
+  // arena chunks to be born. Node allocations that don't cause arena chunks are not
+  // registered here. So, cur_nodes may be new to us.
+  _timeline.on_footprint_change(_current, _live_nodes_current);
+
+  // close old phase
+  _timeline.finish_phase();
+
   // If this was a nested phase under a parent phase, for the footprint timeline we
   // act as if the parent phase just restarted
-  if (phase_trc_id != Phase::PhaseTraceId::_t_none) {
+  if (phase_trc_id != phase_trc_id_none) {
     _timeline.on_phase_start(_phase_id_stack.top(), _current, _live_nodes_current); // parent phase "restarts"
   } else {
     // This should have been the final outer phase. Stack should be empty now.
     assert(_phase_id_stack.empty(), "Sanity");
   }
-
-if (UseNewCode) tty->print_cr("%p <<- %d", Thread::current(), phase_trc_id);
 }
 
 int ArenaStatCounter::retrieve_live_node_count() const {
@@ -583,7 +584,7 @@ public:
     }
     st->cr();
 
-    st->print_cr("%*s: %zu", indent1, "Arena Peak Usage: ", _peak);
+    st->print_cr("%*s: %zu", indent1, "Arena Peak Usage", _peak);
     st->print_cr("%*s: %zu", indent1, "Code Size", _code_size);
     if (_comp_type == CompilerType::compiler_c2) {
       st->print("%*s: ", indent1, "Nodes at global peak");
@@ -758,7 +759,7 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   const size_t limit = directive->mem_limit();
   ArenaStatCounter* const arena_stat = new ArenaStatCounter(comp_type, comp_id, limit);
   th->set_arenastat(arena_stat);
-  arena_stat->on_phase_start(Phase::PhaseTraceId::_t_none); // "outside any phase"
+  arena_stat->on_phase_start(phase_trc_id_none);
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
@@ -774,7 +775,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   th->set_arenastat(nullptr);
 
   // End final outer phase.
-  arena_stat->on_phase_end(Phase::PhaseTraceId::_t_none); // "outside any phase"
+  arena_stat->on_phase_end(phase_trc_id_none);
 
   CompileTask* const task = th->task();
   assert(task->compile_id() == arena_stat->comp_id(), "Different compilation?");
