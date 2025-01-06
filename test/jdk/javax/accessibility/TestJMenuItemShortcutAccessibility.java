@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class TestJMenuItemShortcutAccessibility {
                 2. Press Alt + M to open application Menu
                 3. Navigate the Menu Items by using UP / DOWN arrow key
                 4. Press Pass if you are able to hear correct JAWS announcements
-                   for each menu item shorcut else Fail.
+                   for each menu item shortcut else Fail
                 """;
 
         PassFailJFrame.builder()
@@ -62,7 +62,7 @@ public class TestJMenuItemShortcutAccessibility {
         JFrame frame = new JFrame("A Frame with Menu");
 
         JMenuBar menuBar = new JMenuBar();
-        JMenu menu = new JMenu("Menu with Keystrokes");
+        JMenu menu = new JMenu("Menu with shortcuts");
         menu.setMnemonic(KeyEvent.VK_M);
         menuBar.add(menu);
 
@@ -104,7 +104,6 @@ public class TestJMenuItemShortcutAccessibility {
         menu.add(menuItem6);
         menu.add(menuItem7);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setJMenuBar(menuBar);
         frame.setSize(300, 200);
         return frame;
