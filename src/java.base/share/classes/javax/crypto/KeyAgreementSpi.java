@@ -227,6 +227,7 @@ public abstract class KeyAgreementSpi {
      * @exception InvalidKeyException if the shared secret key material cannot
      * be used to generate a secret key of the requested algorithm type (e.g.,
      * the key material is too short)
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected abstract SecretKey engineGenerateSecret(String algorithm)
         throws IllegalStateException, NoSuchAlgorithmException,

@@ -681,6 +681,7 @@ public class KeyAgreement {
      * @exception InvalidKeyException if the shared secret-key material cannot
      * be used to generate a secret key of the specified algorithm (e.g.,
      * the key material is too short)
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     public final SecretKey generateSecret(String algorithm)
         throws IllegalStateException, NoSuchAlgorithmException,
