@@ -361,7 +361,7 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   // setup parameters
 
   // convention: expect aberrant index in register x11
-  __ zero_extend(c_rarg2, x11, 32);
+  __ zext(c_rarg2, x11, 32);
   // convention: expect array in register x13
   __ mv(c_rarg1, x13);
   __ call_VM(noreg,
@@ -552,7 +552,7 @@ address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter()
   // Restore Java expression stack pointer
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ shadd(esp, t0, fp, t0, Interpreter::logStackElementSize);
-  // and NULL it as marker that esp is now tos until next java call
+  // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   // Restore machine SP

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,15 +60,18 @@ void ShenandoahSuperClosure::do_nmethod(nmethod* nm) {
 // ========= Marking
 //
 
-ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
+ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToScanQueue* q,
+                                                               ShenandoahReferenceProcessor* rp,
+                                                               ShenandoahObjToScanQueue* old_q) :
         ShenandoahSuperClosure(rp),
         _queue(q),
+        _old_queue(old_q),
         _mark_context(ShenandoahHeap::heap()->marking_context()),
         _weak(false) {}
 
 template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _mark_context, _weak);
+  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
@@ -79,7 +83,7 @@ bool ShenandoahForwardedIsAliveClosure::do_object_b(oop obj) {
   }
   obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
   shenandoah_assert_not_forwarded_if(nullptr, obj, ShenandoahHeap::heap()->is_concurrent_mark_in_progress());
-  return _mark_context->is_marked(obj);
+  return _mark_context->is_marked_or_old(obj);
 }
 
 ShenandoahIsAliveClosure::ShenandoahIsAliveClosure() :
@@ -90,7 +94,7 @@ bool ShenandoahIsAliveClosure::do_object_b(oop obj) {
     return false;
   }
   shenandoah_assert_not_forwarded(nullptr, obj);
-  return _mark_context->is_marked(obj);
+  return _mark_context->is_marked_or_old(obj);
 }
 
 BoolObjectClosure* ShenandoahIsAliveSelector::is_alive_closure() {
@@ -105,7 +109,7 @@ ShenandoahKeepAliveClosure::ShenandoahKeepAliveClosure() :
 template <typename T>
 void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
   assert(ShenandoahHeap::heap()->is_concurrent_mark_in_progress(), "Only for concurrent marking phase");
-  assert(!ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
+  assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress() || !ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
 
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
@@ -215,8 +219,10 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
 //
 
 template <ShenandoahGenerationType GENERATION>
-ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-  ShenandoahMarkRefsSuperClosure(q, rp) {
+ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q,
+                                                                             ShenandoahReferenceProcessor* rp,
+                                                                             ShenandoahObjToScanQueue* old_q) :
+  ShenandoahMarkRefsSuperClosure(q, rp, old_q) {
   assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
 }
 

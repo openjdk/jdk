@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.krb5.internal;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.rcache.AuthTimeWithHash;
 import sun.security.krb5.internal.rcache.MemoryCache;
 import sun.security.krb5.internal.rcache.DflCache;
@@ -54,8 +53,7 @@ public abstract class ReplayCache {
         }
     }
     public static ReplayCache getInstance() {
-        String type = GetPropertyAction
-                .privilegedGetProperty("sun.security.krb5.rcache");
+        String type = System.getProperty("sun.security.krb5.rcache");
         return getInstance(type);
     }
 

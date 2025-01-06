@@ -72,7 +72,6 @@ import java.util.stream.Collectors;
 import javax.accessibility.AccessibilityProvider;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.HeadlessToolkit;
 import sun.awt.PeerEvent;
@@ -1360,11 +1359,6 @@ public abstract class Toolkit {
      * @return    the {@code EventQueue} object
     */
     public final EventQueue getSystemEventQueue() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.CHECK_AWT_EVENTQUEUE_PERMISSION);
-        }
         return getSystemEventQueueImpl();
     }
 
@@ -1690,11 +1684,6 @@ public abstract class Toolkit {
         if (localL == null) {
             return;
         }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
-        }
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
                 listener2SelectiveListener.get(localL);
@@ -1750,11 +1739,6 @@ public abstract class Toolkit {
         if (listener == null) {
             return;
         }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
-        }
 
         synchronized (this) {
             SelectiveAWTEventListener selectiveListener =
@@ -1807,11 +1791,6 @@ public abstract class Toolkit {
      * @since 1.4
      */
     public AWTEventListener[] getAWTEventListeners() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
-        }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
 
@@ -1851,11 +1830,6 @@ public abstract class Toolkit {
      * @since 1.4
      */
     public AWTEventListener[] getAWTEventListeners(long eventMask) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ALL_AWT_EVENTS_PERMISSION);
-        }
         synchronized (this) {
             EventListener[] la = ToolkitEventMulticaster.getListeners(eventListener,AWTEventListener.class);
 

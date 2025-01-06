@@ -59,7 +59,6 @@ public class Krb5Util {
     static KerberosTicket getServiceTicket(GSSCaller caller,
             String clientPrincipal, String serverPrincipal) {
         // Try to get ticket from current Subject
-        @SuppressWarnings("removal")
         Subject currSubj = Subject.current();
         KerberosTicket ticket =
             SubjectComber.find(currSubj, serverPrincipal, clientPrincipal,

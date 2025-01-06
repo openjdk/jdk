@@ -35,8 +35,9 @@
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/partialArraySplitter.inline.hpp"
 #include "gc/shared/partialArrayState.hpp"
-#include "gc/shared/partialArrayTaskStepper.inline.hpp"
+#include "gc/shared/partialArrayTaskStats.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -61,8 +62,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                            uint worker_id,
                                            uint num_workers,
                                            G1CollectionSet* collection_set,
-                                           G1EvacFailureRegions* evac_failure_regions,
-                                           PartialArrayStateAllocator* pas_allocator)
+                                           G1EvacFailureRegions* evac_failure_regions)
   : _g1h(g1h),
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
@@ -81,8 +81,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_array_state_allocator(pas_allocator),
-    _partial_array_stepper(num_workers, ParGCArrayScanChunk),
+    _partial_array_splitter(g1h->partial_array_state_manager(), num_workers),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->optional_region_length()),
     _numa(g1h->numa()),
@@ -170,9 +169,12 @@ void G1ParScanThreadState::verify_task(oop* task) const {
 }
 
 void G1ParScanThreadState::verify_task(PartialArrayState* task) const {
-  // Must be in the collection set--it's already been copied.
-  oop p = task->source();
-  assert(_g1h->is_in_cset(p), "p=" PTR_FORMAT, p2i(p));
+  assert(task != nullptr, "invariant");
+  // Source isn't used for processing, so not recorded in task.
+  assert(task->source() == nullptr, "invariant");
+  oop p = task->destination();
+  assert(_g1h->is_in_reserved(p),
+         "task=" PTR_FORMAT " dest=" PTR_FORMAT, p2i(task), p2i(p));
 }
 
 void G1ParScanThreadState::verify_task(ScannerTask task) const {
@@ -223,38 +225,17 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::do_partial_array(PartialArrayState* state) {
-  oop to_obj = state->destination();
-
-#ifdef ASSERT
-  oop from_obj = state->source();
-  assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->is_forwarded(), "must be forwarded");
-  assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
-  assert(to_obj->is_objArray(), "must be obj array");
-#endif // ASSERT
-
-  objArrayOop to_array = objArrayOop(to_obj);
-
-  // Claim a chunk and get number of additional tasks to enqueue.
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.next(state);
-  // Push any additional partial scan tasks needed.  Pushed before processing
-  // the claimed chunk to allow other workers to steal while we're processing.
-  if (step._ncreate > 0) {
-    state->add_references(step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      push_on_queue(ScannerTask(state));
-    }
-  }
-
+void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stolen) {
+  // Access state before release by claim().
+  objArrayOop to_array = objArrayOop(state->destination());
+  PartialArraySplitter::Claim claim =
+    _partial_array_splitter.claim(state, _task_queue, stolen);
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
   G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.
   to_array->oop_iterate_range(&_scanner,
-                              checked_cast<int>(step._index),
-                              checked_cast<int>(step._index + _partial_array_stepper.chunk_size()));
-  // Release reference to the state, now that we're done with it.
-  _partial_array_state_allocator->release(_worker_id, state);
+                              checked_cast<int>(claim._start),
+                              checked_cast<int>(claim._end));
 }
 
 MAYBE_INLINE_EVACUATION
@@ -266,28 +247,10 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
   assert(to_obj->is_objArray(), "precondition");
 
   objArrayOop to_array = objArrayOop(to_obj);
-
   size_t array_length = to_array->length();
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
-
-  // Push any needed partial scan tasks.  Pushed before processing the
-  // initial chunk to allow other workers to steal while we're processing.
-  if (step._ncreate > 0) {
-    assert(step._index < array_length, "invariant");
-    assert(((array_length - step._index) % _partial_array_stepper.chunk_size()) == 0,
-           "invariant");
-    PartialArrayState* state =
-      _partial_array_state_allocator->allocate(_worker_id,
-                                               from_obj, to_obj,
-                                               step._index,
-                                               array_length,
-                                               step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      push_on_queue(ScannerTask(state));
-    }
-  } else {
-    assert(step._index == array_length, "invariant");
-  }
+  size_t initial_chunk_size =
+    // The source array is unused when processing states.
+    _partial_array_splitter.start(_task_queue, nullptr, to_array, array_length);
 
   // Skip the card enqueue iff the object (to_array) is in survivor region.
   // However, G1HeapRegion::is_survivor() is too expensive here.
@@ -298,18 +261,18 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
   // Process the initial chunk.  No need to process the type in the
   // klass, as it will already be handled by processing the built-in
   // module.
-  to_array->oop_iterate_range(&_scanner, 0, checked_cast<int>(step._index));
+  to_array->oop_iterate_range(&_scanner, 0, checked_cast<int>(initial_chunk_size));
 }
 
 MAYBE_INLINE_EVACUATION
-void G1ParScanThreadState::dispatch_task(ScannerTask task) {
+void G1ParScanThreadState::dispatch_task(ScannerTask task, bool stolen) {
   verify_task(task);
   if (task.is_narrow_oop_ptr()) {
     do_oop_evac(task.to_narrow_oop_ptr());
   } else if (task.is_oop_ptr()) {
     do_oop_evac(task.to_oop_ptr());
   } else {
-    do_partial_array(task.to_partial_array_state());
+    do_partial_array(task.to_partial_array_state(), stolen);
   }
 }
 
@@ -322,11 +285,11 @@ void G1ParScanThreadState::trim_queue_to_threshold(uint threshold) {
   do {
     while (_task_queue->pop_overflow(task)) {
       if (!_task_queue->try_push_to_taskqueue(task)) {
-        dispatch_task(task);
+        dispatch_task(task, false);
       }
     }
     while (_task_queue->pop_local(task, threshold)) {
-      dispatch_task(task);
+      dispatch_task(task, false);
     }
   } while (!_task_queue->overflow_empty());
 }
@@ -335,7 +298,7 @@ ATTRIBUTE_FLATTEN
 void G1ParScanThreadState::steal_and_trim_queue(G1ScannerTasksQueueSet* task_queues) {
   ScannerTask stolen_task;
   while (task_queues->steal(_worker_id, stolen_task)) {
-    dispatch_task(stolen_task);
+    dispatch_task(stolen_task, true);
     // Processing stolen task may have added tasks to our queue.
     trim_queue();
   }
@@ -601,8 +564,7 @@ G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) 
                                worker_id,
                                _num_workers,
                                _collection_set,
-                               _evac_failure_regions,
-                               &_partial_array_state_allocator);
+                               _evac_failure_regions);
   }
   return _states[worker_id];
 }
@@ -720,6 +682,14 @@ void G1ParScanThreadState::update_numa_stats(uint node_index) {
   }
 }
 
+#if TASKQUEUE_STATS
+
+PartialArrayTaskStats* G1ParScanThreadState::partial_array_task_stats() {
+  return _partial_array_splitter.stats();
+}
+
+#endif // TASKQUEUE_STATS
+
 G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                                                  uint num_workers,
                                                  G1CollectionSet* collection_set,
@@ -732,8 +702,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
-    _evac_failure_regions(evac_failure_regions),
-    _partial_array_state_allocator(num_workers)
+    _evac_failure_regions(evac_failure_regions)
 {
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
@@ -748,3 +717,15 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
   FREE_C_HEAP_ARRAY(BufferNodeList, _rdc_buffers);
 }
+
+#if TASKQUEUE_STATS
+
+void G1ParScanThreadStateSet::print_partial_array_task_stats() {
+  auto get_stats = [&](uint i) {
+    return state_for_worker(i)->partial_array_task_stats();
+  };
+  PartialArrayTaskStats::log_set(_num_workers, get_stats,
+                                 "Partial Array Task Stats");
+}
+
+#endif // TASKQUEUE_STATS

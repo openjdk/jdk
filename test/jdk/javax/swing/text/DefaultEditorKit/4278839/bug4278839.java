@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,22 @@
  * @key headful
  * @bug 4278839 8233634
  * @summary Incorrect cursor movement between words at the end of line
- * @author Anton Nashatyrev
  * @library ../../../regtesthelpers
  * @build Util
  * @run main bug4278839
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
-public class bug4278839 extends JFrame {
+public class bug4278839 {
 
     private static boolean passed = true;
     private static JTextArea area;
@@ -44,40 +49,80 @@ public class bug4278839 extends JFrame {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        int caret;
         try {
 
             robo = new Robot();
-            robo.setAutoDelay(200);
+            robo.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
             robo.waitForIdle();
+            robo.delay(1000);
 
             clickMouse();
             robo.waitForIdle();
+            robo.delay(250);
 
             area.setCaretPosition(0);
             robo.waitForIdle();
+            robo.delay(250);
 
-            passed &= moveCaret(true) == 1;
-            passed &= moveCaret(true) == 5;
-            passed &= moveCaret(true) == 8;
-            passed &= moveCaret(true) == 9;
-            passed &= moveCaret(true) == 13;
-            passed &= moveCaret(true) == 16;
-            passed &= moveCaret(true) == 17;
-            passed &= moveCaret(false) == 16;
-            passed &= moveCaret(false) == 13;
-            passed &= moveCaret(false) == 9;
-            passed &= moveCaret(false) == 8;
-            passed &= moveCaret(false) == 5;
-            passed &= moveCaret(false) == 1;
-            passed &= moveCaret(false) == 0;
+            passed &= (caret = moveCaret(true)) == 1;
+            System.out.println(" passed " + passed +
+                               " Expected position 1 actual position " + caret);
+
+            passed &= (caret = moveCaret(true)) == 5;
+            System.out.println(" passed " + passed +
+                               " Expected position 5 actual position " + caret);
+
+            passed &= (caret = moveCaret(true)) == 8;
+            System.out.println(" passed " + passed +
+                               " Expected position 8 actual position " + caret);
+
+            passed &= (caret = moveCaret(true)) == 9;
+            System.out.println(" passed " + passed +
+                               " Expected position 9 actual position " + caret);
+
+            passed &= (caret = moveCaret(true)) == 13;
+            System.out.println(" passed " + passed +
+                               " Expected position 13 actual position " + caret);
+
+            passed &= (caret = moveCaret(true)) == 16;
+            System.out.println(" passed " + passed +
+                               " Expected position 16 actual position " + caret);
+
+            passed &= (caret = moveCaret(true)) == 17;
+            System.out.println(" passed " + passed +
+                               " Expected position 17 actual position " + caret);
+
+            passed &= (caret = moveCaret(false)) == 16;
+            System.out.println(" passed " + passed +
+                               " Expected position 16 actual position " + caret);
+
+            passed &= (caret = moveCaret(false)) == 13;
+            System.out.println(" passed " + passed +
+                               " Expected position 13 actual position " + caret);
+
+            passed &= (caret = moveCaret(false)) == 9;
+            System.out.println(" passed " + passed +
+                               " Expected position 9 actual position " + caret);
+
+            passed &= (caret = moveCaret(false)) == 8;
+            System.out.println(" passed " + passed +
+                               " Expected position 8 actual position " + caret);
+
+            passed &= (caret = moveCaret(false)) == 5;
+            System.out.println(" passed " + passed +
+                               " Expected position 5 actual position " + caret);
+
+            passed &= (caret = moveCaret(false)) == 1;
+            System.out.println(" passed " + passed +
+                               " Expected position 1 actual position " + caret);
+
+            passed &= (caret = moveCaret(false)) == 0;
+            System.out.println(" passed " + passed +
+                               " Expected position 0 actual position " + caret);
 
         } catch (Exception e) {
             throw new RuntimeException("Test failed because of an exception:",
@@ -97,36 +142,31 @@ public class bug4278839 extends JFrame {
         Util.hitKeys(robo, getCtrlKey(),
                 right ? KeyEvent.VK_RIGHT : KeyEvent.VK_LEFT);
         robo.waitForIdle();
+        robo.delay(250);
 
         final int[] result = new int[1];
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                result[0] = area.getCaretPosition();
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            result[0] = area.getCaretPosition();
         });
 
-        int pos = result[0];
-        return pos;
+        return result[0];
     }
 
     private static void clickMouse() throws Exception {
         final Rectangle result[] = new Rectangle[1];
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                result[0] = new Rectangle(area.getLocationOnScreen(), area.getSize());
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            result[0] = new Rectangle(area.getLocationOnScreen(), area.getSize());
         });
 
         Rectangle rect = result[0];
 
         robo.mouseMove(rect.x + rect.width / 2, rect.y + rect.width / 2);
-        robo.mousePress(InputEvent.BUTTON1_MASK);
-        robo.mouseRelease(InputEvent.BUTTON1_MASK);
+        robo.waitForIdle();
+        robo.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robo.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robo.waitForIdle();
     }
 
     /**
