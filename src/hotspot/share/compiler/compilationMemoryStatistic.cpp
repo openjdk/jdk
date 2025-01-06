@@ -119,34 +119,38 @@ void ArenaCounterTable::print_on(outputStream* st) const {
 // was larger than this threshold, we report it.
 static constexpr size_t significant_peak_threshold = M;
 
+// if true, footprint timeline will not omit phases it deems insignificant.
+static constexpr bool show_insignificant_phases_too = true;
+
 FootprintTimeline::FootprintTimeline() {
   DEBUG_ONLY(_inbetween_phases = true;)
 }
 
 void FootprintTimeline::copy_from(const FootprintTimeline& other) {
   _fifo.copy_from(other._fifo);
+  DEBUG_ONLY(_inbetween_phases = other._inbetween_phases;)
 }
 
 void FootprintTimeline::print_on(outputStream* st) const {
   if (!_fifo.empty()) {
                // .123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789.123456789
-    st->print_cr("                                bytes at end             nodes at end");
+    st->print_cr("                                   bytes at end             nodes at end");
     unsigned from = 0;
     if (_fifo.lost() > 0) {
       st->print_cr("         (" UINT64_FORMAT " older entries lost)", _fifo.lost());
     }
     auto printer = [&](const Entry& e) {
       check_phase_trace_id(e.phase_trc_id);
-      st->print("%24s: ", phase_trc_id_to_string(e.phase_trc_id));
-      st->fill_to(30);
+      st->print("(%d) %24s: ", e.level, phase_trc_id_to_string(e.phase_trc_id));
+      st->fill_to(32);
       st->print("%9zu ", e._bytes.cur); // end
-      st->fill_to(40);
+      st->fill_to(42);
       st->print("%+9zd ", e._bytes.end_delta()); // delta end
-      st->fill_to(55);
+      st->fill_to(57);
       st->print("%6u ", e._live_nodes.cur); // end
-      st->fill_to(62);
+      st->fill_to(65);
       st->print("%+6zd ", e._live_nodes.end_delta()); // end
-      if (e._bytes.peak_size() > significant_peak_threshold) {
+      if (e._bytes.temporary_peak_size() > significant_peak_threshold) {
         st->fill_to(80);
         st->print(" significant temporary peak: %zu (%+zd)", e._bytes.peak, (ssize_t)e._bytes.peak - e._bytes.start); // peak
       }
@@ -169,23 +173,33 @@ void FootprintTimeline::on_phase_end(int phase_trc_id, size_t cur_abs, unsigned 
   on_footprint_change(cur_abs, cur_nodes);
 
   // Close old, open new entry; but only if the last phase was "interesting".
-  // An "interesting" phase is one that causes a footprint change (end != start),
-  // and/or one that has a local peak that significantly raises above either starting
-  // or ending footprint.
-  if (old._bytes.end_delta() != 0 || old._bytes.peak_size() > significant_peak_threshold) {
+  // An "interesting" phase is one that causes a footprint change (to either raise or fall),
+  // or - even if the final footprint is the same - one that had a local peak that significantly
+  // raised above starting/ending footprint
+  if (show_insignificant_phases_too ||
+      old._bytes.end_delta() != 0 ||
+      old._bytes.temporary_peak_size() > significant_peak_threshold) {
     _fifo.advance();
   }
 
   DEBUG_ONLY(_inbetween_phases = true;)
 }
 
-void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes) {
-  // seed current entry
-  Entry& e = _fifo.current();
-  e._bytes.start = e._bytes.cur = e._bytes.peak = cur_abs;
-  e._live_nodes.start = e._live_nodes.cur = e._live_nodes.peak = cur_nodes;
-  e.phase_trc_id = phase_trc_id;
-
+void FootprintTimeline::on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes, int level) {
+  if (!_fifo.empty() && _fifo.last().phase_trc_id == phase_trc_id) {
+    // If we are starting the same trace id as the last entry, just continue bookkeeping in that entry.
+    // This happens e.g. when a significant phase gets interrupted by a child phase that was insignificant.
+    _fifo.revert();
+    assert(_fifo.current().phase_trc_id == phase_trc_id, "Sanity");
+    // We now just continue the last entry
+  } else {
+    // seed current entry
+    Entry& e = _fifo.current();
+    e._bytes.start = e._bytes.cur = e._bytes.peak = cur_abs;
+    e._live_nodes.start = e._live_nodes.cur = e._live_nodes.peak = cur_nodes;
+    e.phase_trc_id = phase_trc_id;
+    e.level = level;
+  }
   DEBUG_ONLY(_inbetween_phases = false;)
 }
 
@@ -210,7 +224,7 @@ void ArenaStatCounter::on_phase_start(int phase_trc_id) {
     _timeline.on_phase_end(parent_phase_trc_id, _current, _live_nodes_current);
   }
   _phase_id_stack.push(phase_trc_id);
-  _timeline.on_phase_start(phase_trc_id, _current, _live_nodes_current);
+  _timeline.on_phase_start(phase_trc_id, _current, _live_nodes_current, _phase_id_stack.depth());
 }
 
 void ArenaStatCounter::on_phase_end(int phase_trc_id) {
@@ -220,7 +234,7 @@ void ArenaStatCounter::on_phase_end(int phase_trc_id) {
   // "restart" parent phase in timeline
   if (!_phase_id_stack.empty()) {
     const int parent_phase_trc_id = _phase_id_stack.top();
-    _timeline.on_phase_start(parent_phase_trc_id, _current, _live_nodes_current);
+    _timeline.on_phase_start(parent_phase_trc_id, _current, _live_nodes_current, _phase_id_stack.depth());
   }
 }
 

@@ -75,6 +75,7 @@ public:
   inline void push(int phase_trc_id);
   inline void pop(int phase_trc_id);
   inline int top() const;
+  inline int depth() const  { return _depth; }
 };
 
 template <typename T, int max>
@@ -82,46 +83,53 @@ class SimpleFifo {
   STATIC_ASSERT((max * 2) < INT_MAX);
   T _v[max];
   int _pos;
+  int _oldest;
   uint64_t _lost;
 
   // [first_pos, current_pos)
-  int first_pos() const   { return MAX2(0, _pos - max); }
-  int current_pos() const { return _pos; }
+  int first_pos() const           { return _oldest; }
+  int current_pos() const         { return _pos; }
   static int pos_to_index(int pos) { return pos % max; }
   T* slot_at(int pos)             { return _v + pos_to_index(pos); }
   const T* slot_at(int pos) const { return _v + pos_to_index(pos); }
+  T& at(int pos)                  { return *slot_at(pos); }
+  const T& at(int pos) const      { return *slot_at(pos); }
 
 public:
 
-  SimpleFifo() : _pos(0), _lost(0UL) {}
+  SimpleFifo() : _pos(0), _oldest(0), _lost(0UL) {}
 
   const T* raw() const            { return _v; }
-  T& at(int pos)                  { return *slot_at(pos); }
-  const T& at(int pos) const      { return *slot_at(pos); }
   T& current()                    { return at(current_pos()); }
+  T& last()                       { assert(!empty(), "sanity"); return at(current_pos() - 1); }
   const T& current() const        { return at(current_pos()); }
 
-  bool empty() const { return _pos == 0; }
-  bool wrapped() const { return _pos >= max; }
-  int size() const { return MIN2(max, _pos); }
-  uint64_t lost() const { return _lost; }
+  bool empty() const              { return _pos == _oldest; }
+  bool wrapped() const            { return _oldest > 0; }
+  int size() const                { return _pos - _oldest; }
+  uint64_t lost() const           { return _lost; }
 
   void advance() {
     _pos ++;
-    if (_pos == max * 2) {
-      _pos -= max;
-    }
     if (_pos >= max) {
+      _oldest ++;
       _lost ++;
     }
+    if (_pos == INT_MAX) {
+      _pos -= max;
+      _oldest -= max;
+    }
+  }
+
+  void revert() {
+    assert(!empty(), "sanity");
+    _pos--;
   }
 
   template<typename F>
   void iterate_all(F f) const {
-    const int start = first_pos();
-    const int end = current_pos();
-    for (int pos = start; pos < end; pos++) {
-      const int index = pos_to_index(pos);
+    for (int i = _oldest; i < _pos; i++) {
+      const int index = pos_to_index(i);
       f(_v[index]);
     }
   }
@@ -130,6 +138,7 @@ public:
     memcpy(_v, other._v, sizeof(_v));
     _pos = other._pos;
     _lost = other._lost;
+    _oldest = other._oldest;
   }
 };
 
@@ -142,7 +151,7 @@ public:
 // "outside any phase" phase).
 class FootprintTimeline {
 public:
-  static constexpr unsigned max_num_phases = 64; // beyond that we wrap, keeping the last n phases
+  static constexpr unsigned max_num_phases = 256; // beyond that we wrap, keeping just the last n phases
 private:
   template <typename T, typename dT>
   struct C {
@@ -150,12 +159,11 @@ private:
     void init(T v)        { start = cur = peak = v; }
     void update(T v)      { cur = v; if (v > peak) peak = v; }
     dT end_delta() const  { return (dT)cur - (dT)start; }
-    size_t peak_size() const {
-      return MIN2(peak - cur, peak - start);
-    }
+    size_t temporary_peak_size() const { return MIN2(peak - cur, peak - start); }
   };
   struct Entry {
     int phase_trc_id;
+    int level;
     C<size_t, ssize_t> _bytes;
     C<unsigned, ssize_t> _live_nodes;
   };
@@ -167,7 +175,7 @@ public:
   inline void on_footprint_change(size_t cur_abs, unsigned cur_nodes);
   void print_on(outputStream* st) const;
   void on_phase_end(int phase_trc_id, size_t cur_abs, unsigned cur_nodes);
-  void on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes);
+  void on_phase_start(int phase_trc_id, size_t cur_abs, unsigned cur_nodes, int level);
 };
 
 // ArenaState is the central data structure holding all statistics and temp data during
