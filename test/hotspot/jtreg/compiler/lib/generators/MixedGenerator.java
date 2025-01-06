@@ -3,11 +3,11 @@ package compiler.lib.generators;
 /**
  * Mixed results between two different generators with configurable weights.
  */
-public class MixedGenerator<T> implements Generator<T> {
+class MixedGenerator<T> extends GeneratorBase<T> {
     private final Generator<T> a;
     private final Generator<T> b;
-    private final int weightUniform;
-    private final int weightSpecial;
+    private final int weightA;
+    private final int weightB;
 
     /**
      * Creates a new {@link MixedGenerator}, which samples from two generators A and B,
@@ -16,17 +16,18 @@ public class MixedGenerator<T> implements Generator<T> {
      * @param weightA Weight for the distribution for a.
      * @param weightB Weight for the distribution for b.
      */
-    public MixedGenerator(Generator<T> a, Generator<T> b, int weightA, int weightB) {
+    MixedGenerator(Generators g, Generator<T> a, Generator<T> b, int weightA, int weightB) {
+        super(g);
         this.a = a;
         this.b = b;
-        this.weightUniform = weightA;
-        this.weightSpecial = weightB;
+        this.weightA = weightA;
+        this.weightB = weightB;
     }
 
     @Override
     public T next() {
-        int r = Generators.RANDOM.nextInt(weightUniform + weightSpecial);
-        if (r < weightUniform) {
+        int r = g.random.nextInt(0, weightA + weightB);
+        if (r < weightA) {
             return a.next();
         } else {
             return b.next();

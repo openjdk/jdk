@@ -27,15 +27,17 @@ package compiler.lib.generators;
  * Provides an any-bits float distribution random generator, i.e. the bits are uniformly sampled,
  * thus creating any possible float value, including the multiple different NaN representations.
  */
-public final class AnyBitsFloatGenerator implements Generator<Float> {
+final class AnyBitsFloatGenerator extends GeneratorBase<Float> {
 
     /**
      * Creates a new {@link AnyBitsFloatGenerator}.
      */
-    public AnyBitsFloatGenerator() {}
+    public AnyBitsFloatGenerator(Generators g) {
+        super(g);
+    }
 
     @Override
     public Float next() {
-        return Float.intBitsToFloat(Generators.RANDOM.nextInt());
+        return Float.intBitsToFloat(g.random.nextInt());
     }
 }

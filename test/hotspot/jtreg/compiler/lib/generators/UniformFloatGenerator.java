@@ -26,23 +26,24 @@ package compiler.lib.generators;
 /**
  * Provides a uniform float distribution random generator, in the provided range [lo, hi).
  */
-public final class UniformFloatGenerator implements Generator<Float> {
-    private final float lo;
-    private final float hi;
-
+final class UniformFloatGenerator extends RestrictableGeneratorBase<Float> {
     /**
      * Creates a new {@link UniformFloatGenerator}.
      *
      * @param lo Lower bound of the range (inclusive).
      * @param hi Higher bound of the range (exclusive).
      */
-    public UniformFloatGenerator(float lo, float hi) {
-        this.lo = lo;
-        this.hi = hi;
+    public UniformFloatGenerator(Generators g, float lo, float hi) {
+        super(g, lo, hi);
     }
 
     @Override
     public Float next() {
-        return Generators.RANDOM.nextFloat(lo, hi);
+        return g.random.nextFloat(lo(), hi());
+    }
+
+    @Override
+    protected RestrictableGenerator<Float> doRestrictionFromIntersection(Float lo, Float hi) {
+        return new UniformFloatGenerator(g, lo, hi);
     }
 }

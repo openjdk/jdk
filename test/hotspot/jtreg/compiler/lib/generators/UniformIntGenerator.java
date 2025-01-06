@@ -26,19 +26,24 @@ package compiler.lib.generators;
 /**
  * Provides a uniform int distribution random generator.
  */
-public final class UniformIntGenerator extends UniformIntegralGenerator<Integer> {
-    public UniformIntGenerator(int lo, int hi) {
-        super(lo, hi);
+final class UniformIntGenerator extends RestrictableGeneratorBase<Integer> {
+    public UniformIntGenerator(Generators g, int lo, int hi) {
+        super(g, lo, hi);
     }
 
     @Override
     public Integer next() {
         if (hi() == Integer.MAX_VALUE) {
             if (lo() == Integer.MIN_VALUE) {
-                return Generators.RANDOM.nextInt();
+                return g.random.nextInt();
             }
-            return Generators.RANDOM.nextInt(lo() - 1, hi()) + 1;
+            return g.random.nextInt(lo() - 1, hi()) + 1;
         }
-        return Generators.RANDOM.nextInt(lo(), hi() + 1);
+        return g.random.nextInt(lo(), hi() + 1);
+    }
+
+    @Override
+    protected RestrictableGenerator<Integer> doRestrictionFromIntersection(Integer lo, Integer hi) {
+        return new UniformIntGenerator(g, lo, hi);
     }
 }

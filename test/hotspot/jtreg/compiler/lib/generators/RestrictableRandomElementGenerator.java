@@ -23,27 +23,25 @@
 
 package compiler.lib.generators;
 
+import java.util.NavigableSet;
+
 /**
- * Provides a uniform double distribution random generator, in the provided range [lo, hi).
+ * Selects values from a pre-defined list.
  */
-final class UniformDoubleGenerator extends RestrictableGeneratorBase<Double> {
-    /**
-     * Creates a new {@link UniformFloatGenerator}.
-     *
-     * @param lo Lower bound of the range (inclusive).
-     * @param hi Higher bound of the range (exclusive).
+final class RestrictableRandomElementGenerator<T extends Comparable<T>> extends RandomElementGenerator<T> implements RestrictableGenerator<T> {
+    /*
+     * Pre-generated values we can choose from. Maintained for restriction.
      */
-    public UniformDoubleGenerator(Generators g, double lo, double hi) {
-        super(g, lo, hi);
+    private final NavigableSet<T> values;
+
+    public RestrictableRandomElementGenerator(Generators g, NavigableSet<T> values) {
+        super(g, values);
+        if (values.isEmpty()) throw new EmptyGeneratorException();
+        this.values = values;
     }
 
     @Override
-    public Double next() {
-        return g.random.nextDouble(lo(), hi());
-    }
-
-    @Override
-    protected RestrictableGenerator<Double> doRestrictionFromIntersection(Double lo, Double hi) {
-        return new UniformDoubleGenerator(g, lo, hi);
+    public RestrictableGenerator<T> restricted(T newLo, T newHi) {
+        return new RestrictableRandomElementGenerator<>(g, values.subSet(newLo, true, newHi, true));
     }
 }
