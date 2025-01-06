@@ -120,7 +120,7 @@ public interface Key extends java.io.Serializable {
 
     /**
      * Returns the standard algorithm name for this key. For
-     * example, "DSA" would indicate that this key is a DSA key.
+     * example, "RSA" would indicate that this key is an RSA key.
      * See the Key Algorithms section in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#key-algorithms">
      * Java Security Standard Algorithm Names Specification</a>

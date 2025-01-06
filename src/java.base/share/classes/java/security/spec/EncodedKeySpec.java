@@ -83,6 +83,7 @@ public abstract class EncodedKeySpec implements KeySpec {
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
      * the empty string {@code ""}
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @since 9
      */
     protected EncodedKeySpec(byte[] encodedKey, String algorithm) {

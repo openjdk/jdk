@@ -498,6 +498,7 @@ public final class KDF {
      *
      * @see <a href="#DelayedProviderSelection">Delayed Provider
      *         Selection</a>
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      *
      */
     public SecretKey deriveKey(String alg,

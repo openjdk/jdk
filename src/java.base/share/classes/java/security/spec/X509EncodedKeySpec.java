@@ -82,6 +82,7 @@ public class X509EncodedKeySpec extends EncodedKeySpec {
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
      * the empty string {@code ""}
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @since 9
      */
     public X509EncodedKeySpec(byte[] encodedKey, String algorithm) {

@@ -147,6 +147,7 @@ public interface KEMSpi {
          *          is not supported by the encapsulator
          * @see KEM.Encapsulated
          * @see KEM.Encapsulator#encapsulate(int, int, String)
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm);
 
@@ -213,6 +214,7 @@ public interface KEMSpi {
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the decapsulator
          * @see KEM.Decapsulator#decapsulate(byte[], int, int, String)
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
                 throws DecapsulateException;

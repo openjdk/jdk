@@ -243,6 +243,7 @@ public final class KEM {
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the encapsulator
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         public Encapsulated encapsulate(int from, int to, String algorithm) {
             return e.engineEncapsulate(from, to, algorithm);
@@ -373,6 +374,7 @@ public final class KEM {
          * @throws UnsupportedOperationException if the combination of
          *          {@code from}, {@code to}, and {@code algorithm}
          *          is not supported by the decapsulator
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          */
         public SecretKey decapsulate(byte[] encapsulation,
                 int from, int to, String algorithm)

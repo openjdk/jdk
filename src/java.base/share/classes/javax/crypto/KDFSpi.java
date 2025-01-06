@@ -133,6 +133,7 @@ public abstract class KDFSpi {
      *         if {@code alg} is empty or invalid
      * @throws NullPointerException
      *         if {@code alg} or {@code derivationSpec} is null
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected abstract SecretKey engineDeriveKey(String alg,
                                                  AlgorithmParameterSpec derivationSpec)
