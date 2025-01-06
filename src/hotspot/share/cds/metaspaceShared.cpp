@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1633,7 +1633,7 @@ void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo, ReservedSpace archive_
   assert(CDSConfig::is_using_archive(), "must be runtime");
   if (mapinfo != nullptr) {
     mapinfo->unmap_regions(archive_regions, archive_regions_count, archive_space_rs);
-    mapinfo->unmap_non_reserved_region(MetaspaceShared::bm);
+    mapinfo->unmap_region(MetaspaceShared::bm, {} /* containing_rs */);
     mapinfo->set_is_mapped(false);
   }
 }
@@ -1673,7 +1673,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Close the mapinfo file
   static_mapinfo->close();
 
-  static_mapinfo->unmap_non_reserved_region(MetaspaceShared::bm);
+  static_mapinfo->unmap_region(MetaspaceShared::bm, {} /* containing_rs */);
 
   FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (dynamic_mapinfo != nullptr) {
@@ -1682,7 +1682,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
     DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
-    dynamic_mapinfo->unmap_non_reserved_region(MetaspaceShared::bm);
+    dynamic_mapinfo->unmap_region(MetaspaceShared::bm, {} /* containing_rs */);
   }
 
   LogStreamHandle(Info, cds) lsh;

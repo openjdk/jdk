@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2359,7 +2359,6 @@ bool FileMapInfo::map_heap_region_impl() {
     if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
-      unmap_non_reserved_region(MetaspaceShared::hp);
       _heap_pointers_need_patching = false;
       return false;
     }
@@ -2410,51 +2409,37 @@ void FileMapInfo::dealloc_heap_region() {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-void FileMapInfo::unmap_regions(int regions[], int num_regions, ReservedSpace rs) {
+void FileMapInfo::unmap_regions(int regions[], int num_regions, ReservedSpace containing_rs) {
   for (int r = 0; r < num_regions; r++) {
     int idx = regions[r];
-
-    // If the region is inside an active ReservedSpace, its memory and address space will be
-    // freed when the ReservedSpace is released. Skip unmap here to avoid a double release
-    if (rs.is_reserved()) {
-      FileMapRegion* r = region_at(idx);
-      char* mapped_base = r->mapped_base();
-      size_t size = r->used_aligned();
-
-      if (r->mapped_from_file()) {
-        assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
-              PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
-              p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
-      }
-    } else {
-      unmap_non_reserved_region(idx);
-    }
+    unmap_region(idx, containing_rs);
   }
 }
 
 // Unmap a memory region in the address space.
 
-void FileMapInfo::unmap_region(int i) {
+void FileMapInfo::unmap_region(int i, ReservedSpace containing_rs) {
   FileMapRegion* r = region_at(i);
   char* mapped_base = r->mapped_base();
   size_t size = r->used_aligned();
 
   if (mapped_base != nullptr) {
     if (size > 0 && r->mapped_from_file()) {
-      log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
+      if (containing_rs.is_reserved()) {
+        // Don't unmap here; this regions will be released when the containing_rs is released.
+        assert(containing_rs.base() <= mapped_base && mapped_base + size <= containing_rs.end(),
+               PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
+               p2i(containing_rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(containing_rs.end()));
+      } else {
+        log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
                     shared_region_name[i]);
-      if (!os::unmap_memory(mapped_base, size)) {
-        fatal("os::unmap_memory failed");
+        if (!os::unmap_memory(mapped_base, size)) {
+          fatal("os::unmap_memory failed");
+        }
       }
     }
     r->set_mapped_base(nullptr);
   }
-}
-
-// The mapped region is not within a reserved space so it can be
-// released directly
-void FileMapInfo::unmap_non_reserved_region(int i) {
-  unmap_region(i);
 }
 
 void FileMapInfo::assert_mark(bool check) {

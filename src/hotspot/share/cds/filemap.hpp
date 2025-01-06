@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,7 +367,6 @@ private:
   static bool _heap_pointers_need_patching;
   static bool _memory_mapping_failed;
   static GrowableArray<const char*>* _non_existent_class_paths;
-  void  unmap_region(int i);
 
 public:
   FileMapHeader *header() const       { return _header; }
@@ -471,7 +470,8 @@ public:
   size_t  read_bytes(void* buffer, size_t count);
   static size_t readonly_total();
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
-  void  unmap_regions(int regions[], int num_regions, ReservedSpace rs);
+  void  unmap_region(int i, ReservedSpace containing_rs);
+  void  unmap_regions(int regions[], int num_regions, ReservedSpace containing_rs);
   void  map_or_load_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
@@ -479,7 +479,6 @@ public:
   MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
-  void unmap_non_reserved_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
   ReservedSpace reserve_shared_memory();
