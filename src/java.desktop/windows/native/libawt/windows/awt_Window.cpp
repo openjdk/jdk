@@ -2121,9 +2121,19 @@ void AwtWindow::SetIconData(JNIEnv* env, jintArray iconRaster, jint w, jint h,
         hOldIconSm = m_hIconSm;
     }
     m_hIconSm = NULL;
-    m_hIcon = CreateIconFromRaster(env, iconRaster, w, h);
-    JNU_CHECK_EXCEPTION(env);
-    m_hIconSm = CreateIconFromRaster(env, smallIconRaster, smw, smh);
+
+    try {
+        m_hIcon = CreateIconFromRaster(env, iconRaster, w, h);
+        JNU_CHECK_EXCEPTION(env); // Might throw here
+        m_hIconSm = CreateIconFromRaster(env, smallIconRaster, smw, smh);
+        JNU_CHECK_EXCEPTION(env); // Or here
+        } catch (...) {
+            // Clean up any allocated resources here
+            if (m_hIcon != NULL) {
+                DestroyIcon(m_hIcon);
+            }
+            throw; // Re-throw the exception
+    }
 
     m_iconInherited = (m_hIcon == NULL);
     if (m_iconInherited) {
