@@ -30,7 +30,6 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "ci/ciInstance.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/os.hpp"
@@ -527,17 +526,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       break;
     }
 
-    case lir_abs:
-    case lir_sqrt:
-    case lir_f2hf:
-    case lir_hf2f:
-      intrinsic_op(op->code(), op->in_opr(), op->tmp_opr(), op->result_opr(), op);
-      break;
-
-    case lir_neg:
-      negate(op->in_opr(), op->result_opr(), op->tmp_opr());
-      break;
-
     case lir_return: {
       assert(op->as_OpReturn() != nullptr, "sanity");
       LIR_OpReturn *ret_op = (LIR_OpReturn*)op;
@@ -733,6 +721,19 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
         op->result_opr(),
         op->info(),
         op->fpu_pop_count() == 1);
+      break;
+
+    case lir_abs:
+    case lir_sqrt:
+    case lir_tan:
+    case lir_log10:
+    case lir_f2hf:
+    case lir_hf2f:
+      intrinsic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
+      break;
+
+    case lir_neg:
+      negate(op->in_opr1(), op->result_opr(), op->in_opr2());
       break;
 
     case lir_logic_and:
