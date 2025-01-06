@@ -468,17 +468,25 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     @Override
     public String toString() {
-        long lsb = leastSigBits;
-        long msb = mostSigBits;
         byte[] buf = new byte[36];
         buf[8] = '-';
         buf[13] = '-';
         buf[18] = '-';
         buf[23] = '-';
-        putHex8(buf, 0, msb >>> 32, false);
-        putHex8(buf, 9, msb, true);
-        putHex8(buf, 19, lsb >>> 32, true);
-        putHex8(buf, 28, lsb, false);
+
+        long x  = mostSigBits,
+             x0 = hex8(x >>> 32),
+             x1 = hex8(x);
+        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET, x0, false);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 9, (int) x1, false);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 14, (int) (x1 >>> 32), false);
+
+        x  = leastSigBits;
+        x0 = hex8(x >>> 32);
+        x1 = hex8(x);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 19, (int) x0, false);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 24, (int) (x0 >>> 32), false);
+        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 28, x1, false);
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
@@ -487,7 +495,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         }
     }
 
-    private static void putHex8(byte[] bytes, int off, long i, boolean separator) {
+    private static long hex8(long i) {
         long e = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
         /*
             Use long to simulate vector operations and generate 8 hexadecimal characters at a time.
@@ -510,15 +518,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             15 = 0b0000_1111 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'f'
          */
         long m = (e + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
-        long x = ((m << 1) + (m >> 1) - (m >> 4))
+        return Long.reverseBytes(((m << 1) + (m >> 1) - (m >> 4))
                 + 0x3030_3030_3030_3030L
-                + (e & 0x0F0F_0F0F_0F0F_0F0FL);
-        if (separator) {
-            UNSAFE.putIntUnaligned(bytes, ARRAY_BYTE_BASE_OFFSET + off    , (int) (x >>> 32), true);
-            UNSAFE.putIntUnaligned(bytes, ARRAY_BYTE_BASE_OFFSET + off + 5, (int) x, true);
-        } else {
-            UNSAFE.putLongUnaligned(bytes, ARRAY_BYTE_BASE_OFFSET + off, x, true);
-        }
+                + (e & 0x0F0F_0F0F_0F0F_0F0FL));
     }
 
     /**
