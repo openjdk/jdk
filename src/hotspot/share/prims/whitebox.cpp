@@ -1625,6 +1625,74 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   return result;
 WB_END
 
+WB_ENTRY(void, WB_ReplaceNMethod(JNIEnv* env, jobject o, jobject method, jboolean is_osr, jint comp_level_override))
+  ResourceMark rm(THREAD);
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION(env);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  nmethod* code = is_osr ? mh->lookup_osr_nmethod_for(InvocationEntryBci, CompLevel_none, false) : mh->code();
+  if (code == nullptr) {
+    return;
+  }
+
+  nmethod::relocate_to(code, CodeCache::get_code_heap_containing(code)->code_blob_type());
+WB_END
+
+WB_ENTRY(void, WB_ReplaceAllNMethods(JNIEnv* env))
+  ResourceMark rm(THREAD);
+
+  // Get all nmethods in heap
+  GrowableArray<nmethod*> nmethods;
+  for (int codeBlobTypeIndex = 0; codeBlobTypeIndex < (int) CodeBlobType::NumTypes; codeBlobTypeIndex++) {
+    CodeHeap* heap;
+    {
+      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      heap = WhiteBox::get_code_heap(static_cast<CodeBlobType>(codeBlobTypeIndex));
+      if (heap == nullptr) {
+        continue;
+      }
+    }
+
+    for (CodeBlob* cb = (CodeBlob*) heap->first(); cb != nullptr; cb = (CodeBlob*) heap->next(cb)) {
+      if (cb->is_nmethod()) {
+        nmethod* nm = cb->as_nmethod();
+          // TODO Error after relocating MethodHandle functions
+          if (!nm->method()->is_method_handle_intrinsic()) {
+            nmethods.append(nm);
+          }
+      }
+    }
+  }
+
+  // Replace all
+  for (GrowableArrayIterator<nmethod*> it = nmethods.begin(); it != nmethods.end(); ++it) {
+    nmethod::relocate_to(*it, CodeCache::get_code_heap_containing(*it)->code_blob_type());
+  }
+
+WB_END
+
+WB_ENTRY(jlong, WB_GetNumNMethods(JNIEnv* env))
+  ResourceMark rm(THREAD);
+
+  long num = 0;
+  for (int codeBlobTypeIndex = 0; codeBlobTypeIndex < (int) CodeBlobType::NumTypes; codeBlobTypeIndex++) {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeHeap* heap = WhiteBox::get_code_heap(static_cast<CodeBlobType>(codeBlobTypeIndex));
+    if (heap == nullptr) {
+      continue;
+    }
+
+    for (CodeBlob* cb = (CodeBlob*) heap->first(); cb != nullptr; cb = (CodeBlob*) heap->next(cb)) {
+      if (cb->is_nmethod()) {
+        num++;
+      }
+    }
+  }
+
+  return num;
+
+WB_END
+
 CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   guarantee(WhiteBoxAPI, "internal testing API :: WhiteBox has to be enabled");
   BufferBlob* blob;
@@ -2876,6 +2944,12 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
+  {CC"replaceNMethod0",         CC"(Ljava/lang/reflect/Executable;ZI)V",
+                                                      (void*)&WB_ReplaceNMethod     },
+  {CC"replaceAllNMethods",         CC"()V",
+                                                      (void*)&WB_ReplaceAllNMethods },
+  {CC"getNumNMethods",         CC"()J",
+                                                      (void*)&WB_GetNumNMethods },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },

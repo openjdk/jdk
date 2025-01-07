@@ -350,6 +350,8 @@ public:
 
   static ImmutableOopMapSet* build_from(const OopMapSet* oopmap_set);
 
+  ImmutableOopMapSet* clone() const;
+
   int find_slot_for_offset(int pc_offset) const;
   const ImmutableOopMap* find_map_at_offset(int pc_offset) const;
   const ImmutableOopMap* find_map_at_slot(int slot, int pc_offset) const;

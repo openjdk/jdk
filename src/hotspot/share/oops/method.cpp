@@ -1132,6 +1132,11 @@ void Method::unlink_code() {
   clear_code();
 }
 
+void Method::clear_entry_points() {
+  _from_compiled_entry = nullptr;
+  _from_interpreted_entry = nullptr;
+}
+
 #if INCLUDE_CDS
 // Called by class data sharing to remove any entry points (which are not shared)
 void Method::unlink_method() {
