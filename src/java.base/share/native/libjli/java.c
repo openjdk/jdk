@@ -1197,7 +1197,6 @@ ParseArguments(int *pargc, char ***pargv,
                 char *propValue = (char *)JLI_MemAlloc(size);
                 JLI_Snprintf(propValue, size, "%s%s", prop, value);
                 AddOption(propValue, NULL);
-                AddOption("-Djdk.internal.java.launchmode=source", NULL);
             }
         } else if (JLI_StrCmp(arg, "--class-path") == 0 ||
                    JLI_StrCCmp(arg, "--class-path=") == 0 ||
@@ -1367,16 +1366,14 @@ ParseArguments(int *pargc, char ***pargv,
          * launcher mode is LM_UNKNOWN. In such cases, we determine the
          * mode as LM_CLASS or LM_SOURCE per the input file. */
         mode = IsSourceFile(arg) ? LM_SOURCE : LM_CLASS;
-        if (mode == LM_SOURCE) {
-            AddOption("-Djdk.internal.java.launchmode=source", NULL);
-        }
     } else if (mode == LM_CLASS && IsSourceFile(arg)) {
         /* override LM_CLASS mode if given a source file */
         mode = LM_SOURCE;
-        AddOption("-Djdk.internal.java.launchmode=source", NULL);
     }
 
     if (mode == LM_SOURCE) {
+        // signal module bootstrap to defer warnings about unknown modules
+        AddOption("-Djdk.internal.java.launchmode=source", NULL);
         AddOption("--add-modules=ALL-DEFAULT", NULL);
         *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
         // adjust (argc, argv) so that the name of the source file

@@ -834,9 +834,14 @@ public final class ModuleBootstrap {
     /**
      * Grants native access to modules selected using the --enable-native-access
      * command line option, and also to JDK modules that need the access.
+     * <p>
+     * In case of being in "source" launchmode, warnings about unknown modules are
+     * deferred to the source launcher logic in the jdk.compiler module, as those
+     * modules might be not compiled, yet.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        boolean shouldWarn = !"source".equals(System.getProperty("jdk.internal.java.launchmode"));
+        String launchMode = getAndRemoveProperty("jdk.internal.java.launchmode");
+        boolean shouldWarn = !"source".equals(launchMode);
         addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, shouldWarn);
         addEnableNativeAccess(layer, JDK_NATIVE_ACCESS_MODULES, false);
     }

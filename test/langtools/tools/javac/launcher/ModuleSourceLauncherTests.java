@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304400 8332226
+ * @bug 8304400 8332226 8346778
  * @summary Test source launcher running Java programs contained in one module
  * @modules jdk.compiler/com.sun.tools.javac.launcher
  * @run junit ModuleSourceLauncherTests
