@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/psGenerationCounters.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

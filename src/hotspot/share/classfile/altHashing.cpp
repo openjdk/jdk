@@ -43,7 +43,6 @@
    <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
-#include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/klass.inline.hpp"

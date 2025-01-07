@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "utilities/debug.hpp"
 #include "memory/allocation.inline.hpp"
@@ -68,4 +67,3 @@ void BufferNode::Allocator::release(BufferNode* node) {
   node->~BufferNode();
   _free_list.release(node);
 }
-

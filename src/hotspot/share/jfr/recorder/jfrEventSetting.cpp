@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 
 JfrNativeSettings JfrEventSetting::_jvm_event_settings;

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "unittest.hpp"
 #include "runtime/arguments.hpp"

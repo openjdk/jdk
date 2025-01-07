@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolBuffer.hpp"
 
 JfrStringPoolBuffer::JfrStringPoolBuffer() : JfrBuffer(), _string_count_pos(0), _string_count_top(0) {}

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #ifndef _WIN32
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"

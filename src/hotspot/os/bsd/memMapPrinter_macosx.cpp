@@ -25,8 +25,6 @@
 
 #if defined(__APPLE__)
 
-#include "precompiled.hpp"
-
 #include "nmt/memMapPrinter.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"

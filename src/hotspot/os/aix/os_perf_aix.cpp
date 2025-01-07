@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "libperfstat_aix.hpp"
 #include "memory/allocation.inline.hpp"

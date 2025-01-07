@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
@@ -323,4 +321,3 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     scanner->mark_range_as_dirty(humongous_bottom, obj->size());
   }
 }
-

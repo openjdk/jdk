@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "utilities/json.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_zero.hpp"

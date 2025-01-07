@@ -21,7 +21,6 @@
  * questions.
  */
 
-// no precompiled headers
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"

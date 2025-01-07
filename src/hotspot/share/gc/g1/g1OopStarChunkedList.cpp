@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1OopStarChunkedList.inline.hpp"
 
 G1OopStarChunkedList::~G1OopStarChunkedList() {

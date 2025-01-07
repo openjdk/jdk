@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/stackOverflow.hpp"

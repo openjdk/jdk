@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/icache.hpp"
 
 // Use inline assembler to implement icache flush.

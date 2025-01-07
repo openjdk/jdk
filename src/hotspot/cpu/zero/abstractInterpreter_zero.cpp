@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/zero/bytecodeInterpreter.hpp"
 #include "interpreter/zero/zeroInterpreter.hpp"
 #include "runtime/frame.inline.hpp"

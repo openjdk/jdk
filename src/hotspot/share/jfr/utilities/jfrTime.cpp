@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "runtime/os.inline.hpp"
 #if defined(X86) && !defined(ZERO)

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "foreignGlobals.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/resourceArea.hpp"

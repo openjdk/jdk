@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/decoder.hpp"

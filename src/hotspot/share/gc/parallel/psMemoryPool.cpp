@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/psMemoryPool.hpp"
 
 PSGenerationPool::PSGenerationPool(PSOldGen* old_gen,

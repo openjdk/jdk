@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorations.hpp"

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"

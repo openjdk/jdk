@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "oops/access.hpp"

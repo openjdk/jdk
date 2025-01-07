@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/vmOperations.hpp"

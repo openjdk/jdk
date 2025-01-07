@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logTestUtils.inline.hpp"
 #include "logging/logConfiguration.hpp"

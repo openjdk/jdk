@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "runtime/globals.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vtableStubs.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "unittest.hpp"

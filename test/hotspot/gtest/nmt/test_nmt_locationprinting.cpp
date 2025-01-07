@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/memTracker.hpp"

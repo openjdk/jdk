@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "logging/log.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/phaseX.hpp"

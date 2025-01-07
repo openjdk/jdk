@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"

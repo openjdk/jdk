@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/resourceArea.hpp"

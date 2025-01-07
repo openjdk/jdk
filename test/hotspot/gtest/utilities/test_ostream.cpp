@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"

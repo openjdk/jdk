@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logDiagnosticCommand.hpp"
 #include "memory/resourceArea.hpp"

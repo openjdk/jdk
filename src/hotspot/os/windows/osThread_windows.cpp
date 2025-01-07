@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/osThread.hpp"
 
 #include <Windows.h>

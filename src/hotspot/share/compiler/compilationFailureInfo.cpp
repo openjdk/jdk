@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #if defined(COMPILER1) || defined(COMPILER2)
 
 #ifdef COMPILER1

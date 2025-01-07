@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "utilities/bitMap.inline.hpp"

@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"

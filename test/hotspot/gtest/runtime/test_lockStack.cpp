@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/os.hpp"

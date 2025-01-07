@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "register_riscv.hpp"
 
 Register::RegisterImpl             all_RegisterImpls      [Register::number_of_registers       + 1];

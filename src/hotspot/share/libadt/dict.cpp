@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/dict.hpp"
 #include "utilities/powerOfTwo.hpp"
 

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compilationLog.hpp"
 #include "compiler/compileTask.hpp"

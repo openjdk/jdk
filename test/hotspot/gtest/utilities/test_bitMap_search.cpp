@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

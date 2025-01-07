@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "memory/universe.hpp"

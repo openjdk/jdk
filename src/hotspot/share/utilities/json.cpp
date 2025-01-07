@@ -31,7 +31,6 @@
  * - The last element in an object or array can have an ending comma.
  */
 
-#include "precompiled.hpp"
 #include "utilities/json.hpp"
 #include "utilities/ostream.hpp"
 #include <math.h>

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/partialArrayTaskStats.hpp"
 #include "logging/log.hpp"
 #include "logging/logHandle.hpp"

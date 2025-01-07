@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/java.hpp"
 
 // This is in a separate file since it will need to be compiled to two different

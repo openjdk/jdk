@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1FullGCTask.hpp"
 #include "logging/log.hpp"
 #include "utilities/ticks.hpp"

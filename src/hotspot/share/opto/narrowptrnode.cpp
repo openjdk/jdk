@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 

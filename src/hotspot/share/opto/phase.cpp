@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "compiler/compileBroker.hpp"
 #include "opto/compile.hpp"

@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 // These are copied defines originally from fdlibm.h.

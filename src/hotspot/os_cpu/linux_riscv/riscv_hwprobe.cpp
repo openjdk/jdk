@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/os.hpp"

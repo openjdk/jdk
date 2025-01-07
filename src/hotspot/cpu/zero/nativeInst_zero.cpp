@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "entry_zero.hpp"
 #include "interpreter/zero/zeroInterpreter.hpp"

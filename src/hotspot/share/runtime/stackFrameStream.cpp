@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "utilities/debug.hpp"
 

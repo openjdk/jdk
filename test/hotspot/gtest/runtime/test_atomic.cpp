@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/atomic.hpp"
 #include "unittest.hpp"
 

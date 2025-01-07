@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Defs.hpp"

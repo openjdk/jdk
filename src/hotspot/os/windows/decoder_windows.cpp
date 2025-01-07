@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/decoder.hpp"
 #include "symbolengine.hpp"
 #include "windbghelp.hpp"

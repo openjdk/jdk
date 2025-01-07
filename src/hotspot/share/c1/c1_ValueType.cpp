@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_ValueType.hpp"
 #include "ci/ciArray.hpp"
 #include "ci/ciInstance.hpp"

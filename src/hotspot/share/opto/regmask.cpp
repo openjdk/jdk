@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/ad.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/compile.hpp"

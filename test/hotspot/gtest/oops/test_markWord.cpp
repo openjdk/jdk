@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"

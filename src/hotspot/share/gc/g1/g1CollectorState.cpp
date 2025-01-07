@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCPauseType.hpp"
 

@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"

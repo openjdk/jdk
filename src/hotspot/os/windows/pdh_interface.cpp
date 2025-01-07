@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "os_windows.hpp"
 #include "pdh_interface.hpp"
 #include "runtime/os.hpp"

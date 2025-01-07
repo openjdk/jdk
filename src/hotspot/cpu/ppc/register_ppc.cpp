@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "register_ppc.hpp"
 
 const char* Register::name() const {

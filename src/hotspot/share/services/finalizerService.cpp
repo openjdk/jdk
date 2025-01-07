@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_MANAGEMENT
 #include "classfile/classLoaderDataGraph.inline.hpp"

@@ -22,7 +22,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceStats.hpp"

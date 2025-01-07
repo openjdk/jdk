@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"

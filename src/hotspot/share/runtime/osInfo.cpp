@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/osInfo.hpp"
 
 size_t OSInfo::_vm_page_size = 0;

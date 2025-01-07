@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zNMethodTableEntry.hpp"
 #include "gc/z/zNMethodTableIteration.hpp"
 #include "memory/iterator.hpp"

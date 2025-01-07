@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/noOverflowInt.hpp"
 #include "unittest.hpp"
 
@@ -172,4 +171,3 @@ TEST_VM(opto, NoOverflowInt_misc) {
   ASSERT_TRUE(NoOverflowInt(13 * 5).is_multiple_of(NoOverflowInt(5)));
   ASSERT_FALSE(NoOverflowInt(7).is_multiple_of(NoOverflowInt(5)));
 }
-

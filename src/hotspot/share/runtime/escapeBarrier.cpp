@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/scopeDesc.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"

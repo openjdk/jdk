@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/freeListAllocator.hpp"
 #include "logging/log.hpp"
 #include "utilities/globalCounter.inline.hpp"

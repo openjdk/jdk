@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
 
 JfrBlob::JfrBlob(const u1* checkpoint, size_t size) :

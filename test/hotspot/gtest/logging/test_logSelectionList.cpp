@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logLevel.hpp"
 #include "logging/logSelectionList.hpp"

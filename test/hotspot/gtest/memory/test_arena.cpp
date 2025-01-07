@@ -23,7 +23,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/arena.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"

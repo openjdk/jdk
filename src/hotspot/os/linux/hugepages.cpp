@@ -23,9 +23,7 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "hugepages.hpp"
-
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/globals_extension.hpp"

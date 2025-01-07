@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "memory/universe.hpp"

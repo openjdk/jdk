@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/repository/jfrChunk.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/utilities/jfrTime.hpp"

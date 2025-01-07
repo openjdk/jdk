@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/types/jfrTypeSetUtils.hpp"
 #include "jfr/utilities/jfrPredicate.hpp"
 #include "jfr/utilities/jfrRelation.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_zero.hpp"

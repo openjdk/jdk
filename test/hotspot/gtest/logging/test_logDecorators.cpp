@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
 #include "runtime/os.hpp"

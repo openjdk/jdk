@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "jvm.h"

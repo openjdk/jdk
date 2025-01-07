@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 
 void JvmtiDeferredUpdates::create_for(JavaThread* thread) {

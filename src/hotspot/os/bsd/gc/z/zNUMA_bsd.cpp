@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "utilities/globalDefinitions.hpp"
 

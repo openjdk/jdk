@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/ptrQueue.hpp"
 

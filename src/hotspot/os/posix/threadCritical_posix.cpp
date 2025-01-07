@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/compilerWarnings.hpp"

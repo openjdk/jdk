@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_LIR.hpp"
 
 FloatRegister LIR_Opr::as_float_reg() const {

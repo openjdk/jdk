@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/metadata.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"

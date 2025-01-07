@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/tenuredGeneration.hpp"

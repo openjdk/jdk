@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/timerTrace.hpp"
 #include "utilities/ostream.hpp"
 

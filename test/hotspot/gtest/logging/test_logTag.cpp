@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "logging/logTag.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "register_s390.hpp"
 
 const char* Register::name() const {

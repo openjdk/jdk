@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "runtime/atomic.hpp"

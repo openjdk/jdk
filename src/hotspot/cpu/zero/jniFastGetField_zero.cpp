@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"

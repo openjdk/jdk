@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"

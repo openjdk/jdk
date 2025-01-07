@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "utilities/globalDefinitions.hpp"
 

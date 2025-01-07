@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zMemory.inline.hpp"
 #include "unittest.hpp"

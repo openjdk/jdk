@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/vmreg.hpp"
 #include "prims/foreignGlobals.hpp"
 #include "utilities/debug.hpp"

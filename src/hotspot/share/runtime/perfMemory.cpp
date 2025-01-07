@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"

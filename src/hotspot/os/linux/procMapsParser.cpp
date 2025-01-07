@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "procMapsParser.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"

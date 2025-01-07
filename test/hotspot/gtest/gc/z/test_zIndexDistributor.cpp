@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "unittest.hpp"
 

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/objArrayKlass.hpp"

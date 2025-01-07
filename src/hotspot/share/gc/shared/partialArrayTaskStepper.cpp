@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/debug.hpp"

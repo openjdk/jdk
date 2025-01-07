@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciCallProfile.hpp"
 #include "ci/ciExceptionHandler.hpp"
 #include "ci/ciInstanceKlass.hpp"

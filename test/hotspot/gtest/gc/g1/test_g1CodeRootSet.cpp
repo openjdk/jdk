@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "unittest.hpp"
 

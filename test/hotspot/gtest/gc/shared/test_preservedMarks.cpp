@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "oops/oop.inline.hpp"

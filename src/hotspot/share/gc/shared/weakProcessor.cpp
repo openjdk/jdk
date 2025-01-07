@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/oopStorage.inline.hpp"

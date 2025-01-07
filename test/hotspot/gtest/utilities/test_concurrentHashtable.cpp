@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"

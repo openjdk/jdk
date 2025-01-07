@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"

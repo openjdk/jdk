@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/ageTableTracer.hpp"
 #include "gc/shared/gcId.hpp"
 #include "jfr/jfrEvents.hpp"

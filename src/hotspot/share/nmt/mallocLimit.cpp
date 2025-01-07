@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -230,4 +229,3 @@ void MallocLimitHandler::print_on(outputStream* st) {
     st->print_cr("MallocLimit: unset");
   }
 }
-

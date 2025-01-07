@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifdef COMPILER2
 #include "asm/assembler.inline.hpp"
 #include "code/vmreg.hpp"

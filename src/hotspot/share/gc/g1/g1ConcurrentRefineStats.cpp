@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 
 G1ConcurrentRefineStats::G1ConcurrentRefineStats() :

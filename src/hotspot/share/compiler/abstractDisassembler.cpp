@@ -26,7 +26,6 @@
 // AbstractDisassembler is the base class for
 // platform-specific Disassembler classes.
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "compiler/abstractDisassembler.hpp"
 #include "oops/oop.inline.hpp"

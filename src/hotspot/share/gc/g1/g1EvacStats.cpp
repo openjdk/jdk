@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gc_globals.hpp"

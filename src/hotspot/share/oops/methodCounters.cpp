@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "oops/method.hpp"

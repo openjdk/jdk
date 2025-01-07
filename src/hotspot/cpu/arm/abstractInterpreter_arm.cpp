@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSetStackChunk.hpp"
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"

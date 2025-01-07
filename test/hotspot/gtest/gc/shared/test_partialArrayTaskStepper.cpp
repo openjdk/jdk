@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "memory/allStatic.hpp"
 #include "unittest.hpp"

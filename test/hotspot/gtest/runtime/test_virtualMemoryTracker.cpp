@@ -30,7 +30,6 @@
 // The gtestLauncher then are called with various levels of -XX:NativeMemoryTracking during
 //  jtreg-controlled gtests (see test/hotspot/jtreg/gtest/NMTGtests.java)
 
-#include "precompiled.hpp"
 #include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"

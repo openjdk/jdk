@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"

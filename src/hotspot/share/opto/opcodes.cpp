@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 
 // ----------------------------------------------------------------------------
 // Build a table of class names as strings.  Used both for debugging printouts

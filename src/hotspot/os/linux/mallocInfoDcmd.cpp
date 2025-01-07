@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "mallocInfoDcmd.hpp"
 #include "os_linux.hpp"
 #include "utilities/globalDefinitions.hpp"

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BiasedArray.hpp"
 #include "unittest.hpp"
 

@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/globalDefinitions.hpp"

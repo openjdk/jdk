@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"

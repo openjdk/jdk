@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/startOperation.hpp"
 #include "jfr/leakprofiler/stopOperation.hpp"

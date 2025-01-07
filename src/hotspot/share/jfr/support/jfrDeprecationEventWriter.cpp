@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"

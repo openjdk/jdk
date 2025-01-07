@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
 
 void ZUncoloredRootClosure::do_oop(oop* p) {

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/bcEscapeAnalyzer.hpp"
 #include "ci/ciCallSite.hpp"
 #include "ci/ciObjArray.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "rdtsc_x86.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"

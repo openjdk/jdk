@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "memory/allocation.inline.hpp"

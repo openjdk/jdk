@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "utilities/growableArray.hpp"

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
 #include "oops/access.hpp"

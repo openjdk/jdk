@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "logging/log.hpp"

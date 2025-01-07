@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/support/jfrAllocationTracer.hpp"
 #include "jfr/support/jfrObjectAllocationSample.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/stringdedup/stringDedupProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedupThread.hpp"

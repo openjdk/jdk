@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "nmt/memMapPrinter.hpp"
 #include "procMapsParser.hpp"
 #include "runtime/os.hpp"

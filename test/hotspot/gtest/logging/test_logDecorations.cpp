@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"

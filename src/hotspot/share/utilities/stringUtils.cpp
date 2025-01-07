@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"

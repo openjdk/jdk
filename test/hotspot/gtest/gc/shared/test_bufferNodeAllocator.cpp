@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"

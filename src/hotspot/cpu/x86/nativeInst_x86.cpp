@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/compiledIC.hpp"
 #include "memory/resourceArea.hpp"

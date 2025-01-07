@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "systemMemoryBarrier_windows.hpp"
 
 #include <windows.h>

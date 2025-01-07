@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compileLog.hpp"

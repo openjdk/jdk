@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/icache.hpp"
 
 void ICacheStubGenerator::generate_icache_flush(

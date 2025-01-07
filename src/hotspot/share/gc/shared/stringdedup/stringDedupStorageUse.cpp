@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/stringdedup/stringDedupStorageUse.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"

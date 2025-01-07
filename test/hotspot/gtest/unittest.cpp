@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/os.hpp"
 
 extern void gtest_exit_from_child_vm(int num);

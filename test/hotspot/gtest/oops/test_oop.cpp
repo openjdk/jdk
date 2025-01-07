@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
 #include "unittest.hpp"
 #include "utilities/globalDefinitions.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "register_aarch64.hpp"
 
 Register::RegisterImpl           all_RegisterImpls     [Register::number_of_declared_registers + 1];

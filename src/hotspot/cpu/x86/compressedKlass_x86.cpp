@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #ifdef _LP64
 
 #include "oops/compressedKlass.hpp"

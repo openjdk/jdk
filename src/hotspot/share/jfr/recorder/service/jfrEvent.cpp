@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/service/jfrEvent.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/macros.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"

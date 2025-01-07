@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/bytecode.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/constantPool.hpp"

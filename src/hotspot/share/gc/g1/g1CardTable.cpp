@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"

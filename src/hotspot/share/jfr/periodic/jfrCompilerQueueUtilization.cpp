@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrCompilerQueueUtilization.hpp"

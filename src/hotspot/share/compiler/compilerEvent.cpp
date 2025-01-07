@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "compiler/compilerEvent.hpp"
 #include "jfr/jfr.hpp"

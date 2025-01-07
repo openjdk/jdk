@@ -21,8 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-
 #ifdef AIX
 
 #include "runtime/os.inline.hpp"

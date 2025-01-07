@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifndef _WINDOWS
 #include "alloca.h"
 #endif

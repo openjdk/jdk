@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/pcDesc.hpp"

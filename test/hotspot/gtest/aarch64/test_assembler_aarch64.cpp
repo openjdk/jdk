@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 
 #if defined(AARCH64) && !defined(ZERO)
 

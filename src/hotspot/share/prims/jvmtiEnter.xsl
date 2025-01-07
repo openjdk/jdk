@@ -36,7 +36,6 @@
 <xsl:template match="specification">
   <xsl:call-template name="sourceHeader"/>
   <xsl:text>
-# include "precompiled.hpp"
 # include "classfile/javaClasses.inline.hpp"
 # include "classfile/vmClasses.hpp"
 # include "memory/resourceArea.hpp"

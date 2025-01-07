@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/register.hpp"
 #include "logging/log.hpp"
 #include "riscv_hwprobe.hpp"

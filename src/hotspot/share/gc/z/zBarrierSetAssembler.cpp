@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zThreadLocalData.hpp"
 #include "runtime/javaThread.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciType.hpp"
 #include "ci/ciUtilities.inline.hpp"

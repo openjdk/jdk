@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfo.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"

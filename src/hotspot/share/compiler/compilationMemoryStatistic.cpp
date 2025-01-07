@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #ifdef COMPILER1

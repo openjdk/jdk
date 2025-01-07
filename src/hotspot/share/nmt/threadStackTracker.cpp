@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "nmt/memTracker.hpp"
 #include "nmt/threadStackTracker.hpp"

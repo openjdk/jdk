@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
 #include "memory/resourceArea.hpp"

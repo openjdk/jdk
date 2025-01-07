@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_riscv.hpp"

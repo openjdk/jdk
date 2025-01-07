@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "memory/allocation.hpp"
 #include "oops/constantPool.hpp"

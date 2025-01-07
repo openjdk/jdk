@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "register_zero.hpp"
 
 const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers;

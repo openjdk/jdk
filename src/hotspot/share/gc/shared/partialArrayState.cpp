@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"

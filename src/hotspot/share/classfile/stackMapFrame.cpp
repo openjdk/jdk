@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stackMapFrame.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"

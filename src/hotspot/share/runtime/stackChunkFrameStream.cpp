@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/stackChunkFrameStream.inline.hpp"
 #include "utilities/ostream.hpp"
 

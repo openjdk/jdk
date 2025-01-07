@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
 #include "jfr/utilities/jfrLogTagSets.hpp"

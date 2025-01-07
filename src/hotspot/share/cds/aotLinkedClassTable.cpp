@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotLinkedClassTable.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/serializeClosure.hpp"

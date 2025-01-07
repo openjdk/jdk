@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/cSpaceCounters.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "prims/vmstorage.hpp"
 
 void VMStorage::print_on(outputStream* os) const {

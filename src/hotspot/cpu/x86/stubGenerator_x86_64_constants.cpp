@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "stubGenerator_x86_64.hpp"
 
 // Constants for libm trigonometric stubs

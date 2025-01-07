@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"

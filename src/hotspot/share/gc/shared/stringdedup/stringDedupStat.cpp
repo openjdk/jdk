@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
 #include "logging/log.hpp"
 #include "utilities/globalDefinitions.hpp"

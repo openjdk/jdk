@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "unittest.hpp"

@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"

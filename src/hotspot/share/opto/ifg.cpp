@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

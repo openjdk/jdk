@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

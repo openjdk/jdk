@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vmreg.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/tlab_globals.hpp"

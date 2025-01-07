@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1OldGenAllocationTracker.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"

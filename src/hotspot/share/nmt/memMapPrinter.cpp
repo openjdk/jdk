@@ -23,8 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 #include "gc/shared/collectedHeap.hpp"

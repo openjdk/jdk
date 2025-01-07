@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "utilities/decoder.hpp"

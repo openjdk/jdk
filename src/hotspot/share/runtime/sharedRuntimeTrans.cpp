@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jni.h"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/sharedRuntime.hpp"

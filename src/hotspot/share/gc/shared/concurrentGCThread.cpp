@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/init.hpp"

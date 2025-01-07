@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/methodFlags.hpp"
 #include "utilities/ostream.hpp"
 

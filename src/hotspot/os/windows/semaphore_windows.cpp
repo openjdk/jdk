@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "semaphore_windows.hpp"
 #include "utilities/debug.hpp"
 

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/verifier.hpp"
 #include "memory/resourceArea.hpp"

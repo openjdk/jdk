@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/binList.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metablock.hpp"

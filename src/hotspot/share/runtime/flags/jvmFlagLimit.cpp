@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "gc/shared/jvmFlagConstraintsGC.hpp"
 #include "runtime/flags/jvmFlag.hpp"

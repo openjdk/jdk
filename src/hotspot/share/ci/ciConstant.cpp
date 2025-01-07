@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciUtilities.hpp"
 #include "memory/allocation.hpp"

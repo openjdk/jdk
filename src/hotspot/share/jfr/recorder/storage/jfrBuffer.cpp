@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "runtime/javaThread.hpp"
 

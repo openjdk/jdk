@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Instruction.hpp"

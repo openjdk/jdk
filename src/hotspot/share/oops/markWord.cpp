@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/javaThread.hpp"

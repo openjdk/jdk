@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrVirtualMemory.hpp"
 #include "memory/memoryReserver.hpp"
 #include "memory/virtualspace.hpp"

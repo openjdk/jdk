@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "memory/universe.hpp"
 

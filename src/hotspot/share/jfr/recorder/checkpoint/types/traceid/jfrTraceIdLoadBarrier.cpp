@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdLoadBarrier.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdKlassQueue.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"

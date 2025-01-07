@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "oops/method.hpp"
 #include "oops/resolvedMethodEntry.hpp"

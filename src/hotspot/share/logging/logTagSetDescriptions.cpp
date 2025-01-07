@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logTag.hpp"
 #include "logging/logTagSet.hpp"
 #include "logging/logTagSetDescriptions.hpp"

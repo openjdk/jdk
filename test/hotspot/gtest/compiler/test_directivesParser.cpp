@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "compiler/directivesParser.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/thread.hpp"

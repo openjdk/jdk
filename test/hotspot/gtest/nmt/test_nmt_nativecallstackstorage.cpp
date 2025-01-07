@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"

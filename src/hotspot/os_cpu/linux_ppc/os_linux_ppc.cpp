@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "assembler_ppc.hpp"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"

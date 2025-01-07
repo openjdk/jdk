@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/cHeapStringHolder.hpp"
 
 void CHeapStringHolder::set(const char* string) {

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"

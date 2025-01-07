@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/registerMap.hpp"
 #include "vmreg_aarch64.inline.hpp"
 

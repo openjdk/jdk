@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/semaphore.hpp"
 #include "unittest.hpp"
 

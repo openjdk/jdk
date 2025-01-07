@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "utilities/ostream.hpp"
 

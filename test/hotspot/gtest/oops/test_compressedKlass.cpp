@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 

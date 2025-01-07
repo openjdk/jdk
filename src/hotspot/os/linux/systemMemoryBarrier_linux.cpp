@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "os_linux.hpp"
 #include "utilities/debug.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"

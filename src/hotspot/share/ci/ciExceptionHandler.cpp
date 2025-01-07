@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciExceptionHandler.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "runtime/handles.inline.hpp"

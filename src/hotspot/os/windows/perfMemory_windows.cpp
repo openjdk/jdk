@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"

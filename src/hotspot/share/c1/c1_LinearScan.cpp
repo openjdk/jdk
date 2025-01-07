@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Compilation.hpp"

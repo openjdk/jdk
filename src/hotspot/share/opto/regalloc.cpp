@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/regalloc.hpp"
 
 static const int NodeRegsOverflowSize = 200;

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciUtilities.hpp"
 

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "runtime/atomic.hpp"
 

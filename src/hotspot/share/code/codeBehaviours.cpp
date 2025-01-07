@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBehaviours.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"

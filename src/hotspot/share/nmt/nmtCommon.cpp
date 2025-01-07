@@ -21,7 +21,7 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
+
 #include "nmt/nmtCommon.hpp"
 #include "utilities/globalDefinitions.hpp"
 

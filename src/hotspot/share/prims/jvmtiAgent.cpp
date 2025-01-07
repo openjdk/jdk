@@ -21,17 +21,15 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "prims/jvmtiAgent.hpp"
-
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "jni.h"
 #include "jvm_io.h"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "prims/jvmtiAgent.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

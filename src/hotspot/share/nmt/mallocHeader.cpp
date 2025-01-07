@@ -22,7 +22,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethodType.hpp"
 #include "ci/ciSignature.hpp"
 #include "ci/ciStreams.hpp"

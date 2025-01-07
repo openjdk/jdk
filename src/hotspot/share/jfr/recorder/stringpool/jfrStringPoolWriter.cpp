@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolWriter.hpp"
 #include "jfr/writers/jfrEventWriterHost.inline.hpp"

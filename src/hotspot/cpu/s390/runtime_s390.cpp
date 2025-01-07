@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #ifdef COMPILER2
 #include "asm/macroAssembler.inline.hpp"
 #include "code/vmreg.hpp"

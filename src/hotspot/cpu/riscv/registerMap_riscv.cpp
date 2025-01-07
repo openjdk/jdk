@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/registerMap.hpp"
 #include "vmreg_riscv.inline.hpp"
 

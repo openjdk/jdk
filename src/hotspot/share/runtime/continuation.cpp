@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "oops/method.inline.hpp"

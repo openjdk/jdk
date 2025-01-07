@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #include "jfr/utilities/jfrTime.hpp"

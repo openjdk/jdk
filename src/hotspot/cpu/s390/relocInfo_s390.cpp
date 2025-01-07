@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_s390.hpp"

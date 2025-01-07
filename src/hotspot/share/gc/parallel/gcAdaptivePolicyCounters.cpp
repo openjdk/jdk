@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/gcAdaptivePolicyCounters.hpp"
 #include "memory/resourceArea.hpp"
 

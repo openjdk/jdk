@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/nmtCommon.hpp"

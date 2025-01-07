@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #ifdef __APPLE__
 #include "decoder_machO.hpp"

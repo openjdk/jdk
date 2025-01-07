@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"

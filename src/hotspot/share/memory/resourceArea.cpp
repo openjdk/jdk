@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
 #include "nmt/memTracker.hpp"

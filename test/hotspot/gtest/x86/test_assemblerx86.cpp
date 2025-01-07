@@ -21,8 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-
 #if defined(X86) && !defined(ZERO)
 
 #include "utilities/vmassert_uninstall.hpp"

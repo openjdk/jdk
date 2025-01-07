@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"

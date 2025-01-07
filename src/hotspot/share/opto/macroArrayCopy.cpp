@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "opto/arraycopynode.hpp"

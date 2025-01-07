@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerUtils.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "atomic_bsd_zero.hpp"
 #include "classfile/vmSymbols.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/compressedKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
 

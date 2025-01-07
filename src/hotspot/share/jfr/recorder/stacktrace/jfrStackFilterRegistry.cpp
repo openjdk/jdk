@@ -23,7 +23,6 @@
  */
 
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"

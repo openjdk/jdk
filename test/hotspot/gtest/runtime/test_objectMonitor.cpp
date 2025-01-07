@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/vm_version.hpp"
 #include "unittest.hpp"

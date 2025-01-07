@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "utilities/copy.hpp"
 

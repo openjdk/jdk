@@ -23,7 +23,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "jfr/support/jfrAdaptiveSampler.hpp"
 #include "jfr/utilities/jfrRandom.inline.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"

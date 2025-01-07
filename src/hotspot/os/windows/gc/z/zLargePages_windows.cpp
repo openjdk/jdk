@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zLargePages.hpp"
 #include "gc/z/zSyscall_windows.hpp"

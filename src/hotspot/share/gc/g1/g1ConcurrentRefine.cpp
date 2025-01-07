@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"

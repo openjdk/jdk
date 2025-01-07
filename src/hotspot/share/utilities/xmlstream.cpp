@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"

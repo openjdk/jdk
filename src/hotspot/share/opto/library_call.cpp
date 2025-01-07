@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"

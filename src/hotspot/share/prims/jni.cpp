@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"

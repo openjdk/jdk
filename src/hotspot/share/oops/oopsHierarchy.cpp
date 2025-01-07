@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/javaThread.hpp"

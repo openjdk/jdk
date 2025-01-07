@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "jfrfiles/jfrEventIds.hpp"

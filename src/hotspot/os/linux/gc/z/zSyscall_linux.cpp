@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include OS_CPU_HEADER(gc/z/zSyscall)
 

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciArrayKlass.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciKlass.hpp"

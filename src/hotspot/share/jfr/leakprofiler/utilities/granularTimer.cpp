@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 
 long GranularTimer::_granularity = 0;

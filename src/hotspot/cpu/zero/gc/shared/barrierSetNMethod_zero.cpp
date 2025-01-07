@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "utilities/debug.hpp"
 

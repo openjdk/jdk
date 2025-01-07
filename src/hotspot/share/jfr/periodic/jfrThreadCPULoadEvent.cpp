@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"

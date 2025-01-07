@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/klass.inline.hpp"

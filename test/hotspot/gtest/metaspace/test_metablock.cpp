@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace/metablock.inline.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "logging/log.hpp"

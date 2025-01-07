@@ -253,11 +253,11 @@ define CreatePrecompiledHeader
         $$(eval $$(call CreateCompiledNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
             FILE := $$($1_GENERATED_PCH_SRC), \
             BASE := $1, \
-            EXTRA_CXXFLAGS := -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
+            EXTRA_CXXFLAGS := -I$$(dir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
         ))
 
         $1_USE_PCH_FLAGS := \
-            -Fp$$($1_PCH_FILE) -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
+            -FI$$(notdir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
 
         $$($1_ALL_OBJS): $$($1_GENERATED_PCH_OBJ)
 
@@ -271,7 +271,7 @@ define CreatePrecompiledHeader
       else ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
         ifeq ($(TOOLCHAIN_TYPE), gcc)
           $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).gch
-          $1_USE_PCH_FLAGS := -I$$($1_OBJECT_DIR)/precompiled
+          $1_USE_PCH_FLAGS := -I$$($1_OBJECT_DIR)/precompiled -include $$(notdir $$($1_PRECOMPILED_HEADER))
         else ifeq ($(TOOLCHAIN_TYPE), clang)
           $1_PCH_FILE := $$($1_OBJECT_DIR)/precompiled/$$(notdir $$($1_PRECOMPILED_HEADER)).pch
           $1_USE_PCH_FLAGS := -include-pch $$($1_PCH_FILE)

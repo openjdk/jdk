@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "prims/jvmtiUtil.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"

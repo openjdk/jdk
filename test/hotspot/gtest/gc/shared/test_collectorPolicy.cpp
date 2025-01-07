@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/serial/serialArguments.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/flagSetting.hpp"

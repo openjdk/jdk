@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 

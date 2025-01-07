@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/symbolTable.hpp"
 #include "memory/resourceArea.hpp"

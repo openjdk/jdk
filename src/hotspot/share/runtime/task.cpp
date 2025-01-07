@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaThread.hpp"

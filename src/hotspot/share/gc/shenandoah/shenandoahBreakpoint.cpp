@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "runtime/mutexLocker.hpp"

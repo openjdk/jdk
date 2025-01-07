@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 #include "decoder_elf.hpp"

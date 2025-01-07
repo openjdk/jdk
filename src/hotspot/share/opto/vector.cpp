@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciSymbols.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "opto/castnode.hpp"

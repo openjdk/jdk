@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/vmreg.inline.hpp"
 #include "gc/g1/c2/g1BarrierSetC2.hpp"

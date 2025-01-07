@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "riscv_flush_icache.hpp"
 #include "runtime/java.hpp"

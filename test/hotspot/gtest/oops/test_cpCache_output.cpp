@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "precompiled.hpp"
+
 #include "classfile/vmClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.hpp"

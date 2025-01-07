@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"

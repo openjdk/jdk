@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/nmtTreap.hpp"
 #include "runtime/os.hpp"

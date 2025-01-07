@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"

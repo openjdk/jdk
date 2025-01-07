@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClassesImpl.hpp"
 #include "classfile/vmClasses.hpp"

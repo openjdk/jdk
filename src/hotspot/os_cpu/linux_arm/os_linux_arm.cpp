@@ -22,7 +22,6 @@
  *
  */
 
-// no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/vtableStubs.hpp"

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "prims/downcallLinker.hpp"
 
 RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,

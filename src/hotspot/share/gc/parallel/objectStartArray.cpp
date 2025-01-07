@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "memory/memoryReserver.hpp"

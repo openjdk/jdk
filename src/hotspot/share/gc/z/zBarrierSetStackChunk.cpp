@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zBarrierSetStackChunk.hpp"
 #include "gc/z/zContinuation.hpp"
 #include "utilities/debug.hpp"

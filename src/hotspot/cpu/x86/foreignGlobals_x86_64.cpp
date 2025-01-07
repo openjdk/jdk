@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"

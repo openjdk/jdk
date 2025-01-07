@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/javaThread.hpp"

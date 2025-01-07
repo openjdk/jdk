@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zList.inline.hpp"

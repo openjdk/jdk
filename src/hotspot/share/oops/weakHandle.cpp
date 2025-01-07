@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.hpp"

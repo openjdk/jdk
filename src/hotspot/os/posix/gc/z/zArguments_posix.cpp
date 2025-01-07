@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zArguments.hpp"
 
 bool ZArguments::is_os_supported() {

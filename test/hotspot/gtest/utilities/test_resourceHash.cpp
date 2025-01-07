@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "memory/allocation.hpp"

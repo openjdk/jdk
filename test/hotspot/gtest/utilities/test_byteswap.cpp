@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/byteswap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"

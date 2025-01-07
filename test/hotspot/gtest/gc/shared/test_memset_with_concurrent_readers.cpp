@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"

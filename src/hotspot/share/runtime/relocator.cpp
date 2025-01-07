@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "memory/metadataFactory.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilter.hpp"
 #include "oops/method.hpp"
 #include "oops/symbol.hpp"

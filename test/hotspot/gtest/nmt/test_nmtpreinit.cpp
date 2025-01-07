@@ -22,7 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/nmtPreInit.hpp"

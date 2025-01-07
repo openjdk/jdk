@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"

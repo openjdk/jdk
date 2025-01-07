@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logOutputList.hpp"
 #include "memory/allocation.inline.hpp"

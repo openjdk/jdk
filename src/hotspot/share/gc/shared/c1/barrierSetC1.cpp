@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_LIRGenerator.hpp"
 #include "classfile/javaClasses.hpp"

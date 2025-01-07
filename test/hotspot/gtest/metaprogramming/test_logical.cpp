@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "metaprogramming/logical.hpp"
 #include <type_traits>
 

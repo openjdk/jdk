@@ -22,7 +22,6 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "jfr/jfrEvents.hpp"

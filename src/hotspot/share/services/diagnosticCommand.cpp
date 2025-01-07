@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderDataGraph.hpp"

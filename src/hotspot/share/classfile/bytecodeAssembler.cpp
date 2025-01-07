@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "classfile/bytecodeAssembler.hpp"
 #include "classfile/vmSymbols.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jni/jfrJniMethod.hpp"
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
 #include "logging/log.hpp"

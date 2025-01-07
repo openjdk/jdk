@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/heap.hpp"
 #include "memory/memoryReserver.hpp"
 #include "oops/oop.inline.hpp"

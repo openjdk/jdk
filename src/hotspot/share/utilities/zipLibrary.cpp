@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

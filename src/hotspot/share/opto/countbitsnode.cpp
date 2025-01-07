@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/countbitsnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"

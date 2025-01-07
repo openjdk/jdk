@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/reverse_bits.hpp"
 #include "unittest.hpp"

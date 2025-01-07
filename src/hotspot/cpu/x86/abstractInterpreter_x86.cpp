@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "oops/klass.inline.hpp"

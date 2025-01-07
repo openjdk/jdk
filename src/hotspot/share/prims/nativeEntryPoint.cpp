@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/codeCache.hpp"

@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationSizer.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"

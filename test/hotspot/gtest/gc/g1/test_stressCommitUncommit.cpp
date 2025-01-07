@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/workerThread.hpp"

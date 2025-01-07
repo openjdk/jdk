@@ -22,8 +22,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-
 #if (defined(RISCV) || defined(RISCV64)) && !defined(ZERO)
 
 #include "asm/assembler.inline.hpp"

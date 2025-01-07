@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"

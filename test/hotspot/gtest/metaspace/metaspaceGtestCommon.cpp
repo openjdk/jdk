@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
 #include "runtime/os.hpp"

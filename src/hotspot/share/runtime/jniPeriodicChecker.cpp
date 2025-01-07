@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
 #include "runtime/task.hpp"

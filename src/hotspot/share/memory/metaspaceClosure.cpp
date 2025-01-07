@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/metaspaceClosure.hpp"
 
 void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {

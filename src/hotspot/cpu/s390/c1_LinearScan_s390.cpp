@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "utilities/debug.hpp"
 

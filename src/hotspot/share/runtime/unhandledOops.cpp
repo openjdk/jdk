@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/javaThread.hpp"

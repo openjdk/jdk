@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/strongRootsScope.hpp"

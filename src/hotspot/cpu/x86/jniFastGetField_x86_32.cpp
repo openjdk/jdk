@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jniFastGetField.hpp"

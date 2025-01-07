@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 // This test performs mocking of certain JVM functionality. This works by
 // including the source file under test inside an anonymous namespace (which
@@ -83,12 +82,6 @@ namespace {
   };
 
   jlong MockJfrTicks::tick = 0;
-
-  // Reincluding source files in the anonymous namespace unfortunately seems to
-  // behave strangely with precompiled headers (only when using gcc though)
-#ifndef DONT_USE_PRECOMPILED_HEADER
-#define DONT_USE_PRECOMPILED_HEADER
-#endif
 
 #define JfrTicks MockJfrTicks
 #define JfrTimeConverter MockJfrTimeConverter

@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/memReporter.hpp"
 #include "nmt/memTracker.hpp"

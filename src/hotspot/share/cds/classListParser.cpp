@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/classListParser.hpp"

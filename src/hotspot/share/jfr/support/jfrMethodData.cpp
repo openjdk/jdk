@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/support/jfrMethodData.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.inline.hpp"

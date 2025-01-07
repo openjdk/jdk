@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeBlob.hpp"
 #include "opto/c2_CodeStubs.hpp"

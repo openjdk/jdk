@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"

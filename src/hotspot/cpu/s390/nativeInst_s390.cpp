@@ -25,7 +25,6 @@
 
 // Major contributions by JL, LS
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_s390.hpp"

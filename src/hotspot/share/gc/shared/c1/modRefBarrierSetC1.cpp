@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/c1/modRefBarrierSetC1.hpp"
 #include "utilities/macros.hpp"
 

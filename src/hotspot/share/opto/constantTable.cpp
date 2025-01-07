@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.hpp"
 #include "opto/block.hpp"

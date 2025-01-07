@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "logging/logStream.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"

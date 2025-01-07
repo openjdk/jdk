@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "memory/allocation.hpp"

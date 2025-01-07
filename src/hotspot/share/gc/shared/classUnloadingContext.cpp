@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #include "classfile/classLoaderData.inline.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"

@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "downcallLinker.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

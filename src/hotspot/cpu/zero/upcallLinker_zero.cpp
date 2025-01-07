@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "prims/upcallLinker.hpp"
 
 address UpcallLinker::make_upcall_stub(jobject mh, Symbol* signature,

@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/jniHandles.inline.hpp"

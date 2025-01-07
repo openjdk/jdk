@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcCause.hpp"
 
 const char* GCCause::to_string(GCCause::Cause cause) {

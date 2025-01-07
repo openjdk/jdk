@@ -22,9 +22,6 @@
  *
  */
 
-
-#include "precompiled.hpp"
-
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"

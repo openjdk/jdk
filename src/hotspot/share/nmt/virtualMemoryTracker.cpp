@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"

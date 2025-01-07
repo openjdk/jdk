@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zNUMA.hpp"
 
 void ZNUMA::pd_initialize() {

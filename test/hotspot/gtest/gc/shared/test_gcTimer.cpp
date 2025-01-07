@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "utilities/ticks.hpp"
 #include "unittest.hpp"

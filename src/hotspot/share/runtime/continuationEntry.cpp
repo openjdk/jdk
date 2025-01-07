@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "oops/method.inline.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/constMethodFlags.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"

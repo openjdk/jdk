@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.hpp"

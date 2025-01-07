@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
@@ -109,4 +108,3 @@ bool ShenandoahController::try_set_alloc_failure_gc(bool is_humongous) {
 bool ShenandoahController::is_alloc_failure_gc() {
   return _alloc_failure_gc.is_set();
 }
-

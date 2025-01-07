@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcOverheadChecker.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "logging/log.hpp"

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/generation.hpp"

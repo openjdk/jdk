@@ -22,12 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1ConcurrentRefineThreadsNeeded.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <math.h>
 
 G1ConcurrentRefineThreadsNeeded::G1ConcurrentRefineThreadsNeeded(G1Policy* policy,

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"

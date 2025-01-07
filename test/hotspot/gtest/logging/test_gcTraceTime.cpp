@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "jvm.h"
 #include "logTestFixture.hpp"

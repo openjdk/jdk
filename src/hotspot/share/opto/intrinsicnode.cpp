@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/addnode.hpp"
 #include "opto/mulnode.hpp"
