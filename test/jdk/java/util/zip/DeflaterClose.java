@@ -40,8 +40,8 @@ public class DeflaterClose {
     private static final String data = "foobarhelloworld!!!!";
 
     /**
-     * Closes the Deflater multiple times and then expects close() and end() to be called that
-     * many times.
+     * Closes the Deflater multiple times and then expects close() and end() each
+     * to be called that many times.
      */
     @Test
     public void testCloseMultipleTimes() throws Exception {
