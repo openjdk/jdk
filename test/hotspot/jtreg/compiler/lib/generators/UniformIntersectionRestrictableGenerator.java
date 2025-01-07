@@ -26,7 +26,7 @@ package compiler.lib.generators;
 /**
  * A generators whose outputs is restricted by taking the intersection of the previous interval and the new interval.
  */
-abstract class UniformIntersectionRestrictableGenerator<T extends Comparable<T>> extends GeneratorBase<T> implements RestrictableGenerator<T> {
+abstract class UniformIntersectionRestrictableGenerator<T extends Comparable<T>> extends BoundGenerator<T> implements RestrictableGenerator<T> {
     private final T lo;
     private final T hi;
 

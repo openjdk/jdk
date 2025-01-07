@@ -26,7 +26,7 @@ package compiler.lib.generators;
 import java.util.ArrayList;
 import java.util.Collection;
 
-class RandomElementGenerator<T> extends GeneratorBase<T> {
+class RandomElementGenerator<T> extends BoundGenerator<T> {
     private final ArrayList<T> elements;
     private final Generator<Integer> generator;
 

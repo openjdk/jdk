@@ -26,7 +26,7 @@ package compiler.lib.generators;
 /**
  * Mixed results between two different generators with configurable weights.
  */
-class MixedGenerator<T> extends GeneratorBase<T> {
+class MixedGenerator<T> extends BoundGenerator<T> {
     private final Generator<T> a;
     private final Generator<T> b;
     private final int weightA;

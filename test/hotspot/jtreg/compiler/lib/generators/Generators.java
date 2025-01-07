@@ -65,7 +65,7 @@ import jdk.test.lib.Utils;
  * test(G.specialInts(0));
  * </code></pre>
  * <p>
- * If there is a single value that is interesting as the to all three parameters, we might even call this
+ * If there is a single value that is interesting as an argument to all three parameters, we might even call this
  * method with a single generator, ensuring that the single value is within the restriction ranges:
  *
  * <pre><code>

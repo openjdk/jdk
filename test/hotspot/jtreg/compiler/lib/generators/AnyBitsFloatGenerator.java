@@ -27,7 +27,7 @@ package compiler.lib.generators;
  * Provides an any-bits float distribution random generator, i.e. the bits are uniformly sampled,
  * thus creating any possible float value, including the multiple different NaN representations.
  */
-final class AnyBitsFloatGenerator extends GeneratorBase<Float> {
+final class AnyBitsFloatGenerator extends BoundGenerator<Float> {
 
     /**
      * Creates a new {@link AnyBitsFloatGenerator}.

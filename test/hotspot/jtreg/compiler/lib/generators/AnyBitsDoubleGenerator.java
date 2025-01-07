@@ -27,7 +27,7 @@ package compiler.lib.generators;
  * Provides an any-bits double distribution random generator, i.e. the bits are uniformly sampled,
  * thus creating any possible double value, including the multiple different NaN representations.
  */
-final class AnyBitsDoubleGenerator extends GeneratorBase<Double> {
+final class AnyBitsDoubleGenerator extends BoundGenerator<Double> {
     /**
      * Create a new {@link AnyBitsDoubleGenerator}.
      */

@@ -26,6 +26,8 @@ package compiler.lib.generators;
 /**
  * Defines the underlying randomness source used by the generators. This is essentially a subset of
  * {@link java.util.random.RandomGenerator} and the present methods have the same contract.
+ * This interface greatly benefits testing, as it is much easier to implement than
+ * {@link java.util.random.RandomGenerator}  and thus makes creating test doubles more convenient.
  */
 public interface RandomnessSource {
     /** Samples the next long value uniformly at random. */
