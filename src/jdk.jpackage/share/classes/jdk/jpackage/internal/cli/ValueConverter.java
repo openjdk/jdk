@@ -31,8 +31,6 @@ public interface ValueConverter<T> {
      *
      * @param value the string to convert
      * @return the converted value
-     * @throws ValueConversionException if a problem occurs while converting the
-     * value
      */
     T convert(String value);
 
