@@ -751,6 +751,10 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // Memory state modifying nodes include Store and Phi nodes and any node for which needs_anti_dependence_check()
   // returns false.
   // The anti-dependence constraints apply only to the fringe of this tree.
+  //
+  // In some cases, there are other relevant initial memory states besides
+  // initial_mem. In such cases, we are rather dealing with multiple trees and
+  // their fringes.
 
   Node* initial_mem = load->in(MemNode::Memory);
 
@@ -770,23 +774,33 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   }
   worklist_def_use_mem_states.push(nullptr, initial_mem);
   Block* initial_mem_block = get_block_for_node(initial_mem);
-  if (load->in(0) && initial_mem_block != nullptr) {
-    // If the load has an explicit control input and initial_mem has a block,
-    // walk up the dominator tree from the early block to the initial memory
-    // block. If we in a block find memory Phi(s) that can alias initial_mem,
-    // these are also potential initial memory states and there may be further
-    // required anti dependences due to them.
+  assert(initial_mem_block != nullptr, "sanity");
+  if (load->in(0) != nullptr) {
+    // If the load has an explicit control input, walk up the dominator tree
+    // from the early block (inclusive) to the initial memory block
+    // (inclusive). If we in a block find memory Phi(s) that can alias
+    // initial_mem, these are also potential initial memory states and there
+    // may be further required anti-dependences due to them.
     assert(initial_mem_block->dominates(early), "invariant");
     Block* b = early;
-    // Stop searching when we run out of dominators (b == nullptr) or when we
-    // step past the initial memory block (b == initial_mem_block->_idom).
-    while (b != nullptr && b != initial_mem_block->_idom) {
+    // Stop searching when we step past the initial memory block (b ==
+    // initial_mem_block->_idom). The loop below always terminates because the
+    // root block strictly dominates initial_mem_block.
+    while (b != initial_mem_block->_idom) {
+      assert(b != nullptr, "sanity");
       if (b == initial_mem_block && !initial_mem->is_Phi()) {
+        // If we are in the initial memory block, and initial_mem is not itself
+        // a Phi, no Phis in the block can be initial memory states.
         break;
       }
+      // We need to process all memory Phi nodes in the block. We may not have
+      // run LCM yet, so we cannot assume anything regarding the location of
+      // Phi nodes within the block. Therefore, we must search the entire
+      // block.
       for (uint i = 0; i < b->number_of_nodes(); ++i) {
         Node* n = b->get_node(i);
-        if (n->is_memory_phi() && C->can_alias(n->adr_type(), load_alias_idx)) {
+        if (n->is_memory_phi() && C->can_alias(n->adr_type(), load_alias_idx) && n != initial_mem) {
+          // We have found a relevant Phi initial memory state
           worklist_def_use_mem_states.push(nullptr, n);
         }
       }
