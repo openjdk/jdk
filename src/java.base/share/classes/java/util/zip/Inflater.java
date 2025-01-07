@@ -727,7 +727,7 @@ public class Inflater implements AutoCloseable {
      * and discards any unprocessed input.
      *
      * @implSpec This method calls the {@link #end()} method.
-     * @since 24
+     * @since 25
      */
     @Override
     public void close() {
