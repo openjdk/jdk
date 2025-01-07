@@ -291,5 +291,5 @@ TEST(globalDefinitions, format_specifiers) {
   check_format(PTR_FORMAT,             (uintptr_t)0x123,  "0x" LP64_ONLY("00000000") "00000123");
 
   // Check all platforms print this compatibly without leading 0x.
-  check_format(INT64_FORMAT_X_0_,      (u8)0x123,         "0000000000000123");
+  check_format(INT64_FORMAT_0,         (u8)0x123,         "0000000000000123");
 }

@@ -132,8 +132,8 @@ class oopDesc;
 #define UINT64_FORMAT_X_0        "0x%016"     PRIx64
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
 
-// Format without leading 0x
-#define INT64_FORMAT_X_0_        "%016"       PRIx64
+// Format with padding without leading 0x
+#define INT64_FORMAT_0           "%016"       PRIx64
 
 // Format integers which change size between 32- and 64-bit.
 #define SSIZE_FORMAT             "%"          PRIdPTR
