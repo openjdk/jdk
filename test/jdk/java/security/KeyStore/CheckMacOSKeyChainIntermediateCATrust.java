@@ -29,7 +29,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import jdk.test.lib.process.ProcessTools;
@@ -44,7 +43,7 @@ import org.junit.jupiter.api.Test;
  * @bug 8347067
  * @library /test/lib
  * @requires os.family == "mac"
- * @summary Check whether loading of certificates from MacOS Keychain correctly
+ * @summary Check whether loading of certificates from macOS Keychain correctly
  *          loads intermediate CA certificates
  * @run junit CheckMacOSKeyChainIntermediateCATrust
  */
@@ -68,7 +67,7 @@ public class CheckMacOSKeyChainIntermediateCATrust {
                         throw new RuntimeException(e);
                     }
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         System.out.println("Verifying expected certificates are trusted");
 

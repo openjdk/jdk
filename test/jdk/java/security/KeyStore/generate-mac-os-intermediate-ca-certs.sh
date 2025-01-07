@@ -22,5 +22,4 @@ openssl x509 -req \
  -days 3650 \
  -sha256
 
- rm -f root.key test-intermediate-ca.csr intermediate.key test-ca.srl
- 
+rm -f root.key test-intermediate-ca.csr intermediate.key test-ca.srl
