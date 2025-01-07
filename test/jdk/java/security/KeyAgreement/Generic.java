@@ -26,33 +26,44 @@
  * @bug 8189441
  * @library /test/lib /test/jdk/sun/security/pkcs11
  * @summary make sure Generic is accepted by all KeyAgreement implementations
+ * @run main Generic builtin
+ * @run main/othervm Generic nss
+ * @run main/othervm -DCUSTOM_P11_CONFIG_NAME=p11-nss-sensitive.txt Generic nss
  */
 import javax.crypto.KeyAgreement;
 import java.security.KeyPairGenerator;
+import java.security.Provider;
 import java.security.Security;
 
 public class Generic {
 
     public static void main(String[] args) throws Exception {
-        Security.addProvider(PKCS11Test.getSunPKCS11(PKCS11Test.getNssConfig()));
-        for (var p : Security.getProviders()) {
-            for (var s : p.getServices()) {
-                if (s.getType().equalsIgnoreCase("KeyAgreement")) {
-                    try {
-                        System.out.println(s.getProvider().getName() + "." + s.getAlgorithm());
-                        var g = KeyPairGenerator.getInstance(ka2kpg(s.getAlgorithm()), p);
-                        var kp1 = g.generateKeyPair();
-                        var kp2 = g.generateKeyPair();
-                        var ka = KeyAgreement.getInstance(s.getAlgorithm(), s.getProvider());
-                        ka.init(kp1.getPrivate());
-                        ka.doPhase(kp2.getPublic(), true);
-                        ka.generateSecret("TlsPremasterSecret");
-                        ka.init(kp1.getPrivate());
-                        ka.doPhase(kp2.getPublic(), true);
-                        ka.generateSecret("Generic");
-                    } catch (Exception e) {
-                        throw e;
-                    }
+        if (args[0].equals("nss")) {
+            test(PKCS11Test.getSunPKCS11(PKCS11Test.getNssConfig()));
+        } else {
+            for (var p : Security.getProviders()) {
+                test(p);
+            }
+        }
+    }
+
+    static void test(Provider p) throws Exception {
+        for (var s : p.getServices()) {
+            if (s.getType().equalsIgnoreCase("KeyAgreement")) {
+                try {
+                    System.out.println(s.getProvider().getName() + "." + s.getAlgorithm());
+                    var g = KeyPairGenerator.getInstance(ka2kpg(s.getAlgorithm()), p);
+                    var kp1 = g.generateKeyPair();
+                    var kp2 = g.generateKeyPair();
+                    var ka = KeyAgreement.getInstance(s.getAlgorithm(), s.getProvider());
+                    ka.init(kp1.getPrivate());
+                    ka.doPhase(kp2.getPublic(), true);
+                    ka.generateSecret("TlsPremasterSecret");
+                    ka.init(kp1.getPrivate());
+                    ka.doPhase(kp2.getPublic(), true);
+                    ka.generateSecret("Generic");
+                } catch (Exception e) {
+                    throw e;
                 }
             }
         }
@@ -60,9 +71,6 @@ public class Generic {
 
     // Find key algorithm from KeyAgreement algorithm
     private static String ka2kpg(String ka) {
-        return switch (ka) {
-            case "ECDH" -> "EC";
-            default -> ka;
-        };
+        return ka.equals("ECDH") ? "EC" : ka;
     }
 }
