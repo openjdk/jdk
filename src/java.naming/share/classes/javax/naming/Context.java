@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1061,27 +1061,4 @@ public interface Context {
      * @see #removeFromEnvironment(String)
      */
     String LANGUAGE = "java.naming.language";
-
-    /**
-     * @deprecated An environment property with this name is ignored
-     *             while constructing an initial context.
-     * This constant was originally used as a property name to specify an
-     * {@code Applet} to retrieve parameters from, when creating an initial
-     * context. Currently any applet properties that need to be passed to an
-     * initial context should be copied into the environment hashtable:
-     * <pre>{@code
-     *     Hashtable env = new Hashtable();
-     *     env.put(Context.INITIAL_CONTEXT_FACTORY,
-     *       ((Applet) this).getParameter(Context.INITIAL_CONTEXT_FACTORY));
-     *     env.put(Context.PROVIDER_URL,
-     *       ((Applet) this).getParameter(Context.PROVIDER_URL));
-     *     // ... other properties ...
-     *
-     *     Context ctx = new InitialContext(env);
-     * }</pre>
-     *
-     * @since 1.3
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    String APPLET = "java.naming.applet";
 };

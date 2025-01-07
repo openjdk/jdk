@@ -38,7 +38,6 @@ import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.ScopedValueContainer;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A value that may be safely and efficiently shared to methods without using method
@@ -740,7 +739,7 @@ public final class ScopedValue<T> {
 
         static {
             final String propertyName = "java.lang.ScopedValue.cacheSize";
-            var sizeString = GetPropertyAction.privilegedGetProperty(propertyName, "16");
+            var sizeString = System.getProperty(propertyName, "16");
             var cacheSize = Integer.valueOf(sizeString);
             if (cacheSize < 2 || cacheSize > MAX_CACHE_SIZE) {
                 cacheSize = MAX_CACHE_SIZE;

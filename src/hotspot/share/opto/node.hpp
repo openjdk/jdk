@@ -193,6 +193,7 @@ class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
 class ShiftVNode;
+class MulVLNode;
 class ExpandVNode;
 class CompressVNode;
 class CompressMNode;
@@ -743,6 +744,7 @@ public:
         DEFINE_CLASS_ID(Reduction, Vector, 7)
         DEFINE_CLASS_ID(NegV, Vector, 8)
         DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
+        DEFINE_CLASS_ID(MulVL, Vector, 10)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
@@ -970,6 +972,7 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(MulVL)
   DEFINE_CLASS_QUERY(Neg)
   DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
@@ -1123,7 +1126,6 @@ public:
   // Check if 'this' node dominates or equal to 'sub'.
   DomResult dominates(Node* sub, Node_List &nlist);
 
-protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
 public:
 
@@ -1164,6 +1166,7 @@ public:
 
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
+  void add_prec_from(Node* n);
 
   // Visit boundary uses of the node and apply a callback function for each.
   // Recursively traverse uses, stopping and applying the callback when
@@ -1274,6 +1277,8 @@ public:
 
   // Whether this is a memory phi node
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
+
+  bool is_div_or_mod(BasicType bt) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
@@ -1997,6 +2002,10 @@ Compile::locate_node_notes(GrowableArray<Node_Notes*>* arr,
   return arr->at(block_idx) + (idx & (_node_notes_block_size-1));
 }
 
+inline Node_Notes* Compile::node_notes_at(int idx) {
+  return locate_node_notes(_node_note_array, idx, false);
+}
+
 inline bool
 Compile::set_node_notes_at(int idx, Node_Notes* value) {
   if (value == nullptr || value->is_clear())
@@ -2054,6 +2063,10 @@ Op_IL(URShift)
 Op_IL(LShift)
 Op_IL(Xor)
 Op_IL(Cmp)
+Op_IL(Div)
+Op_IL(Mod)
+Op_IL(UDiv)
+Op_IL(UMod)
 
 inline int Op_ConIL(BasicType bt) {
   assert(bt == T_INT || bt == T_LONG, "only for int or longs");
@@ -2110,5 +2123,52 @@ inline int Op_DivModIL(BasicType bt, bool is_unsigned) {
     return Op_DivModL;
   }
 }
+
+// Interface to define actions that should be taken when running DataNodeBFS. Each use can extend this class to specify
+// a customized BFS.
+class BFSActions : public StackObj {
+ public:
+  // Should a node's inputs further be visited in the BFS traversal? By default, we visit all data inputs. Override this
+  // method to provide a custom filter.
+  virtual bool should_visit(Node* node) const {
+    // By default, visit all inputs.
+    return true;
+  };
+
+  // Is the visited node a target node that we are looking for in the BFS traversal? We do not visit its inputs further
+  // but the BFS will continue to visit all unvisited nodes in the queue.
+  virtual bool is_target_node(Node* node) const = 0;
+
+  // Defines an action that should be taken when we visit a target node in the BFS traversal.
+  virtual void target_node_action(Node* target_node) = 0;
+};
+
+// Class to perform a BFS traversal on the data nodes from a given start node. The provided BFSActions guide which
+// data node's inputs should be further visited, which data nodes are target nodes and what to do with the target nodes.
+class DataNodeBFS : public StackObj {
+  BFSActions& _bfs_actions;
+
+ public:
+  explicit DataNodeBFS(BFSActions& bfs_action) : _bfs_actions(bfs_action) {}
+
+  // Run the BFS starting from 'start_node' and apply the actions provided to this class.
+  void run(Node* start_node) {
+    ResourceMark rm;
+    Unique_Node_List _nodes_to_visit;
+    _nodes_to_visit.push(start_node);
+    for (uint i = 0; i < _nodes_to_visit.size(); i++) {
+      Node* next = _nodes_to_visit[i];
+      for (uint j = 1; j < next->req(); j++) {
+        Node* input = next->in(j);
+        if (_bfs_actions.is_target_node(input)) {
+          assert(_bfs_actions.should_visit(input), "must also pass node filter");
+          _bfs_actions.target_node_action(input);
+        } else if (_bfs_actions.should_visit(input)) {
+          _nodes_to_visit.push(input);
+        }
+      }
+    }
+  }
+};
 
 #endif // SHARE_OPTO_NODE_HPP

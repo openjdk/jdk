@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  */
 -->
 <!--
-   Catalog of DTDs for the Java platform
+   Catalog of DTDs and XSDs for the Java platform and W3C specifications
 
    @implNote: DTDs in the built-in catalog are resolved against its URI and the
               xml:base attribute. The preferences.dtd for example is resolved as:
@@ -37,5 +37,120 @@
     <group id="javadtds" prefer = "system" xml:base = "java/dtd/">
         <system systemId="http://java.sun.com/dtd/preferences.dtd" uri="preferences.dtd"/>
         <system systemId="http://java.sun.com/dtd/properties.dtd" uri="properties.dtd"/>
+    </group>
+    
+    <!-- W3C DTDs -->
+    <group id="xhtml11" prefer = "system" xml:base = "w3c/dtd/xhtml11/">
+        <system systemId="http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd" uri="xhtml11.dtd"/>
+        <systemSuffix systemIdSuffix="xhtml-attribs-1.mod" uri="xhtml-attribs-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-base-1.mod" uri="xhtml-base-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-bdo-1.mod" uri="xhtml-bdo-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-blkphras-1.mod" uri="xhtml-blkphras-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-blkpres-1.mod" uri="xhtml-blkpres-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-blkstruct-1.mod" uri="xhtml-blkstruct-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-charent-1.mod" uri="xhtml-charent-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-cicmap-1.mod" uri="xhtml-cicmap-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-csismap-1.mod" uri="xhtml-csismap-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-datatypes-1.mod" uri="xhtml-datatypes-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-edit-1.mod" uri="xhtml-edit-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-events-1.mod" uri="xhtml-events-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-form-1.mod" uri="xhtml-form-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-framework-1.mod" uri="xhtml-framework-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-hypertext-1.mod" uri="xhtml-hypertext-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-image-1.mod" uri="xhtml-image-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-inlphras-1.mod" uri="xhtml-inlphras-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-inlpres-1.mod" uri="xhtml-inlpres-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-inlstruct-1.mod" uri="xhtml-inlstruct-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-inlstyle-1.mod" uri="xhtml-inlstyle-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-lat1-1.mod" uri="xhtml-lat1-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-link-1.mod" uri="xhtml-link-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-list-1.mod" uri="xhtml-list-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-meta-1.mod" uri="xhtml-meta-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-object-1.mod" uri="xhtml-object-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-param-1.mod" uri="xhtml-param-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-pres-1.mod" uri="xhtml-pres-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-qname-1.mod" uri="xhtml-qname-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-ruby-1.mod" uri="xhtml-ruby-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-script-1.mod" uri="xhtml-script-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-special-1.mod" uri="xhtml-special-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-ssismap-1.mod" uri="xhtml-ssismap-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-struct-1.mod" uri="xhtml-struct-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-style-1.mod" uri="xhtml-style-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-symbol-1.mod" uri="xhtml-symbol-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-table-1.mod" uri="xhtml-table-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml-text-1.mod" uri="xhtml-text-1.mod"/>
+        <systemSuffix systemIdSuffix="xhtml11-model-1.mod" uri="xhtml11-model-1.mod"/>
+    </group>
+    
+    <group id="xhtml1" prefer = "system" xml:base = "w3c/dtd/xhtml10/">
+        <systemSuffix systemIdSuffix="xhtml1-strict.dtd" uri="xhtml1-strict.dtd"/>
+        <systemSuffix systemIdSuffix="xhtml1-transitional.dtd" uri="xhtml1-transitional.dtd"/>
+        <systemSuffix systemIdSuffix="xhtml1-frameset.dtd" uri="xhtml1-frameset.dtd"/>
+        <systemSuffix systemIdSuffix="xhtml-lat1.ent" uri="xhtml-lat1.ent"/>
+        <systemSuffix systemIdSuffix="xhtml-special.ent" uri="xhtml-special.ent"/>
+        <systemSuffix systemIdSuffix="xhtml-symbol.ent" uri="xhtml-symbol.ent"/>
+    </group>
+
+    <group id="XMLSchema10" prefer = "system" xml:base = "w3c/dtd/schema10/">
+        <systemSuffix systemIdSuffix="XMLSchema.dtd" uri="XMLSchema.dtd"/>
+        <systemSuffix systemIdSuffix="datatypes.dtd" uri="datatypes.dtd"/>
+        <public publicId="datatypes" uri="datatypes.dtd"/>
+        <public publicId="-//W3C//DTD XMLSCHEMA 200102//EN" uri="XMLSchema.dtd"/>
+    </group>
+    
+    <group id="xmlspec" prefer = "system" xml:base = "w3c/dtd/">
+        <system systemId="http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd" uri="xmlspec2_10/xmlspec.dtd"/>
+    </group>
+    
+    <!-- W3C XSDs -->
+    <group id="w3cxsd" prefer = "system" xml:base = "w3c/xsd/">
+        <systemSuffix systemIdSuffix="XMLSchema.xsd" uri="schema10/XMLSchema.xsd"/>
+        <systemSuffix systemIdSuffix="XMLSchema-datatypes.xsd" uri="schema10/XMLSchema-datatypes.xsd"/>
+        <system systemId="http://www.w3.org/2001/xml.xsd" uri="xmlNS2001/xml.xsd"/>
+        <systemSuffix systemIdSuffix="2001/xml.xsd" uri="xmlNS2001/xml.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml1-frameset.xsd" uri="xhtml10/xhtml1-frameset.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml1-strict.xsd" uri="xhtml10/xhtml1-strict.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml1-transitional.xsd" uri="xhtml10/xhtml1-transitional.xsd"/>
+    </group>
+    <group id="xhtml11xsd" prefer = "system" xml:base = "w3c/xsd/xhtml11/">
+        <systemSuffix systemIdSuffix="xhtml11.xsd" uri="xhtml11.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-attribs-1.xsd" uri="xhtml-attribs-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-base-1.xsd" uri="xhtml-base-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-bdo-1.xsd" uri="xhtml-bdo-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-blkphras-1.xsd" uri="xhtml-blkphras-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-blkpres-1.xsd" uri="xhtml-blkpres-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-blkstruct-1.xsd" uri="xhtml-blkstruct-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-copyright-1.xsd" uri="xhtml-copyright-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-csismap-1.xsd" uri="xhtml-csismap-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-datatypes-1.xsd" uri="xhtml-datatypes-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-edit-1.xsd" uri="xhtml-edit-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-events-1.xsd" uri="xhtml-events-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-form-1.xsd" uri="xhtml-form-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-framework-1.xsd" uri="xhtml-framework-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-hypertext-1.xsd" uri="xhtml-hypertext-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-image-1.xsd" uri="xhtml-image-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-inlphras-1.xsd" uri="xhtml-inlphras-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-inlpres-1.xsd" uri="xhtml-inlpres-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-inlstruct-1.xsd" uri="xhtml-inlstruct-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-inlstyle-1.xsd" uri="xhtml-inlstyle-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-link-1.xsd" uri="xhtml-link-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-list-1.xsd" uri="xhtml-list-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-meta-1.xsd" uri="xhtml-meta-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-notations-1.xsd" uri="xhtml-notations-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-object-1.xsd" uri="xhtml-object-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-param-1.xsd" uri="xhtml-param-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-pres-1.xsd" uri="xhtml-pres-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-ruby-1.xsd" uri="xhtml-ruby-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-script-1.xsd" uri="xhtml-script-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-ssismap-1.xsd" uri="xhtml-ssismap-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-struct-1.xsd" uri="xhtml-struct-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-style-1.xsd" uri="xhtml-style-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-table-1.xsd" uri="xhtml-table-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-target-1.xsd" uri="xhtml-target-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml-text-1.xsd" uri="xhtml-text-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml11-model-1.xsd" uri="xhtml11-model-1.xsd"/>
+        <systemSuffix systemIdSuffix="xhtml11-modules-1.xsd" uri="xhtml11-modules-1.xsd"/>
+        <systemSuffix systemIdSuffix="xml-events-1.xsd" uri="xml-events-1.xsd"/>
+        <systemSuffix systemIdSuffix="xml-events-copyright-1.xsd" uri="xml-events-copyright-1.xsd"/>
     </group>
 </catalog>

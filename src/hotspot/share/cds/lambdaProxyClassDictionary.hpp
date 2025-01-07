@@ -143,7 +143,7 @@ public:
     u4 invoked_name             = b->any_to_offset_u4(key.invoked_name());
     u4 invoked_type             = b->any_to_offset_u4(key.invoked_type());
     u4 method_type              = b->any_to_offset_u4(key.method_type());
-    u4 member_method            = b->any_to_offset_u4(key.member_method());
+    u4 member_method            = b->any_or_null_to_offset_u4(key.member_method()); // could be null
     u4 instantiated_method_type = b->any_to_offset_u4(key.instantiated_method_type());
 
     return RunTimeLambdaProxyClassKey(caller_ik, invoked_name, invoked_type, method_type,
@@ -158,12 +158,12 @@ public:
                                                      Symbol*        instantiated_method_type) {
     // All parameters must be in shared space, or else you'd get an assert in
     // ArchiveUtils::to_offset().
-    return RunTimeLambdaProxyClassKey(ArchiveUtils::to_offset(caller_ik),
-                                      ArchiveUtils::to_offset(invoked_name),
-                                      ArchiveUtils::to_offset(invoked_type),
-                                      ArchiveUtils::to_offset(method_type),
-                                      ArchiveUtils::to_offset(member_method),
-                                      ArchiveUtils::to_offset(instantiated_method_type));
+    return RunTimeLambdaProxyClassKey(ArchiveUtils::archived_address_to_offset(caller_ik),
+                                      ArchiveUtils::archived_address_to_offset(invoked_name),
+                                      ArchiveUtils::archived_address_to_offset(invoked_type),
+                                      ArchiveUtils::archived_address_to_offset(method_type),
+                                      ArchiveUtils::archived_address_or_null_to_offset(member_method), // could be null
+                                      ArchiveUtils::archived_address_to_offset(instantiated_method_type));
   }
 
   unsigned int hash() const;

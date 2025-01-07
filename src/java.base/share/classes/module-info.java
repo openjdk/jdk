@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@ module java.base {
     exports java.lang.annotation;
     exports java.lang.classfile;
     exports java.lang.classfile.attribute;
-    exports java.lang.classfile.components;
     exports java.lang.classfile.constantpool;
     exports java.lang.classfile.instruction;
     exports java.lang.constant;
@@ -156,7 +155,6 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         java.desktop, // for ScopedValue
-        java.se, // for ParticipatesInPreview
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
         jdk.jartool, // participates in preview features
@@ -177,6 +175,8 @@ module java.base {
         jdk.net,
         jdk.sctp,
         jdk.crypto.cryptoki;
+    exports jdk.internal.classfile.components to
+        jdk.jfr;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to
@@ -197,14 +197,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.org.objectweb.asm to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.tree to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.util to
-        jdk.jfr;
-    exports jdk.internal.org.objectweb.asm.commons to
-        jdk.jfr;
     exports jdk.internal.org.xml.sax to
         jdk.jfr;
     exports jdk.internal.org.xml.sax.helpers to
@@ -226,7 +218,8 @@ module java.base {
         jdk.jshell,
         jdk.nio.mapmode,
         jdk.unsupported,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.graal.compiler;
     exports jdk.internal.module to
         java.instrument,
         java.management.rmi,
@@ -291,7 +284,6 @@ module java.base {
         java.security.jgss,
         jdk.naming.dns;
     exports sun.net.util to
-        java.desktop,
         java.net.http,
         jdk.jconsole,
         jdk.sctp;
@@ -315,13 +307,7 @@ module java.base {
         java.desktop;
     exports sun.reflect.misc to
         java.desktop,
-        java.management,
-        java.management.rmi,
-        java.rmi,
-        java.sql.rowset;
-    exports sun.security.action to
-        java.desktop,
-        java.security.jgss;
+        java.management;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
@@ -333,7 +319,6 @@ module java.base {
     exports sun.security.pkcs to
         jdk.jartool;
     exports sun.security.provider to
-        java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
         jdk.security.auth;
@@ -347,9 +332,7 @@ module java.base {
     exports sun.security.tools to
         jdk.jartool;
     exports sun.security.util to
-        java.desktop,
         java.naming,
-        java.rmi,
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,

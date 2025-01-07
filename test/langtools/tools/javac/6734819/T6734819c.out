@@ -1,7 +1,9 @@
 [attribute Y]
 [flow Y]
+[warn Y]
 [attribute W]
 [flow W]
+[warn W]
 [attribute Z]
 [flow Z]
 T6734819c.java:15:11: compiler.err.unreachable.stmt

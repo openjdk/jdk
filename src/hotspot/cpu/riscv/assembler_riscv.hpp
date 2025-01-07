@@ -3107,6 +3107,38 @@ public:
 
 #undef INSN
 
+// --------------  Zicond Instruction Definitions  --------------
+// Zicond conditional operations extension
+  private:
+  enum CZERO_OP : unsigned int {
+    CZERO_NEZ = 0b111,
+    CZERO_EQZ = 0b101
+  };
+
+  template <CZERO_OP OP_VALUE>
+  void czero(Register Rd, Register Rs1, Register Rs2) {
+    assert_cond(UseZicond);
+    uint32_t insn = 0;
+    patch    ((address)&insn,  6,  0, 0b0110011);  // bits:  7, name: 0x33, attr: ['OP']
+    patch_reg((address)&insn,      7, Rd);         // bits:  5, name: 'rd'
+    patch    ((address)&insn, 14, 12, OP_VALUE);   // bits:  3, name: 0x7, attr: ['CZERO.NEZ'] / 0x5, attr: ['CZERO.EQZ']}
+    patch_reg((address)&insn,     15, Rs1);        // bits:  5, name: 'rs1', attr: ['value']
+    patch_reg((address)&insn,     20, Rs2);        // bits:  5, name: 'rs2', attr: ['condition']
+    patch    ((address)&insn, 31, 25, 0b0000111);  // bits:  7, name: 0x7, attr: ['CZERO']
+    emit_int32(insn);
+  }
+
+  public:
+  // Moves zero to a register rd, if the condition rs2 is equal to zero, otherwise moves rs1 to rd.
+  void czero_eqz(Register rd, Register rs1_value, Register rs2_condition) {
+    czero<CZERO_EQZ>(rd, rs1_value, rs2_condition);
+  }
+
+  // Moves zero to a register rd, if the condition rs2 is nonzero, otherwise moves rs1 to rd.
+  void czero_nez(Register rd, Register rs1_value, Register rs2_condition) {
+    czero<CZERO_NEZ>(rd, rs1_value, rs2_condition);
+  }
+
 // --------------  ZCB Instruction Definitions  --------------
 // Zcb additional C instructions
  private:
