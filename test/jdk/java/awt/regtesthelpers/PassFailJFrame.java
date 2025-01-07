@@ -427,37 +427,6 @@ public final class PassFailJFrame {
     /**
      * Constructs a frame which displays test instructions and
      * the <i>Pass</i> / <i>Fail</i> buttons
-     * with the given title, instructions, timeout, number of rows and columns.
-     * The screenshot feature is not enabled, if you use this constructor.
-     * <p>
-     * See {@link #PassFailJFrame(String,String,long,int,int)} for
-     * more details.
-     *
-     * @param title        the title of the instruction frame
-     * @param instructions the instructions for the tester
-     * @param testTimeOut  the test timeout in minutes
-     * @param rows         the number of rows for the text component
-     *                     which displays test instructions
-     * @param columns      the number of columns for the text component
-     *                     which displays test instructions
-     *
-     * @throws InterruptedException if the current thread is interrupted
-     *              while waiting for EDT to finish creating UI components
-     * @throws InvocationTargetException if an exception is thrown while
-     *              creating UI components on EDT
-     */
-    public PassFailJFrame(String title, String instructions,
-                          long testTimeOut,
-                          int rows, int columns)
-            throws InterruptedException, InvocationTargetException {
-        invokeOnEDT(() -> createUI(title, instructions,
-                                   testTimeOut,
-                                   rows, columns));
-    }
-
-    /**
-     * Constructs a frame which displays test instructions and
-     * the <i>Pass</i> / <i>Fail</i> buttons
      * as well as supporting UI components with the given title, instructions,
      * timeout, number of rows and columns.
      * All the UI components are created on the EDT, so it is safe to call
@@ -500,6 +469,26 @@ public final class PassFailJFrame {
      *
      * @see JTextArea#JTextArea(int,int) JTextArea(int rows, int columns)
      * @see Builder Builder
+     */
+
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut,
+                          int rows, int columns)
+            throws InterruptedException, InvocationTargetException {
+        invokeOnEDT(() -> createUI(title, instructions,
+                                   testTimeOut,
+                                   rows, columns));
+    }
+    
+    /**
+     * Configures {@code PassFailJFrame} using the builder.
+     * It creates test UI specified using {@code testUI} or {@code splitUI}
+     * methods on EDT.
+     * @param builder the builder with the parameters
+     * @throws InterruptedException if the current thread is interrupted while
+     *              waiting for EDT to complete a task
+     * @throws InvocationTargetException if an exception is thrown while
+     *              running a task on EDT
      */
     private PassFailJFrame(final Builder builder)
             throws InterruptedException, InvocationTargetException {
