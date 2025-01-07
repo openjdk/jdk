@@ -31,7 +31,6 @@
 import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import javax.swing.JFrame;
 import javax.swing.JScrollBar;
 import javax.swing.SwingUtilities;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +41,6 @@ import java.util.Date;
 public class bug4865918 {
 
     private static TestScrollBar sbar;
-    private static JFrame frame;
     private static final CountDownLatch mousePressLatch = new CountDownLatch(1);
 
     public static void main(String[] argv) throws Exception {
