@@ -189,7 +189,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_cos :
@@ -202,7 +202,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_tan :
@@ -215,7 +215,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log :
@@ -228,7 +228,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log10 :
@@ -241,7 +241,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_exp :
@@ -254,7 +254,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_pow :
@@ -268,7 +268,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_fmaD :
