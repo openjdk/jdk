@@ -21,35 +21,29 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.hierarchicallayout;
+package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.layout.Vertex;
-import java.awt.Point;
-import java.util.Set;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-public interface LayoutMover {
-    /**
-     * Moves a link by shifting its position along the X-axis.
-     *
-     * @param linkPos The current position of the link.
-     * @param shiftX  The amount to shift the link along the X-axis.
-     */
-    void moveLink(Point linkPos, int shiftX);
+public class EnableFreeLayoutAction extends EnableLayoutAction {
 
-    /**
-     * Moves a set of vertices.
-     *
-     * @param movedVertices A set of vertices to be moved.
-     */
-    void moveVertices(Set<? extends Vertex> movedVertices);
+    public EnableFreeLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
 
-    /**
-     * Moves a single vertex.
-     *
-     * @param movedVertex The vertex to be moved.
-     */
-    void moveVertex(Vertex movedVertex);
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/dynamic.png";
+    }
 
-    boolean isFreeForm();
+    @Override
+    protected String getDescription() {
+        return "Show dynamic free layout";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowFreeInteractive(this.isSelected());
+    }
 }
-
