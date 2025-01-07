@@ -24,12 +24,8 @@
 package compiler.vectorapi;
 
 import compiler.lib.ir_framework.*;
-
 import java.util.Random;
-
 import jdk.incubator.vector.*;
-
-import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 /**

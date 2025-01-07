@@ -29,7 +29,6 @@ import java.util.Arrays;
 import jdk.incubator.vector.*;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
