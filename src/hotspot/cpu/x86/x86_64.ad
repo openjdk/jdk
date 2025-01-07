@@ -4379,7 +4379,6 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
-/*
 instruct loadNKlassCompactHeaders_ndd(rRegN dst, memory mem)
 %{
   predicate(UseAPX && UseCompactObjectHeaders);
@@ -4393,7 +4392,7 @@ instruct loadNKlassCompactHeaders_ndd(rRegN dst, memory mem)
     __ eshrl($dst$$Register, $mem$$Address, markWord::klass_shift_at_offset, true);
   %}
   ins_pipe(ialu_reg_mem); // XXX
-%} */
+%}
 
 // Load Float
 instruct loadF(regF dst, memory mem)
@@ -5544,7 +5543,7 @@ instruct bytes_reverse_short(rRegI dst, rFlagsReg cr) %{
 //---------- Zeros Count Instructions ------------------------------------------
 
 instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
-  predicate(UseCountLeadingZerosInstruction && !UseAPX);
+  predicate(!UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI src));
   effect(KILL cr);
 
@@ -5556,7 +5555,7 @@ instruct countLeadingZerosI(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countLeadingZerosI_nf(rRegI dst, rRegI src) %{
-  predicate(UseCountLeadingZerosInstruction && UseAPX);
+  predicate(UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI src));
 
   format %{ "elzcntl  $dst, $src\t# count leading zeros (int  nf)" %}
@@ -5615,7 +5614,7 @@ instruct countLeadingZerosI_bsr(rRegI dst, rRegI src, rFlagsReg cr) %{
 %}
 
 instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
-  predicate(UseCountLeadingZerosInstruction && !UseAPX);
+  predicate(!UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosL src));
   effect(KILL cr);
 
@@ -5627,7 +5626,7 @@ instruct countLeadingZerosL(rRegI dst, rRegL src, rFlagsReg cr) %{
 %}
 
 instruct countLeadingZerosL_nf(rRegI dst, rRegL src) %{
-  predicate(UseCountLeadingZerosInstruction && UseAPX);
+  predicate(UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosL src));
 
   format %{ "elzcntq  $dst, $src\t# count leading zeros (long nf)" %}
@@ -5865,7 +5864,7 @@ instruct bytes_reversebit_long_gfni(rRegL dst, rRegL src, vlRegD xtmp1, vlRegD x
 //---------- Population Count Instructions -------------------------------------
 
 instruct popCountI(rRegI dst, rRegI src, rFlagsReg cr) %{
-  predicate(UsePopCountInstruction && !UseAPX);
+  predicate(!UseAPX && UsePopCountInstruction);
   match(Set dst (PopCountI src));
   effect(KILL cr);
 
@@ -5913,7 +5912,7 @@ instruct popCountI_mem_nf(rRegI dst, memory mem) %{
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
-  predicate(UsePopCountInstruction);
+  predicate(!UseAPX && UsePopCountInstruction);
   match(Set dst (PopCountL src));
   effect(KILL cr);
 
@@ -5926,7 +5925,7 @@ instruct popCountL(rRegI dst, rRegL src, rFlagsReg cr) %{
 
 // Note: Long.bitCount(long) returns an int.
 instruct popCountL_nf(rRegI dst, rRegL src) %{
-  predicate(UsePopCountInstruction && UseAPX);
+  predicate(UseAPX && UsePopCountInstruction);
   match(Set dst (PopCountL src));
 
   format %{ "epopcntq  $dst, $src\t# pop count (long nf)" %}
@@ -7023,7 +7022,6 @@ instruct addI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 
 instruct addI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
 %{
-  //TODO: SDE causing Illegal instruction
   predicate(UseAPX);
   match(Set dst (AddI src1 src2));
 
@@ -7407,7 +7405,7 @@ instruct addL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
 
 instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
 %{
-  predicate(UseIncDec && !UseAPX);
+  predicate(!UseAPX && UseIncDec);
   match(Set dst (AddL dst src));
   effect(KILL cr);
 
@@ -7420,7 +7418,7 @@ instruct incL_rReg(rRegI dst, immL1 src, rFlagsReg cr)
 
 instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val)
 %{
-  predicate(UseIncDec && UseAPX);
+  predicate(UseAPX && UseIncDec);
   match(Set dst (AddL src val));
 
   format %{ "eincq    $dst, $src\t# long ndd" %}
@@ -7432,7 +7430,7 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val)
 
 instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val)
 %{
-  predicate(UseIncDec && UseAPX);
+  predicate(UseAPX && UseIncDec);
   match(Set dst (AddL (LoadL src) val));
 
   format %{ "eincq    $dst, $src\t# long ndd" %}
@@ -9333,7 +9331,7 @@ instruct salL_rReg_immI2_ndd(rRegL dst, rRegL src, immI2 shift)
 
   format %{ "esalq    $dst, $src, $shift\t# long (ndd)" %}
   ins_encode %{
-    __ esalq($dst$$Register, $dst$$Register, $shift$$constant, true);
+    __ esalq($dst$$Register, $src$$Register, $shift$$constant, true);
   %}
   ins_pipe(ialu_reg);
 %}

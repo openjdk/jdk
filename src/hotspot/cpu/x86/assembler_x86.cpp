@@ -7214,21 +7214,6 @@ void Assembler::esubl(Register dst, Register src1, Register src2, bool no_flags)
   emit_arith(0x2B, 0xC0, src1, src2);
 }
 
-// Swap Steve
-// void Assembler::esubl(Register dst, Register src1, Register src2, bool no_flags) {
-//   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-//   (void) evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-//   // opcode matches gcc
-//   emit_arith(0x29, 0xC0, src2, src1);
-// }
-
-// void Assembler::esubl(Register dst, Register src1, Register src2, bool no_flags) {
-//   InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-//   (void) evex_prefix_and_encode_ndd(src2->encoding(), dst->encoding(), src1->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F_3C, &attributes, no_flags);
-//   // opcode matches gcc
-//   emit_arith(0x29, 0xC0, src1, src2);
-// }
-
 void Assembler::subsd(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionAttr attributes(AVX_128bit, /* rex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
