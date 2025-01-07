@@ -30,15 +30,18 @@ import java.nio.file.Path;
 
 
 /**
- * Packages the given {@link Application} and saves it at the given location.
+ * Creates app image directory from the given {@link Application} object.
+ *
+ *  @ see PackageWriter
  */
 @FunctionalInterface
 public interface ApplicationWriter {
+
     /**
-     * Packages the given {@link Application} and saves it at the given location.
+     * Creates app image directory from the given {@link Application} object in the given directory.
      *
-     * @param app an application to package
-     * @param dst destination where to save the packaged application
+     * @param app the source application
+     * @param dst the directory where to create app image of the source application
      * @throws PackagerException
      * @throws IOException
      */

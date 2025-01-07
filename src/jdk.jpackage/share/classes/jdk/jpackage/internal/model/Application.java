@@ -34,79 +34,92 @@ import java.util.stream.Stream;
 /**
  * A generic application for packaging.
  *
- * @apiNote
- * All paths of startup configurations of application launchers returned
- * by {@link #launchers()} call must be relative to the path returned by {@link #srcDir()} call.
+ * @apiNote All paths of startup configurations of application launchers
+ *          returned by {@link #launchers()} call must be relative to the path
+ *          returned by {@link #srcDir()} call.
  *
  * @see Package
  */
 public interface Application {
 
     /**
-     * Returns application's name.
-     * @return application name
+     * Gets the name of this application.
+     *
+     * @return the name of this application
      */
     String name();
 
     /**
-     * Returns application's description.
-     * @return application description
+     * Gets the description of this application.
+     *
+     * @return the description of this application
      */
     String description();
 
     /**
-     * Returns the application's version.
-     * @return application name
+     * Gets the version of this application.
+     *
+     * @return the version of this application
      */
     String version();
 
     /**
-     * Returns application's vendor.
-     * @return application vendor
+     * Gets the vendor of this application.
+     *
+     * @return the vendor of this application
      */
     String vendor();
 
     /**
-     * Returns application's copyright.
-     * @return application copyright
+     * Gets the copyright of this application.
+     *
+     * @return the copyright of this application
      */
     String copyright();
 
     /**
-     * Returns the application's source directory if available or an empty {@link Optional} instance.
+     * Gets the source directory of this application if available or an empty
+     * {@link Optional} instance.
      * <p>
-     * Source directory is a directory with the applications's classes and other resources.
+     * Source directory is a directory with the applications's classes and other
+     * resources.
      *
-     * @return application source directory
+     * @return the source directory of this application
      */
     Optional<Path> srcDir();
 
     /**
-     * Returns the application's input content directories.
+     * Gets the input content directories of this application.
      * <p>
-     * Contents of the content directories will be copied as-is into the dedicated location of the application image.
+     * Contents of the content directories will be copied as-is into the dedicated
+     * location of the application image.
      *
      * @see ApplicationLayout#contentDirectory
      *
-     * @return application content directories
+     * @return the input content directories of this application
      */
     List<Path> contentDirs();
 
     /**
-     * Returns app image layout.
-     * @return app image layout
+     * Gets the unresolved app image layout of this application.
+     *
+     * @return the unresolved app image layout of this application
      */
     AppImageLayout imageLayout();
 
     /**
-     * Returns app image layout as {@link ApplicationLayout} type or an empty {@link Optional} instance
-     * if the return value of {@link #imageLayout()} call is not instance of {@link ApplicationLayout}.
+     * Gets the unresolved app image layout of this application as
+     * {@link ApplicationLayout} type or an empty {@link Optional} instance if the
+     * return value of {@link #imageLayout()} call is not an instance of
+     * {@link ApplicationLayout} type.
      * <p>
-     * Returns an empty {@link Optional} instance if {@link #isRuntime()} returns <code>true</code>.
+     * Returns an empty {@link Optional} instance if {@link #isRuntime()} returns
+     * <code>true</code>.
      *
      * @see #isRuntime
      *
-     * @return app image as {@link ApplicationLayout}
+     * @return the unresolved app image layout of this application as
+     *         {@link ApplicationLayout}
      */
     default Optional<ApplicationLayout> asApplicationLayout() {
         if (imageLayout() instanceof ApplicationLayout layout) {
@@ -117,23 +130,27 @@ public interface Application {
     }
 
     /**
-     * Returns runtime builder if available or an empty {@link Optional} instance.
-     * @return runtime builder
+     * Gets the runtime builder of this application if available or an empty
+     * {@link Optional} instance.
+     *
+     * @return the runtime builder of this application
      */
     Optional<RuntimeBuilder> runtimeBuilder();
 
     /**
-     * Returns the name of the root app image directory.
-     * @return name of the root app image directory.
+     * Gets the name of the root app image directory of this application.
+     *
+     * @return the name of the root app image directory of this application
      */
     default Path appImageDirName() {
         return Path.of(name());
     }
 
     /**
-     * Returns application launchers.
+     * Gets the application launchers of this application.
      * <p>
-     * If the returned list is not empty, the first element in the list is the main launcher.
+     * If the returned list is not empty, the first element in the list is the main
+     * launcher.
      * <p>
      * Returns an empty list if {@link #isRuntime()} returns <code>true</code>.
      *
@@ -141,29 +158,31 @@ public interface Application {
      * @see #additionalLaunchers()
      * @see #isRuntime()
      *
-     * @return application launchers
+     * @return the application launchers of this application
      */
     List<Launcher> launchers();
 
     /**
-     * Returns the main application launcher or an empty {@link Optional} instance if the application doesn't have launchers.
+     * Returns the main application launcher of this application or an empty
+     * {@link Optional} instance if the application doesn't have launchers.
      * <p>
-     * Returns an empty {@link Optional} instance if {@link #isRuntime()} returns <code>true</code>.
+     * Returns an empty {@link Optional} instance if {@link #isRuntime()} returns
+     * <code>true</code>.
      *
      * @see #launchers()
      * @see #additionalLaunchers()
      * @see #isRuntime()
      *
-     * @return main application launcher
+     * @return the main application launcher of this application
      */
     default Optional<Launcher> mainLauncher() {
         return ApplicationLaunchers.fromList(launchers()).map(ApplicationLaunchers::mainLauncher);
     }
 
     /**
-     * Returns additional application launchers.
+     * Gets the additional application launchers of this application.
      * <p>
-     * Returns an empty list if there are no additional application launchers.
+     * Returns an empty list if this application doesn't have additional launchers.
      * <p>
      * Returns an empty list if {@link #isRuntime()} returns <code>true</code>.
      *
@@ -171,45 +190,52 @@ public interface Application {
      * @see #mainLauncher()
      * @see #isRuntime()
      *
-     * @return additional application launchers
+     * @return the additional application launchers of this application
      */
     default List<Launcher> additionalLaunchers() {
-        return ApplicationLaunchers.fromList(launchers()).map(ApplicationLaunchers::additionalLaunchers).orElseGet(Collections::emptyList);
+        return ApplicationLaunchers.fromList(launchers()).map(ApplicationLaunchers::additionalLaunchers)
+                .orElseGet(Collections::emptyList);
     }
 
     /**
-     * Returns <code>true</code> if the application for packaging is Java runtime.
-     * @return <code>true</code> if the application for packaging is Java runtime.
+     * Returns <code>true</code> if this application is Java runtime.
+     *
+     * @return <code>true</code> if this application is Java runtime
      */
     default boolean isRuntime() {
         return imageLayout() instanceof RuntimeLayout;
     }
 
     /**
-     * Returns <code>true</code> if any of application launchers are configured as services.
+     * Returns <code>true</code> if any of application launchers of this application
+     * are configured as services.
      *
      * @see Launcher#isService
      *
-     * @return <code>true</code> if any of application launchers are configured as services
+     * @return <code>true</code> if any of application launchers of this application
+     *         are configured as services
      */
     default boolean isService() {
-        return Optional.ofNullable(launchers()).orElseGet(List::of).stream().filter(
-                Launcher::isService).findAny().isPresent();
+        return Optional.ofNullable(launchers()).orElseGet(List::of).stream()
+                .filter(Launcher::isService).findAny().isPresent();
     }
 
     /**
-     * Gets the additional properties for the application entry in the app image (".jpackage") file.
+     * Gets the additional properties of this application for the application entry
+     * in the app image (".jpackage") file.
      *
-     * @return the additional properties for the application entry in ".jpackage" file
+     * @return the additional properties of this application for the application
+     *         entry in ".jpackage" file
      */
     default Map<String, String> extraAppImageFileData() {
         return Map.of();
     }
 
     /**
-     * Returns file associations of all application launchers.
+     * Gets the file associations of all application launchers of this application.
      *
-     * @return file associations of all application launchers
+     * @return the file associations of all application launchers of this
+     *         application
      *
      * @see Launcher#fileAssociations
      */
@@ -220,15 +246,14 @@ public interface Application {
     /**
      * Default implementation of {@link Application} interface.
      */
-    record Stub(String name, String description, String version, String vendor,
-            String copyright, Optional<Path> srcDir, List<Path> contentDirs,
-            AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
+    record Stub(String name, String description, String version, String vendor, String copyright, Optional<Path> srcDir,
+            List<Path> contentDirs, AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
             List<Launcher> launchers) implements Application {
     }
 
     /**
-     * Implementation of {@link Application} interface in which every method
-     * throws {@link UnsupportedOperationException} exception.
+     * Implementation of {@link Application} interface in which every method throws
+     * {@link UnsupportedOperationException} exception.
      */
     class Unsupported implements Application {
 

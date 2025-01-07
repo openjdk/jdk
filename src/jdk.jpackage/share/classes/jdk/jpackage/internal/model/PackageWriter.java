@@ -29,6 +29,19 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 
+/**
+ * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object.
+ *
+ * @ see ApplicationWriter
+ */
+@FunctionalInterface
 public interface PackageWriter {
+    /**
+     * Creates native package from the given {@link jdk.jpackage.internal.model.Package} object in the given directory.
+     * @param pkg the source package
+     * @param dst the directory where to create a native package
+     * @throws PackagerException
+     * @throws IOException
+     */
     void write(Package pkg, Path dst) throws PackagerException, IOException;
 }

@@ -40,13 +40,15 @@ import jdk.jpackage.internal.resources.ResourceLocator;
 public interface Launcher {
 
     /**
-     * Gets name of this launcher.
+     * Gets the name of this launcher.
+     *
      * @return the name of this launcher
      */
     String name();
 
     /**
-     * Gets name of the executable file of this launcher without file extension.
+     * Gets the name of the executable file of this launcher without file extension.
+     *
      * @return the name of the executable file of this launcher
      */
     default String executableName() {
@@ -54,7 +56,9 @@ public interface Launcher {
     }
 
     /**
-     * Gets extension of the executable file of this launcher if available or an empty {@link Optional} instance.
+     * Gets extension of the executable file of this launcher if available or an
+     * empty {@link Optional} instance otherwise.
+     *
      * @return the extension of the executable file of this launcher
      */
     default Optional<String> executableSuffix() {
@@ -62,7 +66,9 @@ public interface Launcher {
     }
 
     /**
-     * Gets full name of the executable file of this launcher. The full name consists of the name and the extension.
+     * Gets the full name of the executable file of this launcher. The full name
+     * consists of the name and the extension.
+     *
      * @return the full name of the executable file of this launcher
      */
     default String executableNameWithSuffix() {
@@ -70,34 +76,40 @@ public interface Launcher {
     }
 
     /**
-     * Gets startup information of this launcher if available or an empty {@link Optional} instance.
-     * @apiNote
-     * Launchers from an external application image may not have startup information.
+     * Gets the startup information of this launcher if available or an empty
+     * {@link Optional} instance otherwise.
+     *
+     * @apiNote Launchers from an external application image may not have startup
+     *          information.
      * @return the startup information of this launcher
      */
     Optional<LauncherStartupInfo> startupInfo();
 
     /**
-     * Gets file associations of this launcher.
+     * Gets the file associations of this launcher.
+     *
      * @return the file associations of this launcher
      */
     List<FileAssociation> fileAssociations();
 
     /**
      * Returns <code>true</code> if this launcher should be installed as a service.
+     *
      * @return <code>true</code> if this launcher should be installed as a service
      */
     boolean isService();
 
     /**
-     * Gets description of this launcher.
+     * Gets the description of this launcher.
+     *
      * @return the description of this launcher
      */
     String description();
 
     /**
-     * Opens a stream with the template executable file for this launcher.
-     * Caller is responsible for close the stream.
+     * Opens a stream with the template executable file for this launcher. Caller is
+     * responsible for close the stream.
+     *
      * @return a stream with the template executable file for this launcher
      */
     default InputStream executableResource() {
@@ -105,16 +117,20 @@ public interface Launcher {
     }
 
     /**
-     * Gets the additional properties for application launcher entries in the app image (".jpackage") file.
+     * Gets the additional properties for application launcher entries in the app
+     * image (".jpackage") file.
      *
-     * @return the additional properties for application launcher entries in ".jpackage" file
+     * @return the additional properties for application launcher entries in
+     *         ".jpackage" file
      */
     default Map<String, String> extraAppImageFileData() {
         return Map.of();
     }
 
     /**
-     * Gets the icon for this launcher or an empty {@link Optional} instance if the launcher is requested to have no icon.
+     * Gets the icon for this launcher or an empty {@link Optional} instance if the
+     * launcher is requested to have no icon.
+     *
      * @return the icon for this launcher
      * @see #hasIcon()
      * @see #hasDefaultIcon()
@@ -124,6 +140,7 @@ public interface Launcher {
 
     /**
      * Returns <code>true</code> if this launcher is requested to have an icon.
+     *
      * @return <code>true</code> if this launcher is requested to have an icon
      * @see #icon()
      * @see #hasDefaultIcon()
@@ -135,6 +152,7 @@ public interface Launcher {
 
     /**
      * Returns <code>true</code> if this launcher has a default icon.
+     *
      * @return <code>true</code> if this launcher has a default icon
      * @see DefaultLauncherIcon
      * @see #icon()
@@ -147,6 +165,7 @@ public interface Launcher {
 
     /**
      * Returns <code>true</code> if this launcher has a custom icon.
+     *
      * @return <code>true</code> if this launcher has a custom icon
      * @see CustomLauncherIcon
      * @see #icon()
@@ -158,7 +177,9 @@ public interface Launcher {
     }
 
     /**
-     * Gets key in the resource bundle of {@link jdk.jpackage/} module referring to the default launcher icon.
+     * Gets key in the resource bundle of {@link jdk.jpackage/} module referring to
+     * the default launcher icon.
+     *
      * @return the key in the resource bundle referring to the default launcher icon
      */
     String defaultIconResourceName();
@@ -166,15 +187,14 @@ public interface Launcher {
     /**
      * Default implementation of {@link Launcher} interface.
      */
-    record Stub(String name, Optional<LauncherStartupInfo> startupInfo,
-            List<FileAssociation> fileAssociations, boolean isService,
-            String description, Optional<LauncherIcon> icon,
-            String defaultIconResourceName) implements Launcher {
+    record Stub(String name, Optional<LauncherStartupInfo> startupInfo, List<FileAssociation> fileAssociations,
+            boolean isService, String description, Optional<LauncherIcon> icon, String defaultIconResourceName)
+            implements Launcher {
     }
 
     /**
-     * Implementation of {@link Launcher} interface in which every method
-     * throws {@link UnsupportedOperationException} exception.
+     * Implementation of {@link Launcher} interface in which every method throws
+     * {@link UnsupportedOperationException} exception.
      */
     class Unsupported implements Launcher {
 

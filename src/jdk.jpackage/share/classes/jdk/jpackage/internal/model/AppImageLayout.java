@@ -38,17 +38,25 @@ import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 /**
  * Generic app image directory layout.
+ *
+ * App image layout is a collection of files and directories with specific roles
+ * (executables, configuration files, etc.) sharing the same root directory.
+ *
+ * The layout is "unresolved" if the root directory is an empty string and
+ * "resolved" otherwise.
  */
 public interface AppImageLayout {
 
     /**
      * A path to Java runtime directory.
+     *
      * @return Java runtime sub-directory within this app image
      */
     Path runtimeDirectory();
 
     /**
      * Creates a copy of this app image resolved at the given root directory.
+     *
      * @param root path to a directory at which to resolve the layout
      * @return a copy of this app image resolved at the given root directory
      */
@@ -66,7 +74,8 @@ public interface AppImageLayout {
     }
 
     /**
-     * Creates {@link PathGroup} object from the given {@link AppImageLayout} instance.
+     * Creates {@link PathGroup} object from the given {@link AppImageLayout}
+     * instance.
      *
      * It will call every non-static accessible method without parameters and with
      * {@link Path} return type of the given {@link AppImageLayout} instance.
@@ -75,7 +84,8 @@ public interface AppImageLayout {
      * object under the key equals the name of a function used in the call.
      *
      * @param appImageLayout source layout object
-     * @return {@link PathGroup} object constructed from the given source layout object
+     * @return {@link PathGroup} object constructed from the given source layout
+     *         object
      */
     public static PathGroup toPathGroup(AppImageLayout appImageLayout) {
         return new PathGroup(Stream.of(appImageLayout.getClass().getInterfaces())

@@ -28,9 +28,10 @@ import java.nio.file.Path;
 import jdk.jpackage.internal.util.CompositeProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
-
 /**
- * Java runtime app image layout. Returns the root app image directory.
+ * Java runtime app image layout.
+ * <p>
+ * Use {@link #DEFAULT} to get the instance of {@link RuntimeLayout} type.
  */
 public interface RuntimeLayout extends AppImageLayout {
 
@@ -39,9 +40,16 @@ public interface RuntimeLayout extends AppImageLayout {
         return create(new AppImageLayout.Stub(resolveNullablePath(root, runtimeDirectory())));
     }
 
-    static RuntimeLayout create(AppImageLayout layout) {
+    private static RuntimeLayout create(AppImageLayout layout) {
         return CompositeProxy.create(RuntimeLayout.class, layout);
     }
 
+    /**
+     * Singleton.
+     * <p>
+     * {@link #runtimeDirectory()} of the singleton returns empty string (""), i.e.
+     * the runtime directory is the same as the directory at which the layout is
+     * resolved.
+     */
     static final RuntimeLayout DEFAULT = create(new AppImageLayout.Stub(Path.of("")));
 }
