@@ -45,7 +45,7 @@ import org.junit.jupiter.api.Test;
  * @requires os.family == "mac"
  * @summary Check whether loading of certificates from macOS Keychain correctly
  *          loads intermediate CA certificates
- * @run junit CheckMacOSKeyChainIntermediateCATrust
+ * @run junit/manual CheckMacOSKeyChainIntermediateCATrust
  */
 public class CheckMacOSKeyChainIntermediateCATrust {
 
