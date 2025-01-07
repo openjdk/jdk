@@ -1305,7 +1305,7 @@ static void print_negative_lookup_stats(uintx bitmap, outputStream* st) {
 void Klass::print_secondary_supers_on(outputStream* st) const {
   if (secondary_supers() != nullptr) {
     st->print("  - "); st->print("%d elements;", _secondary_supers->length());
-    st->print_cr(" bitmap: " INTPTR_FORMAT, _secondary_supers_bitmap);
+    st->print_cr(" bitmap: " UINTX_FORMAT_X_0, _secondary_supers_bitmap);
     if (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
         _secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
       st->print("  - "); print_positive_lookup_stats(secondary_supers(),

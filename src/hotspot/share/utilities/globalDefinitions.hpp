@@ -159,13 +159,15 @@ class oopDesc;
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
 
-// Format pointers which change size between 32- and 64-bit.
+// Format pointers and padded integral values which change size between 32- and 64-bit.
 #ifdef  _LP64
 #define INTPTR_FORMAT            "0x%016"     PRIxPTR
 #define PTR_FORMAT               "0x%016"     PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
 #else   // !_LP64
 #define INTPTR_FORMAT            "0x%08"      PRIxPTR
 #define PTR_FORMAT               "0x%08"      PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
 #endif  // _LP64
 
 // Convert pointer to intptr_t, for use in printing pointers.
