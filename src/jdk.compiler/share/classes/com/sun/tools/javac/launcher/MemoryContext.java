@@ -186,7 +186,6 @@ final class MemoryContext {
      * @return class loader object able to find and load the desired class
      * @throws Fault if a modular application class is in the unnamed package
      */
-    @SuppressWarnings("restricted")
     ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws Fault {
         var moduleInfoBytes = inMemoryClasses.get("module-info");
         if (moduleInfoBytes == null) {
@@ -209,7 +208,9 @@ final class MemoryContext {
         var modulePathModules = modulePathFinder.findAll().stream().map(ModuleReference::descriptor).map(ModuleDescriptor::name).toList();
         if (!modulePathModules.isEmpty()) {
             var modulePathConfiguration = bootLayer.configuration().resolveAndBind(modulePathFinder, ModuleFinder.of(), Set.copyOf(modulePathModules));
-            var modulePathLayer = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent).layer();
+            var modulePathController = ModuleLayer.defineModulesWithOneLoader(modulePathConfiguration, List.of(bootLayer), parent);
+            enableNativeAccess(modulePathController, false);
+            var modulePathLayer = modulePathController.layer();
             parentLayer = modulePathLayer;
             parentLoader = modulePathLayer.findLoader(modulePathModules.getFirst());
         }
@@ -228,13 +229,7 @@ final class MemoryContext {
         memoryController.addOpens(module, mainClassNamePackageName, getClass().getModule());
 
         // Configure native access for the modular application.
-        // TODO: warn about unknown module(s)
-        // TODO: warn/fail if enableNativeAccess() throws an exception
-        for (var candidate : options.enableNativeAccessForModules()) {
-            if (candidate.equals(applicationModule.name())) {
-                memoryController.enableNativeAccess(module);
-            }
-        }
+        enableNativeAccess(memoryController, true);
 
         return memoryLayer.findLoader(applicationModule.name());
     }
@@ -246,6 +241,24 @@ final class MemoryContext {
         }
         var paths = Arrays.stream(elements.split(File.pathSeparator)).map(Path::of);
         return ModuleFinder.of(paths.toArray(Path[]::new));
+    }
+
+    @SuppressWarnings("restricted")
+    private void enableNativeAccess(ModuleLayer.Controller controller, boolean shouldWarn) {
+        var layer = controller.layer();
+        for (var name : options.enableNativeAccessForModules()) {
+            var found = layer.findModule(name);
+            if (found.isPresent()) {
+                var module = found.get();
+                if (!module.isNativeAccessEnabled()) {
+                    controller.enableNativeAccess(module);
+                }
+                continue;
+            }
+            if (shouldWarn) {
+                out.println("WARNING: Unknown module: " + name + " specified to --enable-native-access");
+            }
+        }
     }
 
     static class MemoryPreview extends Preview {

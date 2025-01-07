@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,8 @@ class ModuleSourceLauncherTests {
                 class Prog1 {
                   public static void main(String... args) {
                     System.out.println(new foo.Foo());
+                    System.out.println("bar=" + Prog1.class.getModule().isNativeAccessEnabled());
+                    System.out.println("foo=" + foo.Foo.class.getModule().isNativeAccessEnabled());
                   }
                 }
                 """);
@@ -199,6 +201,7 @@ class ModuleSourceLauncherTests {
         var command = List.of(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                 "-p", ".",
+                "--enable-native-access", "foo,bar,baz",
                 "bar/bar/Prog1.java");
         var redirectedOut = base.resolve("out.redirected");
         var redirectedErr = base.resolve("err.redirected");
@@ -212,12 +215,17 @@ class ModuleSourceLauncherTests {
         var err = Files.readAllLines(redirectedErr);
 
         assertAll(
-                () -> assertEquals(0, code),
+                () -> assertEquals(0, code, out.toString()),
                 () -> assertLinesMatch(
                       """
                       Foo[]
+                      bar=true
+                      foo=true
                       """.lines(), out.stream()),
-                () -> assertTrue(err.isEmpty())
+                () -> assertLinesMatch(
+                      """
+                      WARNING: Unknown module: baz specified to --enable-native-access
+                      """.lines(), err.stream())
         );
     }
 
