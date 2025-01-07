@@ -1269,8 +1269,10 @@ static bool monitors_used_above_threshold(MonitorList* list) {
     return false;
   }
   size_t old_ceiling = ObjectSynchronizer::in_use_list_ceiling();
-  // Make sure the we use a ceiling value that is not lower than the
-  // max used by the system, and not zero.
+  // Make sure that we use a ceiling value that is not lower than
+  // previous, not lower than the recorded max used by the system, and
+  // not lower than the current number of monitors in use (which can
+  // race ahead of max). The result is guaranteed > 0.
   size_t ceiling = MAX3(old_ceiling, list->max(), monitors_used);
 
   // Check if our monitor usage is above the threshold:
@@ -1285,7 +1287,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
     if (NoAsyncDeflationProgressMax != 0 &&
         _no_progress_cnt >= NoAsyncDeflationProgressMax) {
       double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
-      size_t delta = (size_t)((double)ceiling * remainder) + 1;
+      size_t delta = (size_t)(ceiling * remainder) + 1;
       size_t new_ceiling = (ceiling > SIZE_MAX - delta)
         ? SIZE_MAX         // Overflow, let's clamp new_ceiling.
         : ceiling + delta;
