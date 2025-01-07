@@ -548,8 +548,7 @@ public final class TaskHelper {
                             throw new BadArgs("err.missing.arg", name).showUsage(true);
                         }
                         if (potentiallyGnuOption && param.length() >= 2 &&
-                                param.charAt(0) == '-' && param.charAt(1) == '-' &&
-                                !param.contains(" ")) {
+                                param.charAt(0) == '-' && param.charAt(1) == '-') {
                             throw new BadArgs("err.missing.arg", name).showUsage(true);
                         }
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,13 @@
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.TaskHelper;
@@ -35,6 +39,7 @@ import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -55,13 +60,18 @@ public class TaskHelperTest {
     private static final List<Option<TaskHelperTest>> OPTIONS = List.of(
         new Option<>(true, (task, opt, arg) -> {
             System.out.println(arg);
-            argValue = arg;
+            mainArgValue = arg;
         }, true, "--main-expecting"),
         new Option<>(false, (task, opt, arg) -> {
+            mainFlag = true;
         }, true, "--main-no-arg")
     );
 
     private static String argValue;
+    private static String mainArgValue;
+    private static boolean mainFlag = false;
+
+    public record ArgTestCase(String cmdLine, String[] tokens, String pluginArgValue, String mainArgValue, boolean mainFlagSet) {};
 
     public static class TestPluginWithRawOption implements Plugin {
         @Override
@@ -103,46 +113,108 @@ public class TaskHelperTest {
         PluginRepository.registerPlugin(new TestPluginWithRawOption());
     }
 
-    @Test
-    public void testGnuStyleOptionAsArgValue() throws TaskHelper.BadArgs {
-        var validFormats = new String[][] {
-            { "--main-expecting=--main-no-arg", "--main-no-arg" },
-            { "--main-expecting", "--main-no-arg --list", "--main-no-arg"},
-            { "--main-expecting", " --main-no-arg", "--main-no-arg" },
-            { "--raw-arg-plugin=--main-no-arg", "--main-no-arg" },
-            { "--raw-arg-plugin", "--main-no-arg --list", "--main-no-arg"},
-            { "--raw-arg-plugin", " --main-no-arg", "--main-no-arg" },
-        };
+    @BeforeEach
+    public void reset() {
+        argValue = null;
+        mainArgValue = null;
+        mainFlag = false;
+    }
 
-        for (var args: validFormats) {
-            var remaining = optionsHelper.handleOptions(this, args);
-            try {
-                // trigger Plugin::configure
-                taskHelper.getPluginsConfig(null, null, null);
-            } catch (IOException ex) {
-                fail("Unexpected IOException");
-            }
-            assertTrue(remaining.isEmpty());
-            assertTrue(argValue.strip().startsWith("--main-no-arg"));
-            // reset
-            argValue = null;
+    public static Stream<ArgTestCase> gnuStyleUsages() {
+        return Stream.of(
+            new ArgTestCase(
+                    "--main-expecting=--main-no-arg --main-no-arg",
+                    new String[] { "--main-expecting=--main-no-arg", "--main-no-arg" },
+                    null,
+                    "--main-no-arg",
+                    true
+            ),
+            new ArgTestCase(
+                    "--main-expecting ' --main-no-arg' --main-no-arg",
+                    new String[] { "--main-expecting", " --main-no-arg", "--main-no-arg" },
+                    null,
+                    " --main-no-arg",
+                    true
+            ),
+            new ArgTestCase(
+                    "--raw-arg-plugin=--main-no-arg --main-no-arg",
+                    new String[] { "--raw-arg-plugin=--main-no-arg", "--main-no-arg" },
+                    "--main-no-arg",
+                    null,
+                    true
+            ),
+            new ArgTestCase(
+                    "--raw-arg-plugin ' --main-no-arg' --main-no-arg",
+                    new String[] { "--raw-arg-plugin", " --main-no-arg", "--main-no-arg" },
+                    " --main-no-arg",
+                    null,
+                    true
+            ),
+            new ArgTestCase(
+                    "--raw-arg-plugin=--main-expecting=value --main-no-arg",
+                    new String[] { "--raw-arg-plugin=--main-expecting=value", "--main-no-arg" },
+                    "--main-expecting=value",
+                    null,
+                    true
+            ),
+            new ArgTestCase(
+                    "--raw-arg-plugin='--main-expecting value' --main-no-arg",
+                    new String[] { "--raw-arg-plugin=--main-expecting value", "--main-no-arg" },
+                    "--main-expecting value",
+                    null,
+                    true
+            ),
+            new ArgTestCase(
+                    "--raw-arg-plugin='--main-expecting value' --main-expecting realValue",
+                    new String[] { "--raw-arg-plugin=--main-expecting value", "--main-expecting", "realValue" },
+                    "--main-expecting value",
+                    "realValue",
+                    false
+            ));
+    }
+
+    @ParameterizedTest
+    @MethodSource("gnuStyleUsages")
+    public void testGnuStyleOptionAsArgValue(ArgTestCase testCase) throws TaskHelper.BadArgs {
+        System.out.println("Test cmdline: " + testCase.cmdLine());
+        var args = testCase.tokens();
+        var remaining = optionsHelper.handleOptions(this, args);
+        try {
+            // trigger Plugin::configure
+            taskHelper.getPluginsConfig(null, null, null);
+        } catch (IOException ex) {
+            fail("Unexpected IOException");
         }
+        assertTrue(remaining.isEmpty());
+        assertEquals(testCase.mainFlagSet(), mainFlag);
+        assertEquals(testCase.pluginArgValue(), argValue);
+        assertEquals(testCase.mainArgValue(), mainArgValue);
     }
 
     @Test
     public void testGnuStyleOptionAsArgValueMissing() {
-        var validFormats = new String[][] {
-            { "--main-expecting", "--main-no-arg", "--main-no-arg"},
-            { "--raw-arg-plugin", "--main-no-arg", "--main-no-arg"}
+            var invalidFormat = new String[][] {
+                { "--main-expecting", "--main-no-arg --list", "--main-no-arg" },
+                { "--main-expecting", "--main-no-arg", "--main-no-arg" },
+                { "--raw-arg-plugin", "--main-no-arg --list", "--main-no-arg" },
+                { "--raw-arg-plugin", "--main-no-arg", "--main-no-arg" },
+                { "--raw-arg-plugin", "--main-expecting", "value", "--main-no-arg" }
         };
 
-        for (var args: validFormats) {
+        for (var args: invalidFormat) {
             try {
                 optionsHelper.handleOptions(this, args);
-                fail("Should get missing argument value");
+                fail("Should get missing argument value or ");
             } catch (BadArgs ex) {
                 // expected
             }
         }
+    }
+
+    @Test
+    public void testRemaining() throws BadArgs {
+        String[] args = { "--raw-arg-plugin=--main-expecting", "value", "--main-no-arg" };
+        var remaining = optionsHelper.handleOptions(this, args);
+        assertEquals(2, remaining.size());
     }
 }
