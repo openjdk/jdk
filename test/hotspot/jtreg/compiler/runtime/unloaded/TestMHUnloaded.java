@@ -31,6 +31,13 @@
  *
  * @compile TestMHUnloaded.java TestMHUnloadedHelper.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.runtime.unloaded.TestMHUnloadedHelper
+ *             jdk.internal.org.objectweb.asm.ClassWriter jdk.internal.org.objectweb.asm.ClassVisitor
+ *             jdk.internal.org.objectweb.asm.SymbolTable jdk.internal.org.objectweb.asm.SymbolTable$Entry
+ *             jdk.internal.org.objectweb.asm.Symbol jdk.internal.org.objectweb.asm.ByteVector
+ *             jdk.internal.org.objectweb.asm.MethodWriter jdk.internal.org.objectweb.asm.MethodVisitor
+ *             jdk.internal.org.objectweb.asm.Type jdk.internal.org.objectweb.asm.Label
+ *             jdk.internal.org.objectweb.asm.Handler jdk.internal.org.objectweb.asm.Attribute
+ *             jdk.internal.org.objectweb.asm.AnnotationWriter jdk.internal.org.objectweb.asm.AnnotationVisitor
  *
  * @run main/othervm -Xbootclasspath/a:.
  *                   -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,*::test
