@@ -31,8 +31,11 @@ import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 /**
  * Application app image layout.
- *
+ * <p>
  * Application is comprised from application files and Java runtime.
+ * <p>
+ * Use {@link #build()} or {@link #buildFrom(ApplicationLayout)} methods to
+ * configure and construct instances of this interface.
  */
 public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixin {
 
@@ -61,6 +64,9 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         return new Builder(appLayout);
     }
 
+    /**
+     * Builds {@link ApplicationLayout} instances.
+     */
     final class Builder {
         private Builder() {
         }

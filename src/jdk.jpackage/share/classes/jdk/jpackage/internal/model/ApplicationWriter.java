@@ -29,6 +29,18 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 
+/**
+ * Packages the given {@link Application} and saves it at the given location.
+ */
+@FunctionalInterface
 public interface ApplicationWriter {
+    /**
+     * Packages the given {@link Application} and saves it at the given location.
+     *
+     * @param app an application to package
+     * @param dst destination where to save the packaged application
+     * @throws PackagerException
+     * @throws IOException
+     */
     void write(Application app, Path dst) throws PackagerException, IOException;
 }

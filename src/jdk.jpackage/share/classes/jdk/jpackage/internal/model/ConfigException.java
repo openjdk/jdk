@@ -28,9 +28,27 @@ package jdk.jpackage.internal.model;
 import jdk.jpackage.internal.util.LocalizedExceptionBuilder;
 import jdk.jpackage.internal.util.StringBundle;
 
+/**
+ * Signals that error has occurred at configuration phase.
+ * <p>
+ * It contains an error message and an optional advice message on how to correct the error.
+ * <p>
+ * The preferred way to construct instances of this class is to use
+ * {@link #build(StringBundle)}, or {@link #build(StringBundle, Throwable)},
+ * or {@link #build(StringBundle, String, Object...)} methods.
+ *
+ * {@snippet :
+ * StringBundle i18n = getStringBundle(); // Some way to obtain a string bundle with localized messages
+ *
+ * throw ConfigException.build(i18n)
+ *         .message("error.no.name")
+ *         .advice("error.no.name.advice")
+ *         .create()
+ * }
+ */
 public class ConfigException extends Exception {
     private static final long serialVersionUID = 1L;
-    final String advice;
+    private final String advice;
 
     public ConfigException(String msg, String advice) {
         super(msg);
@@ -63,6 +81,9 @@ public class ConfigException extends Exception {
         return build(i18n).causeAndMessage(t);
     }
 
+    /**
+     * Builds {@link ConfigException} instances.
+     */
     public static class Builder extends LocalizedExceptionBuilder<Builder> {
 
         public Builder advice(String adviceId, Object ... args) {
@@ -85,6 +106,17 @@ public class ConfigException extends Exception {
         private String advice;
     }
 
+    /**
+     * Throws the cause of the given {@link RuntimeException} exception
+     * as {@link ConfigException} if the cause is of this type or re-throws the given
+     * {@link RuntimeException} exception as-is otherwise.
+     * <p>
+     * Never return a value. It always throws some exception object.
+     *
+     * @param ex exception to re-throw
+     * @return doesn't return value
+     * @throws ConfigException
+     */
     public static RuntimeException rethrowConfigException(RuntimeException ex) throws ConfigException {
         if (ex.getCause() instanceof ConfigException configEx) {
             throw configEx;
