@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class CK_KEY_DERIVATION_STRING_DATA {
      *   CK_ULONG ulLen;
      * </pre>
      */
-    public byte[] pData;
+    public final byte[] pData;
 
     public CK_KEY_DERIVATION_STRING_DATA(byte[] pData) {
         this.pData = pData;

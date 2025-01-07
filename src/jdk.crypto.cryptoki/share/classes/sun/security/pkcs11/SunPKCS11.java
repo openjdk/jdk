@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1522,8 +1522,8 @@ public final class SunPKCS11 extends AuthProvider {
                 }
             } else if (type == KDF) {
                 try {
-                    return new P11KDF(token, algorithm, (KDFParameters) param,
-                            mechanism);
+                    return new P11HKDF(token, algorithm, mechanism,
+                            (KDFParameters) param);
                 } catch (ClassCastException |
                          InvalidAlgorithmParameterException e) {
                     throw new NoSuchAlgorithmException(

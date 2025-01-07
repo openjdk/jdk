@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
-final class P11KDF extends KDFSpi {
+final class P11HKDF extends KDFSpi {
     private final Token token;
     private final P11SecretKeyFactory.HKDFKeyInfo svcKi;
     private final long hmacMechanism;
@@ -68,14 +68,15 @@ final class P11KDF extends KDFSpi {
         return null;
     }
 
-    P11KDF(Token token, String algorithm, KDFParameters kdfParameters,
-            long hmacMechanism) throws InvalidAlgorithmParameterException {
+    P11HKDF(Token token, String algorithm, long hmacMechanism,
+            KDFParameters kdfParameters)
+            throws InvalidAlgorithmParameterException {
         super(requireNull(kdfParameters,
                 algorithm + " does not support parameters"));
         this.token = token;
         this.hmacMechanism = hmacMechanism;
         this.svcKi = P11SecretKeyFactory.getHKDFKeyInfo(algorithm);
-        assert this.svcKi != null : "Only HKDF algorithms supported.";
+        assert this.svcKi != null : "Unsupported HKDF algorithm " + algorithm;
     }
 
     @Override
@@ -280,11 +281,11 @@ final class P11KDF extends KDFSpi {
     private final class AnyKeyMaterialMerger extends KeyMaterialMerger {
 
         protected KeyMaterialMerger merge(byte[] nextKeyMaterial) {
-            return P11KDF.this.new DataKeyMaterialMerger(nextKeyMaterial);
+            return P11HKDF.this.new DataKeyMaterialMerger(nextKeyMaterial);
         }
 
         protected KeyMaterialMerger merge(P11Key.P11SecretKey nextKeyMaterial) {
-            return P11KDF.this.new KeyKeyMaterialMerger(nextKeyMaterial);
+            return P11HKDF.this.new KeyKeyMaterialMerger(nextKeyMaterial);
         }
 
         SecretKey getKeyMaterial() {
@@ -341,7 +342,7 @@ final class P11KDF extends KDFSpi {
         }
 
         protected KeyMaterialMerger merge(P11Key.P11SecretKey nextKeyMaterial) {
-            return P11KDF.this.new KeyKeyMaterialMerger(p11Merge(
+            return P11HKDF.this.new KeyKeyMaterialMerger(p11Merge(
                     nextKeyMaterial, new CK_MECHANISM(
                             CKM_CONCATENATE_DATA_AND_BASE,
                             new CK_KEY_DERIVATION_STRING_DATA(keyMaterial)),
@@ -354,7 +355,7 @@ final class P11KDF extends KDFSpi {
     }
 
     private SecretKey consolidateKeyMaterial(List<SecretKey> keys) {
-        KeyMaterialMerger keyMerger = P11KDF.this.new AnyKeyMaterialMerger();
+        KeyMaterialMerger keyMerger = P11HKDF.this.new AnyKeyMaterialMerger();
         for (SecretKey key : keys) {
             keyMerger = keyMerger.merge(key);
         }

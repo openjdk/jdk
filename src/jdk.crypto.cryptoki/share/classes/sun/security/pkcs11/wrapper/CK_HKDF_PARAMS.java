@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 package sun.security.pkcs11.wrapper;
 
 /**
- * class CK_HKDF_PARAMS provides the parameters to the CKM_HKDF_DERIVE,
- * CKM_HKDF_DATA and CKM_HKDF_KEY_GEN mechanisms.<p>
+ * class CK_HKDF_PARAMS provides the parameters to the CKM_HKDF_DERIVE and
+ * CKM_HKDF_DATA mechanisms.<p>
  * <b>PKCS#11 structure:</b>
  * <pre>
  * typedef struct CK_HKDF_PARAMS {
@@ -52,7 +52,7 @@ public class CK_HKDF_PARAMS {
      *   CK_BBOOL bExtract;
      * </pre>
      */
-    public boolean bExtract;
+    public final boolean bExtract;
 
     /**
      * <b>PKCS#11:</b>
@@ -60,7 +60,7 @@ public class CK_HKDF_PARAMS {
      *   CK_BBOOL bExpand;
      * </pre>
      */
-    public boolean bExpand;
+    public final boolean bExpand;
 
     /**
      * <b>PKCS#11:</b>
@@ -68,7 +68,7 @@ public class CK_HKDF_PARAMS {
      *   CK_MECHANISM_TYPE prfHashMechanism;
      * </pre>
      */
-    public long prfHashMechanism;
+    public final long prfHashMechanism;
 
     /**
      * <b>PKCS#11:</b>
@@ -76,7 +76,7 @@ public class CK_HKDF_PARAMS {
      *   CK_ULONG ulSaltType;
      * </pre>
      */
-    public long ulSaltType;
+    public final long ulSaltType;
 
     /**
      * <b>PKCS#11:</b>
@@ -85,7 +85,7 @@ public class CK_HKDF_PARAMS {
      *   CK_ULONG ulSaltLen;
      * </pre>
      */
-    public byte[] pSalt;
+    public final byte[] pSalt;
 
     /**
      * <b>PKCS#11:</b>
@@ -93,7 +93,7 @@ public class CK_HKDF_PARAMS {
      *   CK_OBJECT_HANDLE hSaltKey;
      * </pre>
      */
-    public long hSaltKey;
+    public final long hSaltKey;
 
     /**
      * <b>PKCS#11:</b>
@@ -102,7 +102,7 @@ public class CK_HKDF_PARAMS {
      *   CK_ULONG ulInfoLen;
      * </pre>
      */
-    public byte[] pInfo;
+    public final byte[] pInfo;
 
     public CK_HKDF_PARAMS(boolean bExtract, boolean bExpand,
             long prfHashMechanism, long ulSaltType, byte[] pSalt, long hSaltKey,
