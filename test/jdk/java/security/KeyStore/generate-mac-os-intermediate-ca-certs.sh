@@ -23,3 +23,4 @@ openssl x509 -req \
  -sha256
 
  rm -f root.key test-intermediate-ca.csr intermediate.key test-ca.srl
+ 
