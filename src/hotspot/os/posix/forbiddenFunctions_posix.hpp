@@ -27,6 +27,7 @@
 
 #include "utilities/compilerWarnings.hpp"
 #include <stddef.h> // for size_t
+#include <unistd.h> // clang workaround for _exit - see FORBID macro.
 
 // If needed, add os::strndup and use that instead.
 FORBID_C_FUNCTION(char* strndup(const char*, size_t), "don't use");

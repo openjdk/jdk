@@ -29,7 +29,7 @@
 #include "utilities/macros.hpp"
 #include <stdarg.h> // for va_list
 #include <stddef.h> // for size_t
-#include <stdlib.h> // clang workaround for exit, _exit - see FORBID macro.
+#include <stdlib.h> // clang workaround for exit, _exit, _Exit - see FORBID macro.
 
 #include OS_HEADER(forbiddenFunctions)
 
@@ -39,7 +39,10 @@
 // avoided entirely.
 
 FORBID_IMPORTED_NORETURN_C_FUNCTION(void exit(int), "use os::exit")
-FORBID_IMPORTED_NORETURN_C_FUNCTION(void _exit(int), "use os::_exit")
+FORBID_IMPORTED_NORETURN_C_FUNCTION(void _Exit(int), "use os::exit")
+
+// Windows puts _exit in <stdlib.h>, POSIX in <unistd.h>.
+FORBID_IMPORTED_NORETURN_C_FUNCTION(void _exit(int), "use os::exit")
 
 FORBID_IMPORTED_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_IMPORTED_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
@@ -50,7 +53,7 @@ FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::v
 
 // All of the following functions return raw C-heap pointers (sometimes as an
 // option, e.g. realpath or getwd) or, in case of free(), take raw C-heap
-// pointers.
+// pointers.  We generally want allocation to be done through NMT.
 FORBID_IMPORTED_C_FUNCTION(void* malloc(size_t size), "use os::malloc");
 FORBID_IMPORTED_C_FUNCTION(void free(void *ptr), "use os::free");
 FORBID_IMPORTED_C_FUNCTION(void* calloc(size_t nmemb, size_t size), "use os::malloc and zero out manually");
