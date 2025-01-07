@@ -237,7 +237,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       # Additional warnings that are not activated by -Wall and -Wextra
       WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wreturn-type -Wsign-compare \
           -Wtrampolines -Wundef -Wunused-const-variable=1 -Wunused-function \
-          -Wunused-result -Wunused-value"
+          -Wunused-result -Wunused-value -Wtype-limits -Wuninitialized"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
@@ -754,10 +754,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    FLAGS_SETUP_GCC6_COMPILER_FLAGS($1, $3)
-    $1_TOOLCHAIN_CFLAGS="${$1_GCC6_CFLAGS}"
-
-    $1_WARNING_CFLAGS_JVM="-Wno-format-zero-length -Wtype-limits -Wuninitialized"
+    # This flag is required since GCC 6 as undefined behavior in OpenJDK code
+    # runs afoul of the more aggressive versions of this optimization.
+    $1_TOOLCHAIN_CFLAGS="-fno-lifetime-dse"
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -917,20 +916,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     fi
   fi
   AC_SUBST($2SVE_CFLAGS)
-])
-
-# FLAGS_SETUP_GCC6_COMPILER_FLAGS([PREFIX])
-# Arguments:
-# $1 - Prefix for each variable defined.
-# $2 - Prefix for compiler variables (either BUILD_ or nothing).
-AC_DEFUN([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
-[
-  # This flag is required for GCC 6 builds as undefined behavior in OpenJDK code
-  # runs afoul of the more aggressive versions of this optimization.
-  NO_LIFETIME_DSE_CFLAG="-fno-lifetime-dse"
-  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_LIFETIME_DSE_CFLAG],
-      PREFIX: $2, IF_FALSE: [NO_LIFETIME_DSE_CFLAG=""])
-  $1_GCC6_CFLAGS="${NO_LIFETIME_DSE_CFLAG}"
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],

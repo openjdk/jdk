@@ -89,6 +89,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     private final Map<OutputSlot, Set<LineWidget>> outputSlotToLineWidget = new HashMap<>();
     private final Map<InputSlot, Set<LineWidget>> inputSlotToLineWidget = new HashMap<>();
+    private final FreeInteractiveLayoutManager freeInteractiveLayoutManager;
     private final HierarchicalStableLayoutManager hierarchicalStableLayoutManager;
     private HierarchicalLayoutManager seaLayoutManager;
     private LayoutMover layoutMover;
@@ -511,6 +512,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         });
 
+        freeInteractiveLayoutManager = new FreeInteractiveLayoutManager();
         hierarchicalStableLayoutManager = new HierarchicalStableLayoutManager();
         seaLayoutManager = new HierarchicalLayoutManager();
 
@@ -643,6 +645,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 widget.bringToFront();
                 startLayerY = widget.getLocation().y;
                 hasMoved = false; // Reset the movement flag
+                if (layoutMover.isFreeForm()) return;
+
                 Set<Figure> selectedFigures = model.getSelectedFigures();
                 if (selectedFigures.size() == 1) {
                     Figure selectedFigure = selectedFigures.iterator().next();
@@ -702,8 +706,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 hasMoved = true; // Mark that a movement occurred
 
                 int shiftX = location.x - widget.getLocation().x;
-                int shiftY = magnetToStartLayerY(widget, location);
-
+                int shiftY;
+                if (layoutMover.isFreeForm()) {
+                    shiftY = location.y - widget.getLocation().y;
+                } else {
+                    shiftY = magnetToStartLayerY(widget, location);
+                }
                 List<Figure> selectedFigures = new ArrayList<>( model.getSelectedFigures());
                 selectedFigures.sort(Comparator.comparingInt(f -> f.getPosition().x));
                 for (Figure figure : selectedFigures) {
@@ -713,12 +721,15 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         if (inputSlotToLineWidget.containsKey(inputSlot)) {
                             for (LineWidget lw : inputSlotToLineWidget.get(inputSlot)) {
                                 assert lw != null;
-                                Point toPt = lw.getTo();
                                 Point fromPt = lw.getFrom();
-                                if (toPt != null && fromPt != null) {
-                                    int xTo = toPt.x + shiftX;
-                                    int yTo = toPt.y + shiftY;
-                                    lw.setTo(new Point(xTo, yTo));
+                                Point toPt = lw.getTo();
+                                if (toPt == null || fromPt == null) {
+                                    continue;
+                                }
+                                int xTo = toPt.x + shiftX;
+                                int yTo = toPt.y + shiftY;
+                                lw.setTo(new Point(xTo, yTo));
+                                if (!layoutMover.isFreeForm()) {
                                     lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
                                     LineWidget pred = lw.getPredecessor();
                                     pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
@@ -735,10 +746,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                 assert lw != null;
                                 Point fromPt = lw.getFrom();
                                 Point toPt = lw.getTo();
-                                if (toPt != null && fromPt != null) {
-                                    int xFrom = fromPt.x + shiftX;
-                                    int yFrom = fromPt.y + shiftY;
-                                    lw.setFrom(new Point(xFrom, yFrom));
+                                if (toPt == null || fromPt == null) {
+                                    continue;
+                                }
+                                int xFrom = fromPt.x + shiftX;
+                                int yFrom = fromPt.y + shiftY;
+                                lw.setFrom(new Point(xFrom, yFrom));
+                                if (!layoutMover.isFreeForm()) {
                                     lw.setTo(new Point(toPt.x + shiftX, toPt.y));
                                     for (LineWidget succ : lw.getSuccessors()) {
                                         succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
@@ -753,10 +767,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     ActionFactory.createDefaultMoveProvider().setNewLocation(fw, newLocation);
                 }
 
-                FigureWidget fw = getWidget(selectedFigures.iterator().next());
-                pointerWidget.setVisible(true);
-                Point newLocation = new Point(fw.getLocation().x + shiftX -3, fw.getLocation().y + shiftY);
-                ActionFactory.createDefaultMoveProvider().setNewLocation(pointerWidget, newLocation);
+                if (selectedFigures.size() == 1 && !layoutMover.isFreeForm()) {
+                    FigureWidget fw = getWidget(selectedFigures.iterator().next());
+                    pointerWidget.setVisible(true);
+                    Point newLocation = new Point(fw.getLocation().x + shiftX -3, fw.getLocation().y + shiftY);
+                    ActionFactory.createDefaultMoveProvider().setNewLocation(pointerWidget, newLocation);
+                }
                 connectionLayer.revalidate();
                 connectionLayer.repaint();
             }
@@ -834,7 +850,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         Set<Figure> visibleFigures = getVisibleFigures();
         Set<Connection> visibleConnections = getVisibleConnections();
-        if (getModel().getShowStableSea()) {
+        if (getModel().getShowFreeInteractive()) {
+            doFreeInteractiveLayout(visibleFigures, visibleConnections);
+        } else if (getModel().getShowStableSea()) {
             doStableSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowSea()) {
             doSeaLayout(visibleFigures, visibleConnections);
@@ -902,6 +920,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         Widget w1 = getWidget(figureConnection.getFrom().getVertex());
         Widget w2 = getWidget(figureConnection.getTo().getVertex());
         return w1.isVisible() && w2.isVisible();
+    }
+
+    private void doFreeInteractiveLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
+        layoutMover = freeInteractiveLayoutManager;
+        freeInteractiveLayoutManager.setCutEdges(model.getCutEdges());
+        freeInteractiveLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
     private void doStableSeaLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
@@ -1108,6 +1132,52 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         }
     }
 
+    private void processFreeForm(OutputSlot outputSlot, List<FigureConnection> connections) {
+        for (FigureConnection connection : connections) {
+            if (isVisibleFigureConnection(connection)) {
+                boolean isBold = false;
+                boolean isDashed = true;
+                boolean isVisible = true;
+                if (connection.getStyle() == Connection.ConnectionStyle.BOLD) {
+                    isBold = true;
+                } else if (connection.getStyle() == Connection.ConnectionStyle.INVISIBLE) {
+                    isVisible = false;
+                }
+                if (connection.getStyle() != Connection.ConnectionStyle.DASHED) {
+                    isDashed = false;
+                }
+
+
+                List<Point> controlPoints = connection.getControlPoints();
+                if (controlPoints.size() <= 2) continue;
+                Point firstPoint = controlPoints.get(0); // First point
+                Point lastPoint = controlPoints.get(controlPoints.size() - 1); // Last point
+                List<FigureConnection> connectionList = new ArrayList<>(Collections.singleton(connection));
+                LineWidget line = new LineWidget(this, outputSlot, connectionList, firstPoint, lastPoint, null, isBold, isDashed);
+                line.setFromControlYOffset(50);
+                line.setToControlYOffset(-50);
+                line.setVisible(isVisible);
+                connectionLayer.addChild(line);
+
+                addObject(new ConnectionSet(connectionList), line);
+                line.getActions().addAction(hoverAction);
+
+                if (outputSlotToLineWidget.containsKey(outputSlot)) {
+                    outputSlotToLineWidget.get(outputSlot).add(line);
+                } else {
+                    outputSlotToLineWidget.put(outputSlot, new HashSet<>(Collections.singleton(line)));
+                }
+
+                InputSlot inputSlot = connection.getInputSlot();
+                if (inputSlotToLineWidget.containsKey(inputSlot)) {
+                    inputSlotToLineWidget.get(inputSlot).add(line);
+                } else {
+                    inputSlotToLineWidget.put(inputSlot, new HashSet<>(Collections.singleton(line)));
+                }
+            }
+        }
+    }
+
     private void processBlockConnection(BlockConnection blockConnection) {
         boolean isDashed = blockConnection.getStyle() == Connection.ConnectionStyle.DASHED;
         boolean isBold = blockConnection.getStyle() == Connection.ConnectionStyle.BOLD;
@@ -1281,7 +1351,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
                 List<FigureConnection> connectionList = new ArrayList<>(outputSlot.getConnections());
-                processOutputSlot(outputSlot, connectionList, 0, null, null);
+                if (layoutMover != null && layoutMover.isFreeForm()) {
+                    processFreeForm(outputSlot, connectionList);
+                } else {
+                    processOutputSlot(outputSlot, connectionList, 0, null, null);
+                }
             }
         }
 

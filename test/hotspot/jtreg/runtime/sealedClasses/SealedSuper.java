@@ -21,24 +21,5 @@
  * questions.
  */
 
-/*
- * @test
- * @library /test/lib ../../tools/tester
- * @build jtreg.SkippedException
- * @summary example of a test on the generated documentation
- * @run main TestDocs
- */
-
-import java.nio.file.Files;
-
-public class TestDocs {
-    public static void main(String... args) throws Exception {
-        var docs = DocTester.resolveDocs();
-        System.err.println("Path to the docs is: " + docs);
-        System.err.println("Do docs exits?");
-        System.err.println(Files.exists(docs));
-        System.err.println("tidy location");
-        System.err.println(System.getProperty("tidy"));
-        System.err.println("End of test");
-    }
+public sealed class SealedSuper permits SealedSub {
 }
