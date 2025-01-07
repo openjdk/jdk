@@ -486,16 +486,16 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public String toString() {
-        final String type;
+        final String kind;
         if (this instanceof HeapMemorySegmentImpl) {
-            type = "heap";
+            kind = "heap";
         } else if (this instanceof MappedMemorySegmentImpl) {
-            type = "mapped";
+            kind = "mapped";
         } else {
-            type = "native";
+            kind = "native";
         }
         return "MemorySegment{ kind: " +
-                type +
+                kind +
                 heapBase().map(hb -> ", heapBase: " + hb).orElse("") +
                 ", address: " + Utils.toHexString(address()) +
                 ", byteSize: " + length +
