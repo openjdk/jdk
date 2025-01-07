@@ -433,11 +433,12 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
   const uint64_t num_attempts_to_try   = MIN2((uint64_t)HeapSearchSteps, num_attempts_possible);
 
   const size_t stepsize = (attach_range == 0) ? // Only one try.
-    1 : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
+    (size_t) highest_start : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
 
+  // Try attach points from top to bottom.
   for (char* attach_point = highest_start;
-       attach_point >= lowest_start;  // Avoid wrap around.
-       attach_point -= stepsize) {
+       attach_point >= lowest_start;  // Check for wrap around
+       attach_point =  (char*)(p2u(attach_point) - stepsize)) {
     ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, attach_point);
 
     if (reserved.is_reserved()) {
