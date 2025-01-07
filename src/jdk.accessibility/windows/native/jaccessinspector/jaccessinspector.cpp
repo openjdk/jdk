@@ -831,7 +831,7 @@ INT_PTR CALLBACK jaccessinspectorDialogProc( HWND hWnd, UINT message,
     RECT dialogBoxRect;
     LONG lT;
     HMENU menu;
- // DWORD lastError = 0;
+    DWORD lastError = 0;
 
     switch (message) {
 
@@ -976,11 +976,9 @@ INT_PTR CALLBACK jaccessinspectorDialogProc( HWND hWnd, UINT message,
                 prevMouseHook = SetWindowsHookEx( WH_MOUSE, MouseProc,
                                                   theInstance,
                                                   ::GetCurrentThreadId() );
-                /*
                 if (! prevMouseHook) {
                     lastError = ::GetLastError();
                 }
-                */
             }
             return TRUE;
 
@@ -998,11 +996,9 @@ INT_PTR CALLBACK jaccessinspectorDialogProc( HWND hWnd, UINT message,
                 prevKbdHook = SetWindowsHookEx( WH_KEYBOARD, KeyboardProc,
                                                 theInstance,
                                                 ::GetCurrentThreadId() );
-                /*
                 if (! prevKbdHook) {
                     lastError = ::GetLastError();
                 }
-                */
             }
             return TRUE;
 
@@ -1019,11 +1015,9 @@ INT_PTR CALLBACK jaccessinspectorDialogProc( HWND hWnd, UINT message,
                               MF_BYCOMMAND | MFS_CHECKED);
                 prevKbdHook = SetWindowsHookEx( WH_KEYBOARD, KeyboardProc,
                                                 theInstance, ::GetCurrentThreadId() );
-                /*
                 if (! prevKbdHook) {
                     lastError = ::GetLastError();
                 }
-                */
             }
             return TRUE;
 
@@ -1215,6 +1209,7 @@ INT_PTR CALLBACK jaccessinspectorDialogProc( HWND hWnd, UINT message,
         return TRUE;
     }
 
+    static_cast<void>(lastError);
     return FALSE;
 }
 
