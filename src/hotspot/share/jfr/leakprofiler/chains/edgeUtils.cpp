@@ -72,7 +72,7 @@ const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {
     JavaFieldStream jfs(ik);
     while (!jfs.done()) {
       if (offset == jfs.offset()) {
-        *modifiers = jfs.access_flags().as_unsigned_short();
+        *modifiers = jfs.access_flags().as_field_flags();
         return jfs.name();
       }
       jfs.next();

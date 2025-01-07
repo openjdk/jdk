@@ -583,7 +583,7 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
       resolved_klass->is_array_klass()) {
     // We need to change "protected" to "public".
     assert(flags.is_protected(), "clone not protected?");
-    u2 new_flags = flags.as_unsigned_short();
+    u2 new_flags = flags.as_method_flags();
     new_flags = new_flags & (~JVM_ACC_PROTECTED);
     new_flags = new_flags | JVM_ACC_PUBLIC;
     flags.set_flags(new_flags);
