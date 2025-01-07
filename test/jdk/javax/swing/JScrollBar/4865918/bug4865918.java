@@ -46,19 +46,15 @@ public class bug4865918 {
     private static final CountDownLatch mousePressLatch = new CountDownLatch(1);
 
     public static void main(String[] argv) throws Exception {
-        try {
-            SwingUtilities.invokeAndWait(() -> setupTest());
+        SwingUtilities.invokeAndWait(() -> setupTest());
 
-            SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
-            if (!mousePressLatch.await(2, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Timed out waiting for mouse press");
-            }
+        SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
+        if (!mousePressLatch.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Timed out waiting for mouse press");
+        }
 
-            if (getValue() != 9) {
-                throw new RuntimeException("The scrollbar block increment is incorrect");
-            }
-        } finally {
-            //if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
+        if (getValue() != 9) {
+            throw new RuntimeException("The scrollbar block increment is incorrect");
         }
     }
 
