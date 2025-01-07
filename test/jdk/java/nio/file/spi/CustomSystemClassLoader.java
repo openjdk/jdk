@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,39 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.jdk.classfile;
 
-import java.net.URI;
+import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
-
 /**
- * CorpusNullAdapt
+ * Use by tests in SetDefaultProvider to test startup with a custom default file system
+ * provider and a custom system class loader.
  */
-public class AdaptNull extends AbstractCorpusBenchmark {
 
-    @Param({
-//            "ARRAYCOPY",
-            "SHARED_1",
-            "SHARED_2",
-            "SHARED_3",
-            "SHARED_3_NO_DEBUG",
-//            "HIGH_X1",
-//            "HIGH_X2",
-//            "HIGH_X3",
-//            "UNSHARED_1",
-//            "UNSHARED_2",
-            "UNSHARED_3",
-//            "SHARED_3_NO_STACKMAP"
-    })
-    Transforms.NoOpTransform noOpTransform;
+public class CustomSystemClassLoader extends ClassLoader {
+    public CustomSystemClassLoader(ClassLoader parent) {
+        super(parent);
 
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public void transform(Blackhole bh) {
-        for (byte[] aClass : classes)
-            bh.consume(noOpTransform.transform.apply(aClass));
+        // use default file system
+        FileSystem fs = FileSystems.getDefault();
+        var path = fs.getPath("foo");
     }
 }
