@@ -1350,8 +1350,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
   } else {
     // The RW and RO regions are in a reserved space so they must only be
     // unmapped when the reserved space is released
-    unmap_archive(static_mapinfo, archive_space_rs);
-    unmap_archive(dynamic_mapinfo, archive_space_rs);
+    unmap_archive(static_mapinfo);
+    unmap_archive(dynamic_mapinfo);
     release_reserved_spaces(total_space_rs, archive_space_rs, class_space_rs);
   }
 
@@ -1603,12 +1603,12 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
     mapinfo->map_regions(archive_regions, archive_regions_count, mapped_base_address, rs);
 
   if (result != MAP_ARCHIVE_SUCCESS) {
-    unmap_archive(mapinfo, rs);
+    unmap_archive(mapinfo);
     return result;
   }
 
   if (!mapinfo->validate_shared_path_table()) {
-    unmap_archive(mapinfo, rs);
+    unmap_archive(mapinfo);
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -1621,7 +1621,7 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
   }
 
   if (!mapinfo->validate_aot_class_linking()) {
-    unmap_archive(mapinfo, rs);
+    unmap_archive(mapinfo);
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -1629,11 +1629,11 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
   return MAP_ARCHIVE_SUCCESS;
 }
 
-void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo, ReservedSpace archive_space_rs) {
+void MetaspaceShared::unmap_archive(FileMapInfo* mapinfo) {
   assert(CDSConfig::is_using_archive(), "must be runtime");
   if (mapinfo != nullptr) {
-    mapinfo->unmap_regions(archive_regions, archive_regions_count, archive_space_rs);
-    mapinfo->unmap_region(MetaspaceShared::bm, {} /* containing_rs */);
+    mapinfo->unmap_regions(archive_regions, archive_regions_count);
+    mapinfo->unmap_region(MetaspaceShared::bm);
     mapinfo->set_is_mapped(false);
   }
 }
@@ -1673,7 +1673,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // Close the mapinfo file
   static_mapinfo->close();
 
-  static_mapinfo->unmap_region(MetaspaceShared::bm, {} /* containing_rs */);
+  static_mapinfo->unmap_region(MetaspaceShared::bm);
 
   FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (dynamic_mapinfo != nullptr) {
@@ -1682,7 +1682,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
     DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
-    dynamic_mapinfo->unmap_region(MetaspaceShared::bm, {} /* containing_rs */);
+    dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
   LogStreamHandle(Info, cds) lsh;

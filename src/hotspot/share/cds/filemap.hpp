@@ -162,11 +162,13 @@ public:
   size_t oopmap_size_in_bits()      const { assert_is_heap_region();     return _oopmap_size_in_bits; }
   size_t ptrmap_offset()            const { return _ptrmap_offset; }
   size_t ptrmap_size_in_bits()      const { return _ptrmap_size_in_bits; }
+  bool   in_reserved_space()        const { return _in_reserved_space; }
 
   void set_file_offset(size_t s)     { _file_offset = s; }
   void set_read_only(bool v)         { _read_only = v; }
   void set_mapped_base(char* p)      { _mapped_base = p; }
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
+  void set_in_reserved_space(bool is_reserved) { _in_reserved_space = is_reserved; }
   void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
             bool allow_exec, int crc);
   void init_oopmap(size_t offset, size_t size_in_bits);
@@ -470,8 +472,7 @@ public:
   size_t  read_bytes(void* buffer, size_t count);
   static size_t readonly_total();
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
-  void  unmap_region(int i, ReservedSpace containing_rs);
-  void  unmap_regions(int regions[], int num_regions, ReservedSpace containing_rs);
+  void  unmap_regions(int regions[], int num_regions);
   void  map_or_load_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
@@ -479,6 +480,7 @@ public:
   MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
+  void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
   ReservedSpace reserve_shared_memory();

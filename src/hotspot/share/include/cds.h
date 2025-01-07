@@ -70,6 +70,7 @@ typedef struct CDSFileMapRegion {
                               // (The base address is the bottom of the BM region).
   size_t  _ptrmap_size_in_bits;
   char*   _mapped_base;       // Actually mapped address (null if this region is not mapped).
+  bool    _in_reserved_space; // Is this region in a ReservedSpace
 } CDSFileMapRegion;
 
 // This portion of the archive file header must remain unchanged for

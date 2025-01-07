@@ -1916,7 +1916,17 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
                     shared_region_name[i], p2i(requested_addr));
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
-      assert(r->mapped_base() != nullptr, "must be initialized");
+      // Note that this may either be a "fresh" mapping into unreserved address
+      // space (Windows, first mapping attempt), or a mapping into pre-reserved
+      // space (Posix). See also comment in MetaspaceShared::map_archives().
+      char* mapped_base = r->mapped_base();
+      size_t size = r->used_aligned();
+
+      assert(mapped_base != nullptr, "must be initialized");
+      assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
+               PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
+               p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
+      r->set_in_reserved_space(rs.is_reserved());
       return MAP_ARCHIVE_SUCCESS;
     }
   } else {
@@ -2409,30 +2419,30 @@ void FileMapInfo::dealloc_heap_region() {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-void FileMapInfo::unmap_regions(int regions[], int num_regions, ReservedSpace containing_rs) {
+void FileMapInfo::unmap_regions(int regions[], int num_regions) {
   for (int r = 0; r < num_regions; r++) {
     int idx = regions[r];
-    unmap_region(idx, containing_rs);
+    unmap_region(idx);
   }
 }
 
 // Unmap a memory region in the address space.
 
-void FileMapInfo::unmap_region(int i, ReservedSpace containing_rs) {
+void FileMapInfo::unmap_region(int i) {
   FileMapRegion* r = region_at(i);
   char* mapped_base = r->mapped_base();
   size_t size = r->used_aligned();
 
   if (mapped_base != nullptr) {
     if (size > 0 && r->mapped_from_file()) {
-      if (containing_rs.is_reserved()) {
-        // Don't unmap here; this regions will be released when the containing_rs is released.
-        assert(containing_rs.base() <= mapped_base && mapped_base + size <= containing_rs.end(),
-               PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
-               p2i(containing_rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(containing_rs.end()));
-      } else {
-        log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
+      log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
                     shared_region_name[i]);
+      if (r->in_reserved_space()) {
+        // This region was mapped inside a ReservedSpace. Its memory will be freed when the ReservedSpace
+        // is released. Zero it so that we don't accidentally read its content.
+        log_info(cds)("Region #%d (%s) is in a reserved space, it will be freed when the space is released", i, shared_region_name[i]);
+        memset(mapped_base, 0, size);
+      } else {
         if (!os::unmap_memory(mapped_base, size)) {
           fatal("os::unmap_memory failed");
         }
