@@ -30,7 +30,7 @@ import jdk.internal.org.objectweb.asm.*;
  *          not set in the access_flags.
  * @bug 8175383
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @compile -XDignore.symbol.file ConstModule.java
  * @run main ConstModule
  */

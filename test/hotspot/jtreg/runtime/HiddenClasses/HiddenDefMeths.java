@@ -25,8 +25,8 @@
  * @test
  * @summary Tests a hidden class that implements interfaces with default methods.
  * @library /testlibrary
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.management
+ * @library /asm
+ * @modules java.management
  * @run main HiddenDefMeths
  */
 

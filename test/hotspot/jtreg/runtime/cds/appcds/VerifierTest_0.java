@@ -27,7 +27,7 @@
  * @summary Unverfiable app classes should not be archived.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @compile test-classes/Greet.java
  * @compile test-classes/Hi.java
  * @compile test-classes/VerifierTest0.java

@@ -25,11 +25,11 @@
  * @test
  * @summary tests on constant folding of unsafe get operations
  * @library /test/lib
+ * @library /asm
  *
  * @requires vm.flavor == "server" & !vm.emulatedClient
  *
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.vm.annotation
+ * @modules java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
  *
  * @library ../jsr292/patches

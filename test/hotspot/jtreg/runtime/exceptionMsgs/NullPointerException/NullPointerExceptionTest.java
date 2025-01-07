@@ -30,7 +30,7 @@
  *   of the variable containing the array is printed.
  * @bug 8218628 8248476
  * @modules java.base/java.lang:open
- *          java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @library /test/lib
  * @compile -g NullPointerExceptionTest.java
  * @run main/othervm -XX:MaxJavaStackTraceDepth=1 -XX:+ShowCodeDetailsInExceptionMessages NullPointerExceptionTest hasDebugInfo
@@ -43,7 +43,7 @@
  *   detailed information about the entity that is null.
  * @bug 8218628 8248476
  * @modules java.base/java.lang:open
- *          java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @library /test/lib
  * @compile NullPointerExceptionTest.java
  * @run main/othervm -XX:MaxJavaStackTraceDepth=1 -XX:+ShowCodeDetailsInExceptionMessages NullPointerExceptionTest

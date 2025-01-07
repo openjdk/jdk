@@ -26,8 +26,8 @@
  * @bug 8282241
  * @summary Verifies class redefinition correctly updates generic_signature and source_file_name attributes
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
+ * @library /asm
  * @library /test/lib
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar --add-opens=java.base/java.lang=ALL-UNNAMED RedefineGenericSignatureTest

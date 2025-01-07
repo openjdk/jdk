@@ -26,8 +26,8 @@
  * @bug 8042235
  * @summary redefining method used by multiple MethodHandles crashes VM
  * @library /
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.compiler
+ * @library /asm
+ * @modules java.compiler
  *          java.instrument
  *          jdk.attach
  * @requires vm.jvmti

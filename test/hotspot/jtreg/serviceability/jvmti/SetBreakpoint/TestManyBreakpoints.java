@@ -25,7 +25,7 @@
  * @test
  * @bug 8144992
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @run main/othervm/native -agentlib:TestManyBreakpoints
  *                          -Xlog:gc+metaspace
  *                          -Xint

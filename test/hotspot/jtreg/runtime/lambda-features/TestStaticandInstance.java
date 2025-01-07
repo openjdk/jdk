@@ -25,7 +25,7 @@
  * @test
  * @bug 8087342
  * @summary Test linkresolver search static, instance and overpass duplicates
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BytecodeVerificationRemote -XX:-BytecodeVerificationLocal TestStaticandInstance
  */
 

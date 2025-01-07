@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @summary converted from VM Testbase vm/mlvm/cp/stress/classfmt/mh.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
@@ -34,6 +33,7 @@
  *     ldc commands. Verify that the class is loaded without errors.
  *     The maximum is determined dynamically.
  *
+ * @library /asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

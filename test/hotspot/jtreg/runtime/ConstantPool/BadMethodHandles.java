@@ -25,8 +25,8 @@
  * @test
  * @bug 8087223 8195650
  * @summary Adding constantTag to keep method call consistent with it.
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /asm
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file BadMethodHandles.java
  * @run main/othervm BadMethodHandles

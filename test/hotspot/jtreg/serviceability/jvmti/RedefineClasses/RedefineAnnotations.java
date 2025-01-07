@@ -24,11 +24,11 @@
 /*
  * @test
  * @library /test/lib
+ * @library /asm
  * @summary Test that type annotations are retained after a retransform
  * @requires vm.jvmti
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineAnnotations buildagent
  * @run main/othervm -javaagent:redefineagent.jar RedefineAnnotations

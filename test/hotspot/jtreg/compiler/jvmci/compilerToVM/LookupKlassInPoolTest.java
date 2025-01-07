@@ -28,10 +28,9 @@
  * @summary Testing compiler.jvmci.CompilerToVM.lookupKlassInPool method
  * @library /test/lib /
  * @library ../common/patches
+ * @library /asm
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.reflect
- *          java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.meta

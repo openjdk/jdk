@@ -29,7 +29,7 @@ import jdk.internal.org.objectweb.asm.*;
  *          52 class file.
  * @bug 8175383
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @compile -XDignore.symbol.file ACCModule52.java
  * @run main ACCModule52
  */

@@ -27,9 +27,9 @@
  * @summary Redefine running methods that have cached resolution errors
  * @requires vm.jvmti
  * @library /test/lib
+ * @library /asm
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.instrument
+ * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace RedefineRunningMethodsWithResolutionErrors

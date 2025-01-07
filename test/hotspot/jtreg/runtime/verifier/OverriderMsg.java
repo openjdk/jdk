@@ -33,8 +33,8 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test OverriderMsg
  * @bug 8026894
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /asm
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file OverriderMsg.java
  * @run driver OverriderMsg

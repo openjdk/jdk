@@ -26,7 +26,7 @@
  * @summary Test of method selection and resolution cases that
  * generate InvokeVirtualSuccessTest
  * @requires vm.opt.final.ClassUnloading
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @library /runtime/SelectionResolution/classes
  * @run main/othervm/timeout=400 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeVirtualSuccessTest
  */

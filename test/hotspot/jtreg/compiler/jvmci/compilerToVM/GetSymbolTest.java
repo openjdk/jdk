@@ -27,9 +27,8 @@
  * @requires vm.jvmci
  * @library / /test/lib
  * @library ../common/patches
+ * @library /asm
  * @modules java.base/jdk.internal.misc:+open
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.meta

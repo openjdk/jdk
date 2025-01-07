@@ -27,7 +27,7 @@
  * @test
  * @bug 8322726
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  *
  * @compile TestMHUnloaded.java TestMHUnloadedHelper.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.runtime.unloaded.TestMHUnloadedHelper

@@ -27,9 +27,8 @@
  * @requires vm.jvmci & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library / /test/lib
  *          ../common/patches
+ * @library /asm
  * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.meta

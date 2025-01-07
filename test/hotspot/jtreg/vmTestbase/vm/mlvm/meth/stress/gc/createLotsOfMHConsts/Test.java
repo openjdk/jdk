@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/gc/createLotsOfMHConsts.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
@@ -34,6 +33,7 @@
  *     using different classloaders) to see if they are garbage collected and don't overflow
  *     different generations of heap.
  *
+ * @library /asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

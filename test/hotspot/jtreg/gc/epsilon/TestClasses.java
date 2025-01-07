@@ -28,8 +28,8 @@ package gc.epsilon;
  * @requires vm.gc.Epsilon
  * @summary Epsilon is able to allocate a lot of classes, resizing Metaspace
  *
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /asm
+ * @modules java.base/jdk.internal.misc
  *
  * @run main/othervm -Xmx256m
  *                   -XX:MetaspaceSize=1m -XX:MaxMetaspaceSize=64m -Xlog:gc -Xlog:gc+metaspace

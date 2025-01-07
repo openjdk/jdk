@@ -24,8 +24,8 @@
 /*
  * @test
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @library /asm
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver UnsupportedClassFileVersion
  */

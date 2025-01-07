@@ -27,7 +27,7 @@
  * @bug 7124710
  *
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @library /test/lib
  *
  * @comment main/othervm/native -Xlog:redefine*=trace -agentlib:RedefineRetransform RedefineRetransform

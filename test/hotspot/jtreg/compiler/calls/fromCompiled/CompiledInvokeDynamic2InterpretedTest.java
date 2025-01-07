@@ -25,8 +25,8 @@
  * @test
  * @summary check calls from compiled to interpreted using InvokeDynamic
  * @library /test/lib /
+ * @library /asm
  * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.org.objectweb.asm
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver compiler.calls.common.InvokeDynamicPatcher

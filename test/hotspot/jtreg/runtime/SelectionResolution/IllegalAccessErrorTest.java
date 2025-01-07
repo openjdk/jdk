@@ -25,7 +25,7 @@
  * @test
  * @summary Test of method selection and resolution cases that
  * generate IllegalAccessErrorTest
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @library /runtime/SelectionResolution/classes
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies IllegalAccessErrorTest
  */

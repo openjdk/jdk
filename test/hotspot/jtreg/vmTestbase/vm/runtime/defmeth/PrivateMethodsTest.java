@@ -24,7 +24,7 @@
 /*
  * @test
  *
- * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
+ * @library /asm
  * @library /vmTestbase /test/lib
  *
  * @comment build retransform.jar in current dir

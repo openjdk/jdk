@@ -23,7 +23,7 @@
 
 /*
  * @test 8163808
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @run main TransitiveOverrideCFV50
  */
 

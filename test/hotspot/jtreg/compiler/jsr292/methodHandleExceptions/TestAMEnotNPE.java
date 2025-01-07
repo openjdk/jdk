@@ -25,7 +25,7 @@
  * @test
  * @bug 8025260 8016839 8046171
  * @summary Ensure that correct exceptions are thrown, not NullPointerException
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @library / .
  *
  * @build p.*

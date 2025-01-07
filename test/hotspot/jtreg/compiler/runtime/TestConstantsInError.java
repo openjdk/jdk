@@ -26,7 +26,7 @@
  * @bug 8279822
  * @requires vm.flagless
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  *
  * @run main compiler.runtime.TestConstantsInError
  */
@@ -248,7 +248,6 @@ public abstract class TestConstantsInError implements OutputProcessor {
 
     static void run(TestConstantsInError test) throws Exception {
         List<String> commonArgs = List.of(
-                "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
                 "-Xbatch", "-XX:CompileThreshold=100",
                 "-XX:CompileCommand=quiet", "-XX:CompileCommand=compileonly,*::test",
                 "-XX:+PrintCompilation",

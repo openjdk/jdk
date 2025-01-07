@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @summary converted from VM Testbase vm/mlvm/cp/stress/classfmt/manyIndyOneCPX.
  * VM Testbase keywords: [feature_mlvm, hangup, nonconcurrent, exclude]
@@ -34,6 +33,7 @@
  *        The test creates and executes a class containing lot of invokedynamic instructions
  *        pointing to just one constant pool CONSTANT_InvokeDynamic entry.
  *
+ * @library /asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

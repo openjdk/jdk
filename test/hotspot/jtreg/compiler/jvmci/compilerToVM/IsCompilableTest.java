@@ -27,10 +27,9 @@
  * @requires vm.graal.enabled & vm.compMode == "Xmixed"
  * @library /test/lib /
  * @library ../common/patches
+ * @library /asm
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
@@ -48,10 +47,9 @@
  * @requires vm.jvmci & vm.compMode == "Xmixed"
  * @library /test/lib /
  * @library ../common/patches
+ * @library /asm
  * @modules java.base/jdk.internal.misc
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
- *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime

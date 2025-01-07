@@ -27,7 +27,7 @@
  * @summary CDS support of old classes with major version < JDK_6 (50) for static archive.
  * @requires vm.cds
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @compile test-classes/Hello.java
  * @run build TestCommon JarBuilder
  * @run driver OldClassTest

@@ -25,7 +25,7 @@
  * @test
  * @bug 8174954
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @compile -XDignore.symbol.file BSMCalledTwice.java
  * @run main BSMCalledTwice
  */
@@ -34,8 +34,8 @@
  * @test
  * @bug 8262134
  * @library /test/lib
+ * @library /asm
  * @requires vm.debug
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file BSMCalledTwice.java
  * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestC::* -XX:+DeoptimizeALot -XX:+VerifyStack BSMCalledTwice
  */

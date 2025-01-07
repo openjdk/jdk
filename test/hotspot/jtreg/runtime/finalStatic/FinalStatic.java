@@ -25,7 +25,7 @@
  * @test
  * @bug 8028553
  * @summary Test that VerifyError is not thrown when 'overriding' a static method.
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @run main FinalStatic
  */
 

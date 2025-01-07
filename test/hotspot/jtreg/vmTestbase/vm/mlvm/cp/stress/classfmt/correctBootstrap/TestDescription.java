@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @summary converted from VM Testbase vm/mlvm/cp/stress/classfmt/correctBootstrap.
  * VM Testbase keywords: [feature_mlvm]
@@ -34,6 +33,7 @@
  *     invokedynamic commands that refer to correct bootstrap method types. Verify that bootstrap/target
  *     methods are invoked. The maximum number of invokedynamic calls is determined dynamically.
  *
+ * @library /asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

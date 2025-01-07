@@ -27,7 +27,7 @@
  * @bug 8228604
  *
  * @requires vm.jvmti
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /asm
  * @library /test/lib
  *
  * @run main/othervm/native -agentlib:MissedStackMapFrames MissedStackMapFrames

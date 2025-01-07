@@ -25,7 +25,6 @@
 /*
  * @test
  * @bug 7127687
- * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @summary converted from VM Testbase vm/mlvm/meth/func/regression/b7127687.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
@@ -37,6 +36,7 @@
  *     So previous implementation of MethodType.methodType() throws OOM exception
  *     in this test case.
  *
+ * @library /asm
  * @library /vmTestbase
  *          /test/lib
  *
