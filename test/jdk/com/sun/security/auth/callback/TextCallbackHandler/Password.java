@@ -49,9 +49,9 @@ import javax.security.auth.callback.*;
 public class Password {
    public static void main(String args[]) throws Exception {
 
-       if (System.getProperty("java.class.path").contains("jtreg")){
-           throw new RuntimeException("This is a manual testing, it shouldn't be run with jtreg.");
-       }
+        if (System.getProperty("java.class.path").contains("jtreg")){
+            throw new RuntimeException("This is a manual testing, it shouldn't be run with jtreg.");
+        }
 
         TextCallbackHandler h = new TextCallbackHandler();
         PasswordCallback nc = new PasswordCallback("Invisible: ", false);
