@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -714,14 +714,14 @@ void TemplateInterpreterGenerator::lock_method() {
   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method doesn't need synchronization", false);
 #endif // ASSERT
 
   // get synchronization object
   {
     Label done;
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ andi(t0, x10, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ ld(x10, Address(xlocals, Interpreter::local_offset_in_bytes(0)));
@@ -1028,7 +1028,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_NATIVE, "tried to execute non-native method as native", false);
   __ verify_access_flags(x10, JVM_ACC_ABSTRACT, "tried to execute abstract method in interpreter");
 #endif
@@ -1066,7 +1066,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method needs synchronization");
 #endif
   }
@@ -1130,7 +1130,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass mirror handle if static call
   {
     Label L;
-    __ lwu(t, Address(xmethod, Method::access_flags_offset()));
+    __ load_unsigned_short(t, Address(xmethod, Method::access_flags_offset()));
     __ test_bit(t0, t, exact_log2(JVM_ACC_STATIC));
     __ beqz(t0, L);
     // get mirror
@@ -1346,7 +1346,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // do unlocking if necessary
   {
     Label L;
-    __ lwu(t, Address(xmethod, Method::access_flags_offset()));
+    __ load_unsigned_short(t, Address(xmethod, Method::access_flags_offset()));
     __ test_bit(t0, t, exact_log2(JVM_ACC_SYNCHRONIZED));
     __ beqz(t0, L);
     // the code below should be shared with interpreter macro
@@ -1472,7 +1472,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_NATIVE, "tried to execute native method as non-native");
   __ verify_access_flags(x10, JVM_ACC_ABSTRACT, "tried to execute abstract method in interpreter");
 #endif
@@ -1519,7 +1519,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method needs synchronization");
 #endif
   }

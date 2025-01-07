@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * Copyright 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1013,6 +1013,18 @@ void MacroAssembler::load_and_test_int2long(Register dst, const Address &a) {
 
 void MacroAssembler::load_and_test_long(Register dst, const Address &a) {
   z_ltg(dst, a);
+}
+
+// Test a bit in memory for 2 byte datatype.
+void MacroAssembler::testbit_ushort(const Address &a, unsigned int bit) {
+  assert(a.index() == noreg, "no index reg allowed in testbit");
+  if (bit <= 7) {
+    z_tm(a.disp() + 1, a.base(), 1 << bit);
+  } else if (bit <= 15) {
+    z_tm(a.disp() + 0, a.base(), 1 << (bit - 8));
+  } else {
+    ShouldNotReachHere();
+  }
 }
 
 // Test a bit in memory.

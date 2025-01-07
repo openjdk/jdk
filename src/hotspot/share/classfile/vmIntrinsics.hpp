@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1494,7 +1494,7 @@ private:
   static ID find_id_impl(vmSymbolID holder,
                          vmSymbolID name,
                          vmSymbolID sig,
-                         jshort flags);
+                         u2 flags);
 
   // check if the intrinsic is disabled by course-grained flags.
   static bool disabled_by_jvm_flags(vmIntrinsics::ID id);
@@ -1505,7 +1505,7 @@ public:
   static ID find_id(vmSymbolID holder,
                     vmSymbolID name,
                     vmSymbolID sig,
-                    jshort flags) {
+                    u2 flags) {
     ID id = find_id_impl(holder, name, sig, flags);
 #ifdef ASSERT
     // ID _none does not hold the following asserts.
