@@ -283,7 +283,7 @@ ifeq ($(FREETYPE_TO_USE), bundled)
       OPTIMIZATION := HIGHEST, \
       CFLAGS := -DFT2_BUILD_LIBRARY, \
       CFLAGS_windows := -DDLL_EXPORT, \
-      EXTRA_HEADER_DIRS := libfreetype/include, \
+      EXTRA_HEADER_DIRS := java.base:libjava libfreetype/include, \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
   ))
