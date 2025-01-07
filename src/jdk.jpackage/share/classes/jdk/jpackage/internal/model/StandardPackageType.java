@@ -24,9 +24,6 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.Objects;
-import java.util.stream.Stream;
-
 /**
  * Standard native package types.
  */
