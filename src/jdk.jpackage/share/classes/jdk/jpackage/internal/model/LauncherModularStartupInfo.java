@@ -26,12 +26,22 @@ package jdk.jpackage.internal.model;
 
 import jdk.jpackage.internal.util.CompositeProxy;
 
+/**
+ * Application launcher startup configuration using Java module.
+ */
 public interface LauncherModularStartupInfo extends LauncherStartupInfo,
         LauncherModularStartupInfoMixin {
 
+    /**
+     * Constructs {@link LauncherModularStartupInfo} instance from the given
+     * {@link LauncherJarStartupInfo} and {@link LauncherModularStartupInfoMixin} instances.
+     *
+     * @param info the generic launcher startup information
+     * @param mixin the supplementary launcher startup information
+     * @return the proxy dispatching calls to the given objects
+     */
     public static LauncherModularStartupInfo create(LauncherStartupInfo info,
             LauncherModularStartupInfoMixin mixin) {
-        return CompositeProxy.create(
-                LauncherModularStartupInfo.class, info, mixin);
+        return CompositeProxy.create(LauncherModularStartupInfo.class, info, mixin);
     }
 }

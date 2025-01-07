@@ -26,15 +26,25 @@ package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
 
+/**
+ * Application launcher startup configuration from a non-modular jar file.
+ */
 public interface LauncherJarStartupInfoMixin {
+
     /**
-     * Returns path to the main jar relative to app's main source directory.
-     *
-     * @see jdk.jpackage.internal.model.Application#srcDir()
+     * Gets the path to the input jar file.
+     * @return the path to the input jar file
      */
     Path jarPath();
 
-    boolean isClassNameFromMainJar();
+    /**
+     * Returns <code>true</code> if the input jar file has <code>Main-Class</code> entry in the manifest.
+     * @return <code>true</code> if the input jar file has <code>Main-Class</code> entry in the manifest
+     */
+    boolean isJarWithMainClass();
 
-    record Stub(Path jarPath, boolean isClassNameFromMainJar) implements LauncherJarStartupInfoMixin {}
+    /**
+     * Default implementation of {@link LauncherJarStartupInfoMixin} interface.
+     */
+    record Stub(Path jarPath, boolean isJarWithMainClass) implements LauncherJarStartupInfoMixin {}
 }

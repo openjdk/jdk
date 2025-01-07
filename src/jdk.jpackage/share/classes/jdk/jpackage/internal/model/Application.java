@@ -34,7 +34,9 @@ import java.util.stream.Stream;
 /**
  * A generic application for packaging.
  *
- * @apiNote All methods return non-null values.
+ * @apiNote
+ * All paths of startup configurations of application launchers returned
+ * by {@link #launchers()} call must be relative to the path returned by {@link #srcDir()} call.
  *
  * @see Package
  */

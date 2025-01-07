@@ -24,5 +24,8 @@
  */
 package jdk.jpackage.internal.model;
 
+/**
+ * Launcher icon
+ */
 public interface LauncherIcon {
 }
