@@ -29,9 +29,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+/**
+ * Utility class to manage application launchers.
+ * <p>
+ * Use {@link #asList} to get application launchers as a list.
+ * <p>
+ * Use {@link #mainLauncher()} to get the main application launcher.
+ * <p>
+ * Use {@link #additionalLaunchers()} to get additional application launchers.
+ * <p>
+ * Use {@link #fromList} to convert the list of application launchers into {@link ApplicationLaunchers} instance.
+ */
 public record ApplicationLaunchers(Launcher mainLauncher, List<Launcher> additionalLaunchers) {
 
-    public ApplicationLaunchers  {
+    public ApplicationLaunchers {
         Objects.requireNonNull(mainLauncher);
         Objects.requireNonNull(additionalLaunchers);
     }

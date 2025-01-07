@@ -30,7 +30,9 @@ import jdk.jpackage.internal.util.CompositeProxy;
 import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 /**
- * Application directory layout.
+ * Application app image layout.
+ *
+ * Application is comprised from application files and Java runtime.
  */
 public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixin {
 
@@ -39,6 +41,14 @@ public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixi
         return buildFrom(this).resolveAt(root).create();
     }
 
+    /**
+     * Creates an object implementing {@link ApplicationLayout} interface from
+     * {@link AppImageLayout} and {@link ApplicationLayoutMixin} instances.
+     *
+     * @param appImage app image layout object
+     * @param mixin application layout mixin for the app image layout
+     * @return new object implementing {@link ApplicationLayout} interface
+     */
     static ApplicationLayout create(AppImageLayout appImage, ApplicationLayoutMixin mixin) {
         return CompositeProxy.create(ApplicationLayout.class, appImage, mixin);
     }

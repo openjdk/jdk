@@ -42,7 +42,7 @@ public interface ApplicationLayoutMixin {
     Path appDirectory();
 
     /**
-     * Path to application mods directory.
+     * Path to directory with application's Java modules.
      */
     Path appModsDirectory();
 
@@ -56,6 +56,9 @@ public interface ApplicationLayoutMixin {
      */
     Path contentDirectory();
 
+    /**
+     * Default implementation of {@link ApplicationLayoutMixin} interface.
+     */
     record Stub(Path launchersDirectory, Path appDirectory, Path appModsDirectory, Path destktopIntegrationDirectory, Path contentDirectory) implements ApplicationLayoutMixin {
     }
 }

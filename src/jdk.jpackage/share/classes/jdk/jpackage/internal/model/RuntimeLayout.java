@@ -30,7 +30,7 @@ import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 
 /**
- * Runtime app image layout.
+ * Java runtime app image layout. Returns the root app image directory.
  */
 public interface RuntimeLayout extends AppImageLayout {
 

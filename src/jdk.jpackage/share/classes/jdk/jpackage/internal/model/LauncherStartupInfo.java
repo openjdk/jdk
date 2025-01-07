@@ -48,7 +48,7 @@ public interface LauncherStartupInfo {
      *
      * Every path in the list is relative to app's main source directory.
      *
-     * @see jdk.jpackage.internal.Application#mainSrcDir()
+     * @see Application#srcDir()
      */
     List<Path> classPath();
 
