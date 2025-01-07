@@ -26,7 +26,7 @@ package compiler.lib.generators;
 /**
  * Provides a uniform double distribution random generator, in the provided range [lo, hi).
  */
-final class UniformDoubleGenerator extends RestrictableGeneratorBase<Double> {
+final class UniformDoubleGenerator extends UniformIntersectionRestrictableGenerator<Double> {
     /**
      * Creates a new {@link UniformFloatGenerator}.
      *

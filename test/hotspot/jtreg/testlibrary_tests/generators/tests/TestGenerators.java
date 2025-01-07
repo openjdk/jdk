@@ -83,10 +83,10 @@ public class TestGenerators {
                 .enqueueInteger(0, 10, 3)
                 .enqueueDouble(0, 1, 3.4d)
                 .enqueueInteger(0, 10, 6)
-                .enqueueInteger(0, 9, 3);
+                .enqueueInteger(0, 9, 1);
         var g = mockGS.mixedWithSpecialDoubles(mockGS.uniformDoubles(), 5, 5);
         Asserts.assertEQ(g.next(), 3.4d);
-        Asserts.assertEQ(g.next(), Double.POSITIVE_INFINITY);
+        Asserts.assertEQ(g.next(), -1d);
     }
 
     static void testSpecialDouble() {
@@ -95,10 +95,10 @@ public class TestGenerators {
                 .enqueueInteger(0, 10, 3)
                 .enqueueFloat(0, 1, 3.4f)
                 .enqueueInteger(0, 10, 6)
-                .enqueueInteger(0, 9, 3);
+                .enqueueInteger(0, 9, 1);
         var g = mockGS.mixedWithSpecialFloats(mockGS.uniformFloats(), 5, 5);
         Asserts.assertEQ(g.next(), 3.4f);
-        Asserts.assertEQ(g.next(), Float.POSITIVE_INFINITY);
+        Asserts.assertEQ(g.next(), -1f);
     }
 
     static void testUniformFloat() {
@@ -183,9 +183,15 @@ public class TestGenerators {
         var g = mockGS.single(30);
         Asserts.assertEQ(g.next(), 30);
         Asserts.assertEQ(g.next(), 30);
+        Asserts.assertEQ(g.restricted(10, 50).next(), 30);
         var gs = mockGS.single("hello");
         Asserts.assertEQ(gs.next(), "hello");
         Asserts.assertEQ(gs.next(), "hello");
+        Asserts.assertEQ(gs.restricted("a", "q").next(), "hello");
+        var theObject = new Object();
+        var go = mockGS.single(theObject);
+        Asserts.assertEQ(go.next(), theObject);
+        Asserts.assertEQ(go.next(), theObject);
     }
 
     static void testUniformInts() {
@@ -311,6 +317,9 @@ public class TestGenerators {
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.orderedRandomElement(new ArrayList<Integer>()));
         Asserts.assertNotNull(G.orderedRandomElement(List.of(48, 29, 17)));
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.orderedRandomElement(List.of(48, 29, 17)).restricted(-12, 10));
+
+        Asserts.assertThrows(EmptyGeneratorException.class, () -> G.single(10).restricted(0, 1));
+        Asserts.assertNotNull(G.single(10).restricted(9, 10));
     }
 
     static void testFill() {

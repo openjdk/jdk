@@ -23,27 +23,23 @@
 
 package compiler.lib.generators;
 
-/**
- * Provides a uniform long distribution random generator.
- */
-final class UniformLongGenerator extends UniformIntersectionRestrictableGenerator<Long> {
-    public UniformLongGenerator(Generators g, Long lo, Long hi) {
-        super(g, lo, hi);
+class RestrictableSingleValueGenerator<T extends Comparable<T>> implements RestrictableGenerator<T> {
+    private final T value;
+
+    RestrictableSingleValueGenerator(T value) {
+        this.value = value;
     }
 
     @Override
-    public Long next() {
-        if (hi() == Long.MAX_VALUE) {
-            if (lo() == Long.MIN_VALUE) {
-                return g.random.nextLong();
-            }
-            return g.random.nextLong(lo() - 1, hi()) + 1;
+    public RestrictableGenerator<T> restricted(T newLo, T newHi) {
+        if (newLo.compareTo(value) <= 0 && value.compareTo(newHi) <= 0) {
+            return this;
         }
-        return g.random.nextLong(lo(), hi() + 1);
+        throw new EmptyGeneratorException();
     }
 
     @Override
-    protected RestrictableGenerator<Long> doRestrictionFromIntersection(Long lo, Long hi) {
-        return new UniformLongGenerator(g, lo, hi);
+    public T next() {
+        return value;
     }
 }

@@ -36,13 +36,60 @@ import jdk.test.lib.Utils;
  * "interesting" distributions which might trigger various behaviours in
  * optimizations.
  * <p>
- * Normally, clients get the default Generators instance by referring to the static variable <code>G</code>.
+ * Normally, clients get the default Generators instance by referring to the static variable {@link #G}.
  * <p>
- * Furthermore, the generators provided by this class are composable and therefore extensible. This allows to easily
+ * Generators offers generators with essential distributions, for example, {@link #uniformInts(int, int)},
+ * {@link #uniformLongs(long, long)}, {@link #uniformDoubles(double, double)} or {@link #uniformFloats()}. For floating
+ * points, you may choose to get random bit patterns uniformly at random, rather than the values they represent.
+ * Generators also offers special generators of interesting values such as {@link #specialInts(int)},
+ * {@link #specialLongs(int)}, which are values close to the powers of 2, or {@link #SPECIAL_DOUBLES} and
+ * {@link #SPECIAL_FLOATS}, which are values such as infinity, NaN, zero or the maximum and minimum values.
+ * <p>
+ * Many distributions are <i>restrictable</i>. For example, if you first create a uniform integer generator over [1, 10],
+ * you can obtain a new generator by further restricting this range to [1, 5]. This is useful in cases where a function
+ * should be tested with different distributions. For example, a function <code>h(int, int, int)</code> under test might
+ * be worthwhile to test not only with uniformly sampled integers but might also exhibit interesting behavior if tested
+ * specifically with powers of two. Suppose further that each argument has a different range of allowed values. We
+ * can write a test function as below:
+ *
+ * <pre><code>
+ * void test(Generator<Integer> g) {
+ *     h(g.restricted(1, 10).next(), g.next(), g.restricted(-10, 100).next());
+ * }
+ * </code></pre>
+ *
+ * Then <code>test</code> can be called with different distributions, for example:
+ *
+ * <pre><code>
+ * test(G.uniformInts());
+ * test(G.specialInts(0));
+ * </code></pre>
+ * <p>
+ * If there is a single value that is interesting as the to all three parameters, we might even call this
+ * method with a single generator, ensuring that the single value is within the restriction ranges:
+ *
+ * <pre><code>
+ * test(G.single(1));
+ * </code></pre>
+ *
+ * <p>
+ * Furthermore, this class offers utility generators, such as {@link #randomElement(Collection)} or
+ * {@link #orderedRandomElement(Collection)} for sampling from a list of elements; {@link #single(Object)} for a
+ * generator that only produces a single value; and {@link #mixed(Generator, Generator, int, int)} which combines
+ * two generators with the provided weights.
+ * <p>
+ * Thus, the generators provided by this class are composable and therefore extensible. This allows to easily
  * create random generators even with types and distributions that are not predefined. For example, to create a
  * generator that provides true with 60 percent probably and false with 40 percent probably, one can simply write:
  * <p>
- * <code>G.mixed(G.single(true), G.single(false), 60, 40)</code>
+ * <pre><code>G.mixed(G.single(true), G.single(false), 60, 40)</code></pre>
+ * <p>
+ * Generators are also by no means limited to work with numbers. Restrictable generators can work with any type that
+ * implements {@link Comparable} while generators such as {@link #randomElement(Collection)} and {@link #single(Object)}
+ * work with any type. Note that there are separate restrictable versions of the last two generators
+ * (namely, {@link #orderedRandomElement(Collection)} and {@link #single(Comparable)}) that work with comparable types.
+ * For example, you might restrict a generator choosing strings at random:
+ * <pre><code>G.orderedRandomElement(List.of("Bob", "Alice", "Carol")).restricted("Al", "Bz")</code></pre>
  * <p>
  * For all the generators created by instances of this class, the following rule applies: Integral generators are
  * always inclusive of both the lower and upper bound, while floating point generators are always inclusive of the
@@ -157,6 +204,13 @@ public final class Generators {
      */
     public <T> Generator<T> single(T value) {
         return new SingleValueGenerator<>(value);
+    }
+
+    /**
+     * Returns a restrictable generator that always generate the provided value.
+     */
+    public <T extends Comparable<T>> RestrictableGenerator<T> single(T value) {
+        return new RestrictableSingleValueGenerator<>(value);
     }
 
     /**
@@ -284,7 +338,7 @@ public final class Generators {
      * Generates interesting double values, which often are corner cases such as, 0, 1, -1, NaN, +/- Infinity, Min,
      * Max.
      */
-    public final Generator<Double> SPECIAL_DOUBLES = randomElement(List.of(
+    public final RestrictableGenerator<Double> SPECIAL_DOUBLES = orderedRandomElement(List.of(
         0d,
         1d,
         -1d,
@@ -308,7 +362,7 @@ public final class Generators {
      * Generates interesting double values, which often are corner cases such as, 0, 1, -1, NaN, +/- Infinity, Min,
      * Max.
      */
-    public final Generator<Float> SPECIAL_FLOATS = randomElement(List.of(
+    public final RestrictableGenerator<Float> SPECIAL_FLOATS = orderedRandomElement(List.of(
         0f,
         1f,
         -1f,

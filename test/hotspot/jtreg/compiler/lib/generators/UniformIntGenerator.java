@@ -26,7 +26,7 @@ package compiler.lib.generators;
 /**
  * Provides a uniform int distribution random generator.
  */
-final class UniformIntGenerator extends RestrictableGeneratorBase<Integer> {
+final class UniformIntGenerator extends UniformIntersectionRestrictableGenerator<Integer> {
     public UniformIntGenerator(Generators g, int lo, int hi) {
         super(g, lo, hi);
     }
