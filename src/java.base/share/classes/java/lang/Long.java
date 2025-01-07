@@ -36,6 +36,7 @@ import java.util.Optional;
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.util.HexDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -315,34 +316,36 @@ public final class Long extends Number
     public static String toHexString(long i) {
         int mag = Long.SIZE - Long.numberOfLeadingZeros(i);
         int len = Math.max(((mag + 3) / 4), 1);
-        byte coder = COMPACT_STRINGS ? LATIN1 : UTF16;
-        byte[] chars = new byte[len << coder];
-        byte b;
-        long x = Integer.hex8(i);
-        if (len > 8) {
-            if (COMPACT_STRINGS) {
+        long x = HexDigits.hex8(i);
+        if (COMPACT_STRINGS) {
+            byte[] chars = new byte[len];
+            if (len > 8) {
                 len -= 8;
-                Unsafe.getUnsafe().putLong(chars, ARRAY_BYTE_BASE_OFFSET + len, Long.reverseBytes(x));
-            } else {
+                Unsafe.getUnsafe().putLongUnaligned(chars, ARRAY_BYTE_BASE_OFFSET + len, x, true);
+                x = HexDigits.hex8(i >>> 32);
+            }
+            do {
+                chars[--len] = (byte) x;
+                x >>>= 8;
+            } while (len > 0);
+            return new String(chars, LATIN1);
+        } else {
+            byte[] chars = new byte[len << 1];
+            byte b;
+            if (len > 8) {
                 for (int j = 0; j < 8; j++) {
                     b = (byte) x;
                     StringUTF16.putChar(chars, --len, b);
                     x >>>= 8;
                 }
+                x = HexDigits.hex8(i >>> 32);
             }
-            x = Integer.hex8(i >>> 32);
+            do {
+                StringUTF16.putChar(chars, --len, (byte) x);
+                x >>>= 8;
+            } while (len > 0);
+            return new String(chars, UTF16);
         }
-        do {
-            --len;
-            b = (byte) x;
-            if (COMPACT_STRINGS) {
-                chars[len] = b;
-            } else {
-                StringUTF16.putChar(chars, len, b);
-            }
-            x >>>= 8;
-        } while (len > 0);
-        return new String(chars, coder);
     }
 
     /**
