@@ -211,7 +211,7 @@ public class XDHKeyAgreement extends KeyAgreementSpi {
 
         if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
             throw new NoSuchAlgorithmException(
-                    "Only supported for algorithm TlsPremasterSecret");
+                    "Unsupported secret key algorithm " + algorithm);
         }
         return new SecretKeySpec(engineGenerateSecret(), algorithm);
     }

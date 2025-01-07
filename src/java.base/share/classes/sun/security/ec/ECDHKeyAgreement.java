@@ -256,10 +256,10 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
         if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
-            throw new NoSuchAlgorithmException
-                ("Only supported for algorithm TlsPremasterSecret");
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm " + algorithm);
         }
-        return new SecretKeySpec(engineGenerateSecret(), "TlsPremasterSecret");
+        return new SecretKeySpec(engineGenerateSecret(), algorithm);
     }
 
     private static

@@ -211,13 +211,14 @@ public abstract class KeyAgreementSpi {
      *      <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
      *      Java Security Standard Algorithm Names Specification</a>
      *      for information about standard secret key algorithm names.
-     *      Use "Generic" if the output will be used as the input keying
+     *      Specify "Generic" if the output will be used as the input keying
      *      material of a key derivation function (KDF).
      *
      * @return the shared secret key. The length of the key material
      *      may be adjusted to be compatible with the specified algorithm,
      *      regardless of whether the key is extractable. If {@code algorithm}
-     *      is specified as "Generic", the full shared secret will be returned.
+     *      is specified as "Generic" and it is supported by the implementation,
+     *      the full shared secret will be returned.
      *
      * @exception IllegalStateException if this key agreement has not been
      * initialized or if {@code doPhase} has not been called to supply the

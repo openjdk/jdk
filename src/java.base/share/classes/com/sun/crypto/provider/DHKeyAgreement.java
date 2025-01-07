@@ -428,8 +428,8 @@ extends KeyAgreementSpi {
                 return new SecretKeySpec(secret, algorithm);
             }
         } else {
-            throw new NoSuchAlgorithmException("Unsupported secret key "
-                                               + "algorithm: "+ algorithm);
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm " + algorithm);
         }
     }
 }

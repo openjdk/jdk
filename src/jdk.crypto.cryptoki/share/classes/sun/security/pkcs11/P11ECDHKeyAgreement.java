@@ -171,8 +171,8 @@ final class P11ECDHKeyAgreement extends KeyAgreementSpi {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
         if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
-            throw new NoSuchAlgorithmException
-                ("Only supported for algorithm TlsPremasterSecret");
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm " + algorithm);
         }
         return nativeGenerateSecret(algorithm);
     }

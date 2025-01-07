@@ -278,8 +278,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
         }
 
         if (!AllowKDF.VALUE) {
-            throw new NoSuchAlgorithmException("Unsupported secret key "
-                                               + "algorithm: " + algorithm);
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm " + algorithm);
         }
 
         byte[] secret = engineGenerateSecret();

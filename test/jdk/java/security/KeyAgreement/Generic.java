@@ -30,10 +30,13 @@
  * @run main/othervm Generic nss
  * @run main/othervm -DCUSTOM_P11_CONFIG_NAME=p11-nss-sensitive.txt Generic nss
  */
+import jdk.test.lib.Asserts;
+
 import javax.crypto.KeyAgreement;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.security.Security;
+import java.util.List;
 
 public class Generic {
 
@@ -56,12 +59,12 @@ public class Generic {
                     var kp1 = g.generateKeyPair();
                     var kp2 = g.generateKeyPair();
                     var ka = KeyAgreement.getInstance(s.getAlgorithm(), s.getProvider());
-                    ka.init(kp1.getPrivate());
-                    ka.doPhase(kp2.getPublic(), true);
-                    ka.generateSecret("TlsPremasterSecret");
-                    ka.init(kp1.getPrivate());
-                    ka.doPhase(kp2.getPublic(), true);
-                    ka.generateSecret("Generic");
+                    for (var alg : List.of("TlsPremasterSecret", "Generic")) {
+                        ka.init(kp1.getPrivate());
+                        ka.doPhase(kp2.getPublic(), true);
+                        Asserts.assertEquals(
+                                ka.generateSecret(alg).getAlgorithm(), alg);
+                    }
                 } catch (Exception e) {
                     throw e;
                 }
