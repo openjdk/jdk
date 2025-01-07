@@ -27,6 +27,9 @@ package jdk.jpackage.internal.model;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+/**
+ * Standard native package types.
+ */
 public enum StandardPackageType implements PackageType {
     WIN_MSI(".msi"),
     WIN_EXE(".exe"),
@@ -39,17 +42,14 @@ public enum StandardPackageType implements PackageType {
         this.suffix = suffix;
     }
 
+    /**
+     * Gets file extension of this package type.
+     * E.g.: <code>.msi</code>, <code>.dmg</code>, <code>.deb</code>.
+     * @return file extension of this package type
+     */
     public String suffix() {
         return suffix;
     }
-
-    public static StandardPackageType fromCmdLineType(String type) {
-        Objects.requireNonNull(type);
-        return Stream.of(values()).filter(pt -> {
-            return pt.suffix().substring(1).equals(type);
-        }).findAny().get();
-    }
-
 
     private final String suffix;
 }

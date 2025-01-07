@@ -30,63 +30,152 @@ import java.util.Map;
 import java.util.Optional;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
+/**
+ * Application launcher.
+ *
+ * @apiNote All methods return non-null values.
+ *
+ * @see Application#launchers()
+ */
 public interface Launcher {
 
+    /**
+     * Gets name of this launcher.
+     * @return the name of this launcher
+     */
     String name();
 
+    /**
+     * Gets name of the executable file of this launcher without file extension.
+     * @return the name of the executable file of this launcher
+     */
     default String executableName() {
         return name();
     }
 
+    /**
+     * Gets extension of the executable file of this launcher if available or an empty {@link Optional} instance.
+     * @return the extension of the executable file of this launcher
+     */
     default Optional<String> executableSuffix() {
         return Optional.empty();
     }
 
+    /**
+     * Gets full name of the executable file of this launcher. The full name consists of the name and the extension.
+     * @return the full name of the executable file of this launcher
+     */
     default String executableNameWithSuffix() {
         return executableName() + executableSuffix().orElse("");
     }
 
+    /**
+     * Gets startup information of this launcher if available or an empty {@link Optional} instance.
+     * @apiNote
+     * Launchers from an external application image may not have startup information.
+     * @return the startup information of this launcher
+     */
     Optional<LauncherStartupInfo> startupInfo();
 
+    /**
+     * Gets file associations of this launcher.
+     * @return the file associations of this launcher
+     */
     List<FileAssociation> fileAssociations();
 
+    /**
+     * Returns <code>true</code> if this launcher should be installed as a service.
+     * @return <code>true</code> if this launcher should be installed as a service
+     */
     boolean isService();
 
+    /**
+     * Gets description of this launcher.
+     * @return the description of this launcher
+     */
     String description();
 
+    /**
+     * Opens a stream with the template executable file for this launcher.
+     * Caller is responsible for close the stream.
+     * @return a stream with the template executable file for this launcher
+     */
     default InputStream executableResource() {
         return ResourceLocator.class.getResourceAsStream("jpackageapplauncher");
     }
 
+    /**
+     * Gets the additional properties for application launcher entries in the app image (".jpackage") file.
+     *
+     * @return the additional properties for application launcher entries in ".jpackage" file
+     */
     default Map<String, String> extraAppImageFileData() {
         return Map.of();
     }
 
     /**
-     * Icon for the launcher.
+     * Gets the icon for this launcher or an empty {@link Optional} instance if the launcher is requested to have no icon.
+     * @return the icon for this launcher
+     * @see #hasIcon()
+     * @see #hasDefaultIcon()
+     * @see #hasCustomIcon()
      */
     Optional<LauncherIcon> icon();
 
+    /**
+     * Returns <code>true</code> if this launcher is requested to have an icon.
+     * @return <code>true</code> if this launcher is requested to have an icon
+     * @see #icon()
+     * @see #hasDefaultIcon()
+     * @see #hasCustomIcon()
+     */
     default boolean hasIcon() {
         return icon().isPresent();
     }
 
+    /**
+     * Returns <code>true</code> if this launcher has a default icon.
+     * @return <code>true</code> if this launcher has a default icon
+     * @see DefaultLauncherIcon
+     * @see #icon()
+     * @see #hasIcon()
+     * @see #hasCustomIcon()
+     */
     default boolean hasDefaultIcon() {
         return icon().flatMap(DefaultLauncherIcon::fromLauncherIcon).isPresent();
     }
 
+    /**
+     * Returns <code>true</code> if this launcher has a custom icon.
+     * @return <code>true</code> if this launcher has a custom icon
+     * @see CustomLauncherIcon
+     * @see #icon()
+     * @see #hasDefaultIcon()
+     * @see #hasIcon()
+     */
     default boolean hasCustomIcon() {
         return icon().flatMap(CustomLauncherIcon::fromLauncherIcon).isPresent();
     }
 
+    /**
+     * Gets key in the resource bundle of {@link jdk.jpackage/} module referring to the default launcher icon.
+     * @return the key in the resource bundle referring to the default launcher icon
+     */
     String defaultIconResourceName();
 
+    /**
+     * Default implementation of {@link Launcher} interface.
+     */
     record Stub(String name, Optional<LauncherStartupInfo> startupInfo,
             List<FileAssociation> fileAssociations, boolean isService,
             String description, Optional<LauncherIcon> icon,
             String defaultIconResourceName) implements Launcher {
     }
 
+    /**
+     * Implementation of {@link Launcher} interface in which every method
+     * throws {@link UnsupportedOperationException} exception.
+     */
     class Unsupported implements Launcher {
 
         @Override

@@ -28,24 +28,58 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+/**
+ * File association.
+ */
 public interface FileAssociation {
 
+    /**
+     * Returns file association description if available or an empty {@link Optional} instance.
+     * @see {@link #nonEmptyDescription()}
+     * @return file association description
+     */
     Optional<String> description();
 
+    /**
+     * Returns file association icon if available or an empty {@link Optional} instance.
+     * @see {@link #hasIcon()}
+     * @return file association icon
+     */
     Optional<Path> icon();
 
+    /**
+     * Returns <code>true</code> if the file association has an icon.
+     * @see {@link #icon()}
+     * @return <code>true</code> if the file association has an icon
+     */
     default boolean hasIcon() {
         return icon().isPresent();
     }
 
+    /**
+     * Returns a non-empty description of this file association if available or an empty {@link Optional} instance.
+     * @see {@link #description()}
+     * @return non-empty file association description
+     */
     default Optional<String> nonEmptyDescription() {
         return description().filter(Predicate.not(String::isEmpty));
     }
 
+    /**
+     * Returns file association MIME type. E.g.: <code>application/foo</code>, <code>text/plain<code>.
+     * @return file association MIME type
+     */
     String mimeType();
 
+    /**
+     * Returns file association extension. E.g.: <code>.txt</code>
+     * @return file association extension
+     */
     String extension();
 
+    /**
+     * Default implementation of {@link FileAssociation} interface
+     */
     record Stub(Optional<String> description, Optional<Path> icon, String mimeType, String extension) implements FileAssociation {
     }
 }

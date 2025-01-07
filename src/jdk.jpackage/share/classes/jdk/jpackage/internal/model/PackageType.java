@@ -26,4 +26,9 @@
 package jdk.jpackage.internal.model;
 
 
+/**
+ * Generic package type. E.g.: application image, rpm, msi are all package types.
+ *
+ * @see jdk.jpackage.internal.model.Package
+ */
 public interface PackageType {}

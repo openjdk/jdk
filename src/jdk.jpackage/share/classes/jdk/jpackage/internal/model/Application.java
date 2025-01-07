@@ -196,11 +196,9 @@ public interface Application {
     }
 
     /**
-     * Returns additional properties for application launcher entries in the app image (".jpackage") file.
+     * Gets the additional properties for the application entry in the app image (".jpackage") file.
      *
-     * @see Launcher#isService
-     *
-     * @return additional properties for application launcher entries in ".jpackage" file
+     * @return the additional properties for the application entry in ".jpackage" file
      */
     default Map<String, String> extraAppImageFileData() {
         return Map.of();
