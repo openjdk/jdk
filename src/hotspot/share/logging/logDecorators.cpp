@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,9 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
       break;
     }
     tmp_decorators |= mask(d);
-    token = comma_pos + 1;
+    if (comma_pos != nullptr) {
+      token = comma_pos + 1;
+    }
   } while (comma_pos != nullptr);
   os::free(args_copy);
   if (result) {

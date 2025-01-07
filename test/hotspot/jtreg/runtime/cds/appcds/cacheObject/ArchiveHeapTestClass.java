@@ -27,6 +27,9 @@
  * @bug 8214781 8293187
  * @summary Test for the -XX:ArchiveHeapTestClass flag
  * @requires vm.debug == true & vm.cds.write.archived.java.heap
+ * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
+ * @requires !vm.jvmci.enabled
  * @modules java.logging
  * @library /test/jdk/lib/testlibrary /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds

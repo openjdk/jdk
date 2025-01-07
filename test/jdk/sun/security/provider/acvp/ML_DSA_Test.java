@@ -23,6 +23,7 @@
 import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
 import jdk.test.lib.security.FixedSecureRandom;
+import sun.security.provider.ML_DSA_Impls;
 
 import java.security.*;
 import java.security.spec.EncodedKeySpec;
@@ -34,6 +35,11 @@ import static jdk.test.lib.Utils.toByteArray;
 public class ML_DSA_Test {
 
     public static void run(JSONValue kat, Provider provider) throws Exception {
+
+        // We only have ML-DSA test for internal functions, which
+        // is equivalent to the FIP 204 draft.
+        ML_DSA_Impls.version = ML_DSA_Impls.Version.DRAFT;
+
         var mode = kat.get("mode").asString();
         switch (mode) {
             case "keyGen" -> keyGenTest(kat, provider);
@@ -70,8 +76,8 @@ public class ML_DSA_Test {
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
-                Asserts.assertEqualsByteArray(pk, toByteArray(c.get("pk").asString()));
-                Asserts.assertEqualsByteArray(sk, toByteArray(c.get("sk").asString()));
+                Asserts.assertEqualsByteArray(toByteArray(c.get("pk").asString()), pk);
+                Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()), sk);
             }
             System.out.println();
         }
@@ -98,7 +104,7 @@ public class ML_DSA_Test {
                 s.update(toByteArray(c.get("message").asString()));
                 var sig = s.sign();
                 Asserts.assertEqualsByteArray(
-                        sig, toByteArray(c.get("signature").asString()));
+                        toByteArray(c.get("signature").asString()), sig);
             }
             System.out.println();
         }
