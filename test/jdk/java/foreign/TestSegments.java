@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,27 +240,6 @@ public class TestSegments {
             assertTrue(s.contains("native"));
         }
         assertFalse(s.contains("Optional"));
-
-        assertFalse(s.contains(", mapped"));
-        assertFalse(s.contains(", not alive"));
-        var readOnlySegment = segment.asReadOnly();
-        assertTrue(readOnlySegment.toString().contains(", read-only"));
-    }
-
-    @Test
-    public void testToString2() {
-        MemorySegment segment;
-        try (var arena = Arena.ofConfined()) {
-            segment = arena.allocate(8);
-            assertTrue(segment.toString().contains(", confined"));
-            assertFalse(segment.toString().contains(", not alive"));
-        }
-        assertTrue(segment.toString().contains(", not alive"));
-        try (var arena = Arena.ofShared()) {
-            segment = arena.allocate(8);
-            assertFalse(segment.toString().contains(", confined"));
-            assertFalse(segment.toString().contains(", not alive"));
-        }
     }
 
     @DataProvider(name = "segmentFactories")

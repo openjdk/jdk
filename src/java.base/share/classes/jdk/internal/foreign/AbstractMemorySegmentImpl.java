@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,13 +487,9 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public String toString() {
         return "MemorySegment{ " +
-                heapBase().map(hb -> "heapBase: " + hb).orElse("native") +
+                heapBase().map(hb -> "heapBase: " + hb).orElse(isMapped() ? "mapped" : "native") +
                 ", address: " + Utils.toHexString(address()) +
                 ", byteSize: " + length +
-                (sessionImpl() instanceof ConfinedSession ? ", confined" : "") +
-                (!sessionImpl().isAlive() ? ", not alive" : "") +
-                (isReadOnly() ? ", read-only" : "") +
-                (isMapped() ? ", mapped" : "") +
                 " }";
     }
 
