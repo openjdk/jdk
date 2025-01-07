@@ -450,12 +450,9 @@ public final class PassFailJFrame {
                           long testTimeOut,
                           int rows, int columns)
             throws InterruptedException, InvocationTargetException {
-        if (isEventDispatchThread()) {
-            createUI(title, instructions, testTimeOut, rows, columns);
-        } else {
-            invokeAndWait(() -> createUI(title, instructions, testTimeOut,
-                    rows, columns));
-        }
+        invokeOnEDT(() -> createUI(title, instructions,
+                                   testTimeOut,
+                                   rows, columns));
     }
 
     /**
