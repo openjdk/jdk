@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
                                                         size_t size,
                                                         size_t alignment,
                                                         size_t page_size) {
-  const size_t attach_range = highest_start - lowest_start;
+  const size_t attach_range = pointer_delta(highest_start, lowest_start, sizeof(char*));
   // Cap num_attempts at possible number.
   // At least one is possible even for 0 sized attach range.
   const uint64_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
@@ -435,11 +435,10 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
   const size_t stepsize = (attach_range == 0) ? // Only one try.
     1 : align_up(attach_range / num_attempts_to_try, attach_point_alignment);
 
-  // Try reserve memory from top to bottom.
-  for (size_t offset = attach_range;
-       offset <= attach_range; // Avoid wrap around.
-       offset -= stepsize) {
-    ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, lowest_start + offset);
+  for (char* attach_point = highest_start;
+       attach_point >= lowest_start;  // Avoid wrap around.
+       attach_point -= stepsize) {
+    ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, attach_point);
 
     if (reserved.is_reserved()) {
       if (reserved.base() >= aligned_heap_base_min_address &&
