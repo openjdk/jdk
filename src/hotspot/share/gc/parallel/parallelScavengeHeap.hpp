@@ -44,6 +44,7 @@ class MemoryPool;
 class PSAdaptiveSizePolicy;
 class PSCardTable;
 class PSHeapSummary;
+class ReservedSpace;
 
 // ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.
 //

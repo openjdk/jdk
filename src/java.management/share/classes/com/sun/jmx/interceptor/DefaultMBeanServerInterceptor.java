@@ -35,7 +35,6 @@ import com.sun.jmx.mbeanserver.ModifiableClassLoaderRepository;
 import com.sun.jmx.mbeanserver.NamedObject;
 import com.sun.jmx.mbeanserver.Repository;
 import com.sun.jmx.mbeanserver.Repository.RegistrationContext;
-import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.util.EnvHelp;
 
 import java.lang.ref.WeakReference;
@@ -80,6 +79,8 @@ import javax.management.RuntimeErrorException;
 import javax.management.RuntimeMBeanException;
 import javax.management.RuntimeOperationsException;
 import javax.management.loading.ClassLoaderRepository;
+
+import sun.management.Util;
 
 /**
  * This is the default class for MBean manipulation on the agent side. It

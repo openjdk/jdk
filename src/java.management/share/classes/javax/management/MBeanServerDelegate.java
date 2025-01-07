@@ -28,7 +28,7 @@ package javax.management;
 import java.lang.System.Logger.Level;
 import com.sun.jmx.defaults.JmxProperties;
 import com.sun.jmx.defaults.ServiceName;
-import com.sun.jmx.mbeanserver.Util;
+import sun.management.Util;
 
 /**
  * Represents the MBean server from the management point of view.
