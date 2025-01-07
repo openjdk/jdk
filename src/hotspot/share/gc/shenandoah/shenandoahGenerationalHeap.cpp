@@ -186,8 +186,8 @@ void ShenandoahGenerationalHeap::gc_threads_do(ThreadClosure* tcl) const {
 }
 
 void ShenandoahGenerationalHeap::stop() {
-  regulator_thread()->stop();
   ShenandoahHeap::stop();
+  regulator_thread()->stop();
 }
 
 void ShenandoahGenerationalHeap::start_idle_span() {

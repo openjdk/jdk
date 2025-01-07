@@ -25,13 +25,11 @@
 #ifndef SHARE_C1_C1_FRAMEMAP_HPP
 #define SHARE_C1_C1_FRAMEMAP_HPP
 
-#include "asm/macroAssembler.hpp"
 #include "c1/c1_Defs.hpp"
 #include "c1/c1_LIR.hpp"
 #include "code/vmreg.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/synchronizer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

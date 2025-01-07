@@ -286,7 +286,6 @@ class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
-  ShenandoahHeapRegion** _trash_regions;
 
   // How many words have been allocated by the mutator since the ShenandoahFreeSet was most recently rebuilt.
   // This value is modified and fetched only under HeapLock.
@@ -368,7 +367,6 @@ private:
   HeapWord* try_allocate_from_mutator(ShenandoahAllocRequest& req, bool& in_new_region);
 
   void clear_internal();
-  void try_recycle_trashed(ShenandoahHeapRegion *r);
 
   // Returns true iff this region is entirely available, either because it is empty() or because it has been found to represent
   // immediate trash and we'll be able to immediately recycle it.  Note that we cannot recycle immediate trash if

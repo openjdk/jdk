@@ -149,7 +149,6 @@ final class ProviderConfig {
     /**
      * Get the provider object. Loads the provider if it is not already loaded.
      */
-    @SuppressWarnings("deprecation")
     Provider getProvider() {
         // volatile variable load
         Provider p = provider;
