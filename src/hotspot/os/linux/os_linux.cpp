@@ -4537,7 +4537,7 @@ void os::Linux::disable_numa(const char* reason) {
   if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
       (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
     // Only issue a warning if the user explicitly asked for NUMA support
-    log_warning(os)("NUMA support disabled: %s", reason);
+    log_info(os)("NUMA support disabled: %s", reason);
   }
   FLAG_SET_ERGO(UseNUMA, false);
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
