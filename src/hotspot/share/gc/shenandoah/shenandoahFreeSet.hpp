@@ -491,7 +491,7 @@ public:
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);   }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);       }
   inline size_t reserved()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector); }
-                              
+
   inline size_t available() const {
     assert(used() <= capacity(), "must use less than capacity");
     return capacity() - used();

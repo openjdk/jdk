@@ -68,7 +68,7 @@ const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 const size_t ShenandoahAdaptiveHeuristics::GC_TIME_SAMPLE_SIZE = 3;
 
 // We also keep separate track of recently sampled allocation rates for two purposes:
-//  1. The number of samples examined to determine acceleration of allocation is represented by 
+//  1. The number of samples examined to determine acceleration of allocation is represented by
 //     ShenandoahRateAccelerationSampleSize, default value 6
 //  2. The number of most recent samples averaged to determine a momentary allocation spike is represented by
 //     ShenandoahMomentaryAllocationRateSpikeSampleSize, default value 4
@@ -182,7 +182,7 @@ double ShenandoahAdaptiveHeuristics::get_planned_sleep_interval() const {
 #undef KELVIN_VERBOSE
 
 void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_available) {
-  // The trigger threshold represents mutator available - "head room".  
+  // The trigger threshold represents mutator available - "head room".
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
   // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
@@ -220,7 +220,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
                byte_size_in_proper_unit(mutator_available),   proper_unit_for_byte_size(mutator_available),
                byte_size_in_proper_unit(spike_headroom),      proper_unit_for_byte_size(spike_headroom),
                byte_size_in_proper_unit(penalties),           proper_unit_for_byte_size(penalties));
- 
+
   _most_recent_headroom_at_start_of_idle = mutator_available;
   // _trigger_threshold is expressed in words
   _trigger_threshold = mutator_available / HeapWordSize;
@@ -719,7 +719,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     //
     // Though the above measurements are from actual workload, the following details regarding sampled allocation rates at 3ms
     // period were not measured directly for this run-time sample.  These are hypothetical, though they represent a plausible
-    // result that correlates with the actual measurements. 
+    // result that correlates with the actual measurements.
     //
     // For most of the 100 ms time span that precedes the sample at 101.907, the allocation rate still remains at zero.  The phase
     // change that causes increasing allocations occurs near the end ot this time segment.  When sampled with a 3 ms period,
