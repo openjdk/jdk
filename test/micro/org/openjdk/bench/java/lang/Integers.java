@@ -106,6 +106,13 @@ public class Integers {
         }
     }
 
+    @Benchmark
+    public void toHexString(Blackhole bh) {
+        for (int i : intsBig) {
+            bh.consume(Integer.toHexString(i));
+        }
+    }
+
     /** Performs toString on large values, roughly 10 digits. */
     @Benchmark
     public void toStringBig(Blackhole bh) {
