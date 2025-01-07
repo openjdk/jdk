@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,10 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * written to the output byte array or {@code ByteBuffer} passed to the
  * {@code deflate()} methods.
  * <p>
- * To release resources used by the {@code Deflater}, applications must call the
- * {@link #end()} method. After {@code end()} has been called, subsequent calls
- * to several methods of the {@code Deflater} will throw an {@link IllegalStateException}.
+ * To release resources used by the {@code Deflater}, applications must close the
+ * {@code Deflater} by calling either the {@link #end()} or the {@link #close()} method.
+ * After the {@code Deflater} has been closed, subsequent calls to several methods
+ * of the {@code Deflater} will throw an {@link IllegalStateException}.
  *
  * @apiNote
  * This class implements {@link AutoCloseable} to facilitate its usage with
