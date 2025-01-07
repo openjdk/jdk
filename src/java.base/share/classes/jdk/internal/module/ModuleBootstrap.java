@@ -836,8 +836,7 @@ public final class ModuleBootstrap {
      * command line option, and also to JDK modules that need the access.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        // TODO Use a dedicated "Is in LM_SOURCE?" flag
-        boolean shouldWarn = System.getProperty("jdk.internal.javac.source") == null;
+        boolean shouldWarn = !"source".equals(System.getProperty("jdk.internal.java.launchmode"));
         addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, shouldWarn);
         addEnableNativeAccess(layer, JDK_NATIVE_ACCESS_MODULES, false);
     }

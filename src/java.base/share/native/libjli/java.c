@@ -1197,6 +1197,7 @@ ParseArguments(int *pargc, char ***pargv,
                 char *propValue = (char *)JLI_MemAlloc(size);
                 JLI_Snprintf(propValue, size, "%s%s", prop, value);
                 AddOption(propValue, NULL);
+                AddOption("-Djdk.internal.java.launchmode=source", NULL);
             }
         } else if (JLI_StrCmp(arg, "--class-path") == 0 ||
                    JLI_StrCCmp(arg, "--class-path=") == 0 ||
@@ -1367,14 +1368,12 @@ ParseArguments(int *pargc, char ***pargv,
          * mode as LM_CLASS or LM_SOURCE per the input file. */
         mode = IsSourceFile(arg) ? LM_SOURCE : LM_CLASS;
         if (mode == LM_SOURCE) {
-            // TODO use feature release number constant or a dedicated flag
-            AddOption("-Djdk.internal.javac.source=25", NULL);
+            AddOption("-Djdk.internal.java.launchmode=source", NULL);
         }
     } else if (mode == LM_CLASS && IsSourceFile(arg)) {
         /* override LM_CLASS mode if given a source file */
         mode = LM_SOURCE;
-        // TODO use feature release number constant or a dedicated flag
-        AddOption("-Djdk.internal.javac.source=25", NULL);
+        AddOption("-Djdk.internal.java.launchmode=source", NULL);
     }
 
     if (mode == LM_SOURCE) {
