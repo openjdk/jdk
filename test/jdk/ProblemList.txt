@@ -727,6 +727,8 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 
 # jdk_jdi
 
+com/sun/jdi/ProcessAttachTest.java         8346827 linux-all
+com/sun/jdi/ReattachStressTest.java        8346827 linux-all
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all

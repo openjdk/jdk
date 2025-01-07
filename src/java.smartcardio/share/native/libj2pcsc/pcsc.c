@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,9 @@
 // #define J2PCSC_DEBUG
 
 #ifdef J2PCSC_DEBUG
-#define dprintf(s) printf(s)
-#define dprintf1(s, p1) printf(s, p1)
-#define dprintf2(s, p1, p2) printf(s, p1, p2)
-#define dprintf3(s, p1, p2, p3) printf(s, p1, p2, p3)
+#define debug_printf(format, ...) printf(format, ##__VA_ARGS__)
 #else
-#define dprintf(s)
-#define dprintf1(s, p1)
-#define dprintf2(s, p1, p2)
-#define dprintf3(s, p1, p2, p3)
+#define debug_printf(format, ...)
 #endif
 
 #include "sun_security_smartcardio_PCSC.h"
@@ -112,7 +106,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_smartcardio_PCSC_SCardEstablishContext
 {
     SCARDCONTEXT context = 0;
     LONG rv;
-    dprintf("-establishContext\n");
+    debug_printf("-establishContext\n");
     rv = CALL_SCardEstablishContext(dwScope, NULL, NULL, &context);
     if (handleRV(env, rv)) {
         return 0;
@@ -185,12 +179,12 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
     DWORD size = 0;
     jobjectArray result;
 
-    dprintf1("-context: %x\n", context);
+    debug_printf("-context: %x\n", context);
     rv = CALL_SCardListReaders(context, NULL, NULL, &size);
     if (handleRV(env, rv)) {
         return NULL;
     }
-    dprintf1("-size: %d\n", size);
+    debug_printf("-size: %d\n", size);
 
     if (size != 0) {
         mszReaders = malloc(size);
@@ -204,7 +198,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
             free(mszReaders);
             return NULL;
         }
-        dprintf1("-String: %s\n", mszReaders);
+        debug_printf("-String: %s\n", mszReaders);
     } else {
       return NULL;
     }
@@ -230,8 +224,8 @@ JNIEXPORT jlong JNICALL Java_sun_security_smartcardio_PCSC_SCardConnect
     }
     rv = CALL_SCardConnect(context, readerName, jShareMode, jPreferredProtocols, &card, &proto);
     (*env)->ReleaseStringUTFChars(env, jReaderName, readerName);
-    dprintf1("-cardhandle: %x\n", card);
-    dprintf1("-protocol: %d\n", proto);
+    debug_printf("-cardhandle: %x\n", card);
+    debug_printf("-protocol: %d\n", proto);
     if (handleRV(env, rv)) {
         return 0;
     }
@@ -295,9 +289,9 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_smartcardio_PCSC_SCardStatus
     if (handleRV(env, rv)) {
         return NULL;
     }
-    dprintf1("-reader: %s\n", readerName);
-    dprintf1("-status: %d\n", state);
-    dprintf1("-protocol: %d\n", protocol);
+    debug_printf("-reader: %s\n", readerName);
+    debug_printf("-status: %d\n", state);
+    debug_printf("-protocol: %d\n", protocol);
 
     jArray = (*env)->NewByteArray(env, atrLen);
     if (jArray == NULL) {
@@ -323,7 +317,7 @@ JNIEXPORT void JNICALL Java_sun_security_smartcardio_PCSC_SCardDisconnect
     LONG rv;
 
     rv = CALL_SCardDisconnect(card, jDisposition);
-    dprintf1("-disconnect: 0x%X\n", rv);
+    debug_printf("-disconnect: 0x%X\n", rv);
     handleRV(env, rv);
     return;
 }
@@ -392,7 +386,7 @@ JNIEXPORT jintArray JNICALL Java_sun_security_smartcardio_PCSC_SCardGetStatusCha
     }
     for (i = 0; i < readers; i++) {
         jint eventStateTmp;
-        dprintf3("-reader status %s: 0x%X, 0x%X\n", readerState[i].szReader,
+        debug_printf("-reader status %s: 0x%X, 0x%X\n", readerState[i].szReader,
             readerState[i].dwCurrentState, readerState[i].dwEventState);
         eventStateTmp = (jint)readerState[i].dwEventState;
         (*env)->SetIntArrayRegion(env, jEventState, i, 1, &eventStateTmp);
@@ -417,7 +411,7 @@ JNIEXPORT void JNICALL Java_sun_security_smartcardio_PCSC_SCardBeginTransaction
     LONG rv;
 
     rv = CALL_SCardBeginTransaction(card);
-    dprintf1("-beginTransaction: 0x%X\n", rv);
+    debug_printf("-beginTransaction: 0x%X\n", rv);
     handleRV(env, rv);
     return;
 }
@@ -429,7 +423,7 @@ JNIEXPORT void JNICALL Java_sun_security_smartcardio_PCSC_SCardEndTransaction
     LONG rv;
 
     rv = CALL_SCardEndTransaction(card, jDisposition);
-    dprintf1("-endTransaction: 0x%X\n", rv);
+    debug_printf("-endTransaction: 0x%X\n", rv);
     handleRV(env, rv);
     return;
 }

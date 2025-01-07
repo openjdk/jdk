@@ -55,7 +55,7 @@ import jdk.internal.classfile.impl.LabelImpl;
  * {@snippet lang=java :
  * cob.with(lt); // @link substring="with" target="CodeBuilder#with"
  * // @link substring="labelBinding" target="CodeBuilder#labelBinding" :
- * cob.labelBinding(lt.label()); // @link substring="label" target="#label"
+ * cob.labelBinding(lt.label()); // @link regex="label(?=\()" target="#label"
  * }
  *
  * @see Label
