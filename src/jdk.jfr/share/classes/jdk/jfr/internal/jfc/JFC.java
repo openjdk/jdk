@@ -72,7 +72,7 @@ public final class JFC {
         }
         return list;
     }
-    
+
     /**
      * Reads a known configuration file (located into a string, but doesn't
      * parse it until it's being used.

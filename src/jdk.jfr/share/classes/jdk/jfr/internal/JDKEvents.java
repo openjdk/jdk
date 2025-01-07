@@ -128,7 +128,7 @@ public final class JDKEvents {
         PeriodicEvents.addJavaEvent(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
         PeriodicEvents.addJavaEvent(ContainerIOUsageEvent.class, emitContainerIOUsage);
     }
-    
+
     private static void registerEvent(Class<? extends jdk.internal.event.Event> eventClass) {
         MetadataRepository.getInstance().register(eventClass);
     }

@@ -450,7 +450,7 @@ public final class Utils {
         }
         return null;
     }
-    
+
     public static Path getPathInProperty(String prop, String subPath) {
         String path = System.getProperty(prop);
         if (path == null) {

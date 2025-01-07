@@ -64,7 +64,7 @@ public final class EventWriter {
         }
         return JVM.newEventWriter();
     }
-    
+
     // User code must not be able to instantiate
     private EventWriter() {
         threadID = 0;

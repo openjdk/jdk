@@ -47,7 +47,7 @@ final class JavaEventTask extends EventTask {
         EventType eventType = MetadataRepository.getInstance().getEventType(eventClass);
         return PrivateAccess.getInstance().getPlatformEventType(eventType);
     }
-    
+
     @Override
     public void execute(long timestamp, PeriodicType periodicType) {
         runnable.run();

@@ -32,7 +32,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
 public final class DirectoryCleaner extends SimpleFileVisitor<Path> {
-    
+
     public static void clear(Path path) throws IOException {
         Files.walkFileTree(path, new DirectoryCleaner());
     }
