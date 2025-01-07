@@ -220,18 +220,17 @@ extern "C" {
 
 
     BOOL shutdownAccessBridge() {
-     // BOOL result;
-     // DWORD error;
+        BOOL result;
+        DWORD error;
         theAccessBridgeInitializedFlag = FALSE;
         if (theAccessBridgeInstance != (HANDLE) 0) {
-            /* result = */ FreeLibrary(theAccessBridgeInstance);
-            /*
+            result = FreeLibrary(theAccessBridgeInstance);
             if (result != TRUE) {
                 error = GetLastError();
             }
-            */
             return TRUE;
         }
+        ((void) error);
         return FALSE;
     }
 
