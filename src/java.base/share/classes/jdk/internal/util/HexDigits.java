@@ -196,7 +196,7 @@ public final class HexDigits {
     }
 
     /**
-     * Extract the least significant 8 bytes from the input integer i, convert each byte into its corresponding 2-digit
+     * Extract the least significant 4 bytes from the input integer i, convert each byte into its corresponding 2-digit
      * hexadecimal representation, concatenate these hexadecimal strings into one continuous string, and then interpret
      * this string as a hexadecimal number to form and return a long value.
      */
