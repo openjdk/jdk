@@ -154,6 +154,7 @@ void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   oop_oop_iterate_ref_processing<T>(obj, closure);
 }
 
+
 template <typename T, class OopClosureType>
 void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
@@ -166,6 +167,28 @@ void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure,
   InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
 
   oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
+}
+
+// klute variants
+template <typename T, class OopClosureType>
+void InstanceRefKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute, nk);
+  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
+  narrow_klass_to_klass(nk)->oop_oop_iterate_ref_processing<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+void InstanceRefKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute, nk);
+  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
+  narrow_klass_to_klass(nk)->oop_oop_iterate_ref_processing<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+void InstanceRefKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute, nk);
+  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
+  narrow_klass_to_klass(nk)->oop_oop_iterate_ref_processing_bounded<T>(obj, closure, mr);
 }
 
 #ifdef ASSERT
@@ -189,5 +212,8 @@ void InstanceRefKlass::trace_reference_gc(const char *s, oop obj) {
   }
 }
 #endif
+
+DEFINE_EXACT_CAST_FUNCTIONS(InstanceRefKlass)
+DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceRefKlass)
 
 #endif // SHARE_OOPS_INSTANCEREFKLASS_INLINE_HPP

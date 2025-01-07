@@ -26,6 +26,7 @@
 #define SHARE_OOPS_TYPEARRAYKLASS_HPP
 
 #include "oops/arrayKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 
 class ClassLoaderData;
 
@@ -36,7 +37,7 @@ class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
 
  public:
-  static const KlassKind Kind = TypeArrayKlassKind;
+  static constexpr KlassKind Kind = TypeArrayKlassKind;
 
  private:
   jint _max_length;            // maximum number of elements allowed in an array
@@ -80,7 +81,7 @@ class TypeArrayKlass : public ArrayKlass {
 
  private:
   // The implementation used by all oop_oop_iterate functions in TypeArrayKlasses.
-  inline void oop_oop_iterate_impl(oop obj, OopIterateClosure* closure);
+  static inline void oop_oop_iterate_impl(oop obj, OopIterateClosure* closure);
 
  public:
   // Wraps oop_oop_iterate_impl to conform to macros.
@@ -94,6 +95,14 @@ class TypeArrayKlass : public ArrayKlass {
   // Wraps oop_oop_iterate_impl to conform to macros.
   template <typename T, typename OopClosureType>
   inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure);
+
+  // klute variants
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk);
 
  public:
   static TypeArrayKlass* cast(Klass* k) {
@@ -127,6 +136,10 @@ class TypeArrayKlass : public ArrayKlass {
 
   ModuleEntry* module() const;
   PackageEntry* package() const;
+
+  DECLARE_EXACT_CAST_FUNCTIONS(TypeArrayKlass)
+  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(TypeArrayKlass)
+
 };
 
 #endif // SHARE_OOPS_TYPEARRAYKLASS_HPP

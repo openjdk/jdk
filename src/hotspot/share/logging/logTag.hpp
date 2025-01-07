@@ -110,6 +110,7 @@ class outputStream;
   LOG_TAG(jni) \
   LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
+  LOG_TAG(klut) \
   LOG_TAG(lambda) \
   LOG_TAG(library) \
   LOG_TAG(link) \

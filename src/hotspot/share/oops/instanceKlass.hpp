@@ -32,6 +32,7 @@
 #include "oops/fieldInfo.hpp"
 #include "oops/instanceKlassFlags.hpp"
 #include "oops/instanceOop.hpp"
+#include "oops/klassInfoLUT.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/accessFlags.hpp"
@@ -138,7 +139,7 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  public:
-  static const KlassKind Kind = InstanceKlassKind;
+  static constexpr KlassKind Kind = InstanceKlassKind;
 
  protected:
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
@@ -337,7 +338,6 @@ class InstanceKlass: public Klass {
   void set_nonstatic_field_size(int size)  { _nonstatic_field_size = size; }
 
   int static_field_size() const            { return _static_field_size; }
-  void set_static_field_size(int size)     { _static_field_size = size; }
 
   int static_oop_field_count() const       { return (int)_static_oop_field_count; }
   void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
@@ -909,6 +909,9 @@ public:
     return static_cast<const InstanceKlass*>(k);
   }
 
+  DECLARE_EXACT_CAST_FUNCTIONS(InstanceKlass)
+  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceKlass)
+
   virtual InstanceKlass* java_super() const {
     return (super() == nullptr) ? nullptr : cast(super());
   }
@@ -1009,10 +1012,9 @@ public:
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
-  // Iterate over all oop fields in one oop map.
+  // Iterate over all oop fields in a single oop map.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure);
-
+  static inline void oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure);
 
   // Reverse iteration
   // Iterate over all oop fields and metadata.
@@ -1026,8 +1028,7 @@ public:
 
   // Iterate over all oop fields in one oop map.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure);
-
+  static inline void oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure);
 
   // Bounded range iteration
  public:
@@ -1042,8 +1043,25 @@ public:
  private:
   // Iterate over all oop fields in one oop map.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr);
 
+  // Single oop map iteration given by count and offset
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_single_oop_map(oop obj, OopClosureType* closure, unsigned offset, unsigned count);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_single_oop_map_reverse(oop obj, OopClosureType* closure, unsigned offset, unsigned count);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_single_oop_map_bounded(oop obj, OopClosureType* closure, MemRegion mr, unsigned offset, unsigned count);
+
+ public:
+
+  // klute variants
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk);
 
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }

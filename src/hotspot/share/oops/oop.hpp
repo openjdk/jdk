@@ -29,6 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/objLayout.hpp"

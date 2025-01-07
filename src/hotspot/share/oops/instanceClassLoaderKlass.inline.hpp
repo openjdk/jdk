@@ -25,9 +25,8 @@
 #ifndef SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 #define SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 
-#include "oops/instanceClassLoaderKlass.hpp"
-
 #include "classfile/javaClasses.hpp"
+#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
@@ -36,9 +35,7 @@
 #include "utilities/macros.hpp"
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate<T>(obj, closure);
-
+inline void InstanceClassLoaderKlass::oop_oop_iterate_metadata(oop obj, OopClosureType* closure) {
   if (Devirtualizer::do_metadata(closure)) {
     ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
     // cld can be null if we have a non-registered class loader.
@@ -49,17 +46,7 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* c
 }
 
 template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
-
-  assert(!Devirtualizer::do_metadata(closure),
-      "Code to handle metadata is not implemented");
-}
-
-template <typename T, class OopClosureType>
-inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
-
+inline void InstanceClassLoaderKlass::oop_oop_iterate_metadata_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
       ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
@@ -70,5 +57,50 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosur
     }
   }
 }
+
+#define NO_METADATA_ITERATION   assert(!Devirtualizer::do_metadata(closure), "Code to handle metadata is not implemented");
+
+// External entries implementation: klute variants
+
+template <typename T, class OopClosureType>
+inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure);
+  oop_oop_iterate_metadata<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
+  NO_METADATA_ITERATION
+}
+
+template <typename T, class OopClosureType>
+inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
+  oop_oop_iterate_metadata_bounded<T>(obj, closure, mr);
+}
+
+// External entries implementation: klute variants
+
+template <typename T, class OopClosureType>
+inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+  InstanceKlass::oop_oop_iterate<T>(obj, closure, klute, nk);
+  oop_oop_iterate_metadata<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure, klute, nk);
+  NO_METADATA_ITERATION
+}
+
+template <typename T, class OopClosureType>
+inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk) {
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr, klute, nk);
+  oop_oop_iterate_metadata_bounded<T>(obj, closure, mr);
+}
+
+DEFINE_EXACT_CAST_FUNCTIONS(InstanceClassLoaderKlass)
+DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceClassLoaderKlass)
 
 #endif // SHARE_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP

@@ -26,6 +26,7 @@
 #define SHARE_OOPS_INSTANCEREFKLASS_HPP
 
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "utilities/macros.hpp"
 
 class ClassFileParser;
@@ -50,7 +51,7 @@ class ClassFileParser;
 class InstanceRefKlass: public InstanceKlass {
   friend class InstanceKlass;
  public:
-  static const KlassKind Kind = InstanceRefKlassKind;
+  static constexpr KlassKind Kind = InstanceRefKlassKind;
 
  private:
   InstanceRefKlass(const ClassFileParser& parser);
@@ -77,6 +78,14 @@ class InstanceRefKlass: public InstanceKlass {
   // Iterate over all oop fields and metadata.
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+  // klute variants
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk);
 
   private:
 
@@ -127,6 +136,10 @@ class InstanceRefKlass: public InstanceKlass {
  public:
   // Verification
   void oop_verify_on(oop obj, outputStream* st);
+
+  DECLARE_EXACT_CAST_FUNCTIONS(InstanceRefKlass)
+  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceRefKlass)
+
 };
 
 #endif // SHARE_OOPS_INSTANCEREFKLASS_HPP

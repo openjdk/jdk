@@ -472,7 +472,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   assert(loader_data != nullptr, "invariant");
 
   InstanceKlass* ik;
-  const bool use_class_space = parser.klass_needs_narrow_id();
+  const bool use_class_space = true; // parser.klass_needs_narrow_id();
 
   // Allocation
   if (parser.is_instance_ref_klass()) {
@@ -501,6 +501,14 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   // class count.  Can get OOM here.
   if (HAS_PENDING_EXCEPTION) {
     return nullptr;
+  }
+
+  {
+    char tmp[1024];
+    log_debug(metaspace)("Returning new IK @" PTR_FORMAT " for %s (use_class_space: %d), nKlass=%u, word size=%d",
+                          p2i(ik),
+                          parser.class_name()->as_C_string(tmp, sizeof(tmp)), use_class_space,
+                          CompressedKlassPointers::encode(ik), size);
   }
 
   return ik;
@@ -3629,12 +3637,19 @@ void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
 
+  if (UseCompressedClassPointers) {
+    st->print(BULLET"narrow Klass:    %x", CompressedKlassPointers::encode(const_cast<InstanceKlass*>(this))); st->cr();
+  }
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
+  st->print(BULLET"klass header size: %d", header_size());                        st->cr();
+  st->print(BULLET"vtable size:       %d", itable_length());                      st->cr();
+  st->print(BULLET"itable size:       %d", vtable_length());                      st->cr();
+  st->print(BULLET"nonstatic_oopmap size: %d", nonstatic_oop_map_size());         st->cr();
+
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
   st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
-  st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
   st->print(BULLET"sub:               ");
   Klass* sub = subklass();
@@ -3758,7 +3773,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {
-    st->print("%d-%d ", map->offset(), map->offset() + heapOopSize*(map->count() - 1));
+    st->print_cr("[@%d-@%d) (%d oops) ", map->offset(), map->offset() + heapOopSize * map->count(), map->count());
     map++;
   }
   st->cr();

@@ -126,7 +126,7 @@ inline void InstanceRefKlass::oop_oop_iterate_reverse<narrowOop, PSPushContentsC
 }
 
 inline void PSPromotionManager::push_contents(oop obj) {
-  if (!obj->klass()->is_typeArray_klass()) {
+  if (!obj->is_typeArray()) {
     PSPushContentsClosure pcc(this);
     obj->oop_iterate_backwards(&pcc);
   }
