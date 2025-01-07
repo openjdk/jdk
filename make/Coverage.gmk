@@ -47,7 +47,6 @@ $(JCOV_IMAGE_DIR)/release: $(JCOV_INPUT_IMAGE_DIR)/release
 	    -t $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR)/template.xml \
 	    -rt $(JCOV_HOME)/lib/jcov_network_saver.jar \
 	    -exclude 'java.lang.Object' \
-	    -exclude 'jdk.internal.org.objectweb.**' \
 	    -exclude jdk.test.Main -exclude '**\$Proxy*' \
 	    $(JCOV_FILTERS) \
 	    $(JCOV_TEMP)/$(JCOV_IMAGE_SUBDIR)
