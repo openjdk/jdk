@@ -494,7 +494,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         } else {
             type = "native";
         }
-        return "MemorySegment{ " +
+        return "MemorySegment{ kind: " +
                 type +
                 ", " + heapBase().map(hb -> "heapBase: " + hb).orElse("") +
                 ", address: " + Utils.toHexString(address()) +
