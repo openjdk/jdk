@@ -137,7 +137,7 @@ public final class Generators {
     }
 
     /**
-     * Generates uniform doubles in the range of [lo, hi) (inclusive of 0, exclusive of 1).
+     * Generates uniform doubles in the range of [lo, hi) (inclusive of lo, exclusive of hi).
      */
     public RestrictableGenerator<Double> uniformDoubles(double lo, double hi) {
         return new UniformDoubleGenerator(this, lo, hi);
@@ -159,7 +159,7 @@ public final class Generators {
     }
 
     /**
-     * Generates uniform doubles in the range of [lo, hi) (inclusive of 0, exclusive of 1).
+     * Generates uniform doubles in the range of [lo, hi) (inclusive of lo, exclusive of hi).
      */
     public RestrictableGenerator<Float> uniformFloats(float lo, float hi) {
         return new UniformFloatGenerator(this, lo, hi);
@@ -184,7 +184,7 @@ public final class Generators {
      * Returns a generator that uniformly randomly samples elements from the provided collection.
      * Each element in the collection is treated as a separate, unique value, even if equals might be true.
      * The result is an unrestrictable generator. If you want a restrictable generator that selects values from a
-     * list and are working with Comparable values, use randomComparableElement.
+     * list and are working with Comparable values, use {@link #orderedRandomElement(Collection)}.
      */
     public <T> Generator<T> randomElement(Collection<T> list) {
         return new RandomElementGenerator<>(this, list);
