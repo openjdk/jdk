@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.internal.net.http.quic.streams;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -153,6 +155,9 @@ public final class QuicConnectionStreams {
     // STREAMS_BLOCKED will be sent only if "bidiStreamsBlocked" exceeds this
     // "lastBidiStreamsBlockedSent"
     private final AtomicLong lastBidiStreamsBlockedSent = new AtomicLong(-1);
+    // streams that have been blocked and aren't able to send data to the peer,
+    // due to reaching flow control limit imposed on those streams by the peer.
+    private final Set<Long> flowControlBlockedStreams = Collections.synchronizedSet(new HashSet<>());
 
     private final Logger debug;
 
@@ -757,12 +762,36 @@ public final class QuicConnectionStreams {
     }
 
     /**
+     * Tracks a stream, belonging to this connection, as being blocked from sending data
+     * due to flow control limit.
+     *
+     * @param streamId the stream id
+     */
+    final void trackBlockedStream(final long streamId) {
+        this.flowControlBlockedStreams.add(streamId);
+    }
+
+    /**
+     * Stops tracking a stream, belonging to this connection, that may have been previously
+     * tracked as being blocked due to flow control limit.
+     *
+     * @param streamId the stream id
+     */
+    final void untrackBlockedStream(final long streamId) {
+        this.flowControlBlockedStreams.remove(streamId);
+    }
+
+
+    /**
      * Removes a stream from the stream map after its state has been
      * switched to DATA_RECVD or RESET_RECVD
      * @param streamId the stream id
      * @param stream the stream instance
      */
     private void removeStream(long streamId, QuicStream stream) {
+        // if we were tracking this stream as blocked due to flow control, then
+        // stop tracking the stream.
+        untrackBlockedStream(streamId);
         if (stream instanceof AbstractQuicStream astream) {
             if (astream.isDone()) {
                 if (debug.on()) {
@@ -890,7 +919,15 @@ public final class QuicConnectionStreams {
     public void setMaxStreamData(QuicSenderStream stream, long maxStreamData) {
         var sender = senderImpl(stream);
         if (sender != null) {
-            sender.setMaxStreamData(maxStreamData);
+            final long newFinalizedLimit = sender.setMaxStreamData(maxStreamData);
+            // if the connection was tracking this stream as blocked due to flow control
+            // and if this new MAX_STREAM_DATA limit unblocked this stream, then
+            // stop tracking the stream.
+            if (newFinalizedLimit == maxStreamData) { // the proposed limit was accepted
+                if (!sender.isBlocked()) {
+                    untrackBlockedStream(stream.streamId());
+                }
+            }
         }
     }
 
@@ -903,9 +940,17 @@ public final class QuicConnectionStreams {
      * @param errorCode the error code
      */
     public void stopSendingReceived(QuicSenderStream stream, long errorCode) {
-        var sender = senderImpl(stream);
-        if (sender != null) {
-            sender.stopSendingReceived(errorCode);
+        try {
+            var sender = senderImpl(stream);
+            if (sender != null) {
+                sender.stopSendingReceived(errorCode);
+            }
+        } finally {
+            // if the stream was being tracked as blocked from sending data,
+            // due to flow control limits imposed by the peer, then we now
+            // stop tracking it since the peer no longer wants us to send data
+            // on this stream.
+            untrackBlockedStream(stream.streamId());
         }
     }
 
@@ -983,6 +1028,15 @@ public final class QuicConnectionStreams {
                         streamId, stream.getClass().getName());
             }
         }
+    }
+
+    /**
+     * If there are any streams in this connection that have been blocked from sending
+     * data due to flow control limit on that stream, then this method enqueues a
+     * {@code STREAM_DATA_BLOCKED} frame to be sent for each such stream.
+     */
+    public final void enqueueStreamDataBlocked() {
+        connection.streamDataAvailableForSending(this.flowControlBlockedStreams);
     }
 
     /**
@@ -1200,6 +1254,14 @@ public final class QuicConnectionStreams {
     }
 
     /**
+     * {@return true if there are any streams on this connection which are blocked from
+     * sending data due to flow control limit, false otherwise}
+     */
+    public final boolean hasBlockedStreams() {
+        return !this.flowControlBlockedStreams.isEmpty();
+    }
+
+    /**
      * Checks whether the given stream is recorded as needing a control
      * frame to be sent, and if so, add that frame to the list
      *
@@ -1314,7 +1376,7 @@ public final class QuicConnectionStreams {
                                 var blocked = sender.isBlocked();
                                 if (blocked) {
                                     // track this stream as blocked due to flow control
-                                    connection.trackBlockedStream(streamId);
+                                    trackBlockedStream(streamId);
                                     final var dataBlocked = new StreamDataBlockedFrame(streamId, sender.dataSent());
                                     // This might produce multiple StreamDataBlocked frames
                                     // if the stream was added to sendersReady multiple times, so

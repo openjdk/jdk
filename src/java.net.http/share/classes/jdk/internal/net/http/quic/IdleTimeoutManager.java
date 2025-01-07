@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
+import jdk.internal.net.http.quic.streams.QuicConnectionStreams;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
@@ -311,7 +312,8 @@ public final class IdleTimeoutManager {
             final long inactivityMs = MILLISECONDS.convert((currentNanos - lastActiveNanos),
                     NANOSECONDS);
             if (inactivityMs >= expectedIdleDurationMs) {
-                if (!connection.hasBlockedStreams()) {
+                final QuicConnectionStreams connStreams = connection.streams;
+                if (!connStreams.hasBlockedStreams()) {
                     // has been idle long enough and there aren't any streams that could have
                     // generated traffic on the connection but couldn't due to being blocked by
                     // flow control limits.
@@ -323,7 +325,7 @@ public final class IdleTimeoutManager {
                 // to try and have their limits increased by the peer. also, postpone
                 // the idle timeout deadline to give the connection a chance to be active
                 // again.
-                connection.enqueueStreamDataBlocked();
+                connStreams.enqueueStreamDataBlocked();
                 final Deadline next = timeLine().instant().plusMillis(expectedIdleDurationMs);
                 if (debug.on()) {
                     debug.log("streams blocked due to flow control limits, postponing "

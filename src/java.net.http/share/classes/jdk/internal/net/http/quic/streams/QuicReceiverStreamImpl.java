@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,10 +178,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                     // otherwise do nothing
                 }
             } finally {
-                // if the stream was being tracked as blocked due to flow control limits,
-                // then stop tracking it since it's no longer expecting any more data
-                // to be received.
-                connection().untrackBlockedStream(streamId());
                 // RFC-9000, section 3.5: "If an application is no longer interested in the data it is
                 // receiving on a stream, it can abort reading the stream and specify an application
                 // error code."
@@ -264,10 +260,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 && currentLimit - processed < (desiredBufferSize - desiredBufferSize / 4)) {
             this.reader.demand(desiredBufferSize);
         } else {
-            // don't increase the limit, but send (again)
-            // a MAX_STREAM_DATA frame with the current limit, just in case the peer hasn't
-            // refreshed its local state with an accurate limit.
-            connection().requestSendMaxStreamData(streamId(), currentLimit);
             if (debug.on()) {
                 debug.log("ignoring STREAM_DATA_BLOCKED frame %s," +
                         " since current limit %d is large enough", streamDataBlocked, currentLimit);

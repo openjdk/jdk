@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.util.Set;
 
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
@@ -142,18 +143,12 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
      * Called to set the max stream data for this stream.
      * @apiNote as per RFC 9000, any value less than the current
      *          max stream data is ignored
-     * @param maxData the max stream data
-     * @return the max stream data
+     * @param newLimit the proposed new max stream data
+     * @return the new limit that has been finalized for max stream data.
+     *         This new limit may or may not have been increased to the proposed {@code newLimit}.
      */
-    public long setMaxStreamData(long maxData) {
-        final long updatedVal = queue.setMaxStreamData(maxData);
-        if (!queue.consumerBlocked()) {
-            // if the connection was tracking this stream as blocked due to flow control
-            // and if this new MAX_STREAM_DATA limit unblocked this stream, then
-            // stop tracking the stream.
-            connection().untrackBlockedStream(streamId());
-        }
-        return updatedVal;
+    public long setMaxStreamData(final long newLimit) {
+        return queue.setMaxStreamData(newLimit);
     }
 
     /**
@@ -229,6 +224,8 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
             } catch (IOException io) {
                 if (debug.on()) debug.log("Reset failed: " + io);
             } finally {
+                // TODO: remove tracking of stream_data_blocked for this stream. better to move
+                // untracking into QuicConnectionImpl when STOP_SENDING is received.
                 QuicStreamWriterImpl writer = this.writer;
                 if (writer != null) writer.wakeupWriter();
             }
@@ -277,7 +274,7 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
             // get the data available for writing and package it
             // in a StreamFrame or notice that the stream is blocked and send a
             // STREAM_DATA_BLOCKED frame.
-            connection().streamDataAvailableForSending(streamId());
+            connection().streamDataAvailableForSending(Set.of(streamId()));
         }
 
         @Override

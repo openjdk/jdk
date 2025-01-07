@@ -306,7 +306,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final String logTag;
     // incoming PATH_CHALLENGE frames waiting for PATH_RESPONSE
     private final Queue<PathChallengeFrame> pathChallengeFrameQueue = new ConcurrentLinkedQueue<>();
-    private final Set<Long> flowControlBlockedStreams = Collections.synchronizedSet(new HashSet<>());
 
     private MaxInitialTimer maxInitialTimer;
 
@@ -3896,7 +3895,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     protected void incoming1RTTFrame(final DataBlockedFrame frame) throws QuicTransportException {
-        // TODO any specific handling?
+        // TODO implement similar logic as STREAM_DATA_BLOCKED frame receipt
+        // and increment gradually if consumption is more than 1/4th the window size of the
+        // connection
     }
 
     protected void incoming1RTTFrame(final StreamsBlockedFrame frame)
@@ -4028,11 +4029,13 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Signal the connection that some stream data is available for sending.
-     * @param streamId the stream id
+     * Signal the connection that some stream data is available for sending on one or more streams.
+     * @param streamId the stream ids
      */
-    public void streamDataAvailableForSending(long streamId) {
-        streams.enqueueForSending(streamId);
+    public void streamDataAvailableForSending(final Set<Long> streamIds) {
+        for (final long id : streamIds) {
+            streams.enqueueForSending(id);
+        }
         packetSpaces.app.runTransmitter();
     }
 
@@ -4079,46 +4082,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         assert streams.isReceivingStream(streamId);
         streams.scheduleStopSendingFrame(new StopSendingFrame(streamId, errorCode));
         packetSpaces.app.runTransmitter();
-    }
-
-    /**
-     * {@return true if there are any streams on this connection which are blocked from
-     * sending data due to flow control limit, false otherwise}
-     */
-    final boolean hasBlockedStreams() {
-        return !this.flowControlBlockedStreams.isEmpty();
-    }
-
-    /**
-     * Tracks a stream, belonging to this connection, as being blocked from sending data
-     * due to flow control limit.
-     *
-     * @param streamId the stream id
-     */
-    public final void trackBlockedStream(final long streamId) {
-        this.flowControlBlockedStreams.add(streamId);
-    }
-
-    /**
-     * Stops tracking a stream, belonging to this connection, that may have been previously
-     * tracked as being blocked due to flow control limit.
-     *
-     * @param streamId the stream id
-     */
-    public final void untrackBlockedStream(final long streamId) {
-        this.flowControlBlockedStreams.remove(streamId);
-    }
-
-    /**
-     * If there are any streams in this connection that have been blocked from sending
-     * data due to flow control limit on that stream, then this method enqueues a
-     * {@code STREAM_DATA_BLOCKED} frame to be sent for each such stream.
-     */
-    final void enqueueStreamDataBlocked() {
-        final Set<Long> blockedStreams = this.flowControlBlockedStreams;
-        for (final long streamId : blockedStreams) {
-            streamDataAvailableForSending(streamId);
-        }
     }
 
     /**
