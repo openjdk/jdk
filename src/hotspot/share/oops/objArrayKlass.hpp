@@ -26,6 +26,7 @@
 #define SHARE_OOPS_OBJARRAYKLASS_HPP
 
 #include "oops/arrayKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "utilities/macros.hpp"
 
 class ClassLoaderData;
@@ -37,7 +38,7 @@ class ObjArrayKlass : public ArrayKlass {
   friend class JVMCIVMStructs;
 
  public:
-  static const KlassKind Kind = ObjArrayKlassKind;
+  static constexpr KlassKind Kind = ObjArrayKlassKind;
 
  private:
   // If you add a new field that points to any metaspace object, you
@@ -132,6 +133,14 @@ class ObjArrayKlass : public ArrayKlass {
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end);
 
+  // klute variants
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk);
+
  public:
   // Iterate over all oop elements.
   template <typename T, class OopClosureType>
@@ -161,6 +170,10 @@ class ObjArrayKlass : public ArrayKlass {
   void verify_on(outputStream* st);
 
   void oop_verify_on(oop obj, outputStream* st);
+
+  DECLARE_EXACT_CAST_FUNCTIONS(ObjArrayKlass)
+  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(ObjArrayKlass)
+
 };
 
 #endif // SHARE_OOPS_OBJARRAYKLASS_HPP

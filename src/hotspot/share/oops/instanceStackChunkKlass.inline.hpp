@@ -90,6 +90,25 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
   oop_oop_iterate_lockstack<T>(chunk, closure, mr);
 }
 
+// Klute variants don't do anything else for now. Just exist to make Dispatch happy.
+template <typename T, class OopClosureType>
+void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
+  narrow_klass_to_klass(nk)->oop_oop_iterate<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk) {
+  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
+  narrow_klass_to_klass(nk)->oop_oop_iterate_reverse<T>(obj, closure);
+}
+
+template <typename T, class OopClosureType>
+void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk) {
+  // Todo: for now just resolve the Klass. Maybe more parts can be made static.
+  narrow_klass_to_klass(nk)->oop_oop_iterate_bounded<T>(obj, closure, mr);
+}
+
 template <typename T, class OopClosureType>
 void InstanceStackChunkKlass::oop_oop_iterate_header(stackChunkOop chunk, OopClosureType* closure) {
   T* parent_addr = chunk->field_addr<T>(jdk_internal_vm_StackChunk::parent_offset());
@@ -163,5 +182,8 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_with_bitmap(stackChunkOop ch
     chunk->bitmap().iterate(&bitmap_closure, chunk->bit_index_for((T*)start), chunk->bit_index_for((T*)end));
   }
 }
+
+DEFINE_EXACT_CAST_FUNCTIONS(InstanceStackChunkKlass)
+DEFINE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceStackChunkKlass)
 
 #endif // SHARE_OOPS_INSTANCESTACKCHUNKKLASS_INLINE_HPP

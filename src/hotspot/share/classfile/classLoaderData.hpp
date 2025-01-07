@@ -320,7 +320,7 @@ private:
   void set_jmethod_ids(JNIMethodBlock* new_block)  { _jmethod_ids = new_block; }
 
   void print() const;
-  void print_on(outputStream* out) const PRODUCT_RETURN;
+  void print_on(outputStream* out) const ;
   void print_value() const;
   void print_value_on(outputStream* out) const;
   void verify();

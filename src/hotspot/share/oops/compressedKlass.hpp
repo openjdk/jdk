@@ -95,9 +95,6 @@ class Klass;
 // 0x8_0000_0000                      0x8_4800_0000                            0x9_0000_0000
 //
 
-// If compressed klass pointers then use narrowKlass.
-typedef juint  narrowKlass;
-
 // For UseCompressedClassPointers.
 class CompressedKlassPointers : public AllStatic {
   friend class VMStructs;

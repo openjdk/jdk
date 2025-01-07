@@ -269,7 +269,7 @@ class MetaWordImpl;             // Opaque, never defined.
 typedef MetaWordImpl* MetaWord;
 
 // HeapWordSize must be 2^LogHeapWordSize.
-const int HeapWordSize        = sizeof(HeapWord);
+constexpr int HeapWordSize        = sizeof(HeapWord);
 #ifdef _LP64
 const int LogHeapWordSize     = 3;
 #else
@@ -1365,5 +1365,8 @@ std::add_rvalue_reference_t<T> declval() noexcept;
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.
 bool IEEE_subnormal_handling_OK();
+
+// If compressed klass pointers then use narrowKlass.
+typedef juint  narrowKlass;
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

@@ -27,6 +27,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUTEntry.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
 
@@ -45,7 +46,7 @@ class InstanceMirrorKlass: public InstanceKlass {
   friend class InstanceKlass;
 
  public:
-  static const KlassKind Kind = InstanceMirrorKlassKind;
+  static constexpr KlassKind Kind = InstanceMirrorKlassKind;
 
  private:
   static int _offset_of_static_fields;
@@ -97,10 +98,6 @@ class InstanceMirrorKlass: public InstanceKlass {
   //
   // The InstanceMirrorKlass iterators also visit the hidden Klass pointer.
 
-  // Iterate over the static fields.
-  template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_statics(oop obj, OopClosureType* closure);
-
   // Forward iteration
   // Iterate over the oop fields and metadata.
   template <typename T, class OopClosureType>
@@ -116,11 +113,33 @@ class InstanceMirrorKlass: public InstanceKlass {
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
+  // klute variants
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_reverse(oop obj, OopClosureType* closure, KlassLUTEntry klute, narrowKlass nk);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr, KlassLUTEntry klute, narrowKlass nk);
+
  private:
 
   // Iterate over the static fields.
   template <typename T, class OopClosureType>
-  inline void oop_oop_iterate_statics_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  static inline void oop_oop_iterate_statics(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_statics_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+  // Iterate over the metadata
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_metadata(oop obj, OopClosureType* closure);
+  template <typename T, class OopClosureType>
+  static inline void oop_oop_iterate_metadata_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+
+ public:
+
+  DECLARE_EXACT_CAST_FUNCTIONS(InstanceMirrorKlass)
+  DECLARE_NARROW_KLASS_UTILITY_FUNCTIONS(InstanceMirrorKlass)
+
 };
 
 #endif // SHARE_OOPS_INSTANCEMIRRORKLASS_HPP

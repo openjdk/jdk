@@ -34,6 +34,8 @@
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klassInfoLUT.inline.hpp"
+#include "oops/klassInfoLUTEntry.inline.hpp"
 #include "oops/objLayout.inline.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -229,11 +231,25 @@ bool oopDesc::is_instance()    const { return klass()->is_instance_klass();     
 bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass();   }
 bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_klass(); }
 bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
-bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();             }
-bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();            }
+
+bool oopDesc::is_objArray() const {
+  if (UseKLUT) {
+    const KlassLUTEntry klute = KlassInfoLUT::get_entry(mark().narrow_klass());
+    return klute.is_obj_array();
+  }
+  return klass()->is_objArray_klass();
+}
+
+bool oopDesc::is_typeArray() const {
+  if (UseKLUT) {
+    const KlassLUTEntry klute = KlassInfoLUT::get_entry(mark().narrow_klass());
+    return klute.is_type_array();
+  }
+  return klass()->is_typeArray_klass();
+}
 
 template<typename T>
-T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
+T*       oopDesc::field_addr(int offset_bytes)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset_bytes); }
 
 template <typename T>
 size_t   oopDesc::field_offset(T* p) const { return pointer_delta((void*)p, (void*)this, 1); }
@@ -374,16 +390,39 @@ void oopDesc::incr_age() {
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl) {
+
+  if (UseKLUT) {
+    const narrowKlass nk = mark().narrow_klass();
+    const KlassLUTEntry klute = KlassInfoLUT::get_entry(nk);
+    OopIteratorClosureDispatch::oop_oop_iterate(this, cl, klute, nk);
+    return;
+  }
+
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass());
 }
 
 template <typename OopClosureType>
 void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
+
+  if (UseKLUT) {
+    const narrowKlass nk = mark().narrow_klass();
+    const KlassLUTEntry klute = KlassInfoLUT::get_entry(nk);
+    OopIteratorClosureDispatch::oop_oop_iterate_bounded(this, cl, mr, klute, nk);
+    return;
+  }
+
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass(), mr);
 }
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
+
+  if (UseKLUT) {
+    const narrowKlass nk = mark().narrow_klass();
+    const KlassLUTEntry klute = KlassInfoLUT::get_entry(nk);
+    return OopIteratorClosureDispatch::oop_oop_iterate_size(this, cl, klute, nk);
+  }
+
   Klass* k = klass();
   size_t size = size_given_klass(k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k);
@@ -392,6 +431,13 @@ size_t oopDesc::oop_iterate_size(OopClosureType* cl) {
 
 template <typename OopClosureType>
 size_t oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
+
+  if (UseKLUT) {
+    const narrowKlass nk = mark().narrow_klass();
+    const KlassLUTEntry klute = KlassInfoLUT::get_entry(nk);
+    return OopIteratorClosureDispatch::oop_oop_iterate_bounded_size(this, cl, mr, klute, nk);
+  }
+
   Klass* k = klass();
   size_t size = size_given_klass(k);
   OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k, mr);
@@ -407,6 +453,16 @@ template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
   // In this assert, we cannot safely access the Klass* with compact headers.
   assert(k == klass(), "wrong klass");
+
+  if (UseKLUT) {
+    const narrowKlass nk = CompressedKlassPointers::encode_not_null(k);
+    const KlassLUTEntry klute = KlassInfoLUT::get_entry(nk);
+    if (!klute.is_type_array()) { // no need to iterate TAK
+      OopIteratorClosureDispatch::oop_oop_iterate_reverse(this, cl, klute, nk);
+    }
+    return;
+  }
+
   OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
 }
 

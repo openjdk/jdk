@@ -985,6 +985,7 @@ public:
     _out->print("%s,", k->external_name());
   }
 };
+#endif // PRODUCT
 
 void ClassLoaderData::print_on(outputStream* out) const {
   ResourceMark rm;
@@ -1018,14 +1019,11 @@ void ClassLoaderData::print_on(outputStream* out) const {
     default:                                ShouldNotReachHere();
   }
   out->print_cr(" - handles             %d", _handles.count());
-  out->print_cr(" - dependency count    %d", _dependency_count);
+  DEBUG_ONLY(out->print_cr(" - dependency count    %d", _dependency_count);)
   out->print   (" - klasses             { ");
-  if (Verbose) {
-    PrintKlassClosure closure(out);
-    ((ClassLoaderData*)this)->classes_do(&closure);
-  } else {
-     out->print("...");
-  }
+
+  { PrintClassClosure closure(out, true);
+  ((ClassLoaderData*)this)->classes_do(&closure); }
   out->print_cr(" }");
   out->print_cr(" - packages            " INTPTR_FORMAT, p2i(_packages));
   out->print_cr(" - module              " INTPTR_FORMAT, p2i(_modules));
@@ -1044,7 +1042,6 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - deallocate list     " INTPTR_FORMAT, p2i(_deallocate_list));
   out->print_cr(" - next CLD            " INTPTR_FORMAT, p2i(_next));
 }
-#endif // PRODUCT
 
 void ClassLoaderData::print() const { print_on(tty); }
 
