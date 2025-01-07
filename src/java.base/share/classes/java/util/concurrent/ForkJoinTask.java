@@ -1875,27 +1875,31 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         DelayedTask<?> nextReady; // for collecting ready tasks
         final long nextDelay;     // 0: once; <0: fixedDelay; >0: fixedRate
         long when;                // nanoTime-based trigger time
-        int heapIndex;
+        int heapIndex;            // index if queued on heap
 
         DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
                     long delay, long nextDelay) {
+            heapIndex = -1;
+            when = System.nanoTime() + delay;
             this.runnable = runnable;
             this.callable = callable;
             this.pool = pool;
             this.nextDelay = nextDelay;
-            when = delay + System.nanoTime();
         }
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
-        final boolean postExec() { // resubmit if fixedDelay
-            long d; ForkJoinPool p; ForkJoinPool.DelayScheduler ds;
-            if ((d = nextDelay) < 0L && status >= 0 && (p = pool) != null &&
-                (ds = p.delayer) != null) {
-                heapIndex = 0;
-                when = -d + System.nanoTime();
-                ds.schedule(this);
-            }
-            return d == 0L;
+        final boolean postExec() { // resubmit if periodic
+            long d; ForkJoinPool p;
+            if ((d = nextDelay) == 0L || status < 0 ||
+                (p = pool) == null || p.isShutdown())
+                return true;
+            heapIndex = -1;
+            if (d < 0L)
+                when = System.nanoTime() - d;
+            else
+                when += d;
+            p.scheduleDelayedTask(this);
+            return false;
         }
         final T compute() throws Exception {
             Callable<? extends T> c; Runnable r;
@@ -1908,11 +1912,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         final Object adaptee() { return (runnable != null) ? runnable : callable; }
         public final boolean cancel(boolean mayInterruptIfRunning) {
-            ForkJoinPool p; ForkJoinPool.DelayScheduler ds; DelayedTask<?> s;
+            ForkJoinPool p;
             boolean stat = super.cancel(mayInterruptIfRunning);
             if (heapIndex >= 0 && status < 0 && (p = pool) != null &&
-                (ds = p.delayer) != null)
-                ds.schedule(this); // for heap cleanup
+                !p.isShutdown())
+                p.scheduleDelayedTask(this); // for heap cleanup
             return stat;
         }
         public final long getDelay(TimeUnit unit) {

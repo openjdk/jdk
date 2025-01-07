@@ -360,6 +360,50 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             fail("unexpected execution rate");
         }
     }
+    /**
+     * scheduleWithFixedDelay executes series of tasks with given period.
+     * Eventually, it must hold that each task starts at least delay and at
+     * most 2 * delay after the termination of the previous task.
+     */
+    public void testFixedDelaySequence() throws InterruptedException {
+        final ForkJoinPool p = new ForkJoinPool(1);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            for (int delay = 1; delay <= LONG_DELAY_MS; delay *= 3) {
+                final long startTime = System.nanoTime();
+                final AtomicLong previous = new AtomicLong(startTime);
+                final AtomicBoolean tryLongerDelay = new AtomicBoolean(false);
+                final int cycles = 8;
+                final CountDownLatch done = new CountDownLatch(cycles);
+                final int d = delay;
+                final Runnable task = new CheckedRunnable() {
+                    public void realRun() {
+                        long now = System.nanoTime();
+                        long elapsedMillis
+                            = NANOSECONDS.toMillis(now - previous.get());
+                        if (done.getCount() == cycles) { // first execution
+                            if (elapsedMillis >= d)
+                                tryLongerDelay.set(true);
+                        } else {
+                            if (elapsedMillis >= 2 * d)
+                                tryLongerDelay.set(true);
+                        }
+                        previous.set(now);
+                        done.countDown();
+                    }};
+                final ScheduledFuture<?> periodicTask =
+                    p.scheduleWithFixedDelay(task, 0, delay, MILLISECONDS);
+                final int totalDelayMillis = (cycles - 1) * delay;
+                await(done, totalDelayMillis + cycles * LONG_DELAY_MS);
+                periodicTask.cancel(true);
+                final long elapsedMillis = millisElapsedSince(startTime);
+                assertTrue(elapsedMillis >= totalDelayMillis);
+                if (!tryLongerDelay.get())
+                    return;
+                // else retry with longer delay
+            }
+            fail("unexpected execution rate");
+        }
+    }
 
     /**
      * Submitting null tasks throws NullPointerException
@@ -433,6 +477,25 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             await(delayedDone);
             await(immediateDone);
         }
+    }
+    /**
+     * shutdownNow cancels tasks that were not run
+     */
+    public void testShutdownNow_delayedTasks() throws InterruptedException {
+        final ForkJoinPool p = new ForkJoinPool(1);
+        List<ScheduledFuture<?>> tasks = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            Runnable r = new NoOpRunnable();
+            tasks.add(p.schedule(r, 9, SECONDS));
+            tasks.add(p.scheduleAtFixedRate(r, 9, 9, SECONDS));
+            tasks.add(p.scheduleWithFixedDelay(r, 9, 9, SECONDS));
+        }
+        p.shutdownNow();
+        assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+        for (ScheduledFuture<?> task : tasks) {
+            assertTrue(task.isDone());
+        }
+        assertTrue(p.isTerminated());
     }
 
 }
