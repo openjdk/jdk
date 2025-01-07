@@ -719,7 +719,6 @@ public class ClassFinder {
                     EnumSet.of(JavaFileObject.Kind.CLASS)));
     }
     // where
-        @SuppressWarnings("fallthrough")
         private void fillIn(PackageSymbol p,
                             Location location,
                             Iterable<JavaFileObject> files)

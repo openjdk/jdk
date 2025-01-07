@@ -70,8 +70,8 @@ Version 2 (since jdk24): attach operations may have any number of arguments of a
   If the target VM does not support version 2, client uses version 1 to enqueue operations.
 */
 enum AttachAPIVersion: int {
-    ATTACH_API_V1 = 1,
-    ATTACH_API_V2 = 2
+  ATTACH_API_V1 = 1,
+  ATTACH_API_V2 = 2
 };
 
 class AttachListenerThread : public JavaThread {
@@ -164,6 +164,10 @@ public:
     arg_length_max = 1024,      // maximum length of argument
     arg_count_max = 3           // maximum number of arguments
   };
+  // error codes (reported as status to clients)
+  enum {
+    ATTACH_ERROR_BADVERSION = 101
+  };
 
   // name of special operation that can be enqueued when all
   // clients detach
@@ -231,6 +235,8 @@ public:
   // complete operation by sending result code and any result data to the client
   virtual void complete(jint result, bufferedStream* result_stream) = 0;
 
+  class ReplyWriter; // forward declaration
+
   // Helper classes/methods for platform-specific implementations.
   class RequestReader {
   public:
@@ -239,11 +245,16 @@ public:
     virtual int read(void* buffer, int size) = 0;
 
     // Reads unsigned value, returns -1 on error.
-    int read_uint();
+    //
+    // Attach client can make sanity connect/disconnect.
+    // In that case we get "premature EOF" error.
+    // If may_be_empty is true, the error is not logged.
+    int read_uint(bool may_be_empty = false);
   };
 
   // Reads standard operation request (v1 or v2).
-  bool read_request(RequestReader* reader);
+  // Some errors known by clients are reported to error_writer.
+  bool read_request(RequestReader* reader, ReplyWriter* error_writer);
 
   class ReplyWriter {
   public:
@@ -256,6 +267,7 @@ public:
   };
 
   // Writes standard operation reply (to be called from 'complete' method).
+  bool write_reply(ReplyWriter* writer, jint result, const char* message, int message_len = -1);
   bool write_reply(ReplyWriter* writer, jint result, bufferedStream* result_stream);
 
 private:

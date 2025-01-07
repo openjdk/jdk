@@ -94,7 +94,6 @@ public class ClassWriter extends SubWriterHolderWriter {
                        ClassTree classTree) {
         super(configuration, configuration.docPaths.forClass(typeElement));
         this.typeElement = typeElement;
-        configuration.currentTypeElement = typeElement;
         this.classTree = classTree;
 
         pHelper = new PropertyUtils.PropertyHelper(configuration, typeElement);
@@ -506,7 +505,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     @Override
-    public TypeElement getCurrentPageElement() {
+    public TypeElement getCurrentTypeElement() {
         return typeElement;
     }
 
