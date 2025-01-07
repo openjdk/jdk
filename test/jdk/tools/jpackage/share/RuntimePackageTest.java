@@ -101,6 +101,7 @@ public class RuntimePackageTest {
         .forTypes(types)
         .addInitializer(cmd -> {
             final Path runtimeImageDir;
+
             if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
                 runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
             } else {
