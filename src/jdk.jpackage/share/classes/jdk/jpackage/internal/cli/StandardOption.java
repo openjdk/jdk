@@ -50,7 +50,7 @@ public enum StandardOption implements Option {
             if ("app-image".equals(value)) {
                 return AppImagePackageType.APP_IMAGE;
             } else {
-                return StandardPackageType.fromCmdLineType(value);
+                return fromCmdLineType(value);
             }
         }
 
@@ -59,6 +59,12 @@ public enum StandardOption implements Option {
             return PackageType.class;
         }
 
+        private static StandardPackageType fromCmdLineType(String type) {
+            Objects.requireNonNull(type);
+            return Stream.of(StandardPackageType.values()).filter(pt -> {
+                return pt.suffix().substring(1).equals(type);
+            }).findAny().get();
+        }
     })),
     INPUT(build("input").shortName("i").ofDirectory(), APP_IMAGE),
     DEST(build("dest").shortName("d").ofDirectory()),
