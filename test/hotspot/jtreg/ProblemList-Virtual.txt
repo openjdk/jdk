@@ -104,7 +104,9 @@ gc/g1/TestMixedGCLiveThreshold.java#25percent 8334759 windows-x64
 
 gc/arguments/TestNewSizeThreadIncrease.java 0000000 generic-all
 gc/g1/TestSkipRebuildRemsetPhase.java 0000000 generic-all
+runtime/classFileParserBug/TestEmptyBootstrapMethodsAttr.java JDK-8346442 generic-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 0000000 generic-all
+runtime/logging/LoaderConstraintsTest.java JDK-8346442 generic-all
 runtime/Thread/AsyncExceptionOnMonitorEnter.java 0000000 generic-all
 runtime/Thread/StopAtExit.java 0000000 generic-all
 runtime/handshake/HandshakeWalkStackTest.java 0000000 generic-all

@@ -78,7 +78,7 @@ class PipeImpl
             connector.run();
             if (ioe instanceof ClosedByInterruptException) {
                 ioe = null;
-                Thread connThread = new Thread(connector) {
+                Thread connThread = new Thread(connector, "LoopbackConnector") {
                     @Override
                     public void interrupt() {}
                 };
