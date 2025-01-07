@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.OSVersion;
+import jdk.internal.util.StaticProperty;
 
 /**
  * Uses Files.probeContentType to probe html file, custom file type, and minimal
@@ -83,7 +84,7 @@ public class Basic {
         if (!expected.equals(actual)) {
             if (!OperatingSystem.isWindows()) {
                 Path userMimeTypes =
-                    Path.of(System.getProperty("user.home"), ".mime.types");
+                    Path.of(StaticProperty.userHome(), ".mime.types");
                 checkMimeTypesFile(userMimeTypes);
 
                 Path etcMimeTypes = Path.of("/etc/mime.types");
@@ -191,8 +192,7 @@ public class Basic {
         // extensions with content type that differs on Windows 11+ and
         // Windows Server 2025
         if (OperatingSystem.isWindows() &&
-            (System.getProperty("os.name").endsWith("11") ||
-                System.getProperty("os.name").endsWith("2025") ||
+            (StaticProperty.osName().matches("^.*[11|2025]$") ||
                 new OSVersion(10, 0).compareTo(OSVersion.current()) > 0)) {
             System.out.println("Windows 11+ detected: using different types");
             exTypes.add(new ExType("bz2", List.of("application/bz2", "application/x-bzip2", "application/x-bzip", "application/x-compressed")));
