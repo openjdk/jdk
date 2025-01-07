@@ -105,11 +105,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     public DocPath topFile = DocPath.empty;
 
     /**
-     * The TypeElement for the class file getting generated.
-     */
-    public TypeElement currentTypeElement = null;  // Set this TypeElement in the ClassWriter.
-
-    /**
      * The collections of items for the main index.
      * This field is only initialized if {@code options.createIndex()}
      * is {@code true}.

@@ -527,7 +527,6 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/dynamicArchive/LambdaInBaseArchive.java \
  -runtime/cds/appcds/dynamicArchive/LambdasInTwoArchives.java \
  -runtime/cds/appcds/HelloExtTest.java \
- -runtime/cds/appcds/javaldr/AnonVmClassesDuringDump.java \
  -runtime/cds/appcds/javaldr/GCDuringDump.java \
  -runtime/cds/appcds/javaldr/LockDuringDump.java \
  -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \

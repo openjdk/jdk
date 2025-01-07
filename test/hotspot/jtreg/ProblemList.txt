@@ -135,8 +135,6 @@ serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
-serviceability/dcmd/vm/SystemDumpMapTest.java 8340401 windows-all
-serviceability/dcmd/vm/SystemMapTest.java 8340401 windows-all
 
 serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
 serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64
@@ -173,7 +171,6 @@ vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 807
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8192647 generic-all
-vmTestbase/gc/memory/Nio/Nio.java 8340728 generic-all
 
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening001.java 8148743 generic-all
 vmTestbase/jit/escape/LockCoarsening/LockCoarsening002.java 8208259 generic-all
