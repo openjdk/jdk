@@ -65,7 +65,7 @@ abstract class UniformIntersectionRestrictableGenerator<T extends Comparable<T>>
     }
 
     /**
-     * Your subclass can just override this method which will received the computed intersection between the old and
+     * Your subclass can just override this method which will receive the computed intersection between the old and
      * new interval. It is guaranteed that the interval is non-empty.
      */
     protected abstract RestrictableGenerator<T> doRestrictionFromIntersection(T lo, T hi);
