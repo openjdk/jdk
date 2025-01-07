@@ -28,15 +28,15 @@ import java.util.function.BiFunction;
 
 public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
 
-    protected LocalizedExceptionBuilder(StringBundle l18n) {
-        this.l18n = l18n;
+    protected LocalizedExceptionBuilder(StringBundle i18n) {
+        this.i18n = i18n;
     }
 
-    public static <R extends LocalizedExceptionBuilder<R>> R buildLocalizedException(StringBundle l18n) {
-        return new LocalizedExceptionBuilder<R>(l18n).thiz();
+    public static <R extends LocalizedExceptionBuilder<R>> R buildLocalizedException(StringBundle i18n) {
+        return new LocalizedExceptionBuilder<R>(i18n).thiz();
     }
 
-    final public <T extends Exception> T create(BiFunction<String, Throwable, T> exceptionCtor) {
+    final public <U extends Exception> U create(BiFunction<String, Throwable, U> exceptionCtor) {
         return exceptionCtor.apply(msg, cause);
     }
 
@@ -66,7 +66,7 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
 
     final protected String formatString(String keyId, Object... args) {
         if (!noFormat) {
-            return l18n.format(keyId, args);
+            return i18n.format(keyId, args);
         } else if (args.length == 0) {
             return keyId;
         } else {
@@ -83,5 +83,5 @@ public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
     private String msg;
     private Throwable cause;
 
-    private final StringBundle l18n;
+    private final StringBundle i18n;
 }
