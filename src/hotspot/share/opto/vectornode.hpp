@@ -73,6 +73,14 @@ class VectorNode : public TypeNode {
     return type()->ideal_reg();
   }
 
+  virtual uint hash() const {
+    if (is_commutative_operation()) {
+      return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
+    } else {
+      return Node::hash();
+    }
+  }
+
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
   static VectorNode* scalar2vector(Node* s, uint vlen, BasicType bt, bool is_mask = false);
@@ -168,7 +176,7 @@ class SaturatingVectorNode : public VectorNode {
     st->print("%s", _is_unsigned ? "{unsigned_vector_node}" : "{signed_vector_node}");
   }
 #endif
-  virtual uint hash() const { return Node::hash() + _is_unsigned; }
+  virtual uint hash() const { return VectorNode::hash() + _is_unsigned; }
 
   bool is_unsigned() { return _is_unsigned; }
 };
@@ -177,7 +185,9 @@ class SaturatingVectorNode : public VectorNode {
 // Vector add byte
 class AddVBNode : public VectorNode {
  public:
-  AddVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  AddVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
+    add_flag(Node::Flag_is_commutative_operation);
+  }
   virtual int Opcode() const;
 };
 
@@ -185,7 +195,9 @@ class AddVBNode : public VectorNode {
 // Vector add char/short
 class AddVSNode : public VectorNode {
  public:
-  AddVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
+  AddVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
+    add_flag(Node::Flag_is_commutative_operation);
+  }
   virtual int Opcode() const;
 };
 
@@ -395,7 +407,9 @@ class SubVLNode : public VectorNode {
 // Vector saturating addition.
 class SaturatingAddVNode : public SaturatingVectorNode {
  public:
-  SaturatingAddVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
+  SaturatingAddVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {
+    add_flag(Node::Flag_is_commutative_operation);
+  }
   virtual int Opcode() const;
 };
 
