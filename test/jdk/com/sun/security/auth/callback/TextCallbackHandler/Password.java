@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@
  */
 
 /*
+ * This test should not be run with JTreg. If it is run using JTreg the test will fail.
+ * Please use the following instructions:
+ *
  * This scenario cannot be automated because util/Password.java verifies the given input stream is
  * equal to the initialSystemIn. This prevents the test from providing a custom input stream.
  *
@@ -45,6 +48,11 @@ import javax.security.auth.callback.*;
 
 public class Password {
    public static void main(String args[]) throws Exception {
+
+       if (System.getProperty("java.class.path").contains("jtreg")){
+           throw new RuntimeException("This is a manual testing, it shouldn't be run with jtreg.");
+       }
+
         TextCallbackHandler h = new TextCallbackHandler();
         PasswordCallback nc = new PasswordCallback("Invisible: ", false);
         PasswordCallback nc2 = new PasswordCallback("Visible: ", true);
@@ -55,5 +63,6 @@ public class Password {
         h.handle(callbacks);
         System.out.println("You input " + new String(nc.getPassword()) +
                 " and " + new String(nc2.getPassword()));
+
    }
 }
