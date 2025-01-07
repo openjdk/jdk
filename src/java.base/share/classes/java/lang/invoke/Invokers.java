@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
@@ -681,16 +682,9 @@ class Invokers {
     }
 
     private static class Lazy {
-        private static final MethodHandle MH_asSpreader;
-
-        static {
-            try {
-                MH_asSpreader = IMPL_LOOKUP.findVirtual(MethodHandle.class, "asSpreader",
-                        MethodType.methodType(MethodHandle.class, Class.class, int.class));
-            } catch (ReflectiveOperationException ex) {
-                throw newInternalError(ex);
-            }
-        }
+        private static final MethodHandle MH_asSpreader = MhUtil.findVirtual(
+                IMPL_LOOKUP, MethodHandle.class, "asSpreader",
+                MethodType.methodType(MethodHandle.class, Class.class, int.class));
     }
 
     static {

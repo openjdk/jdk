@@ -32,9 +32,7 @@
 #include "opto/c2compiler.hpp"
 #endif
 #include "compiler/compilerDefinitions.hpp"
-
 #include "compiler/compiler_globals.hpp"
-#include "compiler/compilerDefinitions.hpp"
 #include "runtime/arguments.hpp"
 
 inline bool CompilerConfig::is_interpreter_only() {

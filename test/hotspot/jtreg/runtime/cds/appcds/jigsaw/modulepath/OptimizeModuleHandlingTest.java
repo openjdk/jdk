@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @requires vm.cds & !vm.graal.enabled
+ * @requires vm.cds & !vm.graal.enabled & vm.cds.write.archived.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver OptimizeModuleHandlingTest
  * @summary test module path changes for optimization of
@@ -64,8 +64,8 @@ public class OptimizeModuleHandlingTest {
 
     private static String CLASS_FOUND_MESSAGE = "com.foos.Test found";
     private static String CLASS_NOT_FOUND_MESSAGE = "java.lang.ClassNotFoundException: com.foos.Test";
-    private static String OPTIMIZE_ENABLED = "optimized module handling: enabled";
-    private static String OPTIMIZE_DISABLED = "optimized module handling: disabled";
+    private static String OPTIMIZE_ENABLED = "] optimized module handling: enabled";
+    private static String OPTIMIZE_DISABLED = "] optimized module handling: disabled";
     private static String MAIN_FROM_JAR = "class,load.*com.bars.Main.*[.]jar";
     private static String MAIN_FROM_CDS = "class,load.*com.bars.Main.*shared objects file";
     private static String TEST_FROM_JAR = "class,load.*com.foos.Test.*[.]jar";
@@ -154,14 +154,14 @@ public class OptimizeModuleHandlingTest {
 
         // Following 5 - 10 test with CDS on
         tty("5. run with CDS on, with module path");
-        String prefix[] = {"-Djava.class.path=", "-Xlog:cds", "-Xlog:class+load"};
+        String prefix[] = {"-Djava.class.path=", "-Xlog:cds,class+load,class+path=info"};
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  libsDir.toString(), // --module-path
                                  MAIN_MODULE)        // -m
             .assertNormalExit(out -> {
-                out.shouldNotContain(OPTIMIZE_ENABLED)
-                   .shouldContain(OPTIMIZE_DISABLED)
+                out.shouldNotContain(OPTIMIZE_DISABLED)
+                   .shouldContain(OPTIMIZE_ENABLED)
                    .shouldMatch(MAIN_FROM_CDS)       // // archived Main class is for module only
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });
@@ -174,8 +174,8 @@ public class OptimizeModuleHandlingTest {
                 out.shouldContain(CLASS_FOUND_MESSAGE)
                    .shouldMatch(MAIN_FROM_CDS)
                    .shouldMatch(TEST_FROM_CDS)
-                   .shouldContain(OPTIMIZE_DISABLED)
-                   .shouldNotContain(OPTIMIZE_ENABLED);
+                   .shouldContain(OPTIMIZE_ENABLED)
+                   .shouldNotContain(OPTIMIZE_DISABLED);
             });
         tty("7. run with CDS on, with jar on path");
         TestCommon.run("-Xlog:cds",
@@ -231,7 +231,6 @@ public class OptimizeModuleHandlingTest {
                        MAIN_CLASS)
             .assertAbnormalExit(out -> {
                 out.shouldNotContain(CLASS_FOUND_MESSAGE)
-                   .shouldContain(OPTIMIZE_DISABLED)           // mapping info
                    .shouldContain("shared class paths mismatch");
             });
     }

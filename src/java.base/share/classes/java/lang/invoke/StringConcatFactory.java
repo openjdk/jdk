@@ -28,9 +28,9 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.ReferenceKey;
@@ -1080,6 +1080,8 @@ public final class StringConcatFactory {
      * without copying.
      */
     private static final class InlineHiddenClassStrategy {
+        // The CLASS_NAME prefix must be the same as used by HeapShared::is_string_concat_klass()
+        // in the HotSpot code.
         static final String CLASS_NAME   = "java.lang.String$$StringConcat";
         static final String METHOD_NAME  = "concat";
 
@@ -1088,10 +1090,10 @@ public final class StringConcatFactory {
         static final MethodHandles.Lookup STR_LOOKUP = new MethodHandles.Lookup(String.class);
 
         static final ClassDesc CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME);
-        static final ClassDesc CD_StringConcatHelper = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper;");
-        static final ClassDesc CD_StringConcatBase   = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper$StringConcatBase;");
-        static final ClassDesc CD_Array_byte         = ReferenceClassDescImpl.ofValidated("[B");
-        static final ClassDesc CD_Array_String       = ReferenceClassDescImpl.ofValidated("[Ljava/lang/String;");
+        static final ClassDesc CD_StringConcatHelper = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/StringConcatHelper;");
+        static final ClassDesc CD_StringConcatBase   = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/StringConcatHelper$StringConcatBase;");
+        static final ClassDesc CD_Array_byte         = CD_byte.arrayType();
+        static final ClassDesc CD_Array_String       = CD_String.arrayType();
 
         static final MethodTypeDesc MTD_byte_char       = MethodTypeDescImpl.ofValidated(CD_byte, CD_char);
         static final MethodTypeDesc MTD_byte            = MethodTypeDescImpl.ofValidated(CD_byte);
@@ -1134,7 +1136,7 @@ public final class StringConcatFactory {
         };
 
         static final ReferencedKeyMap<MethodType, SoftReference<MethodHandlePair>> CACHE =
-                ReferencedKeyMap.create(true, true,
+                ReferencedKeyMap.create(true,
                         new Supplier<>() {
                             @Override
                             public Map<ReferenceKey<MethodType>, SoftReference<MethodHandlePair>> get() {
@@ -1526,7 +1528,7 @@ public final class StringConcatFactory {
                      * length = length(this.length, arg0, arg1, ..., argN);
                      */
                     if (staticConcat) {
-                        cb.ldc(length);
+                        cb.loadConstant(length);
                     } else {
                         cb.aload(thisSlot)
                           .getfield(concatClass, "length", CD_int);
@@ -1549,7 +1551,7 @@ public final class StringConcatFactory {
                      * length -= suffix.length();
                      */
                     if (staticConcat) {
-                        cb.ldc(constants[paramCount].length())
+                        cb.loadConstant(constants[paramCount].length())
                           .isub()
                           .istore(lengthSlot);
                     } else {
@@ -1557,7 +1559,7 @@ public final class StringConcatFactory {
                           .getfield(concatClass, "constants", CD_Array_String)
                           .dup()
                           .astore(constantsSlot)
-                          .ldc(paramCount)
+                          .loadConstant(paramCount)
                           .aaload()
                           .dup()
                           .astore(suffixSlot)
@@ -1572,7 +1574,7 @@ public final class StringConcatFactory {
                      *  buf = newArrayWithSuffix(suffix, length, coder)
                      */
                     if (staticConcat) {
-                        cb.ldc(constants[paramCount]);
+                        cb.loadConstant(constants[paramCount]);
                     } else {
                         cb.aload(suffixSlot);
                     }
@@ -1759,10 +1761,10 @@ public final class StringConcatFactory {
                           .loadLocal(kind, cb.parameterSlot(i));
 
                         if (staticConcat) {
-                            cb.ldc(constants[i - 3]);
+                            cb.loadConstant(constants[i - 3]);
                         } else {
                             cb.aload(constantsSlot)
-                              .ldc(i - 4)
+                              .loadConstant(i - 4)
                               .aaload();
                         }
 

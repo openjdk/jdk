@@ -34,9 +34,7 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class ReferenceProcessor;
 class ParallelScavengeHeap;
-class ParallelScavengeTracer;
 class PSIsAliveClosure;
 class STWGCTimer;
 

@@ -111,11 +111,10 @@ class ArchiveHeapWriter : AllStatic {
 public:
   static const intptr_t NOCOOPS_REQUESTED_BASE = 0x10000000;
 
-  // The minimum region size of all collectors that are supported by CDS in
-  // ArchiveHeapLoader::can_map() mode. Currently only G1 is supported. G1's region size
-  // depends on -Xmx, but can never be smaller than 1 * M.
-  // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
-  static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
+  // The minimum region size of all collectors that are supported by CDS.
+  // G1 heap region size can never be smaller than 1M.
+  // Shenandoah heap region size can never be smaller than 256K.
+  static constexpr int MIN_GC_REGION_ALIGNMENT = 256 * K;
 
 private:
   class EmbeddedOopRelocator;
@@ -240,17 +239,6 @@ public:
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);
-
-  // Archived heap object headers carry pre-computed narrow Klass ids calculated with the
-  // following scheme:
-  // 1) the encoding base must be the mapping start address.
-  // 2) shift must be large enough to result in an encoding range that covers the runtime Klass range.
-  //    That Klass range is defined by CDS archive size and runtime class space size. Luckily, the maximum
-  //    size can be predicted: archive size is assumed to be <1G, class space size capped at 3G, and at
-  //    runtime we put both regions adjacent to each other. Therefore, runtime Klass range size < 4G.
-  //    Since nKlass itself is 32 bit, our encoding range len is 4G, and since we set the base directly
-  //    at mapping start, these 4G are enough. Therefore, we don't need to shift at all (shift=0).
-  static constexpr int precomputed_narrow_klass_shift = 0;
 
 };
 #endif // INCLUDE_CDS_JAVA_HEAP

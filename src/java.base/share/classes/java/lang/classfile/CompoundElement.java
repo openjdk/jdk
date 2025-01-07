@@ -33,7 +33,8 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.internal.javac.PreviewFeature;
+
+import jdk.internal.classfile.components.ClassPrinter;
 
 /**
  * A {@link ClassFileElement} that has complex structure defined in terms of
@@ -45,9 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * @param <E> the element type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CompoundElement<E extends ClassFileElement>
         extends ClassFileElement, Iterable<E>
         permits ClassModel, CodeModel, FieldModel, MethodModel, jdk.internal.classfile.impl.AbstractUnboundModel {
@@ -94,4 +94,14 @@ public sealed interface CompoundElement<E extends ClassFileElement>
         return Collections.unmodifiableList(list);
     }
 
+    /**
+     * {@return a text representation of the compound element and its contents for debugging purposes}
+     *
+     * The format, structure and exact contents of the returned string are not specified and may change at any time in the future.
+     */
+    default String toDebugString() {
+        StringBuilder text = new StringBuilder();
+        ClassPrinter.toYaml(this, ClassPrinter.Verbosity.TRACE_ALL, text::append);
+        return text.toString();
+    }
 }

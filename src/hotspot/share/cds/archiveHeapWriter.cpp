@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -88,7 +89,6 @@ void ArchiveHeapWriter::init() {
     _native_pointers = new GrowableArrayCHeap<NativePointerInfo, mtClassShared>(2048);
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
-    guarantee(UseG1GC, "implementation limitation");
     guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
   }
 }
@@ -187,8 +187,12 @@ objArrayOop ArchiveHeapWriter::allocate_root_segment(size_t offset, int element_
   memset(mem, 0, objArrayOopDesc::object_size(element_count));
 
   // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
-  oopDesc::set_mark(mem, markWord::prototype());
-  oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, Universe::objectArrayKlass()->prototype_header());
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
+  }
   arrayOopDesc::set_length(mem, element_count);
   return objArrayOop(cast_to_oop(mem));
 }
@@ -224,6 +228,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
                             MIN_GC_REGION_ALIGNMENT,
                             max_elem_count);
 
+  int root_index = 0;
   for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
     int size_elems = segments.size_in_elems(seg_idx);
     size_t size_bytes = segments.size_in_bytes(seg_idx);
@@ -236,7 +241,6 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
            "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
            segments.count(), oop_offset);
 
-    int root_index = 0;
     objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
     for (int i = 0; i < size_elems; i++) {
       root_segment_at_put(seg_oop, i, roots->at(root_index++));
@@ -246,14 +250,21 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
                         size_elems, size_bytes, p2i(seg_oop));
   }
 
+  assert(root_index == roots->length(), "Post-condition: All roots are handled");
+
   _heap_root_segments = segments;
 }
 
+// The goal is to sort the objects in increasing order of:
+// - objects that have only oop pointers
+// - objects that have both native and oop pointers
+// - objects that have only native pointers
+// - objects that have no pointers
 static int oop_sorting_rank(oop o) {
   bool has_oop_ptr, has_native_ptr;
   HeapShared::get_pointer_info(o, has_oop_ptr, has_native_ptr);
 
-  if (!has_oop_ptr) {
+  if (has_oop_ptr) {
     if (!has_native_ptr) {
       return 0;
     } else {
@@ -268,11 +279,6 @@ static int oop_sorting_rank(oop o) {
   }
 }
 
-// The goal is to sort the objects in increasing order of:
-// - objects that have no pointers
-// - objects that have only native pointers
-// - objects that have both native and oop pointers
-// - objects that have only oop pointers
 int ArchiveHeapWriter::compare_objs_by_oop_fields(HeapObjOrder* a, HeapObjOrder* b) {
   int rank_a = a->_rank;
   int rank_b = b->_rank;
@@ -349,9 +355,13 @@ HeapWord* ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, s
   Klass* oak = Universe::objectArrayKlass(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
   memset(mem, 0, fill_bytes);
-  oopDesc::set_mark(mem, markWord::prototype());
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
-  cast_to_oop(mem)->set_narrow_klass(nk);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    cast_to_oop(mem)->set_narrow_klass(nk);
+  }
   arrayOopDesc::set_length(mem, array_length);
   return mem;
 }
@@ -452,26 +462,30 @@ size_t ArchiveHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
 void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
   assert(!info->is_used(), "only set once");
-  assert(UseG1GC, "must be");
-  address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
-  log_info(cds, heap)("Heap end = %p", heap_end);
 
   size_t heap_region_byte_size = _buffer_used;
   assert(heap_region_byte_size > 0, "must archived at least one object!");
 
-
   if (UseCompressedOops) {
-    _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
+    if (UseG1GC) {
+      address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
+      log_info(cds, heap)("Heap end = %p", heap_end);
+      _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
+      _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
+      assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+    } else {
+      _requested_bottom = align_up(CompressedOops::begin(), MIN_GC_REGION_ALIGNMENT);
+    }
   } else {
     // We always write the objects as if the heap started at this address. This
     // makes the contents of the archive heap deterministic.
     //
     // Note that at runtime, the heap address is selected by the OS, so the archive
     // heap will not be mapped at 0x10000000, and the contents need to be patched.
-    _requested_bottom = (address)NOCOOPS_REQUESTED_BASE;
+    _requested_bottom = align_up((address)NOCOOPS_REQUESTED_BASE, MIN_GC_REGION_ALIGNMENT);
   }
 
-  assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+  assert(is_aligned(_requested_bottom, MIN_GC_REGION_ALIGNMENT), "sanity");
 
   _requested_top = _requested_bottom + _buffer_used;
 
@@ -522,7 +536,14 @@ oop ArchiveHeapWriter::load_oop_from_buffer(narrowOop* buffered_addr) {
 
 template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap) {
   oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
-  if (!CompressedOops::is_null(source_referent)) {
+  if (source_referent != nullptr) {
+    if (java_lang_Class::is_instance(source_referent)) {
+      // When the source object points to a "real" mirror, the buffered object should point
+      // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
+      // at run time).
+      source_referent = HeapShared::scratch_java_mirror(source_referent);
+      assert(source_referent != nullptr, "must be");
+    }
     oop request_referent = source_obj_to_requested_obj(source_referent);
     store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
     mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
@@ -551,18 +572,31 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   address buffered_addr = requested_addr_to_buffered_addr(cast_from_oop<address>(requested_obj));
 
   oop fake_oop = cast_to_oop(buffered_addr);
-  fake_oop->set_narrow_klass(nk);
+  if (UseCompactObjectHeaders) {
+    fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk));
+  } else {
+    fake_oop->set_narrow_klass(nk);
+  }
 
+  if (src_obj == nullptr) {
+    return;
+  }
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (src_obj != nullptr && !src_obj->fast_no_hash_check()) {
+  if (!src_obj->fast_no_hash_check()) {
     intptr_t src_hash = src_obj->identity_hash();
-    fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    if (UseCompactObjectHeaders) {
+      fake_oop->set_mark(markWord::prototype().set_narrow_klass(nk).copy_set_hash(src_hash));
+    } else {
+      fake_oop->set_mark(markWord::prototype().copy_set_hash(src_hash));
+    }
     assert(fake_oop->mark().is_unlocked(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = fake_oop->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
   }
+  // Strip age bits.
+  fake_oop->set_mark(fake_oop->mark().set_age(0));
 }
 
 class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
@@ -705,7 +739,9 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
 
     Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
     Metadata* native_ptr = *buffered_field_addr;
-    assert(native_ptr != nullptr, "sanity");
+    guarantee(native_ptr != nullptr, "sanity");
+    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+              "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);

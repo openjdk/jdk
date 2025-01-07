@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,6 +227,10 @@ void DependencyContext::remove_and_mark_for_deoptimization_all_dependents(Deopti
 }
 
 #ifndef PRODUCT
+bool DependencyContext::is_empty() {
+  return dependencies() == nullptr;
+}
+
 void DependencyContext::print_dependent_nmethods(bool verbose) {
   int idx = 0;
   for (nmethodBucket* b = dependencies_not_unloading(); b != nullptr; b = b->next_not_unloading()) {

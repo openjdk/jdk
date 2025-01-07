@@ -166,7 +166,7 @@ class MallocMemorySnapshot {
   }
 
   inline size_t malloc_overhead() const {
-    return _all_mallocs.count() * sizeof(MallocHeader);
+    return _all_mallocs.count() * MallocHeader::malloc_overhead();
   }
 
   // Total malloc invocation count
@@ -269,7 +269,7 @@ class MallocTracker : AllStatic {
 
   // The overhead that is incurred by switching on NMT (we need, per malloc allocation,
   // space for header and 16-bit footer)
-  static const size_t overhead_per_malloc = sizeof(MallocHeader) + sizeof(uint16_t);
+  static inline size_t overhead_per_malloc() { return MallocHeader::malloc_overhead(); }
 
   // Parameter name convention:
   // memblock :   the beginning address for user data

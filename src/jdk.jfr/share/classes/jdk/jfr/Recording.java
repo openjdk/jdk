@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,8 @@ public final class Recording implements Closeable {
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
      *
-     * @throws SecurityException If a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
-     *
      * @see jdk.jfr
+     * @since 11
      */
     public Recording(Map<String, String> settings) {
         Objects.requireNonNull(settings, "settings");
@@ -123,9 +121,6 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException If a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
      */
     public Recording() {
         this(Map.of());
@@ -149,9 +144,6 @@ public final class Recording implements Closeable {
      * @throws IllegalStateException if Flight Recorder can't be created (for
      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
      *         support, or if the file repository can't be created or accessed)
-     *
-     * @throws SecurityException if a security manager is used and
-     *         FlightRecorderPermission "accessFlightRecorder" is not set.
      *
      * @see Configuration
      */
@@ -206,10 +198,6 @@ public final class Recording implements Closeable {
      * @return {@code true} if recording is stopped, {@code false} otherwise
      *
      * @throws IllegalStateException if the recording is not started or is already stopped
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         doesn't have {@code FilePermission} to write to the destination
-     *         path
      *
      * @see #setDestination(Path)
      *
@@ -375,9 +363,6 @@ public final class Recording implements Closeable {
      *         location, for example, if the recording is closed or the
      *         destination path is not writable
      *
-     * @throws SecurityException if a security manager exists and the caller doesn't
-     *         have {@code FilePermission} to write to the destination path
-     *
      * @see #getState()
      * @see #isToDisk()
      */
@@ -472,10 +457,6 @@ public final class Recording implements Closeable {
      *
      * @throws IllegalStateException if recording is in the {@code STOPPED} or
      *         {@code CLOSED} state.
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         doesn't have {@code FilePermission} to read, write, and delete the
-     *         {@code destination} file
      *
      * @throws IOException if the path is not writable
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,6 @@ class LinuxDosFileAttributeView
 
     @Override
     public DosFileAttributes readAttributes() throws IOException {
-        file.checkRead();
-
         int fd = -1;
         try {
              fd = file.openForAttributeAccess(followLinks);
@@ -249,8 +247,6 @@ class LinuxDosFileAttributeView
      * Updates the value of the user.DOSATTRIB extended attribute
      */
     private void updateDosAttribute(int flag, boolean enable) throws IOException {
-        file.checkWrite();
-
         int fd = -1;
         try {
             fd = file.openForAttributeAccess(followLinks);

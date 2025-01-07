@@ -122,7 +122,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
 
     if (singleton) {
       wins++;
-      x = ((PhaseGVN&)_igvn).makecon(t);
+      x = makecon(t);
     } else {
       // We now call Identity to try to simplify the cloned node.
       // Note that some Identity methods call phase->type(this).
@@ -189,8 +189,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     IdealLoopTree *old_loop;
 
     if (x->is_Con()) {
-      // Constant's control is always root.
-      set_ctrl(x, C->root());
+      assert(get_ctrl(x) == C->root(), "constant control is not root");
       continue;
     }
     // The occasional new node
@@ -279,10 +278,14 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
   switch (n->Opcode()) {
     case Op_DivI:
     case Op_ModI:
+    case Op_UDivI:
+    case Op_UModI:
       zero = TypeInt::ZERO;
       break;
     case Op_DivL:
     case Op_ModL:
+    case Op_UDivL:
+    case Op_UModL:
       zero = TypeLong::ZERO;
       break;
     default:
@@ -331,8 +334,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
       pop = Op_IfTrue;
   }
   // 'con' is set to true or false to kill the dominated test.
-  Node *con = _igvn.makecon(pop == Op_IfTrue ? TypeInt::ONE : TypeInt::ZERO);
-  set_ctrl(con, C->root()); // Constant gets a new use
+  Node* con = makecon(pop == Op_IfTrue ? TypeInt::ONE : TypeInt::ZERO);
   // Hack the dominated test
   _igvn.replace_input_of(iff, 1, con);
 
@@ -472,8 +474,7 @@ Node* PhaseIdealLoop::remix_address_expressions_add_left_shift(Node* n, IdealLoo
     if (add->Opcode() == Op_Sub(bt) &&
         _igvn.type(add->in(1)) != TypeInteger::zero(bt)) {
       assert(add->Opcode() == Op_SubI || add->Opcode() == Op_SubL, "");
-      Node* zero = _igvn.integercon(0, bt);
-      set_ctrl(zero, C->root());
+      Node* zero = integercon(0, bt);
       Node* neg = SubNode::make(zero, add->in(2), bt);
       register_new_node_with_ctrl_of(neg, add->in(2));
       add = AddNode::make(add->in(1), neg, bt);
@@ -787,10 +788,8 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   }//for
   Node* bol = iff->in(1);
   assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond with Halt");
-  if (bol->is_Opaque4()) {
-    // Ignore Template Assertion Predicates with Opaque4 nodes.
-    assert(assertion_predicate_has_loop_opaque_node(iff),
-           "must be Template Assertion Predicate, non-null-check with Opaque4 cannot form a diamond with Halt");
+  if (bol->is_OpaqueTemplateAssertionPredicate()) {
+    // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
     return nullptr;
   }
   assert(bol->Opcode() == Op_Bool, "Unexpected node");
@@ -1550,6 +1549,9 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   }
 
   try_sink_out_of_loop(n);
+  if (C->failing()) {
+    return;
+  }
 
   try_move_store_after_loop(n);
 }
@@ -1702,8 +1704,9 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       !n->is_Proj() &&
       !n->is_MergeMem() &&
       !n->is_CMove() &&
-      !n->is_Opaque4() &&
+      !n->is_OpaqueNotNull() &&
       !n->is_OpaqueInitializedAssertionPredicate() &&
+      !n->is_OpaqueTemplateAssertionPredicate() &&
       !n->is_Type()) {
     Node *n_ctrl = get_ctrl(n);
     IdealLoopTree *n_loop = get_loop(n_ctrl);
@@ -1736,7 +1739,11 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       Node* early_ctrl = compute_early_ctrl(n, n_ctrl);
       if (n_loop->is_member(get_loop(early_ctrl)) && // check that this one can't be hoisted now
           ctrl_of_all_uses_out_of_loop(n, early_ctrl, n_loop)) { // All uses in outer loops!
-        assert(!n->is_Store() && !n->is_LoadStore(), "no node with a side effect");
+        if (n->is_Store() || n->is_LoadStore()) {
+            assert(false, "no node with a side effect");
+            C->record_failure("no node with a side effect");
+            return;
+        }
         Node* outer_loop_clone = nullptr;
         for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin;) {
           Node* u = n->last_out(j); // Clone private computation per use
@@ -1945,10 +1952,11 @@ bool PhaseIdealLoop::ctrl_of_use_out_of_loop(const Node* n, Node* n_ctrl, IdealL
   // Sinking a node from a pre loop to its main loop pins the node between the pre and main loops. If that node is input
   // to a check that's eliminated by range check elimination, it becomes input to an expression that feeds into the exit
   // test of the pre loop above the point in the graph where it's pinned.
-  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop() &&
-      u_loop->_head->is_CountedLoop() && u_loop->_head->as_CountedLoop()->is_main_loop() &&
-      n_loop->_next == get_loop(u_loop->_head->as_CountedLoop()->skip_strip_mined())) {
-    return false;
+  if (n_loop->_head->is_CountedLoop() && n_loop->_head->as_CountedLoop()->is_pre_loop()) {
+    CountedLoopNode* pre_loop = n_loop->_head->as_CountedLoop();
+    if (is_dominator(pre_loop->loopexit(), ctrl)) {
+      return false;
+    }
   }
   return true;
 }
@@ -1983,6 +1991,9 @@ void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack
       if (cnt != 0 && !n->is_Con()) {
         assert(has_node(n), "no dead nodes");
         split_if_with_blocks_post(n);
+        if (C->failing()) {
+          return;
+        }
       }
       if (must_throttle_split_if()) {
         nstack.clear();
@@ -2020,14 +2031,14 @@ Node* PhaseIdealLoop::clone_iff(PhiNode* phi) {
     if (b->is_Phi()) {
       _igvn.replace_input_of(phi, i, clone_iff(b->as_Phi()));
     } else {
-      assert(b->is_Bool() || b->is_Opaque4() || b->is_OpaqueInitializedAssertionPredicate(),
-             "bool, non-null check with Opaque4 node or Initialized Assertion Predicate with its Opaque node");
+      assert(b->is_Bool() || b->is_OpaqueNotNull() || b->is_OpaqueInitializedAssertionPredicate(),
+             "bool, non-null check with OpaqueNotNull or Initialized Assertion Predicate with its Opaque node");
     }
   }
   Node* n = phi->in(1);
   Node* sample_opaque = nullptr;
   Node *sample_bool = nullptr;
-  if (n->is_Opaque4() || n->is_OpaqueInitializedAssertionPredicate()) {
+  if (n->is_OpaqueNotNull() || n->is_OpaqueInitializedAssertionPredicate()) {
     sample_opaque = n;
     sample_bool = n->in(1);
     assert(sample_bool->is_Bool(), "wrong type");
@@ -2201,7 +2212,9 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // For example, it is unexpected that there is a Phi between an
       // AllocateArray node and its ValidLengthTest input that could cause
       // split if to break.
-      if (use->is_If() || use->is_CMove() || use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate() ||
+      assert(!use->is_OpaqueTemplateAssertionPredicate(),
+             "should not clone a Template Assertion Predicate which should be removed once it's useless");
+      if (use->is_If() || use->is_CMove() || use->is_OpaqueNotNull() || use->is_OpaqueInitializedAssertionPredicate() ||
           (use->Opcode() == Op_AllocateArray && use->in(AllocateNode::ValidLengthTest) == old)) {
         // Since this code is highly unlikely, we lazily build the worklist
         // of such Nodes to go split.
@@ -2903,8 +2916,7 @@ Node* PhaseIdealLoop::short_circuit_if(IfNode* iff, ProjNode* live_proj) {
   guarantee(live_proj != nullptr, "null projection");
   int proj_con = live_proj->_con;
   assert(proj_con == 0 || proj_con == 1, "false or true projection");
-  Node *con = _igvn.intcon(proj_con);
-  set_ctrl(con, C->root());
+  Node* con = intcon(proj_con);
   if (iff) {
     iff->set_req(1, con);
   }
@@ -3213,8 +3225,7 @@ IfNode* PhaseIdealLoop::insert_cmpi_loop_exit(IfNode* if_cmpu, IdealLoopTree* lo
   if (stride > 0) {
     rhs_cmpi = limit; // For i >= limit
   } else {
-    rhs_cmpi = _igvn.makecon(TypeInt::ZERO); // For i < 0
-    set_ctrl(rhs_cmpi, C->root());
+    rhs_cmpi = makecon(TypeInt::ZERO); // For i < 0
   }
   // Create a new region on the exit path
   RegionNode* reg = insert_region_before_proj(lp_exit);
@@ -3243,8 +3254,7 @@ void PhaseIdealLoop::remove_cmpi_loop_exit(IfNode* if_cmp, IdealLoopTree *loop) 
   assert(if_cmp->in(1)->in(1)->Opcode() == Op_CmpI &&
          stay_in_loop(lp_proj, loop)->is_If() &&
          stay_in_loop(lp_proj, loop)->in(1)->in(1)->Opcode() == Op_CmpU, "inserted cmpi before cmpu");
-  Node *con = _igvn.makecon(lp_proj->is_IfTrue() ? TypeInt::ONE : TypeInt::ZERO);
-  set_ctrl(con, C->root());
+  Node* con = makecon(lp_proj->is_IfTrue() ? TypeInt::ONE : TypeInt::ZERO);
   if_cmp->set_req(1, con);
 }
 
@@ -4548,7 +4558,6 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     const TypeVect* vec_t = last_ur->vect_type();
     uint vector_length    = vec_t->length();
     BasicType bt          = vec_t->element_basic_type();
-    const Type* bt_t      = Type::get_const_basic_type(bt);
 
     // Convert opcode from vector-reduction -> scalar -> normal-vector-op
     const int sopc        = VectorNode::scalar_opcode(last_ur->Opcode(), bt);
@@ -4627,8 +4636,8 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     assert(first_ur != nullptr, "must have successfully terminated chain traversal");
 
     Node* identity_scalar = ReductionNode::make_identity_con_scalar(_igvn, sopc, bt);
-    set_ctrl(identity_scalar, C->root());
-    VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt_t);
+    set_root_as_ctrl(identity_scalar);
+    VectorNode* identity_vector = VectorNode::scalar2vector(identity_scalar, vector_length, bt);
     register_new_node(identity_vector, C->root());
     assert(vec_t == identity_vector->vect_type(), "matching vector type");
     VectorNode::trace_new_vector(identity_vector, "Unordered Reduction");

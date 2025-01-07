@@ -807,7 +807,11 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
       x->id() == vmIntrinsics::_dpow || x->id() == vmIntrinsics::_dcos ||
       x->id() == vmIntrinsics::_dsin || x->id() == vmIntrinsics::_dtan ||
-      x->id() == vmIntrinsics::_dlog10) {
+      x->id() == vmIntrinsics::_dlog10
+#ifdef _LP64
+      || x->id() == vmIntrinsics::_dtanh
+#endif
+      ) {
     do_LibmIntrinsic(x);
     return;
   }
@@ -989,9 +993,15 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dtan:
        if (StubRoutines::dtan() != nullptr) {
-      __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
+        __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dtanh:
+       assert(StubRoutines::dtanh() != nullptr, "tanh intrinsic not found");
+       if (StubRoutines::dtanh() != nullptr) {
+        __ call_runtime_leaf(StubRoutines::dtanh(), getThreadTemp(), result_reg, cc->args());
       }
       break;
     default:  ShouldNotReachHere();

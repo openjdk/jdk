@@ -26,6 +26,7 @@
 #define SHARE_GC_SHARED_OOPSTORAGESET_HPP
 
 #include "nmt/memTag.hpp"
+#include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -89,6 +90,8 @@ public:
   template <typename Closure>
   static void strong_oops_do(Closure* cl);
 
+  // Debugging: print location info, if in storage.
+  static bool print_containing(const void* addr, outputStream* st);
 };
 
 ENUMERATOR_VALUE_RANGE(OopStorageSet::StrongId,

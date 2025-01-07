@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,20 @@ public class InferenceContext {
         }
         return buf.toList();
     }
+
+    /**
+     * Replace all undet vars in a given type with corresponding free variables
+     */
+    public final Type asTypeVar(Type t) {
+        return asTypeVarFun.apply(t);
+    }
+
+    Types.TypeMapping<Void> asTypeVarFun = new Type.StructuralTypeMapping<>() {
+        @Override
+        public Type visitUndetVar(UndetVar uv, Void aVoid) {
+            return uv.qtype;
+        }
+    };
 
     List<Type> instTypes() {
         ListBuffer<Type> buf = new ListBuffer<>();

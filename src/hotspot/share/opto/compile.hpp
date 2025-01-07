@@ -239,11 +239,12 @@ class Compile : public Phase {
    private:
     Compile*    _compile;
     CompileLog* _log;
-    const char* _phase_name;
     bool _dolog;
    public:
-    TracePhase(const char* name, elapsedTimer* accumulator);
+    TracePhase(PhaseTraceId phaseTraceId);
+    TracePhase(const char* name, PhaseTraceId phaseTraceId);
     ~TracePhase();
+    const char* phase_name() const { return title(); }
   };
 
   // Information per category of alias (memory slice)
@@ -370,7 +371,8 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
-  GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
+  // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates.
+  GrowableArray<Node*>  _template_assertion_predicate_opaqs;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -390,6 +392,8 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
+
+  DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
 
   // Arenas for new-space and old-space nodes.
   // Swapped between using _node_arena.
@@ -707,14 +711,16 @@ private:
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_method(graph_name, level);
+      _igv_printer->print_graph(graph_name);
     }
   }
 
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
   void igv_print_method_to_network(const char* phase_name = "Debug");
+  void igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
@@ -768,7 +774,7 @@ private:
 
   void add_template_assertion_predicate_opaq(Node* n) {
     assert(!_template_assertion_predicate_opaqs.contains(n),
-           "duplicate entry in template assertion predicate opaque4 list");
+           "Duplicate entry in Template Assertion Predicate OpaqueTemplateAssertionPredicate list");
     _template_assertion_predicate_opaqs.append(n);
   }
 
@@ -785,6 +791,12 @@ private:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+#ifdef ASSERT
+  bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }
+  void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
+  void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
+#endif
 
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
@@ -815,7 +827,7 @@ private:
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
 
-  bool        failing() const        {
+  bool        failing_internal() const {
     return _env->failing() ||
            _failure_reason.get() != nullptr;
   }
@@ -827,6 +839,27 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
+  bool failing() {
+    if (failing_internal()) {
+      return true;
+    }
+#ifdef ASSERT
+    // Disable stress code for PhaseIdealLoop verification (would have cascading effects).
+    if (phase_verify_ideal_loop()) {
+      return false;
+    }
+    if (StressBailout) {
+      return fail_randomly();
+    }
+#endif
+    return false;
+  }
+
+#ifdef ASSERT
+  bool fail_randomly();
+  bool failure_is_artificial();
+#endif
+
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason.get()) ||
            (r != nullptr &&
@@ -834,11 +867,11 @@ private:
             strcmp(r, _failure_reason.get()) == 0);
   }
 
-  void record_failure(const char* reason);
-  void record_method_not_compilable(const char* reason) {
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
-    record_failure(reason);
+    record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
   }
   bool check_node_count(uint margin, const char* reason) {
     if (oom()) {
@@ -913,11 +946,9 @@ private:
   Node_Notes* default_node_notes() const        { return _default_node_notes; }
   void    set_default_node_notes(Node_Notes* n) { _default_node_notes = n; }
 
-  Node_Notes*       node_notes_at(int idx) {
-    return locate_node_notes(_node_note_array, idx, false);
-  }
-  inline bool   set_node_notes_at(int idx, Node_Notes* value);
+  Node_Notes*       node_notes_at(int idx);
 
+  inline bool   set_node_notes_at(int idx, Node_Notes* value);
   // Copy notes from source to dest, if they exist.
   // Overwrite dest only if source provides something.
   // Return true if information was moved.
@@ -1215,7 +1246,6 @@ private:
   void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
-  void eliminate_redundant_card_marks(Node* n);
   void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
 
   // Logic cone optimization.

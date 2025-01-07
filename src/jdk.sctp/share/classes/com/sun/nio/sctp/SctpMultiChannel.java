@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,11 +236,6 @@ public abstract class SctpMultiChannel
      * @throws  java.nio.channels.UnsupportedAddressTypeException
      *          If the type of the given address is not supported
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and its {@link
-     *          java.lang.SecurityManager#checkListen(int) checkListen} method
-     *          denies the operation
-     *
      * @throws  IOException
      *          If some other I/O error occurs
      */
@@ -272,11 +267,6 @@ public abstract class SctpMultiChannel
      *
      * @throws  java.nio.channels.UnsupportedAddressTypeException
      *          If the type of the given address is not supported
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and its {@link
-     *          java.lang.SecurityManager#checkListen(int) checkListen} method
-     *          denies the operation
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -481,13 +471,13 @@ public abstract class SctpMultiChannel
      * @param   name
      *          The socket option
      *
-     * @param  association
-     *         The association whose option should be set, or {@code null}
-     *         if this option should be set at the channel's socket level.
-     *
      * @param   value
      *          The value of the socket option. A value of {@code null} may be
      *          a valid value for some socket options.
+     *
+     * @param  association
+     *         The association whose option should be set, or {@code null}
+     *         if this option should be set at the channel's socket level.
      *
      * @return  This channel
      *
@@ -567,11 +557,6 @@ public abstract class SctpMultiChannel
      * this method will return {@code null}. If an uncaught exception is thrown by the
      * handler it will be propagated up the stack through this method.
      *
-     * <P> If a security manager has been installed then for each new association
-     * setup this method verifies that the associations source address and port
-     * number are permitted by the security manager's {@link
-     * java.lang.SecurityManager#checkAccept(String,int) checkAccept} method.
-     *
      * <P> This method may be invoked at any time. If another thread has
      * already initiated a receive operation upon this channel, then an
      * invocation of this method will block until the first operation is
@@ -620,10 +605,6 @@ public abstract class SctpMultiChannel
      *          If the given handler invokes the {@code receive} method of this
      *          channel
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it does not permit
-     *          new associations to be accepted from the message's sender
-     *
      * @throws  IOException
      *          If some other I/O error occurs
      */
@@ -669,11 +650,6 @@ public abstract class SctpMultiChannel
      * {@link java.nio.channels.WritableByteChannel#write(java.nio.ByteBuffer)
      * write} operation.
      *
-     * <P> If a security manager has been installed then for each new association
-     * setup this method verifies that the given remote peers address and port
-     * number are permitted by the security manager's {@link
-     * java.lang.SecurityManager#checkConnect(String,int) checkConnect} method.
-     *
      * <P> This method may be invoked at any time. If another thread has already
      * initiated a send operation upon this channel, then an invocation of
      * this method will block until the first operation is complete.
@@ -707,10 +683,6 @@ public abstract class SctpMultiChannel
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
      *          interrupt status
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it does not permit
-     *          new associations to be setup with the messages's address
      *
      * @throws  IOException
      *          If some other I/O error occurs

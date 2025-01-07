@@ -635,9 +635,9 @@ class StubGenerator: public StubCodeGenerator {
         r_result       = Z_R11;
     address start = __ pc();
 
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     r_bitmap, r_result, super_klass_index);
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           r_array_base, r_array_length, r_array_index,
+                                           r_bitmap, r_result, super_klass_index);
 
     __ z_br(Z_R14);
 
@@ -659,7 +659,7 @@ class StubGenerator: public StubCodeGenerator {
         r_result       = Z_R11;
 
     __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base,
-                                               r_array_index, r_bitmap, r_result, r_temp1);
+                                               r_array_index, r_bitmap, r_temp1, r_result, /* is_stub */ true);
 
     __ z_br(Z_R14);
 
@@ -688,7 +688,7 @@ class StubGenerator: public StubCodeGenerator {
     // code (code_size == 0) confuses opjitconv
     // StubCodeMark mark(this, "StubRoutines", "verify_oop_stub");
 
-    address start = 0;
+    address start = nullptr;
 
 #if !defined(PRODUCT)
     start = CAST_FROM_FN_PTR(address, verify_oop_helper);
@@ -3053,6 +3053,29 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // Z_ARG1 = jobject receiver
+  // Z_method = Method* result
+  address generate_upcall_stub_load_target() {
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
+      // Load target method from receiver
+    __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_MemberName::method_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
+    __ z_stg(Z_method, Address(Z_thread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ z_br(Z_R14);
+
+    return start;
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
 
@@ -3110,6 +3133,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
 
   void generate_compiler_stubs() {

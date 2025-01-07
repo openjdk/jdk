@@ -313,8 +313,9 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   case CallInfo::direct_call:
     vmindex = Method::nonvirtual_vtable_index;
     if (m->is_static()) {
+      assert(!m->is_static_initializer(), "Cannot be static initializer");
       flags |= IS_METHOD      | (JVM_REF_invokeStatic  << REFERENCE_KIND_SHIFT);
-    } else if (m->is_initializer()) {
+    } else if (m->is_object_initializer()) {
       flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
     } else {
       // "special" reflects that this is a direct call, not that it
@@ -1463,15 +1464,15 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     ThreadToNativeFromVM ttnfv(thread);
 
     int status = env->RegisterNatives(MHN_class, MHN_methods, sizeof(MHN_methods)/sizeof(JNINativeMethod));
-    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+    guarantee(status == JNI_OK && !env->ExceptionCheck(),
               "register java.lang.invoke.MethodHandleNative natives");
 
     status = env->RegisterNatives(MH_class, MH_methods, sizeof(MH_methods)/sizeof(JNINativeMethod));
-    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+    guarantee(status == JNI_OK && !env->ExceptionCheck(),
               "register java.lang.invoke.MethodHandle natives");
 
     status = env->RegisterNatives(VH_class, VH_methods, sizeof(VH_methods)/sizeof(JNINativeMethod));
-    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+    guarantee(status == JNI_OK && !env->ExceptionCheck(),
               "register java.lang.invoke.VarHandle natives");
   }
 

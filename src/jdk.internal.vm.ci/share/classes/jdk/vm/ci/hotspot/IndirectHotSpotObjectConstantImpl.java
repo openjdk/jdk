@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
      */
     private Object rawAudit;
 
-    @SuppressWarnings("serial")
     @VMEntryPoint
     private IndirectHotSpotObjectConstantImpl(long objectHandle, boolean compressed, boolean skipRegister) {
         super(compressed);
@@ -164,13 +163,17 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
 
     @Override
     public JavaConstant compress() {
-        assert !compressed;
+        if (compressed) {
+            throw new IllegalArgumentException("already compressed: " + this);
+        }
         return new IndirectHotSpotObjectConstantImpl(this, true);
     }
 
     @Override
     public JavaConstant uncompress() {
-        assert compressed;
+        if (!compressed) {
+            throw new IllegalArgumentException("not compressed: " + this);
+        }
         return new IndirectHotSpotObjectConstantImpl(this, false);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeTracer.hpp"
@@ -70,7 +71,7 @@
 // Max size with JVMTI
 int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 //-----------------------------------------------------------------------------
 
@@ -165,7 +166,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   address fn = nullptr;
   address entry_point = nullptr;
-  Register continuation = ra;
   switch (kind) {
     case Interpreter::java_lang_math_abs:
       entry_point = __ pc();
@@ -184,83 +184,82 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dsin() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_cos :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dcos() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_tan :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dtan() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log10 :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dlog10() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_exp :
       entry_point = __ pc();
       __ fld(f10, Address(esp));
       __ mv(sp, x19_sender_sp);
       __ mv(x9, ra);
-      continuation = x9;  // The first callee-saved register
       if (StubRoutines::dexp() == nullptr) {
         fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_pow :
       entry_point = __ pc();
       __ mv(x9, ra);
-      continuation = x9;
       __ fld(f10, Address(esp, 2 * Interpreter::stackElementSize));
       __ fld(f11, Address(esp));
       __ mv(sp, x19_sender_sp);
@@ -270,6 +269,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
       __ call(fn);
+      __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_fmaD :
       if (UseFMA) {
@@ -295,7 +295,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       ;
   }
   if (entry_point != nullptr) {
-    __ jr(continuation);
+    __ ret();
   }
 
   return entry_point;
@@ -361,7 +361,7 @@ address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler() {
   // setup parameters
 
   // convention: expect aberrant index in register x11
-  __ zero_extend(c_rarg2, x11, 32);
+  __ zext(c_rarg2, x11, 32);
   // convention: expect array in register x13
   __ mv(c_rarg1, x13);
   __ call_VM(noreg,
@@ -421,7 +421,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                c_rarg1, c_rarg2);
   }
   // throw exception
-  __ j(address(Interpreter::throw_exception_entry()));
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
   return entry;
 }
 
@@ -538,6 +538,38 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Restore constant pool cache
+  __ ld(xcpool, Address(fp, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Restore Java expression stack pointer
+  __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ shadd(esp, t0, fp, t0, Interpreter::logStackElementSize);
+  // and null it as marker that esp is now tos until next java call
+  __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  // Restore machine SP
+  __ ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ shadd(sp, t0, fp, t0, LogBytesPerWord);
+
+  // Restore method
+  __ ld(xmethod, Address(fp, frame::interpreter_frame_method_offset * wordSize));
+
+  // Restore dispatch
+  __ la(xdispatch, ExternalAddress((address)Interpreter::dispatch_table()));
+
+  __ ret();
+
+  return start;
+}
+
 
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -1092,6 +1124,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in x10
   // set result handler
   __ mv(result_handler, x10);
+  // Save it in the frame in case of preemption; we cannot rely on callee saved registers.
+  __ sd(x10, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
+
   // pass mirror handle if static call
   {
     Label L;
@@ -1130,6 +1165,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // It is enough that the pc() points into the right code
   // segment. It does not have to be the correct return pc.
+  // For convenience we use the pc we want to resume to in
+  // case of preemption on Object.wait.
   Label native_return;
   __ set_last_Java_frame(esp, fp, native_return, x30);
 
@@ -1151,9 +1188,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   __ sw(t0, Address(t1));
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ jalr(x28);
-  __ bind(native_return);
+
+  __ pop_cont_fastpath();
+
   __ get_method(xmethod);
   // result potentially in x10 or f10
 
@@ -1218,6 +1259,23 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   __ mv(t0, _thread_in_Java);
   __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ beqz(t1, not_preempted);
+    __ sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    __ jr(t1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    // reload result_handler
+    __ ld(result_handler, Address(fp, frame::interpreter_frame_result_handler_offset * wordSize));
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
@@ -1748,13 +1806,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t != nullptr && t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();  __ j(L);
-  fep = __ pc();  __ push_f();    __ j(L);
-  dep = __ pc();  __ push_d();    __ j(L);
-  lep = __ pc();  __ push_l();    __ j(L);
-  bep = cep = sep =
-  iep = __ pc();  __ push_i();
-  vep = __ pc();
+  aep = __ pc();     // atos entry point
+      __ push_ptr();
+      __ j(L);
+  fep = __ pc();     // ftos entry point
+      __ push_f();
+      __ j(L);
+  dep = __ pc();     // dtos entry point
+      __ push_d();
+      __ j(L);
+  lep = __ pc();     // ltos entry point
+      __ push_l();
+      __ j(L);
+  bep = cep = sep = iep = __ pc();     // [bcsi]tos entry point
+      __ push_i();
+  vep = __ pc();     // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
 }

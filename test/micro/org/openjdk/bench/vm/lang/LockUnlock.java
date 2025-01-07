@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,10 +309,11 @@ public class LockUnlock {
     }
 
     /**
-     * With two threads lockObject1 will be contended so should be
-     * inflated.
+     * With three threads lockObject1 will be contended so should be
+     * inflated. Three threads is also needed to ensure a high level
+     * of code coverage in the locking code.
      */
-    @Threads(2)
+    @Threads(3)
     @Benchmark
     public void testContendedLock() {
         synchronized (lockObject1) {

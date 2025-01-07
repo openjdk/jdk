@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 
-@Fork(jvmArgsAppend = {"-XX:+AlwaysPreTouch"}, value = 5)
+@Fork(jvmArgs = {"-XX:+AlwaysPreTouch"}, value = 5)
 @Warmup(iterations = 3, time = 3)
 @Measurement(iterations = 8, time = 2)
 @OutputTimeUnit(TimeUnit.SECONDS)

@@ -26,7 +26,6 @@
  * @bug 8012723
  * @summary strictfp interface misses strictfp modifer on default method
  * @library /tools/lib /test/lib
- * @enablePreview
  * @run main CheckACC_STRICTFlagOnDefaultMethodTest
  */
 

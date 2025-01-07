@@ -185,6 +185,11 @@ inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
 }
 
+// Convert pointer to uintptr_t
+inline uintptr_t p2u(const volatile void* p) {
+  return (uintptr_t) p;
+}
+
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
 
 //----------------------------------------------------------------------------------------------------
@@ -210,7 +215,7 @@ FORBID_C_FUNCTION(char* strdup(const char *s), "use os::strdup");
 FORBID_C_FUNCTION(char* strndup(const char *s, size_t n), "don't use");
 FORBID_C_FUNCTION(int posix_memalign(void **memptr, size_t alignment, size_t size), "don't use");
 FORBID_C_FUNCTION(void* aligned_alloc(size_t alignment, size_t size), "don't use");
-FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::Posix::realpath");
+FORBID_C_FUNCTION(char* realpath(const char* path, char* resolved_path), "use os::realpath");
 FORBID_C_FUNCTION(char* get_current_dir_name(void), "use os::get_current_directory()");
 FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
 FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
@@ -559,6 +564,9 @@ const jint min_jintFloat = (jint)(0x00000001);
 const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
+
+// A named constant for the integral representation of a Java null.
+const intptr_t NULL_WORD = 0;
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
