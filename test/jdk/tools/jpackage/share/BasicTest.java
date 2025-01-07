@@ -62,12 +62,15 @@ public final class BasicTest {
 
     public static Collection addModulesParams() {
         List<Object[][]> params = new ArrayList<>();
-        params.add(new Object[][] { new String[] { "ALL-DEFAULT"  } });
-        params.add(new Object[][] { new String[] { "java.desktop" } });
-        params.add(new Object[][] { new String[] { "java.desktop,jdk.jartool" } });
-        params.add(new Object[][] { new String[] { "java.desktop", "jdk.jartool" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "ALL-DEFAULT"  } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop,jdk.jartool" } });
+        params.add(new Object[][] { new String[] { "--add-modules", "java.desktop", "--add-modules", "jdk.jartool" } });
         if (isAllModulePathCapable()) {
-            params.add(new Object[][] { new String[] { "ALL-MODULE-PATH" } });
+            final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+            params.add(new Object[][] { new String[] { "--add-modules", "ALL-MODULE-PATH",
+                                                       // Since JDK-8345259 ALL-MODULE-PATH requires --module-path arg
+                                                       "--module-path", jmods.toString() } });
         }
         return Collections.unmodifiableList(params);
     }
@@ -338,8 +341,7 @@ public final class BasicTest {
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage("goodbye.jar:com.other/com.other.Hello")
                 .ignoreDefaultRuntime(true); // because of --add-modules
-        Stream.of(addModulesArg).map(v -> Stream.of("--add-modules", v)).flatMap(
-                s -> s).forEachOrdered(cmd::addArgument);
+        Stream.of(addModulesArg).forEachOrdered(cmd::addArgument);
         cmd.executeAndAssertHelloAppImageCreated();
     }
 
