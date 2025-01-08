@@ -1182,6 +1182,17 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     case Op_AddI:
 
+    // SubTypeCheckNode::Ideal calls SubTypeCheckNode::verify_helper, which does
+    //   Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
+    //   record_for_cleanup(cmp, phase);
+    // This has the effect that these new nodes end up on the IGVN worklist,
+    // but if we now leave verification and IGVN itself, we have nodes on the
+    // worklist, and that should not be (there are asserts against this).
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
+    case Op_SubTypeCheck:
+
     // We do not even call Ideal for all the exceptions above. If first
     // called Ideal on them, then we may already have modified the graph
     // and cannot undo that.
