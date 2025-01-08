@@ -429,13 +429,13 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
   assert(is_aligned(highest_start, attach_point_alignment), "precondition");
   assert(is_aligned(lowest_start, attach_point_alignment), "precondition");
 
-  const size_t attach_range = highest_start - lowest_start;
-  const uint64_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
-  const uint64_t num_attempts_to_try   = MIN2((uint64_t)HeapSearchSteps, num_attempts_possible);
-  const uint64_t num_intervals = num_attempts_to_try - 1;
+  const size_t attach_range = pointer_delta(highest_start, lowest_start, sizeof(char*));
+  const size_t num_attempts_possible = (attach_range / attach_point_alignment) + 1;
+  const size_t num_attempts_to_try   = MIN2((size_t)HeapSearchSteps, num_attempts_possible);
+  const size_t num_intervals = num_attempts_to_try - 1;
   const size_t stepsize = num_intervals == 0 ? 0 : align_down(attach_range / num_intervals, attach_point_alignment);
 
-  for (uint64_t i = 0; i < num_attempts_to_try; ++i) {
+  for (size_t i = 0; i < num_attempts_to_try; ++i) {
     char* const attach_point = highest_start - stepsize * i;
     ReservedSpace reserved = try_reserve_memory(size, alignment, page_size, attach_point);
 
