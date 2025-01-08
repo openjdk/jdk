@@ -31,8 +31,7 @@ import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.Unsafe;
-import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
+import jdk.internal.util.ByteArrayLittleEndian;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -77,8 +76,6 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
     /**
      * Explicit serialVersionUID for interoperability.
      */
@@ -474,19 +471,21 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         buf[18] = '-';
         buf[23] = '-';
 
+//        Unsafe UNSAFE = Unsafe.getUnsafe();
+
         long x  = mostSigBits,
              x0 = hex8(x >>> 32),
              x1 = hex8(x);
-        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET, x0, false);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 9, (int) x1, false);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 14, (int) (x1 >>> 32), false);
+        ByteArrayLittleEndian.setLong(buf, 0, x0);
+        ByteArrayLittleEndian.setInt(buf, 9, (int) x1);
+        ByteArrayLittleEndian.setInt(buf, 14, (int) (x1 >>> 32));
 
         x  = leastSigBits;
         x0 = hex8(x >>> 32);
         x1 = hex8(x);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 19, (int) (x0), false);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 24, (int) (x0 >>> 32), false);
-        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 28, x1, false);
+        ByteArrayLittleEndian.setInt(buf, 19, (int) (x0));
+        ByteArrayLittleEndian.setInt(buf, 24, (int) (x0 >>> 32));
+        ByteArrayLittleEndian.setLong(buf, 28, x1);
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
