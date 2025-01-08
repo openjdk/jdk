@@ -695,6 +695,7 @@ address generate_ghash_processBlocks() {
   __ vsldoi(vTmp11, vTmp10, vTmp10, 8);        // swap Lower and Higher Halves of subkey H
   __ vsldoi(vLowerH, vZero, vTmp11, 8);      // H.L
   __ vsldoi(vHigherH, vTmp11, vZero, 8);     // H.H
+  __ clrldi(blocks, blocks, 32);
   __ mtctr(blocks);
   // Performing Karatsuba multiplication in Galois fields
   Label loop;
@@ -744,7 +745,7 @@ address generate_ghash_processBlocks() {
     __ addi(data, data, 16);
     __ bdnz(loop);
   __ stxvd2x(vZero->to_vsr(), state);
-  
+
   __ blr();
   return start;
 }
