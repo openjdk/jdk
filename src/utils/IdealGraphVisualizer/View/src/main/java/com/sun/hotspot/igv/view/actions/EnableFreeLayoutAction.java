@@ -19,26 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+package com.sun.hotspot.igv.view.actions;
 
-/*
- * @test
- * @library /test/lib ../../tools/tester
- * @build jtreg.SkippedException
- * @summary example of a test on the generated documentation
- * @run main TestDocs
- */
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-import java.nio.file.Files;
+public class EnableFreeLayoutAction extends EnableLayoutAction {
 
-public class TestDocs {
-    public static void main(String... args) throws Exception {
-        var docs = DocTester.resolveDocs();
-        System.err.println("Path to the docs is: " + docs);
-        System.err.println("Do docs exits?");
-        System.err.println(Files.exists(docs));
-        System.err.println("tidy location");
-        System.err.println(System.getProperty("tidy"));
-        System.err.println("End of test");
+    public EnableFreeLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/dynamic.png";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Show dynamic free layout";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowFreeInteractive(this.isSelected());
     }
 }

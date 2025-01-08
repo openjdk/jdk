@@ -662,7 +662,7 @@ perform.
 
     -   {`-noprompt`}: Do not prompt
 
-    -   {`-addprovider` *name* \[`-providerarg` *arg*\]: Add security provider
+    -   {`-addprovider` *name* \[`-providerarg` *arg*\]}: Add security provider
         by name (such as SunPKCS11) with an optional configure argument.
 
     -   {`-providerclass` *class* \[`-providerarg` *arg*\]}: Add security
@@ -1617,7 +1617,7 @@ name information, the keystore password, and the private key password.
 The rest of the examples assume that you responded to the prompts with values
 equal to those specified in the first `-genkeypair` command. For example, a
 distinguished name of
-`cn=`*myname*`, ou=`*mygroup*`, o=`*mycompany*`, c=`*mycountry*).
+`cn=`*myname*`, ou=`*mygroup*`, o=`*mycompany*`, c=`*mycountry*.
 
 ## Requesting a Signed Certificate from a CA
 
@@ -1914,7 +1914,7 @@ Keystore implementation
     The `keytool` command works on any file-based keystore implementation. It
     treats the keystore location that is passed to it at the command line as a
     file name and converts it to a `FileInputStream`, from which it loads the
-    keystore information.)The `jarsigner` commands can read a keystore from any
+    keystore information. The `jarsigner` commands can read a keystore from any
     location that can be specified with a URL.
 
     For `keytool` and `jarsigner`, you can specify a keystore type at the

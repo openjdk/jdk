@@ -46,10 +46,10 @@
        $ jfr print dump.jfr
 
        Programmatic access:
-       try (var rf = new RecordingFile(Path.of("dump.jfr)) {
+       try (var rf = new RecordingFile(Path.of("dump.jfr"))) {
            while (rf.hasMoreEvents()) {
                RecordedEvent e = rf.readEvent();
-               System.out.println(e.getName() + " " + e.getDuration()));
+               System.out.println(e.getName() + " " + e.getDuration());
            }
        };
   !-->
