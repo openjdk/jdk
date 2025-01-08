@@ -494,6 +494,11 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         }
     }
 
+    /**
+     * Extract the least significant 4 bytes from the input integer i, convert each byte into its corresponding 2-digit
+     * hexadecimal representation, concatenate these hexadecimal strings into one continuous string, and then interpret
+     * this string as a hexadecimal number to form and return a long value.
+     */
     private static long hex8(long i) {
         i = Long.reverseBytes(Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL));
         /*
