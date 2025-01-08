@@ -1152,6 +1152,16 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
 
 // Check that all Ideal optimizations that could be done were done.
 bool PhaseIterGVN::verify_node_Ideal(Node* n) {
+  switch (n->Opcode()) {
+    // RangeCheckNode::Ideal looks up the chain for about 999 nodes
+    // see "Range-Check scan limit". So it is possible that something
+    // optimized in that input subgraph, and the RangeCheck was not
+    // added to the worklist because it would be too expensive to walk
+    // down the graph for 1000 nodes and put all on the worklist.
+    case Op_RangeCheck:
+      return false;
+  }
+
   Node* i = n->Ideal(this, true); // TODO also with false?
   // If there was no new Idealization, we are happy.
   if (i == nullptr) {
