@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5917,11 +5917,14 @@ bool LibraryCallKit::inline_arraycopy() {
     // (1) src and dest are arrays.
     // Keep track of the information that src/dest are arrays to prevent below array specific accesses from floating above.
     generate_non_array_guard(load_object_klass(src), slow_region);
-    const Type* tary = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::BOTTOM, TypeInt::POS), nullptr, false, Type::OffsetBot);
-    src = _gvn.transform(new CheckCastPPNode(control(), src, tary));
+    if (!stopped()) {
+      src = _gvn.transform(new CheckCastPPNode(control(), src, TypeAryPtr::BOTTOM));
+    }
 
     generate_non_array_guard(load_object_klass(dest), slow_region);
-    dest = _gvn.transform(new CheckCastPPNode(control(), dest, tary));
+    if (!stopped()) {
+      dest = _gvn.transform(new CheckCastPPNode(control(), dest, TypeAryPtr::BOTTOM));
+    }
 
     // (2) src and dest arrays must have elements of the same BasicType
     // done at macro expansion or at Ideal transformation time
