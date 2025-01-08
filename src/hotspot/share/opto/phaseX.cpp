@@ -1158,6 +1158,9 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // optimized in that input subgraph, and the RangeCheck was not
     // added to the worklist because it would be too expensive to walk
     // down the graph for 1000 nodes and put all on the worklist.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     case Op_RangeCheck:
 
     // In AddNode::Ideal, we call "commute", which swaps the inputs so
