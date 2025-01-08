@@ -87,17 +87,23 @@ public class Longs {
 
     /** Performs toString on large values, around 10 digits. */
     @Benchmark
-    public void toHexString(Blackhole bh) {
+    public void toStringBig(Blackhole bh) {
         for (long value : longArrayBig) {
+            bh.consume(Long.toString(value));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringSmall(Blackhole bh) {
+        for (long value : longArraySmall) {
             bh.consume(Long.toHexString(value));
         }
     }
 
-    /** Performs toString on large values, around 10 digits. */
     @Benchmark
-    public void toStringBig(Blackhole bh) {
+    public void toHexStringBig(Blackhole bh) {
         for (long value : longArrayBig) {
-            bh.consume(Long.toString(value));
+            bh.consume(Long.toHexString(value));
         }
     }
 

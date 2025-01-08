@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Fork(3)
 public class Integers {
@@ -106,18 +106,32 @@ public class Integers {
         }
     }
 
-    @Benchmark
-    public void toHexString(Blackhole bh) {
-        for (int i : intsBig) {
-            bh.consume(Integer.toHexString(i));
-        }
-    }
-
     /** Performs toString on large values, roughly 10 digits. */
     @Benchmark
     public void toStringBig(Blackhole bh) {
         for (int i : intsBig) {
             bh.consume(Integer.toString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringTiny(Blackhole bh) {
+        for (int i : intsTiny) {
+            bh.consume(Integer.toHexString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringSmall(Blackhole bh) {
+        for (int i : intsSmall) {
+            bh.consume(Integer.toHexString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringBig(Blackhole bh) {
+        for (int i : intsBig) {
+            bh.consume(Integer.toHexString(i));
         }
     }
 
