@@ -1190,15 +1190,15 @@ public:
 //    2 -   a FastLockNode
 //
 class LockNode : public AbstractLockNode {
-  static const TypeFunc *_lock_type_Type;
+  static const TypeFunc* _lock_type_Type;
 public:
 
-  static inline const TypeFunc *lock_type() {
+  static inline const TypeFunc* lock_type() {
     assert(_lock_type_Type != nullptr, "should be initialized");
     return _lock_type_Type;
   }
 
-  static void lock_type_init() {
+  static void initialize_lock_Type() {
     assert(_lock_type_Type == nullptr, "should be called once");
     // create input type (domain)
     const Type **fields = TypeTuple::fields(3);

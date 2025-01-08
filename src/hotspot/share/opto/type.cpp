@@ -713,8 +713,8 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecY] = TypeVect::VECTY;
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
 
-  LockNode::lock_type_init();
-  ArrayCopyNode::arraycopy_type_init();
+  LockNode::initialize_lock_Type();
+  ArrayCopyNode::initialize_arraycopy_Type();
   OptoRuntime::initialize_types();
 
   // Restore working type arena.

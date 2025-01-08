@@ -73,7 +73,7 @@ public:
     return _arraycopy_type_Type;
   }
 
-  static void arraycopy_type_init() {
+  static void initialize_arraycopy_Type() {
     assert(_arraycopy_type_Type == nullptr, "should be");
     const Type** fields = TypeTuple::fields(ParmLimit - TypeFunc::Parms);
     fields[Src]       = TypeInstPtr::BOTTOM;

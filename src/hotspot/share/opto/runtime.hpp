@@ -196,10 +196,6 @@ class OptoRuntime : public AllStatic {
 #endif // INCLUDE_JVMTI
   static const TypeFunc *_dtrace_method_entry_exit_Type;
   static const TypeFunc *_dtrace_object_alloc_Type;
-  static const TypeFunc *_clone_type_Type;
-  static const TypeFunc *_load_reference_barrier_Type;
-  static const TypeFunc *_write_ref_field_pre_Type;
-  static const TypeFunc *_clone_barrier_Type;
 
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
@@ -311,16 +307,6 @@ private:
 
   // Type functions
   // ======================================================
-
-  static inline const TypeFunc *clone_barrier_Type() {
-    assert(_clone_barrier_Type != nullptr, "should be initialized");
-    return _clone_barrier_Type;
-  }
-
-  static inline const TypeFunc *write_ref_field_pre_Type() {
-    assert(_write_ref_field_pre_Type != nullptr, "should be initialized");
-    return _write_ref_field_pre_Type;
-  }
 
   static inline const TypeFunc *new_instance_Type() {
     assert(_new_instance_Type != nullptr, "should be initialized");
@@ -680,16 +666,6 @@ private:
   static inline const TypeFunc* dtrace_object_alloc_Type() {
     assert(_dtrace_object_alloc_Type != nullptr, "should be initialized");
     return _dtrace_object_alloc_Type;
-  }
-
-  static inline const TypeFunc* clone_type_Type() {
-    assert(_clone_type_Type != nullptr, "should be initialized");
-    return _clone_type_Type;
-  }
-
-  static inline const TypeFunc* load_reference_barrier_Type() {
-    assert(_load_reference_barrier_Type != nullptr, "should be initialized");
-    return _load_reference_barrier_Type;
   }
 
  private:
