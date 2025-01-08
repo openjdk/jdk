@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,11 +158,11 @@ public final class Duration
     }
 
     /**
-     * The number of seconds in the duration.
+     * @serial The number of seconds in the duration.
      */
     private final long seconds;
     /**
-     * The number of nanoseconds in the duration, expressed as a fraction of the
+     * @serial The number of nanoseconds in the duration, expressed as a fraction of the
      * number of seconds. This is always positive, and never exceeds 999,999,999.
      */
     private final int nanos;
