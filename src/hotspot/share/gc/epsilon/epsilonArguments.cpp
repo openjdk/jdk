@@ -64,18 +64,6 @@ void EpsilonArguments::initialize() {
     }
   }
 #endif
-
-  // Suggest that non-resizable heap might be better for some configurations.
-  // We are not adjusting the heap size by ourselves, because it affects startup time.
-  if (InitialHeapSize != MaxHeapSize) {
-    log_info(gc)("Consider setting -Xms equal to -Xmx to avoid resizing hiccups");
-  }
-
-  // Suggest that AlwaysPreTouch might be better for some configurations.
-  // We are not turning this on by ourselves, because it affects startup time.
-  if (FLAG_IS_DEFAULT(AlwaysPreTouch) && !AlwaysPreTouch) {
-    log_info(gc)("Consider enabling -XX:+AlwaysPreTouch to avoid memory commit hiccups");
-  }
 }
 
 void EpsilonArguments::initialize_alignments() {
