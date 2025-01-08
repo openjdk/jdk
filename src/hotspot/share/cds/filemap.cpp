@@ -1923,17 +1923,6 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // Note that this may either be a "fresh" mapping into unreserved address
     // space (Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in MetaspaceShared::map_archives().
-    char* mapped_base = r->mapped_base();
-    size_t size = r->used_aligned();
-
-    // Only for Posix: verify that the region is inside the reserved space
-    if (rs.is_reserved()) {
-      assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
-                PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
-                p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
-    }
-    r->set_in_reserved_space(rs.is_reserved());
-
     char* base = map_memory(_fd, _full_path, r->file_offset(),
                             requested_addr, size, r->read_only(),
                             r->allow_exec(), mtClassShared);
@@ -1950,6 +1939,15 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
 
     r->set_mapped_from_file(true);
     r->set_mapped_base(requested_addr);
+
+    // Only for Posix: verify that the region is inside the reserved space
+    if (rs.is_reserved()) {
+      char* mapped_base = r->mapped_base();
+      assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
+             PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
+             p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
+    }
+    r->set_in_reserved_space(rs.is_reserved());
 
     return MAP_ARCHIVE_SUCCESS;
   }
@@ -2442,7 +2440,7 @@ void FileMapInfo::unmap_region(int i) {
         // This region was mapped inside a ReservedSpace. Its memory will be freed when the ReservedSpace
         // is released. Zero it so that we don't accidentally read its content.
         log_info(cds)("Region #%d (%s) is in a reserved space, it will be freed when the space is released", i, shared_region_name[i]);
-        memset(mapped_base, 0, size);
+        r->set_mapped_base(nullptr);
       } else {
         if (!os::unmap_memory(mapped_base, size)) {
           fatal("os::unmap_memory failed");
