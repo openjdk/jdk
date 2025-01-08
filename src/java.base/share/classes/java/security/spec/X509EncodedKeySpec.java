@@ -73,7 +73,7 @@ public class X509EncodedKeySpec extends EncodedKeySpec {
      * @param encodedKey the key, which is assumed to be
      * encoded according to the X.509 standard. The contents of the
      * array are copied to protect against subsequent modification.
-     * @param algorithm the algorithm name of the encoded public key
+     * @param algorithm the algorithm name of the encoded public key.
      * See the AsymmetricKey Algorithms section in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#asymmetrickey-algorithms">
      * Java Security Standard Algorithm Names Specification</a>

@@ -134,7 +134,7 @@ public interface KEMSpi {
          *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
          *          Java Security Standard Algorithm Names Specification</a>
          *          for information about standard secret key algorithm names.
-         *          Use "Generic" if the output will be used as the input keying
+         *          Specify "Generic" if the output will be used as the input keying
          *          material of a key derivation function (KDF).
          * @return an {@link KEM.Encapsulated} object containing a portion of
          *          the shared secret as a key with the specified algorithm,
@@ -200,7 +200,7 @@ public interface KEMSpi {
          *          <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
          *          Java Security Standard Algorithm Names Specification</a>
          *          for information about standard secret key algorithm names.
-         *          Use "Generic" if the output will be used as the input keying
+         *          Specify "Generic" if the output will be used as the input keying
          *          material of a key derivation function (KDF).
          * @return a portion of the shared secret as a {@code SecretKey} with
          *          the specified algorithm
