@@ -291,6 +291,33 @@ public class TestShiftAndMask {
     }
 
     @Test
+    @IR(counts = { IRNode.AND_L, "1" })
+    @IR(failOn = { IRNode.ADD_L })
+    public static long addConstNonConstMaskLong(long j, boolean flag) {
+        long mask;
+        if (flag) {
+            barrier = 42;
+            mask = LONG_MASK;
+        } else {
+            mask = LONG_MASK2;
+        }
+        return mask & (j + LONG_ZERO_CONST); // transformed to: return j & mask;
+    }
+
+    @Run(test = "addConstNonConstMaskLong")
+    public static void addConstNonConstMaskLong_runner() {
+        long j = RANDOM.nextLong();
+        long res = addConstNonConstMaskLong(j, true);
+        if (res != (j & LONG_MASK)) {
+            throw new RuntimeException("incorrect result: " + res);
+        }
+        res = addConstNonConstMaskLong(j, false);
+        if (res != (j & LONG_MASK2)) {
+            throw new RuntimeException("incorrect result: " + res);
+        }
+    }
+
+    @Test
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = { IRNode.AND_I, IRNode.ADD_I, IRNode.LSHIFT_I })
     public static int addShiftMaskInt2(int i, int j) {
