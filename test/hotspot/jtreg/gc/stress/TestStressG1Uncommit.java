@@ -81,8 +81,8 @@ class StressUncommit {
         long allocationSize = (long) (Runtime.getRuntime().maxMemory() * 0.8);
 
         // Figure out suitable number of workers (~1 per 100M).
-        int allocationChunk = (int) Math.ceil((double) allocationSize * 100 / M);
-        int numWorkers = Math.min(allocationChunk, Runtime.getRuntime().availableProcessors());
+        int allocationChunks = (int) Math.ceil((double) allocationSize / (100 * M));
+        int numWorkers = Math.min(allocationChunks, Runtime.getRuntime().availableProcessors());
         long workerAllocation = allocationSize / numWorkers;
 
         log("Using " + numWorkers + " workers, each allocating: ~" + (workerAllocation / M) + "M");
