@@ -637,7 +637,7 @@ class StubGenerator: public StubCodeGenerator {
 //      subkeyH:    R4_ARG2
 //      data: R5_ARG3
 //      blocks: R6_ARG4
-//     
+//
 address generate_ghash_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "ghash");
   address start = __ function_entry();
