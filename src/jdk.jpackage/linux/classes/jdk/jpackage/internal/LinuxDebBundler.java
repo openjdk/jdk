@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -69,7 +68,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
     protected void doValidate(BuildEnv env, LinuxPackage pkg) throws ConfigException {
 
         // Show warning if license file is missing
-        if (pkg.licenseFile() == null) {
+        if (pkg.licenseFile().isEmpty()) {
             Log.verbose(I18N.getString("message.debs-like-licenses"));
         }
     }
@@ -326,7 +325,7 @@ public class LinuxDebBundler extends LinuxPackageBundler {
                 configDir.resolve("postrm"),
                 "resource.deb-postrm-script").setExecutable());
 
-        Optional.ofNullable(((LinuxDebPackage)pkg).relativeCopyrightFilePath()).ifPresent(copyrightFile -> {
+        ((LinuxDebPackage)pkg).relativeCopyrightFilePath().ifPresent(copyrightFile -> {
             debianFiles.add(new DebianFile(Path.of("/").resolve(copyrightFile),
                     "resource.copyright-file"));
         });
