@@ -477,16 +477,16 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         long x  = mostSigBits,
              x0 = hex8(x >>> 32),
              x1 = hex8(x);
-        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET, x0, true);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 9, (int) (x1 >>> 32), true);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 14, (int) x1, true);
+        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET, x0, false);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 9, (int) x1, false);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 14, (int) (x1 >>> 32), false);
 
         x  = leastSigBits;
         x0 = hex8(x >>> 32);
         x1 = hex8(x);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 19, (int) (x0 >>> 32), true);
-        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 24, (int) x0, true);
-        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 28, x1, true);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 19, (int) (x0), false);
+        UNSAFE.putIntUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 24, (int) (x0 >>> 32), false);
+        UNSAFE.putLongUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + 28, x1, false);
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
@@ -496,15 +496,15 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     private static long hex8(long i) {
-        //  i = Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL);
-        i = ((i & 0xF0000000L) << 28)
-           |((i & 0xF000000) << 24)
-           |((i & 0xF00000) << 20)
-           |((i & 0xF0000) << 16)
-           |((i & 0xF000) << 12)
-           |((i & 0xF00) << 8)
-           |((i & 0xF0) << 4)
-           | (i & 0xF);
+        //  i = Long.reverseBytes(Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL));
+        i = ((i & 0xF0000000L) >> 28)
+           |((i & 0xF000000L) >> 16)
+           |((i & 0xF00000L) >> 4)
+           |((i & 0xF0000L) << 8)
+           |((i & 0xF000L) << 20)
+           |((i & 0xF00L) << 32)
+           |((i & 0xF0L) << 44)
+           |((i & 0xFL) << 56);
         /*
             Use long to simulate vector operations and generate 8 hexadecimal characters at a time.
             ------------
