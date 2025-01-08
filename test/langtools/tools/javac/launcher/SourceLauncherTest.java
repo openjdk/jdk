@@ -161,6 +161,20 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
+    public void testHelloWorldWithShebangWithoutSource(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "#!/usr/bin/java\n" + // without "--source N" for JDK-8340380
+            "import java.util.Arrays;\n" +
+            "class HelloWorld {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(\"Hello World! \" + Arrays.toString(args));\n" +
+            "    }\n" +
+            "}");
+        Files.copy(base.resolve("HelloWorld.java"), base.resolve("HelloWorld"));
+        testSuccess(base.resolve("HelloWorld"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
     public void testNoAnnoProcessing(Path base) throws IOException {
         Path annoSrc = base.resolve("annoSrc");
         tb.writeJavaFiles(annoSrc,
