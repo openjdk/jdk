@@ -1204,6 +1204,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         if (hIcon == 0) {
             return null;
         }
+
         Image icon = makeIcon(hIcon);
         if (icon != null && LARGE_ICON_SIZE != icon.getWidth(null)) {
             icon = new MultiResolutionIconImage(LARGE_ICON_SIZE, icon);
@@ -1220,6 +1221,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         if (hIcon == 0) {
             return null;
         }
+
         Image icon = makeIcon(hIcon);
         if (icon != null && size != icon.getWidth(null)) {
             icon = new MultiResolutionIconImage(size, icon);
