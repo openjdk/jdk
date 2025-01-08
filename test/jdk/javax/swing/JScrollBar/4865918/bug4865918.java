@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4865918
+ * @requires (os.family != "mac")
  * @summary REGRESSION:JCK1.4a-runtime api/javax_swing/interactive/JScrollBarTests.html#JScrollBar
  * @run main bug4865918
  */
