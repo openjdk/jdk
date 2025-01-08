@@ -108,20 +108,23 @@ public final class ButtonGroupFocusTest {
 
             button2.setSelected(true);
 
+            // Debugging aid: log focus owner changes...
             KeyboardFocusManager focusManager = getCurrentKeyboardFocusManager();
-            focusManager.addPropertyChangeListener(new PropertyChangeListener() {
-                @Override
-                public void propertyChange(PropertyChangeEvent evt) {
-                    System.out.println(evt.getPropertyName()
-                                       + "\n\t" + evt.getOldValue()
-                                       + "\n\t" + evt.getNewValue());
-                }
-            });
+            focusManager.addPropertyChangeListener("focusOwner",
+                    new PropertyChangeListener() {
+                        @Override
+                        public void propertyChange(PropertyChangeEvent evt) {
+                            System.out.println(evt.getPropertyName()
+                                               + "\n\t" + evt.getOldValue()
+                                               + "\n\t" + evt.getNewValue());
+                        }
+                    });
 
+            // ...and dispatched key events
             Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
                 @Override
                 public void eventDispatched(AWTEvent event) {
-                    System.out.println("  Dispatched " + event);
+                    System.out.println("Dispatched " + event);
                 }
             }, AWTEvent.KEY_EVENT_MASK);
 
