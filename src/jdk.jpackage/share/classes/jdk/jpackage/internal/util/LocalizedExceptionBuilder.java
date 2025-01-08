@@ -26,39 +26,103 @@ package jdk.jpackage.internal.util;
 
 import java.util.function.BiFunction;
 
+/**
+ * Builder of exceptions with localized messages.
+ * @param <T> Subclass extending {@link LocalizedExceptionBuilder} class.
+ */
 public class LocalizedExceptionBuilder<T extends LocalizedExceptionBuilder<T>> {
 
     protected LocalizedExceptionBuilder(StringBundle i18n) {
         this.i18n = i18n;
     }
 
-    public static <R extends LocalizedExceptionBuilder<R>> R buildLocalizedException(StringBundle i18n) {
-        return new LocalizedExceptionBuilder<R>(i18n).thiz();
+    /**
+     * Creates an exception builder with the given source of error messages.
+     *
+     * @param i18n the source of error messages
+     * @return the exception builder
+     */
+    public static LocalizedExceptionBuilder<?> buildLocalizedException(StringBundle i18n) {
+        return new LocalizedExceptionBuilder<>(i18n);
     }
 
+    /**
+     * Creates an instance of type extending {@link Exception} class from the
+     * configured message and cause.
+     * <p>
+     * Use {@link #message(String, Object...)}, {@link #causeAndMessage(Throwable)},
+     * and {@link #cause(Throwable)} methods to initialize message and/or cause.
+     *
+     * @param <U>           the exception class
+     * @param exceptionCtor the exception constructor
+     * @return the exception
+     */
     final public <U extends Exception> U create(BiFunction<String, Throwable, U> exceptionCtor) {
         return exceptionCtor.apply(msg, cause);
     }
 
+    /**
+     * Configures this builder if strings from the associated string bundle should
+     * be used as patterns for message formatting or not.
+     *
+     * Affects the behavior of the subsequent {@link #message(String, Object...)}
+     * calls.
+     *
+     * @param v <code>true</code> if strings from the associated string bundle
+     *          should be used as patterns for message formatting by this builder or
+     *          <code>false</code> otherwise
+     * @return this
+     *
+     * @see #noformat()
+     */
     final public T format(boolean v) {
         noFormat = !v;
         return thiz();
     }
 
+    /**
+     * A shortcut for <code>format(false)</code> call.
+     *
+     * @return this
+     *
+     * @see #format(boolean)
+     */
     final public T noformat() {
         return format(false);
     }
 
+    /**
+     * Sets the message.
+     *
+     * @param msgId key of the string in the associated string bundle for the
+     *              formatting pattern
+     * @param args  the arguments for formatting message
+     * @return this
+     */
     final public T message(String msgId, Object... args) {
         msg = formatString(msgId, args);
         return thiz();
     }
 
+    /**
+     * Sets the cause.
+     *
+     * @param v the cause. A null value is permitted, and indicates that the cause
+     *          is nonexistent or unknown.
+     * @return this
+     */
     final public T cause(Throwable v) {
         cause = v;
         return thiz();
     }
 
+    /**
+     * Sets the cause and the message. The message is copied from the given
+     * {@link Throwable} object as is.
+     *
+     * @param t the cause. Must not be null.
+     * @return this
+     */
     final public T causeAndMessage(Throwable t) {
         boolean oldNoFormat = noFormat;
         return noformat().message(t.getMessage()).cause(t).format(oldNoFormat);

@@ -43,7 +43,7 @@ import jdk.jpackage.internal.util.StringBundle;
  * throw ConfigException.build(i18n)
  *         .message("error.no.name")
  *         .advice("error.no.name.advice")
- *         .create()
+ *         .create();
  * }
  */
 public class ConfigException extends Exception {
