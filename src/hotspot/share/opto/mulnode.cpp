@@ -670,13 +670,12 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
   return and_value<TypeInt>(r0, r1);
 }
 
-// Is expr a neutral element wrt addition under mask?
-static bool AndIL_is_zero_element(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
+static bool AndIL_is_zero_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
 
 const Type* AndINode::Value(PhaseGVN* phase) const {
-  // patterns similar to (v << 2) & 3
-  if (AndIL_is_zero_element(phase, in(1), in(2), T_INT) ||
-      AndIL_is_zero_element(phase, in(2), in(1), T_INT)) {
+  // Match patterns similar to (v << n) & [0..n).
+  if (AndIL_is_zero_under_mask(phase, in(1), in(2), T_INT) ||
+      AndIL_is_zero_under_mask(phase, in(2), in(1), T_INT)) {
     return TypeInt::ZERO;
   }
 
@@ -722,7 +721,7 @@ Node* AndINode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+  // Simplify (v1 + v2) & mask to v1 & mask or v2 & mask when possible.
   Node* progress = AndIL_sum_and_mask(phase, T_INT);
   if (progress != nullptr) {
     return progress;
@@ -806,9 +805,9 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
 }
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
-  // patterns similar to (v << 2) & 3
-  if (AndIL_is_zero_element(phase, in(1), in(2), T_LONG) ||
-      AndIL_is_zero_element(phase, in(2), in(1), T_LONG)) {
+  // Match patterns similar to (v << n) & [0..n).
+  if (AndIL_is_zero_under_mask(phase, in(1), in(2), T_LONG) ||
+      AndIL_is_zero_under_mask(phase, in(2), in(1), T_LONG)) {
     return TypeLong::ZERO;
   }
 
@@ -855,7 +854,7 @@ Node* AndLNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Ideal------------------------------------------
 Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // pattern similar to (v1 + (v2 << 2)) & 3 transformed to v1 & 3
+  // Simplify (v1 + v2) & mask to v1 & mask or v2 & mask when possible.
   Node* progress = AndIL_sum_and_mask(phase, T_LONG);
   if (progress != nullptr) {
     return progress;
@@ -2089,9 +2088,8 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
   return 0;
 }
 
-// Given an expression (AndX T+expr mask), determine
-// whether expr is neutral wrt addition under mask
-// and hence the result is always equivalent to (AndX T mask),
+// Checks whether expr is neutral wrt addition under mask, i.e.
+// an expression of the form (AndX (T+expr) mask) can be simplified to (AndX T mask).
 // The X in AndX must be I or L, depending on bt.
 // Specifically, this holds for the following cases,
 // when the shift value N is large enough to zero out
@@ -2099,11 +2097,11 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 //   (AndI (LShiftI _ #N) #M)
 //   (AndL (LShiftL _ #N) #M)
 //   (AndL (ConvI2L (LShiftI _ #N)) #M)
-// including constant operands:
+// including equivalent constant operands:
 //   (AndI (ConI (_ << #N)) #M)
 //   (AndL (ConL (_ << #N)) #M)
 // The M and N values must satisfy ((-1 << N) & M) == 0.
-static bool AndIL_is_zero_element(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
+static bool AndIL_is_zero_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
   if (mask_t == nullptr) {
     return false;
@@ -2132,10 +2130,10 @@ Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
   if (addidx > 0) {
     Node* add1 = add->in(1);
     Node* add2 = add->in(2);
-    if (AndIL_is_zero_element(phase, add1, mask, bt)) {
+    if (AndIL_is_zero_under_mask(phase, add1, mask, bt)) {
       set_req_X(addidx, add2, phase);
       return this;
-    } else if (AndIL_is_zero_element(phase, add2, mask, bt)) {
+    } else if (AndIL_is_zero_under_mask(phase, add2, mask, bt)) {
       set_req_X(addidx, add1, phase);
       return this;
     }
