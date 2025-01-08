@@ -1082,7 +1082,7 @@ void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_r
       if (g_handletable_used == max_handletable) {
         // No place in array anymore; increase array.
         unsigned new_max = MAX2(max_handletable * 2, init_num_handles);
-        struct handletableentry* new_tab = (struct handletableentry*)::realloc(p_handletable, new_max * sizeof(struct handletableentry));
+        struct handletableentry* new_tab = (struct handletableentry*) permit_forbidden_function::realloc(p_handletable, new_max * sizeof(struct handletableentry));
         assert(new_tab != nullptr, "no more memory for handletable");
         if (new_tab == nullptr) {
           *error_report = "dlopen: no more memory for handletable";
