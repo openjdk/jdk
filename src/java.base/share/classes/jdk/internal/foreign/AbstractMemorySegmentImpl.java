@@ -145,10 +145,15 @@ public abstract sealed class AbstractMemorySegmentImpl
         Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret", false);
         Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
-        Runnable action = cleanup != null ?
-                () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
-                null;
+        Runnable action = cleanupAction(address(), newSize, cleanup);
         return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, scope, readOnly, action);
+    }
+
+    // Using a static helper method ensures there is no unintended lambda capturing of `this`
+    private static Runnable cleanupAction(long address, long newSize, Consumer<MemorySegment> cleanup) {
+        return cleanup != null ?
+                () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address, newSize)) :
+                null;
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
