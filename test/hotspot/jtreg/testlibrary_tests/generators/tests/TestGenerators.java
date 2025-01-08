@@ -47,8 +47,8 @@ public class TestGenerators {
     // values are fed to the generators. Thus, a lot of the tests below are white-box tests, that have knowledge about
     // the internals of when randomness is consumed. There are also black-box tests which refer to Generators.G.
     // Please also see MockRandomness to learn more about this class.
-    static MockRandomness mockRandomness = new MockRandomness();
-    static Generators mockGS = new Generators(mockRandomness);
+    static MockRandomnessSource mockSource = new MockRandomnessSource();
+    static Generators mockGS = new Generators(mockSource);
 
     public static void main(String[] args) {
         testEmptyGenerators();
@@ -68,7 +68,7 @@ public class TestGenerators {
     }
 
     static void testMixed() {
-        mockRandomness
+        mockSource
                 .checkEmpty()
                 .enqueueInteger(0, 10, 7)  // MixedGenerator chooses a generator: single
                 // single was chosen but does not consume randomness
@@ -81,7 +81,7 @@ public class TestGenerators {
         Asserts.assertEQ(g0.next(), 4);
         Asserts.assertEQ(g0.next(), 18);
 
-        mockRandomness
+        mockSource
                 .checkEmpty()
                 .enqueueInteger(0, 10, 1)  // MixedGenerator chooses a generator: the first uniform ints
                 .enqueueInteger(0, 31, 24) // uniform ints (1) samples
@@ -104,7 +104,7 @@ public class TestGenerators {
         Asserts.assertEQ(g1.next(), -4);
         Asserts.assertEQ(g1.next(), 29);
 
-        mockRandomness
+        mockSource
             .checkEmpty()
             .enqueueInteger(0, 10, 7)  // MixedGenerator chooses a generator: single
             // single was chosen but does not consume randomness
@@ -114,14 +114,14 @@ public class TestGenerators {
         Asserts.assertEQ(g0r0.next(), -1);
         Asserts.assertEQ(g0r0.next(), 18);
 
-        mockRandomness
+        mockSource
             .checkEmpty()
             .enqueueInteger(0, 7, 6)  // MixedGenerator chooses a generator (weight for single will have been removed): uniform ints
             .enqueueInteger(4, 21, 9);  // MixedGenerator chooses a generator: uniform ints
         var g0r1 = g0.restricted(4, 20);
         Asserts.assertEQ(g0r1.next(), 9);
 
-        mockRandomness
+        mockSource
             .checkEmpty()
             .enqueueInteger(0, 10, 1)  // MixedGenerator chooses a generator: the first uniform ints
             .enqueueInteger(0, 21, 2) // uniform ints (1) samples
@@ -134,7 +134,7 @@ public class TestGenerators {
         Asserts.assertEQ(g1r0.next(), -1);
         Asserts.assertEQ(g1r0.next(), -1);
 
-        mockRandomness
+        mockSource
                 .checkEmpty()
                 .enqueueInteger(0, 10, 1)  // MixedGenerator chooses a generator: the first uniform ints
                 .enqueueInteger(0, 21, 2) // uniform ints (1) samples
@@ -149,7 +149,7 @@ public class TestGenerators {
     }
 
     static void testSpecialFloat() {
-        mockRandomness
+        mockSource
                 .checkEmpty()
                 .enqueueInteger(0, 10, 3)
                 .enqueueDouble(0, 1, 3.4d)
@@ -161,7 +161,7 @@ public class TestGenerators {
     }
 
     static void testSpecialDouble() {
-        mockRandomness
+        mockSource
                 .checkEmpty()
                 .enqueueInteger(0, 10, 3)
                 .enqueueFloat(0, 1, 3.4f)
@@ -173,9 +173,9 @@ public class TestGenerators {
     }
 
     static void testUniformFloat() {
-        mockRandomness.checkEmpty().enqueueFloat(-1, 10, 3.14159f);
+        mockSource.checkEmpty().enqueueFloat(-1, 10, 3.14159f);
         Asserts.assertEQ(mockGS.uniformFloats(-1, 10).next(), 3.14159f);
-        mockRandomness.checkEmpty().enqueueFloat(0, 1, 3.14159f);
+        mockSource.checkEmpty().enqueueFloat(0, 1, 3.14159f);
         Asserts.assertEQ(mockGS.uniformFloats(0, 1).next(), 3.14159f);
 
         float lo = 0.13f, hi = 13.532f;
@@ -188,9 +188,9 @@ public class TestGenerators {
     }
 
     static void testUniformDouble() {
-        mockRandomness.checkEmpty().enqueueDouble(-1, 10, 3.14159d);
+        mockSource.checkEmpty().enqueueDouble(-1, 10, 3.14159d);
         Asserts.assertEQ(mockGS.uniformDoubles(-1, 10).next(), 3.14159d);
-        mockRandomness.checkEmpty().enqueueDouble(0, 1, 3.14159d);
+        mockSource.checkEmpty().enqueueDouble(0, 1, 3.14159d);
         Asserts.assertEQ(mockGS.uniformDoubles(0, 1).next(), 3.14159d);
 
         double lo = 0.13, hi = 13.532;
@@ -203,12 +203,12 @@ public class TestGenerators {
     }
 
     static void testRandomElement() {
-        mockRandomness.checkEmpty().enqueueInteger(0, 3, 1).enqueueInteger(0, 3, 0);
+        mockSource.checkEmpty().enqueueInteger(0, 3, 1).enqueueInteger(0, 3, 0);
         var g = mockGS.randomElement(List.of("a", "b", "c"));
         Asserts.assertEQ(g.next(), "b");
         Asserts.assertEQ(g.next(), "a");
 
-        mockRandomness.checkEmpty().enqueueInteger(0, 8, 1).enqueueInteger(0, 8, 2);
+        mockSource.checkEmpty().enqueueInteger(0, 8, 1).enqueueInteger(0, 8, 2);
         // The list below is intentionally not sorted and is equivalent to: 1, 4, 4, 8, 9, 10, 13, 18, 20
         // It contains 8 distinct values. Note that orderedRandomElement removes duplicates. Therefor the internal
         // value list is: 1, 4, 8, 9, 10, 13, 18, 20
@@ -216,41 +216,41 @@ public class TestGenerators {
         Asserts.assertEQ(g1.next(), 4);
         Asserts.assertEQ(g1.next(), 8);
 
-        mockRandomness.checkEmpty().enqueueInteger(0, 3, 1).enqueueInteger(0, 3, 2);
+        mockSource.checkEmpty().enqueueInteger(0, 3, 1).enqueueInteger(0, 3, 2);
         // Ordered lists can also be restricted. Our new values are 9, 10, 13.
         var gr = g1.restricted(9, 13);
         Asserts.assertEQ(gr.next(), 10);
         Asserts.assertEQ(gr.next(), 13);
 
-        mockRandomness.checkEmpty().enqueueInteger(0, 2, 1);
+        mockSource.checkEmpty().enqueueInteger(0, 2, 1);
         var gs = mockGS.orderedRandomElement(List.of("Bob", "Alice", "Carol")).restricted("Al", "Bz");
         Asserts.assertEQ(gs.next(), "Bob");
     }
 
     static void specialInt() {
-        mockRandomness.checkEmpty().enqueueInteger(0, 63, 1).enqueueInteger(0, 63, 32);
+        mockSource.checkEmpty().enqueueInteger(0, 63, 1).enqueueInteger(0, 63, 32);
         var si = mockGS.specialInts(0);
         Asserts.assertEQ(si.next(), -(1 << 30));
         Asserts.assertEQ(si.next(), 1);
 
-        mockRandomness.checkEmpty().enqueueInteger(0, 182, 1);
+        mockSource.checkEmpty().enqueueInteger(0, 182, 1);
         var si1 = mockGS.specialInts(1);
         Asserts.assertEQ(si1.next(), -(1 << 31) + 1);
     }
 
     static void specialLong() {
-        mockRandomness.checkEmpty().enqueueInteger(0, 127, 1).enqueueInteger(0, 127, 64);
+        mockSource.checkEmpty().enqueueInteger(0, 127, 1).enqueueInteger(0, 127, 64);
         var si = mockGS.specialLongs(0);
         Asserts.assertEQ(si.next(), -(1L << 62));
         Asserts.assertEQ(si.next(), 1L);
 
-        mockRandomness.checkEmpty().enqueueInteger(0, 374, 1);
+        mockSource.checkEmpty().enqueueInteger(0, 374, 1);
         var si1 = mockGS.specialLongs(1);
         Asserts.assertEQ(si1.next(), -(1L << 63) + 1);
     }
 
     static void testSingle() {
-        mockRandomness.checkEmpty();
+        mockSource.checkEmpty();
         var g = mockGS.single(30);
         Asserts.assertEQ(g.next(), 30);
         Asserts.assertEQ(g.next(), 30);
@@ -266,59 +266,59 @@ public class TestGenerators {
     }
 
     static void testUniformInts() {
-        mockRandomness.checkEmpty().enqueueInteger(0, 11, 1).enqueueInteger(0, 11, 4);
+        mockSource.checkEmpty().enqueueInteger(0, 11, 1).enqueueInteger(0, 11, 4);
         var g0 = mockGS.uniformInts(0, 10);
         Asserts.assertEQ(g0.next(), 1);
         Asserts.assertEQ(g0.next(), 4);
 
-        mockRandomness.checkEmpty().enqueueInteger(0, 1, 0).enqueueInteger(0, 1, 0);
+        mockSource.checkEmpty().enqueueInteger(0, 1, 0).enqueueInteger(0, 1, 0);
         var g1 = mockGS.uniformInts(0, 0);
         Asserts.assertEQ(g1.next(), 0);
         Asserts.assertEQ(g1.next(), 0);
 
-        mockRandomness.checkEmpty().enqueueInteger(-1, Integer.MAX_VALUE, 10);
+        mockSource.checkEmpty().enqueueInteger(-1, Integer.MAX_VALUE, 10);
         Asserts.assertEQ(mockGS.uniformInts(0, Integer.MAX_VALUE).next(), 11);
 
-        mockRandomness.checkEmpty().enqueueInteger(Integer.MIN_VALUE, 13, -33);
+        mockSource.checkEmpty().enqueueInteger(Integer.MIN_VALUE, 13, -33);
         Asserts.assertEQ(mockGS.uniformInts(Integer.MIN_VALUE, 12).next(), -33);
 
-        mockRandomness.checkEmpty().enqueueInteger(11);
+        mockSource.checkEmpty().enqueueInteger(11);
         Asserts.assertEQ(mockGS.uniformInts(Integer.MIN_VALUE, Integer.MAX_VALUE).next(), 11);
 
-        mockRandomness.checkEmpty().enqueueInteger(10, 29, 17);
+        mockSource.checkEmpty().enqueueInteger(10, 29, 17);
         Asserts.assertEQ(mockGS.uniformInts(Integer.MIN_VALUE, Integer.MAX_VALUE).restricted(10, 28).next(), 17);
 
-        mockRandomness.checkEmpty().enqueueInteger(19, 29, 17);
+        mockSource.checkEmpty().enqueueInteger(19, 29, 17);
         Asserts.assertEQ(mockGS.uniformInts(Integer.MIN_VALUE, Integer.MAX_VALUE).restricted(10, 28).restricted(19, 33).next(), 17);
 
         // inside interval positive
-        mockRandomness.checkEmpty().enqueueInteger(12, 19, 17);
+        mockSource.checkEmpty().enqueueInteger(12, 19, 17);
         Asserts.assertEQ(mockGS.uniformInts(10, 20).restricted(12, 18).next(), 17);
 
         // inside interval negative
-        mockRandomness.checkEmpty().enqueueInteger(-18, -11, -17);
+        mockSource.checkEmpty().enqueueInteger(-18, -11, -17);
         Asserts.assertEQ(mockGS.uniformInts(-20, -10).restricted(-18, -12).next(), -17);
 
         // left interval positive
-        mockRandomness.checkEmpty().enqueueInteger(10, 13, 11);
+        mockSource.checkEmpty().enqueueInteger(10, 13, 11);
         Asserts.assertEQ(mockGS.uniformInts(10, 20).restricted(5, 12).next(), 11);
 
         // left interval negative
-        mockRandomness.checkEmpty().enqueueInteger(-12, -9, -11);
+        mockSource.checkEmpty().enqueueInteger(-12, -9, -11);
         Asserts.assertEQ(mockGS.uniformInts(-20, -10).restricted(-12, -5).next(), -11);
 
         // right interval positive
-        mockRandomness.checkEmpty().enqueueInteger(17, 21, 19);
+        mockSource.checkEmpty().enqueueInteger(17, 21, 19);
         Asserts.assertEQ(mockGS.uniformInts(10, 20).restricted(17, 22).next(), 19);
 
         // right interval negative
-        mockRandomness.checkEmpty().enqueueInteger(-20, -16, -19);
+        mockSource.checkEmpty().enqueueInteger(-20, -16, -19);
         Asserts.assertEQ(mockGS.uniformInts(-20, -10).restricted(-22, -17).next(), -19);
 
-        mockRandomness.checkEmpty().enqueueInteger(144);
+        mockSource.checkEmpty().enqueueInteger(144);
         Asserts.assertEQ(mockGS.uniformInts().next(), 144);
 
-        mockRandomness.checkEmpty();
+        mockSource.checkEmpty();
 
         int lo = -345555, hi = 11123;
         var gb = G.uniformInts(lo, hi);
@@ -330,35 +330,35 @@ public class TestGenerators {
     }
 
     static void testUniformLongs() {
-        mockRandomness.checkEmpty().enqueueLong(0, 11, 1).enqueueLong(0, 11, 4);
+        mockSource.checkEmpty().enqueueLong(0, 11, 1).enqueueLong(0, 11, 4);
         var g0 = mockGS.uniformLongs(0, 10);
         Asserts.assertEQ(g0.next(), 1L);
         Asserts.assertEQ(g0.next(), 4L);
 
-        mockRandomness.checkEmpty().enqueueLong(0, 1, 0).enqueueLong(0, 1, 0);
+        mockSource.checkEmpty().enqueueLong(0, 1, 0).enqueueLong(0, 1, 0);
         var g1 = mockGS.uniformLongs(0, 0);
         Asserts.assertEQ(g1.next(), 0L);
         Asserts.assertEQ(g1.next(), 0L);
 
-        mockRandomness.checkEmpty().enqueueLong(-1, Long.MAX_VALUE, 10);
+        mockSource.checkEmpty().enqueueLong(-1, Long.MAX_VALUE, 10);
         Asserts.assertEQ(mockGS.uniformLongs(0, Long.MAX_VALUE).next(), 11L);
 
-        mockRandomness.checkEmpty().enqueueLong(Long.MIN_VALUE, 13, -33);
+        mockSource.checkEmpty().enqueueLong(Long.MIN_VALUE, 13, -33);
         Asserts.assertEQ(mockGS.uniformLongs(Long.MIN_VALUE, 12).next(), -33L);
 
-        mockRandomness.checkEmpty().enqueueLong(11);
+        mockSource.checkEmpty().enqueueLong(11);
         Asserts.assertEQ(mockGS.uniformLongs(Long.MIN_VALUE, Long.MAX_VALUE).next(), 11L);
 
-        mockRandomness.checkEmpty().enqueueLong(10, 29, 17);
+        mockSource.checkEmpty().enqueueLong(10, 29, 17);
         Asserts.assertEQ(mockGS.uniformLongs(Long.MIN_VALUE, Long.MAX_VALUE).restricted(10L, 28L).next(), 17L);
 
-        mockRandomness.checkEmpty().enqueueLong(19, 29, 17);
+        mockSource.checkEmpty().enqueueLong(19, 29, 17);
         Asserts.assertEQ(mockGS.uniformLongs(Long.MIN_VALUE, Long.MAX_VALUE).restricted(10L, 28L).restricted(19L, 33L).next(), 17L);
 
-        mockRandomness.checkEmpty().enqueueLong(144);
+        mockSource.checkEmpty().enqueueLong(144);
         Asserts.assertEQ(mockGS.uniformLongs().next(), 144L);
 
-        mockRandomness.checkEmpty();
+        mockSource.checkEmpty();
 
         long lo = -344223244511L, hi = 29;
         var gb = G.uniformLongs(lo, hi);
@@ -370,10 +370,10 @@ public class TestGenerators {
     }
 
     static void testAnyBits() {
-        mockRandomness.checkEmpty().enqueueInteger(Float.floatToIntBits(3.14159f));
+        mockSource.checkEmpty().enqueueInteger(Float.floatToIntBits(3.14159f));
         Asserts.assertEQ(mockGS.anyBitsFloats().next(), 3.14159f);
 
-        mockRandomness.checkEmpty().enqueueLong(Double.doubleToLongBits(3.14159d));
+        mockSource.checkEmpty().enqueueLong(Double.doubleToLongBits(3.14159d));
         Asserts.assertEQ(mockGS.anyBitsDouble().next(), 3.14159d);
     }
 
