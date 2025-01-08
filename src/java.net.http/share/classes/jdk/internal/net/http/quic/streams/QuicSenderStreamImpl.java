@@ -224,8 +224,6 @@ public final class QuicSenderStreamImpl extends AbstractQuicStream implements Qu
             } catch (IOException io) {
                 if (debug.on()) debug.log("Reset failed: " + io);
             } finally {
-                // TODO: remove tracking of stream_data_blocked for this stream. better to move
-                // untracking into QuicConnectionImpl when STOP_SENDING is received.
                 QuicStreamWriterImpl writer = this.writer;
                 if (writer != null) writer.wakeupWriter();
             }

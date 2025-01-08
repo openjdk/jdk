@@ -940,17 +940,14 @@ public final class QuicConnectionStreams {
      * @param errorCode the error code
      */
     public void stopSendingReceived(QuicSenderStream stream, long errorCode) {
-        try {
-            var sender = senderImpl(stream);
-            if (sender != null) {
-                sender.stopSendingReceived(errorCode);
-            }
-        } finally {
+        var sender = senderImpl(stream);
+        if (sender != null) {
             // if the stream was being tracked as blocked from sending data,
             // due to flow control limits imposed by the peer, then we now
             // stop tracking it since the peer no longer wants us to send data
             // on this stream.
             untrackBlockedStream(stream.streamId());
+            sender.stopSendingReceived(errorCode);
         }
     }
 
