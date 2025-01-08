@@ -1150,13 +1150,44 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
   return true;
 }
 
+// Check that all Ideal optimizations that could be done were done.
 bool PhaseIterGVN::verify_node_Ideal(Node* n) {
-  assert(false, "TODO Ideal"); // TODO
-  return false;
+  Node* i = n->Ideal(this, true); // TODO also with false?
+  // If there was no new Idealization, we are happy.
+  if (i == nullptr) {
+    return false;
+  }
+
+  // We just saw a new Idealization which was not done during IGVN.
+  tty->cr();
+  tty->print_cr("Missed Ideal optimization:");
+  if (i == n) {
+    tty->print_cr("The node was reshaped by Ideal.");
+  } else {
+    tty->print_cr("The node was replaced by Ideal.");
+    tty->print_cr("Old node:");
+    n->dump_bfs(1, nullptr, "");
+  }
+  tty->print_cr("The result after Ideal:");
+  i->dump_bfs(1, nullptr, "");
+  return true;
 }
 
+// Check that all Identity optimizations that could be done were done.
 bool PhaseIterGVN::verify_node_Identity(Node* n) {
-  assert(false, "TODO Identity"); // TODO
+  Node* i = n->Ideal(this, true); // TODO also with false?
+  // If we cannot find any other Identity, we are happy.
+  if (i == n) {
+    return false;
+  }
+
+  // We just saw a new Identity which was not found during IGVN.
+  tty->cr();
+  tty->print_cr("Missed Identity optimization:");
+  tty->print_cr("Old node:");
+  n->dump_bfs(1, nullptr, "");
+  tty->print_cr("New node:");
+  i->dump_bfs(1, nullptr, "");
   return false;
 }
 #endif
