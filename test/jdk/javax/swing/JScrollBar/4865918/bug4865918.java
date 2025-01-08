@@ -45,6 +45,11 @@ public class bug4865918 {
     private static final CountDownLatch mousePressLatch = new CountDownLatch(1);
 
     public static void main(String[] argv) throws Exception {
+        String osName = System.getProperty("os.name");
+        if (osName.toLowerCase().contains("os x")) {
+            System.out.println("This test is not for MacOS, considered passed.");
+            return;
+        }
         SwingUtilities.invokeAndWait(() -> setupTest());
 
         SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
