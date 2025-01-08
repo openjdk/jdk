@@ -162,7 +162,25 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 }
 
 pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t pid, jlong *total, jlong *start) {
-    return unix_getParentPidAndTimings(env, pid, total, start);
+    pid_t the_pid = pid;
+    struct procentry64 ProcessBuffer;
+    struct fdsinfo64 FileDescBuffer;
+
+    if (getprocs64(&ProcessBuffer, sizeof(ProcessBuffer), NULL, sizeof(FileDescBuffer), &the_pid, 1 ) <= 0) {
+        return -1;
+    }
+
+    // Validate the pid before returning the info
+    if (kill(pid, 0) < 0) {
+        return -1;
+    }
+
+    *total = ((ProcessBuffer.pi_ru.ru_utime.tv_sec + ProcessBuffer.pi_ru.ru_stime.tv_sec) * 1000000000L) +
+             ((ProcessBuffer.pi_ru.ru_utime.tv_usec + ProcessBuffer.pi_ru.ru_stime.tv_usec));
+
+    *start = ProcessBuffer.pi_start * (jlong)1000;
+
+    return (pid_t) ProcessBuffer.pi_ppid;
 }
 
 void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
