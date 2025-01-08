@@ -354,7 +354,9 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
       }
       break;
     }
-    pos = comma_pos + 1;
+    if (comma_pos != nullptr) {
+      pos = comma_pos + 1;
+    }
   } while (comma_pos != nullptr);
 
   os::free(opts);
