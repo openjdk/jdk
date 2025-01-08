@@ -27,7 +27,7 @@ package jdk.jpackage.internal.model;
 import java.nio.file.Path;
 
 /**
- * Application launcher startup configuration from a non-modular jar file.
+ * Details of Linux application launcher startup configuration using non-modular jar file.
  */
 public interface LauncherJarStartupInfoMixin {
 

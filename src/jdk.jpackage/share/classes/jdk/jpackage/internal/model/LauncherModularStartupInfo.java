@@ -28,6 +28,8 @@ import jdk.jpackage.internal.util.CompositeProxy;
 
 /**
  * Application launcher startup configuration using Java module.
+ * <p>
+ * Use {@link #create} method to create objects implementing this interface.
  */
 public interface LauncherModularStartupInfo extends LauncherStartupInfo,
         LauncherModularStartupInfoMixin {

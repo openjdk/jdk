@@ -27,6 +27,11 @@ package jdk.jpackage.internal.model;
 import java.util.Map;
 import jdk.jpackage.internal.util.CompositeProxy;
 
+/**
+ * Linux application launcher.
+ * <p>
+ * Use {@link #create} method to create objects implementing this interface.
+ */
 public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
 
     @Override
@@ -36,6 +41,14 @@ public interface LinuxLauncher extends Launcher, LinuxLauncherMixin {
         }).orElseGet(Map::of);
     }
 
+    /**
+     * Constructs {@link LinuxLauncher} instance from the given
+     * {@link Launcher} and {@link LinuxLauncherMixin} instances.
+     *
+     * @param launcher the generic application launcher
+     * @param mixin Linux-specific details supplementing the generic application launcher
+     * @return the proxy dispatching calls to the given objects
+     */
     public static LinuxLauncher create(Launcher launcher, LinuxLauncherMixin mixin) {
         return CompositeProxy.create(LinuxLauncher.class, launcher, mixin);
     }

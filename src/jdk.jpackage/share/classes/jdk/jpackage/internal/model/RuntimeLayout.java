@@ -31,7 +31,7 @@ import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 /**
  * Java runtime app image layout.
  * <p>
- * Use {@link #DEFAULT} to get the instance of {@link RuntimeLayout} type.
+ * Use {@link #DEFAULT} to get the object implementing this interface.
  */
 public interface RuntimeLayout extends AppImageLayout {
 

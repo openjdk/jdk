@@ -24,10 +24,20 @@
  */
 package jdk.jpackage.internal.model;
 
+/**
+ * Details of Linux RPM package.
+ */
 public interface LinuxRpmPackageMixin {
 
+    /**
+     * Gets type of the license of this RPM package.
+     * @return type of the license of this RPM package
+     */
     String licenseType();
 
+    /**
+     * Default implementation of {@link LinuxRpmPackageMixin} interface.
+     */
     record Stub(String licenseType) implements LinuxRpmPackageMixin {
     }
 }

@@ -28,7 +28,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Application launcher startup configuration from Java module.
+ * Details of application launcher startup configuration using Java module.
  */
 public interface LauncherModularStartupInfoMixin {
 

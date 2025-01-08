@@ -26,8 +26,19 @@ package jdk.jpackage.internal.model;
 
 import jdk.jpackage.internal.util.CompositeProxy;
 
+/**
+ * Linux RPM package.
+ */
 public interface LinuxRpmPackage extends LinuxPackage, LinuxRpmPackageMixin {
 
+    /**
+     * Constructs {@link LinuxRpmPackage} instance from the given
+     * {@link LinuxPackage} and {@link LinuxRpmPackageMixin} instances.
+     *
+     * @param pkg the Linux package
+     * @param mixin RPM-specific details supplementing the generic package
+     * @return the proxy dispatching calls to the given objects
+     */
     public static LinuxRpmPackage create(LinuxPackage pkg, LinuxRpmPackageMixin mixin) {
         return CompositeProxy.create(LinuxRpmPackage.class, pkg, mixin);
     }

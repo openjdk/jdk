@@ -42,8 +42,8 @@ public interface ApplicationWriter {
      *
      * @param app the source application
      * @param dst the directory where to create app image of the source application
-     * @throws PackagerException
-     * @throws IOException
+     * @throws PackagerException if packaging error occurs
+     * @throws IOException if an I/O error occurs
      */
     void write(Application app, Path dst) throws PackagerException, IOException;
 }

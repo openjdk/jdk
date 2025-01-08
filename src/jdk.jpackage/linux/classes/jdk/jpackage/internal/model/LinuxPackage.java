@@ -25,10 +25,14 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
-import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
+
 import jdk.jpackage.internal.util.CompositeProxy;
 
+/**
+ * Linux package.
+ * <p>
+ * Use {@link #create} method to create objects implementing this interface.
+ */
 public interface LinuxPackage extends Package, LinuxPackageMixin {
 
     @Override
@@ -53,10 +57,23 @@ public interface LinuxPackage extends Package, LinuxPackageMixin {
         return String.format(packageFileNameTemlate, packageName(), version(), release(), arch());
     }
 
+    /**
+     * Returns <code>true</code> in this Linux package installs in "/usr" tree.
+     *
+     * @return <code>true</code> in this Linux package installs in "/usr" tree
+     */
     default boolean isInstallDirInUsrTree() {
         return !relativeInstallDir().getFileName().equals(Path.of(packageName()));
     }
 
+    /**
+     * Constructs {@link LinuxPackage} instance from the given
+     * {@link Package} and {@link LinuxPackageMixin} instances.
+     *
+     * @param pkg the generic package
+     * @param mixin Linux-specific details supplementing the Linux package
+     * @return the proxy dispatching calls to the given objects
+     */
     public static LinuxPackage create(Package pkg, LinuxPackageMixin mixin) {
         return CompositeProxy.create(LinuxPackage.class, pkg, mixin);
     }

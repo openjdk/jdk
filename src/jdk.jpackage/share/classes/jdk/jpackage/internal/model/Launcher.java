@@ -33,8 +33,6 @@ import jdk.jpackage.internal.resources.ResourceLocator;
 /**
  * Application launcher.
  *
- * @apiNote All methods return non-null values.
- *
  * @see Application#launchers()
  */
 public interface Launcher {

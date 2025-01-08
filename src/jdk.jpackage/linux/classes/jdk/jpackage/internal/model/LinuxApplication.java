@@ -27,8 +27,20 @@ package jdk.jpackage.internal.model;
 
 import jdk.jpackage.internal.util.CompositeProxy;
 
+/**
+ * Linux application.
+ * <p>
+ * Use {@link #create} method to create objects implementing this interface.
+ */
 public interface LinuxApplication extends Application {
 
+    /**
+     * Creates {@link LinuxApplication} instance from the given {@link Application}
+     * instance.
+     *
+     * @param app the generic application
+     * @return the proxy dispatching calls to the given {@link Application} instance
+     */
     public static LinuxApplication create(Application app) {
         return CompositeProxy.create(LinuxApplication.class, app);
     }

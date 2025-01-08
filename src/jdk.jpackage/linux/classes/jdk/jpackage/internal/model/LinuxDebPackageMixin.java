@@ -24,10 +24,21 @@
  */
 package jdk.jpackage.internal.model;
 
+/**
+ * Details of Linux DEB package.
+ */
 public interface LinuxDebPackageMixin {
 
+    /**
+     * Gets the email of the maintainer of this DEB package.
+     *
+     * @return the email of the maintainer of this DEB package
+     */
     String maintainerEmail();
 
+    /**
+     * Default implementation of {@link LinuxDebPackageMixin} interface.
+     */
     record Stub(String maintainerEmail) {
     }
 }

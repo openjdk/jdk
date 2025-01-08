@@ -26,20 +26,60 @@ package jdk.jpackage.internal.model;
 
 import java.util.Optional;
 
+/**
+ * Details of Linux package.
+ */
 public interface LinuxPackageMixin {
 
+    /**
+     * Overrides {@link Package#packageLayout()}.
+     */
     AppImageLayout packageLayout();
 
+    /**
+     * Gets the name of the start menu group where to create shortcuts for
+     * application launchers of this package.
+     *
+     * @return the name of the start menu group where to create shortcuts for
+     *         application launchers of this package
+     *
+     * @see LinuxLauncherMixin#shortcut()
+     */
     String menuGroupName();
 
+    /**
+     * Gets the category of this package.
+     *
+     * @return the category of this package
+     */
     String category();
 
+    /**
+     * Gets a string with the additional dependencies of this package. Returns an
+     * empty {@link Optional} instance if this package has no additional
+     * dependencies.
+     *
+     * @return a string with the additional dependencies of this package
+     */
     Optional<String> additionalDependencies();
 
+    /**
+     * Gets the release of this package.
+     *
+     * @return the release of this package
+     */
     String release();
 
+    /**
+     * Gets the platform architecture of this package.
+     *
+     * @return the platform architecture of this package
+     */
     String arch();
 
+    /**
+     * Default implementation of {@link LinuxPackageMixin} interface.
+     */
     record Stub(AppImageLayout packageLayout, String menuGroupName,
             String category, Optional<String> additionalDependencies, String release,
             String arch) implements LinuxPackageMixin {
