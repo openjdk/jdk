@@ -549,7 +549,7 @@ public final class SunPKCS11 extends AuthProvider {
         String P11PBECipher        = "sun.security.pkcs11.P11PBECipher";
         String P11Signature        = "sun.security.pkcs11.P11Signature";
         String P11PSSSignature     = "sun.security.pkcs11.P11PSSSignature";
-        String P11KDF              = "sun.security.pkcs11.P11KDF";
+        String P11HKDF             = "sun.security.pkcs11.P11HKDF";
 
         // XXX register all aliases
 
@@ -1080,11 +1080,11 @@ public final class SunPKCS11 extends AuthProvider {
         d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_MAC));
 
-        d(KDF, "HKDF-SHA256", P11KDF, m(CKM_SHA256_HMAC),
+        d(KDF, "HKDF-SHA256", P11HKDF, m(CKM_SHA256_HMAC),
                 m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
-        d(KDF, "HKDF-SHA384", P11KDF, m(CKM_SHA384_HMAC),
+        d(KDF, "HKDF-SHA384", P11HKDF, m(CKM_SHA384_HMAC),
                 m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
-        d(KDF, "HKDF-SHA512", P11KDF, m(CKM_SHA512_HMAC),
+        d(KDF, "HKDF-SHA512", P11HKDF, m(CKM_SHA512_HMAC),
                 m(CKM_HKDF_DERIVE, CKM_HKDF_DATA));
     }
 
