@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940 8331467
+ * @bug 4313887 7006126 8142968 8178380 8183320 8210112 8266345 8263940 8331467 8346573
  * @modules jdk.jartool jdk.jlink
  * @library /test/lib
- * @build testfsp/* testapp/*
+ * @build testfsp/* testapp/* CustomSystemClassLoader
  * @run junit SetDefaultProvider
  * @summary Runs tests with -Djava.nio.file.spi.DefaultFileSystemProvider set on
  *          the command line to override the default file system provider
@@ -202,6 +202,19 @@ class SetDefaultProvider {
                 "-p", TESTAPP_CLASSES,
                 "-cp", TESTFSP_CLASSES,
                 "-m", TESTAPP + "/" + TESTAPP_MAIN);
+    }
+
+    /**
+     * Test file system provider on class path in conjunction with a custom system
+     * class loader that uses the file system API during its initialization.
+     */
+    @Test
+    void testCustomSystemClassLoader() throws Exception {
+        String testClasses = System.getProperty("test.classes");
+        exec(SET_DEFAULT_FSP,
+                "-Djava.system.class.loader=CustomSystemClassLoader",
+                "-cp", ofClasspath(testClasses, TESTFSP_CLASSES, TESTAPP_CLASSES),
+                TESTAPP_MAIN);
     }
 
     /**
