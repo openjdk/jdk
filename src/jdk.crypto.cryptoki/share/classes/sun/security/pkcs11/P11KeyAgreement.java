@@ -270,7 +270,8 @@ final class P11KeyAgreement extends KeyAgreementSpi {
 
         if (KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
             // For now, only perform native derivation for TlsPremasterSecret
-            // as that is required for FIPS compliance and Generic for KDF.
+            // and Generic algorithms. TlsPremasterSecret is required for
+            // FIPS compliance and Generic is required for input to KDF.
             // For other algorithms, there are unresolved issues regarding
             // how this should work in JCE plus a Solaris truncation bug.
             // (bug not yet filed).
@@ -279,7 +280,7 @@ final class P11KeyAgreement extends KeyAgreementSpi {
 
         if (!AllowKDF.VALUE) {
             throw new NoSuchAlgorithmException(
-                    "Unsupported secret key algorithm " + algorithm);
+                    "Unsupported secret key algorithm: " + algorithm);
         }
 
         byte[] secret = engineGenerateSecret();

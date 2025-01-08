@@ -380,10 +380,9 @@ extends KeyAgreementSpi {
         }
 
         if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm) &&
-            !AllowKDF.VALUE) {
-
-            throw new NoSuchAlgorithmException("Unsupported secret key "
-                                               + "algorithm: " + algorithm);
+                !AllowKDF.VALUE) {
+            throw new NoSuchAlgorithmException(
+                    "Unsupported secret key algorithm: " + algorithm);
         }
 
         byte[] secret = engineGenerateSecret();
@@ -429,7 +428,7 @@ extends KeyAgreementSpi {
             }
         } else {
             throw new NoSuchAlgorithmException(
-                    "Unsupported secret key algorithm " + algorithm);
+                    "Unsupported secret key algorithm: " + algorithm);
         }
     }
 }

@@ -672,7 +672,7 @@ public class KeyAgreement {
      *      may be adjusted to be compatible with the specified algorithm,
      *      regardless of whether the key is extractable. If {@code algorithm}
      *      is specified as "Generic" and it is supported by the implementation,
-     *      the full shared secret will be returned.
+     *      the full shared secret is returned.
      *
      * @exception IllegalStateException if this key agreement has not been
      * initialized or if {@code doPhase} has not been called to supply the

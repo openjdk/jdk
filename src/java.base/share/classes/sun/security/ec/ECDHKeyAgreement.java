@@ -257,7 +257,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         }
         if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
             throw new NoSuchAlgorithmException(
-                    "Unsupported secret key algorithm " + algorithm);
+                    "Unsupported secret key algorithm: " + algorithm);
         }
         return new SecretKeySpec(engineGenerateSecret(), algorithm);
     }
