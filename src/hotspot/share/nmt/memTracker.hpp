@@ -31,6 +31,7 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -61,9 +62,9 @@ class MemTracker : AllStatic {
     return _tracking_level != NMT_unknown;
   }
 
-  // This may be called on a detached thread during VM init, so we should check is_bootstrapping_done() first.
+  // This may be called on a detached thread during VM init, so we should check that first.
   static inline void assert_locked() {
-    assert(!Mutex::is_bootstrapping_done() || NmtVirtualMemory_lock->owned_by_self(),
+    assert(Threads::is_single_threaded() || NmtVirtualMemory_lock->owned_by_self(),
            "should have acquired NmtVirtualMemory_lock");
   }
 
@@ -292,7 +293,7 @@ class MemTracker : AllStatic {
   class NmtVirtualMemoryLocker: StackObj {
     ConditionalMutexLocker _cml;
   public:
-    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, Mutex::is_bootstrapping_done(), Mutex::_no_safepoint_check_flag){}
+    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, !Threads::is_single_threaded(), Mutex::_no_safepoint_check_flag){}
   };
 
  private:

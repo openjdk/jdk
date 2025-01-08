@@ -210,20 +210,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   // by fatal error handler.
   static void print_owned_locks_on_error(outputStream* st);
   static void print_lock_ranks(outputStream* st);
-
-  // Returns true if it is safe to start use mutexes.
-  static inline bool is_bootstrapping_done()  {
-    return _bootstrapping_done;
-  }
-
-  // Set in Threads::create_vm once threads and mutexes have been initialized.
-  static inline void set_bootstrapping_done()  {
-    _bootstrapping_done = true;
-  }
-
- private:
-  // _bootstrapping_done means that both mutex_init() has been called and current thread has been set in Threads::create_vm.
-  static bool _bootstrapping_done;
 };
 
 class Monitor : public Mutex {

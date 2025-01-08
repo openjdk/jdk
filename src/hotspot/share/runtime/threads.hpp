@@ -27,6 +27,8 @@
 #define SHARE_RUNTIME_THREADS_HPP
 
 #include "jni.h"
+#include "logging/logAsyncWriter.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -144,6 +146,17 @@ public:
   static int number_of_threads()                 { return _number_of_threads; }
   // Number of non-daemon threads on the active threads list
   static int number_of_non_daemon_threads()      { return _number_of_non_daemon_threads; }
+
+  // <=1 because during VM init before Thread::add is called, or any other threads are started, it is single threaded.
+  static bool is_single_threaded() {
+    int count = number_of_threads();
+    for (NonJavaThread::Iterator njti; !njti.end(); njti.step()) {
+      if (++count > 1) {
+        return false;
+      }
+    }
+    return count <= 1;
+  }
 
   struct Test;                  // For private gtest access.
 };
