@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6825240 6829785
+ * @bug 6825240 6829785 8345134
  * @summary Password.readPassword() echos the input when System.Console is null
  * @run main/manual Password
  */
