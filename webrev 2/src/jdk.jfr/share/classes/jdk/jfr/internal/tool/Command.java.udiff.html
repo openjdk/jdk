@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Command.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../settings/ThrottleSetting.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="Configure.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Command.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -50,11 +50,11 @@</span>
+  
+      private static List&lt;Command&gt; createCommands() {
+          List&lt;Command&gt; commands = new ArrayList&lt;&gt;();
+          commands.add(new Print());
+          // Uncomment when developing new queries for the view command
+<span class="udiff-line-modified-removed">-         // commands.add(new Query());</span>
+<span class="udiff-line-modified-added">+         commands.add(new Query());</span>
+          commands.add(new View());
+          commands.add(new Configure());
+          commands.add(new Metadata());
+          commands.add(new Scrub());
+          commands.add(new Summary());
+</pre>
+<center><a href="../settings/ThrottleSetting.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="Configure.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

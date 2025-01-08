@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/event/EventWriter.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../dcmd/DCmdStop.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../jfc/JFC.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/event/EventWriter.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -25,35 +25,21 @@</span>
+  
+  package jdk.jfr.internal.event;
+  
+  import jdk.internal.misc.Unsafe;
+  import jdk.jfr.internal.Bits;
+<span class="udiff-line-removed">- import jdk.jfr.internal.EventWriterKey;</span>
+  import jdk.jfr.internal.StringPool;
+  import jdk.jfr.internal.JVM;
+  import jdk.jfr.internal.PlatformEventType;
+  import jdk.jfr.internal.consumer.StringParser;
+  
+  // User code should not be able to get access to an EventWriter instance as it
+  // would allow it to write arbitrary data into buffers, potentially from
+  // different threads.
+  //
+<span class="udiff-line-modified-removed">- // This is prevented in three ways:</span>
+<span class="udiff-line-modified-removed">- //</span>
+<span class="udiff-line-removed">- // 1. For code to access the jdk.jfr.internal.event package</span>
+<span class="udiff-line-removed">- //    at least one event class (for a particular module) must be</span>
+<span class="udiff-line-removed">- //    registered having FlightRecorderPermission(&quot;registerEvent&quot;).</span>
+<span class="udiff-line-removed">- //</span>
+<span class="udiff-line-removed">- // 2. The EventWriter EventWriterFactory::getEventWriter(long) method can only be linked from</span>
+<span class="udiff-line-removed">- //    the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.</span>
+<span class="udiff-line-removed">- //    (The EventWriterFactory class is dynamically generated before the first event</span>
+<span class="udiff-line-removed">- //    is instrumented. See EventWriterFactoryRecipe)</span>
+<span class="udiff-line-removed">- //</span>
+<span class="udiff-line-removed">- // 3. Steps 1 and 2 are sufficient to make it fully secure, with or without a Security</span>
+<span class="udiff-line-removed">- //    Manager, but as an additional measure, the method EventWriterFactory::getEventWriter(long)</span>
+<span class="udiff-line-removed">- //    requires the caller to provide a key that is hard to guess. The key is generated</span>
+<span class="udiff-line-removed">- //    into the bytecode of the method invoking getEventWriter(long).</span>
+<span class="udiff-line-modified-added">+ // The EventWriter EventWriterFactory::getEventWriter(long) method can only be linked from</span>
+<span class="udiff-line-modified-added">+ // the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.</span>
+  //
+  public final class EventWriter {
+  
+      // Event may not exceed size for a padded integer
+      private static final long MAX_EVENT_SIZE = (1 &lt;&lt; 28) -1;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -69,10 +55,18 @@</span>
+      boolean excluded;
+  
+      private PlatformEventType eventType;
+      private boolean largeSize = false;
+  
+<span class="udiff-line-added">+     public static EventWriter getEventWriter() {</span>
+<span class="udiff-line-added">+         EventWriter ew = JVM.getEventWriter();</span>
+<span class="udiff-line-added">+         if (ew != null) {</span>
+<span class="udiff-line-added">+             return ew;</span>
+<span class="udiff-line-added">+         }</span>
+<span class="udiff-line-added">+         return JVM.newEventWriter();</span>
+<span class="udiff-line-added">+     }</span>
+<span class="udiff-line-added">+ </span>
+      // User code must not be able to instantiate
+      private EventWriter() {
+          threadID = 0;
+      }
+  
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -237,15 +231,13 @@</span>
+      private void flush(int usedSize, int requestedSize) {
+          JVM.flush(this, usedSize, requestedSize);
+      }
+  
+      public boolean beginEvent(EventConfiguration configuration, long typeId) {
+<span class="udiff-line-modified-removed">-         // Malicious code could take the EventConfiguration object from one</span>
+<span class="udiff-line-removed">-         // event class field and assign it to another. This check makes sure</span>
+<span class="udiff-line-removed">-         // the event type matches what was added by instrumentation.</span>
+<span class="udiff-line-modified-added">+         // This check makes sure the event type matches what was added by instrumentation.</span>
+          if (configuration.getId() != typeId) {
+<span class="udiff-line-modified-removed">-             EventWriterKey.block();</span>
+<span class="udiff-line-modified-added">+             throw new InternalError(&quot;Unexpected type id &quot; + typeId);</span>
+          }
+          if (excluded) {
+              // thread is excluded from writing events
+              return false;
+          }
+</pre>
+<center><a href="../dcmd/DCmdStop.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../jfc/JFC.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

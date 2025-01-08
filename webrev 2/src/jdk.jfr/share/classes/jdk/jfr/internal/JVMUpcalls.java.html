@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/internal/JVMUpcalls.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal;
+ 26 
+ 27 import java.lang.reflect.Modifier;
+ 28 
+ 29 import jdk.jfr.internal.event.EventConfiguration;
+ 30 import jdk.jfr.internal.util.Bytecode;
+ 31 import jdk.jfr.internal.util.Utils;
+ 32 /**
+ 33  * All upcalls from the JVM should go through this class.
+ 34  *
+ 35  */
+ 36 // Called by native
+ 37 final class JVMUpcalls {
+ 38     /**
+ 39      * Called by the JVM when a retransform happens on a tagged class
+ 40      *
+ 41      * @param traceId
+ 42      *            Id of the class
+ 43      * @param dummy1
+ 44      *            not used, but act as padding so bytesForEagerInstrumentation and
+ 45      *            onRetransform can have identical method signatures, which simplifies the
+ 46      *            invoke machinery in native
+ 47      *
+ 48      * @param dummy2
+ 49      *            not used, but act as padding so bytesForEagerInstrumentation and
+ 50      *            onRetransform can have identical method signatures, which simplifies the
+ 51      *            invoke machinery in native
+ 52      *
+ 53      * @param clazz
+ 54      *            class being retransformed
+ 55      * @param oldBytes
+ 56      *            byte code
+ 57      * @return byte code to use
+ 58      * @throws Throwable
+ 59      */
+ 60     static byte[] onRetransform(long traceId, boolean dummy1, boolean dummy2, Class&lt;?&gt; clazz, byte[] oldBytes) throws Throwable {
+ 61         try {
+ 62             if (jdk.internal.event.Event.class.isAssignableFrom(clazz) &amp;&amp; !Modifier.isAbstract(clazz.getModifiers())) {
+ 63                 if (!JVMSupport.shouldInstrument(Utils.isJDKClass(clazz), clazz.getName())) {
+ 64                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, &quot;Skipping instrumentation for &quot; + clazz.getName() + &quot; since container support is missing&quot;);
+ 65                     return oldBytes;
+ 66                 }
+ 67                 EventConfiguration configuration = JVMSupport.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
+ 68                 if (configuration == null) {
+ 69                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, &quot;No event configuration found for &quot; + clazz.getName() + &quot;. Ignoring instrumentation request.&quot;);
+ 70                     // Probably triggered by some other agent
+ 71                     return oldBytes;
+ 72                 }
+ 73                 boolean jdkClass = Utils.isJDKClass(clazz);
+ 74                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, &quot;Adding instrumentation to event class &quot; + clazz.getName() + &quot; using retransform&quot;);
+ 75                 EventInstrumentation ei = new EventInstrumentation(clazz.getSuperclass(), oldBytes, traceId, jdkClass, false);
+ 76                 byte[] bytes = ei.buildInstrumented();
+ 77                 Bytecode.log(clazz.getName(), bytes);
+ 78                 return bytes;
+ 79             }
+ 80             return oldBytes;
+ 81         } catch (Throwable t) {
+ 82             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, &quot;Unexpected error when adding instrumentation to event class &quot; + clazz.getName());
+ 83         }
+ 84         return oldBytes;
+ 85     }
+ 86 
+ 87     /**
+ 88      * Called by the JVM when requested to do an &quot;eager&quot; instrumentation. Would
+ 89      * normally happen when JVMTI retransform capabilities are not available.
+ 90      *
+ 91      * @param traceId
+ 92      *            Id of the class
+ 93      * @param forceInstrumentation
+ 94      *            add instrumentation regardless if event is enabled or not.
+ 95      * @param superClass
+ 96      *            the super class of the class being processed
+ 97      * @param oldBytes
+ 98      *            byte code
+ 99      * @return byte code to use
+100      * @throws Throwable
+101      */
+102     static byte[] bytesForEagerInstrumentation(long traceId, boolean forceInstrumentation, boolean bootClassLoader, Class&lt;?&gt; superClass, byte[] oldBytes) throws Throwable {
+103         if (JVMSupport.isNotAvailable()) {
+104             return oldBytes;
+105         }
+106         String eventName = &quot;&lt;Unknown&gt;&quot;;
+107         try {
+108             EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader, true);
+109             eventName = ei.getEventName();
+110             if (!JVMSupport.shouldInstrument(bootClassLoader,  ei.getEventName())) {
+111                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, &quot;Skipping instrumentation for &quot; + eventName + &quot; since container support is missing&quot;);
+112                 return oldBytes;
+113             }
+114 
+115             if (!forceInstrumentation) {
+116                 // Assume we are recording
+117                 MetadataRepository mr = MetadataRepository.getInstance();
+118                 // No need to generate bytecode if:
+119                 // 1) Event class is disabled, and there is not an external configuration that overrides.
+120                 // 2) Event class has @Registered(false)
+121                 if (!mr.isEnabled(ei.getEventName()) &amp;&amp; !ei.isEnabled() || !ei.isRegistered()) {
+122                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, &quot;Skipping instrumentation for event type &quot; + eventName + &quot; since event was disabled on class load&quot;);
+123                     return oldBytes;
+124                 }
+125             }
+126             Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, &quot;Adding &quot; + (forceInstrumentation ? &quot;forced &quot; : &quot;&quot;) + &quot;instrumentation for event type &quot; + eventName + &quot; during initial class load&quot;);
+127             byte[] bytes = ei.buildInstrumented();
+128             Bytecode.log(ei.getClassName() + &quot;(&quot; + traceId + &quot;)&quot;, bytes);
+129             return bytes;
+130         } catch (Throwable t) {
+131             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, &quot;Unexpected error when adding instrumentation for event type &quot; + eventName);
+132             return oldBytes;
+133         }
+134     }
+135 
+136     /**
+137      * Called by the JVM to ensure metadata for internal events/types become public.
+138      *
+139      * Must be called after metadata repository has been initialized (JFR created).
+140      *
+141      */
+142     static void unhideInternalTypes() {
+143         MetadataRepository.unhideInternalTypes();
+144     }
+145 
+146     /**
+147      * Called by the JVM to create the recorder thread.
+148      *
+149      * @param systemThreadGroup  the system thread group
+150      *
+151      * @param contextClassLoader the context class loader.
+152      *
+153      * @return a new thread
+154      */
+155     static Thread createRecorderThread(ThreadGroup systemThreadGroup, ClassLoader contextClassLoader) {
+156         Thread thread = new Thread(systemThreadGroup, &quot;JFR Recorder Thread&quot;);
+157         thread.setContextClassLoader(contextClassLoader);
+158         return thread;
+159     }
+160 }
+    </pre>
+  </body>
+</html>

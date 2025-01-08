@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/internal/SecuritySupport.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+ 1 /*
+ 2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal;
+27 
+28 import java.lang.invoke.MethodHandles;
+29 import jdk.internal.module.Modules;
+30 import jdk.jfr.Event;
+31 
+32 public final class SecuritySupport {
+33     private static final Module JFR_MODULE = Event.class.getModule();
+34     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+35 
+36     static {
+37         // ensure module java.base can read module jdk.jfr as early as possible
+38         addReadEdge(Object.class);
+39         addInternalEventExport(Object.class);
+40         addEventsExport(Object.class);
+41     }
+42 
+43     static void makeVisibleToJFR(Class&lt;?&gt; clazz) {
+44         Module classModule = clazz.getModule();
+45         Modules.addReads(JFR_MODULE, classModule);
+46         if (clazz.getPackage() != null) {
+47             String packageName = clazz.getPackage().getName();
+48             Modules.addExports(classModule, packageName, JFR_MODULE);
+49             Modules.addOpens(classModule, packageName, JFR_MODULE);
+50         }
+51     }
+52 
+53     /**
+54      * Adds a qualified export of the internal.jdk.jfr.internal.event package
+55      * (for EventConfiguration and EventWriter)
+56      */
+57     static void addInternalEventExport(Class&lt;?&gt; clazz) {
+58         Modules.addExports(JFR_MODULE, &quot;jdk.jfr.internal.event&quot;, clazz.getModule());
+59     }
+60 
+61     static void addEventsExport(Class&lt;?&gt; clazz) {
+62         Modules.addExports(JFR_MODULE, &quot;jdk.jfr.events&quot;, clazz.getModule());
+63     }
+64 
+65     static void addReadEdge(Class&lt;?&gt; clazz) {
+66         Modules.addReads(clazz.getModule(), JFR_MODULE);
+67     }
+68 
+69     public static void ensureClassIsInitialized(Class&lt;?&gt; clazz) {
+70         try {
+71             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(clazz, LOOKUP);
+72             lookup.ensureInitialized(clazz);
+73         } catch (IllegalAccessException e) {
+74             throw new InternalError(e);
+75         }
+76     }
+77 
+78     static Class&lt;?&gt; defineClass(Class&lt;?&gt; lookupClass, byte[] bytes) {
+79         try {
+80             return MethodHandles.privateLookupIn(lookupClass, LOOKUP).defineClass(bytes);
+81         } catch (IllegalAccessException e) {
+82             throw new InternalError(e);
+83         }
+84     }
+85 }
+    </pre>
+  </body>
+</html>

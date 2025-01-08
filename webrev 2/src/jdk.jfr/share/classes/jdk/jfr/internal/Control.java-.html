@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/Control.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.security.AccessControlContext;
+ 29 import java.security.AccessController;
+ 30 import java.security.PrivilegedAction;
+ 31 import java.util.Collections;
+ 32 import java.util.HashSet;
+ 33 import java.util.Objects;
+ 34 import java.util.Set;
+ 35 
+ 36 import jdk.jfr.SettingControl;
+ 37 import jdk.jfr.internal.settings.JDKSettingControl;
+ 38 import jdk.jfr.internal.settings.PeriodSetting;
+ 39 import jdk.jfr.internal.settings.StackTraceSetting;
+ 40 import jdk.jfr.internal.settings.ThresholdSetting;
+ 41 
+ 42 final class Control {
+ 43     @SuppressWarnings(&quot;removal&quot;)
+ 44     private final AccessControlContext context;
+ 45     private static final int CACHE_SIZE = 5;
+ 46     private final Set&lt;?&gt;[] cachedUnions = new HashSet&lt;?&gt;[CACHE_SIZE];
+ 47     private final String[] cachedValues = new String[CACHE_SIZE];
+ 48     private final SettingControl delegate;
+ 49     private String defaultValue;
+ 50     private String lastValue;
+ 51 
+ 52     // called by exposed subclass in external API
+ 53     public Control(SettingControl delegate, String defaultValue) {
+ 54         this.context = PrivateAccess.getInstance().getContext(delegate);
+ 55         this.delegate = delegate;
+ 56         this.defaultValue = defaultValue;
+ 57         if (this.context == null &amp;&amp; !(delegate instanceof JDKSettingControl)) {
+ 58             throw new InternalError(&quot;Security context can only be null for trusted setting controls&quot;);
+ 59         }
+ 60     }
+ 61 
+ 62     boolean isType(Class&lt;? extends SettingControl&gt; clazz) {
+ 63         return delegate.getClass() == clazz;
+ 64     }
+ 65 
+ 66     final void apply(Set&lt;String&gt; values) {
+ 67         setValue(findCombine(values));
+ 68     }
+ 69 
+ 70     final void setDefault() {
+ 71         if (defaultValue == null) {
+ 72             defaultValue = getValue();
+ 73         }
+ 74         apply(defaultValue);
+ 75     }
+ 76 
+ 77     @SuppressWarnings(&quot;removal&quot;)
+ 78     public String getValue() {
+ 79         if (context == null) {
+ 80             // VM events requires no access control context
+ 81             return delegate.getValue();
+ 82         } else {
+ 83             return AccessController.doPrivileged(new PrivilegedAction&lt;String&gt;() {
+ 84                 @Override
+ 85                 public String run() {
+ 86                     try {
+ 87                         return delegate.getValue();
+ 88                     } catch (Throwable t) {
+ 89                         // Prevent malicious user to propagate exception callback in the wrong context
+ 90                         Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, &quot;Exception occurred when trying to get value for &quot; + getClass());
+ 91                     }
+ 92                     return defaultValue != null ? defaultValue : &quot;&quot;; // Need to return something
+ 93                 }
+ 94             }, context);
+ 95         }
+ 96     }
+ 97 
+ 98     private void apply(String value) {
+ 99         if (lastValue != null &amp;&amp; Objects.equals(value, lastValue)) {
+100             return;
+101         }
+102         setValue(value);
+103     }
+104 
+105     @SuppressWarnings(&quot;removal&quot;)
+106     public void setValue(String value) {
+107         if (context == null) {
+108             // VM events requires no access control context
+109             try {
+110                 delegate.setValue(value);
+111                 lastValue = delegate.getValue();
+112             } catch (Throwable t) {
+113                 Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, &quot;Exception occurred when setting value \&quot;&quot; + value + &quot;\&quot; for &quot; + getClass());
+114                 lastValue = null;
+115             }
+116         } else {
+117             lastValue = AccessController.doPrivileged(new PrivilegedAction&lt;String&gt;() {
+118                 @Override
+119                 public String run() {
+120                     try {
+121                         delegate.setValue(value);
+122                         return delegate.getValue();
+123                     } catch (Throwable t) {
+124                         // Prevent malicious user to propagate exception callback in the wrong context
+125                         Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, &quot;Exception occurred when setting value \&quot;&quot; + value + &quot;\&quot; for &quot; + getClass());
+126                     }
+127                     return null;
+128                 }
+129             }, context);
+130         }
+131     }
+132 
+133 
+134     @SuppressWarnings(&quot;removal&quot;)
+135     public String combine(Set&lt;String&gt; values) {
+136         if (context == null) {
+137             // VM events requires no access control context
+138             return delegate.combine(values);
+139         }
+140         return AccessController.doPrivileged(new PrivilegedAction&lt;String&gt;() {
+141             @Override
+142             public String run() {
+143                 try {
+144                     return delegate.combine(Collections.unmodifiableSet(values));
+145                 } catch (Throwable t) {
+146                     // Prevent malicious user to propagate exception callback in the wrong context
+147                     Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, &quot;Exception occurred when combining &quot; + values + &quot; for &quot; + getClass());
+148                 }
+149                 return null;
+150             }
+151         }, context);
+152     }
+153 
+154     private final String findCombine(Set&lt;String&gt; values) {
+155         if (values.size() == 1) {
+156             return values.iterator().next();
+157         }
+158         for (int i = 0; i &lt; CACHE_SIZE; i++) {
+159             if (Objects.equals(cachedUnions[i], values)) {
+160                 return cachedValues[i];
+161             }
+162         }
+163         String result = combine(values);
+164         for (int i = 0; i &lt; CACHE_SIZE - 1; i++) {
+165             cachedUnions[i + 1] = cachedUnions[i];
+166             cachedValues[i + 1] = cachedValues[i];
+167         }
+168         cachedValues[0] = result;
+169         cachedUnions[0] = values;
+170         return result;
+171     }
+172 
+173     final String getDefaultValue() {
+174         return defaultValue;
+175     }
+176 
+177     final String getLastValue() {
+178         return lastValue;
+179     }
+180 
+181     final SettingControl getSettingControl() {
+182         return delegate;
+183     }
+184 
+185     boolean isVisible(boolean hasEventHook) {
+186         if (isType(ThresholdSetting.class)) {
+187             return !hasEventHook;
+188         }
+189         if (isType(PeriodSetting.class)) {
+190             return hasEventHook;
+191         }
+192         if (isType(StackTraceSetting.class)) {
+193             return !hasEventHook;
+194         }
+195         return true;
+196     }
+197 }
+    </pre>
+  </body>
+</html>

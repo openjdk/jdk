@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/internal/settings/ThrottleSetting.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="ThresholdSetting.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../tool/Command.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/settings/ThrottleSetting.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+   * Copyright (c) 2020, Datadog, Inc. All rights reserved.
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * Copyright (c) 2020, Datadog, Inc. All rights reserved.
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 34,10 ***</span>
+<span class="line-new-header">--- 34,11 ---</span>
+  
+  import jdk.jfr.Description;
+  import jdk.jfr.Label;
+  import jdk.jfr.MetadataDefinition;
+  import jdk.jfr.Name;
+<span class="line-added">+ import jdk.jfr.SettingControl;</span>
+  import jdk.jfr.internal.PlatformEventType;
+  import jdk.jfr.internal.Throttle;
+  import jdk.jfr.internal.Type;
+  import jdk.jfr.internal.util.Rate;
+  import jdk.jfr.internal.util.TimespanUnit;
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 45,11 ***</span>
+  
+  @MetadataDefinition
+  @Label(&quot;Throttle&quot;)
+  @Description(&quot;Throttles the emission rate for an event&quot;)
+  @Name(Type.SETTINGS_PREFIX + &quot;Throttle&quot;)
+<span class="line-modified">! public final class ThrottleSetting extends JDKSettingControl {</span>
+      public static final String DEFAULT_VALUE = Throttle.DEFAULT;
+      private final PlatformEventType eventType;
+      private String value = DEFAULT_VALUE;
+  
+      public ThrottleSetting(PlatformEventType eventType) {
+<span class="line-new-header">--- 46,11 ---</span>
+  
+  @MetadataDefinition
+  @Label(&quot;Throttle&quot;)
+  @Description(&quot;Throttles the emission rate for an event&quot;)
+  @Name(Type.SETTINGS_PREFIX + &quot;Throttle&quot;)
+<span class="line-modified">! public final class ThrottleSetting extends SettingControl {</span>
+      public static final String DEFAULT_VALUE = Throttle.DEFAULT;
+      private final PlatformEventType eventType;
+      private String value = DEFAULT_VALUE;
+  
+      public ThrottleSetting(PlatformEventType eventType) {
+</pre>
+<center><a href="ThresholdSetting.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../tool/Command.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

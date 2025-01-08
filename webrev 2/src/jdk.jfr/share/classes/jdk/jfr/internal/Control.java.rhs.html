@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/Control.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+<a name="2" id="anc2"></a>
+
+
+
+ 28 import java.util.HashSet;
+ 29 import java.util.Objects;
+ 30 import java.util.Set;
+ 31 
+ 32 import jdk.jfr.SettingControl;
+<a name="3" id="anc3"></a>
+ 33 import jdk.jfr.internal.settings.PeriodSetting;
+ 34 import jdk.jfr.internal.settings.StackTraceSetting;
+ 35 import jdk.jfr.internal.settings.ThresholdSetting;
+ 36 
+ 37 final class Control {
+<a name="4" id="anc4"></a>
+
+ 38     private static final int CACHE_SIZE = 5;
+ 39     private final Set&lt;?&gt;[] cachedUnions = new HashSet&lt;?&gt;[CACHE_SIZE];
+ 40     private final String[] cachedValues = new String[CACHE_SIZE];
+ 41     private final SettingControl delegate;
+ 42     private String defaultValue;
+ 43     private String lastValue;
+ 44 
+ 45     // called by exposed subclass in external API
+ 46     public Control(SettingControl delegate, String defaultValue) {
+<a name="5" id="anc5"></a>
+ 47         this.delegate = delegate;
+ 48         this.defaultValue = defaultValue;
+<a name="6" id="anc6"></a>
+
+
+ 49     }
+ 50 
+ 51     boolean isType(Class&lt;? extends SettingControl&gt; clazz) {
+ 52         return delegate.getClass() == clazz;
+ 53     }
+ 54 
+ 55     final void apply(Set&lt;String&gt; values) {
+ 56         setValue(findCombine(values));
+ 57     }
+ 58 
+ 59     final void setDefault() {
+ 60         if (defaultValue == null) {
+ 61             defaultValue = getValue();
+ 62         }
+ 63         apply(defaultValue);
+ 64     }
+ 65 
+<a name="7" id="anc7"></a>
+ 66     public String getValue() {
+<a name="8" id="anc8"></a><span class="line-modified"> 67         return delegate.getValue();</span>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 68     }
+ 69 
+ 70     private void apply(String value) {
+ 71         if (lastValue != null &amp;&amp; Objects.equals(value, lastValue)) {
+ 72             return;
+ 73         }
+ 74         setValue(value);
+ 75     }
+ 76 
+<a name="9" id="anc9"></a>
+ 77     public void setValue(String value) {
+<a name="10" id="anc10"></a><span class="line-modified"> 78         try {</span>
+<span class="line-modified"> 79             delegate.setValue(value);</span>
+<span class="line-modified"> 80             lastValue = delegate.getValue();</span>
+<span class="line-modified"> 81         } catch (Throwable t) {</span>
+<span class="line-modified"> 82             Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, &quot;Exception occurred when setting value \&quot;&quot; + value + &quot;\&quot;. &quot; + t.getMessage());</span>
+<span class="line-modified"> 83             lastValue = null;</span>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 84         }
+ 85     }
+ 86 
+<a name="11" id="anc11"></a>
+
+ 87     public String combine(Set&lt;String&gt; values) {
+<a name="12" id="anc12"></a><span class="line-modified"> 88         return delegate.combine(values);</span>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 89     }
+ 90 
+ 91     private final String findCombine(Set&lt;String&gt; values) {
+ 92         if (values.size() == 1) {
+ 93             return values.iterator().next();
+ 94         }
+ 95         for (int i = 0; i &lt; CACHE_SIZE; i++) {
+ 96             if (Objects.equals(cachedUnions[i], values)) {
+ 97                 return cachedValues[i];
+ 98             }
+ 99         }
+100         String result = combine(values);
+101         for (int i = 0; i &lt; CACHE_SIZE - 1; i++) {
+102             cachedUnions[i + 1] = cachedUnions[i];
+103             cachedValues[i + 1] = cachedValues[i];
+104         }
+105         cachedValues[0] = result;
+106         cachedUnions[0] = values;
+107         return result;
+108     }
+109 
+110     final String getDefaultValue() {
+111         return defaultValue;
+112     }
+113 
+114     final String getLastValue() {
+115         return lastValue;
+116     }
+117 
+118     final SettingControl getSettingControl() {
+119         return delegate;
+120     }
+121 
+122     boolean isVisible(boolean hasEventHook) {
+123         if (isType(ThresholdSetting.class)) {
+124             return !hasEventHook;
+125         }
+126         if (isType(PeriodSetting.class)) {
+127             return hasEventHook;
+128         }
+129         if (isType(StackTraceSetting.class)) {
+130             return !hasEventHook;
+131         }
+132         return true;
+133     }
+134 }
+<a name="13" id="anc13"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="13" type="hidden" />
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdStop.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.dcmd;
+ 26 
+ 27 import java.io.IOException;
+ 28 import java.nio.file.InvalidPathException;
+ 29 import java.nio.file.Path;
+ 30 import java.nio.file.Paths;
+ 31 
+ 32 import jdk.jfr.Recording;
+ 33 import jdk.jfr.internal.PrivateAccess;
+ 34 import jdk.jfr.internal.WriteablePath;
+ 35 
+ 36 /**
+ 37  * JFR.stop
+ 38  *
+ 39  */
+ 40 // Instantiated by native
+ 41 final class DCmdStop extends AbstractDCmd {
+ 42 
+ 43     @Override
+ 44     protected void execute(ArgumentParser parser)  throws DCmdException {
+ 45         parser.checkUnknownArguments();
+ 46         String name = parser.getOption(&quot;name&quot;);
+ 47         String filename = parser.getOption(&quot;filename&quot;);
+ 48         try {
+ 49             Recording recording = findRecording(name);
+ 50             WriteablePath wp = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();
+ 51             Path path = wp == null ? null : wp.getReal();
+ 52             if (filename != null) {
+ 53                 try {
+ 54                     // Ensure path is valid. Don&#39;t generate path if filename == null, as a user may
+ 55                     // want to stop recording without a dump
+ 56                     path = resolvePath(null, filename);
+ 57                     recording.setDestination(Paths.get(filename));
+ 58                 } catch (IOException | InvalidPathException  e) {
+ 59                     throw new DCmdException(&quot;Failed to stop %s. Could not set destination for \&quot;%s\&quot; to file %s&quot;, recording.getName(), filename, e.getMessage());
+ 60                 }
+ 61             }
+ 62             recording.stop();
+ 63             reportOperationComplete(&quot;Stopped&quot;, recording.getName(), path);
+ 64             recording.close();
+ 65         } catch (InvalidPathException | DCmdException e) {
+ 66             if (filename != null) {
+ 67                 throw new DCmdException(&quot;Could not write recording \&quot;%s\&quot; to file. %s&quot;, name, e.getMessage());
+ 68             }
+ 69             throw new DCmdException(e, &quot;Could not stop recording \&quot;%s\&quot;.&quot;, name, e.getMessage());
+ 70         }
+ 71     }
+ 72 
+ 73     @Override
+ 74     public String[] getHelp() {
+ 75             // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+ 76         return &quot;&quot;&quot;
+ 77                Syntax : JFR.stop [options]
+ 78 
+ 79                Options:
+ 80 
+ 81                  filename  (Optional) Name of the file to which the recording is written when the
+ 82                            recording is stopped. If no path is provided, the data from the recording
+ 83                            is discarded. (FILE, no default value)
+ 84 
+ 85                            Note: If a path is given, &#39;%%p&#39; in the path will be replaced by the PID,
+ 86                            and &#39;%%t&#39; will be replaced by the time in &#39;yyyy_MM_dd_HH_mm_ss&#39; format.
+ 87 
+ 88                  name      Name of the recording (STRING, no default value)
+ 89 
+ 90                Options must be specified using the &lt;key&gt; or &lt;key&gt;=&lt;value&gt; syntax.
+ 91 
+ 92                Example usage:
+ 93 
+ 94                 $ jcmd &lt;pid&gt; JFR.stop name=1
+ 95                 $ jcmd &lt;pid&gt; JFR.stop name=benchmark filename=%s
+ 96                 $ jcmd &lt;pid&gt; JFR.stop name=5 filename=recording.jfr
+ 97 
+ 98                &quot;&quot;&quot;.formatted(exampleDirectory()).
+ 99                lines().toArray(String[]::new);
+100     }
+101 
+102     @Override
+103     public Argument[] getArgumentInfos() {
+104         return new Argument[] {
+105             new Argument(&quot;name&quot;,
+106                 &quot;Recording name, e.g. \\\&quot;My Recording\\\&quot;&quot;,
+107                 &quot;STRING&quot;, true, true, null, false),
+108             new Argument(&quot;filename&quot;,
+109                 &quot;Copy recording data to file, e.g. \\\&quot;&quot; + exampleFilename() +  &quot;\\\&quot;&quot;,
+110                 &quot;FILE&quot;, false, true, null, false)
+111         };
+112     }
+113 }
+    </pre>
+  </body>
+</html>

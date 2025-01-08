@@ -1,0 +1,50 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/EventInstrumentation.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/EventInstrumentation.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/EventInstrumentation.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/EventInstrumentation.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -87,22 +87,21 @@
+     private static final ClassDesc ANNOTATION_REGISTERED = classDesc(Registered.class);
+     private static final ClassDesc ANNOTATION_REMOVE_FIELDS = classDesc(RemoveFields.class);
+     private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
+     private static final ClassDesc TYPE_ISE = Bytecode.classDesc(IllegalStateException.class);
+     private static final ClassDesc TYPE_EVENT_WRITER = classDesc(EventWriter.class);
+-    private static final ClassDesc TYPE_EVENT_WRITER_FACTORY = ClassDesc.of("jdk.jfr.internal.event.EventWriterFactory");
+     private static final ClassDesc TYPE_OBJECT = Bytecode.classDesc(Object.class);
+     private static final ClassDesc TYPE_SETTING_DEFINITION = Bytecode.classDesc(SettingDefinition.class);
+     private static final MethodDesc METHOD_BEGIN = MethodDesc.of("begin", "()V");
+     private static final MethodDesc METHOD_COMMIT = MethodDesc.of("commit", "()V");
+     private static final MethodDesc METHOD_DURATION = MethodDesc.of("duration", "(J)J");
+     private static final MethodDesc METHOD_ENABLED = MethodDesc.of("enabled", "()Z");
+     private static final MethodDesc METHOD_END = MethodDesc.of("end", "()V");
+     private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "(J)Z");
+     private static final MethodDesc METHOD_EVENT_CONFIGURATION_GET_SETTING = MethodDesc.of("getSetting", SettingControl.class, int.class);
+     private static final MethodDesc METHOD_EVENT_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "()Z");
+-    private static final MethodDesc METHOD_GET_EVENT_WRITER_KEY = MethodDesc.of("getEventWriter", "(J)" + TYPE_EVENT_WRITER.descriptorString());
++    private static final MethodDesc METHOD_GET_EVENT_WRITER = MethodDesc.of("getEventWriter", "()" + TYPE_EVENT_WRITER.descriptorString());
+     private static final MethodDesc METHOD_IS_ENABLED = MethodDesc.of("isEnabled", "()Z");
+     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
+     private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
+     private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
+ 
+@@ -765,12 +764,11 @@
+         }
+         return false;
+     }
+ 
+     private void getEventWriter(CodeBuilder codeBuilder) {
+-        codeBuilder.ldc(EventWriterKey.getKey());
+-        invokestatic(codeBuilder, TYPE_EVENT_WRITER_FACTORY, METHOD_GET_EVENT_WRITER_KEY);
++        invokestatic(codeBuilder, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER);
+     }
+ 
+     private void getEventConfiguration(CodeBuilder codeBuilder) {
+         if (untypedEventConfiguration) {
+             codeBuilder.getstatic(getEventClassDesc(), FIELD_EVENT_CONFIGURATION.name(), TYPE_OBJECT);

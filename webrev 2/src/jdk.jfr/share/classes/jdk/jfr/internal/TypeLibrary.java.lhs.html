@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/TypeLibrary.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.lang.annotation.Annotation;
+ 30 import java.lang.annotation.Repeatable;
+ 31 import java.lang.reflect.Field;
+ 32 import java.lang.reflect.InvocationTargetException;
+ 33 import java.lang.reflect.Method;
+ 34 import java.lang.reflect.Modifier;
+ 35 import java.util.ArrayDeque;
+ 36 import java.util.ArrayList;
+ 37 import java.util.Collection;
+ 38 import java.util.Collections;
+ 39 import java.util.Comparator;
+ 40 import java.util.HashMap;
+ 41 import java.util.HashSet;
+ 42 import java.util.LinkedHashMap;
+ 43 import java.util.List;
+ 44 import java.util.Map;
+ 45 import java.util.Queue;
+ 46 import java.util.Set;
+ 47 import java.util.function.Consumer;
+ 48 import java.util.function.Predicate;
+ 49 import java.util.stream.Stream;
+ 50 
+ 51 import jdk.jfr.AnnotationElement;
+ 52 import jdk.jfr.Description;
+ 53 import jdk.jfr.Label;
+ 54 import jdk.jfr.MetadataDefinition;
+ 55 import jdk.jfr.Name;
+ 56 import jdk.jfr.SettingControl;
+ 57 import jdk.jfr.SettingDescriptor;
+ 58 import jdk.jfr.Timespan;
+ 59 import jdk.jfr.Timestamp;
+ 60 import jdk.jfr.ValueDescriptor;
+ 61 import jdk.jfr.internal.util.Utils;
+ 62 import jdk.jfr.internal.util.ImplicitFields;
+ 63 import jdk.internal.module.Modules;
+ 64 
+ 65 public final class TypeLibrary {
+ 66     private static boolean implicitFieldTypes;
+ 67     private static final Map&lt;Long, Type&gt; types = LinkedHashMap.newLinkedHashMap(350);
+ 68     private static volatile boolean initialized;
+ 69     static final ValueDescriptor DURATION_FIELD = createDurationField();
+ 70     static final ValueDescriptor THREAD_FIELD = createThreadField();
+ 71     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
+ 72     static final ValueDescriptor START_TIME_FIELD = createStartTimeField();
+ 73 
+ 74     private TypeLibrary() {
+ 75         throw new InternalError(&quot;Don&#39;t instantiate&quot;);
+ 76     }
+ 77 
+ 78     private static ValueDescriptor createStartTimeField() {
+ 79         var annos = createStandardAnnotations(&quot;Start Time&quot;, null);
+ 80         annos.add(new jdk.jfr.AnnotationElement(Timestamp.class, Timestamp.TICKS));
+ 81         return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.START_TIME, Type.LONG, annos, 0, false,
+ 82                 ImplicitFields.START_TIME);
+ 83     }
+ 84 
+ 85     private static ValueDescriptor createStackTraceField() {
+ 86         var annos = createStandardAnnotations(&quot;Stack Trace&quot;, &quot;Stack Trace starting from the method the event was committed in&quot;);
+ 87         return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.STACK_TRACE, Type.STACK_TRACE, annos, 0, true,
+ 88                 ImplicitFields.STACK_TRACE);
+ 89     }
+ 90 
+ 91     private static ValueDescriptor createThreadField() {
+ 92         var annos = createStandardAnnotations(&quot;Event Thread&quot;, &quot;Thread in which event was committed in&quot;);
+ 93         return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.EVENT_THREAD, Type.THREAD, annos, 0, true,
+ 94                 ImplicitFields.EVENT_THREAD);
+ 95     }
+ 96 
+ 97     private static ValueDescriptor createDurationField() {
+ 98         var annos = createStandardAnnotations(&quot;Duration&quot;, null);
+ 99         annos.add(new jdk.jfr.AnnotationElement(Timespan.class, Timespan.TICKS));
+100         return PrivateAccess.getInstance().newValueDescriptor(ImplicitFields.DURATION, Type.LONG, annos, 0, false, ImplicitFields.DURATION);
+101     }
+102 
+103     public static synchronized void initialize() {
+104         // The usual case is that TypeLibrary is initialized only once by the MetadataRepository singleton.
+105         // However, this check is needed to ensure some tools (ie. GraalVM Native Image) do not perform the initialization routine twice.
+106         if (initialized) {
+107             return;
+108         }
+109         List&lt;Type&gt; jvmTypes;
+110         try {
+111             jvmTypes = MetadataLoader.createTypes();
+112             jvmTypes.sort(Comparator.comparingLong(Type::getId));
+113         } catch (IOException e) {
+114             throw new Error(&quot;JFR: Could not read metadata&quot;);
+115         }
+116         visitReachable(jvmTypes, t -&gt; !types.containsKey(t.getId()), t -&gt; types.put(t.getId(), t));
+117         initialized = true;
+118         if (Logger.shouldLog(LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO)) {
+119             Stream&lt;Type&gt; s = types.values().stream().sorted((x, y) -&gt; Long.compare(x.getId(), y.getId()));
+120             s.forEach(t -&gt; t.log(&quot;Added&quot;, LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO));
+121         }
+122     }
+123 
+124     public static synchronized Collection&lt;Type&gt; getTypes() {
+125         return new ArrayList&lt;&gt;(types.values());
+126     }
+127 
+128     // Returned list should be mutable (for in-place sorting)
+129     public static synchronized List&lt;Type&gt; getVisibleTypes() {
+130         List&lt;Type&gt; visible = new ArrayList&lt;&gt;(types.size());
+131         types.values().forEach(t -&gt; {
+132             if (t.isVisible()) {
+133                 visible.add(t);
+134             }
+135         });
+136         return visible;
+137     }
+138 
+139     public static synchronized Type createAnnotationType(Class&lt;? extends Annotation&gt; a) {
+140         if (shouldPersist(a)) {
+141             Type type = defineType(a, Type.SUPER_TYPE_ANNOTATION, false);
+142             if (type != null) {
+143                 SecuritySupport.makeVisibleToJFR(a);
+144                 for (Method method : a.getDeclaredMethods()) {
+145                     type.add(PrivateAccess.getInstance().newValueDescriptor(method.getReturnType(), method.getName()));
+146                 }
+147                 ArrayList&lt;AnnotationElement&gt; aes = new ArrayList&lt;&gt;();
+148                 for (Annotation annotation : resolveRepeatedAnnotations(a.getAnnotations())) {
+149                     AnnotationElement ae = createAnnotation(annotation);
+150                     if (ae != null) {
+151                         aes.add(ae);
+152                     }
+153                 }
+154                 type.setAnnotations(aes);
+155             }
+156             return getType(a);
+157         }
+158         return null;
+159     }
+160 
+161     public static synchronized AnnotationElement createAnnotation(Annotation annotation) {
+162         Class&lt;? extends Annotation&gt; annotationType = annotation.annotationType();
+163         Type type = createAnnotationType(annotationType);
+164         if (type != null) {
+165             List&lt;Object&gt; values = new ArrayList&lt;&gt;();
+166             for (ValueDescriptor v : type.getFields()) {
+167                 values.add(invokeAnnotation(annotation, v.getName()));
+168             }
+169             // Only annotation classes in the boot class loader can always be resolved.
+170             boolean bootClassLoader = annotationType.getClassLoader() == null;
+171             return PrivateAccess.getInstance().newAnnotation(type, values, bootClassLoader);
+172         }
+173         return null;
+174     }
+175 
+176     private static Object invokeAnnotation(Annotation annotation, String methodName) {
+177         final Method m;
+178         try {
+179             m = annotation.getClass().getMethod(methodName, new Class&lt;?&gt;[0]);
+180         } catch (NoSuchMethodException e1) {
+181             throw (Error) new InternalError(&quot;Could not locate method &quot; + methodName + &quot; in annotation &quot; + annotation.getClass().getName());
+182         }
+183         // Add export from JDK proxy module
+184         if (annotation.getClass().getClassLoader() == null) {
+185             if (annotation.getClass().getName().contains(&quot;Proxy&quot;)) {
+186                 Module proxyModule = annotation.getClass().getModule();
+187                 String proxyPackage = annotation.getClass().getPackageName();
+188                 Module jfrModule = TypeLibrary.class.getModule();
+189                 Modules.addExports(proxyModule, proxyPackage, jfrModule);
+190             }
+191         }
+<a name="2" id="anc2"></a><span class="line-modified">192         SecuritySupport.setAccessible(m);</span>
+193         try {
+194             return m.invoke(annotation, new Object[0]);
+195         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+196             throw (Error) new InternalError(&quot;Could not get value for method &quot; + methodName + &quot; in annotation &quot; + annotation.getClass().getName());
+197         }
+198     }
+199 
+200     private static boolean shouldPersist(Class&lt;? extends Annotation&gt; a) {
+201         if (a == MetadataDefinition.class || a.getAnnotation(MetadataDefinition.class) == null) {
+202             return false;
+203         }
+204         return true;
+205     }
+206 
+207     private static boolean isDefined(Class&lt;?&gt; clazz) {
+208         return types.containsKey(Type.getTypeId(clazz));
+209     }
+210 
+211     private static Type getType(Class&lt;?&gt; clazz) {
+212         return types.get(Type.getTypeId(clazz));
+213     }
+214 
+215     private static Type defineType(Class&lt;?&gt; clazz, String superType, boolean eventType) {
+216         if (!isDefined(clazz)) {
+217             Name name = clazz.getAnnotation(Name.class);
+218             String typeName = clazz.getName();
+219             if (name != null) {
+220                 typeName = Utils.validTypeName(name.value(), typeName);
+221             }
+222             long id = Type.getTypeId(clazz);
+223             Type t;
+224             if (eventType) {
+225                 t = new PlatformEventType(typeName, id, Utils.isJDKClass(clazz), true);
+226             } else {
+227                 t = new Type(typeName, superType, id);
+228             }
+229             types.put(t.getId(), t);
+230             return t;
+231         }
+232         return null;
+233     }
+234 
+235     public static synchronized Type createType(Class&lt;?&gt; clazz) {
+236         return createType(clazz, Collections.emptyList(), Collections.emptyList());
+237     }
+238 
+239     public static synchronized Type createType(Class&lt;?&gt; clazz, List&lt;AnnotationElement&gt; dynamicAnnotations, List&lt;ValueDescriptor&gt; dynamicFields) {
+240 
+241         if (Thread.class == clazz) {
+242             return Type.THREAD;
+243         }
+244 
+245         if (Class.class.isAssignableFrom(clazz)) {
+246             return Type.CLASS;
+247         }
+248 
+249         if (String.class.equals(clazz)) {
+250             return Type.STRING;
+251         }
+252 
+253         if (isDefined(clazz)) {
+254             return getType(clazz);
+255         }
+256 
+257         if (clazz.isPrimitive()) {
+258             return defineType(clazz, null,false);
+259         }
+260 
+261         if (clazz.isArray()) {
+262             throw new InternalError(&quot;Arrays not supported&quot;);
+263         }
+264 
+265         // STRUCT
+266         String superType = null;
+267         boolean eventType = false;
+268         if (isEventClass(clazz)) {
+269             superType = Type.SUPER_TYPE_EVENT;
+270             eventType= true;
+271         }
+272         if (SettingControl.class.isAssignableFrom(clazz)) {
+273             superType = Type.SUPER_TYPE_SETTING;
+274         }
+275 
+276         // forward declare to avoid infinite recursion
+277         defineType(clazz, superType, eventType);
+278         Type type = getType(clazz);
+279 
+280         if (eventType) {
+281             ImplicitFields ifs = new ImplicitFields(clazz);
+282             addImplicitFields(type, true, ifs.hasDuration(), ifs.hasEventThread(), ifs.hasStackTrace(), false);
+283             addUserFields(clazz, type, dynamicFields);
+284             type.trimFields();
+285         }
+286         addAnnotations(clazz, type, dynamicAnnotations);
+287 
+288         if (Utils.isJDKClass(clazz)) {
+289             type.log(&quot;Added&quot;, LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO);
+290         } else {
+291             type.log(&quot;Added&quot;, LogTag.JFR_METADATA, LogLevel.INFO);
+292         }
+293         return type;
+294     }
+295 
+296     private static boolean isEventClass(Class&lt;?&gt; clazz) {
+297         if (jdk.internal.event.Event.class.isAssignableFrom(clazz)) {
+298             return true;
+299         }
+300         if (MirrorEvent.class.isAssignableFrom(clazz)) {
+301             return true;
+302         }
+303         return false;
+304     }
+305 
+306     private static void addAnnotations(Class&lt;?&gt; clazz, Type type, List&lt;AnnotationElement&gt; dynamicAnnotations) {
+307         ArrayList&lt;AnnotationElement&gt; aes = new ArrayList&lt;&gt;();
+308         if (dynamicAnnotations.isEmpty()) {
+309             for (Annotation a : Utils.getAnnotations(clazz)) {
+310                 AnnotationElement ae = createAnnotation(a);
+311                 if (ae != null) {
+312                     aes.add(ae);
+313                 }
+314             }
+315         } else {
+316             List&lt;Type&gt; newTypes = new ArrayList&lt;&gt;();
+317             aes.addAll(dynamicAnnotations);
+318             for (AnnotationElement ae : dynamicAnnotations) {
+319                 newTypes.add(PrivateAccess.getInstance().getType(ae));
+320             }
+321             addTypes(newTypes);
+322         }
+323         type.setAnnotations(aes);
+324         aes.trimToSize();
+325     }
+326 
+327     private static void addUserFields(Class&lt;?&gt; clazz, Type type, List&lt;ValueDescriptor&gt; dynamicFields) {
+328         Map&lt;String, ValueDescriptor&gt; dynamicFieldSet = HashMap.newHashMap(dynamicFields.size());
+329         for (ValueDescriptor dynamicField : dynamicFields) {
+330             dynamicFieldSet.put(dynamicField.getName(), dynamicField);
+331         }
+332         List&lt;Type&gt; newTypes = new ArrayList&lt;&gt;();
+333         for (Field field : Utils.getVisibleEventFields(clazz)) {
+334             ValueDescriptor vd = dynamicFieldSet.get(field.getName());
+335             if (vd != null) {
+336                 if (!vd.getTypeName().equals(field.getType().getName())) {
+337                     throw new InternalError(&quot;Type expected to match for field &quot; + vd.getName() + &quot; expected &quot;  + field.getType().getName() + &quot; but got &quot; + vd.getTypeName());
+338                 }
+339                 for (AnnotationElement ae : vd.getAnnotationElements()) {
+340                     newTypes.add(PrivateAccess.getInstance().getType(ae));
+341                 }
+342                 newTypes.add(PrivateAccess.getInstance().getType(vd));
+343             } else {
+344                 vd = createField(field);
+345             }
+346             if (vd != null) {
+347                 type.add(vd);
+348             }
+349         }
+350         addTypes(newTypes);
+351     }
+352 
+353     // By convention all events have these fields.
+354     public static synchronized void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+355         if (!implicitFieldTypes) {
+356             createAnnotationType(Timespan.class);
+357             createAnnotationType(Timestamp.class);
+358             createAnnotationType(Label.class);
+359             implicitFieldTypes = true;
+360         }
+361         addFields(type, requestable, hasDuration, hasThread, hasStackTrace, hasCutoff);
+362     }
+363 
+364     private static void addFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+365         type.add(START_TIME_FIELD);
+366         if (hasDuration || hasCutoff) {
+367             type.add(DURATION_FIELD);
+368         }
+369         if (hasThread) {
+370             type.add(THREAD_FIELD);
+371         }
+372         if (hasStackTrace) {
+373             type.add(STACK_TRACE_FIELD);
+374         }
+375     }
+376 
+377     private static List&lt;AnnotationElement&gt; createStandardAnnotations(String name, String description) {
+378         List&lt;AnnotationElement&gt; annotationElements = new ArrayList&lt;&gt;(2);
+379         annotationElements.add(new jdk.jfr.AnnotationElement(Label.class, name));
+380         if (description != null) {
+381             annotationElements.add(new jdk.jfr.AnnotationElement(Description.class, description));
+382         }
+383         return annotationElements;
+384     }
+385 
+386     private static ValueDescriptor createField(Field field) {
+387         int mod = field.getModifiers();
+388         if (Modifier.isTransient(mod)) {
+389             return null;
+390         }
+391         if (Modifier.isStatic(mod)) {
+392             return null;
+393         }
+394         Class&lt;?&gt; fieldType = field.getType();
+395         if (!Type.isKnownType(fieldType)) {
+396             return null;
+397         }
+398         boolean constantPool = Thread.class == fieldType || fieldType == Class.class;
+399         Type type = createType(fieldType);
+400         String fieldName = field.getName();
+401         Name name = field.getAnnotation(Name.class);
+402         String useName = fieldName;
+403         if (name != null) {
+404             useName = Utils.validJavaIdentifier(name.value(), useName);
+405         }
+406         List&lt;jdk.jfr.AnnotationElement&gt; ans = new ArrayList&lt;&gt;();
+407         for (Annotation a : resolveRepeatedAnnotations(field.getAnnotations())) {
+408             AnnotationElement ae = createAnnotation(a);
+409             if (ae != null) {
+410                 ans.add(ae);
+411             }
+412         }
+413         return PrivateAccess.getInstance().newValueDescriptor(useName, type, ans, 0, constantPool, fieldName);
+414     }
+415 
+416     private static List&lt;Annotation&gt; resolveRepeatedAnnotations(Annotation[] annotations) {
+417         List&lt;Annotation&gt; annos = new ArrayList&lt;&gt;(annotations.length);
+418         for (Annotation a : annotations) {
+419             boolean repeated = false;
+420             Method m;
+421             try {
+422                 m = a.annotationType().getMethod(&quot;value&quot;);
+423                 Class&lt;?&gt; returnType = m.getReturnType();
+424                 if (returnType.isArray()) {
+425                     Class&lt;?&gt; ct = returnType.getComponentType();
+426                     if (Annotation.class.isAssignableFrom(ct) &amp;&amp; ct.getAnnotation(Repeatable.class) != null) {
+427                         Object res = m.invoke(a, new Object[0]);
+428                         if (res instanceof Annotation[] anns) {
+429                             for (Annotation rep : anns) {
+430                                 annos.add(rep);
+431                             }
+432                             repeated = true;
+433                         }
+434                     }
+435                 }
+436             } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+437                 // Ignore, can&#39;t access repeatable information
+438             }
+439             if (!repeated) {
+440                 annos.add(a);
+441             }
+442         }
+443         return annos;
+444     }
+445 
+446     // Purpose of this method is to mark types that are reachable
+447     // from registered event types. Those types that are not reachable can
+448     // safely be removed
+449     // Returns true if type was removed
+450     public static synchronized boolean clearUnregistered() {
+451         Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, &quot;Cleaning out obsolete metadata&quot;);
+452         List&lt;Type&gt; registered = new ArrayList&lt;&gt;();
+453         for (Type type : types.values()) {
+454             if (type instanceof PlatformEventType pType) {
+455                 if (pType.isRegistered()) {
+456                     registered.add(type);
+457                 }
+458             }
+459         }
+460         visitReachable(registered, t -&gt; t.getRemove(), t -&gt; t.setRemove(false));
+461         List&lt;Long&gt; removeIds = new ArrayList&lt;&gt;();
+462         for (Type type :  types.values()) {
+463             if (type.getRemove() &amp;&amp; !Type.isDefinedByJVM(type.getId())) {
+464                 removeIds.add(type.getId());
+465                 if (Logger.shouldLog(LogTag.JFR_METADATA, LogLevel.TRACE)) {
+466                     Logger.log(LogTag.JFR_METADATA, LogLevel.TRACE, &quot;Removed obsolete metadata &quot; + type.getName());
+467                 }
+468             }
+469             // Optimization, set to true now to avoid iterating
+470             // types first thing at next call to clearUnregistered
+471             type.setRemove(true);
+472         }
+473         for (Long id : removeIds) {
+474             types.remove(id);
+475         }
+476         return !removeIds.isEmpty();
+477     }
+478 
+479     public static synchronized void addType(Type type) {
+480         addTypes(Collections.singletonList(type));
+481     }
+482 
+483     public static synchronized void addTypes(List&lt;Type&gt; ts) {
+484         if (!ts.isEmpty()) {
+485             visitReachable(ts, t -&gt; !types.containsKey(t.getId()), t -&gt; types.put(t.getId(), t));
+486         }
+487     }
+488 
+489     /**
+490      * Iterates all reachable types from a start collection
+491      *
+492      * @param rootSet the types to start from
+493      * @param p if a type should be accepted
+494      * @param c action to take on an accepted type
+495      */
+496     private  static void visitReachable(Collection&lt;Type&gt; rootSet, Predicate&lt;Type&gt; p,  Consumer&lt;Type&gt; c) {
+497         Queue&lt;Type&gt; typeQ = new ArrayDeque&lt;&gt;(rootSet);
+498         while (!typeQ.isEmpty()) {
+499             Type type = typeQ.poll();
+500             if (p.test(type)) {
+501                 c.accept(type);
+502                 visitAnnotations(typeQ, type.getAnnotationElements());
+503                 for (ValueDescriptor v : type.getFields()) {
+504                     typeQ.add(PrivateAccess.getInstance().getType(v));
+505                     visitAnnotations(typeQ, v.getAnnotationElements());
+506                 }
+507                 if (type instanceof PlatformEventType pe) {
+508                     for (SettingDescriptor s : pe.getAllSettings()) {
+509                         typeQ.add(PrivateAccess.getInstance().getType(s));
+510                         visitAnnotations(typeQ, s.getAnnotationElements());
+511                     }
+512                 }
+513             }
+514         }
+515     }
+516 
+517     private static void visitAnnotations(Queue&lt;Type&gt; typeQ, List&lt;AnnotationElement&gt; aes) {
+518         Queue&lt;AnnotationElement&gt; aQ = new ArrayDeque&lt;&gt;(aes);
+519         Set&lt;AnnotationElement&gt; visited = new HashSet&lt;&gt;();
+520         while (!aQ.isEmpty()) {
+521             AnnotationElement ae = aQ.poll();
+522             if (!visited.contains(ae)) {
+523                 Type ty = PrivateAccess.getInstance().getType(ae);
+524                 typeQ.add(ty);
+525                 visited.add(ae);
+526             }
+527             aQ.addAll(ae.getAnnotationElements());
+528         }
+529     }
+530 
+531     public static synchronized void removeType(long id) {
+532         types.remove(id);
+533     }
+534 }
+<a name="3" id="anc3"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="3" type="hidden" />
+</body>
+</html>

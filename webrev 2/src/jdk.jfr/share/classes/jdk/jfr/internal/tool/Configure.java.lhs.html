@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Configure.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.tool;
+ 26 
+ 27 import java.io.FileNotFoundException;
+ 28 import java.io.IOError;
+ 29 import java.io.IOException;
+ 30 import java.io.PrintStream;
+ 31 import java.nio.file.InvalidPathException;
+ 32 import java.nio.file.Path;
+ 33 import java.text.ParseException;
+ 34 import java.util.ArrayList;
+ 35 import java.util.Arrays;
+ 36 import java.util.Deque;
+ 37 import java.util.LinkedHashMap;
+ 38 import java.util.List;
+ 39 import java.util.Map;
+ 40 
+<a name="2" id="anc2"></a><span class="line-removed"> 41 import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+ 42 import jdk.jfr.internal.jfc.JFC;
+ 43 import jdk.jfr.internal.jfc.model.AbortException;
+ 44 import jdk.jfr.internal.jfc.model.JFCModel;
+ 45 import jdk.jfr.internal.jfc.model.JFCModelException;
+ 46 import jdk.jfr.internal.jfc.model.SettingsLog;
+ 47 import jdk.jfr.internal.jfc.model.UserInterface;
+ 48 import jdk.jfr.internal.jfc.model.XmlInput;
+ 49 import jdk.jfr.internal.util.UserDataException;
+ 50 import jdk.jfr.internal.util.UserSyntaxException;
+ 51 
+ 52 final class Configure extends Command {
+ 53     private final List&lt;String&gt; inputFiles = new ArrayList&lt;&gt;();
+ 54 
+ 55     @Override
+ 56     public List&lt;String&gt; getOptionSyntax() {
+ 57         List&lt;String&gt; list = new ArrayList&lt;&gt;();
+ 58         list.add(&quot;[--interactive] [--verbose]&quot;);
+ 59         list.add(&quot;[--input &lt;files&gt;] [--output &lt;file&gt;]&quot;);
+ 60         list.add(&quot;[option=value]* [event-setting=value]*&quot;);
+ 61         return list;
+ 62     }
+ 63 
+ 64     @Override
+ 65     protected String getTitle() {
+ 66         return &quot;Configures a .jfc file&quot;;
+ 67     }
+ 68 
+ 69     @Override
+ 70     public String getName() {
+ 71         return &quot;configure&quot;;
+ 72     }
+ 73 
+ 74     @Override
+ 75     public String getDescription() {
+ 76         return &quot;Creates a custom .jfc-file for event configuration&quot;;
+ 77     }
+ 78 
+ 79     @Override
+ 80     public void displayOptionUsage(PrintStream stream) {
+ 81         stream.println(&quot;  --interactive           Interactive mode where the configuration is&quot;);
+ 82         stream.println(&quot;                          determined by a set of questions.&quot;);
+ 83         stream.println();
+ 84         stream.println(&quot;  --verbose               Displays the modified settings.&quot;);
+ 85         stream.println();
+ 86         stream.println(&quot;  --input &lt;files&gt;         A comma-separated list of .jfc files from which&quot;);
+ 87         stream.println(&quot;                          the new configuration is based. If no file is&quot;);
+ 88         stream.println(&quot;                          specified, the default file in the JDK is used&quot;);
+ 89         stream.println(&quot;                          (default.jfc). If &#39;none&#39; is specified, the new&quot;);
+ 90         stream.println(&quot;                          configuration starts empty.&quot;);
+ 91         stream.println();
+ 92         stream.println(&quot;  --output &lt;file&gt;         The filename of the generated output file. If not&quot;);
+ 93         stream.println(&quot;                          specified, the filename custom.jfc will be used.&quot;);
+ 94         stream.println();
+ 95         stream.println(&quot;  option=value            The option value to modify. For available options,&quot;);
+ 96         stream.println(&quot;                          see listed input files below.&quot;);
+ 97         stream.println();
+ 98         stream.println(&quot;  event-setting=value     The event setting value to modify. Use the form:&quot;);
+ 99         stream.println(&quot;                          &lt;event-name&gt;#&lt;setting-name&gt;=&lt;value&gt;&quot;);
+100         stream.println(&quot;                          To add a new event setting, prefix the event name&quot;);
+101         stream.println(&quot;                          with &#39;+&#39;.&quot;);
+102         stream.println();
+103         stream.println(&quot;The whitespace delimiter can be omitted for timespan values, i.e. 20ms. For&quot;);
+104         stream.println(&quot;more information about the settings syntax, see Javadoc of the jdk.jfr package.&quot;);
+105         ensureInputFiles();
+106         for (String name : inputFiles) {
+107             displayParameters(stream, name);
+108         }
+109         stream.println();
+110         stream.println(&quot;To run interactive configuration wizard:&quot;);
+111         stream.println();
+112         stream.println(&quot;  jfr configure --interactive&quot;);
+113         stream.println();
+114         stream.println(&quot;Example usage:&quot;);
+115         stream.println();
+116         stream.println(&quot;  jfr configure gc=high method-profiling=high --output high.jfc&quot;);
+117         stream.println();
+118         stream.println(&quot;  jfr configure jdk.JavaMonitorEnter#threshold=1ms --output locks.jfc&quot;);
+119         stream.println();
+120         stream.println(&quot;  jfr configure +HelloWorld#enabled=true +HelloWorld#stackTrace=true&quot;);
+121         stream.println();
+122         stream.println(&quot;  jfr configure --input default.jfc,third-party.jfc --output unified.jfc&quot;);
+123         stream.println();
+124         stream.println(&quot;  jfr configure --input none +Hello#enabled=true --output minimal.jfc&quot;);
+125     }
+126 
+127     private void displayParameters(PrintStream stream, String name) {
+128         stream.println();
+129         stream.println(&quot;Options for &quot; + name + &quot;:&quot;);
+130         stream.println();
+131         try {
+<a name="3" id="anc3"></a><span class="line-modified">132             SafePath path = JFC.createSafePath(name);</span>
+133             JFCModel parameters = JFCModel.create(path, l -&gt; stream.println(&quot;Warning! &quot; + l));
+134             for (XmlInput input : parameters.getInputs()) {
+135                 stream.println(&quot;  &quot; + input.getOptionSyntax());
+136                 stream.println();
+137             }
+138         } catch (JFCModelException | InvalidPathException | ParseException | IOException e) {
+139             stream.println(JFC.formatException(&quot;  Could not&quot;, e, name)); // indented
+140         }
+141     }
+142 
+143     @Override
+144     public void execute(Deque&lt;String&gt; options) throws UserSyntaxException, UserDataException {
+145         boolean interactive = false;
+146         boolean log = false;
+<a name="4" id="anc4"></a><span class="line-modified">147         SafePath output = null;</span>
+148         Map&lt;String, String&gt; keyValues = new LinkedHashMap&lt;&gt;();
+149         int optionCount = options.size();
+150         while (optionCount &gt; 0) {
+151             if (acceptSwitch(options, &quot;--interactive&quot;)) {
+152                 interactive = true;
+153             }
+154             if (acceptSwitch(options, &quot;--verbose&quot;)) {
+155                 log = true;
+156             }
+157             if (acceptOption(options, &quot;--input&quot;)) {
+158                 String value = options.pop();
+159                 inputFiles.addAll(Arrays.asList(value.split(&quot;,&quot;)));
+160             }
+161             if (acceptOption(options, &quot;--output&quot;)) {
+162                 if (output != null) {
+163                     throw new UserDataException(&quot;only one output file can be specified&quot;);
+164                 }
+165                 String value = options.pop();
+166                 output = makeJFCPath(value);
+167             }
+168             if (acceptKeyValue(options)) {
+169                 String value = options.pop();
+170                 var keyValue = value.split(&quot;=&quot;);
+171                 keyValues.put(keyValue[0], keyValue[1]);
+172             }
+173             if (optionCount == options.size()) {
+174                 // No progress
+175                 throw new UserSyntaxException(&quot;unknown option &quot; + options.peek());
+176             }
+177             optionCount = options.size();
+178         }
+179         if (!interactive &amp;&amp; output == null &amp;&amp; keyValues.isEmpty()) {
+180             throw new UserSyntaxException(&quot;missing argument&quot;);
+181         }
+182         ensureInputFiles();
+183         configure(interactive, log, output, keyValues);
+184     }
+185 
+186     private boolean acceptKeyValue(Deque&lt;String&gt; options) {
+187         if (!options.isEmpty()) {
+188             String keyValue = options.peek();
+189             int index = keyValue.indexOf(&quot;=&quot;);
+190             return index &gt; 0 &amp;&amp; index &lt; keyValue.length() - 1;
+191         }
+192         return false;
+193     }
+194 
+<a name="5" id="anc5"></a><span class="line-modified">195     private void configure(boolean interactive, boolean log, SafePath output, Map&lt;String, String&gt; options) throws UserDataException {</span>
+196         UserInterface ui = new UserInterface();
+197         if (log) {
+198             SettingsLog.enable();
+199         }
+200         JFCModel model = new JFCModel(l -&gt; ui.println(&quot;Warning! &quot; + l));
+201         model.setLabel(&quot;Custom&quot;);
+202         for (String input : inputFiles) {
+203             try {
+<a name="6" id="anc6"></a><span class="line-modified">204                 model.parse(JFC.createSafePath(input));</span>
+205             } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
+206                 throw new UserDataException(JFC.formatException(&quot;could not&quot;, e, input));
+207             }
+208         }
+209         try {
+210             if (output == null) {
+<a name="7" id="anc7"></a><span class="line-modified">211                 output = new SafePath(Path.of(&quot;custom.jfc&quot;));</span>
+212             }
+213             for (var option : options.entrySet()) {
+214                 model.configure(option.getKey(), option.getValue());
+215             }
+216             SettingsLog.flush();
+217             try {
+218                 if (interactive) {
+219                     int q = model.getInputs().size() + 1;
+220                     ui.println(&quot;============== .jfc Configuration Wizard ============&quot;);
+221                     ui.println(&quot;This wizard will generate a JFR configuration file by&quot;);
+222                     ui.println(&quot;asking &quot; + q + &quot; questions. Press ENTER to use the default&quot;);
+223                     ui.println(&quot;value, or type Q to abort the wizard.&quot;);
+224                     model.configure(ui);
+225                     output = filename(ui, output);
+226                 }
+227             } catch (AbortException e) {
+228                 ui.println(&quot;Abort.&quot;);
+229                 return;
+230             }
+231             model.saveToFile(output);
+232             ui.println(&quot;Configuration written successfully to:&quot;);
+<a name="8" id="anc8"></a><span class="line-modified">233             ui.println(output.toPath().toAbsolutePath().toString());</span>
+234         } catch (IllegalArgumentException iae) {
+235             throw new UserDataException(iae.getMessage());
+236         } catch (FileNotFoundException ffe) {
+237             throw new UserDataException(&quot;could not find file: &quot; + ffe.getMessage());
+238         } catch (IOException ioe) {
+239             throw new UserDataException(&quot;i/o error: &quot; + ioe.getMessage());
+240         }
+241     }
+242 
+243     private void ensureInputFiles() throws InternalError {
+244         if (inputFiles.isEmpty()) {
+245             inputFiles.add(&quot;default.jfc&quot;);
+246         }
+247     }
+248 
+<a name="9" id="anc9"></a><span class="line-modified">249     private static SafePath filename(UserInterface ui, SafePath file) throws AbortException {</span>
+250         ui.println();
+251         ui.println(&quot;Filename: &quot; + file + &quot; (default)&quot;);
+252         while (true) {
+253             String line = ui.readLine();
+254             try {
+255                 if (line.isBlank()) {
+256                     return file;
+257                 }
+258                 if (line.endsWith(&quot;.jfc&quot;)) {
+<a name="10" id="anc10"></a><span class="line-modified">259                     return new SafePath(line);</span>
+260                 }
+261                 ui.println(&quot;Filename must end with .jfc.&quot;);
+262             } catch (InvalidPathException ipe) {
+263                 ui.println(&quot;Not a valid filename. &quot; + ipe.getMessage());
+264             }
+265         }
+266     }
+267 
+<a name="11" id="anc11"></a><span class="line-modified">268     private SafePath makeJFCPath(String file) throws UserDataException, UserSyntaxException {</span>
+269         if (file.startsWith(&quot;--&quot;)) {
+270             throw new UserSyntaxException(&quot;missing file&quot;);
+271         }
+272         try {
+273             Path path = Path.of(file).toAbsolutePath();
+274             ensureFileExtension(path, &quot;.jfc&quot;);
+<a name="12" id="anc12"></a><span class="line-modified">275             return new SafePath(path);</span>
+276         } catch (IOError ioe) {
+277             throw new UserDataException(&quot;i/o error reading file &#39;&quot; + file + &quot;&#39;, &quot; + ioe.getMessage());
+278         } catch (InvalidPathException ipe) {
+279             throw new UserDataException(&quot;invalid path &#39;&quot; + file + &quot;&#39;&quot;);
+280         }
+281     }
+282 }
+<a name="13" id="anc13"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="13" type="hidden" />
+</body>
+</html>

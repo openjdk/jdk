@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/filter/ChunkWriter.java</title>
+    <link rel="stylesheet" href="../../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../RepositoryFiles.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../../index.html" target="_top">index</a> <a href="../../dcmd/AbstractDCmd.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/filter/ChunkWriter.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -36,11 +36,10 @@</span>
+  
+  import jdk.jfr.consumer.RecordedEvent;
+  import jdk.jfr.internal.LongMap;
+  import jdk.jfr.internal.Type;
+  import jdk.jfr.internal.consumer.ChunkHeader;
+<span class="udiff-line-removed">- import jdk.jfr.internal.consumer.FileAccess;</span>
+  import jdk.jfr.internal.Logger;
+  import jdk.jfr.internal.LogLevel;
+  import jdk.jfr.internal.LogTag;
+  import jdk.jfr.internal.consumer.RecordingInput;
+  import jdk.jfr.internal.consumer.Reference;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -65,11 +64,11 @@</span>
+      private long lastCheckpoint;
+  
+      public ChunkWriter(Path source, Path destination, Predicate&lt;RecordedEvent&gt; filter) throws IOException {
+          this.destination = destination;
+          this.output = new RecordingOutput(destination.toFile());
+<span class="udiff-line-modified-removed">-         this.input = new RecordingInput(source.toFile(), FileAccess.UNPRIVILEGED);</span>
+<span class="udiff-line-modified-added">+         this.input = new RecordingInput(source.toFile());</span>
+          this.filter = filter;
+      }
+  
+      Constants getPool(Type type) {
+          long typeId = type.getId();
+</pre>
+<center><a href="../RepositoryFiles.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../../index.html" target="_top">index</a> <a href="../../dcmd/AbstractDCmd.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

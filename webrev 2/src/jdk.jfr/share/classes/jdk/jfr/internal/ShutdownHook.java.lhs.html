@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/ShutdownHook.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre> 1 /*
+<a name="1" id="anc1"></a><span class="line-modified"> 2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal;
+27 
+<a name="2" id="anc2"></a><span class="line-removed">28 import java.security.AccessControlContext;</span>
+<span class="line-removed">29 import java.security.AccessController;</span>
+<span class="line-removed">30 import java.security.PrivilegedActionException;</span>
+<span class="line-removed">31 import java.security.PrivilegedExceptionAction;</span>
+<span class="line-removed">32 </span>
+33 import jdk.jfr.RecordingState;
+34 
+35 /**
+36  * Class responsible for dumping recordings on exit
+37  *
+38  */
+<a name="3" id="anc3"></a><span class="line-modified">39 final class ShutdownHook implements Runnable {</span>
+40     private final PlatformRecorder recorder;
+41     Object tlabDummyObject;
+42 
+43     ShutdownHook(PlatformRecorder recorder) {
+<a name="4" id="anc4"></a>
+44         this.recorder = recorder;
+45     }
+46 
+47     @Override
+48     public void run() {
+49         // this allocation is done in order to fetch a new TLAB before
+50         // starting any &quot;real&quot; operations. In low memory situations,
+51         // we would like to take an OOM as early as possible.
+52         tlabDummyObject = new Object();
+53         recorder.setInShutDown();
+54         for (PlatformRecording recording : recorder.getRecordings()) {
+55             if (recording.getDumpOnExit() &amp;&amp; recording.getState() == RecordingState.RUNNING) {
+56                 dump(recording);
+57             }
+58         }
+59         recorder.destroy();
+60     }
+61 
+62     private void dump(PlatformRecording recording) {
+63         try {
+<a name="5" id="anc5"></a><span class="line-modified">64             WriteableUserPath dest = recording.getDestination();</span>
+65             if (dest == null) {
+66                 dest = recording.makeDumpPath();
+67                 recording.setDestination(dest);
+68             }
+69             if (dest != null) {
+70                 recording.stop(&quot;Dump on exit&quot;);
+71             }
+72         } catch (Exception e) {
+73             if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
+74                 Logger.log(LogTag.JFR, LogLevel.DEBUG, &quot;Could not dump recording &quot; + recording.getName() + &quot; on exit.&quot;);
+75             }
+76         }
+77     }
+78 
+79     static final class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+80         @Override
+81         public void uncaughtException(Thread t, Throwable e) {
+82             JVM.uncaughtException(t, e);
+83         }
+84     }
+85 }
+<a name="6" id="anc6"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="6" type="hidden" />
+</body>
+</html>

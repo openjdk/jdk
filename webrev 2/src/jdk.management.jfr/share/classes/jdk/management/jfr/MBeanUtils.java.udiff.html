@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="FlightRecorderMXBeanImpl.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="RemoteRecordingStream.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -23,12 +23,10 @@</span>
+   * questions.
+   */
+  package jdk.management.jfr;
+  
+  import java.io.IOException;
+<span class="udiff-line-removed">- import java.lang.management.ManagementPermission;</span>
+<span class="udiff-line-removed">- import java.security.Permission;</span>
+  import java.time.DateTimeException;
+  import java.time.Duration;
+  import java.time.Instant;
+  import java.time.format.DateTimeParseException;
+  import java.util.List;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -41,37 +39,18 @@</span>
+  import jdk.jfr.Recording;
+  import jdk.jfr.internal.management.ManagementSupport;
+  
+  final class MBeanUtils {
+  
+<span class="udiff-line-removed">-     private static final Permission monitor = new ManagementPermission(&quot;monitor&quot;);</span>
+<span class="udiff-line-removed">-     private static final Permission control = new ManagementPermission(&quot;control&quot;);</span>
+<span class="udiff-line-removed">- </span>
+      static ObjectName createObjectName() {
+          try {
+              return new ObjectName(FlightRecorderMXBean.MXBEAN_NAME);
+          } catch (MalformedObjectNameException mne) {
+              throw new Error(&quot;Can&#39;t happen&quot;, mne);
+          }
+      }
+  
+<span class="udiff-line-removed">-     static void checkControl() {</span>
+<span class="udiff-line-removed">-         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="udiff-line-removed">-         SecurityManager secManager = System.getSecurityManager();</span>
+<span class="udiff-line-removed">-         if (secManager != null) {</span>
+<span class="udiff-line-removed">-             secManager.checkPermission(control);</span>
+<span class="udiff-line-removed">-         }</span>
+<span class="udiff-line-removed">-     }</span>
+<span class="udiff-line-removed">- </span>
+<span class="udiff-line-removed">-     static void checkMonitor() {</span>
+<span class="udiff-line-removed">-         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="udiff-line-removed">-         SecurityManager secManager = System.getSecurityManager();</span>
+<span class="udiff-line-removed">-         if (secManager != null) {</span>
+<span class="udiff-line-removed">-             secManager.checkPermission(monitor);</span>
+<span class="udiff-line-removed">-         }</span>
+<span class="udiff-line-removed">-     }</span>
+<span class="udiff-line-removed">- </span>
+      static &lt;T, R&gt; List&lt;R&gt; transformList(List&lt;T&gt; source, Function&lt;T, R&gt; function) {
+          return source.stream().map(function).collect(Collectors.toList());
+      }
+  
+      static boolean booleanValue(String s) {
+</pre>
+<center><a href="FlightRecorderMXBeanImpl.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="RemoteRecordingStream.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

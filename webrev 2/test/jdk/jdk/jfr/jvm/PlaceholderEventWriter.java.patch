@@ -1,0 +1,23 @@
+diff a/test/jdk/jdk/jfr/jvm/PlaceholderEventWriter.java b/test/jdk/jdk/jfr/jvm/PlaceholderEventWriter.java
+--- a/test/jdk/jdk/jfr/jvm/PlaceholderEventWriter.java
++++ b/test/jdk/jdk/jfr/jvm/PlaceholderEventWriter.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.
+@@ -28,6 +28,10 @@
+ //
+ // When the class is loaded "jdk.jfr.jvm.PlaceholderEventWriter"
+ // will be replaced with "jdk.jfr.internal.event.EventWriter"
+ public class PlaceholderEventWriter {
+ 
++    public static PlaceholderEventWriter getEventWriter() {
++        return null;
++    }
++
+ }

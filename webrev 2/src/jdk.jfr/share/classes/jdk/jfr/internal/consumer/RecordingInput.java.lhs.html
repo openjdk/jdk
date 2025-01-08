@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RecordingInput.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.DataInput;
+ 29 import java.io.EOFException;
+ 30 import java.io.File;
+ 31 import java.io.IOException;
+ 32 import java.io.RandomAccessFile;
+ 33 import java.nio.file.Path;
+ 34 
+ 35 import jdk.jfr.internal.management.HiddenWait;
+<a name="2" id="anc2"></a><span class="line-removed"> 36 import jdk.jfr.internal.util.Utils;</span>
+ 37 
+ 38 public final class RecordingInput implements DataInput, AutoCloseable {
+ 39 
+ 40     private static final int DEFAULT_BLOCK_SIZE = 64_000;
+ 41 
+ 42     private static final class Block {
+ 43         private byte[] bytes = new byte[0];
+ 44         private long blockPosition;
+ 45         private long blockPositionEnd;
+ 46 
+ 47         boolean contains(long position) {
+ 48             return position &gt;= blockPosition &amp;&amp; position &lt; blockPositionEnd;
+ 49         }
+ 50 
+ 51         public void read(RandomAccessFile file, int amount) throws IOException {
+ 52             blockPosition = file.getFilePointer();
+ 53             // reuse byte array, if possible
+ 54             if (amount &gt; bytes.length) {
+ 55                 bytes = new byte[amount];
+ 56             }
+ 57             this.blockPositionEnd = blockPosition + amount;
+ 58             file.readFully(bytes, 0, amount);
+ 59         }
+ 60 
+ 61         public byte get(long position) {
+ 62             return bytes[(int) (position - blockPosition)];
+ 63         }
+ 64 
+ 65         public void reset() {
+ 66             blockPosition = 0;
+ 67             blockPositionEnd = 0;
+ 68         }
+ 69     }
+ 70     private final int blockSize;
+<a name="3" id="anc3"></a><span class="line-removed"> 71     private final FileAccess fileAccess;</span>
+ 72     private final HiddenWait threadSleeper = new HiddenWait();
+ 73     private long pollCount = 1000;
+ 74     private RandomAccessFile file;
+ 75     private String filename;
+ 76     private Block currentBlock = new Block();
+ 77     private Block previousBlock = new Block();
+ 78     private long position;
+ 79     private long size = -1; // Fail fast if setSize(...) has not been called
+ 80                             // before parsing
+ 81 
+<a name="4" id="anc4"></a><span class="line-modified"> 82     RecordingInput(File f, FileAccess fileAccess, int blockSize) throws IOException {</span>
+ 83         this.blockSize = blockSize;
+<a name="5" id="anc5"></a><span class="line-removed"> 84         this.fileAccess = fileAccess;</span>
+ 85         initialize(f);
+ 86     }
+ 87 
+ 88     private void initialize(File f) throws IOException {
+<a name="6" id="anc6"></a><span class="line-modified"> 89         this.filename = fileAccess.getAbsolutePath(f);</span>
+<span class="line-modified"> 90         this.file = fileAccess.openRAF(f, &quot;r&quot;);</span>
+ 91         this.position = 0;
+ 92         this.size = -1;
+ 93         this.currentBlock.reset();
+ 94         previousBlock.reset();
+<a name="7" id="anc7"></a><span class="line-modified"> 95         if (fileAccess.length(f) &lt; 8) {</span>
+<span class="line-modified"> 96             throw new IOException(&quot;Not a valid Flight Recorder file. File length is only &quot; + fileAccess.length(f) + &quot; bytes.&quot;);</span>
+ 97         }
+ 98     }
+ 99 
+<a name="8" id="anc8"></a><span class="line-modified">100     public RecordingInput(File f, FileAccess fileAccess) throws IOException {</span>
+<span class="line-modified">101         this(f, fileAccess, DEFAULT_BLOCK_SIZE);</span>
+102     }
+103 
+104     void positionPhysical(long position) throws IOException {
+105         file.seek(position);
+106     }
+107 
+108     byte readPhysicalByte() throws IOException {
+109         return file.readByte();
+110     }
+111 
+112     long readPhysicalLong() throws IOException {
+113         return file.readLong();
+114     }
+115 
+116     @Override
+117     public final byte readByte() throws IOException {
+118         if (!currentBlock.contains(position)) {
+119             position(position);
+120         }
+121         return currentBlock.get(position++);
+122     }
+123 
+124     @Override
+125     public final void readFully(byte[] dest, int offset, int length) throws IOException {
+126         // TODO: Optimize, use Arrays.copy if all bytes are in current block
+127         // array
+128         for (int i = 0; i &lt; length; i++) {
+129             dest[i + offset] = readByte();
+130         }
+131     }
+132 
+133     @Override
+134     public final void readFully(byte[] dst) throws IOException {
+135         readFully(dst, 0, dst.length);
+136     }
+137 
+138     short readRawShort() throws IOException {
+139         // copied from java.io.Bits
+140         byte b0 = readByte();
+141         byte b1 = readByte();
+142         return (short) ((b1 &amp; 0xFF) + (b0 &lt;&lt; 8));
+143     }
+144 
+145     @Override
+146     public double readDouble() throws IOException {
+147         // copied from java.io.Bits
+148         return Double.longBitsToDouble(readRawLong());
+149     }
+150 
+151     @Override
+152     public float readFloat() throws IOException {
+153         // copied from java.io.Bits
+154         return Float.intBitsToFloat(readRawInt());
+155     }
+156 
+157     int readRawInt() throws IOException {
+158         // copied from java.io.Bits
+159         byte b0 = readByte();
+160         byte b1 = readByte();
+161         byte b2 = readByte();
+162         byte b3 = readByte();
+163         return ((b3 &amp; 0xFF)) + ((b2 &amp; 0xFF) &lt;&lt; 8) + ((b1 &amp; 0xFF) &lt;&lt; 16) + ((b0) &lt;&lt; 24);
+164     }
+165 
+166     long readRawLong() throws IOException {
+167         // copied from java.io.Bits
+168         byte b0 = readByte();
+169         byte b1 = readByte();
+170         byte b2 = readByte();
+171         byte b3 = readByte();
+172         byte b4 = readByte();
+173         byte b5 = readByte();
+174         byte b6 = readByte();
+175         byte b7 = readByte();
+176         return ((b7 &amp; 0xFFL)) + ((b6 &amp; 0xFFL) &lt;&lt; 8) + ((b5 &amp; 0xFFL) &lt;&lt; 16) + ((b4 &amp; 0xFFL) &lt;&lt; 24) + ((b3 &amp; 0xFFL) &lt;&lt; 32) + ((b2 &amp; 0xFFL) &lt;&lt; 40) + ((b1 &amp; 0xFFL) &lt;&lt; 48) + (((long) b0) &lt;&lt; 56);
+177     }
+178 
+179     public final long position() {
+180         return position;
+181     }
+182 
+183     public final void position(long newPosition) throws IOException {
+184         if (!currentBlock.contains(newPosition)) {
+185             if (!previousBlock.contains(newPosition)) {
+186                 if (newPosition &gt; size) {
+187                     throw new EOFException(&quot;Trying to read at &quot; + newPosition + &quot;, but file is only &quot; + size + &quot; bytes.&quot;);
+188                 }
+189                 long blockStart = trimToFileSize(calculateBlockStart(newPosition));
+190                 file.seek(blockStart);
+191                 // trim amount to file size
+192                 long amount = Math.min(size - blockStart, blockSize);
+193                 previousBlock.read(file, (int) amount);
+194             }
+195             // swap previous and current
+196             Block tmp = currentBlock;
+197             currentBlock = previousBlock;
+198             previousBlock = tmp;
+199         }
+200         position = newPosition;
+201     }
+202 
+203     private final long trimToFileSize(long position) throws IOException {
+204         return Math.min(size(), Math.max(0, position));
+205     }
+206 
+207     private final long calculateBlockStart(long newPosition) {
+208         // align to end of current block
+209         if (currentBlock.contains(newPosition - blockSize)) {
+210             return currentBlock.blockPosition + currentBlock.bytes.length;
+211         }
+212         // align before current block
+213         if (currentBlock.contains(newPosition + blockSize)) {
+214             return currentBlock.blockPosition - blockSize;
+215         }
+216         // not near current block, pick middle
+217         return newPosition - blockSize / 2;
+218     }
+219 
+220     long size() {
+221         return size;
+222     }
+223 
+224     @Override
+225     public void close() throws IOException {
+226         RandomAccessFile ra = file;
+227         if (ra != null) {
+228             ra.close();
+229         }
+230     }
+231 
+232     @Override
+233     public final int skipBytes(int n) throws IOException {
+234         long position = position();
+235         position(position + n);
+236         return (int) (position() - position);
+237     }
+238 
+239     @Override
+240     public final boolean readBoolean() throws IOException {
+241         return readByte() != 0;
+242     }
+243 
+244     @Override
+245     public int readUnsignedByte() throws IOException {
+246         return readByte() &amp; 0x00FF;
+247     }
+248 
+249     @Override
+250     public int readUnsignedShort() throws IOException {
+251         return readShort() &amp; 0xFFFF;
+252     }
+253 
+254     @Override
+255     public final String readLine() throws IOException {
+256         throw new UnsupportedOperationException();
+257     }
+258 
+259     // NOTE, this method should really be called readString
+260     // but can&#39;t be renamed without making RecordingInput a
+261     // public class.
+262     //
+263     // This method DOES Not read as expected (s2 + utf8 encoded character)
+264     // instead it read:
+265     // byte encoding
+266     // int size
+267     // data (byte or char)
+268     //
+269     // where encoding
+270     //
+271     // 0, means null
+272     // 1, means UTF8 encoded byte array
+273     // 2, means char array
+274     // 3, means latin-1 (ISO-8859-1) encoded byte array
+275     // 4, means &quot;&quot;
+276     @Override
+277     public String readUTF() throws IOException {
+278         throw new UnsupportedOperationException(&quot;Use StringParser&quot;);
+279     }
+280 
+281     @Override
+282     public char readChar() throws IOException {
+283         return (char) readLong();
+284     }
+285 
+286     @Override
+287     public short readShort() throws IOException {
+288         return (short) readLong();
+289     }
+290 
+291     @Override
+292     public int readInt() throws IOException {
+293         return (int) readLong();
+294     }
+295 
+296     @Override
+297     public long readLong() throws IOException {
+298         final byte[] bytes = currentBlock.bytes;
+299         final int index = (int) (position - currentBlock.blockPosition);
+300 
+301         if (index + 8 &lt; bytes.length &amp;&amp; index &gt;= 0) {
+302             byte b0 = bytes[index];
+303             long ret = (b0 &amp; 0x7FL);
+304             if (b0 &gt;= 0) {
+305                 position += 1;
+306                 return ret;
+307             }
+308             int b1 = bytes[index + 1];
+309             ret += (b1 &amp; 0x7FL) &lt;&lt; 7;
+310             if (b1 &gt;= 0) {
+311                 position += 2;
+312                 return ret;
+313             }
+314             int b2 = bytes[index + 2];
+315             ret += (b2 &amp; 0x7FL) &lt;&lt; 14;
+316             if (b2 &gt;= 0) {
+317                 position += 3;
+318                 return ret;
+319             }
+320             int b3 = bytes[index + 3];
+321             ret += (b3 &amp; 0x7FL) &lt;&lt; 21;
+322             if (b3 &gt;= 0) {
+323                 position += 4;
+324                 return ret;
+325             }
+326             int b4 = bytes[index + 4];
+327             ret += (b4 &amp; 0x7FL) &lt;&lt; 28;
+328             if (b4 &gt;= 0) {
+329                 position += 5;
+330                 return ret;
+331             }
+332             int b5 = bytes[index + 5];
+333             ret += (b5 &amp; 0x7FL) &lt;&lt; 35;
+334             if (b5 &gt;= 0) {
+335                 position += 6;
+336                 return ret;
+337             }
+338             int b6 = bytes[index + 6];
+339             ret += (b6 &amp; 0x7FL) &lt;&lt; 42;
+340             if (b6 &gt;= 0) {
+341                 position += 7;
+342                 return ret;
+343             }
+344             int b7 = bytes[index + 7];
+345             ret += (b7 &amp; 0x7FL) &lt;&lt; 49;
+346             if (b7 &gt;= 0) {
+347                 position += 8;
+348                 return ret;
+349             }
+350             int b8 = bytes[index + 8];// read last byte raw
+351             position += 9;
+352             return ret + (((long) (b8 &amp; 0XFF)) &lt;&lt; 56);
+353         } else {
+354             return readLongSlow();
+355         }
+356     }
+357 
+358     private long readLongSlow() throws IOException {
+359         byte b0 = readByte();
+360         long ret = (b0 &amp; 0x7FL);
+361         if (b0 &gt;= 0) {
+362             return ret;
+363         }
+364 
+365         int b1 = readByte();
+366         ret += (b1 &amp; 0x7FL) &lt;&lt; 7;
+367         if (b1 &gt;= 0) {
+368             return ret;
+369         }
+370 
+371         int b2 = readByte();
+372         ret += (b2 &amp; 0x7FL) &lt;&lt; 14;
+373         if (b2 &gt;= 0) {
+374             return ret;
+375         }
+376 
+377         int b3 = readByte();
+378         ret += (b3 &amp; 0x7FL) &lt;&lt; 21;
+379         if (b3 &gt;= 0) {
+380             return ret;
+381         }
+382 
+383         int b4 = readByte();
+384         ret += (b4 &amp; 0x7FL) &lt;&lt; 28;
+385         if (b4 &gt;= 0) {
+386             return ret;
+387         }
+388 
+389         int b5 = readByte();
+390         ret += (b5 &amp; 0x7FL) &lt;&lt; 35;
+391         if (b5 &gt;= 0) {
+392             return ret;
+393         }
+394 
+395         int b6 = readByte();
+396         ret += (b6 &amp; 0x7FL) &lt;&lt; 42;
+397         if (b6 &gt;= 0) {
+398             return ret;
+399         }
+400 
+401         int b7 = readByte();
+402         ret += (b7 &amp; 0x7FL) &lt;&lt; 49;
+403         if (b7 &gt;= 0) {
+404             return ret;
+405 
+406         }
+407 
+408         int b8 = readByte(); // read last byte raw
+409         return ret + (((long) (b8 &amp; 0XFF)) &lt;&lt; 56);
+410     }
+411 
+412     public void setValidSize(long size) {
+413         if (size &gt; this.size) {
+414             this.size = size;
+415         }
+416     }
+417 
+418     public long getFileSize() throws IOException {
+419         return file.length();
+420     }
+421 
+422     public String getFilename() {
+423         return filename;
+424     }
+425 
+426     // Purpose of this method is to prevent OOM by sanity check
+427     // the minimum required number of bytes against what is available in
+428     // segment/chunk/file
+429     public void require(int minimumBytes, String errorMessage) throws IOException {
+430         if (position + minimumBytes &gt; size) {
+431             throw new IOException(String.format(errorMessage, minimumBytes));
+432         }
+433     }
+434 
+435     // Purpose of this method is to reuse block cache from a
+436     // previous RecordingInput
+437     public void setFile(Path path) throws IOException {
+438         try {
+439             file.close();
+440         } catch (IOException e) {
+441             // perhaps deleted
+442         }
+443         file = null;
+444         initialize(path.toFile());
+445     }
+446 
+447     // Marks that it is OK to poll indefinitely for file update
+448     // By default, only 1000 polls are allowed
+449     public void setStreamed() {
+450         this.pollCount = Long.MAX_VALUE;
+451     }
+452 
+453     // Wait for file to be updated
+454     public void pollWait() throws IOException {
+455         pollCount--;
+456         if (pollCount &lt; 0) {
+457             throw new IOException(&quot;Recording file is stuck in locked stream state.&quot;);
+458         }
+459         threadSleeper.takeNap(1);
+460     }
+461 }
+<a name="9" id="anc9"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="9" type="hidden" />
+</body>
+</html>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/Recording.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="FlightRecorderPermission.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="SettingControl.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/Recording.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import java.io.Closeable;
+ 29 import java.io.IOException;
+ 30 import java.io.InputStream;
+ 31 import java.nio.file.Path;
+ 32 import java.time.Duration;
+ 33 import java.time.Instant;
+ 34 import java.util.HashMap;
+ 35 import java.util.Map;
+ 36 import java.util.Objects;
+ 37 
+ 38 import jdk.jfr.internal.PlatformRecorder;
+ 39 import jdk.jfr.internal.PlatformRecording;
+ 40 import jdk.jfr.internal.Type;
+ 41 import jdk.jfr.internal.util.Utils;
+<span class="line-modified"> 42 import jdk.jfr.internal.WriteableUserPath;</span>
+ 43 
+ 44 /**
+ 45  * Provides means to configure, start, stop and dump recording data to disk.
+ 46  * &lt;p&gt;
+ 47  * The following example shows how configure, start, stop and dump recording data to disk.
+ 48  *
+ 49  * {@snippet class=&quot;Snippets&quot; region=&quot;RecordingOverview&quot;}
+ 50  *
+ 51  * @since 9
+ 52  */
+ 53 public final class Recording implements Closeable {
+ 54 
+ 55     private static class RecordingSettings extends EventSettings {
+ 56 
+ 57         private final Recording recording;
+ 58         private final String identifier;
+ 59 
+ 60         RecordingSettings(Recording r, String identifier) {
+ 61             this.recording = r;
+ 62             this.identifier = identifier;
+</pre>
+<hr />
+<pre>
+351 
+352     /**
+353      * Writes recording data to a file.
+354      * &lt;p&gt;
+355      * For a dump to succeed, the recording must either be 1) running, or 2) stopped
+356      * and to disk. If the recording is in any other state, an
+357      * {@link IOException} is thrown.
+358      *
+359      * @param destination the location where recording data is written, not
+360      *        {@code null}
+361      *
+362      * @throws IOException if recording data can&#39;t be copied to the specified
+363      *         location, for example, if the recording is closed or the
+364      *         destination path is not writable
+365      *
+366      * @see #getState()
+367      * @see #isToDisk()
+368      */
+369     public void dump(Path destination) throws IOException {
+370         Objects.requireNonNull(destination, &quot;destination&quot;);
+<span class="line-modified">371         internal.dump(new WriteableUserPath(destination));</span>
+372     }
+373 
+374     /**
+375      * Returns {@code true} if this recording uses the disk repository, {@code false} otherwise.
+376      * &lt;p&gt;
+377      * If no value is set, {@code true} is returned.
+378      *
+379      * @return {@code true} if the recording uses the disk repository, {@code false}
+380      *         otherwise
+381      */
+382     public boolean isToDisk() {
+383         return internal.isToDisk();
+384     }
+385 
+386     /**
+387      * Determines how much data is kept in the disk repository.
+388      * &lt;p&gt;
+389      * To control the amount of recording data that is stored on disk, the maximum
+390      * amount of data to retain can be specified. When the maximum limit is
+391      * exceeded, the Java Virtual Machine (JVM) removes the oldest chunk to make
+</pre>
+<hr />
+<pre>
+444     /**
+445      * Sets a location where data is written on recording stop, or
+446      * {@code null} if data is not to be dumped.
+447      * &lt;p&gt;
+448      * If a destination is set, this recording is automatically closed
+449      * after data is successfully copied to the destination path.
+450      * &lt;p&gt;
+451      * If a destination is &lt;em&gt;not&lt;/em&gt; set, Flight Recorder retains the
+452      * recording data until this recording is closed. Use the {@link #dump(Path)} method to
+453      * manually write data to a file.
+454      *
+455      * @param destination the destination path, or {@code null} if recording should
+456      *        not be dumped at stop
+457      *
+458      * @throws IllegalStateException if recording is in the {@code STOPPED} or
+459      *         {@code CLOSED} state.
+460      *
+461      * @throws IOException if the path is not writable
+462      */
+463     public void setDestination(Path destination) throws IOException {
+<span class="line-modified">464         internal.setDestination(destination != null ? new WriteableUserPath(destination) : null);</span>
+465     }
+466 
+467     /**
+468      * Returns the destination file, where recording data is written when the
+469      * recording stops, or {@code null} if no destination is set.
+470      *
+471      * @return the destination file, or {@code null} if not set.
+472      */
+473     public Path getDestination() {
+<span class="line-modified">474         WriteableUserPath usp = internal.getDestination();</span>
+<span class="line-modified">475         if (usp == null) {</span>
+476             return null;
+477         } else {
+<span class="line-modified">478             return usp.getPotentiallyMaliciousOriginal();</span>
+479         }
+480     }
+481 
+482     /**
+483      * Returns a unique ID for this recording.
+484      *
+485      * @return the recording ID
+486      */
+487     public long getId() {
+488         return internal.getId();
+489     }
+490 
+491     /**
+492      * Sets a human-readable name (for example, {@code &quot;My Recording&quot;}).
+493      *
+494      * @param name the recording name, not {@code null}
+495      *
+496      * @throws IllegalStateException if the recording is in {@code CLOSED} state
+497      */
+498     public void setName(String name) {
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import java.io.Closeable;
+ 29 import java.io.IOException;
+ 30 import java.io.InputStream;
+ 31 import java.nio.file.Path;
+ 32 import java.time.Duration;
+ 33 import java.time.Instant;
+ 34 import java.util.HashMap;
+ 35 import java.util.Map;
+ 36 import java.util.Objects;
+ 37 
+ 38 import jdk.jfr.internal.PlatformRecorder;
+ 39 import jdk.jfr.internal.PlatformRecording;
+ 40 import jdk.jfr.internal.Type;
+ 41 import jdk.jfr.internal.util.Utils;
+<span class="line-modified"> 42 import jdk.jfr.internal.WriteablePath;</span>
+ 43 
+ 44 /**
+ 45  * Provides means to configure, start, stop and dump recording data to disk.
+ 46  * &lt;p&gt;
+ 47  * The following example shows how configure, start, stop and dump recording data to disk.
+ 48  *
+ 49  * {@snippet class=&quot;Snippets&quot; region=&quot;RecordingOverview&quot;}
+ 50  *
+ 51  * @since 9
+ 52  */
+ 53 public final class Recording implements Closeable {
+ 54 
+ 55     private static class RecordingSettings extends EventSettings {
+ 56 
+ 57         private final Recording recording;
+ 58         private final String identifier;
+ 59 
+ 60         RecordingSettings(Recording r, String identifier) {
+ 61             this.recording = r;
+ 62             this.identifier = identifier;
+</pre>
+<hr />
+<pre>
+351 
+352     /**
+353      * Writes recording data to a file.
+354      * &lt;p&gt;
+355      * For a dump to succeed, the recording must either be 1) running, or 2) stopped
+356      * and to disk. If the recording is in any other state, an
+357      * {@link IOException} is thrown.
+358      *
+359      * @param destination the location where recording data is written, not
+360      *        {@code null}
+361      *
+362      * @throws IOException if recording data can&#39;t be copied to the specified
+363      *         location, for example, if the recording is closed or the
+364      *         destination path is not writable
+365      *
+366      * @see #getState()
+367      * @see #isToDisk()
+368      */
+369     public void dump(Path destination) throws IOException {
+370         Objects.requireNonNull(destination, &quot;destination&quot;);
+<span class="line-modified">371         internal.dump(new WriteablePath(destination));</span>
+372     }
+373 
+374     /**
+375      * Returns {@code true} if this recording uses the disk repository, {@code false} otherwise.
+376      * &lt;p&gt;
+377      * If no value is set, {@code true} is returned.
+378      *
+379      * @return {@code true} if the recording uses the disk repository, {@code false}
+380      *         otherwise
+381      */
+382     public boolean isToDisk() {
+383         return internal.isToDisk();
+384     }
+385 
+386     /**
+387      * Determines how much data is kept in the disk repository.
+388      * &lt;p&gt;
+389      * To control the amount of recording data that is stored on disk, the maximum
+390      * amount of data to retain can be specified. When the maximum limit is
+391      * exceeded, the Java Virtual Machine (JVM) removes the oldest chunk to make
+</pre>
+<hr />
+<pre>
+444     /**
+445      * Sets a location where data is written on recording stop, or
+446      * {@code null} if data is not to be dumped.
+447      * &lt;p&gt;
+448      * If a destination is set, this recording is automatically closed
+449      * after data is successfully copied to the destination path.
+450      * &lt;p&gt;
+451      * If a destination is &lt;em&gt;not&lt;/em&gt; set, Flight Recorder retains the
+452      * recording data until this recording is closed. Use the {@link #dump(Path)} method to
+453      * manually write data to a file.
+454      *
+455      * @param destination the destination path, or {@code null} if recording should
+456      *        not be dumped at stop
+457      *
+458      * @throws IllegalStateException if recording is in the {@code STOPPED} or
+459      *         {@code CLOSED} state.
+460      *
+461      * @throws IOException if the path is not writable
+462      */
+463     public void setDestination(Path destination) throws IOException {
+<span class="line-modified">464         internal.setDestination(destination != null ? new WriteablePath(destination) : null);</span>
+465     }
+466 
+467     /**
+468      * Returns the destination file, where recording data is written when the
+469      * recording stops, or {@code null} if no destination is set.
+470      *
+471      * @return the destination file, or {@code null} if not set.
+472      */
+473     public Path getDestination() {
+<span class="line-modified">474         WriteablePath wp = internal.getDestination();</span>
+<span class="line-modified">475         if (wp == null) {</span>
+476             return null;
+477         } else {
+<span class="line-modified">478             return wp.getPath();</span>
+479         }
+480     }
+481 
+482     /**
+483      * Returns a unique ID for this recording.
+484      *
+485      * @return the recording ID
+486      */
+487     public long getId() {
+488         return internal.getId();
+489     }
+490 
+491     /**
+492      * Sets a human-readable name (for example, {@code &quot;My Recording&quot;}).
+493      *
+494      * @param name the recording name, not {@code null}
+495      *
+496      * @throws IllegalStateException if the recording is in {@code CLOSED} state
+497      */
+498     public void setName(String name) {
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="FlightRecorderPermission.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="SettingControl.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

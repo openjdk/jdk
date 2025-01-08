@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/FlightRecorderPermission.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="FlightRecorder.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="Recording.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/FlightRecorderPermission.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 23,20 ***</span>
+   * questions.
+   */
+  
+  package jdk.jfr;
+  
+<span class="line-removed">- import java.security.AccessControlContext;</span>
+  import java.util.List;
+  import java.util.Map;
+  import java.util.Objects;
+  
+  import jdk.jfr.internal.PlatformEventType;
+  import jdk.jfr.internal.PlatformRecorder;
+  import jdk.jfr.internal.PlatformRecording;
+  import jdk.jfr.internal.PrivateAccess;
+<span class="line-removed">- import jdk.jfr.internal.SecuritySupport;</span>
+  import jdk.jfr.internal.Type;
+  import jdk.jfr.internal.management.EventSettingsModifier;
+  
+  /**
+   * Permission for controlling access to Flight Recorder.
+<span class="line-new-header">--- 23,18 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 154,16 ***</span>
+          @Override
+          public PlatformRecorder getPlatformRecorder() {
+              return FlightRecorder.getFlightRecorder().getInternal();
+          }
+  
+<span class="line-removed">-         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed">-         @Override</span>
+<span class="line-removed">-         public AccessControlContext getContext(SettingControl settingControl) {</span>
+<span class="line-removed">-             return settingControl.getContext();</span>
+<span class="line-removed">-         }</span>
+<span class="line-removed">- </span>
+          @Override
+          public EventSettings newEventSettings(EventSettingsModifier esm) {
+              return new EventSettings.DelegatedEventSettings(esm);
+          }
+  
+<span class="line-new-header">--- 152,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 182,10 ***</span>
+       *
+       * @throws IllegalArgumentException if {@code name} is empty or not valid
+       */
+      public FlightRecorderPermission(String name) {
+          super(Objects.requireNonNull(name, &quot;name&quot;));
+<span class="line-modified">!         if (!name.equals(SecuritySupport.ACCESS_FLIGHT_RECORDER) &amp;&amp; !name.equals(SecuritySupport.REGISTER_EVENT)) {</span>
+              throw new IllegalArgumentException(&quot;name: &quot; + name);
+          }
+      }
+  }
+<span class="line-new-header">--- 174,10 ---</span>
+       *
+       * @throws IllegalArgumentException if {@code name} is empty or not valid
+       */
+      public FlightRecorderPermission(String name) {
+          super(Objects.requireNonNull(name, &quot;name&quot;));
+<span class="line-modified">!         if (!name.equals(&quot;accessFlightRecorder&quot;) &amp;&amp; !name.equals(&quot;registerEvent&quot;)) {</span>
+              throw new IllegalArgumentException(&quot;name: &quot; + name);
+          }
+      }
+  }
+</pre>
+<center><a href="FlightRecorder.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="Recording.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

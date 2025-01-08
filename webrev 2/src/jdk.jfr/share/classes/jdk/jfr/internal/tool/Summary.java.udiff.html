@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Summary.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="Disassemble.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../util/Utils.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Summary.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -39,11 +39,10 @@</span>
+  
+  import jdk.jfr.EventType;
+  import jdk.jfr.internal.MetadataDescriptor;
+  import jdk.jfr.internal.Type;
+  import jdk.jfr.internal.consumer.ChunkHeader;
+<span class="udiff-line-removed">- import jdk.jfr.internal.consumer.FileAccess;</span>
+  import jdk.jfr.internal.consumer.RecordingInput;
+  import jdk.jfr.internal.util.UserDataException;
+  import jdk.jfr.internal.util.UserSyntaxException;
+  
+  final class Summary extends Command {
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -91,11 +90,11 @@</span>
+  
+      private void printInformation(Path p) throws IOException {
+          long totalDuration = 0;
+          long chunks = 0;
+  
+<span class="udiff-line-modified-removed">-         try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILEGED)) {</span>
+<span class="udiff-line-modified-added">+         try (RecordingInput input = new RecordingInput(p.toFile())) {</span>
+              ChunkHeader first = new ChunkHeader(input);
+              ChunkHeader ch = first;
+              String eventPrefix = Type.EVENT_NAME_PREFIX;
+              if (first.getMajor() == 1) {
+                  eventPrefix = &quot;com.oracle.jdk.&quot;;
+</pre>
+<center><a href="Disassemble.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../util/Utils.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

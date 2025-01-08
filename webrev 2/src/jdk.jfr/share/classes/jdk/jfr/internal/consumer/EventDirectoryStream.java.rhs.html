@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/EventDirectoryStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.nio.file.Path;
+<a name="2" id="anc2"></a>
+ 30 import java.time.Instant;
+ 31 import java.util.Arrays;
+ 32 import java.util.Comparator;
+ 33 import java.util.List;
+<a name="3" id="anc3"></a>
+ 34 import java.util.concurrent.atomic.AtomicLong;
+ 35 import java.util.function.Consumer;
+ 36 
+ 37 import jdk.jfr.Configuration;
+ 38 import jdk.jfr.RecordingState;
+ 39 import jdk.jfr.consumer.RecordedEvent;
+ 40 import jdk.jfr.internal.JVM;
+ 41 import jdk.jfr.internal.LogLevel;
+ 42 import jdk.jfr.internal.LogTag;
+ 43 import jdk.jfr.internal.Logger;
+ 44 import jdk.jfr.internal.PlatformRecording;
+<a name="4" id="anc4"></a>
+ 45 import jdk.jfr.internal.util.Utils;
+ 46 import jdk.jfr.internal.management.StreamBarrier;
+ 47 
+ 48 /**
+ 49  * Implementation of an {@code EventStream}} that operates against a directory
+ 50  * with chunk files.
+ 51  *
+ 52  */
+ 53 public final class EventDirectoryStream extends AbstractEventStream {
+ 54 
+ 55     private static final Comparator&lt;? super RecordedEvent&gt; EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
+ 56 
+ 57     private final RepositoryFiles repositoryFiles;
+<a name="5" id="anc5"></a>
+ 58     private final PlatformRecording recording;
+ 59     private final StreamBarrier barrier = new StreamBarrier();
+ 60     private final AtomicLong streamId = new AtomicLong();
+ 61     private ChunkParser currentParser;
+ 62     private long currentChunkStartNanos;
+ 63     private RecordedEvent[] sortedCache;
+ 64     private int threadExclusionLevel = 0;
+ 65     private volatile Consumer&lt;Long&gt; onCompleteHandler;
+ 66 
+ 67     public EventDirectoryStream(
+<a name="6" id="anc6"></a>
+
+ 68             Path p,
+<a name="7" id="anc7"></a>
+ 69             PlatformRecording recording,
+ 70             List&lt;Configuration&gt; configurations,
+ 71             boolean allowSubDirectories) throws IOException {
+<a name="8" id="anc8"></a><span class="line-modified"> 72         super(configurations);</span>
+ 73         this.recording = recording;
+<a name="9" id="anc9"></a><span class="line-modified"> 74         this.repositoryFiles = new RepositoryFiles(p, allowSubDirectories);</span>
+
+
+
+
+ 75         this.streamId.incrementAndGet();
+ 76         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, &quot;Stream &quot; + streamId + &quot; started.&quot;);
+ 77     }
+ 78 
+ 79     @Override
+ 80     public void close() {
+ 81         closeParser();
+ 82         dispatcher().runCloseActions();
+ 83         repositoryFiles.close();
+ 84         if (currentParser != null) {
+ 85             currentParser.close();
+ 86             onComplete(currentParser.getEndNanos());
+ 87         }
+ 88     }
+ 89 
+ 90     public void setChunkCompleteHandler(Consumer&lt;Long&gt; handler) {
+ 91         onCompleteHandler = handler;
+ 92     }
+ 93 
+ 94     private void onComplete(long epochNanos) {
+ 95         Consumer&lt;Long&gt; handler = onCompleteHandler;
+ 96         if (handler != null) {
+ 97             handler.accept(epochNanos);
+ 98         }
+ 99     }
+100 
+101     @Override
+102     public void start() {
+103         start(Utils.timeToNanos(Instant.now()));
+104     }
+105 
+106     @Override
+107     public void startAsync() {
+108         startAsync(Utils.timeToNanos(Instant.now()));
+109     }
+110 
+111     @Override
+112     protected void process() throws IOException {
+113         Thread t = Thread.currentThread();
+114         try {
+115             if (JVM.isExcluded(t)) {
+116                 threadExclusionLevel++;
+117             } else {
+118                 JVM.exclude(t);
+119             }
+120             processRecursionSafe();
+121         } finally {
+122             if (threadExclusionLevel &gt; 0) {
+123                 threadExclusionLevel--;
+124             } else {
+125                 JVM.include(t);
+126             }
+127         }
+128     }
+129 
+130     protected void processRecursionSafe() throws IOException {
+131         Dispatcher lastDisp = null;
+132         Dispatcher disp = dispatcher();
+133         Path path;
+134         boolean validStartTime = isRecordingStream() || disp.startTime != null;
+135         if (validStartTime) {
+136             path = repositoryFiles.firstPath(disp.startNanos, true);
+137         } else {
+138             path = repositoryFiles.lastPath(true);
+139         }
+140         if (path == null) { // closed
+141             logStreamEnd(&quot;no first chunk file found.&quot;);
+142             return;
+143         }
+144         currentChunkStartNanos = repositoryFiles.getTimestamp(path);
+<a name="10" id="anc10"></a><span class="line-modified">145         try (RecordingInput input = new RecordingInput(path.toFile())) {</span>
+146             input.setStreamed();
+147             currentParser = new ChunkParser(input, disp.parserConfiguration, parserState());
+148             long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
+149             long filterStart = validStartTime ? disp.startNanos : segmentStart;
+150             long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
+151             while (!isClosed()) {
+152                 onMetadata(currentParser);
+153                 while (!isClosed() &amp;&amp; !currentParser.isChunkFinished()) {
+154                     disp = dispatcher();
+155                     if (disp != lastDisp) {
+156                         var ranged = disp.parserConfiguration.withRange(filterStart, filterEnd);
+157                         currentParser.updateConfiguration(ranged, true);
+158                         lastDisp = disp;
+159                     }
+160                     if (disp.parserConfiguration.ordered()) {
+161                         processOrdered(disp);
+162                     } else {
+163                         processUnordered(disp);
+164                     }
+165                     currentParser.resetCache();
+166                     long lastFlush = currentParser.getLastFlush();
+167                     if (lastFlush  &gt; filterEnd) {
+168                         logStreamEnd(&quot;end time at &quot; + filterEnd +
+169                                      &quot;ns (epoch), parser at &quot; + lastFlush + &quot;ns (epoch).&quot;);
+170                         return;
+171                     }
+172                 }
+173                 long endNanos = currentParser.getStartNanos() + currentParser.getChunkDuration();
+174                 long endMillis = Instant.ofEpochSecond(0, endNanos).toEpochMilli();
+175 
+176                 barrier.check(); // block if recording is being stopped
+177                 if (barrier.getStreamEnd() &lt;= endMillis) {
+178                     String msg = &quot;stopped at &quot; + barrier.getStreamEnd() + &quot;ms (epoch), &quot;;
+179                     msg += &quot;parser at &quot; + endMillis + &quot;ms (epoch), &quot; + endNanos + &quot;ns (epoch)&quot;;
+180                     logStreamEnd(msg);
+181                     return;
+182                 }
+183 
+184                 if (isRecordingStream()) {
+185                     if (recording.getState() == RecordingState.STOPPED &amp;&amp; !barrier.used()) {
+186                         logStreamEnd(&quot;recording stopped externally.&quot;);
+187                         return;
+188                     }
+189                 }
+190 
+191                 if (repositoryFiles.hasFixedPath() &amp;&amp; currentParser.isFinalChunk()) {
+192                     logStreamEnd(&quot;JVM process exited/crashed, or repository migrated to an unknown location.&quot;);
+193                     return;
+194                 }
+195                 if (isClosed()) {
+196                     logStreamEnd(&quot;stream closed.&quot;);
+197                     return;
+198                 }
+199                 long durationNanos = currentParser.getChunkDuration();
+200                 long endChunkNanos = currentParser.getEndNanos();
+201                 if (durationNanos == 0) {
+202                     // Avoid reading the same chunk again and again if
+203                     // duration is 0 ns
+204                     durationNanos++;
+205                     if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO)) {
+206                         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, &quot;Unexpected chunk with 0 ns duration&quot;);
+207                     }
+208                 }
+209                 path = repositoryFiles.nextPath(currentChunkStartNanos + durationNanos, true);
+210                 if (path == null) {
+211                     logStreamEnd(&quot;no more chunk files found.&quot;);
+212                     return;
+213                 }
+214                 currentChunkStartNanos = repositoryFiles.getTimestamp(path);
+215                 input.setFile(path);
+216                 onComplete(endChunkNanos);
+217                 currentParser = currentParser.newChunkParser();
+218                 // TODO: Optimization. No need filter when we reach new chunk
+219                 // Could set start = 0;
+220             }
+221         }
+222     }
+223 
+224     private void logStreamEnd(String text) {
+225         String msg = &quot;Stream &quot; + streamId + &quot; ended, &quot; + text;
+226         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, msg);
+227     }
+228 
+229     protected boolean isRecordingStream() {
+230         return recording != null;
+231     }
+232 
+233     private void processOrdered(Dispatcher c) throws IOException {
+234         if (sortedCache == null) {
+235             sortedCache = new RecordedEvent[100_000];
+236         }
+237         int index = 0;
+238         while (true) {
+239             RecordedEvent e = currentParser.readStreamingEvent();
+240             if (e == null) {
+241                 break;
+242             }
+243             if (index == sortedCache.length) {
+244                 sortedCache = Arrays.copyOf(sortedCache, sortedCache.length * 2);
+245             }
+246             sortedCache[index++] = e;
+247         }
+248         onMetadata(currentParser);
+249         // no events found
+250         if (index == 0 &amp;&amp; currentParser.isChunkFinished()) {
+251             onFlush();
+252             return;
+253         }
+254         // at least 2 events, sort them
+255         if (index &gt; 1) {
+256             Arrays.sort(sortedCache, 0, index, EVENT_COMPARATOR);
+257         }
+258         for (int i = 0; i &lt; index; i++) {
+259             c.dispatch(sortedCache[i]);
+260         }
+261         onFlush();
+262         return;
+263     }
+264 
+265     private boolean processUnordered(Dispatcher c) throws IOException {
+266         while (true) {
+267             RecordedEvent e = currentParser.readStreamingEvent();
+268             if (e == null) {
+269                 onFlush();
+270                 return true;
+271             }
+272             onMetadata(currentParser);
+273             c.dispatch(e);
+274         }
+275     }
+276 
+277     public StreamBarrier activateStreamBarrier() {
+278         barrier.activate();
+279         return barrier;
+280     }
+281 }
+<a name="11" id="anc11"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="11" type="hidden" />
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/JVMSupport.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal;
+ 26 
+ 27 import java.io.IOException;
+ 28 import java.time.Instant;
+ 29 import java.time.LocalDateTime;
+ 30 
+ 31 import jdk.jfr.Recording;
+ 32 import jdk.jfr.internal.event.EventConfiguration;
+ 33 import jdk.jfr.internal.management.HiddenWait;
+ 34 import jdk.jfr.internal.util.Utils;
+ 35 import jdk.jfr.internal.util.ValueFormatter;
+ 36 
+ 37 /**
+ 38  * Checks if the running VM supports Flight Recorder.
+ 39  *
+ 40  * Purpose of this helper class is to detect early and cleanly if the VM has
+ 41  * support for Flight Recorder, i.e. not throw {@link UnsatisfiedLinkError} in
+ 42  * unexpected places.
+ 43  * &lt;p&gt;
+ 44  * This is needed so a disabled-jfr.jar can be built for non Oracle JDKs.
+ 45  */
+ 46 public final class JVMSupport {
+ 47     private static final String UNSUPPORTED_VM_MESSAGE = &quot;Flight Recorder is not supported on this VM&quot;;
+ 48     private static final boolean notAvailable = !checkAvailability();
+ 49     /*
+ 50      * This field will be lazily initialized and the access is not synchronized.
+ 51      * The possible data race is benign and is worth of not introducing any contention here.
+ 52      */
+ 53     private static Instant lastTimestamp;
+ 54     private static volatile boolean nativeOK;
+ 55 
+ 56     private static boolean checkAvailability() {
+ 57         // set jfr.unsupported.vm to true to test API on an unsupported VM
+ 58         try {
+<a name="2" id="anc2"></a><span class="line-modified"> 59             if (Boolean.getBoolean(&quot;jfr.unsupported.vm&quot;)) {</span>
+ 60                 return false;
+ 61             }
+ 62         } catch (NoClassDefFoundError cnfe) {
+ 63             // May happen on JDK 8, where jdk.internal.misc.Unsafe can&#39;t be found
+ 64             return false;
+ 65         }
+ 66         try {
+ 67             // Will typically throw UnsatisfiedLinkError if
+ 68             // there is no native implementation
+ 69             JVM.isAvailable();
+ 70             return true;
+ 71         } catch (Throwable t) {
+ 72             return false;
+ 73         }
+ 74     }
+ 75 
+ 76     public static void ensureWithInternalError() {
+ 77         if (notAvailable) {
+ 78             throw new InternalError(UNSUPPORTED_VM_MESSAGE);
+ 79         }
+ 80     }
+ 81 
+ 82     public static void ensureWithIOException() throws IOException {
+ 83         if (notAvailable) {
+ 84             throw new IOException(UNSUPPORTED_VM_MESSAGE);
+ 85         }
+ 86     }
+ 87 
+ 88     public static void ensureWithIllegalStateException() {
+ 89         if (notAvailable) {
+ 90             throw new IllegalStateException(UNSUPPORTED_VM_MESSAGE);
+ 91         }
+ 92     }
+ 93 
+ 94     public static boolean isNotAvailable() {
+ 95         return notAvailable;
+ 96     }
+ 97 
+ 98     public static void tryToInitializeJVM() {
+ 99     }
+100 
+101     static long nanosToTicks(long nanos) {
+102         return (long) (nanos * JVM.getTimeConversionFactor());
+103     }
+104 
+105     static long getChunkStartNanos() {
+106         long nanos = JVM.getChunkStartNanos();
+107         // Spin here to give Instant.now() a chance to catch up.
+108         awaitUniqueTimestamp();
+109         return nanos;
+110     }
+111 
+112     private static void awaitUniqueTimestamp() {
+113         if (lastTimestamp == null) {
+114             lastTimestamp = Instant.now(); // lazy initialization
+115         }
+116         while (true) {
+117             Instant time = Instant.now();
+118             if (!time.equals(lastTimestamp)) {
+119                 lastTimestamp = time;
+120                 return;
+121             }
+122             HiddenWait hiddenWait = new HiddenWait();
+123             hiddenWait.takeNap(1);
+124         }
+125     }
+126 
+127     public static synchronized EventConfiguration getConfiguration(Class&lt;? extends jdk.internal.event.Event&gt; eventClass) {
+128         Utils.ensureValidEventSubclass(eventClass);
+129         Object configuration = JVM.getConfiguration(eventClass);
+130         if (configuration == null || configuration instanceof EventConfiguration) {
+131             return (EventConfiguration) configuration;
+132         }
+133         throw new InternalError(&quot;Could not get configuration object on event class &quot; + eventClass.getName());
+134     }
+135 
+136     public static synchronized void setConfiguration(Class&lt;? extends jdk.internal.event.Event&gt; eventClass, EventConfiguration configuration) {
+137         Utils.ensureValidEventSubclass(eventClass);
+138         if (!JVM.setConfiguration(eventClass, configuration)) {
+139             throw new InternalError(&quot;Could not set configuration object on event class &quot; + eventClass.getName());
+140         }
+141     }
+142 
+143     static boolean shouldInstrument(boolean isJDK, String name) {
+144         if (!isJDK) {
+145             return true;
+146         }
+147         if (!name.contains(&quot;.Container&quot;)) {
+148             // Didn&#39;t match @Name(&quot;jdk.jfr.Container*&quot;) or class name &quot;jdk.jfr.events.Container*&quot;
+149             return true;
+150         }
+151         return JVM.isContainerized();
+152     }
+153 
+154     public static String makeFilename(Recording recording) {
+155         String pid = JVM.getPid();
+156         String date = ValueFormatter.formatDateTime(LocalDateTime.now());
+157         String idText = recording == null ? &quot;&quot; :  &quot;-id-&quot; + Long.toString(recording.getId());
+158         return &quot;hotspot-&quot; + &quot;pid-&quot; + pid + idText + &quot;-&quot; + date + &quot;.jfr&quot;;
+159     }
+160 
+161     public static boolean createFailedNativeJFR() throws IllegalStateException {
+162         return JVM.createJFR(true);
+163     }
+164 
+165     public static void createJFR() {
+166         nativeOK = JVM.createJFR(false);
+167     }
+168 
+169     public static boolean destroyJFR() {
+170         boolean result = JVM.destroyJFR();
+171         nativeOK = !result;
+172         return result;
+173     }
+174 
+175     public static boolean hasJFR() {
+176         return nativeOK;
+177     }
+178 }
+<a name="3" id="anc3"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="3" type="hidden" />
+</body>
+</html>

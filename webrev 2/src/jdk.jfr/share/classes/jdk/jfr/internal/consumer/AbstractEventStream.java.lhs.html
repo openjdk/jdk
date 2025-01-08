@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/AbstractEventStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.IOException;
+<a name="2" id="anc2"></a><span class="line-removed"> 29 import java.security.AccessControlContext;</span>
+<span class="line-removed"> 30 import java.security.AccessController;</span>
+<span class="line-removed"> 31 import java.security.PrivilegedAction;</span>
+ 32 import java.time.Duration;
+ 33 import java.time.Instant;
+ 34 import java.util.List;
+ 35 import java.util.Objects;
+ 36 import java.util.concurrent.CountDownLatch;
+ 37 import java.util.concurrent.TimeUnit;
+ 38 import java.util.concurrent.atomic.AtomicLong;
+ 39 import java.util.function.Consumer;
+ 40 
+ 41 import jdk.jfr.Configuration;
+ 42 import jdk.jfr.EventType;
+ 43 import jdk.jfr.consumer.EventStream;
+ 44 import jdk.jfr.consumer.MetadataEvent;
+ 45 import jdk.jfr.consumer.RecordedEvent;
+ 46 import jdk.jfr.internal.LogLevel;
+ 47 import jdk.jfr.internal.LogTag;
+ 48 import jdk.jfr.internal.Logger;
+<a name="3" id="anc3"></a><span class="line-removed"> 49 import jdk.jfr.internal.SecuritySupport;</span>
+ 50 
+ 51 /*
+ 52  * Purpose of this class is to simplify the implementation of
+ 53  * an event stream.
+ 54  */
+ 55 public abstract class AbstractEventStream implements EventStream {
+ 56     private static final AtomicLong counter = new AtomicLong();
+ 57 
+ 58     private final CountDownLatch terminated = new CountDownLatch(1);
+ 59     private final Runnable flushOperation = () -&gt; dispatcher().runFlushActions();
+<a name="4" id="anc4"></a><span class="line-removed"> 60     @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed"> 61     private final AccessControlContext accessControllerContext;</span>
+ 62     private final StreamConfiguration streamConfiguration = new StreamConfiguration();
+ 63     private final List&lt;Configuration&gt; configurations;
+ 64     private final ParserState parserState = new ParserState();
+ 65     private volatile boolean closeOnComplete = true;
+ 66     private Dispatcher dispatcher;
+ 67     private boolean daemon = false;
+ 68 
+ 69 
+<a name="5" id="anc5"></a><span class="line-modified"> 70     AbstractEventStream(@SuppressWarnings(&quot;removal&quot;) AccessControlContext acc, List&lt;Configuration&gt; configurations) throws IOException {</span>
+<span class="line-removed"> 71         this.accessControllerContext = Objects.requireNonNull(acc);</span>
+ 72         this.configurations = configurations;
+ 73     }
+ 74 
+ 75     @Override
+ 76     public abstract void start();
+ 77 
+ 78     @Override
+ 79     public abstract void startAsync();
+ 80 
+ 81     @Override
+ 82     public abstract void close();
+ 83 
+ 84     protected final Dispatcher dispatcher() {
+ 85         if (streamConfiguration.hasChanged()) { // quick check
+ 86             synchronized (streamConfiguration) {
+ 87                 dispatcher = new Dispatcher(streamConfiguration);
+ 88                 streamConfiguration.setChanged(false);
+ 89                 if (Logger.shouldLog(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG)) {
+ 90                     Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, dispatcher.toString());
+ 91                 }
+ 92             }
+ 93         }
+ 94         return dispatcher;
+ 95     }
+ 96 
+ 97     @Override
+ 98     public final void setOrdered(boolean ordered) {
+ 99         streamConfiguration.setOrdered(ordered);
+100     }
+101 
+102     @Override
+103     public final void setReuse(boolean reuse) {
+104         streamConfiguration.setReuse(reuse);
+105     }
+106 
+107     // Only used if -Xlog:jfr+event* is specified
+108     public final void setDaemon(boolean daemon) {
+109         this.daemon = daemon;
+110     }
+111 
+112     // When set to false, it becomes the callers responsibility
+113     // to invoke close() and clean up resources. By default,
+114     // the resource is cleaned up when the process() call has finished.
+115     public final void setCloseOnComplete(boolean closeOnComplete) {
+116         this.closeOnComplete = closeOnComplete;
+117     }
+118 
+119     @Override
+120     public final void setStartTime(Instant startTime) {
+121         Objects.requireNonNull(startTime, &quot;startTime&quot;);
+122         synchronized (streamConfiguration) {
+123             if (streamConfiguration.started) {
+124                 throw new IllegalStateException(&quot;Stream is already started&quot;);
+125             }
+126             if (startTime.isBefore(Instant.EPOCH)) {
+127                 startTime = Instant.EPOCH;
+128             }
+129             streamConfiguration.setStartTime(startTime);
+130         }
+131     }
+132 
+133     @Override
+134     public final void setEndTime(Instant endTime) {
+135         Objects.requireNonNull(endTime, &quot;endTime&quot;);
+136         synchronized (streamConfiguration) {
+137             if (streamConfiguration.started) {
+138                 throw new IllegalStateException(&quot;Stream is already started&quot;);
+139             }
+140             streamConfiguration.setEndTime(endTime);
+141         }
+142     }
+143 
+144     @Override
+145     public final void onEvent(Consumer&lt;RecordedEvent&gt; action) {
+146         Objects.requireNonNull(action, &quot;action&quot;);
+147         streamConfiguration.addEventAction(action);
+148     }
+149 
+150     @Override
+151     public final void onEvent(String eventName, Consumer&lt;RecordedEvent&gt; action) {
+152         Objects.requireNonNull(eventName, &quot;eventName&quot;);
+153         Objects.requireNonNull(action, &quot;action&quot;);
+154         streamConfiguration.addEventAction(eventName, action);
+155     }
+156 
+157     @Override
+158     public final void onFlush(Runnable action) {
+159         Objects.requireNonNull(action, &quot;action&quot;);
+160         streamConfiguration.addFlushAction(action);
+161     }
+162 
+163     @Override
+164     public final void onClose(Runnable action) {
+165         Objects.requireNonNull(action, &quot;action&quot;);
+166         streamConfiguration.addCloseAction(action);
+167     }
+168 
+169     @Override
+170     public final void onError(Consumer&lt;Throwable&gt; action) {
+171         Objects.requireNonNull(action, &quot;action&quot;);
+172         streamConfiguration.addErrorAction(action);
+173     }
+174 
+175     @Override
+176     public final boolean remove(Object action) {
+177         Objects.requireNonNull(action, &quot;action&quot;);
+178         return streamConfiguration.remove(action);
+179     }
+180 
+181     @Override
+182     public final void awaitTermination() throws InterruptedException {
+183         awaitTermination(Duration.ofMillis(0));
+184     }
+185 
+186     @Override
+187     public final void awaitTermination(Duration timeout) throws InterruptedException {
+188         Objects.requireNonNull(timeout, &quot;timeout&quot;);
+189         if (timeout.isNegative()) {
+190             throw new IllegalArgumentException(&quot;timeout value is negative&quot;);
+191         }
+192 
+193         long nanos;
+194         try {
+195             nanos = timeout.toNanos();
+196         } catch (ArithmeticException a) {
+197             nanos = Long.MAX_VALUE;
+198         }
+199         if (nanos == 0) {
+200             terminated.await();
+201         } else {
+202             terminated.await(nanos, TimeUnit.NANOSECONDS);
+203         }
+204     }
+205 
+206     protected abstract void process() throws IOException;
+207 
+208     protected abstract boolean isRecordingStream();
+209 
+210     protected final void closeParser() {
+211         parserState.close();
+212     }
+213 
+214     protected final boolean isClosed() {
+215         return parserState.isClosed();
+216     }
+217 
+218     protected final ParserState parserState() {
+219         return parserState;
+220     }
+221 
+222     public final void startAsync(long startNanos) {
+223         startInternal(startNanos);
+<a name="6" id="anc6"></a><span class="line-modified">224         Runnable r = () -&gt; run(accessControllerContext);</span>
+<span class="line-modified">225         Thread thread = SecuritySupport.createThreadWitNoPermissions(nextThreadName(), r);</span>
+<span class="line-modified">226         SecuritySupport.setDaemonThread(thread, daemon);</span>
+227         thread.start();
+228     }
+229 
+230     public final void start(long startNanos) {
+231         startInternal(startNanos);
+<a name="7" id="anc7"></a><span class="line-modified">232         run(accessControllerContext);</span>
+233     }
+234 
+235     protected final Runnable getFlushOperation() {
+236         return flushOperation;
+237     }
+238 
+<a name="8" id="anc8"></a><span class="line-removed">239 </span>
+240     protected final void onFlush() {
+241        Runnable r = getFlushOperation();
+242        if (r != null) {
+243            r.run();
+244        }
+245     }
+246 
+247     private void startInternal(long startNanos) {
+248         synchronized (streamConfiguration) {
+249             if (streamConfiguration.started) {
+250                 throw new IllegalStateException(&quot;Event stream can only be started once&quot;);
+251             }
+252             if (isRecordingStream() &amp;&amp; streamConfiguration.startTime == null) {
+253                 streamConfiguration.setStartNanos(startNanos);
+254             }
+255             streamConfiguration.setStarted(true);
+256         }
+257     }
+258 
+259     private void execute() {
+260         try {
+261             process();
+262         } catch (IOException ioe) {
+263             // This can happen if a chunk file is removed, or
+264             // a file is access that has been closed
+265             // This is &quot;normal&quot; behavior for streaming and the
+266             // stream will be closed when this happens.
+267         } finally {
+268             Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, &quot;Execution of stream ended.&quot;);
+269             try {
+270                 if (closeOnComplete) {
+271                     close();
+272                 }
+273             } finally {
+274                 terminated.countDown();
+275             }
+276         }
+277     }
+278 
+<a name="9" id="anc9"></a><span class="line-removed">279     @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed">280     private void run(AccessControlContext accessControlContext) {</span>
+<span class="line-removed">281         AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {</span>
+<span class="line-removed">282             @Override</span>
+<span class="line-removed">283             public Void run() {</span>
+<span class="line-removed">284                 execute();</span>
+<span class="line-removed">285                 return null;</span>
+<span class="line-removed">286             }</span>
+<span class="line-removed">287         }, accessControlContext);</span>
+<span class="line-removed">288     }</span>
+<span class="line-removed">289 </span>
+290     private String nextThreadName() {
+291         return &quot;JFR Event Stream &quot; + counter.incrementAndGet();
+292     }
+293 
+294     @Override
+295     public void onMetadata(Consumer&lt;MetadataEvent&gt; action) {
+296         Objects.requireNonNull(action, &quot;action&quot;);
+297         synchronized (streamConfiguration) {
+298             if (streamConfiguration.started) {
+299                 throw new IllegalStateException(&quot;Stream is already started&quot;);
+300             }
+301         }
+302         streamConfiguration.addMetadataAction(action);
+303     }
+304 
+305     protected final void onMetadata(ChunkParser parser) {
+306         if (parser.hasStaleMetadata()) {
+307             if (dispatcher.hasMetadataHandler()) {
+308                 List&lt;EventType&gt; ce = parser.getEventTypes();
+309                 List&lt;EventType&gt; pe = parser.getPreviousEventTypes();
+310                 if (ce != pe) {
+311                     MetadataEvent me = JdkJfrConsumer.instance().newMetadataEvent(pe, ce, configurations);
+312                     dispatcher.runMetadataActions(me);
+313                 }
+314                 parser.setStaleMetadata(false);
+315             }
+316         }
+317     }
+318 }
+<a name="10" id="anc10"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="10" type="hidden" />
+</body>
+</html>

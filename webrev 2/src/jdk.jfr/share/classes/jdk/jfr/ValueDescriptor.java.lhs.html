@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/ValueDescriptor.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import java.lang.annotation.Annotation;
+ 29 import java.util.Collections;
+ 30 import java.util.List;
+ 31 import java.util.Objects;
+ 32 
+ 33 import jdk.jfr.internal.AnnotationConstruct;
+<a name="2" id="anc2"></a><span class="line-removed"> 34 import jdk.jfr.internal.SecuritySupport;</span>
+ 35 import jdk.jfr.internal.Type;
+ 36 import jdk.jfr.internal.util.Utils;
+ 37 
+ 38 /**
+ 39  * Describes the event fields and annotation elements.
+ 40  * &lt;p&gt;
+ 41  * The following example shows how the {@code ValueDescriptor} class can
+ 42  * be used to list field information of all types.
+ 43  *
+ 44  * {@snippet class=&quot;Snippets&quot; region=&quot;ValueDescriptorOverview&quot;}
+ 45  *
+ 46  * @since 9
+ 47  */
+ 48 public final class ValueDescriptor {
+ 49     private static final String UNKNOWN = new String();
+ 50     private final AnnotationConstruct annotationConstruct;
+ 51     private final Type type;
+ 52     private final String name;
+ 53     private final boolean isArray;
+ 54     private final boolean constantPool;
+ 55     private final String javaFieldName;
+ 56     private String label = UNKNOWN;
+ 57     private String contentType = UNKNOWN;
+ 58 
+ 59     // package private, invoked by jdk.internal.
+ 60     ValueDescriptor(Type type, String name, List&lt;AnnotationElement&gt; annotations, int dimension, boolean constantPool, String fieldName) {
+ 61         Objects.requireNonNull(annotations);
+ 62         if (dimension &lt; 0) {
+ 63             throw new IllegalArgumentException(&quot;Dimension must be positive&quot;);
+ 64         }
+ 65         this.name = Objects.requireNonNull(name, &quot;Name of value descriptor can&#39;t be null&quot;);
+ 66         this.type = Objects.requireNonNull(type);
+ 67         this.isArray = dimension &gt; 0;
+ 68         this.constantPool = constantPool;
+ 69         this.annotationConstruct = new AnnotationConstruct(annotations);
+ 70         this.javaFieldName = fieldName;
+ 71     }
+ 72 
+ 73     /**
+ 74      * &lt;p&gt;
+ 75      * Constructs a value descriptor, useful for dynamically creating event types and
+ 76      * annotations.
+ 77      * &lt;P&gt;
+ 78      * The following types are supported:
+ 79      * &lt;ul&gt;
+ 80      * &lt;li&gt;{@code byte.class}
+ 81      * &lt;li&gt;{@code short.class}
+ 82      * &lt;li&gt;{@code int.class}
+ 83      * &lt;li&gt;{@code long.class}
+ 84      * &lt;li&gt;{@code char.class}
+ 85      * &lt;li&gt;{@code float.class}
+ 86      * &lt;li&gt;{@code double.class}
+ 87      * &lt;li&gt;{@code boolean.class}
+ 88      * &lt;li&gt;{@code String.class}
+ 89      * &lt;li&gt;{@code Class.class}
+ 90      * &lt;li&gt;{@code Thread.class}
+ 91      * &lt;/ul&gt;
+ 92      *
+ 93      * &lt;p&gt;
+ 94      * The name must be a valid Java identifier (for example, {@code &quot;maxThroughput&quot;}). See
+ 95      * section 3.8 and 3.9 of the Java Language Specification for more information.
+ 96      *
+ 97      * @param type the type, not {@code null}
+ 98      * @param name the name, not {@code null}
+ 99      *
+100      * @throws IllegalArgumentException if the name is not a valid Java identifier
+101      */
+102     public ValueDescriptor(Class&lt;?&gt; type, String name) {
+103         this(type, name, Collections.&lt;AnnotationElement&gt; emptyList());
+104     }
+105 
+106     /**
+107      * &lt;p&gt;
+108      * Constructs a value descriptor, useful for dynamically creating event types and
+109      * annotations.
+110      * &lt;P&gt;
+111      * The following types are supported:
+112      * &lt;ul&gt;
+113      * &lt;li&gt;{@code byte.class}
+114      * &lt;li&gt;{@code short.class}
+115      * &lt;li&gt;{@code int.class}
+116      * &lt;li&gt;{@code long.class}
+117      * &lt;li&gt;{@code char.class}
+118      * &lt;li&gt;{@code float.class}
+119      * &lt;li&gt;{@code double.class}
+120      * &lt;li&gt;{@code boolean.class}
+121      * &lt;li&gt;{@code String.class}
+122      * &lt;li&gt;{@code Class.class}
+123      * &lt;li&gt;{@code Thread.class}
+124      * &lt;/ul&gt;
+125      *
+126      * &lt;p&gt;
+127      * The name must be a valid Java identifier (for example, {@code &quot;maxThroughput&quot;}). See
+128      * section 3.8 and 3.9 of the Java Language Specification for more information.
+129      *
+130      * @param type the type, not {@code null}
+131      * @param name the name, not {@code null}
+132      * @param annotations the annotations on the value descriptors, not
+133      *        {@code null}
+134      *
+135      * @throws IllegalArgumentException if the name is not a valid Java identifier
+136      */
+137     public ValueDescriptor(Class&lt;?&gt; type, String name, List&lt;AnnotationElement&gt; annotations) {
+138         this(type, name, List.copyOf(annotations), false);
+139     }
+140 
+141 
+142     ValueDescriptor(Class&lt;?&gt; type, String name, List&lt;AnnotationElement&gt; annotations, boolean allowArray) {
+143         Objects.requireNonNull(type, &quot;type&quot;);
+144         Objects.requireNonNull(name, &quot;name&quot;);
+145         Objects.requireNonNull(annotations, &quot;annotations&quot;);
+<a name="3" id="anc3"></a><span class="line-removed">146         SecuritySupport.checkRegisterPermission();</span>
+147         if (!allowArray) {
+148             if (type.isArray()) {
+149                 throw new IllegalArgumentException(&quot;Array types are not allowed&quot;);
+150             }
+151         }
+152         this.name = Objects.requireNonNull(name, &quot;Name of value descriptor can&#39;t be null&quot;);
+153         Utils.ensureJavaIdentifier(name);
+154         this.type = Objects.requireNonNull(Utils.getValidType(Objects.requireNonNull(type), Objects.requireNonNull(name)));
+155         this.annotationConstruct = new AnnotationConstruct(annotations);
+156         this.javaFieldName = name; // Needed for dynamic events
+157         this.isArray = type.isArray();
+158         // Assume we always want to store String and Thread in constant pool
+159         this.constantPool = type == Class.class || type == Thread.class;
+160     }
+161 
+162     /**
+163      * Returns a human-readable name that describes the value (for example,
+164      * {@code &quot;Maximum Throughput&quot;}).
+165      *
+166      * @return a human-readable name, or {@code null} if doesn&#39;t exist
+167      */
+168     public String getLabel() {
+169         if (label == UNKNOWN) {
+170             label = annotationConstruct.getLabel();;
+171         }
+172         return label;
+173     }
+174 
+175     /**
+176      * Returns the name of the value (for example, {@code &quot;maxThroughput&quot;}).
+177      *
+178      * @return the name, not {@code null}
+179      */
+180     public String getName() {
+181         return name;
+182     }
+183 
+184     /**
+185      * Returns a sentence describing the value (for example, {@code &quot;Maximum
+186      * throughput in the transaction system. Value is reset after each new
+187      * batch.&quot;}).
+188      *
+189      * @return the description, or {@code null} if doesn&#39;t exist
+190      */
+191     public String getDescription() {
+192         return annotationConstruct.getDescription();
+193     }
+194 
+195     /**
+196      * Returns a textual identifier that specifies how a value represented by
+197      * this {@link ValueDescriptor} is interpreted or formatted.
+198      * &lt;p&gt;
+199      * For example, if the value descriptor&#39;s type is {@code float} and the
+200      * event value is {@code 0.5f}, a content type of
+201      * {@code &quot;jdk.jfr.Percentage&quot;} hints to a client that the value is a
+202      * percentage and that it should be rendered as {@code &quot;50%&quot;}.
+203      * &lt;p&gt;
+204      * The JDK provides the following predefined content types:
+205      * &lt;ul&gt;
+206      * &lt;li&gt;jdk.jfr.Percentage&lt;/li&gt;
+207      * &lt;li&gt;jdk.jfr.Timespan&lt;/li&gt;
+208      * &lt;li&gt;jdk.jfr.Timestamp&lt;/li&gt;
+209      * &lt;li&gt;jdk.jfr.Frequency&lt;/li&gt;
+210      * &lt;li&gt;jdk.jfr.Flag&lt;/li&gt;
+211      * &lt;li&gt;jdk.jfr.MemoryAddress&lt;/li&gt;
+212      * &lt;li&gt;jdk.jfr.DataAmount&lt;/li&gt;
+213      * &lt;li&gt;jdk.jfr.NetworkAddress&lt;/li&gt;
+214      * &lt;/ul&gt;
+215      * &lt;p&gt;
+216      * User-defined content types can be created by using the {@link ContentType} class.
+217      *
+218      * @return the content type, or {@code null} if doesn&#39;t exist
+219      *
+220      * @see ContentType
+221      */
+222     public String getContentType() {
+223         if (contentType == UNKNOWN) {
+224             for (AnnotationElement anno : getAnnotationElements()) {
+225                 for (AnnotationElement meta : anno.getAnnotationElements()) {
+226                     if (meta.getTypeName().equals(ContentType.class.getName())) {
+227                         contentType = anno.getTypeName();
+228                         return contentType;
+229                     }
+230                 }
+231             }
+232             contentType = null;
+233         }
+234         return contentType;
+235     }
+236 
+237     /**
+238      * Returns the fully qualified class name of the type that is associated with
+239      * this value descriptor.
+240      *
+241      * @return the type name, not {@code null}
+242      *
+243      * @see ValueDescriptor#getTypeId()
+244      */
+245     public String getTypeName() {
+246         if (type.isSimpleType()) {
+247             return type.getFields().getFirst().getTypeName();
+248         }
+249         return type.getName();
+250     }
+251 
+252     /**
+253      * Returns a unique ID for the type in the Java virtual Machine (JVM).
+254      *
+255      * The ID might not be the same between JVM instances.
+256      *
+257      * @return the type ID, not negative
+258      */
+259     public long getTypeId() {
+260         return type.getId();
+261     }
+262 
+263     /**
+264      * Returns if this value descriptor is an array type.
+265      *
+266      * @return {@code true} if it is an array type, {@code false} otherwise
+267      */
+268     public boolean isArray() {
+269         return isArray;
+270     }
+271 
+272     /**
+273      * Returns the first annotation for the specified type if an annotation
+274      * element with the same name is directly present for this value descriptor,
+275      * {@code null} otherwise.
+276      *
+277      * @param &lt;A&gt; the type of the annotation to query for and return if present
+278      * @param annotationType the Class object that corresponds to the annotation
+279      *        type, not {@code null}
+280      * @return this element&#39;s annotation for the specified annotation type if
+281      *         directly present, else {@code null}
+282      */
+283     public &lt;A extends Annotation&gt; A getAnnotation(Class&lt;A&gt; annotationType) {
+284         Objects.requireNonNull(annotationType, &quot;annotationType&quot;);
+285         return annotationConstruct.getAnnotation(annotationType);
+286     }
+287 
+288     /**
+289      * Returns an immutable list of annotation elements for this value
+290      * descriptor.
+291      *
+292      * @return a list of annotations, not {@code null}
+293      */
+294     public List&lt;AnnotationElement&gt; getAnnotationElements() {
+295         return annotationConstruct.getUnmodifiableAnnotationElements();
+296     }
+297 
+298     /**
+299      * Returns an immutable list of value descriptors if the type is complex,
+300      * else an empty list.
+301      *
+302      * @return a list of value descriptors, not {@code null}
+303      */
+304     public List&lt;ValueDescriptor&gt; getFields() {
+305         if (type.isSimpleType()) {
+306             return List.of();
+307         }
+308         return type.getFields();
+309     }
+310 
+311     // package private
+312     Type getType() {
+313         return type;
+314     }
+315 
+316     // package private
+317     void setAnnotations(List&lt;AnnotationElement&gt; anno) {
+318         annotationConstruct.setAnnotationElements(anno);
+319     }
+320 
+321     // package private
+322     boolean isConstantPool() {
+323         return constantPool;
+324     }
+325 
+326     // package private
+327     String getJavaFieldName() {
+328         return javaFieldName;
+329     }
+330 
+331     // package private
+332     boolean isUnsigned() {
+333         return annotationConstruct.hasUnsigned();
+334     }
+335 
+336 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

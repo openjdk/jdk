@@ -1,0 +1,25 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/MetadataLoader.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/MetadataLoader.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/MetadataLoader.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/MetadataLoader.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -189,11 +189,11 @@
+         }
+     }
+ 
+     public static List<Type> createTypes() throws IOException {
+         try (DataInputStream dis = new DataInputStream(
+-                SecuritySupport.getResourceAsStream("/jdk/jfr/internal/types/metadata.bin"))) {
++                MetadataLoader.class.getResourceAsStream("/jdk/jfr/internal/types/metadata.bin"))) {
+             MetadataLoader ml = new MetadataLoader(dis);
+             return ml.buildTypes();
+         } catch (Exception e) {
+             throw new InternalError(e);
+         }

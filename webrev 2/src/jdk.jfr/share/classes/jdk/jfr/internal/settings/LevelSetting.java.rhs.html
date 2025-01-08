@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/settings/LevelSetting.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre> 1 /*
+<a name="1" id="anc1"></a><span class="line-modified"> 2  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal.settings;
+27 
+28 import java.util.Arrays;
+29 import java.util.List;
+30 import java.util.Objects;
+31 import java.util.Set;
+32 
+33 import jdk.jfr.Label;
+34 import jdk.jfr.MetadataDefinition;
+35 import jdk.jfr.Name;
+<a name="2" id="anc2"></a><span class="line-added">36 import jdk.jfr.SettingControl;</span>
+37 import jdk.jfr.internal.PlatformEventType;
+38 import jdk.jfr.internal.Type;
+39 
+40 @MetadataDefinition
+41 @Label(&quot;Level&quot;)
+42 @Name(Type.SETTINGS_PREFIX + &quot;Level&quot;)
+<a name="3" id="anc3"></a><span class="line-modified">43 public final class LevelSetting extends SettingControl {</span>
+44     private final PlatformEventType eventType;
+45     private final List&lt;String&gt; levels;
+46     private String value;
+47 
+48     public LevelSetting(PlatformEventType eventType, String[] levels) {
+49         this.eventType = Objects.requireNonNull(eventType);
+50         this.levels = Arrays.asList(Objects.requireNonNull(levels));
+51         this.value = levels[0];
+52     }
+53 
+54     @Override
+55     public String combine(Set&lt;String&gt; values) {
+56         int maxIndex = 0; // index 0 contains the default value
+57         for (String value : values) {
+58             maxIndex = Math.max(maxIndex, levels.indexOf(value));
+59         }
+60         return levels.get(maxIndex);
+61     }
+62 
+63     @Override
+64     public void setValue(String value) {
+65         int index = levels.indexOf(value);
+66         if (index != -1) {
+67             this.eventType.setLevel(index);
+68             this.value = value;
+69         }
+70     }
+71 
+72     @Override
+73     public String getValue() {
+74         return value;
+75     }
+76 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

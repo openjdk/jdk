@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdDump.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.dcmd;
+ 26 
+ 27 import java.io.IOException;
+ 28 import java.nio.file.InvalidPathException;
+ 29 import java.time.Duration;
+ 30 import java.time.Instant;
+ 31 import java.time.LocalDate;
+ 32 import java.time.LocalDateTime;
+ 33 import java.time.LocalTime;
+ 34 import java.time.ZoneId;
+ 35 import java.time.ZonedDateTime;
+ 36 import java.time.format.DateTimeParseException;
+ 37 
+ 38 import jdk.jfr.FlightRecorder;
+ 39 import jdk.jfr.Recording;
+ 40 import jdk.jfr.internal.PlatformRecorder;
+ 41 import jdk.jfr.internal.PlatformRecording;
+ 42 import jdk.jfr.internal.PrivateAccess;
+ 43 import jdk.jfr.internal.SecuritySupport.SafePath;
+ 44 import jdk.jfr.internal.util.ValueParser;
+ 45 import jdk.jfr.internal.WriteableUserPath;
+ 46 
+ 47 /**
+ 48  * JFR.dump
+ 49  *
+ 50  */
+ 51 // Instantiated by native
+ 52 final class DCmdDump extends AbstractDCmd {
+ 53 
+ 54     @Override
+ 55     public void execute(ArgumentParser parser) throws DCmdException {
+ 56         parser.checkUnknownArguments();
+ 57         String name = parser.getOption(&quot;name&quot;);
+ 58         String filename = parser.getOption(&quot;filename&quot;);
+ 59         Long maxAge = parser.getOption(&quot;maxage&quot;);
+ 60         Long maxSize = parser.getOption(&quot;maxsize&quot;);
+ 61         String begin = parser.getOption(&quot;begin&quot;);
+ 62         String end = parser.getOption(&quot;end&quot;);
+ 63         Boolean pathToGcRoots = parser.getOption(&quot;path-to-gc-roots&quot;);
+ 64 
+ 65         if (FlightRecorder.getFlightRecorder().getRecordings().isEmpty()) {
+ 66             throw new DCmdException(&quot;No recordings to dump from. Use JFR.start to start a recording.&quot;);
+ 67         }
+ 68 
+ 69         if (maxAge != null) {
+ 70             if (end != null || begin != null) {
+ 71                 throw new DCmdException(&quot;Dump failed, maxage can&#39;t be combined with begin or end.&quot;);
+ 72             }
+ 73 
+ 74             if (maxAge &lt; 0) {
+ 75                 throw new DCmdException(&quot;Dump failed, maxage can&#39;t be negative.&quot;);
+ 76             }
+ 77             if (maxAge == 0) {
+ 78                 maxAge = Long.MAX_VALUE / 2; // a high value that won&#39;t overflow
+ 79             }
+ 80         }
+ 81 
+ 82         if (maxSize!= null) {
+ 83             if (maxSize &lt; 0) {
+ 84                 throw new DCmdException(&quot;Dump failed, maxsize can&#39;t be negative.&quot;);
+ 85             }
+ 86             if (maxSize == 0) {
+ 87                 maxSize = Long.MAX_VALUE / 2; // a high value that won&#39;t overflow
+ 88             }
+ 89         }
+ 90 
+ 91         Instant beginTime = parseTime(begin, &quot;begin&quot;);
+ 92         Instant endTime = parseTime(end, &quot;end&quot;);
+ 93 
+ 94         if (beginTime != null &amp;&amp; endTime != null) {
+ 95             if (endTime.isBefore(beginTime)) {
+ 96                 throw new DCmdException(&quot;Dump failed, begin must precede end.&quot;);
+ 97             }
+ 98         }
+ 99 
+100         Duration duration = null;
+101         if (maxAge != null) {
+102             duration = Duration.ofNanos(maxAge);
+103             beginTime = Instant.now().minus(duration);
+104         }
+105         Recording recording = null;
+106         if (name != null) {
+107             recording = findRecording(name);
+108         }
+109         PlatformRecorder recorder = PrivateAccess.getInstance().getPlatformRecorder();
+110 
+111         try {
+112             synchronized (recorder) {
+113                 dump(recorder, recording, name, filename, maxSize, pathToGcRoots, beginTime, endTime);
+114             }
+115         } catch (IOException | InvalidPathException e) {
+116             throw new DCmdException(&quot;Dump failed. Could not copy recording data. %s&quot;, e.getMessage());
+117         }
+118     }
+119 
+120     public void dump(PlatformRecorder recorder, Recording recording, String name, String filename, Long maxSize, Boolean pathToGcRoots, Instant beginTime, Instant endTime) throws DCmdException, IOException {
+121         try (PlatformRecording r = newSnapShot(recorder, recording, pathToGcRoots)) {
+122             r.filter(beginTime, endTime, maxSize);
+123             if (r.getChunks().isEmpty()) {
+124                 throw new DCmdException(&quot;Dump failed. No data found in the specified interval.&quot;);
+125             }
+126             // If a filename exist, use it
+127             // if a filename doesn&#39;t exist, use destination set earlier
+128             // if destination doesn&#39;t exist, generate a filename
+129             WriteableUserPath wup = null;
+130             if (recording != null) {
+131                 PlatformRecording pRecording = PrivateAccess.getInstance().getPlatformRecording(recording);
+132                 wup = pRecording.getDestination();
+133             }
+134             if (filename != null || (filename == null &amp;&amp; wup == null) ) {
+135                 SafePath safe = resolvePath(recording, filename);
+136                 wup = new WriteableUserPath(safe.toPath());
+137             }
+138             r.dumpStopped(wup);
+139             reportOperationComplete(&quot;Dumped&quot;, name, new SafePath(wup.getRealPathText()));
+140         }
+141     }
+142 
+143     private Instant parseTime(String time, String parameter) throws DCmdException {
+144         if (time == null) {
+145             return null;
+146         }
+147         try {
+148             return Instant.parse(time);
+149         } catch (DateTimeParseException dtp) {
+150             // fall through
+151         }
+152         try {
+153             LocalDateTime ldt = LocalDateTime.parse(time);
+154             return ZonedDateTime.of(ldt, ZoneId.systemDefault()).toInstant();
+155         } catch (DateTimeParseException dtp) {
+156             // fall through
+157         }
+158         try {
+159             LocalTime lt = LocalTime.parse(time);
+160             LocalDate ld = LocalDate.now();
+161             Instant instant = ZonedDateTime.of(ld, lt, ZoneId.systemDefault()).toInstant();
+162             Instant now = Instant.now();
+163             if (instant.isAfter(now) &amp;&amp; !instant.isBefore(now.plusSeconds(3600))) {
+164                 // User must have meant previous day
+165                 ld = ld.minusDays(1);
+166             }
+167             return ZonedDateTime.of(ld, lt, ZoneId.systemDefault()).toInstant();
+168         } catch (DateTimeParseException dtp) {
+169             // fall through
+170         }
+171 
+172         if (time.startsWith(&quot;-&quot;)) {
+173             try {
+174                 long durationNanos = ValueParser.parseTimespan(time.substring(1));
+175                 Duration duration = Duration.ofNanos(durationNanos);
+176                 return Instant.now().minus(duration);
+177             } catch (NumberFormatException nfe) {
+178                 // fall through
+179             }
+180         }
+181         throw new DCmdException(&quot;Dump failed, not a valid %s time.&quot;, parameter);
+182     }
+183 
+184     private PlatformRecording newSnapShot(PlatformRecorder recorder, Recording recording, Boolean pathToGcRoots) throws DCmdException, IOException {
+185         if (recording == null) {
+186             // Operate on all recordings
+187             PlatformRecording snapshot = recorder.newTemporaryRecording();
+188             recorder.fillWithRecordedData(snapshot, pathToGcRoots);
+189             return snapshot;
+190         }
+191 
+192         PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+193         return pr.newSnapshotClone(&quot;Dumped by user&quot;, pathToGcRoots);
+194     }
+195 
+196     @Override
+197     public String[] getHelp() {
+198             // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+199         return &quot;&quot;&quot;
+200                Syntax : JFR.dump [options]
+201 
+202                Options:
+203 
+204                  begin            (Optional) Specify the time from which recording data will be
+205                                   included in the dump file. The format is specified as local time.
+206                                   (STRING, no default value)
+207 
+208                  end              (Optional) Specify the time to which recording data will be included
+209                                   in the dump file. The format is specified as local time.
+210                                   (STRING, no default value)
+211 
+212                                   Note: For both begin and end, the time must be in a format that can
+213                                   be read by any of these methods:
+214 
+215                                    java.time.LocalTime::parse(String),
+216                                    java.time.LocalDateTime::parse(String)
+217                                    java.time.Instant::parse(String)
+218 
+219                                   For example, &quot;13:20:15&quot;, &quot;2020-03-17T09:00:00&quot; or
+220                                   &quot;2020-03-17T09:00:00Z&quot;.
+221 
+222                                   Note: begin and end times correspond to the timestamps found within
+223                                   the recorded information in the flight recording data.
+224 
+225                                   Another option is to use a time relative to the current time that is
+226                                   specified by a negative integer followed by &quot;s&quot;, &quot;m&quot; or &quot;h&quot;.
+227                                   For example, &quot;-12h&quot;, &quot;-15m&quot; or &quot;-30s&quot;
+228 
+229                  filename         (Optional) Name of the file to which the flight recording data is
+230                                   dumped. If no filename is given, a filename is generated from the PID
+231                                   and the current date. The filename may also be a directory in which
+232                                   case, the filename is generated from the PID and the current date in
+233                                   the specified directory. (FILE, no default value)
+234 
+235                                   Note: If a filename is given, &#39;%%p&#39; in the filename will be
+236                                   replaced by the PID, and &#39;%%t&#39; will be replaced by the time in
+237                                   &#39;yyyy_MM_dd_HH_mm_ss&#39; format.
+238 
+239                  maxage           (Optional) Length of time for dumping the flight recording data to a
+240                                   file. (INT followed by &#39;s&#39; for seconds &#39;m&#39; for minutes or &#39;h&#39; for
+241                                   hours, no default value)
+242 
+243                  maxsize          (Optional) Maximum size for the amount of data to dump from a flight
+244                                   recording in bytes if one of the following suffixes is not used:
+245                                   &#39;m&#39; or &#39;M&#39; for megabytes OR &#39;g&#39; or &#39;G&#39; for gigabytes.
+246                                   (STRING, no default value)
+247 
+248                  name             (Optional) Name of the recording. If no name is given, data from all
+249                                   recordings is dumped. (STRING, no default value)
+250 
+251                  path-to-gc-roots (Optional) Flag for saving the path to garbage collection (GC) roots
+252                                   at the time the recording data is dumped. The path information is
+253                                   useful for finding memory leaks but collecting it can cause the
+254                                   application to pause for a short period of time. Turn on this flag
+255                                   only when you have an application that you suspect has a memory
+256                                   leak. (BOOLEAN, false)
+257 
+258                Options must be specified using the &lt;key&gt; or &lt;key&gt;=&lt;value&gt; syntax.
+259 
+260                Example usage:
+261 
+262                 $ jcmd &lt;pid&gt; JFR.dump
+263                 $ jcmd &lt;pid&gt; JFR.dump filename=recording.jfr
+264                 $ jcmd &lt;pid&gt; JFR.dump filename=%s
+265                 $ jcmd &lt;pid&gt; JFR.dump name=1 filename=%s
+266                 $ jcmd &lt;pid&gt; JFR.dump maxage=1h
+267                 $ jcmd &lt;pid&gt; JFR.dump maxage=1h maxsize=50M
+268                 $ jcmd &lt;pid&gt; JFR.dump filename=leaks.jfr path-to-gc-roots=true
+269                 $ jcmd &lt;pid&gt; JFR.dump begin=13:15
+270                 $ jcmd &lt;pid&gt; JFR.dump begin=13:15 end=21:30:00
+271                 $ jcmd &lt;pid&gt; JFR.dump end=18:00 maxage=10m
+272                 $ jcmd &lt;pid&gt; JFR.dump begin=2021-09-15T09:00:00 end=2021-09-15T10:00:00
+273                 $ jcmd &lt;pid&gt; JFR.dump begin=-1h
+274                 $ jcmd &lt;pid&gt; JFR.dump begin=-15m end=-5m
+275 
+276                &quot;&quot;&quot;.formatted(exampleDirectory(), exampleFilename()).lines().toArray(String[]::new);
+277     }
+278 
+279     @Override
+280     public Argument[] getArgumentInfos() {
+281         return new Argument[] {
+282            new Argument(&quot;name&quot;,
+283                &quot;Recording name, e.g. \\\&quot;My Recording\\\&quot;&quot;,
+284                &quot;STRING&quot;, false, true, null, false),
+285            new Argument(&quot;filename&quot;,
+286                &quot;Copy recording data to file, e.g. \\\&quot;&quot; + exampleFilename() + &quot;\\\&quot;&quot;,
+287                &quot;FILE&quot;, false, true, null, false),
+288            new Argument(&quot;maxage&quot;,
+289                &quot;Maximum duration to dump, in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit&quot;,
+290                &quot;NANOTIME&quot;, false, true, null, false),
+291            new Argument(&quot;maxsize&quot;, &quot;Maximum amount of bytes to dump, in (M)B or (G)B, e.g. 500M, or 0 for no limit&quot;,
+292                &quot;MEMORY SIZE&quot;, false, true, &quot;hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr&quot;, false),
+293            new Argument(&quot;begin&quot;,
+294                &quot;Point in time to dump data from, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d&quot;,
+295                &quot;STRING&quot;, false, true, null, false),
+296            new Argument(&quot;end&quot;,
+297                &quot;Point in time to dump data to, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d&quot;,
+298                &quot;STRING&quot;, false, true, null, false),
+299            new Argument(&quot;path-to-gc-roots&quot;,
+300                &quot;Collect path to GC roots&quot;,
+301                &quot;BOOLEAN&quot;, false, true, &quot;false&quot;, false)
+302         };
+303     }
+304 }
+305 
+    </pre>
+  </body>
+</html>

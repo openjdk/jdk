@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RepositoryFiles.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="RecordingInput.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="filter/ChunkWriter.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RepositoryFiles.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.nio.file.DirectoryIteratorException;
+ 30 import java.nio.file.DirectoryStream;
+
+ 31 import java.nio.file.Path;
+ 32 import java.nio.file.attribute.FileTime;
+ 33 import java.util.ArrayList;
+ 34 import java.util.Collections;
+ 35 import java.util.HashMap;
+ 36 import java.util.HashSet;
+ 37 import java.util.List;
+ 38 import java.util.Map;
+ 39 import java.util.NavigableMap;
+ 40 import java.util.Set;
+ 41 import java.util.SortedMap;
+ 42 import java.util.TreeMap;
+ 43 
+ 44 import jdk.jfr.internal.LogLevel;
+ 45 import jdk.jfr.internal.LogTag;
+ 46 import jdk.jfr.internal.Logger;
+ 47 import jdk.jfr.internal.Repository;
+<span class="line-removed"> 48 import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+ 49 import jdk.jfr.internal.management.HiddenWait;;
+ 50 
+ 51 public final class RepositoryFiles {
+ 52     private static final HiddenWait WAIT_OBJECT = new HiddenWait();
+ 53     private static final String DIRECTORY_PATTERN = &quot;DDDD_DD_DD_DD_DD_DD_&quot;;
+ 54     public static void notifyNewFile() {
+ 55         synchronized (WAIT_OBJECT) {
+ 56             WAIT_OBJECT.notifyAll();
+ 57         }
+ 58     }
+ 59 
+<span class="line-removed"> 60     private final FileAccess fileAccess;</span>
+ 61     private final NavigableMap&lt;Long, Path&gt; pathSet = new TreeMap&lt;&gt;();
+ 62     private final Map&lt;Path, Long&gt; pathLookup = new HashMap&lt;&gt;();
+ 63     private final HiddenWait waitObject;
+ 64     private boolean allowSubDirectory;
+ 65     private volatile boolean closed;
+ 66     private Path repository;
+ 67 
+<span class="line-modified"> 68     public RepositoryFiles(FileAccess fileAccess, Path repository, boolean allowSubDirectory) {</span>
+ 69         this.repository = repository;
+<span class="line-removed"> 70         this.fileAccess = fileAccess;</span>
+ 71         this.waitObject = repository == null ? WAIT_OBJECT : new HiddenWait();
+ 72         this.allowSubDirectory = allowSubDirectory;
+ 73     }
+ 74 
+ 75     long getTimestamp(Path p) {
+ 76         return pathLookup.get(p);
+ 77     }
+ 78 
+ 79     public Path lastPath(boolean wait) {
+ 80         if (updatePaths(wait)) {
+ 81             return pathSet.lastEntry().getValue();
+ 82         }
+ 83         return null; // closed
+ 84     }
+ 85 
+ 86     public Path firstPath(long startTimeNanos, boolean wait) {
+ 87         if (updatePaths(wait)) {
+ 88             // Pick closest chunk before timestamp
+ 89             Long time = pathSet.floorKey(startTimeNanos);
+ 90             if (time != null) {
+</pre>
+<hr />
+<pre>
+155             if (!updatePaths(wait)) {
+156                 return null; // closed
+157             }
+158         }
+159     }
+160 
+161     private boolean updatePaths() throws IOException, DirectoryIteratorException {
+162         boolean foundNew = false;
+163         Path repoPath = repository;
+164 
+165         if (allowSubDirectory) {
+166             Path subDirectory = findSubDirectory(repoPath);
+167             if (subDirectory != null) {
+168                 repoPath = subDirectory;
+169             }
+170         }
+171 
+172         if (repoPath == null) {
+173             // Always get the latest repository if &#39;jcmd JFR.configure
+174             // repositorypath=...&#39; has been executed
+<span class="line-modified">175             SafePath sf = Repository.getRepository().getRepositoryPath();</span>
+<span class="line-modified">176             if (sf == null) {</span>
+177                 return false; // not initialized
+178             }
+<span class="line-modified">179             repoPath = sf.toPath();</span>
+180         }
+181 
+<span class="line-modified">182         try (DirectoryStream&lt;Path&gt; dirStream = fileAccess.newDirectoryStream(repoPath)) {</span>
+183             List&lt;Path&gt; added = new ArrayList&lt;&gt;();
+184             Set&lt;Path&gt; current = new HashSet&lt;&gt;();
+185             for (Path p : dirStream) {
+186                 if (!pathLookup.containsKey(p)) {
+187                     String s = p.toString();
+188                     if (s.endsWith(&quot;.jfr&quot;)) {
+189                         added.add(p);
+190                         Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, &quot;New file found: &quot; + p.toAbsolutePath());
+191                     }
+192                     current.add(p);
+193                 }
+194             }
+195             List&lt;Path&gt; removed = new ArrayList&lt;&gt;();
+196             for (Path p : pathLookup.keySet()) {
+197                 if (!current.contains(p)) {
+198                     removed.add(p);
+199                 }
+200             }
+201 
+202             for (Path remove : removed) {
+203                 Long time = pathLookup.get(remove);
+204                 pathSet.remove(time);
+205                 pathLookup.remove(remove);
+206             }
+207             Collections.sort(added);
+208             for (Path p : added) {
+209                 // Only add files that have a complete header
+210                 // as the JVM may be in progress writing the file
+<span class="line-modified">211                 long size = fileAccess.fileSize(p);</span>
+212                 if (size &gt;= ChunkHeader.headerSize()) {
+213                     long startNanos = readStartTime(p);
+214                     if (startNanos != -1) {
+215                         pathSet.put(startNanos, p);
+216                         pathLookup.put(p, startNanos);
+217                         foundNew = true;
+218                     }
+219                 }
+220             }
+221             if (allowSubDirectory &amp;&amp; foundNew) {
+222                 // Found a valid file, possibly in a subdirectory.
+223                 // Use the same (sub)directory from now on.
+224                 repository = repoPath;
+225                 allowSubDirectory = false;
+226             }
+227 
+228             return foundNew;
+229         }
+230     }
+231 
+232     private Path findSubDirectory(Path repoPath) {
+233         FileTime latestTimestamp = null;
+234         Path latestPath = null;
+<span class="line-modified">235         try (DirectoryStream&lt;Path&gt; dirStream = fileAccess.newDirectoryStream(repoPath)) {</span>
+236             for (Path p : dirStream) {
+237                 String filename = p.getFileName().toString();
+<span class="line-modified">238                 if (isRepository(filename) &amp;&amp; fileAccess.isDirectory(p)) {</span>
+239                     FileTime timestamp = getLastModified(p);
+240                     if (timestamp != null) {
+241                         if (latestPath == null || latestTimestamp.compareTo(timestamp) &lt;= 0) {
+242                             latestPath = p;
+243                             latestTimestamp = timestamp;
+244                         }
+245                     }
+246                 }
+247             }
+248         } catch (IOException | DirectoryIteratorException e) {
+249             // Ignore
+250         }
+251         return latestPath;
+252     }
+253 
+254     private FileTime getLastModified(Path p) {
+255         try {
+<span class="line-modified">256             return fileAccess.getLastModified(p);</span>
+257         } catch (IOException e) {
+258             return null;
+259         }
+260     }
+261 
+262     private static boolean isRepository(String filename) {
+263         if (filename.length() &lt; DIRECTORY_PATTERN.length()) {
+264             return false;
+265         }
+266         for (int i = 0; i &lt; DIRECTORY_PATTERN.length(); i++) {
+267             char expected = DIRECTORY_PATTERN.charAt(i);
+268             char c = filename.charAt(i);
+269             if (expected == &#39;D&#39; &amp;&amp; !Character.isDigit(c)) {
+270                 return false;
+271             }
+272             if (expected == &#39;_&#39; &amp;&amp; c != &#39;_&#39;) {
+273                 return false;
+274             }
+275         }
+276         return true;
+277     }
+278 
+279     private long readStartTime(Path p) {
+<span class="line-modified">280         try (RecordingInput in = new RecordingInput(p.toFile(), fileAccess, 100)) {</span>
+281             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, &quot;Parsing header for chunk start time&quot;);
+282             ChunkHeader c = new ChunkHeader(in);
+283             return c.getStartNanos();
+284         } catch (IOException ioe) {
+285             return -1;
+286         }
+287     }
+288 
+289     void close() {
+290         synchronized (waitObject) {
+291             this.closed = true;
+292             waitObject.notify();
+293         }
+294     }
+295 
+296     public boolean hasFixedPath() {
+297         return repository != null;
+298     }
+299 }
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.nio.file.DirectoryIteratorException;
+ 30 import java.nio.file.DirectoryStream;
+<span class="line-added"> 31 import java.nio.file.Files;</span>
+ 32 import java.nio.file.Path;
+ 33 import java.nio.file.attribute.FileTime;
+ 34 import java.util.ArrayList;
+ 35 import java.util.Collections;
+ 36 import java.util.HashMap;
+ 37 import java.util.HashSet;
+ 38 import java.util.List;
+ 39 import java.util.Map;
+ 40 import java.util.NavigableMap;
+ 41 import java.util.Set;
+ 42 import java.util.SortedMap;
+ 43 import java.util.TreeMap;
+ 44 
+ 45 import jdk.jfr.internal.LogLevel;
+ 46 import jdk.jfr.internal.LogTag;
+ 47 import jdk.jfr.internal.Logger;
+ 48 import jdk.jfr.internal.Repository;
+
+ 49 import jdk.jfr.internal.management.HiddenWait;;
+ 50 
+ 51 public final class RepositoryFiles {
+ 52     private static final HiddenWait WAIT_OBJECT = new HiddenWait();
+ 53     private static final String DIRECTORY_PATTERN = &quot;DDDD_DD_DD_DD_DD_DD_&quot;;
+ 54     public static void notifyNewFile() {
+ 55         synchronized (WAIT_OBJECT) {
+ 56             WAIT_OBJECT.notifyAll();
+ 57         }
+ 58     }
+ 59 
+
+ 60     private final NavigableMap&lt;Long, Path&gt; pathSet = new TreeMap&lt;&gt;();
+ 61     private final Map&lt;Path, Long&gt; pathLookup = new HashMap&lt;&gt;();
+ 62     private final HiddenWait waitObject;
+ 63     private boolean allowSubDirectory;
+ 64     private volatile boolean closed;
+ 65     private Path repository;
+ 66 
+<span class="line-modified"> 67     public RepositoryFiles(Path repository, boolean allowSubDirectory) {</span>
+ 68         this.repository = repository;
+
+ 69         this.waitObject = repository == null ? WAIT_OBJECT : new HiddenWait();
+ 70         this.allowSubDirectory = allowSubDirectory;
+ 71     }
+ 72 
+ 73     long getTimestamp(Path p) {
+ 74         return pathLookup.get(p);
+ 75     }
+ 76 
+ 77     public Path lastPath(boolean wait) {
+ 78         if (updatePaths(wait)) {
+ 79             return pathSet.lastEntry().getValue();
+ 80         }
+ 81         return null; // closed
+ 82     }
+ 83 
+ 84     public Path firstPath(long startTimeNanos, boolean wait) {
+ 85         if (updatePaths(wait)) {
+ 86             // Pick closest chunk before timestamp
+ 87             Long time = pathSet.floorKey(startTimeNanos);
+ 88             if (time != null) {
+</pre>
+<hr />
+<pre>
+153             if (!updatePaths(wait)) {
+154                 return null; // closed
+155             }
+156         }
+157     }
+158 
+159     private boolean updatePaths() throws IOException, DirectoryIteratorException {
+160         boolean foundNew = false;
+161         Path repoPath = repository;
+162 
+163         if (allowSubDirectory) {
+164             Path subDirectory = findSubDirectory(repoPath);
+165             if (subDirectory != null) {
+166                 repoPath = subDirectory;
+167             }
+168         }
+169 
+170         if (repoPath == null) {
+171             // Always get the latest repository if &#39;jcmd JFR.configure
+172             // repositorypath=...&#39; has been executed
+<span class="line-modified">173             Path path = Repository.getRepository().getRepositoryPath();</span>
+<span class="line-modified">174             if (path == null) {</span>
+175                 return false; // not initialized
+176             }
+<span class="line-modified">177             repoPath = path;</span>
+178         }
+179 
+<span class="line-modified">180         try (DirectoryStream&lt;Path&gt; dirStream = Files.newDirectoryStream(repoPath)) {</span>
+181             List&lt;Path&gt; added = new ArrayList&lt;&gt;();
+182             Set&lt;Path&gt; current = new HashSet&lt;&gt;();
+183             for (Path p : dirStream) {
+184                 if (!pathLookup.containsKey(p)) {
+185                     String s = p.toString();
+186                     if (s.endsWith(&quot;.jfr&quot;)) {
+187                         added.add(p);
+188                         Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, &quot;New file found: &quot; + p.toAbsolutePath());
+189                     }
+190                     current.add(p);
+191                 }
+192             }
+193             List&lt;Path&gt; removed = new ArrayList&lt;&gt;();
+194             for (Path p : pathLookup.keySet()) {
+195                 if (!current.contains(p)) {
+196                     removed.add(p);
+197                 }
+198             }
+199 
+200             for (Path remove : removed) {
+201                 Long time = pathLookup.get(remove);
+202                 pathSet.remove(time);
+203                 pathLookup.remove(remove);
+204             }
+205             Collections.sort(added);
+206             for (Path p : added) {
+207                 // Only add files that have a complete header
+208                 // as the JVM may be in progress writing the file
+<span class="line-modified">209                 long size = Files.size(p);</span>
+210                 if (size &gt;= ChunkHeader.headerSize()) {
+211                     long startNanos = readStartTime(p);
+212                     if (startNanos != -1) {
+213                         pathSet.put(startNanos, p);
+214                         pathLookup.put(p, startNanos);
+215                         foundNew = true;
+216                     }
+217                 }
+218             }
+219             if (allowSubDirectory &amp;&amp; foundNew) {
+220                 // Found a valid file, possibly in a subdirectory.
+221                 // Use the same (sub)directory from now on.
+222                 repository = repoPath;
+223                 allowSubDirectory = false;
+224             }
+225 
+226             return foundNew;
+227         }
+228     }
+229 
+230     private Path findSubDirectory(Path repoPath) {
+231         FileTime latestTimestamp = null;
+232         Path latestPath = null;
+<span class="line-modified">233         try (DirectoryStream&lt;Path&gt; dirStream = Files.newDirectoryStream(repoPath)) {</span>
+234             for (Path p : dirStream) {
+235                 String filename = p.getFileName().toString();
+<span class="line-modified">236                 if (isRepository(filename) &amp;&amp; Files.isDirectory(p)) {</span>
+237                     FileTime timestamp = getLastModified(p);
+238                     if (timestamp != null) {
+239                         if (latestPath == null || latestTimestamp.compareTo(timestamp) &lt;= 0) {
+240                             latestPath = p;
+241                             latestTimestamp = timestamp;
+242                         }
+243                     }
+244                 }
+245             }
+246         } catch (IOException | DirectoryIteratorException e) {
+247             // Ignore
+248         }
+249         return latestPath;
+250     }
+251 
+252     private FileTime getLastModified(Path p) {
+253         try {
+<span class="line-modified">254             return Files.getLastModifiedTime(p);</span>
+255         } catch (IOException e) {
+256             return null;
+257         }
+258     }
+259 
+260     private static boolean isRepository(String filename) {
+261         if (filename.length() &lt; DIRECTORY_PATTERN.length()) {
+262             return false;
+263         }
+264         for (int i = 0; i &lt; DIRECTORY_PATTERN.length(); i++) {
+265             char expected = DIRECTORY_PATTERN.charAt(i);
+266             char c = filename.charAt(i);
+267             if (expected == &#39;D&#39; &amp;&amp; !Character.isDigit(c)) {
+268                 return false;
+269             }
+270             if (expected == &#39;_&#39; &amp;&amp; c != &#39;_&#39;) {
+271                 return false;
+272             }
+273         }
+274         return true;
+275     }
+276 
+277     private long readStartTime(Path p) {
+<span class="line-modified">278         try (RecordingInput in = new RecordingInput(p.toFile(), 100)) {</span>
+279             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, &quot;Parsing header for chunk start time&quot;);
+280             ChunkHeader c = new ChunkHeader(in);
+281             return c.getStartNanos();
+282         } catch (IOException ioe) {
+283             return -1;
+284         }
+285     }
+286 
+287     void close() {
+288         synchronized (waitObject) {
+289             this.closed = true;
+290             waitObject.notify();
+291         }
+292     }
+293 
+294     public boolean hasFixedPath() {
+295         return repository != null;
+296     }
+297 }
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="RecordingInput.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="filter/ChunkWriter.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

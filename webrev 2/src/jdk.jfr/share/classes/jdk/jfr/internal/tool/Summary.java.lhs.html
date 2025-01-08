@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Summary.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.tool;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.io.PrintStream;
+ 30 import java.nio.file.Path;
+ 31 import java.time.Instant;
+ 32 import java.time.ZoneOffset;
+ 33 import java.time.format.DateTimeFormatter;
+ 34 import java.util.ArrayList;
+ 35 import java.util.Deque;
+ 36 import java.util.HashMap;
+ 37 import java.util.List;
+ 38 import java.util.Locale;
+ 39 
+ 40 import jdk.jfr.EventType;
+ 41 import jdk.jfr.internal.MetadataDescriptor;
+ 42 import jdk.jfr.internal.Type;
+ 43 import jdk.jfr.internal.consumer.ChunkHeader;
+<a name="2" id="anc2"></a><span class="line-removed"> 44 import jdk.jfr.internal.consumer.FileAccess;</span>
+ 45 import jdk.jfr.internal.consumer.RecordingInput;
+ 46 import jdk.jfr.internal.util.UserDataException;
+ 47 import jdk.jfr.internal.util.UserSyntaxException;
+ 48 
+ 49 final class Summary extends Command {
+ 50     private final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern(&quot;yyyy-MM-dd HH:mm:ss&quot;).withLocale(Locale.UK).withZone(ZoneOffset.UTC);
+ 51 
+ 52     @Override
+ 53     public String getName() {
+ 54         return &quot;summary&quot;;
+ 55     }
+ 56 
+ 57     private static class Statistics {
+ 58         Statistics(String name) {
+ 59             this.name = name;
+ 60         }
+ 61         String name;
+ 62         long count;
+ 63         long size;
+ 64     }
+ 65 
+ 66     @Override
+ 67     public List&lt;String&gt; getOptionSyntax() {
+ 68         return List.of(&quot;&lt;file&gt;&quot;);
+ 69     }
+ 70 
+ 71     @Override
+ 72     public void displayOptionUsage(PrintStream stream) {
+ 73         stream.println(&quot;  &lt;file&gt;   Location of the recording file (.jfr) to display information about&quot;);
+ 74     }
+ 75 
+ 76     @Override
+ 77     public String getDescription() {
+ 78         return &quot;Display general information about a recording file (.jfr)&quot;;
+ 79     }
+ 80 
+ 81     @Override
+ 82     public void execute(Deque&lt;String&gt; options) throws UserSyntaxException, UserDataException {
+ 83         ensureMaxArgumentCount(options, 1);
+ 84         Path p = getJFRInputFile(options);
+ 85         try {
+ 86             printInformation(p);
+ 87         } catch (IOException e) {
+ 88             couldNotReadError(p, e);
+ 89         }
+ 90     }
+ 91 
+ 92     private void printInformation(Path p) throws IOException {
+ 93         long totalDuration = 0;
+ 94         long chunks = 0;
+ 95 
+<a name="3" id="anc3"></a><span class="line-modified"> 96         try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILEGED)) {</span>
+ 97             ChunkHeader first = new ChunkHeader(input);
+ 98             ChunkHeader ch = first;
+ 99             String eventPrefix = Type.EVENT_NAME_PREFIX;
+100             if (first.getMajor() == 1) {
+101                 eventPrefix = &quot;com.oracle.jdk.&quot;;
+102             }
+103             HashMap&lt;Long, Statistics&gt; stats = new HashMap&lt;&gt;();
+104             stats.put(0L, new Statistics(eventPrefix + &quot;Metadata&quot;));
+105             stats.put(1L, new Statistics(eventPrefix + &quot;Checkpoint&quot;));
+106             int minWidth = 0;
+107             while (true) {
+108                 long chunkEnd = ch.getEnd();
+109                 MetadataDescriptor md = ch.readMetadata();
+110 
+111                 for (EventType eventType : md.getEventTypes()) {
+112                     stats.computeIfAbsent(eventType.getId(), (e) -&gt; new Statistics(eventType.getName()));
+113                     minWidth = Math.max(minWidth, eventType.getName().length());
+114                 }
+115 
+116                 totalDuration += ch.getDurationNanos();
+117                 chunks++;
+118                 input.position(ch.getEventStart());
+119                 while (input.position() &lt; chunkEnd) {
+120                     long pos = input.position();
+121                     int size = input.readInt();
+122                     long eventTypeId = input.readLong();
+123                     Statistics s = stats.get(eventTypeId);
+124                     if (s == null) {
+125                         s = new Statistics(eventTypeId + &quot; (missing event metadata)&quot;);
+126                         stats.put(eventTypeId, s);
+127                     }
+128                     if (s != null) {
+129                         s.count++;
+130                         s.size += size;
+131                     }
+132                     input.position(pos + size);
+133                 }
+134                 if (ch.isLastChunk()) {
+135                     break;
+136                 }
+137                 ch = ch.nextHeader();
+138             }
+139             println();
+140             long epochSeconds = first.getStartNanos() / 1_000_000_000L;
+141             long adjustNanos = first.getStartNanos() - epochSeconds * 1_000_000_000L;
+142             println(&quot; Version: &quot; + first.getMajor() + &quot;.&quot; + first.getMinor());
+143             println(&quot; Chunks: &quot; + chunks);
+144             println(&quot; Start: &quot; + DATE_FORMAT.format(Instant.ofEpochSecond(epochSeconds, adjustNanos)) + &quot; (UTC)&quot;);
+145             println(&quot; Duration: &quot; + (totalDuration + 500_000_000) / 1_000_000_000 + &quot; s&quot;);
+146             List&lt;Statistics&gt; statsList = new ArrayList&lt;&gt;(stats.values());
+147             statsList.sort((u, v) -&gt; u.name.compareTo(v.name));
+148             statsList.sort((u, v) -&gt; Long.compare(v.count, u.count));
+149             println();
+150             String header = &quot;      Count  Size (bytes) &quot;;
+151             String typeHeader = &quot; Event Type&quot;;
+152             minWidth = Math.max(minWidth, typeHeader.length());
+153             println(typeHeader + &quot; &quot;.repeat(minWidth - typeHeader.length()) + header);
+154             println(&quot;=&quot;.repeat(minWidth + header.length()));
+155             for (Statistics s : statsList) {
+156                 System.out.printf(&quot; %-&quot; + minWidth + &quot;s%10d  %12d\n&quot;, s.name, s.count, s.size);
+157             }
+158         }
+159     }
+160 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/AbstractDCmd.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.dcmd;
+ 26 
+ 27 import java.io.IOException;
+ 28 import java.nio.file.Files;
+ 29 import java.nio.file.InvalidPathException;
+ 30 import java.nio.file.Path;
+ 31 import java.nio.file.Paths;
+ 32 import java.time.Duration;
+ 33 import java.util.ArrayList;
+ 34 import java.util.Comparator;
+ 35 import java.util.List;
+ 36 
+ 37 import jdk.jfr.FlightRecorder;
+ 38 import jdk.jfr.Recording;
+ 39 import jdk.jfr.internal.JVM;
+ 40 import jdk.jfr.internal.util.Output.LinePrinter;
+ 41 import jdk.jfr.internal.util.Output;
+ 42 import jdk.jfr.internal.JVMSupport;
+ 43 import jdk.jfr.internal.LogLevel;
+ 44 import jdk.jfr.internal.LogTag;
+ 45 import jdk.jfr.internal.Logger;
+<a name="2" id="anc2"></a>
+
+ 46 import jdk.jfr.internal.util.ValueFormatter;
+ 47 
+ 48 /**
+ 49  * Base class for JFR diagnostic commands
+ 50  *
+ 51  */
+ 52 abstract class AbstractDCmd {
+ 53     private final LinePrinter output = new LinePrinter();
+ 54     private String source;
+ 55 
+ 56     // Called by native
+ 57     public abstract String[] getHelp();
+ 58 
+ 59     // Called by native. The number of arguments for each command is
+ 60     // reported to the DCmdFramework as a hardcoded number in native.
+ 61     // This is to avoid an upcall as part of DcmdFramework enumerating existing commands.
+ 62     // Remember to keep the two sides in synch.
+ 63     public abstract Argument[] getArgumentInfos();
+ 64 
+ 65     protected abstract void execute(ArgumentParser parser) throws DCmdException;
+ 66 
+ 67 
+ 68     // Called by native
+ 69     public final String[] execute(String source, String arg, char delimiter) throws DCmdException {
+ 70         this.source = source;
+ 71         if (isInteractive()) {
+ 72             JVM.exclude(Thread.currentThread());
+ 73         }
+ 74         try {
+ 75             boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
+ 76             if (log) {
+ 77                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, &quot;Executing &quot; + this.getClass().getSimpleName() + &quot;: &quot; + arg);
+ 78             }
+ 79             ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter);
+ 80             parser.parse();
+ 81             if (log) {
+ 82                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, &quot;DCMD options: &quot; + parser.getOptions());
+ 83                 if (parser.hasExtendedOptions()) {
+ 84                     Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, &quot;JFC options: &quot; + parser.getExtendedOptions());
+ 85                 }
+ 86             }
+ 87             execute(parser);
+ 88             return getResult();
+ 89        }
+ 90        catch (IllegalArgumentException iae) {
+ 91             DCmdException e = new DCmdException(iae.getMessage());
+ 92             e.addSuppressed(iae);
+ 93             throw e;
+ 94        } finally {
+ 95            if (isInteractive()) {
+ 96                JVM.include(Thread.currentThread());
+ 97            }
+ 98        }
+ 99     }
+100 
+101     // Diagnostic commands that are meant to be used interactively
+102     // should turn off events to avoid noise in the output.
+103     protected boolean isInteractive() {
+104         return false;
+105     }
+106 
+107     protected final Output getOutput() {
+108         return output;
+109     }
+110 
+111     protected final FlightRecorder getFlightRecorder() {
+112         return FlightRecorder.getFlightRecorder();
+113     }
+114 
+115     protected final String[] getResult() {
+116         return output.getLines().toArray(new String[0]);
+117     }
+118 
+119     protected void logWarning(String message) {
+120         if (source.equals(&quot;internal&quot;)) { // -XX:StartFlightRecording
+121             Logger.log(LogTag.JFR_START, LogLevel.WARN, message);
+122         } else { // DiagnosticMXBean or JCMD
+123             println(&quot;Warning! &quot; + message);
+124         }
+125     }
+126 
+127     public String getPid() {
+128         // Invoking ProcessHandle.current().pid() would require loading more
+129         // classes during startup so instead JVM.getPid() is used.
+130         // The pid will not be exposed to running Java application, only when starting
+131         // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
+132         return JVM.getPid();
+133     }
+134 
+<a name="3" id="anc3"></a><span class="line-modified">135     protected Path resolvePath(Recording recording, String filename) throws InvalidPathException {</span>
+136         if (filename == null) {
+137             return makeGenerated(recording, Paths.get(&quot;.&quot;));
+138         }
+139         Path path = Paths.get(filename);
+140         if (Files.isDirectory(path)) {
+141             return makeGenerated(recording, path);
+142         }
+<a name="4" id="anc4"></a><span class="line-modified">143         return path.toAbsolutePath().normalize();</span>
+144     }
+145 
+<a name="5" id="anc5"></a><span class="line-modified">146     private Path makeGenerated(Recording recording, Path directory) {</span>
+<span class="line-modified">147         return directory.toAbsolutePath().resolve(JVMSupport.makeFilename(recording)).normalize();</span>
+148     }
+149 
+150     protected final Recording findRecording(String name) throws DCmdException {
+151         try {
+152             return findRecordingById(Integer.parseInt(name));
+153         } catch (NumberFormatException nfe) {
+154             // User specified a name, not an id.
+155             return findRecordingByName(name);
+156         }
+157     }
+158 
+<a name="6" id="anc6"></a><span class="line-modified">159     protected final void reportOperationComplete(String actionPrefix, String name, Path file) {</span>
+160         print(actionPrefix);
+161         print(&quot; recording&quot;);
+162         if (name != null) {
+163             print(&quot; \&quot;&quot; + name + &quot;\&quot;&quot;);
+164         }
+165         if (file != null) {
+166             print(&quot;,&quot;);
+167             try {
+168                 print(&quot; &quot;);
+<a name="7" id="anc7"></a><span class="line-modified">169                 long bytes = Files.size(file);</span>
+170                 printBytes(bytes);
+171             } catch (IOException e) {
+172                 // Ignore, not essential
+173             }
+174             println(&quot; written to:&quot;);
+175             println();
+176             printPath(file);
+177         } else {
+178             println(&quot;.&quot;);
+179         }
+180     }
+181 
+182     protected final List&lt;Recording&gt; getRecordings() {
+183         List&lt;Recording&gt; list = new ArrayList&lt;&gt;(getFlightRecorder().getRecordings());
+184         list.sort(Comparator.comparingLong(Recording::getId));
+185         return list;
+186     }
+187 
+188     static String quoteIfNeeded(String text) {
+189         if (text.contains(&quot; &quot;)) {
+190             return &quot;\\\&quot;&quot; + text + &quot;\\\&quot;&quot;;
+191         } else {
+192             return text;
+193         }
+194     }
+195 
+196     protected final void println() {
+197         output.println();
+198     }
+199 
+200     protected final void print(String s) {
+201         output.print(s);
+202     }
+203 
+204     protected final void print(String s, Object... args) {
+205         output.print(s, args);
+206     }
+207 
+208     protected final void println(String s, Object... args) {
+209         output.println(s, args);
+210     }
+211 
+212     protected final void printBytes(long bytes) {
+213         print(ValueFormatter.formatBytes(bytes));
+214     }
+215 
+216     protected final void printTimespan(Duration timespan, String separator) {
+217         print(ValueFormatter.formatTimespan(timespan, separator));
+218     }
+219 
+<a name="8" id="anc8"></a><span class="line-modified">220     protected final void printPath(Path path) {</span>
+221         if (path == null) {
+222             print(&quot;N/A&quot;);
+223             return;
+224         }
+<a name="9" id="anc9"></a><span class="line-modified">225         println(path.toAbsolutePath().toString());</span>
+
+
+
+
+226     }
+227 
+228     protected final void printHelpText() {
+229         for (String line : getHelp()) {
+230             println(line);
+231         }
+232     }
+233 
+<a name="10" id="anc10"></a>
+
+
+
+
+
+
+
+
+234     private Recording findRecordingById(int id) throws DCmdException {
+235         for (Recording r : getFlightRecorder().getRecordings()) {
+236             if (r.getId() == id) {
+237                 return r;
+238             }
+239         }
+240         throw new DCmdException(&quot;Could not find %d.\n\nUse JFR.check without options to see list of all available recordings.&quot;, id);
+241     }
+242 
+243     private Recording findRecordingByName(String name) throws DCmdException {
+244         for (Recording recording : getFlightRecorder().getRecordings()) {
+245             if (name.equals(recording.getName())) {
+246                 return recording;
+247             }
+248         }
+249         throw new DCmdException(&quot;Could not find %s.\n\nUse JFR.check without options to see list of all available recordings.&quot;, name);
+250     }
+251 
+252     protected final String exampleRepository() {
+253         if (&quot;\r\n&quot;.equals(System.lineSeparator())) {
+254             return &quot;C:\\Repositories&quot;;
+255         } else {
+256             return &quot;/Repositories&quot;;
+257         }
+258     }
+259 
+260     protected final String exampleFilename() {
+261         if (&quot;\r\n&quot;.equals(System.lineSeparator())) {
+262             return &quot;C:\\Users\\user\\recording.jfr&quot;;
+263         } else {
+264             return &quot;/recordings/recording.jfr&quot;;
+265         }
+266     }
+267 
+268     protected final String exampleDirectory() {
+269         if (&quot;\r\n&quot;.equals(System.lineSeparator())) {
+270             return &quot;C:\\Directory\\recordings&quot;;
+271         } else {
+272             return &quot;/directory/recordings&quot;;
+273         }
+274     }
+275 }
+<a name="11" id="anc11"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="11" type="hidden" />
+</body>
+</html>

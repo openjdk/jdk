@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/JavaEventTask.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+ 1 /*
+ 2  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 package jdk.jfr.internal.periodic;
+26 
+27 import jdk.internal.event.Event;
+28 import jdk.jfr.EventType;
+29 import jdk.jfr.internal.MetadataRepository;
+30 import jdk.jfr.internal.PlatformEventType;
+31 import jdk.jfr.internal.PrivateAccess;
+32 /**
+33  * Base class for periodic Java events.
+34  */
+35 abstract class JavaEventTask extends EventTask {
+36     private final Runnable runnable;
+37 
+38     public JavaEventTask(Class&lt;? extends Event&gt; eventClass, Runnable runnable) {
+39         super(toPlatformEventType(eventClass), new LookupKey(runnable));
+40         this.runnable = runnable;
+41         if (getEventType().isJVM()) {
+42             throw new InternalError(&quot;Must not be a JVM event&quot;);
+43         }
+44     }
+45 
+46     private static PlatformEventType toPlatformEventType(Class&lt;? extends Event&gt; eventClass) {
+47         EventType eventType = MetadataRepository.getInstance().getEventType(eventClass);
+48         return PrivateAccess.getInstance().getPlatformEventType(eventType);
+49     }
+50 
+51     protected final Runnable getRunnable() {
+52         return runnable;
+53     }
+54 }
+    </pre>
+  </body>
+</html>

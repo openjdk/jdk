@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/event/EventWriter.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../dcmd/DCmdStop.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../jfc/JFC.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/event/EventWriter.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.event;
+ 27 
+ 28 import jdk.internal.misc.Unsafe;
+ 29 import jdk.jfr.internal.Bits;
+<span class="line-removed"> 30 import jdk.jfr.internal.EventWriterKey;</span>
+ 31 import jdk.jfr.internal.StringPool;
+ 32 import jdk.jfr.internal.JVM;
+ 33 import jdk.jfr.internal.PlatformEventType;
+ 34 import jdk.jfr.internal.consumer.StringParser;
+ 35 
+ 36 // User code should not be able to get access to an EventWriter instance as it
+ 37 // would allow it to write arbitrary data into buffers, potentially from
+ 38 // different threads.
+ 39 //
+<span class="line-modified"> 40 // This is prevented in three ways:</span>
+<span class="line-modified"> 41 //</span>
+<span class="line-removed"> 42 // 1. For code to access the jdk.jfr.internal.event package</span>
+<span class="line-removed"> 43 //    at least one event class (for a particular module) must be</span>
+<span class="line-removed"> 44 //    registered having FlightRecorderPermission(&quot;registerEvent&quot;).</span>
+<span class="line-removed"> 45 //</span>
+<span class="line-removed"> 46 // 2. The EventWriter EventWriterFactory::getEventWriter(long) method can only be linked from</span>
+<span class="line-removed"> 47 //    the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.</span>
+<span class="line-removed"> 48 //    (The EventWriterFactory class is dynamically generated before the first event</span>
+<span class="line-removed"> 49 //    is instrumented. See EventWriterFactoryRecipe)</span>
+<span class="line-removed"> 50 //</span>
+<span class="line-removed"> 51 // 3. Steps 1 and 2 are sufficient to make it fully secure, with or without a Security</span>
+<span class="line-removed"> 52 //    Manager, but as an additional measure, the method EventWriterFactory::getEventWriter(long)</span>
+<span class="line-removed"> 53 //    requires the caller to provide a key that is hard to guess. The key is generated</span>
+<span class="line-removed"> 54 //    into the bytecode of the method invoking getEventWriter(long).</span>
+ 55 //
+ 56 public final class EventWriter {
+ 57 
+ 58     // Event may not exceed size for a padded integer
+ 59     private static final long MAX_EVENT_SIZE = (1 &lt;&lt; 28) -1;
+ 60     private static final Unsafe unsafe = Unsafe.getUnsafe();
+ 61 
+ 62     // The JVM needs access to these values. Don&#39;t remove
+ 63     private final long threadID;
+ 64     private long startPosition;
+ 65     private long currentPosition;
+ 66     private long maxPosition;
+ 67     private boolean valid;
+ 68     private boolean pinVirtualThread;
+ 69     boolean excluded;
+ 70 
+ 71     private PlatformEventType eventType;
+ 72     private boolean largeSize = false;
+ 73 
+
+
+
+
+
+
+
+
+ 74     // User code must not be able to instantiate
+ 75     private EventWriter() {
+ 76         threadID = 0;
+ 77     }
+ 78 
+ 79     public void putBoolean(boolean i) {
+ 80         if (isValidForSize(Byte.BYTES)) {
+ 81             unsafe.putBoolean(null, currentPosition, i);
+ 82             ++currentPosition;
+ 83         }
+ 84     }
+ 85 
+ 86     public void putByte(byte i) {
+ 87         if (isValidForSize(Byte.BYTES)) {
+ 88             unsafe.putByte(currentPosition, i);
+ 89             ++currentPosition;
+ 90         }
+ 91     }
+ 92 
+ 93     public void putChar(char v) {
+</pre>
+<hr />
+<pre>
+222             if (!valid) {
+223                 return false;
+224             }
+225         }
+226         return true;
+227     }
+228 
+229     private int usedSize() {
+230         return (int) (currentPosition - startPosition);
+231     }
+232 
+233     private void flush() {
+234         flush(usedSize(), 0);
+235     }
+236 
+237     private void flush(int usedSize, int requestedSize) {
+238         JVM.flush(this, usedSize, requestedSize);
+239     }
+240 
+241     public boolean beginEvent(EventConfiguration configuration, long typeId) {
+<span class="line-modified">242         // Malicious code could take the EventConfiguration object from one</span>
+<span class="line-removed">243         // event class field and assign it to another. This check makes sure</span>
+<span class="line-removed">244         // the event type matches what was added by instrumentation.</span>
+245         if (configuration.getId() != typeId) {
+<span class="line-modified">246             EventWriterKey.block();</span>
+247         }
+248         if (excluded) {
+249             // thread is excluded from writing events
+250             return false;
+251         }
+252         this.eventType = configuration.getPlatformEventType();
+253         reserveEventSizeField();
+254         putLong(eventType.getId());
+255         return true;
+256     }
+257 
+258     public boolean endEvent() {
+259         if (!valid) {
+260             reset();
+261             valid = true;
+262             return true;
+263         }
+264         final int eventSize = usedSize();
+265         if (eventSize &gt; MAX_EVENT_SIZE) {
+266             reset();
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.event;
+ 27 
+ 28 import jdk.internal.misc.Unsafe;
+ 29 import jdk.jfr.internal.Bits;
+
+ 30 import jdk.jfr.internal.StringPool;
+ 31 import jdk.jfr.internal.JVM;
+ 32 import jdk.jfr.internal.PlatformEventType;
+ 33 import jdk.jfr.internal.consumer.StringParser;
+ 34 
+ 35 // User code should not be able to get access to an EventWriter instance as it
+ 36 // would allow it to write arbitrary data into buffers, potentially from
+ 37 // different threads.
+ 38 //
+<span class="line-modified"> 39 // The EventWriter EventWriterFactory::getEventWriter(long) method can only be linked from</span>
+<span class="line-modified"> 40 // the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.</span>
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 41 //
+ 42 public final class EventWriter {
+ 43 
+ 44     // Event may not exceed size for a padded integer
+ 45     private static final long MAX_EVENT_SIZE = (1 &lt;&lt; 28) -1;
+ 46     private static final Unsafe unsafe = Unsafe.getUnsafe();
+ 47 
+ 48     // The JVM needs access to these values. Don&#39;t remove
+ 49     private final long threadID;
+ 50     private long startPosition;
+ 51     private long currentPosition;
+ 52     private long maxPosition;
+ 53     private boolean valid;
+ 54     private boolean pinVirtualThread;
+ 55     boolean excluded;
+ 56 
+ 57     private PlatformEventType eventType;
+ 58     private boolean largeSize = false;
+ 59 
+<span class="line-added"> 60     public static EventWriter getEventWriter() {</span>
+<span class="line-added"> 61         EventWriter ew = JVM.getEventWriter();</span>
+<span class="line-added"> 62         if (ew != null) {</span>
+<span class="line-added"> 63             return ew;</span>
+<span class="line-added"> 64         }</span>
+<span class="line-added"> 65         return JVM.newEventWriter();</span>
+<span class="line-added"> 66     }</span>
+<span class="line-added"> 67 </span>
+ 68     // User code must not be able to instantiate
+ 69     private EventWriter() {
+ 70         threadID = 0;
+ 71     }
+ 72 
+ 73     public void putBoolean(boolean i) {
+ 74         if (isValidForSize(Byte.BYTES)) {
+ 75             unsafe.putBoolean(null, currentPosition, i);
+ 76             ++currentPosition;
+ 77         }
+ 78     }
+ 79 
+ 80     public void putByte(byte i) {
+ 81         if (isValidForSize(Byte.BYTES)) {
+ 82             unsafe.putByte(currentPosition, i);
+ 83             ++currentPosition;
+ 84         }
+ 85     }
+ 86 
+ 87     public void putChar(char v) {
+</pre>
+<hr />
+<pre>
+216             if (!valid) {
+217                 return false;
+218             }
+219         }
+220         return true;
+221     }
+222 
+223     private int usedSize() {
+224         return (int) (currentPosition - startPosition);
+225     }
+226 
+227     private void flush() {
+228         flush(usedSize(), 0);
+229     }
+230 
+231     private void flush(int usedSize, int requestedSize) {
+232         JVM.flush(this, usedSize, requestedSize);
+233     }
+234 
+235     public boolean beginEvent(EventConfiguration configuration, long typeId) {
+<span class="line-modified">236         // This check makes sure the event type matches what was added by instrumentation.</span>
+
+
+237         if (configuration.getId() != typeId) {
+<span class="line-modified">238             throw new InternalError(&quot;Unexpected type id &quot; + typeId);</span>
+239         }
+240         if (excluded) {
+241             // thread is excluded from writing events
+242             return false;
+243         }
+244         this.eventType = configuration.getPlatformEventType();
+245         reserveEventSizeField();
+246         putLong(eventType.getId());
+247         return true;
+248     }
+249 
+250     public boolean endEvent() {
+251         if (!valid) {
+252             reset();
+253             valid = true;
+254             return true;
+255         }
+256         final int eventSize = usedSize();
+257         if (eventSize &gt; MAX_EVENT_SIZE) {
+258             reset();
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="../dcmd/DCmdStop.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../jfc/JFC.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

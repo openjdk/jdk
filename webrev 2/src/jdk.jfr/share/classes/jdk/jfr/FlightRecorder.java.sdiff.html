@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/FlightRecorder.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="EventFactory.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="FlightRecorderPermission.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/FlightRecorder.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import static jdk.jfr.internal.LogLevel.DEBUG;
+ 29 import static jdk.jfr.internal.LogLevel.INFO;
+ 30 import static jdk.jfr.internal.LogTag.JFR;
+ 31 
+<span class="line-removed"> 32 import java.security.AccessControlContext;</span>
+<span class="line-removed"> 33 import java.security.AccessController;</span>
+ 34 import java.util.ArrayList;
+ 35 import java.util.Collections;
+ 36 import java.util.List;
+ 37 import java.util.Objects;
+ 38 
+ 39 import jdk.jfr.internal.JVM;
+ 40 import jdk.jfr.internal.JVMSupport;
+ 41 import jdk.jfr.internal.Logger;
+ 42 import jdk.jfr.internal.MetadataRepository;
+ 43 import jdk.jfr.internal.Options;
+ 44 import jdk.jfr.internal.PlatformRecorder;
+ 45 import jdk.jfr.internal.PlatformRecording;
+ 46 import jdk.jfr.internal.Repository;
+<span class="line-removed"> 47 import jdk.jfr.internal.SecuritySupport;</span>
+ 48 import jdk.jfr.internal.util.Utils;
+ 49 import jdk.jfr.internal.periodic.PeriodicEvents;
+ 50 
+ 51 /**
+ 52  * Class for accessing, controlling, and managing Flight Recorder.
+ 53  * &lt;p&gt;
+ 54  * This class provides the methods necessary for creating, starting, stopping,
+ 55  * and destroying recordings.
+ 56  *
+ 57  * @since 9
+ 58  */
+ 59 public final class FlightRecorder {
+ 60     private static volatile FlightRecorder platformRecorder;
+ 61     private static volatile boolean initialized;
+ 62     private final PlatformRecorder internal;
+ 63 
+ 64     private FlightRecorder(PlatformRecorder internal) {
+ 65         this.internal = internal;
+ 66     }
+ 67 
+</pre>
+<hr />
+<pre>
+140     public static void unregister(Class&lt;? extends Event&gt; eventClass) {
+141         Objects.requireNonNull(eventClass, &quot;eventClass&quot;);
+142         if (JVMSupport.isNotAvailable()) {
+143             return;
+144         }
+145         Utils.ensureValidEventSubclass(eventClass);
+146         MetadataRepository.getInstance().unregister(eventClass);
+147     }
+148 
+149     /**
+150      * Returns the Flight Recorder for the platform.
+151      *
+152      * @return a Flight Recorder instance, not {@code null}
+153      *
+154      * @throws IllegalStateException if Flight Recorder can&#39;t be created (for
+155      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
+156      *         support, or if the file repository can&#39;t be created or accessed)
+157      */
+158     public static FlightRecorder getFlightRecorder() throws IllegalStateException {
+159         synchronized (PlatformRecorder.class) {
+<span class="line-removed">160             SecuritySupport.checkAccessFlightRecorder();</span>
+161             JVMSupport.ensureWithIllegalStateException();
+162             if (platformRecorder == null) {
+163                 try {
+164                     platformRecorder = new FlightRecorder(new PlatformRecorder());
+165                 } catch (IllegalStateException ise) {
+166                     throw ise;
+167                 } catch (Exception e) {
+168                     throw new IllegalStateException(&quot;Can&#39;t create Flight Recorder. &quot; + e.getMessage(), e);
+169                 }
+170                 // Must be in synchronized block to prevent instance leaking out
+171                 // before initialization is done
+172                 initialized = true;
+173                 Logger.log(JFR, INFO, &quot;Flight Recorder initialized&quot;);
+174                 if (Logger.shouldLog(JFR, DEBUG)) {
+175                     Logger.log(JFR, DEBUG, &quot;maxchunksize: &quot; + Options.getMaxChunkSize()+ &quot; bytes&quot;);
+176                     Logger.log(JFR, DEBUG, &quot;memorysize: &quot; + Options.getMemorySize()+ &quot; bytes&quot;);
+177                     Logger.log(JFR, DEBUG, &quot;globalbuffersize: &quot; + Options.getGlobalBufferSize()+ &quot; bytes&quot;);
+178                     Logger.log(JFR, DEBUG, &quot;globalbuffercount: &quot; + Options.getGlobalBufferCount());
+179                     Logger.log(JFR, DEBUG, &quot;dumppath: &quot; + Options.getDumpPath());
+180                     Logger.log(JFR, DEBUG, &quot;stackdepth: &quot; + Options.getStackDepth());
+</pre>
+<hr />
+<pre>
+196      * avoid blocking other Flight Recorder operations. The hook should emit
+197      * one or more events of the specified type. When a hook is added, the
+198      * interval at which the call is invoked is configurable using the
+199      * {@code &quot;period&quot;} setting.
+200      *
+201      * @param eventClass the class that the hook should run for, not {@code null}
+202      * @param hook the hook, not {@code null}
+203      * @throws IllegalArgumentException if a class is not a subclass of
+204      *         {@link Event}, is abstract, or the hook is already added
+205      * @throws IllegalStateException if the event class has the
+206      *         {@code Registered(false)} annotation and is not registered manually
+207      */
+208     public static void addPeriodicEvent(Class&lt;? extends Event&gt; eventClass, Runnable hook) {
+209         Objects.requireNonNull(eventClass, &quot;eventClass&quot;);
+210         Objects.requireNonNull(hook, &quot;hook&quot;);
+211         if (JVMSupport.isNotAvailable()) {
+212             return;
+213         }
+214 
+215         Utils.ensureValidEventSubclass(eventClass);
+<span class="line-modified">216         SecuritySupport.checkRegisterPermission();</span>
+<span class="line-removed">217         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed">218         AccessControlContext acc = AccessController.getContext();</span>
+<span class="line-removed">219         PeriodicEvents.addUserEvent(acc, eventClass, hook);</span>
+220     }
+221 
+222     /**
+223      * Removes a hook for a periodic event.
+224      *
+225      * @param hook the hook to remove, not {@code null}
+226      * @return {@code true} if hook is removed, {@code false} otherwise
+227      */
+228     public static boolean removePeriodicEvent(Runnable hook) {
+229         Objects.requireNonNull(hook, &quot;hook&quot;);
+<span class="line-removed">230         SecuritySupport.checkRegisterPermission();</span>
+231         if (JVMSupport.isNotAvailable()) {
+232             return false;
+233         }
+234         return PeriodicEvents.removeEvent(hook);
+235     }
+236 
+237     /**
+238      * Returns an immutable list that contains all currently registered events.
+239      * &lt;p&gt;
+240      * By default, events are registered when they are first used, typically
+241      * when an event object is allocated. To ensure an event is visible early,
+242      * registration can be triggered by invoking the
+243      * {@link FlightRecorder#register(Class)} method.
+244      *
+245      * @return list of events, not {@code null}
+246      */
+247     public List&lt;EventType&gt; getEventTypes() {
+248         return Collections.unmodifiableList(MetadataRepository.getInstance().getRegisteredEventTypes());
+249     }
+250 
+251     /**
+<span class="line-modified">252      * Adds a recorder listener and captures the {@code AccessControlContext} to</span>
+<span class="line-removed">253      * use when invoking the listener.</span>
+254      * &lt;p&gt;
+255      * If Flight Recorder is already initialized when the listener is added, then the method
+256      * {@link FlightRecorderListener#recorderInitialized(FlightRecorder)} method is
+257      * invoked before returning from this method.
+258      *
+259      * @param changeListener the listener to add, not {@code null}
+260      */
+261     public static void addListener(FlightRecorderListener changeListener) {
+262         Objects.requireNonNull(changeListener, &quot;changeListener&quot;);
+<span class="line-removed">263         SecuritySupport.checkAccessFlightRecorder();</span>
+264         if (JVMSupport.isNotAvailable()) {
+265             return;
+266         }
+267         PlatformRecorder.addListener(changeListener);
+268     }
+269 
+270     /**
+271      * Removes a recorder listener.
+272      * &lt;p&gt;
+273      * If the same listener is added multiple times, only one instance is
+274      * removed.
+275      *
+276      * @param changeListener listener to remove, not {@code null}
+277      *
+278      * @return {@code true}, if the listener could be removed, {@code false}
+279      *         otherwise
+280      */
+281     public static boolean removeListener(FlightRecorderListener changeListener) {
+282         Objects.requireNonNull(changeListener, &quot;changeListener&quot;);
+<span class="line-removed">283         SecuritySupport.checkAccessFlightRecorder();</span>
+284         if (JVMSupport.isNotAvailable()) {
+285             return false;
+286         }
+287 
+288         return PlatformRecorder.removeListener(changeListener);
+289     }
+290 
+291     /**
+292      * Returns {@code true} if the Java Virtual Machine (JVM) has Flight Recorder capabilities.
+293      * &lt;p&gt;
+294      * This method can quickly check whether Flight Recorder can be
+295      * initialized, without actually doing the initialization work. The value may
+296      * change during runtime and it is not safe to cache it.
+297      *
+298      * @return {@code true}, if Flight Recorder is available, {@code false}
+299      *         otherwise
+300      *
+301      * @see FlightRecorderListener for callback when Flight Recorder is
+302      *      initialized
+303      */
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import static jdk.jfr.internal.LogLevel.DEBUG;
+ 29 import static jdk.jfr.internal.LogLevel.INFO;
+ 30 import static jdk.jfr.internal.LogTag.JFR;
+ 31 
+
+
+ 32 import java.util.ArrayList;
+ 33 import java.util.Collections;
+ 34 import java.util.List;
+ 35 import java.util.Objects;
+ 36 
+ 37 import jdk.jfr.internal.JVM;
+ 38 import jdk.jfr.internal.JVMSupport;
+ 39 import jdk.jfr.internal.Logger;
+ 40 import jdk.jfr.internal.MetadataRepository;
+ 41 import jdk.jfr.internal.Options;
+ 42 import jdk.jfr.internal.PlatformRecorder;
+ 43 import jdk.jfr.internal.PlatformRecording;
+ 44 import jdk.jfr.internal.Repository;
+
+ 45 import jdk.jfr.internal.util.Utils;
+ 46 import jdk.jfr.internal.periodic.PeriodicEvents;
+ 47 
+ 48 /**
+ 49  * Class for accessing, controlling, and managing Flight Recorder.
+ 50  * &lt;p&gt;
+ 51  * This class provides the methods necessary for creating, starting, stopping,
+ 52  * and destroying recordings.
+ 53  *
+ 54  * @since 9
+ 55  */
+ 56 public final class FlightRecorder {
+ 57     private static volatile FlightRecorder platformRecorder;
+ 58     private static volatile boolean initialized;
+ 59     private final PlatformRecorder internal;
+ 60 
+ 61     private FlightRecorder(PlatformRecorder internal) {
+ 62         this.internal = internal;
+ 63     }
+ 64 
+</pre>
+<hr />
+<pre>
+137     public static void unregister(Class&lt;? extends Event&gt; eventClass) {
+138         Objects.requireNonNull(eventClass, &quot;eventClass&quot;);
+139         if (JVMSupport.isNotAvailable()) {
+140             return;
+141         }
+142         Utils.ensureValidEventSubclass(eventClass);
+143         MetadataRepository.getInstance().unregister(eventClass);
+144     }
+145 
+146     /**
+147      * Returns the Flight Recorder for the platform.
+148      *
+149      * @return a Flight Recorder instance, not {@code null}
+150      *
+151      * @throws IllegalStateException if Flight Recorder can&#39;t be created (for
+152      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
+153      *         support, or if the file repository can&#39;t be created or accessed)
+154      */
+155     public static FlightRecorder getFlightRecorder() throws IllegalStateException {
+156         synchronized (PlatformRecorder.class) {
+
+157             JVMSupport.ensureWithIllegalStateException();
+158             if (platformRecorder == null) {
+159                 try {
+160                     platformRecorder = new FlightRecorder(new PlatformRecorder());
+161                 } catch (IllegalStateException ise) {
+162                     throw ise;
+163                 } catch (Exception e) {
+164                     throw new IllegalStateException(&quot;Can&#39;t create Flight Recorder. &quot; + e.getMessage(), e);
+165                 }
+166                 // Must be in synchronized block to prevent instance leaking out
+167                 // before initialization is done
+168                 initialized = true;
+169                 Logger.log(JFR, INFO, &quot;Flight Recorder initialized&quot;);
+170                 if (Logger.shouldLog(JFR, DEBUG)) {
+171                     Logger.log(JFR, DEBUG, &quot;maxchunksize: &quot; + Options.getMaxChunkSize()+ &quot; bytes&quot;);
+172                     Logger.log(JFR, DEBUG, &quot;memorysize: &quot; + Options.getMemorySize()+ &quot; bytes&quot;);
+173                     Logger.log(JFR, DEBUG, &quot;globalbuffersize: &quot; + Options.getGlobalBufferSize()+ &quot; bytes&quot;);
+174                     Logger.log(JFR, DEBUG, &quot;globalbuffercount: &quot; + Options.getGlobalBufferCount());
+175                     Logger.log(JFR, DEBUG, &quot;dumppath: &quot; + Options.getDumpPath());
+176                     Logger.log(JFR, DEBUG, &quot;stackdepth: &quot; + Options.getStackDepth());
+</pre>
+<hr />
+<pre>
+192      * avoid blocking other Flight Recorder operations. The hook should emit
+193      * one or more events of the specified type. When a hook is added, the
+194      * interval at which the call is invoked is configurable using the
+195      * {@code &quot;period&quot;} setting.
+196      *
+197      * @param eventClass the class that the hook should run for, not {@code null}
+198      * @param hook the hook, not {@code null}
+199      * @throws IllegalArgumentException if a class is not a subclass of
+200      *         {@link Event}, is abstract, or the hook is already added
+201      * @throws IllegalStateException if the event class has the
+202      *         {@code Registered(false)} annotation and is not registered manually
+203      */
+204     public static void addPeriodicEvent(Class&lt;? extends Event&gt; eventClass, Runnable hook) {
+205         Objects.requireNonNull(eventClass, &quot;eventClass&quot;);
+206         Objects.requireNonNull(hook, &quot;hook&quot;);
+207         if (JVMSupport.isNotAvailable()) {
+208             return;
+209         }
+210 
+211         Utils.ensureValidEventSubclass(eventClass);
+<span class="line-modified">212         PeriodicEvents.addJavaEvent(eventClass, hook);</span>
+
+
+
+213     }
+214 
+215     /**
+216      * Removes a hook for a periodic event.
+217      *
+218      * @param hook the hook to remove, not {@code null}
+219      * @return {@code true} if hook is removed, {@code false} otherwise
+220      */
+221     public static boolean removePeriodicEvent(Runnable hook) {
+222         Objects.requireNonNull(hook, &quot;hook&quot;);
+
+223         if (JVMSupport.isNotAvailable()) {
+224             return false;
+225         }
+226         return PeriodicEvents.removeEvent(hook);
+227     }
+228 
+229     /**
+230      * Returns an immutable list that contains all currently registered events.
+231      * &lt;p&gt;
+232      * By default, events are registered when they are first used, typically
+233      * when an event object is allocated. To ensure an event is visible early,
+234      * registration can be triggered by invoking the
+235      * {@link FlightRecorder#register(Class)} method.
+236      *
+237      * @return list of events, not {@code null}
+238      */
+239     public List&lt;EventType&gt; getEventTypes() {
+240         return Collections.unmodifiableList(MetadataRepository.getInstance().getRegisteredEventTypes());
+241     }
+242 
+243     /**
+<span class="line-modified">244      * Adds a recorder listener.</span>
+
+245      * &lt;p&gt;
+246      * If Flight Recorder is already initialized when the listener is added, then the method
+247      * {@link FlightRecorderListener#recorderInitialized(FlightRecorder)} method is
+248      * invoked before returning from this method.
+249      *
+250      * @param changeListener the listener to add, not {@code null}
+251      */
+252     public static void addListener(FlightRecorderListener changeListener) {
+253         Objects.requireNonNull(changeListener, &quot;changeListener&quot;);
+
+254         if (JVMSupport.isNotAvailable()) {
+255             return;
+256         }
+257         PlatformRecorder.addListener(changeListener);
+258     }
+259 
+260     /**
+261      * Removes a recorder listener.
+262      * &lt;p&gt;
+263      * If the same listener is added multiple times, only one instance is
+264      * removed.
+265      *
+266      * @param changeListener listener to remove, not {@code null}
+267      *
+268      * @return {@code true}, if the listener could be removed, {@code false}
+269      *         otherwise
+270      */
+271     public static boolean removeListener(FlightRecorderListener changeListener) {
+272         Objects.requireNonNull(changeListener, &quot;changeListener&quot;);
+
+273         if (JVMSupport.isNotAvailable()) {
+274             return false;
+275         }
+276 
+277         return PlatformRecorder.removeListener(changeListener);
+278     }
+279 
+280     /**
+281      * Returns {@code true} if the Java Virtual Machine (JVM) has Flight Recorder capabilities.
+282      * &lt;p&gt;
+283      * This method can quickly check whether Flight Recorder can be
+284      * initialized, without actually doing the initialization work. The value may
+285      * change during runtime and it is not safe to cache it.
+286      *
+287      * @return {@code true}, if Flight Recorder is available, {@code false}
+288      *         otherwise
+289      *
+290      * @see FlightRecorderListener for callback when Flight Recorder is
+291      *      initialized
+292      */
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="EventFactory.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="FlightRecorderPermission.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

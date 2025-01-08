@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/jfc/JFC.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.jfc;
+ 27 
+ 28 import java.io.FileNotFoundException;
+ 29 import java.io.IOException;
+ 30 import java.io.InputStream;
+ 31 import java.io.Reader;
+ 32 import java.io.StringReader;
+ 33 import java.nio.charset.StandardCharsets;
+ 34 import java.nio.file.AccessDeniedException;
+ 35 import java.nio.file.Files;
+ 36 import java.nio.file.NoSuchFileException;
+ 37 import java.nio.file.Path;
+ 38 import java.nio.file.Paths;
+ 39 import java.text.ParseException;
+ 40 import java.util.ArrayList;
+ 41 import java.util.Arrays;
+ 42 import java.util.List;
+ 43 
+ 44 import jdk.jfr.Configuration;
+ 45 import jdk.jfr.internal.jfc.model.JFCModelException;
+ 46 import jdk.jfr.internal.LogLevel;
+ 47 import jdk.jfr.internal.LogTag;
+ 48 import jdk.jfr.internal.Logger;
+<a name="2" id="anc2"></a><span class="line-modified"> 49 import jdk.jfr.internal.util.Utils;</span>
+
+ 50 
+ 51 /**
+ 52  * {@link Configuration} factory for JFC files. *
+ 53  */
+ 54 public final class JFC {
+<a name="3" id="anc3"></a><span class="line-added"> 55     private static final Path JFC_DIRECTORY = Utils.getPathInProperty(&quot;java.home&quot;, &quot;lib/jfr&quot;);</span>
+ 56     private static final int BUFFER_SIZE = 8192;
+ 57     private static final int MAXIMUM_FILE_SIZE = 1024 * 1024;
+ 58     private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+ 59     private static volatile List&lt;KnownConfiguration&gt; knownConfigurations;
+ 60 
+<a name="4" id="anc4"></a><span class="line-added"> 61     public static List&lt;Path&gt; getPredefined() {</span>
+<span class="line-added"> 62         List&lt;Path&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="line-added"> 63         try (var ds = Files.newDirectoryStream(JFC_DIRECTORY)) {</span>
+<span class="line-added"> 64             for (Path path : ds) {</span>
+<span class="line-added"> 65                 String text = path.toString();</span>
+<span class="line-added"> 66                 if (text.endsWith(&quot;.jfc&quot;) &amp;&amp; !Files.isDirectory(path)) {</span>
+<span class="line-added"> 67                     list.add(path);</span>
+<span class="line-added"> 68                 }</span>
+<span class="line-added"> 69             }</span>
+<span class="line-added"> 70         } catch (IOException ioe) {</span>
+<span class="line-added"> 71             Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Could not access .jfc-files in &quot; + JFC_DIRECTORY + &quot;, &quot; + ioe.getMessage());</span>
+<span class="line-added"> 72         }</span>
+<span class="line-added"> 73         return list;</span>
+<span class="line-added"> 74     }</span>
+<span class="line-added"> 75 </span>
+ 76     /**
+ 77      * Reads a known configuration file (located into a string, but doesn&#39;t
+ 78      * parse it until it&#39;s being used.
+ 79      */
+ 80     private static final class KnownConfiguration {
+ 81         private final String content;
+ 82         private final String filename;
+ 83         private final String name;
+<a name="5" id="anc5"></a><span class="line-modified"> 84         private final Path path;</span>
+ 85         private Configuration configuration;
+ 86 
+<a name="6" id="anc6"></a><span class="line-modified"> 87         public KnownConfiguration(Path knownPath) throws IOException {</span>
+ 88             this.path = knownPath;
+ 89             this.content = readContent(knownPath);
+<a name="7" id="anc7"></a><span class="line-modified"> 90             this.name = nameFromPath(knownPath);</span>
+<span class="line-modified"> 91             this.filename = nullSafeFileName(knownPath);</span>
+ 92         }
+ 93 
+ 94         public boolean isNamed(String name) {
+ 95             return filename.equals(name) || this.name.equals(name);
+ 96         }
+ 97 
+ 98         public Configuration getConfigurationFile() throws IOException, ParseException {
+ 99             if (configuration == null) {
+100                 configuration = JFCParser.createConfiguration(name, content);
+101             }
+102             return configuration;
+103         }
+104 
+105         public String getName() {
+106             return name;
+107         }
+108 
+<a name="8" id="anc8"></a><span class="line-modified">109         private static String readContent(Path knownPath) throws IOException {</span>
+<span class="line-modified">110             if (Files.size(knownPath) &gt; MAXIMUM_FILE_SIZE) {</span>
+111                 throw new IOException(&quot;Configuration with more than &quot;
+112                         + MAXIMUM_FILE_SIZE + &quot; characters can&#39;t be read.&quot;);
+113             }
+<a name="9" id="anc9"></a><span class="line-modified">114             try (InputStream r = Files.newInputStream(knownPath);) {</span>
+115                 return JFC.readContent(r);
+116             }
+117         }
+118     }
+119 
+120     private JFC() {
+121         // private utility class
+122     }
+123 
+124     /**
+125      * Reads a configuration from a file.
+126      *
+127      * @param path the file containing the configuration, not {@code null}
+128      * @return {@link Configuration}, not {@code null}
+129      * @throws ParseException if the file can&#39;t be parsed
+130      * @throws IOException if the file can&#39;t be read
+131      *
+<a name="10" id="anc10"></a>
+
+132      * @see java.io.File#getPath()
+<a name="11" id="anc11"></a>
+133      */
+134     public static Configuration create(String name, Reader reader) throws IOException, ParseException {
+135         try {
+136             return JFCParser.createConfiguration(name, reader);
+137         } catch (ParseException pe) {
+138             throw new ParseException(&quot;Error reading JFC file. &quot; + pe.getMessage(), -1);
+139         }
+140     }
+141 
+142     /**
+143      * Create a path to a .jfc file.
+144      * &lt;p&gt;
+145      * If the name is predefined name,
+146      * i.e. &quot;default&quot; or &quot;profile.jfc&quot;, it will return the path for
+147      * the predefined path in the JDK.
+148      *
+149      * @param path textual representation of the path
+150      *
+<a name="12" id="anc12"></a><span class="line-modified">151      * @return a path, not null</span>
+152      */
+<a name="13" id="anc13"></a><span class="line-modified">153     public static Path ofPath(String path) {</span>
+<span class="line-modified">154         for (Path predefined : JFC.getPredefined()) {</span>
+155             try {
+<a name="14" id="anc14"></a><span class="line-modified">156                 String name = JFC.nameFromPath(predefined);</span>
+157                 if (name.equals(path) || (name + &quot;.jfc&quot;).equals(path)) {
+158                     return predefined;
+159                 }
+160             } catch (IOException e) {
+161                 throw new InternalError(&quot;Error in predefined .jfc file&quot;, e);
+162             }
+163         }
+<a name="15" id="anc15"></a><span class="line-modified">164         return Path.of(path);</span>
+165     }
+166 
+167 
+168     private static String nullSafeFileName(Path file) throws IOException {
+169         Path filename = file.getFileName();
+170         if (filename == null) {
+171             throw new IOException(&quot;Path has no file name&quot;);
+172         }
+173         return filename.toString();
+174     }
+175 
+176     public static String nameFromPath(Path file) throws IOException {
+177         String f = nullSafeFileName(file);
+178         if (f.endsWith(JFCParser.FILE_EXTENSION)) {
+179             return f.substring(0, f.length() - JFCParser.FILE_EXTENSION.length());
+180         } else  {
+181             return f;
+182         }
+183     }
+184 
+185     // Invoked by DCmdStart
+186     public static Configuration createKnown(String name) throws IOException, ParseException {
+<a name="16" id="anc16"></a>
+187         for (KnownConfiguration known : getKnownConfigurations()) {
+188             if (known.isNamed(name)) {
+189                 return known.getConfigurationFile();
+190             }
+191         }
+192         // Check JFC directory
+<a name="17" id="anc17"></a><span class="line-modified">193         Path path = JFC_DIRECTORY;</span>
+<span class="line-modified">194         if (path != null &amp;&amp; Files.exists(path)) {</span>
+195             for (String extension : Arrays.asList(&quot;&quot;, JFCParser.FILE_EXTENSION)) {
+<a name="18" id="anc18"></a><span class="line-modified">196                 Path file = path.resolveSibling(name + extension);</span>
+<span class="line-modified">197                 if (Files.exists(file) &amp;&amp; !Files.isDirectory(file)) {</span>
+<span class="line-modified">198                     try (Reader r = Files.newBufferedReader(file);) {</span>
+<span class="line-modified">199                         String jfcName = nameFromPath(file);</span>
+200                         return JFCParser.createConfiguration(jfcName, r);
+201                     }
+202                 }
+203             }
+204         }
+205 
+206         // Assume path included in name
+207 
+208         Path localPath = Paths.get(name);
+209         String jfcName = nameFromPath(localPath);
+210         try (Reader r = Files.newBufferedReader(localPath)) {
+211             return JFCParser.createConfiguration(jfcName, r);
+212         }
+213     }
+214 
+215     private static String readContent(InputStream source) throws IOException {
+216         byte[] bytes = read(source, BUFFER_SIZE);
+217         return new String(bytes, StandardCharsets.UTF_8);
+218     }
+219 
+220     // copied from java.io.file.Files to avoid dependency on JDK 9 code
+221     private static byte[] read(InputStream source, int initialSize) throws IOException {
+222         int capacity = initialSize;
+223         byte[] buf = new byte[capacity];
+224         int nread = 0;
+225         int n;
+226         for (;;) {
+227             // read to EOF which may read more or less than initialSize (eg: file
+228             // is truncated while we are reading)
+229             while ((n = source.read(buf, nread, capacity - nread)) &gt; 0)
+230                 nread += n;
+231 
+232             // if last call to source.read() returned -1, we are done
+233             // otherwise, try to read one more byte; if that failed we&#39;re done too
+234             if (n &lt; 0 || (n = source.read()) &lt; 0)
+235                 break;
+236 
+237             // one more byte was read; need to allocate a larger buffer
+238             if (capacity &lt;= MAX_BUFFER_SIZE - capacity) {
+239                 capacity = Math.max(capacity &lt;&lt; 1, BUFFER_SIZE);
+240             } else {
+241                 if (capacity == MAX_BUFFER_SIZE)
+242                     throw new OutOfMemoryError(&quot;Required array size too large&quot;);
+243                 capacity = MAX_BUFFER_SIZE;
+244             }
+245             buf = Arrays.copyOf(buf, capacity);
+246             buf[nread++] = (byte)n;
+247         }
+248         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
+249     }
+250 
+251 
+252     /**
+253      * Returns list of predefined configurations available.
+254      *
+255      * @return list of configurations, not null
+256      */
+257     public static List&lt;Configuration&gt; getConfigurations() {
+258         List&lt;Configuration&gt; configs = new ArrayList&lt;&gt;();
+259         for (KnownConfiguration knownConfig : getKnownConfigurations()) {
+260             try {
+261                 configs.add(knownConfig.getConfigurationFile());
+262             } catch (IOException e) {
+263                 Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Could not load configuration &quot; + knownConfig.getName() + &quot;. &quot; + e.getMessage());
+264             } catch (ParseException e) {
+265                 Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Could not parse configuration &quot; + knownConfig.getName() + &quot;. &quot; + e.getMessage());
+266             }
+267         }
+268         return configs;
+269     }
+270 
+271     private static List&lt;KnownConfiguration&gt; getKnownConfigurations() {
+272         if (knownConfigurations == null) {
+273             List&lt;KnownConfiguration&gt; configProxies = new ArrayList&lt;&gt;();
+<a name="19" id="anc19"></a><span class="line-modified">274             for (Path p : JFC.getPredefined()) {</span>
+275                 try {
+276                     configProxies.add(new KnownConfiguration(p));
+277                 } catch (IOException ioe) {
+278                     // ignore
+279                 }
+280             }
+281             knownConfigurations = configProxies;
+282         }
+283         return knownConfigurations;
+284     }
+285 
+286     public static Configuration getPredefined(String name) throws IOException, ParseException {
+287         for (KnownConfiguration knownConfig : getKnownConfigurations()) {
+288             if (knownConfig.getName().equals(name)) {
+289                 return knownConfig.getConfigurationFile();
+290             }
+291         }
+292         throw new NoSuchFileException(&quot;Could not locate configuration with name &quot; + name);
+293     }
+294 
+<a name="20" id="anc20"></a><span class="line-modified">295     public static Reader newReader(Path sf) throws IOException {</span>
+296         for (KnownConfiguration c : getKnownConfigurations()) {
+297             if (c.path.equals(sf)) {
+298                 return new StringReader(c.content);
+299             }
+300         }
+301         return Files.newBufferedReader(sf.toFile().toPath(), StandardCharsets.UTF_8);
+302     }
+303 
+304     public static String formatException(String prefix, Exception e, String input) {
+305         String message = prefix + &quot; &quot; + JFC.exceptionToVerb(e) + &quot; file &#39;&quot; + input + &quot;&#39;&quot;;
+306         String details = e.getMessage();
+307         if (e instanceof JFCModelException) {
+308             return message +  &quot;. &quot; + details;
+309         }
+310         if (e instanceof ParseException &amp;&amp; !details.isEmpty()) {
+311             return message +  &quot;. &quot; + details;
+312         }
+313         return message;
+314     }
+315 
+316     private static String exceptionToVerb(Exception e) {
+317         return switch (e) {
+318             case FileNotFoundException f -&gt; &quot;find&quot;;
+319             case NoSuchFileException n -&gt; &quot;find&quot;;
+320             case ParseException p -&gt; &quot;parse&quot;;
+321             case JFCModelException j -&gt; &quot;use&quot;;
+322             case AccessDeniedException a -&gt; &quot;access&quot;;
+323             default -&gt; &quot;open&quot;; // InvalidPath, IOException
+324         };
+325     }
+326 }
+<a name="21" id="anc21"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="21" type="hidden" />
+</body>
+</html>

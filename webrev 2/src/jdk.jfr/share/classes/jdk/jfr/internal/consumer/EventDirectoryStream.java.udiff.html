@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/EventDirectoryStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="AbstractEventStream.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="EventFileStream.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/EventDirectoryStream.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -25,16 +25,14 @@</span>
+  
+  package jdk.jfr.internal.consumer;
+  
+  import java.io.IOException;
+  import java.nio.file.Path;
+<span class="udiff-line-removed">- import java.security.AccessControlContext;</span>
+  import java.time.Instant;
+  import java.util.Arrays;
+  import java.util.Comparator;
+  import java.util.List;
+<span class="udiff-line-removed">- import java.util.Objects;</span>
+  import java.util.concurrent.atomic.AtomicLong;
+  import java.util.function.Consumer;
+  
+  import jdk.jfr.Configuration;
+  import jdk.jfr.RecordingState;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -42,11 +40,10 @@</span>
+  import jdk.jfr.internal.JVM;
+  import jdk.jfr.internal.LogLevel;
+  import jdk.jfr.internal.LogTag;
+  import jdk.jfr.internal.Logger;
+  import jdk.jfr.internal.PlatformRecording;
+<span class="udiff-line-removed">- import jdk.jfr.internal.SecuritySupport;</span>
+  import jdk.jfr.internal.util.Utils;
+  import jdk.jfr.internal.management.StreamBarrier;
+  
+  /**
+   * Implementation of an {@code EventStream}} that operates against a directory
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -56,35 +53,27 @@</span>
+  public final class EventDirectoryStream extends AbstractEventStream {
+  
+      private static final Comparator&lt;? super RecordedEvent&gt; EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
+  
+      private final RepositoryFiles repositoryFiles;
+<span class="udiff-line-removed">-     private final FileAccess fileAccess;</span>
+      private final PlatformRecording recording;
+      private final StreamBarrier barrier = new StreamBarrier();
+      private final AtomicLong streamId = new AtomicLong();
+      private ChunkParser currentParser;
+      private long currentChunkStartNanos;
+      private RecordedEvent[] sortedCache;
+      private int threadExclusionLevel = 0;
+      private volatile Consumer&lt;Long&gt; onCompleteHandler;
+  
+      public EventDirectoryStream(
+<span class="udiff-line-removed">-             @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="udiff-line-removed">-             AccessControlContext acc,</span>
+              Path p,
+<span class="udiff-line-removed">-             FileAccess fileAccess,</span>
+              PlatformRecording recording,
+              List&lt;Configuration&gt; configurations,
+              boolean allowSubDirectories) throws IOException {
+<span class="udiff-line-modified-removed">-         super(acc, configurations);</span>
+<span class="udiff-line-modified-added">+         super(configurations);</span>
+          this.recording = recording;
+<span class="udiff-line-modified-removed">-         if (p != null &amp;&amp; SecuritySupport.PRIVILEGED == fileAccess) {</span>
+<span class="udiff-line-removed">-             throw new SecurityException(&quot;Priviliged file access not allowed with potentially malicious Path implementation&quot;);</span>
+<span class="udiff-line-removed">-         }</span>
+<span class="udiff-line-removed">-         this.fileAccess = Objects.requireNonNull(fileAccess);</span>
+<span class="udiff-line-removed">-         this.repositoryFiles = new RepositoryFiles(fileAccess, p, allowSubDirectories);</span>
+<span class="udiff-line-modified-added">+         this.repositoryFiles = new RepositoryFiles(p, allowSubDirectories);</span>
+          this.streamId.incrementAndGet();
+          Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, &quot;Stream &quot; + streamId + &quot; started.&quot;);
+      }
+  
+      @Override
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -151,11 +140,11 @@</span>
+          if (path == null) { // closed
+              logStreamEnd(&quot;no first chunk file found.&quot;);
+              return;
+          }
+          currentChunkStartNanos = repositoryFiles.getTimestamp(path);
+<span class="udiff-line-modified-removed">-         try (RecordingInput input = new RecordingInput(path.toFile(), fileAccess)) {</span>
+<span class="udiff-line-modified-added">+         try (RecordingInput input = new RecordingInput(path.toFile())) {</span>
+              input.setStreamed();
+              currentParser = new ChunkParser(input, disp.parserConfiguration, parserState());
+              long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();
+              long filterStart = validStartTime ? disp.startNanos : segmentStart;
+              long filterEnd = disp.endTime != null ? disp.endNanos : Long.MAX_VALUE;
+</pre>
+<center><a href="AbstractEventStream.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="EventFileStream.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.management.jfr/share/classes/jdk/management/jfr/FlightRecorderMXBeanImpl.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="DiskRepository.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="MBeanUtils.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.management.jfr/share/classes/jdk/management/jfr/FlightRecorderMXBeanImpl.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 28,13 ***</span>
+  import java.io.IOException;
+  import java.io.InputStream;
+  import java.io.StringReader;
+  import java.nio.file.Path;
+  import java.nio.file.Paths;
+<span class="line-removed">- import java.security.AccessControlContext;</span>
+<span class="line-removed">- import java.security.AccessController;</span>
+<span class="line-removed">- import java.security.PrivilegedAction;</span>
+  import java.text.ParseException;
+  import java.time.Instant;
+  import java.util.ArrayList;
+  import java.util.Arrays;
+  import java.util.Collections;
+<span class="line-new-header">--- 28,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 65,11 ***</span>
+  
+  import jdk.jfr.Configuration;
+  import jdk.jfr.EventType;
+  import jdk.jfr.FlightRecorder;
+  import jdk.jfr.FlightRecorderListener;
+<span class="line-removed">- import jdk.jfr.FlightRecorderPermission;</span>
+  import jdk.jfr.Recording;
+  import jdk.jfr.RecordingState;
+  import jdk.jfr.internal.management.ManagementSupport;
+  import jdk.jfr.internal.management.StreamManager;
+  
+<span class="line-new-header">--- 62,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 78,30 ***</span>
+  
+      final class MXBeanListener implements FlightRecorderListener {
+          private final NotificationListener listener;
+          private final NotificationFilter filter;
+          private final Object handback;
+<span class="line-removed">-         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed">-         private final AccessControlContext context;</span>
+  
+          @SuppressWarnings(&quot;removal&quot;)
+          public MXBeanListener(NotificationListener listener, NotificationFilter filter, Object handback) {
+<span class="line-removed">-             this.context = AccessController.getContext();</span>
+              this.listener = listener;
+              this.filter = filter;
+              this.handback = handback;
+          }
+  
+          @SuppressWarnings(&quot;removal&quot;)
+          public void recordingStateChanged(Recording recording) {
+<span class="line-modified">!             AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {</span>
+<span class="line-removed">-                 @Override</span>
+<span class="line-removed">-                 public Void run() {</span>
+<span class="line-removed">-                     sendNotification(createNotification(recording));</span>
+<span class="line-removed">-                     return null;</span>
+<span class="line-removed">-                 }</span>
+<span class="line-removed">-             }, context);</span>
+          }
+      }
+  
+      private static final String ATTRIBUTE_RECORDINGS = &quot;Recordings&quot;;
+      private static final String OPTION_MAX_SIZE = &quot;maxSize&quot;;
+<span class="line-new-header">--- 74,21 ---</span>
+  
+      final class MXBeanListener implements FlightRecorderListener {
+          private final NotificationListener listener;
+          private final NotificationFilter filter;
+          private final Object handback;
+  
+          @SuppressWarnings(&quot;removal&quot;)
+          public MXBeanListener(NotificationListener listener, NotificationFilter filter, Object handback) {
+              this.listener = listener;
+              this.filter = filter;
+              this.handback = handback;
+          }
+  
+          @SuppressWarnings(&quot;removal&quot;)
+          public void recordingStateChanged(Recording recording) {
+<span class="line-modified">!             sendNotification(createNotification(recording));</span>
+          }
+      }
+  
+      private static final String ATTRIBUTE_RECORDINGS = &quot;Recordings&quot;;
+      private static final String OPTION_MAX_SIZE = &quot;maxSize&quot;;
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 122,29 ***</span>
+          super(FlightRecorderMXBean.class, true, new NotificationBroadcasterSupport(createNotificationInfo()));
+      }
+  
+      @Override
+      public void startRecording(long id) {
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          getExistingRecording(id).start();
+      }
+  
+      @Override
+      public boolean stopRecording(long id) {
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          return getExistingRecording(id).stop();
+      }
+  
+      @Override
+      public void closeRecording(long id) {
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          getExistingRecording(id).close();
+      }
+  
+      @Override
+      public long openStream(long id, Map&lt;String, String&gt; options) throws IOException {
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          if (!FlightRecorder.isInitialized()) {
+              throw new IllegalArgumentException(&quot;No recording available with id &quot; + id);
+          }
+          // Make local copy to prevent concurrent modification
+          Map&lt;String, String&gt; s = options == null ? new HashMap&lt;&gt;() : new HashMap&lt;&gt;(options);
+<span class="line-new-header">--- 109,25 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 167,85 ***</span>
+          return streamHandler.create(is, blockSize).getId();
+      }
+  
+      @Override
+      public void closeStream(long streamIdentifier) throws IOException {
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          streamHandler.getStream(streamIdentifier).close();
+      }
+  
+      @Override
+      public byte[] readStream(long streamIdentifier) throws IOException {
+<span class="line-removed">-         MBeanUtils.checkMonitor();</span>
+          return streamHandler.getStream(streamIdentifier).read();
+      }
+  
+      @Override
+      public List&lt;RecordingInfo&gt; getRecordings() {
+<span class="line-removed">-         MBeanUtils.checkMonitor();</span>
+          if (!FlightRecorder.isInitialized()) {
+              return Collections.emptyList();
+          }
+          return MBeanUtils.transformList(getRecorder().getRecordings(), RecordingInfo::new);
+      }
+  
+      @Override
+      public List&lt;ConfigurationInfo&gt; getConfigurations() {
+<span class="line-removed">-         MBeanUtils.checkMonitor();</span>
+          return MBeanUtils.transformList(Configuration.getConfigurations(), ConfigurationInfo::new);
+      }
+  
+      @Override
+      public List&lt;EventTypeInfo&gt; getEventTypes() {
+<span class="line-modified">!         MBeanUtils.checkMonitor();</span>
+<span class="line-removed">-         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed">-         List&lt;EventType&gt; eventTypes = AccessController.doPrivileged(new PrivilegedAction&lt;List&lt;EventType&gt;&gt;() {</span>
+<span class="line-removed">-             @Override</span>
+<span class="line-removed">-             public List&lt;EventType&gt; run() {</span>
+<span class="line-removed">-                 return ManagementSupport.getEventTypes();</span>
+<span class="line-removed">-             }</span>
+<span class="line-removed">-         }, null, new FlightRecorderPermission(&quot;accessFlightRecorder&quot;));</span>
+<span class="line-removed">- </span>
+<span class="line-removed">-         return MBeanUtils.transformList(eventTypes, EventTypeInfo::new);</span>
+      }
+  
+      @Override
+      public Map&lt;String, String&gt; getRecordingSettings(long recording) throws IllegalArgumentException {
+<span class="line-removed">-         MBeanUtils.checkMonitor();</span>
+          return getExistingRecording(recording).getSettings();
+      }
+  
+      @Override
+      public void setRecordingSettings(long recording, Map&lt;String, String&gt; settings) throws IllegalArgumentException {
+          Objects.requireNonNull(settings, &quot;settings&quot;);
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          getExistingRecording(recording).setSettings(settings);
+      }
+  
+<span class="line-removed">-     @SuppressWarnings(&quot;removal&quot;)</span>
+      @Override
+      public long newRecording() {
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          getRecorder(); // ensure notification listener is setup
+<span class="line-modified">!         return AccessController.doPrivileged(new PrivilegedAction&lt;Recording&gt;() {</span>
+<span class="line-removed">-             @Override</span>
+<span class="line-removed">-             public Recording run() {</span>
+<span class="line-removed">-                 return new Recording();</span>
+<span class="line-removed">-             }</span>
+<span class="line-removed">-         }, null, new FlightRecorderPermission(&quot;accessFlightRecorder&quot;)).getId();</span>
+      }
+  
+      @Override
+      public long takeSnapshot() {
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          return getRecorder().takeSnapshot().getId();
+      }
+  
+      @Override
+      public void setConfiguration(long recording, String contents) throws IllegalArgumentException {
+          Objects.requireNonNull(contents, &quot;contents&quot;);
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          try {
+              Configuration c = Configuration.create(new StringReader(contents));
+              getExistingRecording(recording).setSettings(c.getSettings());
+          } catch (IOException | ParseException e) {
+              throw new IllegalArgumentException(&quot;Could not parse configuration&quot;, e);
+<span class="line-new-header">--- 150,61 ---</span>
+          return streamHandler.create(is, blockSize).getId();
+      }
+  
+      @Override
+      public void closeStream(long streamIdentifier) throws IOException {
+          streamHandler.getStream(streamIdentifier).close();
+      }
+  
+      @Override
+      public byte[] readStream(long streamIdentifier) throws IOException {
+          return streamHandler.getStream(streamIdentifier).read();
+      }
+  
+      @Override
+      public List&lt;RecordingInfo&gt; getRecordings() {
+          if (!FlightRecorder.isInitialized()) {
+              return Collections.emptyList();
+          }
+          return MBeanUtils.transformList(getRecorder().getRecordings(), RecordingInfo::new);
+      }
+  
+      @Override
+      public List&lt;ConfigurationInfo&gt; getConfigurations() {
+          return MBeanUtils.transformList(Configuration.getConfigurations(), ConfigurationInfo::new);
+      }
+  
+      @Override
+      public List&lt;EventTypeInfo&gt; getEventTypes() {
+<span class="line-modified">!         return MBeanUtils.transformList(ManagementSupport.getEventTypes(), EventTypeInfo::new);</span>
+      }
+  
+      @Override
+      public Map&lt;String, String&gt; getRecordingSettings(long recording) throws IllegalArgumentException {
+          return getExistingRecording(recording).getSettings();
+      }
+  
+      @Override
+      public void setRecordingSettings(long recording, Map&lt;String, String&gt; settings) throws IllegalArgumentException {
+          Objects.requireNonNull(settings, &quot;settings&quot;);
+          getExistingRecording(recording).setSettings(settings);
+      }
+  
+      @Override
+      public long newRecording() {
+          getRecorder(); // ensure notification listener is setup
+<span class="line-modified">!         return new Recording().getId();</span>
+      }
+  
+      @Override
+      public long takeSnapshot() {
+          return getRecorder().takeSnapshot().getId();
+      }
+  
+      @Override
+      public void setConfiguration(long recording, String contents) throws IllegalArgumentException {
+          Objects.requireNonNull(contents, &quot;contents&quot;);
+          try {
+              Configuration c = Configuration.create(new StringReader(contents));
+              getExistingRecording(recording).setSettings(c.getSettings());
+          } catch (IOException | ParseException e) {
+              throw new IllegalArgumentException(&quot;Could not parse configuration&quot;, e);
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 253,11 ***</span>
+      }
+  
+      @Override
+      public void setPredefinedConfiguration(long recording, String configurationName) throws IllegalArgumentException {
+          Objects.requireNonNull(configurationName, &quot;configurationName&quot;);
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          Recording r = getExistingRecording(recording);
+          for (Configuration c : Configuration.getConfigurations()) {
+              if (c.getName().equals(configurationName)) {
+                  r.setSettings(c.getSettings());
+                  return;
+<span class="line-new-header">--- 212,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 267,18 ***</span>
+      }
+  
+      @Override
+      public void copyTo(long recording, String outputFile) throws IOException {
+          Objects.requireNonNull(outputFile, &quot;outputFile&quot;);
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          getExistingRecording(recording).dump(Paths.get(outputFile));
+      }
+  
+      @Override
+      public void setRecordingOptions(long recording, Map&lt;String, String&gt; options) throws IllegalArgumentException {
+          Objects.requireNonNull(options, &quot;options&quot;);
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          // Make local copy to prevent concurrent modification
+          Map&lt;String, String&gt; ops = new HashMap&lt;String, String&gt;(options);
+          for (Map.Entry&lt;String, String&gt; entry : ops.entrySet()) {
+              Object key = entry.getKey();
+              Object value = entry.getValue();
+<span class="line-new-header">--- 225,16 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 313,11 ***</span>
+          setOption(ops, OPTION_DESTINATION, null, x -&gt; MBeanUtils.destination(r, x), x -&gt; setOptionDestination(r, x));
+      }
+  
+      @Override
+      public Map&lt;String, String&gt; getRecordingOptions(long recording) throws IllegalArgumentException {
+<span class="line-removed">-         MBeanUtils.checkMonitor();</span>
+          Recording r = getExistingRecording(recording);
+          Map&lt;String, String&gt; options = HashMap.newHashMap(10);
+          options.put(OPTION_DUMP_ON_EXIT, String.valueOf(r.getDumpOnExit()));
+          options.put(OPTION_DISK, String.valueOf(r.isToDisk()));
+          options.put(OPTION_NAME, String.valueOf(r.getName()));
+<span class="line-new-header">--- 269,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 328,12 ***</span>
+          options.put(OPTION_DESTINATION, ManagementSupport.getDestinationOriginalText(r));
+          return options;
+      }
+  
+      @Override
+<span class="line-modified">!     public long cloneRecording(long id, boolean stop) throws IllegalStateException, SecurityException {</span>
+<span class="line-removed">-         MBeanUtils.checkControl();</span>
+          return getRecording(id).copy(stop).getId();
+      }
+  
+      @Override
+      public ObjectName getObjectName() {
+<span class="line-new-header">--- 283,11 ---</span>
+          options.put(OPTION_DESTINATION, ManagementSupport.getDestinationOriginalText(r));
+          return options;
+      }
+  
+      @Override
+<span class="line-modified">!     public long cloneRecording(long id, boolean stop) throws IllegalStateException {</span>
+          return getRecording(id).copy(stop).getId();
+      }
+  
+      @Override
+      public ObjectName getObjectName() {
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 395,20 ***</span>
+              throw new IllegalArgumentException(&quot;Not a valid value for option &#39;&quot; + name + &quot;&#39;. &quot; + iae.getMessage());
+          }
+      }
+  
+      @SuppressWarnings(&quot;removal&quot;)
+<span class="line-modified">!     private FlightRecorder getRecorder() throws SecurityException {</span>
+          // Synchronize on some private object that is always available
+          synchronized (streamHandler) {
+              if (recorder == null) {
+<span class="line-modified">!                 recorder = AccessController.doPrivileged(new PrivilegedAction&lt;FlightRecorder&gt;() {</span>
+<span class="line-removed">-                     @Override</span>
+<span class="line-removed">-                     public FlightRecorder run() {</span>
+<span class="line-removed">-                         return FlightRecorder.getFlightRecorder();</span>
+<span class="line-removed">-                     }</span>
+<span class="line-removed">-                 }, null, new FlightRecorderPermission(&quot;accessFlightRecorder&quot;));</span>
+              }
+              return recorder;
+          }
+      }
+  
+<span class="line-new-header">--- 349,15 ---</span>
+              throw new IllegalArgumentException(&quot;Not a valid value for option &#39;&quot; + name + &quot;&#39;. &quot; + iae.getMessage());
+          }
+      }
+  
+      @SuppressWarnings(&quot;removal&quot;)
+<span class="line-modified">!     private FlightRecorder getRecorder() {</span>
+          // Synchronize on some private object that is always available
+          synchronized (streamHandler) {
+              if (recorder == null) {
+<span class="line-modified">!                 recorder = FlightRecorder.getFlightRecorder();</span>
+              }
+              return recorder;
+          }
+      }
+  
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 423,17 ***</span>
+      @SuppressWarnings(&quot;removal&quot;)
+      @Override
+      public void addNotificationListener(NotificationListener listener, NotificationFilter filter, Object handback) {
+          MXBeanListener mxbeanListener = new MXBeanListener(listener, filter, handback);
+          listeners.add(mxbeanListener);
+<span class="line-modified">!         AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {</span>
+<span class="line-removed">-             @Override</span>
+<span class="line-removed">-             public Void run(){</span>
+<span class="line-removed">-                 FlightRecorder.addListener(mxbeanListener);</span>
+<span class="line-removed">-                 return null;</span>
+<span class="line-removed">-             }</span>
+<span class="line-removed">-         }, null, new FlightRecorderPermission(&quot;accessFlightRecorder&quot;));</span>
+          super.addNotificationListener(listener, filter, handback);
+      }
+  
+      @Override
+      public void removeNotificationListener(NotificationListener listener) throws ListenerNotFoundException {
+<span class="line-new-header">--- 372,11 ---</span>
+      @SuppressWarnings(&quot;removal&quot;)
+      @Override
+      public void addNotificationListener(NotificationListener listener, NotificationFilter filter, Object handback) {
+          MXBeanListener mxbeanListener = new MXBeanListener(listener, filter, handback);
+          listeners.add(mxbeanListener);
+<span class="line-modified">!         FlightRecorder.addListener(mxbeanListener);</span>
+          super.addNotificationListener(listener, filter, handback);
+      }
+  
+      @Override
+      public void removeNotificationListener(NotificationListener listener) throws ListenerNotFoundException {
+</pre>
+<center><a href="DiskRepository.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="MBeanUtils.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

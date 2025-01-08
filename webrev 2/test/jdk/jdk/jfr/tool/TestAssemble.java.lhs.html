@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames test/jdk/jdk/jfr/tool/TestAssemble.java</title>
+    <link rel="stylesheet" href="../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.
+  8  *
+  9  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 10  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 11  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 12  * version 2 for more details (a copy is included in the LICENSE file that
+ 13  * accompanied this code).
+ 14  *
+ 15  * You should have received a copy of the GNU General Public License version
+ 16  * 2 along with this work; if not, write to the Free Software Foundation,
+ 17  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 18  *
+ 19  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 20  * or visit www.oracle.com if you need additional information or have any
+ 21  * questions.
+ 22  */
+ 23 
+ 24 package jdk.jfr.tool;
+ 25 
+ 26 import java.io.FileWriter;
+ 27 import java.io.IOException;
+ 28 import java.nio.file.Files;
+ 29 import java.nio.file.Path;
+ 30 import java.nio.file.Paths;
+ 31 
+ 32 import jdk.jfr.Event;
+ 33 import jdk.jfr.Name;
+ 34 import jdk.jfr.Recording;
+ 35 import jdk.jfr.consumer.RecordedEvent;
+ 36 import jdk.jfr.consumer.RecordingFile;
+ 37 import jdk.jfr.internal.Repository;
+<a name="2" id="anc2"></a><span class="line-removed"> 38 import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+ 39 import jdk.test.lib.Asserts;
+ 40 import jdk.test.lib.process.OutputAnalyzer;
+ 41 
+ 42 /**
+ 43  * @test
+ 44  * @summary Test jfr reconstruct
+ 45  * @key jfr
+ 46  * @requires vm.hasJFR
+ 47  * @library /test/lib /test/jdk
+ 48  * @modules jdk.jfr/jdk.jfr.internal
+ 49  * @run main/othervm jdk.jfr.tool.TestAssemble
+ 50  */
+ 51 public class TestAssemble {
+ 52 
+ 53     @Name(&quot;Correlation&quot;)
+ 54     static class CorrelationEvent extends Event {
+ 55         int id;
+ 56     }
+ 57     private static int RECORDING_COUNT = 5;
+ 58 
+ 59     @SuppressWarnings(&quot;resource&quot;)
+ 60     public static void main(String[] args) throws Throwable {
+ 61         // Create some disk recordings
+ 62         Recording[] recordings = new Recording[5];
+ 63         for (int i = 0; i &lt; RECORDING_COUNT; i++) {
+ 64             Recording r = new Recording();
+ 65             r.setToDisk(true);
+ 66             r.start();
+ 67             CorrelationEvent ce = new CorrelationEvent();
+ 68             ce.id = i;
+ 69             ce.commit();
+ 70             r.stop();
+ 71             recordings[i] = r;
+ 72         }
+ 73         Path dir = Paths.get(&quot;reconstruction-parts&quot;);
+ 74         Files.createDirectories(dir);
+ 75 
+ 76         long expectedCount = 0;
+ 77         for (int i = 0; i &lt; RECORDING_COUNT; i++) {
+ 78             Path tmp = dir.resolve(&quot;chunk-part-&quot; + i + &quot;.jfr&quot;);
+ 79             recordings[i].dump(tmp);
+ 80             expectedCount += countEventInRecording(tmp);
+ 81         }
+ 82 
+<a name="3" id="anc3"></a><span class="line-modified"> 83         SafePath repository = Repository.getRepository().getRepositoryPath();</span>
+ 84         Path destinationPath = Paths.get(&quot;reconstructed.jfr&quot;);
+ 85 
+ 86         String directory = repository.toString();
+ 87         String destination = destinationPath.toAbsolutePath().toString();
+ 88 
+ 89         // Test failure
+ 90         OutputAnalyzer output = ExecuteHelper.jfr(&quot;assemble&quot;);
+ 91         output.shouldContain(&quot;too few arguments&quot;);
+ 92 
+ 93         output = ExecuteHelper.jfr(&quot;assemble&quot;, directory);
+ 94         output.shouldContain(&quot;too few arguments&quot;);
+ 95 
+ 96         output = ExecuteHelper.jfr(&quot;assemble&quot;, &quot;not-a-directory&quot;, destination);
+ 97         output.shouldContain(&quot;directory does not exist, not-a-directory&quot;);
+ 98 
+ 99         output = ExecuteHelper.jfr(&quot;assemble&quot;, directory, &quot;not-a-destination&quot;);
+100         output.shouldContain(&quot;filename must end with &#39;.jfr&#39;&quot;);
+101 
+102         output = ExecuteHelper.jfr(&quot;assemble&quot;, &quot;--wrongOption&quot;, directory, destination);
+103         output.shouldContain(&quot;too many arguments&quot;);
+104 
+105         FileWriter fw = new FileWriter(destination);
+106         fw.write(&#39;d&#39;);
+107         fw.close();
+108         output = ExecuteHelper.jfr(&quot;assemble&quot;, directory, destination);
+109         output.shouldContain(&quot;already exists&quot;);
+110         Files.delete(destinationPath);
+111 
+112         // test success
+113         output = ExecuteHelper.jfr(&quot;assemble&quot;, directory, destination);
+114         System.out.println(output.getOutput());
+115         output.shouldContain(&quot;Finished.&quot;);
+116 
+117         long reconstructedCount = countEventInRecording(destinationPath);
+118         Asserts.assertEquals(expectedCount, reconstructedCount);
+119         // Cleanup
+120         for (int i = 0; i &lt; RECORDING_COUNT; i++) {
+121             recordings[i].close();
+122         }
+123     }
+124 
+125     private static long countEventInRecording(Path file) throws IOException {
+126         Integer lastId = -1;
+127         try (RecordingFile rf = new RecordingFile(file)) {
+128             long count = 0;
+129             while (rf.hasMoreEvents()) {
+130                 RecordedEvent re = rf.readEvent();
+131                 if (re.getEventType().getName().equals(&quot;Correlation&quot;)) {
+132                     Integer id = re.getValue(&quot;id&quot;);
+133                     if (id &lt; lastId) {
+134                         Asserts.fail(&quot;Expected chunk number to increase&quot;);
+135                     }
+136                     lastId = id;
+137                 }
+138                 count++;
+139             }
+140             return count;
+141         }
+142     }
+143 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

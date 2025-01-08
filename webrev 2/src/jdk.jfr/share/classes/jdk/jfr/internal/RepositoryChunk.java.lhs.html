@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/RepositoryChunk.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.io.RandomAccessFile;
+<a name="2" id="anc2"></a>
+ 30 import java.nio.channels.ReadableByteChannel;
+<a name="3" id="anc3"></a>
+
+
+ 31 import java.time.Instant;
+ 32 import java.util.Comparator;
+ 33 
+<a name="4" id="anc4"></a><span class="line-removed"> 34 import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+<span class="line-removed"> 35 </span>
+ 36 public final class RepositoryChunk {
+ 37 
+ 38     static final Comparator&lt;RepositoryChunk&gt; END_TIME_COMPARATOR = new Comparator&lt;RepositoryChunk&gt;() {
+ 39         @Override
+ 40         public int compare(RepositoryChunk c1, RepositoryChunk c2) {
+ 41             return c1.endTime.compareTo(c2.endTime);
+ 42         }
+ 43     };
+ 44 
+<a name="5" id="anc5"></a><span class="line-modified"> 45     private final SafePath chunkFile;</span>
+ 46     private final RandomAccessFile unFinishedRAF;
+ 47 
+ 48     private Instant endTime = null; // unfinished
+ 49     private Instant startTime;
+ 50     private int refCount = 1;
+ 51     private long size;
+ 52 
+<a name="6" id="anc6"></a><span class="line-modified"> 53     RepositoryChunk(SafePath path) throws Exception {</span>
+ 54         this.chunkFile = path;
+<a name="7" id="anc7"></a><span class="line-modified"> 55         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);</span>
+ 56     }
+ 57 
+ 58     boolean finish(Instant endTime) {
+ 59         try {
+ 60             unFinishedRAF.close();
+<a name="8" id="anc8"></a><span class="line-modified"> 61             size = SecuritySupport.getFileSize(chunkFile);</span>
+ 62             this.endTime = endTime;
+ 63             if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+ 64                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, &quot;Chunk finished: &quot; + chunkFile);
+ 65             }
+ 66             return true;
+ 67         } catch (IOException e) {
+ 68             final String reason;
+ 69             if (isMissingFile()) {
+ 70                 reason = &quot;Chunkfile \&quot;&quot;+ getFile() + &quot;\&quot; is missing. &quot; +
+ 71                          &quot;Data loss might occur from &quot; + getStartTime() + &quot; to &quot; + endTime;
+ 72             } else {
+ 73                 reason = e.getClass().getName();
+ 74             }
+ 75             Logger.log(LogTag.JFR, LogLevel.ERROR, &quot;Could not finish chunk. &quot; + reason);
+ 76             return false;
+ 77         }
+ 78     }
+ 79 
+ 80     public Instant getStartTime() {
+ 81         return startTime;
+ 82     }
+ 83 
+ 84     public void setStartTime(Instant timestamp) {
+ 85         this.startTime = timestamp;
+ 86     }
+ 87 
+ 88     public Instant getEndTime() {
+ 89         return endTime;
+ 90     }
+ 91 
+<a name="9" id="anc9"></a><span class="line-modified"> 92     private void delete(SafePath f) {</span>
+ 93         try {
+<a name="10" id="anc10"></a><span class="line-modified"> 94             SecuritySupport.delete(f);</span>
+ 95             if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
+ 96                 Logger.log(LogTag.JFR, LogLevel.DEBUG, &quot;Repository chunk &quot; + f + &quot; deleted&quot;);
+ 97             }
+ 98         } catch (IOException e) {
+ 99             // Probably happens because file is being streamed
+100             // on Windows where files in use can&#39;t be removed.
+101             if (Logger.shouldLog(LogTag.JFR, LogLevel.DEBUG)) {
+102                 Logger.log(LogTag.JFR, LogLevel.DEBUG, &quot;Repository chunk &quot; + f + &quot; could not be deleted: &quot; + e.getMessage());
+103             }
+104             if (f != null) {
+105                 FilePurger.add(f);
+106             }
+107         }
+108     }
+109 
+110     private void destroy() {
+111         try {
+112             unFinishedRAF.close();
+113         } catch (IOException e) {
+114             if (Logger.shouldLog(LogTag.JFR, LogLevel.ERROR)) {
+115                 Logger.log(LogTag.JFR, LogLevel.ERROR, &quot;Could not close random access file: &quot; + chunkFile.toString() + &quot;. File will not be deleted due to: &quot; + e.getMessage());
+116             }
+117         } finally {
+118             delete(chunkFile);
+119         }
+120     }
+121 
+122     public synchronized void use() {
+123         ++refCount;
+124         if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+125             Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, &quot;Use chunk &quot; + toString() + &quot; ref count now &quot; + refCount);
+126         }
+127     }
+128 
+129     public synchronized void release() {
+130         --refCount;
+131         if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
+132             Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, &quot;Release chunk &quot; + toString() + &quot; ref count now &quot; + refCount);
+133         }
+134         if (refCount == 0) {
+135             destroy();
+136         }
+137     }
+138 
+139     public long getSize() {
+140         return size;
+141     }
+142 
+143     public boolean isFinished() {
+144         return endTime != null;
+145     }
+146 
+147     @Override
+148     public String toString() {
+149         return chunkFile.toString();
+150     }
+151 
+152     ReadableByteChannel newChannel() throws IOException {
+153         if (!isFinished()) {
+154             throw new IOException(&quot;Chunk not finished&quot;);
+155         }
+<a name="11" id="anc11"></a><span class="line-modified">156         return ((SecuritySupport.newFileChannelToRead(chunkFile)));</span>
+157     }
+158 
+159     public boolean inInterval(Instant startTime, Instant endTime) {
+160         if (startTime != null &amp;&amp; getEndTime().isBefore(startTime)) {
+161             return false;
+162         }
+163         if (endTime != null &amp;&amp; getStartTime().isAfter(endTime)) {
+164             return false;
+165         }
+166         return true;
+167     }
+168 
+<a name="12" id="anc12"></a><span class="line-modified">169     public SafePath getFile() {</span>
+170         return chunkFile;
+171     }
+172 
+173     public long getCurrentFileSize() {
+174         try {
+<a name="13" id="anc13"></a><span class="line-modified">175             return SecuritySupport.getFileSize(chunkFile);</span>
+176         } catch (IOException e) {
+177             return 0L;
+178         }
+179     }
+180 
+181     boolean isMissingFile() {
+<a name="14" id="anc14"></a><span class="line-modified">182         try {</span>
+<span class="line-removed">183             return !SecuritySupport.exists(chunkFile);</span>
+<span class="line-removed">184         } catch (IOException ioe) {</span>
+<span class="line-removed">185             return true;</span>
+<span class="line-removed">186         }</span>
+187     }
+188 }
+<a name="15" id="anc15"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="15" type="hidden" />
+</body>
+</html>

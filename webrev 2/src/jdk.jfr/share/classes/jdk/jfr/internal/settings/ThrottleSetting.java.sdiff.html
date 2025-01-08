@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/settings/ThrottleSetting.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="ThresholdSetting.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../tool/Command.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/settings/ThrottleSetting.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
+  4  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  5  *
+  6  * This code is free software; you can redistribute it and/or modify it
+  7  * under the terms of the GNU General Public License version 2 only, as
+  8  * published by the Free Software Foundation.  Oracle designates this
+  9  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 10  * by Oracle in the LICENSE file that accompanied this code.
+ 11  *
+ 12  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 13  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 14  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 15  * version 2 for more details (a copy is included in the LICENSE file that
+ 16  * accompanied this code).
+ 17  *
+ 18  * You should have received a copy of the GNU General Public License version
+ 19  * 2 along with this work; if not, write to the Free Software Foundation,
+ 20  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 21  *
+ 22  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 23  * or visit www.oracle.com if you need additional information or have any
+ 24  * questions.
+ 25  */
+ 26 
+ 27 package jdk.jfr.internal.settings;
+ 28 
+ 29 import static jdk.jfr.internal.util.TimespanUnit.SECONDS;
+ 30 import static jdk.jfr.internal.util.TimespanUnit.MILLISECONDS;
+ 31 
+ 32 import java.util.Objects;
+ 33 import java.util.Set;
+ 34 
+ 35 import jdk.jfr.Description;
+ 36 import jdk.jfr.Label;
+ 37 import jdk.jfr.MetadataDefinition;
+ 38 import jdk.jfr.Name;
+
+ 39 import jdk.jfr.internal.PlatformEventType;
+ 40 import jdk.jfr.internal.Throttle;
+ 41 import jdk.jfr.internal.Type;
+ 42 import jdk.jfr.internal.util.Rate;
+ 43 import jdk.jfr.internal.util.TimespanUnit;
+ 44 import jdk.jfr.internal.util.Utils;
+ 45 
+ 46 @MetadataDefinition
+ 47 @Label(&quot;Throttle&quot;)
+ 48 @Description(&quot;Throttles the emission rate for an event&quot;)
+ 49 @Name(Type.SETTINGS_PREFIX + &quot;Throttle&quot;)
+<span class="line-modified"> 50 public final class ThrottleSetting extends JDKSettingControl {</span>
+ 51     public static final String DEFAULT_VALUE = Throttle.DEFAULT;
+ 52     private final PlatformEventType eventType;
+ 53     private String value = DEFAULT_VALUE;
+ 54 
+ 55     public ThrottleSetting(PlatformEventType eventType) {
+ 56        this.eventType = Objects.requireNonNull(eventType);
+ 57     }
+ 58 
+ 59     @Override
+ 60     public String combine(Set&lt;String&gt; values) {
+ 61         Rate max = null;
+ 62         String text = null;
+ 63         for (String value : values) {
+ 64             Rate rate = Rate.of(value);
+ 65             if (rate != null) {
+ 66                 if (max == null || rate.isHigher(max)) {
+ 67                     text = value;
+ 68                     max = rate;
+ 69                 }
+ 70             }
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
+  4  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  5  *
+  6  * This code is free software; you can redistribute it and/or modify it
+  7  * under the terms of the GNU General Public License version 2 only, as
+  8  * published by the Free Software Foundation.  Oracle designates this
+  9  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 10  * by Oracle in the LICENSE file that accompanied this code.
+ 11  *
+ 12  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 13  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 14  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 15  * version 2 for more details (a copy is included in the LICENSE file that
+ 16  * accompanied this code).
+ 17  *
+ 18  * You should have received a copy of the GNU General Public License version
+ 19  * 2 along with this work; if not, write to the Free Software Foundation,
+ 20  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 21  *
+ 22  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 23  * or visit www.oracle.com if you need additional information or have any
+ 24  * questions.
+ 25  */
+ 26 
+ 27 package jdk.jfr.internal.settings;
+ 28 
+ 29 import static jdk.jfr.internal.util.TimespanUnit.SECONDS;
+ 30 import static jdk.jfr.internal.util.TimespanUnit.MILLISECONDS;
+ 31 
+ 32 import java.util.Objects;
+ 33 import java.util.Set;
+ 34 
+ 35 import jdk.jfr.Description;
+ 36 import jdk.jfr.Label;
+ 37 import jdk.jfr.MetadataDefinition;
+ 38 import jdk.jfr.Name;
+<span class="line-added"> 39 import jdk.jfr.SettingControl;</span>
+ 40 import jdk.jfr.internal.PlatformEventType;
+ 41 import jdk.jfr.internal.Throttle;
+ 42 import jdk.jfr.internal.Type;
+ 43 import jdk.jfr.internal.util.Rate;
+ 44 import jdk.jfr.internal.util.TimespanUnit;
+ 45 import jdk.jfr.internal.util.Utils;
+ 46 
+ 47 @MetadataDefinition
+ 48 @Label(&quot;Throttle&quot;)
+ 49 @Description(&quot;Throttles the emission rate for an event&quot;)
+ 50 @Name(Type.SETTINGS_PREFIX + &quot;Throttle&quot;)
+<span class="line-modified"> 51 public final class ThrottleSetting extends SettingControl {</span>
+ 52     public static final String DEFAULT_VALUE = Throttle.DEFAULT;
+ 53     private final PlatformEventType eventType;
+ 54     private String value = DEFAULT_VALUE;
+ 55 
+ 56     public ThrottleSetting(PlatformEventType eventType) {
+ 57        this.eventType = Objects.requireNonNull(eventType);
+ 58     }
+ 59 
+ 60     @Override
+ 61     public String combine(Set&lt;String&gt; values) {
+ 62         Rate max = null;
+ 63         String text = null;
+ 64         for (String value : values) {
+ 65             Rate rate = Rate.of(value);
+ 66             if (rate != null) {
+ 67                 if (max == null || rate.isHigher(max)) {
+ 68                     text = value;
+ 69                     max = rate;
+ 70                 }
+ 71             }
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="ThresholdSetting.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../tool/Command.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="FlightRecorderMXBeanImpl.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="RemoteRecordingStream.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.management.jfr;
+ 26 
+ 27 import java.io.IOException;
+<span class="line-removed"> 28 import java.lang.management.ManagementPermission;</span>
+<span class="line-removed"> 29 import java.security.Permission;</span>
+ 30 import java.time.DateTimeException;
+ 31 import java.time.Duration;
+ 32 import java.time.Instant;
+ 33 import java.time.format.DateTimeParseException;
+ 34 import java.util.List;
+ 35 import java.util.function.Function;
+ 36 import java.util.stream.Collectors;
+ 37 
+ 38 import javax.management.MalformedObjectNameException;
+ 39 import javax.management.ObjectName;
+ 40 
+ 41 import jdk.jfr.Recording;
+ 42 import jdk.jfr.internal.management.ManagementSupport;
+ 43 
+ 44 final class MBeanUtils {
+ 45 
+<span class="line-removed"> 46     private static final Permission monitor = new ManagementPermission(&quot;monitor&quot;);</span>
+<span class="line-removed"> 47     private static final Permission control = new ManagementPermission(&quot;control&quot;);</span>
+<span class="line-removed"> 48 </span>
+ 49     static ObjectName createObjectName() {
+ 50         try {
+ 51             return new ObjectName(FlightRecorderMXBean.MXBEAN_NAME);
+ 52         } catch (MalformedObjectNameException mne) {
+ 53             throw new Error(&quot;Can&#39;t happen&quot;, mne);
+ 54         }
+ 55     }
+ 56 
+<span class="line-removed"> 57     static void checkControl() {</span>
+<span class="line-removed"> 58         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed"> 59         SecurityManager secManager = System.getSecurityManager();</span>
+<span class="line-removed"> 60         if (secManager != null) {</span>
+<span class="line-removed"> 61             secManager.checkPermission(control);</span>
+<span class="line-removed"> 62         }</span>
+<span class="line-removed"> 63     }</span>
+<span class="line-removed"> 64 </span>
+<span class="line-removed"> 65     static void checkMonitor() {</span>
+<span class="line-removed"> 66         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed"> 67         SecurityManager secManager = System.getSecurityManager();</span>
+<span class="line-removed"> 68         if (secManager != null) {</span>
+<span class="line-removed"> 69             secManager.checkPermission(monitor);</span>
+<span class="line-removed"> 70         }</span>
+<span class="line-removed"> 71     }</span>
+<span class="line-removed"> 72 </span>
+ 73     static &lt;T, R&gt; List&lt;R&gt; transformList(List&lt;T&gt; source, Function&lt;T, R&gt; function) {
+ 74         return source.stream().map(function).collect(Collectors.toList());
+ 75     }
+ 76 
+ 77     static boolean booleanValue(String s) {
+ 78         if (&quot;true&quot;.equals(s)) {
+ 79             return true;
+ 80         }
+ 81         if (&quot;false&quot;.equals(s)) {
+ 82             return false;
+ 83         }
+ 84         throw new IllegalArgumentException(&quot;Value must be true or false.&quot;);
+ 85     }
+ 86 
+ 87     static Duration duration(String s) throws NumberFormatException {
+ 88         if (s == null) {
+ 89             return null;
+ 90         }
+ 91         long l = ManagementSupport.parseTimespan(s);
+ 92         if (l == 0) {
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.management.jfr;
+ 26 
+ 27 import java.io.IOException;
+
+
+ 28 import java.time.DateTimeException;
+ 29 import java.time.Duration;
+ 30 import java.time.Instant;
+ 31 import java.time.format.DateTimeParseException;
+ 32 import java.util.List;
+ 33 import java.util.function.Function;
+ 34 import java.util.stream.Collectors;
+ 35 
+ 36 import javax.management.MalformedObjectNameException;
+ 37 import javax.management.ObjectName;
+ 38 
+ 39 import jdk.jfr.Recording;
+ 40 import jdk.jfr.internal.management.ManagementSupport;
+ 41 
+ 42 final class MBeanUtils {
+ 43 
+
+
+
+ 44     static ObjectName createObjectName() {
+ 45         try {
+ 46             return new ObjectName(FlightRecorderMXBean.MXBEAN_NAME);
+ 47         } catch (MalformedObjectNameException mne) {
+ 48             throw new Error(&quot;Can&#39;t happen&quot;, mne);
+ 49         }
+ 50     }
+ 51 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 52     static &lt;T, R&gt; List&lt;R&gt; transformList(List&lt;T&gt; source, Function&lt;T, R&gt; function) {
+ 53         return source.stream().map(function).collect(Collectors.toList());
+ 54     }
+ 55 
+ 56     static boolean booleanValue(String s) {
+ 57         if (&quot;true&quot;.equals(s)) {
+ 58             return true;
+ 59         }
+ 60         if (&quot;false&quot;.equals(s)) {
+ 61             return false;
+ 62         }
+ 63         throw new IllegalArgumentException(&quot;Value must be true or false.&quot;);
+ 64     }
+ 65 
+ 66     static Duration duration(String s) throws NumberFormatException {
+ 67         if (s == null) {
+ 68             return null;
+ 69         }
+ 70         long l = ManagementSupport.parseTimespan(s);
+ 71         if (l == 0) {
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="FlightRecorderMXBeanImpl.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="RemoteRecordingStream.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

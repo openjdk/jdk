@@ -1,0 +1,28 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/settings/BooleanSetting.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/settings/BooleanSetting.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/settings/BooleanSetting.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/settings/BooleanSetting.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -26,13 +26,14 @@
+ package jdk.jfr.internal.settings;
+ 
+ import java.util.Objects;
+ import java.util.Set;
+ 
++import jdk.jfr.SettingControl;
+ import jdk.jfr.internal.PlatformEventType;
+ 
+-abstract class BooleanSetting extends JDKSettingControl {
++abstract class BooleanSetting extends SettingControl {
+     private final PlatformEventType eventType;
+     private final String defaultValue;
+     private String value;
+ 
+     public BooleanSetting(PlatformEventType eventType, String defaultValue) {

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/PeriodicEvents.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="LookupKey.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="PeriodicTask.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/PeriodicEvents.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.periodic;
+ 26 
+<span class="line-removed"> 27 import java.security.AccessControlContext;</span>
+ 28 import java.util.ArrayList;
+ 29 import java.util.List;
+ 30 import java.util.concurrent.atomic.AtomicLong;
+ 31 
+ 32 import jdk.internal.event.Event;
+ 33 import jdk.jfr.internal.JVM;
+ 34 import jdk.jfr.internal.LogLevel;
+ 35 import jdk.jfr.internal.LogTag;
+ 36 import jdk.jfr.internal.Logger;
+ 37 import jdk.jfr.internal.PlatformEventType;
+ 38 
+ 39 /**
+ 40  * Class that runs and schedules tasks for periodic events.
+ 41  * &lt;p&gt;
+ 42  * Events can run at the beginning of a chunk rotation, at the end of a chunk
+ 43  * rotation or at a periodic interval.
+ 44  * &lt;p&gt;
+ 45  * Events with the same period runs in the same order as users added them.
+ 46  * Temporarily disabling events don&#39;t impact the order of execution.
+ 47  * &lt;p&gt;
+ 48  * A best effort is made to run events with different periods at the same time.
+ 49  * For example, an event that runs every two seconds executes half of the time
+ 50  * with the events that run every second.
+ 51  */
+ 52 public final class PeriodicEvents {
+ 53     private static final TaskRepository taskRepository = new TaskRepository();
+ 54     private static final BatchManager batchManager = new BatchManager();
+ 55     private static final FlushTask flushTask = new FlushTask();
+ 56     private static final AtomicLong settingsIteration = new AtomicLong();
+ 57 
+ 58     // State only to be read and modified by periodic task thread
+ 59     private static long lastTimeMillis;
+ 60 
+<span class="line-modified"> 61     public static void addJDKEvent(Class&lt;? extends Event&gt; eventClass, Runnable runnable) {</span>
+<span class="line-modified"> 62         taskRepository.add(new JDKEventTask(eventClass, runnable));</span>
+ 63     }
+ 64 
+ 65     public static void addJVMEvent(PlatformEventType eventType) {
+ 66         taskRepository.add(new JVMEventTask(eventType));
+ 67     }
+ 68 
+<span class="line-removed"> 69     public static void addUserEvent(@SuppressWarnings(&quot;removal&quot;) AccessControlContext acc, Class&lt;? extends Event&gt; eventClass, Runnable runnable) {</span>
+<span class="line-removed"> 70         taskRepository.add(new UserEventTask(acc, eventClass, runnable));</span>
+<span class="line-removed"> 71     }</span>
+<span class="line-removed"> 72 </span>
+ 73     public static boolean removeEvent(Runnable runnable) {
+ 74         return taskRepository.removeTask(runnable);
+ 75     }
+ 76 
+ 77     public static void doChunkBegin() {
+ 78         long timestamp = JVM.counterTime();
+ 79         for (EventTask task : taskRepository.getTasks()) {
+ 80             var eventType = task.getEventType();
+ 81             if (eventType.isEnabled() &amp;&amp; eventType.isBeginChunk()) {
+ 82                 task.run(timestamp, PeriodicType.BEGIN_CHUNK);
+ 83             }
+ 84         }
+ 85     }
+ 86 
+ 87     public static void doChunkEnd() {
+ 88         long timestamp = JVM.counterTime();
+ 89         for (EventTask task : taskRepository.getTasks()) {
+ 90             var eventType = task.getEventType();
+ 91             if (eventType.isEnabled() &amp;&amp; eventType.isEndChunk()) {
+ 92                 task.run(timestamp, PeriodicType.END_CHUNK);
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.periodic;
+ 26 
+
+ 27 import java.util.ArrayList;
+ 28 import java.util.List;
+ 29 import java.util.concurrent.atomic.AtomicLong;
+ 30 
+ 31 import jdk.internal.event.Event;
+ 32 import jdk.jfr.internal.JVM;
+ 33 import jdk.jfr.internal.LogLevel;
+ 34 import jdk.jfr.internal.LogTag;
+ 35 import jdk.jfr.internal.Logger;
+ 36 import jdk.jfr.internal.PlatformEventType;
+ 37 
+ 38 /**
+ 39  * Class that runs and schedules tasks for periodic events.
+ 40  * &lt;p&gt;
+ 41  * Events can run at the beginning of a chunk rotation, at the end of a chunk
+ 42  * rotation or at a periodic interval.
+ 43  * &lt;p&gt;
+ 44  * Events with the same period runs in the same order as users added them.
+ 45  * Temporarily disabling events don&#39;t impact the order of execution.
+ 46  * &lt;p&gt;
+ 47  * A best effort is made to run events with different periods at the same time.
+ 48  * For example, an event that runs every two seconds executes half of the time
+ 49  * with the events that run every second.
+ 50  */
+ 51 public final class PeriodicEvents {
+ 52     private static final TaskRepository taskRepository = new TaskRepository();
+ 53     private static final BatchManager batchManager = new BatchManager();
+ 54     private static final FlushTask flushTask = new FlushTask();
+ 55     private static final AtomicLong settingsIteration = new AtomicLong();
+ 56 
+ 57     // State only to be read and modified by periodic task thread
+ 58     private static long lastTimeMillis;
+ 59 
+<span class="line-modified"> 60     public static void addJavaEvent(Class&lt;? extends Event&gt; eventClass, Runnable runnable) {</span>
+<span class="line-modified"> 61         taskRepository.add(new JavaEventTask(eventClass, runnable));</span>
+ 62     }
+ 63 
+ 64     public static void addJVMEvent(PlatformEventType eventType) {
+ 65         taskRepository.add(new JVMEventTask(eventType));
+ 66     }
+ 67 
+
+
+
+
+ 68     public static boolean removeEvent(Runnable runnable) {
+ 69         return taskRepository.removeTask(runnable);
+ 70     }
+ 71 
+ 72     public static void doChunkBegin() {
+ 73         long timestamp = JVM.counterTime();
+ 74         for (EventTask task : taskRepository.getTasks()) {
+ 75             var eventType = task.getEventType();
+ 76             if (eventType.isEnabled() &amp;&amp; eventType.isBeginChunk()) {
+ 77                 task.run(timestamp, PeriodicType.BEGIN_CHUNK);
+ 78             }
+ 79         }
+ 80     }
+ 81 
+ 82     public static void doChunkEnd() {
+ 83         long timestamp = JVM.counterTime();
+ 84         for (EventTask task : taskRepository.getTasks()) {
+ 85             var eventType = task.getEventType();
+ 86             if (eventType.isEnabled() &amp;&amp; eventType.isEndChunk()) {
+ 87                 task.run(timestamp, PeriodicType.END_CHUNK);
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="LookupKey.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="PeriodicTask.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

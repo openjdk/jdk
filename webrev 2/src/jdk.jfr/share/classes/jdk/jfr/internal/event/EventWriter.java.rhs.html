@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/event/EventWriter.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.event;
+ 27 
+ 28 import jdk.internal.misc.Unsafe;
+ 29 import jdk.jfr.internal.Bits;
+<a name="2" id="anc2"></a>
+ 30 import jdk.jfr.internal.StringPool;
+ 31 import jdk.jfr.internal.JVM;
+ 32 import jdk.jfr.internal.PlatformEventType;
+ 33 import jdk.jfr.internal.consumer.StringParser;
+ 34 
+ 35 // User code should not be able to get access to an EventWriter instance as it
+ 36 // would allow it to write arbitrary data into buffers, potentially from
+ 37 // different threads.
+ 38 //
+<a name="3" id="anc3"></a><span class="line-modified"> 39 // The EventWriter EventWriterFactory::getEventWriter(long) method can only be linked from</span>
+<span class="line-modified"> 40 // the UserEvent::commit() method instrumented by JFR. This is ensured by the JVM.</span>
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 41 //
+ 42 public final class EventWriter {
+ 43 
+ 44     // Event may not exceed size for a padded integer
+ 45     private static final long MAX_EVENT_SIZE = (1 &lt;&lt; 28) -1;
+ 46     private static final Unsafe unsafe = Unsafe.getUnsafe();
+ 47 
+ 48     // The JVM needs access to these values. Don&#39;t remove
+ 49     private final long threadID;
+ 50     private long startPosition;
+ 51     private long currentPosition;
+ 52     private long maxPosition;
+ 53     private boolean valid;
+ 54     private boolean pinVirtualThread;
+ 55     boolean excluded;
+ 56 
+ 57     private PlatformEventType eventType;
+ 58     private boolean largeSize = false;
+ 59 
+<a name="4" id="anc4"></a><span class="line-added"> 60     public static EventWriter getEventWriter() {</span>
+<span class="line-added"> 61         EventWriter ew = JVM.getEventWriter();</span>
+<span class="line-added"> 62         if (ew != null) {</span>
+<span class="line-added"> 63             return ew;</span>
+<span class="line-added"> 64         }</span>
+<span class="line-added"> 65         return JVM.newEventWriter();</span>
+<span class="line-added"> 66     }</span>
+<span class="line-added"> 67 </span>
+ 68     // User code must not be able to instantiate
+ 69     private EventWriter() {
+ 70         threadID = 0;
+ 71     }
+ 72 
+ 73     public void putBoolean(boolean i) {
+ 74         if (isValidForSize(Byte.BYTES)) {
+ 75             unsafe.putBoolean(null, currentPosition, i);
+ 76             ++currentPosition;
+ 77         }
+ 78     }
+ 79 
+ 80     public void putByte(byte i) {
+ 81         if (isValidForSize(Byte.BYTES)) {
+ 82             unsafe.putByte(currentPosition, i);
+ 83             ++currentPosition;
+ 84         }
+ 85     }
+ 86 
+ 87     public void putChar(char v) {
+ 88         if (isValidForSize(Character.BYTES + 1)) {
+ 89             putUncheckedLong(v);
+ 90         }
+ 91     }
+ 92 
+ 93     private void putUncheckedChar(char v) {
+ 94         putUncheckedLong(v);
+ 95     }
+ 96 
+ 97     public void putShort(short v) {
+ 98         if (isValidForSize(Short.BYTES + 1)) {
+ 99             putUncheckedLong(v &amp; 0xFFFF);
+100         }
+101     }
+102 
+103     public void putInt(int v) {
+104         if (isValidForSize(Integer.BYTES + 1)) {
+105             putUncheckedLong(v &amp; 0x00000000ffffffffL);
+106         }
+107     }
+108 
+109     private void putUncheckedInt(int v) {
+110         putUncheckedLong(v &amp; 0x00000000ffffffffL);
+111     }
+112 
+113     public void putFloat(float i) {
+114         if (isValidForSize(Float.BYTES)) {
+115             currentPosition += Bits.putFloat(currentPosition, i);
+116         }
+117     }
+118 
+119     public void putLong(long v) {
+120         if (isValidForSize(Long.BYTES + 1)) {
+121             putUncheckedLong(v);
+122         }
+123     }
+124 
+125     public void putDouble(double i) {
+126         if (isValidForSize(Double.BYTES)) {
+127             currentPosition += Bits.putDouble(currentPosition, i);
+128         }
+129     }
+130 
+131     public void putString(String s) {
+132         if (s == null) {
+133             putByte(StringParser.Encoding.NULL.byteValue());
+134             return;
+135         }
+136         int length = s.length();
+137         if (length == 0) {
+138             putByte(StringParser.Encoding.EMPTY_STRING.byteValue());
+139             return;
+140         }
+141         if (length &gt; StringPool.MIN_LIMIT &amp;&amp; length &lt; StringPool.MAX_LIMIT) {
+142             long l = StringPool.addString(s, pinVirtualThread);
+143             if (l &gt; 0) {
+144                 putByte(StringParser.Encoding.CONSTANT_POOL.byteValue());
+145                 putLong(l);
+146                 return;
+147             }
+148         }
+149         putStringValue(s);
+150         return;
+151     }
+152 
+153     private void putStringValue(String s) {
+154         int length = s.length();
+155         if (isValidForSize(1 + 5 + 3 * length)) {
+156             putUncheckedByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // 1 byte
+157             putUncheckedInt(length); // max 5 bytes
+158             for (int i = 0; i &lt; length; i++) {
+159                 putUncheckedChar(s.charAt(i)); // max 3 bytes
+160             }
+161         }
+162     }
+163 
+164     public void putEventThread() {
+165         putLong(threadID);
+166     }
+167 
+168     public void putThread(Thread athread) {
+169         if (athread == null) {
+170             putLong(0L);
+171         } else {
+172             putLong(JVM.getThreadId(athread));
+173         }
+174     }
+175 
+176     public void putClass(Class&lt;?&gt; aClass) {
+177         if (aClass == null) {
+178             putLong(0L);
+179         } else {
+180             putLong(JVM.getClassId(aClass));
+181         }
+182     }
+183 
+184     public void putStackTrace() {
+185         if (eventType.getStackTraceEnabled()) {
+186             putLong(JVM.getStackTraceId(eventType.getStackTraceOffset(), eventType.getStackFilterId()));
+187         } else {
+188             putLong(0L);
+189         }
+190     }
+191 
+192     private void reserveEventSizeField() {
+193         this.largeSize = eventType.isLargeSize();
+194         if (largeSize) {
+195             if (isValidForSize(Integer.BYTES)) {
+196                 currentPosition +=  Integer.BYTES;
+197             }
+198         } else {
+199             if (isValidForSize(1)) {
+200                 currentPosition += 1;
+201             }
+202         }
+203     }
+204 
+205     public void reset() {
+206         currentPosition = startPosition;
+207     }
+208 
+209     private boolean isValidForSize(int requestedSize) {
+210         if (!valid) {
+211             return false;
+212         }
+213         if (currentPosition + requestedSize &gt; maxPosition) {
+214             flush(usedSize(), requestedSize);
+215             // retry
+216             if (!valid) {
+217                 return false;
+218             }
+219         }
+220         return true;
+221     }
+222 
+223     private int usedSize() {
+224         return (int) (currentPosition - startPosition);
+225     }
+226 
+227     private void flush() {
+228         flush(usedSize(), 0);
+229     }
+230 
+231     private void flush(int usedSize, int requestedSize) {
+232         JVM.flush(this, usedSize, requestedSize);
+233     }
+234 
+235     public boolean beginEvent(EventConfiguration configuration, long typeId) {
+<a name="5" id="anc5"></a><span class="line-modified">236         // This check makes sure the event type matches what was added by instrumentation.</span>
+
+
+237         if (configuration.getId() != typeId) {
+<a name="6" id="anc6"></a><span class="line-modified">238             throw new InternalError(&quot;Unexpected type id &quot; + typeId);</span>
+239         }
+240         if (excluded) {
+241             // thread is excluded from writing events
+242             return false;
+243         }
+244         this.eventType = configuration.getPlatformEventType();
+245         reserveEventSizeField();
+246         putLong(eventType.getId());
+247         return true;
+248     }
+249 
+250     public boolean endEvent() {
+251         if (!valid) {
+252             reset();
+253             valid = true;
+254             return true;
+255         }
+256         final int eventSize = usedSize();
+257         if (eventSize &gt; MAX_EVENT_SIZE) {
+258             reset();
+259             return true;
+260         }
+261         if (largeSize) {
+262             Bits.putInt(startPosition, makePaddedInt(eventSize));
+263         } else {
+264             if (eventSize &lt; 128) {
+265                 unsafe.putByte(startPosition, (byte) eventSize);
+266             } else {
+267                 eventType.setLargeSize();
+268                 reset();
+269                 // returning false will trigger restart of the
+270                 // event write attempt
+271                 return false;
+272             }
+273         }
+274         long nextPosition = JVM.commit(currentPosition);
+275         if (nextPosition == currentPosition) {
+276             // Successful commit. Update the writer start position.
+277             startPosition = nextPosition;
+278             return true;
+279         }
+280         // If nextPosition == 0, the event was committed, the underlying buffer lease
+281         // returned and new writer positions updated. Nothing to do.
+282         if (nextPosition == 0) {
+283             return true;
+284         }
+285         // The commit was aborted because of an interleaving epoch shift.
+286         // The nextPosition returned is the current start position.
+287         // Reset the writer and return false to restart the write attempt.
+288         currentPosition = nextPosition;
+289         return false;
+290     }
+291 
+292     private EventWriter(long startPos, long maxPos, long threadID, boolean valid, boolean pinVirtualThread, boolean excluded) {
+293         startPosition = currentPosition = startPos;
+294         maxPosition = maxPos;
+295         this.threadID = threadID;
+296         this.valid = valid;
+297         this.pinVirtualThread = pinVirtualThread;
+298         this.excluded = excluded;
+299     }
+300 
+301     private static int makePaddedInt(int v) {
+302         // bit  0-6 + pad =&gt; bit 24 - 31
+303         long b1 = (((v &gt;&gt;&gt; 0) &amp; 0x7F) | 0x80) &lt;&lt; 24;
+304 
+305         // bit  7-13 + pad =&gt; bit 16 - 23
+306         long b2 = (((v &gt;&gt;&gt; 7) &amp; 0x7F) | 0x80) &lt;&lt; 16;
+307 
+308         // bit 14-20 + pad =&gt; bit  8 - 15
+309         long b3 = (((v &gt;&gt;&gt; 14) &amp; 0x7F) | 0x80) &lt;&lt; 8;
+310 
+311         // bit 21-28       =&gt; bit  0 -  7
+312         long b4 = (((v &gt;&gt;&gt; 21) &amp; 0x7F)) &lt;&lt; 0;
+313 
+314         return (int) (b1 + b2 + b3 + b4);
+315     }
+316 
+317     private void putUncheckedLong(long v) {
+318         if ((v &amp; ~0x7FL) == 0L) {
+319             putUncheckedByte((byte) v); // 0-6
+320             return;
+321         }
+322         putUncheckedByte((byte) (v | 0x80L)); // 0-6
+323         v &gt;&gt;&gt;= 7;
+324         if ((v &amp; ~0x7FL) == 0L) {
+325             putUncheckedByte((byte) v); // 7-13
+326             return;
+327         }
+328         putUncheckedByte((byte) (v | 0x80L)); // 7-13
+329         v &gt;&gt;&gt;= 7;
+330         if ((v &amp; ~0x7FL) == 0L) {
+331             putUncheckedByte((byte) v); // 14-20
+332             return;
+333         }
+334         putUncheckedByte((byte) (v | 0x80L)); // 14-20
+335         v &gt;&gt;&gt;= 7;
+336         if ((v &amp; ~0x7FL) == 0L) {
+337             putUncheckedByte((byte) v); // 21-27
+338             return;
+339         }
+340         putUncheckedByte((byte) (v | 0x80L)); // 21-27
+341         v &gt;&gt;&gt;= 7;
+342         if ((v &amp; ~0x7FL) == 0L) {
+343             putUncheckedByte((byte) v); // 28-34
+344             return;
+345         }
+346         putUncheckedByte((byte) (v | 0x80L)); // 28-34
+347         v &gt;&gt;&gt;= 7;
+348         if ((v &amp; ~0x7FL) == 0L) {
+349             putUncheckedByte((byte) v); // 35-41
+350             return;
+351         }
+352         putUncheckedByte((byte) (v | 0x80L)); // 35-41
+353         v &gt;&gt;&gt;= 7;
+354         if ((v &amp; ~0x7FL) == 0L) {
+355             putUncheckedByte((byte) v); // 42-48
+356             return;
+357         }
+358         putUncheckedByte((byte) (v | 0x80L)); // 42-48
+359         v &gt;&gt;&gt;= 7;
+360 
+361         if ((v &amp; ~0x7FL) == 0L) {
+362             putUncheckedByte((byte) v); // 49-55
+363             return;
+364         }
+365         putUncheckedByte((byte) (v | 0x80L)); // 49-55
+366         putUncheckedByte((byte) (v &gt;&gt;&gt; 7)); // 56-63, last byte as is.
+367     }
+368 
+369     private void putUncheckedByte(byte i) {
+370         unsafe.putByte(currentPosition, i);
+371         ++currentPosition;
+372     }
+373 }
+<a name="7" id="anc7"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="7" type="hidden" />
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/AnnotationElement.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import java.lang.annotation.Annotation;
+ 29 import java.lang.reflect.Method;
+ 30 import java.util.ArrayList;
+ 31 import java.util.Collections;
+ 32 import java.util.HashMap;
+ 33 import java.util.HashSet;
+ 34 import java.util.List;
+ 35 import java.util.Map;
+ 36 import java.util.Objects;
+ 37 import java.util.Set;
+ 38 import java.util.StringJoiner;
+ 39 
+ 40 import jdk.jfr.internal.SecuritySupport;
+ 41 import jdk.jfr.internal.Type;
+ 42 import jdk.jfr.internal.TypeLibrary;
+ 43 import jdk.jfr.internal.util.Utils;
+ 44 
+ 45 /**
+ 46  * Describes event metadata, such as labels, descriptions and units.
+ 47  * &lt;p&gt;
+ 48  * The following example shows how {@code AnnotationElement} can be used to dynamically define events.
+ 49  *
+ 50  * {@snippet class=&quot;Snippets&quot; region=&quot;AnnotationElementOverview&quot;}
+ 51  *
+ 52  * @since 9
+ 53  */
+ 54 public final class AnnotationElement {
+ 55     private final Type type;
+ 56     private final List&lt;Object&gt; annotationValues;
+ 57     private final boolean inBootClassLoader;
+ 58 
+ 59     // package private
+ 60     AnnotationElement(Type type, List&lt;Object&gt; objects, boolean boot) {
+ 61         Objects.requireNonNull(type);
+ 62         Objects.requireNonNull(objects);
+ 63         this.type = type;
+ 64         List&lt;ValueDescriptor&gt; fields = type.getFields();
+ 65         int fieldCount = fields.size();
+ 66         if (objects.size() != fieldCount) {
+ 67             StringJoiner descriptors = new StringJoiner(&quot;,&quot;, &quot;[&quot;, &quot;]&quot;);
+ 68             for (ValueDescriptor v : type.getFields()) {
+ 69                 descriptors.add(v.getName());
+ 70             }
+ 71             StringJoiner values = new StringJoiner(&quot;,&quot;, &quot;[&quot;, &quot;]&quot;);
+ 72             for (Object object : objects) {
+ 73                 descriptors.add(String.valueOf(object));
+ 74             }
+ 75             throw new IllegalArgumentException(&quot;Annotation &quot; + descriptors + &quot; for &quot; + type.getName() + &quot; doesn&#39;t match number of values &quot; + values);
+ 76         }
+ 77 
+ 78         for (int index = 0; index &lt; fieldCount; index++) {
+ 79             Object object = objects.get(index);
+ 80             if (object == null) {
+ 81                 throw new IllegalArgumentException(&quot;Annotation value can&#39;t be null&quot;);
+ 82             }
+ 83             Class&lt;?&gt; valueType = object.getClass();
+ 84             if (fields.get(index).isArray()) {
+ 85                 valueType = valueType.getComponentType();
+ 86             }
+ 87             checkType(Utils.unboxType(valueType));
+ 88         }
+ 89         this.annotationValues = List.copyOf(objects);
+ 90         this.inBootClassLoader = boot;
+ 91     }
+ 92 
+ 93     /**
+ 94      * Creates an annotation element to use for dynamically defined events.
+ 95      * &lt;p&gt;
+ 96      * Supported value types are {@code byte}, {@code int}, {@code short},
+ 97      * {@code long}, {@code double}, {@code float}, {@code boolean}, {@code char},
+ 98      * and {@code String}. Enums, arrays and classes, are not supported.
+ 99      * &lt;p&gt;
+100      * If {@code annotationType} has annotations (directly present, indirectly
+101      * present, or associated), then those annotation are recursively included.
+102      * However, both the {@code annotationType} and any annotation found recursively
+103      * must have the {@link MetadataDefinition} annotation.
+104      * &lt;p&gt;
+105      * To statically define events, see {@link Event} class.
+106      *
+107      * @param annotationType interface extending
+108      *        {@code java.lang.annotation.Annotation}, not {@code null}
+109      * @param values a {@code Map} with keys that match method names of the specified
+110      *        annotation interface
+111      * @throws IllegalArgumentException if value/key is {@code null}, an unsupported
+112      *         value type is used, or a value/key is used that doesn&#39;t match the
+113      *         signatures in the {@code annotationType}
+114      */
+115     public AnnotationElement(Class&lt;? extends Annotation&gt; annotationType, Map&lt;String, Object&gt; values) {
+116         Objects.requireNonNull(annotationType, &quot;annotationType&quot;);
+117         Objects.requireNonNull(values, &quot;values&quot;);
+118         SecuritySupport.checkRegisterPermission();
+119         // copy values to avoid modification after validation
+120         HashMap&lt;String, Object&gt; map = new HashMap&lt;&gt;(values);
+121         for (Map.Entry&lt;String, Object&gt; entry : map.entrySet()) {
+122             if (entry.getKey() == null) {
+123                 throw new NullPointerException(&quot;Name of annotation method can&#39;t be null&quot;);
+124             }
+125             if (entry.getValue() == null) {
+126                 throw new NullPointerException(&quot;Return value for annotation method can&#39;t be null&quot;);
+127             }
+128         }
+129 
+130         if (AnnotationElement.class.isAssignableFrom(annotationType) &amp;&amp; annotationType.isInterface()) {
+131             throw new IllegalArgumentException(&quot;Must be interface extending &quot; + Annotation.class.getName());
+132         }
+133         if (!isKnownJFRAnnotation(annotationType) &amp;&amp; annotationType.getAnnotation(MetadataDefinition.class) == null) {
+134             throw new IllegalArgumentException(&quot;Annotation class must be annotated with jdk.jfr.MetadataDefinition to be valid&quot;);
+135         }
+136         if (isKnownJFRAnnotation(annotationType)) {
+137             this.type = new Type(annotationType.getCanonicalName(), Type.SUPER_TYPE_ANNOTATION, Type.getTypeId(annotationType));
+138         } else {
+139             this.type = TypeLibrary.createAnnotationType(annotationType);
+140         }
+141         Method[] methods = annotationType.getDeclaredMethods();
+142         if (methods.length != map.size()) {
+143             throw new IllegalArgumentException(&quot;Number of declared methods must match size of value map&quot;);
+144         }
+145         List&lt;Object&gt; v = new ArrayList&lt;&gt;(methods.length);
+146         Set&lt;String&gt; nameSet = methods.length &gt; 1 ? new HashSet&lt;String&gt;() : null;
+147         for (Method method : methods) {
+148             String fieldName = method.getName();
+149             Object object = map.get(fieldName);
+150             if (object == null) {
+151                 throw new IllegalArgumentException(&quot;No method in annotation interface &quot; + annotationType.getName() + &quot; matching name &quot; + fieldName);
+152             }
+153             Class&lt;?&gt; fieldType = object.getClass();
+154 
+155             if (fieldType == Class.class) {
+156                 throw new IllegalArgumentException(&quot;Annotation value for &quot; + fieldName + &quot; can&#39;t be class&quot;);
+157             }
+158             if (object instanceof Enum) {
+159                 throw new IllegalArgumentException(&quot;Annotation value for &quot; + fieldName + &quot; can&#39;t be enum&quot;);
+160             }
+161             if (!fieldType.equals(object.getClass())) {
+162                 throw new IllegalArgumentException(&quot;Return type of annotation &quot; + fieldType.getName() + &quot; must match type of object&quot; + object.getClass());
+163             }
+164 
+165             if (fieldType.isArray()) {
+166                 Class&lt;?&gt; componentType = fieldType.getComponentType();
+167                 checkType(componentType);
+168                 if (componentType.equals(String.class)) {
+169                     String[] stringArray = (String[]) object;
+170                     for (int i = 0; i &lt; stringArray.length; i++) {
+171                         if (stringArray[i] == null) {
+172                             throw new IllegalArgumentException(&quot;Annotation value for &quot; + fieldName + &quot; contains null&quot;);
+173                         }
+174                     }
+175                 }
+176             } else {
+177                 fieldType = Utils.unboxType(object.getClass());
+178                 checkType(fieldType);
+179             }
+180             if (nameSet!= null) {
+181                 if (nameSet.contains(fieldName)) {
+182                     throw new IllegalArgumentException(&quot;Value with name &#39;&quot; + fieldName + &quot;&#39; already exists&quot;);
+183                 }
+184                 nameSet.add(fieldName);
+185             }
+186             if (isKnownJFRAnnotation(annotationType)) {
+187                 ValueDescriptor vd = new ValueDescriptor(fieldType, fieldName, Collections.emptyList(), true);
+188                 type.add(vd);
+189             }
+190             v.add(object);
+191         }
+192         this.annotationValues = List.copyOf(v);
+193         this.inBootClassLoader = annotationType.getClassLoader() == null;
+194     }
+195 
+196     /**
+197      * Creates an annotation element to use for dynamically defined events.
+198      * &lt;p&gt;
+199      * Supported value types are {@code byte}, {@code int}, {@code short},
+200      * {@code long}, {@code double}, {@code float}, {@code boolean}, {@code char},
+201      * and {@code String}. Enums, arrays, and classes are not supported.
+202      * &lt;p&gt;
+203      * If {@code annotationType} has annotations (directly present, indirectly
+204      * present, or associated), then those annotations are recursively included.
+205      * However, both {@code annotationType} and any annotation found recursively
+206      * must have the {@link MetadataDefinition} annotation.
+207      * &lt;p&gt;
+208      * To statically define events, see {@link Event} class.
+209      *
+210      * @param annotationType interface extending
+211      *        {@code java.lang.annotation.Annotation,} not {@code null}
+212      * @param value the value that matches the {@code value} method of the specified
+213      *        {@code annotationType}
+214      * @throws IllegalArgumentException if value/key is {@code null}, an unsupported
+215      *         value type is used, or a value/key is used that doesn&#39;t match the
+216      *         signatures in the {@code annotationType}
+217      */
+218     public AnnotationElement(Class&lt;? extends Annotation&gt; annotationType, Object value) {
+219         this(annotationType, Collections.singletonMap(&quot;value&quot;, Objects.requireNonNull(value)));
+220     }
+221 
+222     /**
+223      * Creates an annotation element to use for dynamically defined events.
+224      * &lt;p&gt;
+225      * Supported value types are {@code byte}, {@code short}, {@code int},
+226      * {@code long}, {@code double}, {@code float}, {@code boolean}, {@code char},
+227      * and {@code String}. Enums, arrays, and classes are not supported.
+228      * &lt;p&gt;
+229      * If {@code annotationType} has annotations (directly present, indirectly
+230      * present or associated), then those annotation are recursively included.
+231      * However, both {@code annotationType} and any annotation found recursively
+232      * must have the {@link MetadataDefinition} annotation.
+233      * &lt;p&gt;
+234      * To statically define events, see {@link Event} class.
+235      *
+236      * @param annotationType interface extending java.lang.annotation.Annotation,
+237      *        not {@code null}
+238      */
+239     public AnnotationElement(Class&lt;? extends Annotation&gt; annotationType) {
+240         this(annotationType, Collections.emptyMap());
+241     }
+242 
+243     /**
+244      * Returns an immutable list of annotation values in an order that matches the
+245      * value descriptors for this {@code AnnotationElement}.
+246      *
+247      * @return list of values, not {@code null}
+248      */
+249     public List&lt;Object&gt; getValues() {
+250         return annotationValues;
+251     }
+252 
+253     /**
+254      * Returns an immutable list of descriptors that describes the annotation values
+255      * for this {@code AnnotationElement}.
+256      *
+257      * @return the list of value descriptors for this {@code Annotation}, not
+258      *         {@code null}
+259      */
+260     public List&lt;ValueDescriptor&gt; getValueDescriptors() {
+261         return Collections.unmodifiableList(type.getFields());
+262     }
+263 
+264     /**
+265      * Returns an immutable list of annotation elements for this
+266      * {@code AnnotationElement}.
+267      *
+268      * @return a list of meta annotation, not {@code null}
+269      */
+270     public List&lt;AnnotationElement&gt; getAnnotationElements() {
+271         return type.getAnnotationElements();
+272     }
+273 
+274     /**
+275      * Returns the fully qualified name of the annotation type that corresponds to
+276      * this {@code AnnotationElement} (for example, {@code &quot;jdk.jfr.Label&quot;}).
+277      *
+278      * @return type name, not {@code null}
+279      */
+280     public String getTypeName() {
+281         return type.getName();
+282     }
+283 
+284     /**
+285      * Returns a value for this {@code AnnotationElement}.
+286      *
+287      * @param name the name of the method in the annotation interface, not
+288      *        {@code null}.
+289      *
+290      * @return the annotation value, not {@code null}.
+291      *
+292      * @throws IllegalArgumentException if a method with the specified name does
+293      *         not exist in the annotation
+294      */
+295     public Object getValue(String name) {
+296         Objects.requireNonNull(name, &quot;name&quot;);
+297         int index = type.indexOf(name);
+298         if (index != -1) {
+299             return annotationValues.get(index);
+300         }
+301         StringJoiner valueNames = new StringJoiner(&quot;,&quot;, &quot;[&quot;, &quot;]&quot;);
+302         for (ValueDescriptor v : type.getFields()) {
+303             valueNames.add(v.getName());
+304         }
+305         throw new IllegalArgumentException(&quot;No value with name &#39;&quot; + name + &quot;&#39;. Valid names are &quot; + valueNames);
+306     }
+307 
+308     /**
+309      * Returns {@code true} if an annotation value with the specified name exists in
+310      * this {@code AnnotationElement}.
+311      *
+312      * @param name name of the method in the annotation interface to find, not
+313      *        {@code null}
+314      *
+315      * @return {@code true} if method exists, {@code false} otherwise
+316      */
+317     public boolean hasValue(String name) {
+318         Objects.requireNonNull(name, &quot;name&quot;);
+319         return type.indexOf(name) != -1;
+320     }
+321 
+322     /**
+323      * Returns the first annotation for the specified type if an
+324      * {@code AnnotationElement} with the same name exists, else {@code null}.
+325      *
+326      * @param &lt;A&gt; the type of the annotation to query for and return if it exists
+327      * @param annotationType the {@code Class object} corresponding to the annotation type,
+328      *        not {@code null}
+329      * @return this element&#39;s annotation for the specified annotation type if
+330      *         it exists, else {@code null}
+331      */
+332     public final &lt;A&gt; A getAnnotation(Class&lt;? extends Annotation&gt; annotationType) {
+333         Objects.requireNonNull(annotationType, &quot;annotationType&quot;);
+334         return type.getAnnotation(annotationType);
+335     }
+336 
+337     /**
+338      * Returns the type ID for this {@code AnnotationElement}.
+339      * &lt;p&gt;
+340      * The ID is a unique identifier for the type in the Java Virtual Machine (JVM). The ID might not
+341      * be the same between JVM instances.
+342      *
+343      * @return the type ID, not negative
+344      */
+345     public long getTypeId() {
+346         return type.getId();
+347     }
+348 
+349     // package private
+350     Type getType() {
+351         return type;
+352     }
+353 
+354     private static void checkType(Class&lt;?&gt; type) {
+355         if (type.isPrimitive()) {
+356             return;
+357         }
+358         if (type == String.class) {
+359             return;
+360         }
+361         throw new IllegalArgumentException(&quot;Only primitives types or java.lang.String are allowed&quot;);
+362     }
+363 
+364     // List of annotation classes that are allowed, even though
+365     // they don&#39;t have @MetadataDefinition.
+366     private static boolean isKnownJFRAnnotation(Class&lt;? extends Annotation&gt; annotationType) {
+367         if (annotationType == Registered.class) {
+368             return true;
+369         }
+370         if (annotationType == Threshold.class) {
+371             return true;
+372         }
+373         if (annotationType == StackTrace.class) {
+374             return true;
+375         }
+376         if (annotationType == Period.class) {
+377             return true;
+378         }
+379         if (annotationType == Enabled.class) {
+380             return true;
+381         }
+382         return false;
+383     }
+384 
+385     // package private
+386     boolean isInBoot() {
+387         return inBootClassLoader;
+388     }
+389 }
+    </pre>
+  </body>
+</html>

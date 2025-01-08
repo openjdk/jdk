@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="Control.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="EventInstrumentation.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+</pre>
+<hr />
+<pre>
+263                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
+264                 settingControls.add(settingControl);
+265             }
+266         } catch (InstantiationException e) {
+267             // Programming error by user, fail fast
+268             throw new InstantiationError(&quot;Could not instantiate setting &quot; + settingsClass.getName() + &quot; for event &quot; + eventType.getLogName() + &quot;. &quot; + e.getMessage());
+269         } catch (IllegalAccessException e) {
+270             // Programming error by user, fail fast
+271             throw new IllegalAccessError(&quot;Could not access setting &quot; + settingsClass.getName() + &quot; for event &quot; + eventType.getLogName() + &quot;. &quot; + e.getMessage());
+272         }
+273     }
+274 
+275     private SettingControl instantiateSettingControl(Class&lt;? extends SettingControl&gt; settingControlClass) throws IllegalAccessException, InstantiationException {
+276         SecuritySupport.makeVisibleToJFR(settingControlClass);
+277         final Constructor&lt;?&gt; cc;
+278         try {
+279             cc = settingControlClass.getDeclaredConstructors()[0];
+280         } catch (Exception e) {
+281             throw (Error) new InternalError(&quot;Could not get constructor for &quot; + settingControlClass.getName()).initCause(e);
+282         }
+<span class="line-modified">283         SecuritySupport.setAccessible(cc);</span>
+284         try {
+285             return (SettingControl) cc.newInstance();
+286         } catch (IllegalArgumentException | InvocationTargetException e) {
+287             throw new InternalError(&quot;Could not instantiate setting for class &quot; + settingControlClass.getName());
+288         }
+289     }
+290 
+291     private static Control defineEnabled(PlatformEventType type) {
+292         // Java events are enabled by default,
+293         // JVM events are not, maybe they should be? Would lower learning curve
+294         // there too.
+295         Boolean defaultValue = Boolean.valueOf(!type.isJVM());
+296         String def = type.getAnnotationValue(Enabled.class, defaultValue).toString();
+297         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_ENABLED, Enabled.NAME, def, Collections.emptyList()));
+298         return new Control(new EnabledSetting(type, def), def);
+299     }
+300 
+301     private static Control defineThreshold(PlatformEventType type) {
+302         String def = type.getAnnotationValue(Threshold.class, ThresholdSetting.DEFAULT_VALUE);
+303         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
+</pre>
+<hr />
+<pre>
+356                 }
+357                 if (ActiveSettingEvent.enabled()) {
+358                     ActiveSettingEvent.commit(timestamp, type.getId(), nc.name(), value);
+359                 }
+360             }
+361         }
+362     }
+363 
+364     public ArrayList&lt;NamedControl&gt; getNamedControls() {
+365         return namedControls;
+366     }
+367 
+368     public PlatformEventType getEventType() {
+369         return type;
+370     }
+371 
+372     public String getSettingsId() {
+373         return idName;
+374     }
+375 
+<span class="line-removed">376     /**</span>
+<span class="line-removed">377      * A malicious user must never be able to run a callback in the wrong</span>
+<span class="line-removed">378      * context. Methods on SettingControl must therefore never be invoked directly</span>
+<span class="line-removed">379      * by JFR, instead use jdk.jfr.internal.Control.</span>
+<span class="line-removed">380      *</span>
+<span class="line-removed">381      * The returned list is only to be used inside EventConfiguration</span>
+<span class="line-removed">382      */</span>
+383     public List&lt;SettingControl&gt; getSettingControls() {
+384         return settingControls;
+385     }
+386 }
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+</pre>
+<hr />
+<pre>
+263                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
+264                 settingControls.add(settingControl);
+265             }
+266         } catch (InstantiationException e) {
+267             // Programming error by user, fail fast
+268             throw new InstantiationError(&quot;Could not instantiate setting &quot; + settingsClass.getName() + &quot; for event &quot; + eventType.getLogName() + &quot;. &quot; + e.getMessage());
+269         } catch (IllegalAccessException e) {
+270             // Programming error by user, fail fast
+271             throw new IllegalAccessError(&quot;Could not access setting &quot; + settingsClass.getName() + &quot; for event &quot; + eventType.getLogName() + &quot;. &quot; + e.getMessage());
+272         }
+273     }
+274 
+275     private SettingControl instantiateSettingControl(Class&lt;? extends SettingControl&gt; settingControlClass) throws IllegalAccessException, InstantiationException {
+276         SecuritySupport.makeVisibleToJFR(settingControlClass);
+277         final Constructor&lt;?&gt; cc;
+278         try {
+279             cc = settingControlClass.getDeclaredConstructors()[0];
+280         } catch (Exception e) {
+281             throw (Error) new InternalError(&quot;Could not get constructor for &quot; + settingControlClass.getName()).initCause(e);
+282         }
+<span class="line-modified">283         cc.setAccessible(true);</span>
+284         try {
+285             return (SettingControl) cc.newInstance();
+286         } catch (IllegalArgumentException | InvocationTargetException e) {
+287             throw new InternalError(&quot;Could not instantiate setting for class &quot; + settingControlClass.getName());
+288         }
+289     }
+290 
+291     private static Control defineEnabled(PlatformEventType type) {
+292         // Java events are enabled by default,
+293         // JVM events are not, maybe they should be? Would lower learning curve
+294         // there too.
+295         Boolean defaultValue = Boolean.valueOf(!type.isJVM());
+296         String def = type.getAnnotationValue(Enabled.class, defaultValue).toString();
+297         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_ENABLED, Enabled.NAME, def, Collections.emptyList()));
+298         return new Control(new EnabledSetting(type, def), def);
+299     }
+300 
+301     private static Control defineThreshold(PlatformEventType type) {
+302         String def = type.getAnnotationValue(Threshold.class, ThresholdSetting.DEFAULT_VALUE);
+303         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
+</pre>
+<hr />
+<pre>
+356                 }
+357                 if (ActiveSettingEvent.enabled()) {
+358                     ActiveSettingEvent.commit(timestamp, type.getId(), nc.name(), value);
+359                 }
+360             }
+361         }
+362     }
+363 
+364     public ArrayList&lt;NamedControl&gt; getNamedControls() {
+365         return namedControls;
+366     }
+367 
+368     public PlatformEventType getEventType() {
+369         return type;
+370     }
+371 
+372     public String getSettingsId() {
+373         return idName;
+374     }
+375 
+
+
+
+
+
+
+
+376     public List&lt;SettingControl&gt; getSettingControls() {
+377         return settingControls;
+378     }
+379 }
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="Control.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="EventInstrumentation.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

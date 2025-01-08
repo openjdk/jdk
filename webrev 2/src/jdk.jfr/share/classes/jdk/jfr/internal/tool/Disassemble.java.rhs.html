@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Disassemble.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.tool;
+ 27 
+ 28 import java.io.BufferedInputStream;
+ 29 import java.io.DataInputStream;
+ 30 import java.io.File;
+ 31 import java.io.FileInputStream;
+ 32 import java.io.FileOutputStream;
+ 33 import java.io.IOException;
+ 34 import java.io.InputStream;
+ 35 import java.io.PrintStream;
+ 36 import java.nio.file.Files;
+ 37 import java.nio.file.InvalidPathException;
+ 38 import java.nio.file.Path;
+ 39 import java.util.ArrayList;
+ 40 import java.util.Deque;
+ 41 import java.util.List;
+ 42 
+ 43 import jdk.jfr.internal.consumer.ChunkHeader;
+<a name="2" id="anc2"></a>
+ 44 import jdk.jfr.internal.consumer.RecordingInput;
+ 45 import jdk.jfr.internal.util.UserDataException;
+ 46 import jdk.jfr.internal.util.UserSyntaxException;
+ 47 
+ 48 final class Disassemble extends Command {
+ 49 
+ 50     @Override
+ 51     public String getName() {
+ 52         return &quot;disassemble&quot;;
+ 53     }
+ 54 
+ 55     @Override
+ 56     public List&lt;String&gt; getOptionSyntax() {
+ 57         List&lt;String&gt; list = new ArrayList&lt;&gt;();
+ 58         list.add(&quot;[--output &lt;directory&gt;]&quot;);
+ 59         list.add(&quot;[--max-chunks &lt;chunks&gt;]&quot;);
+ 60         list.add(&quot;[--max-size &lt;size&gt;]&quot;);
+ 61         list.add(&quot;&lt;file&gt;&quot;);
+ 62         return list;
+ 63     }
+ 64 
+ 65     @Override
+ 66     public void displayOptionUsage(PrintStream stream) {
+ 67         stream.println(&quot; --output &lt;directory&gt;    The location to write the disassembled file,&quot;);
+ 68         stream.println(&quot;                         by default the current directory&quot;);
+ 69         stream.println(&quot;&quot;);
+ 70         stream.println(&quot; --max-chunks &lt;chunks&gt;   Maximum number of chunks per disassembled file,&quot;);
+ 71         stream.println(&quot;                         by default 5. The chunk size varies, but is &quot;);
+ 72         stream.println(&quot;                         typically around 15 MB.&quot;);
+ 73         stream.println(&quot;&quot;);
+ 74         stream.println(&quot; --max-size &lt;size&gt;       Maximum number of bytes per file.&quot;);
+ 75         stream.println(&quot;&quot;);
+ 76         stream.println(&quot;  &lt;file&gt;                 Location of the recording file (.jfr)&quot;);
+ 77     }
+ 78 
+ 79     @Override
+ 80     public String getDescription() {
+ 81         return &quot;Disassemble a recording file into smaller files/chunks&quot;;
+ 82     }
+ 83 
+ 84     @Override
+ 85     public void execute(Deque&lt;String&gt; options) throws UserSyntaxException, UserDataException {
+ 86         if (options.isEmpty()) {
+ 87             throw new UserSyntaxException(&quot;missing file&quot;);
+ 88         }
+ 89         Path file = getJFRInputFile(options);
+ 90         int maxChunks = Integer.MAX_VALUE;
+ 91         int maxsize = Integer.MAX_VALUE;
+ 92         String output = System.getProperty(&quot;user.dir&quot;);
+ 93         int optionCount = options.size();
+ 94         while (optionCount &gt; 0) {
+ 95             if (acceptOption(options, &quot;--output&quot;)) {
+ 96                 output = options.pop();
+ 97             }
+ 98             if (acceptOption(options, &quot;--max-size&quot;)) {
+ 99                 String value = options.pop();
+100                 try {
+101                     maxsize = Integer.parseInt(value);
+102                     if (maxsize &lt; 1) {
+103                         throw new UserDataException(&quot;max size must be at least 1&quot;);
+104                     }
+105                 } catch (NumberFormatException nfe) {
+106                     throw new UserDataException(&quot;not a valid value for --max-size.&quot;);
+107                 }
+108             }
+109             if (acceptOption(options, &quot;--max-chunks&quot;)) {
+110                 String value = options.pop();
+111                 try {
+112                     maxChunks = Integer.parseInt(value);
+113                     if (maxChunks &lt; 1) {
+114                         throw new UserDataException(&quot;max chunks must be at least 1.&quot;);
+115                     }
+116                 } catch (NumberFormatException nfe) {
+117                     throw new UserDataException(&quot;not a valid value for --max-size.&quot;);
+118                 }
+119             }
+120             if (optionCount == options.size()) {
+121                 // No progress made
+122                 throw new UserSyntaxException(&quot;unknown option &quot; + options.peek());
+123             }
+124             optionCount = options.size();
+125         }
+126         Path outputPath = getDirectory(output);
+127 
+128         println();
+129         println(&quot;Examining recording &quot; + file + &quot; ...&quot;);
+130         List&lt;Long&gt; sizes;
+131         if (maxsize != Integer.MAX_VALUE &amp;&amp; maxChunks == Integer.MAX_VALUE) {
+132             try {
+133                 long fileSize = Files.size(file);
+134                 if (maxsize &gt;=fileSize) {
+135                     println();
+136                     println(&quot;File size (&quot; + fileSize +&quot;) does not exceed max size (&quot; + maxsize + &quot;)&quot;);
+137                     return;
+138                 }
+139             } catch (IOException e) {
+140                 throw new UserDataException(&quot;unexpected i/o error when determining file size&quot; + e.getMessage());
+141             }
+142         }
+143         if (maxsize == Integer.MAX_VALUE &amp;&amp; maxChunks == Integer.MAX_VALUE) {
+144             maxChunks = 5;
+145         }
+146 
+147         try {
+148             sizes = findChunkSizes(file);
+149         } catch (IOException e) {
+150             throw new UserDataException(&quot;unexpected i/o error. &quot; + e.getMessage());
+151         }
+152         if (maxsize == Integer.MAX_VALUE == sizes.size() &lt;= maxChunks) {
+153             throw new UserDataException(&quot;number of chunks in recording (&quot; + sizes.size() + &quot;) doesn&#39;t exceed max chunks (&quot; + maxChunks + &quot;)&quot;);
+154         }
+155         println();
+156         if (sizes.size() &gt; 0) {
+157             List&lt;Long&gt; combinedSizes = combineChunkSizes(sizes, maxChunks, maxsize);
+158             print(&quot;File consists of &quot; + sizes.size() + &quot; chunks. The recording will be split into &quot;);
+159             println(combinedSizes.size() + &quot; files&quot;);
+160             println();
+161             splitFile(outputPath, file, combinedSizes);
+162         } else {
+163             throw new UserDataException(&quot;no JFR chunks found in file.&quot;);
+164         }
+165     }
+166 
+167     private List&lt;Long&gt; findChunkSizes(Path p) throws IOException {
+<a name="3" id="anc3"></a><span class="line-modified">168         try (RecordingInput input = new RecordingInput(p.toFile())) {</span>
+169             List&lt;Long&gt; sizes = new ArrayList&lt;&gt;();
+170             ChunkHeader ch = new ChunkHeader(input);
+171             sizes.add(ch.getSize());
+172             while (!ch.isLastChunk()) {
+173                 ch = ch.nextHeader();
+174                 sizes.add(ch.getSize());
+175             }
+176             return sizes;
+177         }
+178     }
+179 
+180     private List&lt;Long&gt; combineChunkSizes(List&lt;Long&gt; sizes, int maxChunks, long maxSize) {
+181         List&lt;Long&gt; reduced = new ArrayList&lt;Long&gt;();
+182         int chunks = 1;
+183         long fileSize = sizes.getFirst();
+184         for (int i = 1; i &lt; sizes.size(); i++) {
+185             long size = sizes.get(i);
+186             if (fileSize + size &gt; maxSize || chunks == maxChunks) {
+187                 reduced.add(fileSize);
+188                 chunks = 1;
+189                 fileSize = size;
+190                 continue;
+191             }
+192             fileSize += size;
+193             chunks++;
+194         }
+195         if (fileSize != 0) {
+196             reduced.add(fileSize);
+197         }
+198         return reduced;
+199     }
+200 
+201     private void splitFile(Path directory, Path file, List&lt;Long&gt; splitPositions) throws UserDataException {
+202         int padAmountZeros = String.valueOf(splitPositions.size() - 1).length();
+203         String fileName = file.getFileName().toString();
+204         String fileFormatter = fileName.subSequence(0, fileName.length() - 4) + &quot;_%0&quot; + padAmountZeros + &quot;d.jfr&quot;;
+205         for (int i = 0; i &lt; splitPositions.size(); i++) {
+206             String formattedFilename = String.format(fileFormatter, i);
+207             try {
+208                 Path p = directory.resolve(formattedFilename);
+209                 if (Files.exists(p)) {
+210                     throw new UserDataException(&quot;can&#39;t create disassembled file &quot; + p + &quot;, a file with that name already exist&quot;);
+211                 }
+212             } catch (InvalidPathException ipe) {
+213                 throw new UserDataException(&quot;can&#39;t construct path with filename&quot; + formattedFilename);
+214             }
+215         }
+216 
+217         try (DataInputStream stream = new DataInputStream(new BufferedInputStream(new FileInputStream(file.toFile())))) {
+218             for (int i = 0; i &lt; splitPositions.size(); i++) {
+219                 Long l = splitPositions.get(i);
+220                 byte[] bytes = readBytes(stream, l.intValue());
+221                 String formattedFilename = String.format(fileFormatter, i);
+222                 Path p = directory.resolve(formattedFilename);
+223                 File splittedFile = p.toFile();
+224                 println(&quot;Writing &quot; + splittedFile + &quot; ... &quot; + bytes.length);
+225                 try (var fos = new FileOutputStream(splittedFile)) {
+226                     fos.write(bytes);
+227                 }
+228             }
+229         } catch (IOException ioe) {
+230             throw new UserDataException(&quot;i/o error writing file &quot; + file);
+231         }
+232     }
+233 
+234     private byte[] readBytes(InputStream stream, int count) throws UserDataException, IOException {
+235         byte[] data = new byte[count];
+236         int totalRead = 0;
+237         while (totalRead &lt; data.length) {
+238             int read = stream.read(data, totalRead, data.length - totalRead);
+239             if (read == -1) {
+240                 throw new UserDataException(&quot;unexpected end of data&quot;);
+241             }
+242             totalRead += read;
+243         }
+244         return data;
+245     }
+246 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

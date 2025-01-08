@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/PeriodicTask.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="PeriodicEvents.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../settings/BooleanSetting.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/PeriodicTask.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.periodic;
+ 26 
+ 27 import jdk.jfr.internal.LogLevel;
+ 28 import jdk.jfr.internal.LogTag;
+ 29 import jdk.jfr.internal.Logger;
+ 30 
+ 31 /**
+ 32  * Base class that holds time related information for a periodic task.
+ 33  * &lt;p&gt;
+ 34  * Class hierarchy for periodic tasks:
+ 35  * &lt;pre&gt;
+ 36  *               PeriodicTask
+ 37  *                /        \
+ 38  *               /          \
+ 39  *          EventTask    FlushTask
+ 40  *           /     \
+ 41  *          /       \
+ 42  * JVMEventTask   JavaEventTask
+<span class="line-removed"> 43  *                /         \</span>
+<span class="line-removed"> 44  *               /           \</span>
+<span class="line-removed"> 45  *      UserEventTask     JDKEventTask</span>
+ 46  * &lt;/pre&gt;
+ 47  * &lt;p&gt;
+ 48  * State modifications should only be done from the periodic task thread.
+ 49  */
+ 50 abstract class PeriodicTask {
+ 51     private final LookupKey lookupKey;
+ 52     private final String name;
+ 53     // State only to be modified by the periodic task thread
+ 54     private long counter;
+ 55     private long period;
+ 56     private Batch batch;
+ 57 
+ 58     public PeriodicTask(LookupKey lookupKey, String name) {
+ 59         this.lookupKey = lookupKey;
+ 60         this.name = name;
+ 61     }
+ 62 
+ 63     public abstract void execute(long timestamp, PeriodicType periodicType);
+ 64 
+ 65     public abstract boolean isSchedulable();
+</pre>
+<hr />
+<pre>
+110         // Reset counter if new period
+111         if (p != period) {
+112             counter = 0;
+113             period = p;
+114             batch = null;
+115         }
+116     }
+117 
+118     // Only to be called from periodic task thread
+119     public final long getPeriod() {
+120         return period;
+121     }
+122 
+123     public final void run(long timestamp, PeriodicType periodicType) {
+124         if (periodicType != PeriodicType.INTERVAL) {
+125             logChunk(periodicType);
+126         }
+127         try {
+128             execute(timestamp, periodicType);
+129         } catch (Throwable e) {
+<span class="line-modified">130             // Prevent malicious user to propagate exception callback in the wrong context</span>
+<span class="line-modified">131             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, &quot;Exception occurred during execution of &quot; + name);</span>
+132         }
+133     }
+134 
+135     private void logChunk(PeriodicType periodicType) {
+136         if (Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.DEBUG)) {
+137             String action = periodicType == PeriodicType.BEGIN_CHUNK ? &quot;beginChunk&quot; : &quot;endChunk&quot;;
+138             String message = &quot;Run &quot; + action + &quot; &quot; + getName();
+139             Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
+140         }
+141     }
+142 
+143     private void logInterval(boolean trace, String action) {
+144         String message = action + &quot; periodic &quot; + getName();
+145         if (trace) {
+146             // Makes the counter run on x/x instead of 0/x which looks strange.
+147             long a =  counter == 0 ? period : counter;
+148             Logger.log(LogTag.JFR_PERIODIC, LogLevel.TRACE, message + (&quot; &quot; + a + &quot;/&quot; + period));
+149         } else {
+150             Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
+151         }
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.periodic;
+ 26 
+ 27 import jdk.jfr.internal.LogLevel;
+ 28 import jdk.jfr.internal.LogTag;
+ 29 import jdk.jfr.internal.Logger;
+ 30 
+ 31 /**
+ 32  * Base class that holds time related information for a periodic task.
+ 33  * &lt;p&gt;
+ 34  * Class hierarchy for periodic tasks:
+ 35  * &lt;pre&gt;
+ 36  *               PeriodicTask
+ 37  *                /        \
+ 38  *               /          \
+ 39  *          EventTask    FlushTask
+ 40  *           /     \
+ 41  *          /       \
+ 42  * JVMEventTask   JavaEventTask
+
+
+
+ 43  * &lt;/pre&gt;
+ 44  * &lt;p&gt;
+ 45  * State modifications should only be done from the periodic task thread.
+ 46  */
+ 47 abstract class PeriodicTask {
+ 48     private final LookupKey lookupKey;
+ 49     private final String name;
+ 50     // State only to be modified by the periodic task thread
+ 51     private long counter;
+ 52     private long period;
+ 53     private Batch batch;
+ 54 
+ 55     public PeriodicTask(LookupKey lookupKey, String name) {
+ 56         this.lookupKey = lookupKey;
+ 57         this.name = name;
+ 58     }
+ 59 
+ 60     public abstract void execute(long timestamp, PeriodicType periodicType);
+ 61 
+ 62     public abstract boolean isSchedulable();
+</pre>
+<hr />
+<pre>
+107         // Reset counter if new period
+108         if (p != period) {
+109             counter = 0;
+110             period = p;
+111             batch = null;
+112         }
+113     }
+114 
+115     // Only to be called from periodic task thread
+116     public final long getPeriod() {
+117         return period;
+118     }
+119 
+120     public final void run(long timestamp, PeriodicType periodicType) {
+121         if (periodicType != PeriodicType.INTERVAL) {
+122             logChunk(periodicType);
+123         }
+124         try {
+125             execute(timestamp, periodicType);
+126         } catch (Throwable e) {
+<span class="line-modified">127             String msg = &quot;Exception occurred during execution of &quot; + name + &quot;. &quot; + e.getMessage();</span>
+<span class="line-modified">128             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, msg);</span>
+129         }
+130     }
+131 
+132     private void logChunk(PeriodicType periodicType) {
+133         if (Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.DEBUG)) {
+134             String action = periodicType == PeriodicType.BEGIN_CHUNK ? &quot;beginChunk&quot; : &quot;endChunk&quot;;
+135             String message = &quot;Run &quot; + action + &quot; &quot; + getName();
+136             Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
+137         }
+138     }
+139 
+140     private void logInterval(boolean trace, String action) {
+141         String message = action + &quot; periodic &quot; + getName();
+142         if (trace) {
+143             // Makes the counter run on x/x instead of 0/x which looks strange.
+144             long a =  counter == 0 ? period : counter;
+145             Logger.log(LogTag.JFR_PERIODIC, LogLevel.TRACE, message + (&quot; &quot; + a + &quot;/&quot; + period));
+146         } else {
+147             Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
+148         }
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="PeriodicEvents.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../settings/BooleanSetting.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

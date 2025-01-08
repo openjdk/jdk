@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdStop.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="DCmdStart.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../event/EventWriter.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdStop.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 24,16 ***</span>
+   */
+  package jdk.jfr.internal.dcmd;
+  
+  import java.io.IOException;
+  import java.nio.file.InvalidPathException;
+  import java.nio.file.Paths;
+  
+  import jdk.jfr.Recording;
+  import jdk.jfr.internal.PrivateAccess;
+<span class="line-modified">! import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+<span class="line-removed">- import jdk.jfr.internal.WriteableUserPath;</span>
+  
+  /**
+   * JFR.stop
+   *
+   */
+<span class="line-new-header">--- 24,16 ---</span>
+   */
+  package jdk.jfr.internal.dcmd;
+  
+  import java.io.IOException;
+  import java.nio.file.InvalidPathException;
+<span class="line-added">+ import java.nio.file.Path;</span>
+  import java.nio.file.Paths;
+  
+  import jdk.jfr.Recording;
+  import jdk.jfr.internal.PrivateAccess;
+<span class="line-modified">! import jdk.jfr.internal.WriteablePath;</span>
+  
+  /**
+   * JFR.stop
+   *
+   */
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 45,24 ***</span>
+          parser.checkUnknownArguments();
+          String name = parser.getOption(&quot;name&quot;);
+          String filename = parser.getOption(&quot;filename&quot;);
+          try {
+              Recording recording = findRecording(name);
+<span class="line-modified">!             WriteableUserPath path = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();</span>
+<span class="line-modified">!             SafePath safePath = path == null ? null : new SafePath(path.getRealPathText());</span>
+              if (filename != null) {
+                  try {
+<span class="line-modified">!                     // Ensure path is valid. Don&#39;t generate safePath if filename == null, as a user may</span>
+                      // want to stop recording without a dump
+<span class="line-modified">!                     safePath = resolvePath(null, filename);</span>
+                      recording.setDestination(Paths.get(filename));
+                  } catch (IOException | InvalidPathException  e) {
+                      throw new DCmdException(&quot;Failed to stop %s. Could not set destination for \&quot;%s\&quot; to file %s&quot;, recording.getName(), filename, e.getMessage());
+                  }
+              }
+              recording.stop();
+<span class="line-modified">!             reportOperationComplete(&quot;Stopped&quot;, recording.getName(), safePath);</span>
+              recording.close();
+          } catch (InvalidPathException | DCmdException e) {
+              if (filename != null) {
+                  throw new DCmdException(&quot;Could not write recording \&quot;%s\&quot; to file. %s&quot;, name, e.getMessage());
+              }
+<span class="line-new-header">--- 45,24 ---</span>
+          parser.checkUnknownArguments();
+          String name = parser.getOption(&quot;name&quot;);
+          String filename = parser.getOption(&quot;filename&quot;);
+          try {
+              Recording recording = findRecording(name);
+<span class="line-modified">!             WriteablePath wp = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();</span>
+<span class="line-modified">!             Path path = wp == null ? null : wp.getReal();</span>
+              if (filename != null) {
+                  try {
+<span class="line-modified">!                     // Ensure path is valid. Don&#39;t generate path if filename == null, as a user may</span>
+                      // want to stop recording without a dump
+<span class="line-modified">!                     path = resolvePath(null, filename);</span>
+                      recording.setDestination(Paths.get(filename));
+                  } catch (IOException | InvalidPathException  e) {
+                      throw new DCmdException(&quot;Failed to stop %s. Could not set destination for \&quot;%s\&quot; to file %s&quot;, recording.getName(), filename, e.getMessage());
+                  }
+              }
+              recording.stop();
+<span class="line-modified">!             reportOperationComplete(&quot;Stopped&quot;, recording.getName(), path);</span>
+              recording.close();
+          } catch (InvalidPathException | DCmdException e) {
+              if (filename != null) {
+                  throw new DCmdException(&quot;Could not write recording \&quot;%s\&quot; to file. %s&quot;, name, e.getMessage());
+              }
+</pre>
+<center><a href="DCmdStart.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="../event/EventWriter.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

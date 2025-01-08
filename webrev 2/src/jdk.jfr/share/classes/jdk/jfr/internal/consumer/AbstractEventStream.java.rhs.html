@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/AbstractEventStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.IOException;
+<a name="2" id="anc2"></a>
+
+
+ 29 import java.time.Duration;
+ 30 import java.time.Instant;
+ 31 import java.util.List;
+ 32 import java.util.Objects;
+ 33 import java.util.concurrent.CountDownLatch;
+ 34 import java.util.concurrent.TimeUnit;
+ 35 import java.util.concurrent.atomic.AtomicLong;
+ 36 import java.util.function.Consumer;
+ 37 
+ 38 import jdk.jfr.Configuration;
+ 39 import jdk.jfr.EventType;
+ 40 import jdk.jfr.consumer.EventStream;
+ 41 import jdk.jfr.consumer.MetadataEvent;
+ 42 import jdk.jfr.consumer.RecordedEvent;
+ 43 import jdk.jfr.internal.LogLevel;
+ 44 import jdk.jfr.internal.LogTag;
+ 45 import jdk.jfr.internal.Logger;
+<a name="3" id="anc3"></a>
+ 46 
+ 47 /*
+ 48  * Purpose of this class is to simplify the implementation of
+ 49  * an event stream.
+ 50  */
+ 51 public abstract class AbstractEventStream implements EventStream {
+ 52     private static final AtomicLong counter = new AtomicLong();
+ 53 
+ 54     private final CountDownLatch terminated = new CountDownLatch(1);
+ 55     private final Runnable flushOperation = () -&gt; dispatcher().runFlushActions();
+<a name="4" id="anc4"></a>
+
+ 56     private final StreamConfiguration streamConfiguration = new StreamConfiguration();
+ 57     private final List&lt;Configuration&gt; configurations;
+ 58     private final ParserState parserState = new ParserState();
+ 59     private volatile boolean closeOnComplete = true;
+ 60     private Dispatcher dispatcher;
+ 61     private boolean daemon = false;
+ 62 
+ 63 
+<a name="5" id="anc5"></a><span class="line-modified"> 64     AbstractEventStream(List&lt;Configuration&gt; configurations) throws IOException {</span>
+
+ 65         this.configurations = configurations;
+ 66     }
+ 67 
+ 68     @Override
+ 69     public abstract void start();
+ 70 
+ 71     @Override
+ 72     public abstract void startAsync();
+ 73 
+ 74     @Override
+ 75     public abstract void close();
+ 76 
+ 77     protected final Dispatcher dispatcher() {
+ 78         if (streamConfiguration.hasChanged()) { // quick check
+ 79             synchronized (streamConfiguration) {
+ 80                 dispatcher = new Dispatcher(streamConfiguration);
+ 81                 streamConfiguration.setChanged(false);
+ 82                 if (Logger.shouldLog(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG)) {
+ 83                     Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, dispatcher.toString());
+ 84                 }
+ 85             }
+ 86         }
+ 87         return dispatcher;
+ 88     }
+ 89 
+ 90     @Override
+ 91     public final void setOrdered(boolean ordered) {
+ 92         streamConfiguration.setOrdered(ordered);
+ 93     }
+ 94 
+ 95     @Override
+ 96     public final void setReuse(boolean reuse) {
+ 97         streamConfiguration.setReuse(reuse);
+ 98     }
+ 99 
+100     // Only used if -Xlog:jfr+event* is specified
+101     public final void setDaemon(boolean daemon) {
+102         this.daemon = daemon;
+103     }
+104 
+105     // When set to false, it becomes the callers responsibility
+106     // to invoke close() and clean up resources. By default,
+107     // the resource is cleaned up when the process() call has finished.
+108     public final void setCloseOnComplete(boolean closeOnComplete) {
+109         this.closeOnComplete = closeOnComplete;
+110     }
+111 
+112     @Override
+113     public final void setStartTime(Instant startTime) {
+114         Objects.requireNonNull(startTime, &quot;startTime&quot;);
+115         synchronized (streamConfiguration) {
+116             if (streamConfiguration.started) {
+117                 throw new IllegalStateException(&quot;Stream is already started&quot;);
+118             }
+119             if (startTime.isBefore(Instant.EPOCH)) {
+120                 startTime = Instant.EPOCH;
+121             }
+122             streamConfiguration.setStartTime(startTime);
+123         }
+124     }
+125 
+126     @Override
+127     public final void setEndTime(Instant endTime) {
+128         Objects.requireNonNull(endTime, &quot;endTime&quot;);
+129         synchronized (streamConfiguration) {
+130             if (streamConfiguration.started) {
+131                 throw new IllegalStateException(&quot;Stream is already started&quot;);
+132             }
+133             streamConfiguration.setEndTime(endTime);
+134         }
+135     }
+136 
+137     @Override
+138     public final void onEvent(Consumer&lt;RecordedEvent&gt; action) {
+139         Objects.requireNonNull(action, &quot;action&quot;);
+140         streamConfiguration.addEventAction(action);
+141     }
+142 
+143     @Override
+144     public final void onEvent(String eventName, Consumer&lt;RecordedEvent&gt; action) {
+145         Objects.requireNonNull(eventName, &quot;eventName&quot;);
+146         Objects.requireNonNull(action, &quot;action&quot;);
+147         streamConfiguration.addEventAction(eventName, action);
+148     }
+149 
+150     @Override
+151     public final void onFlush(Runnable action) {
+152         Objects.requireNonNull(action, &quot;action&quot;);
+153         streamConfiguration.addFlushAction(action);
+154     }
+155 
+156     @Override
+157     public final void onClose(Runnable action) {
+158         Objects.requireNonNull(action, &quot;action&quot;);
+159         streamConfiguration.addCloseAction(action);
+160     }
+161 
+162     @Override
+163     public final void onError(Consumer&lt;Throwable&gt; action) {
+164         Objects.requireNonNull(action, &quot;action&quot;);
+165         streamConfiguration.addErrorAction(action);
+166     }
+167 
+168     @Override
+169     public final boolean remove(Object action) {
+170         Objects.requireNonNull(action, &quot;action&quot;);
+171         return streamConfiguration.remove(action);
+172     }
+173 
+174     @Override
+175     public final void awaitTermination() throws InterruptedException {
+176         awaitTermination(Duration.ofMillis(0));
+177     }
+178 
+179     @Override
+180     public final void awaitTermination(Duration timeout) throws InterruptedException {
+181         Objects.requireNonNull(timeout, &quot;timeout&quot;);
+182         if (timeout.isNegative()) {
+183             throw new IllegalArgumentException(&quot;timeout value is negative&quot;);
+184         }
+185 
+186         long nanos;
+187         try {
+188             nanos = timeout.toNanos();
+189         } catch (ArithmeticException a) {
+190             nanos = Long.MAX_VALUE;
+191         }
+192         if (nanos == 0) {
+193             terminated.await();
+194         } else {
+195             terminated.await(nanos, TimeUnit.NANOSECONDS);
+196         }
+197     }
+198 
+199     protected abstract void process() throws IOException;
+200 
+201     protected abstract boolean isRecordingStream();
+202 
+203     protected final void closeParser() {
+204         parserState.close();
+205     }
+206 
+207     protected final boolean isClosed() {
+208         return parserState.isClosed();
+209     }
+210 
+211     protected final ParserState parserState() {
+212         return parserState;
+213     }
+214 
+215     public final void startAsync(long startNanos) {
+216         startInternal(startNanos);
+<a name="6" id="anc6"></a><span class="line-modified">217         Runnable r = () -&gt; execute();</span>
+<span class="line-modified">218         Thread thread = new Thread(r, nextThreadName());</span>
+<span class="line-modified">219         thread.setDaemon(daemon);</span>
+220         thread.start();
+221     }
+222 
+223     public final void start(long startNanos) {
+224         startInternal(startNanos);
+<a name="7" id="anc7"></a><span class="line-modified">225         execute();</span>
+226     }
+227 
+228     protected final Runnable getFlushOperation() {
+229         return flushOperation;
+230     }
+231 
+<a name="8" id="anc8"></a>
+232     protected final void onFlush() {
+233        Runnable r = getFlushOperation();
+234        if (r != null) {
+235            r.run();
+236        }
+237     }
+238 
+239     private void startInternal(long startNanos) {
+240         synchronized (streamConfiguration) {
+241             if (streamConfiguration.started) {
+242                 throw new IllegalStateException(&quot;Event stream can only be started once&quot;);
+243             }
+244             if (isRecordingStream() &amp;&amp; streamConfiguration.startTime == null) {
+245                 streamConfiguration.setStartNanos(startNanos);
+246             }
+247             streamConfiguration.setStarted(true);
+248         }
+249     }
+250 
+251     private void execute() {
+252         try {
+253             process();
+254         } catch (IOException ioe) {
+255             // This can happen if a chunk file is removed, or
+256             // a file is access that has been closed
+257             // This is &quot;normal&quot; behavior for streaming and the
+258             // stream will be closed when this happens.
+259         } finally {
+260             Logger.log(LogTag.JFR_SYSTEM_STREAMING, LogLevel.DEBUG, &quot;Execution of stream ended.&quot;);
+261             try {
+262                 if (closeOnComplete) {
+263                     close();
+264                 }
+265             } finally {
+266                 terminated.countDown();
+267             }
+268         }
+269     }
+270 
+<a name="9" id="anc9"></a>
+
+
+
+
+
+
+
+
+
+
+271     private String nextThreadName() {
+272         return &quot;JFR Event Stream &quot; + counter.incrementAndGet();
+273     }
+274 
+275     @Override
+276     public void onMetadata(Consumer&lt;MetadataEvent&gt; action) {
+277         Objects.requireNonNull(action, &quot;action&quot;);
+278         synchronized (streamConfiguration) {
+279             if (streamConfiguration.started) {
+280                 throw new IllegalStateException(&quot;Stream is already started&quot;);
+281             }
+282         }
+283         streamConfiguration.addMetadataAction(action);
+284     }
+285 
+286     protected final void onMetadata(ChunkParser parser) {
+287         if (parser.hasStaleMetadata()) {
+288             if (dispatcher.hasMetadataHandler()) {
+289                 List&lt;EventType&gt; ce = parser.getEventTypes();
+290                 List&lt;EventType&gt; pe = parser.getPreviousEventTypes();
+291                 if (ce != pe) {
+292                     MetadataEvent me = JdkJfrConsumer.instance().newMetadataEvent(pe, ce, configurations);
+293                     dispatcher.runMetadataActions(me);
+294                 }
+295                 parser.setStaleMetadata(false);
+296             }
+297         }
+298     }
+299 }
+<a name="10" id="anc10"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="10" type="hidden" />
+</body>
+</html>

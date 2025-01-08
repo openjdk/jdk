@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/internal/WriteablePath.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+ 1 /*
+ 2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal;
+27 
+28 import java.io.BufferedWriter;
+29 import java.io.FileNotFoundException;
+30 import java.io.IOException;
+31 import java.nio.file.Files;
+32 import java.nio.file.Path;
+33 
+34 public final class WriteablePath {
+35     private final Path path;
+36     private final Path real;
+37 
+38     public WriteablePath(Path path) throws IOException {
+39         // verify that the path is writeable
+40         if (Files.exists(path) &amp;&amp; !Files.isWritable(path)) {
+41             // throw same type of exception as FileOutputStream
+42             // constructor, if file can&#39;t be opened.
+43             throw new FileNotFoundException(&quot;Could not write to file: &quot; + path.toAbsolutePath());
+44         }
+45         // will throw if non-writeable
+46         BufferedWriter fw = Files.newBufferedWriter(path);
+47         fw.close();
+48         this.path = path;
+49         this.real = path.toRealPath();
+50     }
+51 
+52     public Path getPath() {
+53         return path;
+54     }
+55 
+56     public Path getReal() {
+57         return real;
+58     }
+59 
+60     public String getRealPathText() {
+61         return real.toString();
+62     }
+63 }
+    </pre>
+  </body>
+</html>

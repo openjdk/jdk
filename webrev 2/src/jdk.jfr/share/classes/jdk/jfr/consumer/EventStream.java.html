@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/consumer/EventStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.consumer;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.nio.file.Path;
+ 30 import java.time.Duration;
+ 31 import java.time.Instant;
+ 32 import java.util.Collections;
+ 33 import java.util.Objects;
+ 34 import java.util.function.Consumer;
+ 35 
+ 36 import jdk.jfr.internal.consumer.EventDirectoryStream;
+ 37 import jdk.jfr.internal.consumer.EventFileStream;
+ 38 
+ 39 /**
+ 40  * Represents a stream of events.
+ 41  * &lt;p&gt;
+ 42  * A stream is a sequence of events and the way to interact with a stream is to
+ 43  * register actions. The {@code EventStream} interface is not to be implemented
+ 44  * and future versions of the JDK may prevent this completely.
+ 45  * &lt;p&gt;
+ 46  * To receive a notification when an event arrives, register an action using the
+ 47  * {@link #onEvent(Consumer)} method. To filter the stream for an event with a
+ 48  * specific name, use {@link #onEvent(String, Consumer)} method.
+ 49  * &lt;p&gt;
+ 50  * By default, the same {@code RecordedEvent} object can be used to
+ 51  * represent two or more distinct events. That object can be delivered
+ 52  * multiple times to the same action as well as to other actions. To use an
+ 53  * event object after the action is completed, the
+ 54  * {@link #setReuse(boolean)} method should be set to {@code false} so a
+ 55  * new object is allocated for each event.
+ 56  * &lt;p&gt;
+ 57  * Events are delivered in batches. To receive a notification when a batch is
+ 58  * complete, register an action using the {@link #onFlush(Runnable)} method.
+ 59  * This is an opportunity to aggregate or push data to external systems while
+ 60  * the Java Virtual Machine (JVM) is preparing the next batch.
+ 61  * &lt;p&gt;
+ 62  * Events within a batch are sorted chronologically by their end time.
+ 63  * Well-ordering of events is only maintained for events available to the JVM at
+ 64  * the point of flush, i.e. for the set of events delivered as a unit in a
+ 65  * single batch. Events delivered in a batch could therefore be out-of-order
+ 66  * compared to events delivered in a previous batch, but never out-of-order with
+ 67  * events within the same batch. If ordering is not a concern, sorting can be
+ 68  * disabled using the {@link #setOrdered(boolean)} method.
+ 69  * &lt;p&gt;
+ 70  * To dispatch events to registered actions, the stream must be started. To
+ 71  * start processing in the current thread, invoke the {@link #start()} method.
+ 72  * To process actions asynchronously in a separate thread, invoke the
+ 73  * {@link #startAsync()} method. To await completion of the stream, use the
+ 74  * awaitTermination {@link #awaitTermination()} or the
+ 75  * {@link #awaitTermination(Duration)} method.
+ 76  * &lt;p&gt;
+ 77  * When a stream ends it is automatically closed. To manually stop processing of
+ 78  * events, close the stream by invoking the {@link #close()} method. A stream
+ 79  * can also be automatically closed in exceptional circumstances, for example if
+ 80  * the JVM that is being monitored exits. To receive a notification in any of
+ 81  * these occasions, use the {@link #onClose(Runnable)} method to register an
+ 82  * action.
+ 83  * &lt;p&gt;
+ 84  * If an unexpected exception occurs in an action, it is possible to catch the
+ 85  * exception in an error handler. An error handler can be registered using the
+ 86  * {@link #onError(Consumer)} method. If no error handler is registered, the
+ 87  * default behavior is to print the exception and its backtrace to the standard
+ 88  * error stream.
+ 89  * &lt;p&gt;
+ 90  * The following example shows how an {@code EventStream} can be used to listen
+ 91  * to events on a JVM running Flight Recorder
+ 92  *
+ 93  * {@snippet class=&quot;Snippets&quot; region=&quot;EventStreamOverview&quot;}
+ 94  * &lt;p&gt;
+ 95  * To start recording together with the stream, see {@link RecordingStream}.
+ 96  *
+ 97  * @since 14
+ 98  */
+ 99 public interface EventStream extends AutoCloseable {
+100     /**
+101      * Creates a stream from the repository of the current Java Virtual Machine
+102      * (JVM).
+103      * &lt;p&gt;
+104      * By default, the stream starts with the next event flushed by Flight
+105      * Recorder.
+106      *
+107      * @return an event stream, not {@code null}
+108      *
+109      * @throws IOException if a stream can&#39;t be opened, or an I/O error occurs
+110      *         when trying to access the repository
+111      */
+112     public static EventStream openRepository() throws IOException {
+113         return new EventDirectoryStream(
+114             null,
+115             null,
+116             Collections.emptyList(),
+117             false
+118         );
+119     }
+120 
+121     /**
+122      * Creates an event stream from a disk repository.
+123      * &lt;p&gt;
+124      * By default, the stream starts with the next event flushed by Flight
+125      * Recorder.
+126      * &lt;p&gt;
+127      * Only trusted disk repositories should be opened.
+128      *
+129      * @param directory location of the disk repository, not {@code null}
+130      *
+131      * @return an event stream, not {@code null}
+132      *
+133      * @throws IOException if a stream can&#39;t be opened, or an I/O error occurs
+134      *         when trying to access the repository
+135      */
+136     public static EventStream openRepository(Path directory) throws IOException {
+137         Objects.requireNonNull(directory, &quot;directory&quot;);
+138         return new EventDirectoryStream(
+139             directory,
+140             null,
+141             Collections.emptyList(),
+142             true
+143         );
+144     }
+145 
+146     /**
+147      * Creates an event stream from a file.
+148      * &lt;p&gt;
+149      * By default, the stream starts with the first event in the file.
+150      * &lt;p&gt;
+151      * Only recording files from trusted sources should be opened.
+152      *
+153      * @param file location of the file, not {@code null}
+154      *
+155      * @return an event stream, not {@code null}
+156      *
+157      * @throws IOException if the file can&#39;t be opened, or an I/O error occurs
+158      *         during reading
+159      */
+160     static EventStream openFile(Path file) throws IOException {
+161         Objects.requireNonNull(file, &quot;file&quot;);
+162         return new EventFileStream(file);
+163     }
+164 
+165     /**
+166      * Registers an action to perform when new metadata arrives in the stream.
+167      *
+168      * The event type of an event always arrives sometime before the actual event.
+169      * The action must be registered before the stream is started.
+170      * &lt;p&gt;
+171      * The following example shows how to listen to new event types, register
+172      * an action if the event type name matches a regular expression and increase a
+173      * counter if a matching event is found. A benefit of using an action per
+174      * event type, instead of the generic {@link #onEvent(Consumer)} method,
+175      * is that a stream implementation can avoid reading events that are of no
+176      * interest.
+177      *
+178      * {@snippet class = &quot;Snippets&quot; region = &quot;EventStreamMetadata&quot;}
+179      *
+180      * @implSpec The default implementation of this method is empty.
+181      *
+182      * @param action to perform, not {@code null}
+183      *
+184      * @throws IllegalStateException if an action is added after the stream has
+185      *                               started
+186      * @since 16
+187      */
+188      default void onMetadata(Consumer&lt;MetadataEvent&gt; action) {
+189      }
+190 
+191     /**
+192      * Registers an action to perform on all events in the stream.
+193      * &lt;p&gt;
+194      * To perform an action on a subset of event types, consider using
+195      * {@link #onEvent(String, Consumer)} and {@link #onMetadata(Consumer)} as it is
+196      * likely more performant than any selection or filtering mechanism implemented
+197      * in a generic action.
+198      *
+199      * @param action an action to perform on each {@code RecordedEvent}, not
+200      *        {@code null}
+201      *
+202      * @see #onEvent(Consumer)
+203      * @see #onMetadata(Consumer)
+204      */
+205     void onEvent(Consumer&lt;RecordedEvent&gt; action);
+206 
+207     /**
+208      * Registers an action to perform on all events matching a name.
+209      *
+210      * @param eventName the name of the event, not {@code null}
+211      *
+212      * @param action an action to perform on each {@code RecordedEvent} matching
+213      *        the event name, not {@code null}
+214      */
+215     void onEvent(String eventName, Consumer&lt;RecordedEvent&gt; action);
+216 
+217     /**
+218      * Registers an action to perform after the stream has been flushed.
+219      *
+220      * @param action an action to perform after the stream has been
+221      *        flushed, not {@code null}
+222      */
+223     void onFlush(Runnable action);
+224 
+225     /**
+226      * Registers an action to perform if an exception occurs.
+227      * &lt;p&gt;
+228      * If an action is not registered, an exception stack trace is printed to
+229      * standard error.
+230      * &lt;p&gt;
+231      * Registering an action overrides the default behavior. If multiple actions
+232      * have been registered, they are performed in the order of registration.
+233      * &lt;p&gt;
+234      * If this method itself throws an exception, resulting behavior is
+235      * undefined.
+236      *
+237      * @param action an action to perform if an exception occurs, not
+238      *        {@code null}
+239      */
+240     void onError(Consumer&lt;Throwable&gt; action);
+241 
+242     /**
+243      * Registers an action to perform when the stream is closed.
+244      * &lt;p&gt;
+245      * If the stream is already closed, the action will be performed immediately
+246      * in the current thread.
+247      *
+248      * @param action an action to perform after the stream is closed, not
+249      *        {@code null}
+250      * @see #close()
+251      */
+252     void onClose(Runnable action);
+253 
+254     /**
+255      * Releases all resources associated with this stream.
+256      * &lt;p&gt;
+257      * If a stream is started, asynchronously or synchronously, it is stopped
+258      * immediately or after the next flush. This method does &lt;em&gt;NOT&lt;/em&gt;
+259      * guarantee that all registered actions are completed before return.
+260      * &lt;p&gt;
+261      * Closing a previously closed stream has no effect.
+262      */
+263     @Override
+264     void close();
+265 
+266     /**
+267      * Unregisters an action.
+268      * &lt;p&gt;
+269      * If the action has been registered multiple times, all instances are
+270      * unregistered.
+271      *
+272      * @param action the action to unregister, not {@code null}
+273      *
+274      * @return {@code true} if the action was unregistered, {@code false}
+275      *         otherwise
+276      *
+277      * @see #onEvent(Consumer)
+278      * @see #onEvent(String, Consumer)
+279      * @see #onFlush(Runnable)
+280      * @see #onClose(Runnable)
+281      * @see #onError(Consumer)
+282      */
+283     boolean remove(Object action);
+284 
+285     /**
+286      * Specifies that the event object in an {@link #onEvent(Consumer)} action
+287      * can be reused.
+288      * &lt;p&gt;
+289      * If reuse is set to {@code true}, an action should not keep a reference
+290      * to the event object after the action has completed.
+291      *
+292      * @param reuse {@code true} if an event object can be reused, {@code false}
+293      * otherwise
+294      */
+295     void setReuse(boolean reuse);
+296 
+297     /**
+298      * Specifies that events arrives in chronological order, sorted by the time
+299      * they were committed to the stream.
+300      *
+301      * @param ordered if event objects arrive in chronological order to
+302      *        {@link #onEvent(Consumer)}
+303      */
+304     void setOrdered(boolean ordered);
+305 
+306     /**
+307      * Specifies the start time of the stream.
+308      * &lt;p&gt;
+309      * The start time must be set before starting the stream
+310      *
+311      * @param startTime the start time, not {@code null}
+312      *
+313      * @throws IllegalStateException if the stream is already started
+314      *
+315      * @see #start()
+316      * @see #startAsync()
+317      */
+318     void setStartTime(Instant startTime);
+319 
+320     /**
+321      * Specifies the end time of the stream.
+322      * &lt;p&gt;
+323      * The end time must be set before starting the stream.
+324      * &lt;p&gt;
+325      * At end time, the stream is closed.
+326      *
+327      * @param endTime the end time, not {@code null}
+328      *
+329      * @throws IllegalStateException if the stream is already started
+330      *
+331      * @see #start()
+332      * @see #startAsync()
+333      */
+334     void setEndTime(Instant endTime);
+335 
+336     /**
+337      * Starts processing of actions.
+338      * &lt;p&gt;
+339      * Actions are performed in the current thread.
+340      * &lt;p&gt;
+341      * To stop the stream, use the {@link #close()} method.
+342      *
+343      * @throws IllegalStateException if the stream is already started or closed
+344      */
+345     void start();
+346 
+347     /**
+348      * Starts asynchronous processing of actions.
+349      * &lt;p&gt;
+350      * Actions are performed in a single separate thread.
+351      * &lt;p&gt;
+352      * To stop the stream, use the {@link #close()} method.
+353      *
+354      * @throws IllegalStateException if the stream is already started or closed
+355      */
+356     void startAsync();
+357 
+358     /**
+359      * Blocks until all actions are completed, or the stream is closed, or the
+360      * timeout occurs, or the current thread is interrupted, whichever happens
+361      * first.
+362      *
+363      * @param timeout the maximum time to wait, not {@code null}
+364      *
+365      * @throws IllegalArgumentException if timeout is negative
+366      * @throws InterruptedException if interrupted while waiting
+367      *
+368      * @see #start()
+369      * @see #startAsync()
+370      * @see Thread#interrupt()
+371      */
+372     void awaitTermination(Duration timeout) throws InterruptedException;
+373 
+374     /**
+375      * Blocks until all actions are completed, or the stream is closed, or the
+376      * current thread is interrupted, whichever happens first.
+377      *
+378      * @throws InterruptedException if interrupted while waiting
+379      *
+380      * @see #start()
+381      * @see #startAsync()
+382      * @see Thread#interrupt()
+383      */
+384     void awaitTermination() throws InterruptedException;
+385 }
+    </pre>
+  </body>
+</html>

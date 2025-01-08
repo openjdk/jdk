@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/settings/PeriodSetting.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.settings;
+ 27 
+ 28 import java.util.Objects;
+ 29 import java.util.Set;
+ 30 
+ 31 import jdk.jfr.Description;
+ 32 import jdk.jfr.Label;
+ 33 import jdk.jfr.MetadataDefinition;
+ 34 import jdk.jfr.Name;
+<a name="2" id="anc2"></a>
+ 35 import jdk.jfr.internal.PlatformEventType;
+ 36 import jdk.jfr.internal.Type;
+ 37 import jdk.jfr.internal.util.ValueParser;
+ 38 import static jdk.jfr.internal.util.ValueParser.MISSING;
+ 39 
+ 40 @MetadataDefinition
+ 41 @Label(&quot;Period&quot;)
+ 42 @Description(&quot;Record event at interval&quot;)
+ 43 @Name(Type.SETTINGS_PREFIX + &quot;Period&quot;)
+<a name="3" id="anc3"></a><span class="line-modified"> 44 public final class PeriodSetting extends JDKSettingControl {</span>
+ 45     private static final long typeId = Type.getTypeId(PeriodSetting.class);
+ 46 
+ 47     public static final String EVERY_CHUNK = &quot;everyChunk&quot;;
+ 48     public static final String BEGIN_CHUNK = &quot;beginChunk&quot;;
+ 49     public static final String END_CHUNK = &quot;endChunk&quot;;
+ 50     public static final String DEFAULT_VALUE = EVERY_CHUNK;
+ 51     public static final String NAME = &quot;period&quot;;
+ 52     private final PlatformEventType eventType;
+ 53     private String value = EVERY_CHUNK;
+ 54 
+ 55     public PeriodSetting(PlatformEventType eventType) {
+ 56         this.eventType = Objects.requireNonNull(eventType);
+ 57     }
+ 58 
+ 59     @Override
+ 60     public String combine(Set&lt;String&gt; values) {
+ 61         boolean beginChunk = false;
+ 62         boolean endChunk = false;
+ 63         Long min = null;
+ 64         String text = null;
+ 65         for (String value : values) {
+ 66             switch (value) {
+ 67             case EVERY_CHUNK:
+ 68                 beginChunk = true;
+ 69                 endChunk = true;
+ 70                 break;
+ 71             case BEGIN_CHUNK:
+ 72                 beginChunk = true;
+ 73                 break;
+ 74             case END_CHUNK:
+ 75                 endChunk = true;
+ 76                 break;
+ 77             default:
+ 78                 long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+ 79                 if (nanos != MISSING) {
+ 80                     if (min == null || nanos &lt; min) {
+ 81                         text = value;
+ 82                         min = nanos;
+ 83                     }
+ 84                 }
+ 85             }
+ 86         }
+ 87         // A specified interval trumps *_CHUNK
+ 88         if (min != null) {
+ 89             return text;
+ 90         }
+ 91         if (beginChunk &amp;&amp; !endChunk) {
+ 92             return BEGIN_CHUNK;
+ 93         }
+ 94         if (!beginChunk &amp;&amp; endChunk) {
+ 95             return END_CHUNK;
+ 96         }
+ 97         return DEFAULT_VALUE; // &quot;everyChunk&quot; is default
+ 98     }
+ 99 
+100     @Override
+101     public void setValue(String value) {
+102         switch (value) {
+103         case EVERY_CHUNK:
+104             eventType.setPeriod(0, true, true);
+105             break;
+106         case BEGIN_CHUNK:
+107             eventType.setPeriod(0, true, false);
+108             break;
+109         case END_CHUNK:
+110             eventType.setPeriod(0, false, true);
+111             break;
+112         default:
+113             long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+114             if (nanos == MISSING) {
+115                 return;
+116             }
+117             if (nanos == 0 || nanos == Long.MAX_VALUE) {
+118                 eventType.setPeriod(nanos, false, false);
+119             } else {
+120                 eventType.setPeriod(Math.max(1, nanos / 1_000_000), false, false);
+121             }
+122         }
+123         this.value = value;
+124     }
+125 
+126     @Override
+127     public String getValue() {
+128         return value;
+129     }
+130 
+131     public static boolean isType(long typeId) {
+132         return PeriodSetting.typeId == typeId;
+133     }
+134 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

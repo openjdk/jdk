@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/consumer/RecordingFile.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.consumer;
+ 27 
+ 28 import java.io.Closeable;
+ 29 import java.io.EOFException;
+ 30 import java.io.File;
+ 31 import java.io.IOException;
+ 32 import java.nio.file.NoSuchFileException;
+ 33 import java.nio.file.Path;
+ 34 import java.util.ArrayList;
+ 35 import java.util.HashSet;
+ 36 import java.util.List;
+ 37 import java.util.Objects;
+ 38 import java.util.function.Predicate;
+ 39 import jdk.jfr.EventType;
+ 40 import jdk.jfr.internal.MetadataDescriptor;
+ 41 import jdk.jfr.internal.Type;
+ 42 import jdk.jfr.internal.consumer.ChunkParser.ParserConfiguration;
+ 43 import jdk.jfr.internal.consumer.ParserFilter;
+ 44 import jdk.jfr.internal.consumer.ChunkHeader;
+ 45 import jdk.jfr.internal.consumer.ChunkParser;
+<a name="2" id="anc2"></a>
+ 46 import jdk.jfr.internal.consumer.ParserState;
+ 47 import jdk.jfr.internal.consumer.RecordingInput;
+ 48 import jdk.jfr.internal.consumer.filter.ChunkWriter;
+ 49 
+ 50 /**
+ 51  * A recording file.
+ 52  * &lt;p&gt;
+ 53  * The following example shows how read and print all events in a recording file.
+ 54  *
+ 55  * {@snippet class=&quot;Snippets&quot; region=&quot;RecordingFileOverview&quot;}
+ 56  *
+ 57  * @since 9
+ 58  */
+ 59 public final class RecordingFile implements Closeable {
+ 60 
+ 61     private final ParserState parserState = new ParserState();
+ 62     private final ChunkWriter chunkWriter;
+ 63     private boolean isLastEventInChunk;
+ 64     private final File file;
+ 65     private RecordingInput input;
+ 66     private ChunkParser chunkParser;
+ 67     private RecordedEvent nextEvent;
+ 68     private boolean eof;
+ 69 
+ 70     /**
+ 71      * Creates a recording file.
+ 72      * &lt;p&gt;
+ 73      * Only recording files from trusted sources should be used.
+ 74      *
+ 75      * @param file the path of the file to open, not {@code null}
+ 76      * @throws IOException if it&#39;s not a valid recording file, or an I/O error
+ 77      *         occurred
+ 78      * @throws NoSuchFileException if the {@code file} can&#39;t be located
+ 79      */
+ 80     public RecordingFile(Path file) throws IOException {
+ 81         Objects.requireNonNull(file, &quot;file&quot;);
+ 82         this.file = file.toFile();
+<a name="3" id="anc3"></a><span class="line-modified"> 83         this.input = new RecordingInput(this.file);</span>
+ 84         this.chunkWriter = null;
+ 85         findNext();
+ 86     }
+ 87 
+ 88     // Only used by RecordingFile::write(Path, Predicate&lt;RecordedEvent&gt;)
+ 89     private RecordingFile(ChunkWriter chunkWriter) throws IOException {
+ 90         this.file = null; // not used
+ 91         this.input = chunkWriter.getInput();
+ 92         this.chunkWriter = chunkWriter;
+ 93         findNext();
+ 94     }
+ 95 
+ 96     /**
+ 97      * Reads the next event in the recording.
+ 98      *
+ 99      * @return the next event, not {@code null}
+100      *
+101      * @throws EOFException if no more events exist in the recording file
+102      * @throws IOException if an I/O error occurs
+103      *
+104      * @see #hasMoreEvents()
+105      */
+106     public RecordedEvent readEvent() throws IOException {
+107         if (eof) {
+108             ensureOpen();
+109             throw new EOFException();
+110         }
+111         isLastEventInChunk = false;
+112         RecordedEvent event = nextEvent;
+113         nextEvent = chunkParser.readEvent();
+114         while (nextEvent == ChunkParser.FLUSH_MARKER) {
+115             nextEvent = chunkParser.readEvent();
+116         }
+117         if (nextEvent == null) {
+118             isLastEventInChunk = true;
+119             findNext();
+120         }
+121         return event;
+122     }
+123 
+124     /**
+125      * Returns {@code true} if unread events exist in the recording file,
+126      * {@code false} otherwise.
+127      *
+128      * @return {@code true} if unread events exist in the recording, {@code false}
+129      *         otherwise.
+130      */
+131     public boolean hasMoreEvents() {
+132         return !eof;
+133     }
+134 
+135     /**
+136      * Returns a list of all event types in this recording.
+137      *
+138      * @return a list of event types, not {@code null}
+139      * @throws IOException if an I/O error occurred while reading from the file
+140      *
+141      * @see #hasMoreEvents()
+142      */
+143     public List&lt;EventType&gt; readEventTypes() throws IOException {
+144         ensureOpen();
+145         MetadataDescriptor previous = null;
+146         List&lt;EventType&gt; types = new ArrayList&lt;&gt;();
+147         HashSet&lt;Long&gt; foundIds = new HashSet&lt;&gt;();
+<a name="4" id="anc4"></a><span class="line-modified">148         try (RecordingInput ri = new RecordingInput(file)) {</span>
+149             ChunkHeader ch = new ChunkHeader(ri);
+150             aggregateEventTypeForChunk(ch, null, types, foundIds);
+151             while (!ch.isLastChunk()) {
+152                 ch = ch.nextHeader();
+153                 previous = aggregateEventTypeForChunk(ch, previous, types, foundIds);
+154             }
+155         }
+156         return types;
+157     }
+158 
+159     List&lt;Type&gt; readTypes() throws IOException  {
+160         ensureOpen();
+161         MetadataDescriptor previous = null;
+162         List&lt;Type&gt; types = new ArrayList&lt;&gt;(200);
+163         HashSet&lt;Long&gt; foundIds = HashSet.newHashSet(types.size());
+<a name="5" id="anc5"></a><span class="line-modified">164         try (RecordingInput ri = new RecordingInput(file)) {</span>
+165             ChunkHeader ch = new ChunkHeader(ri);
+166             ch.awaitFinished();
+167             aggregateTypeForChunk(ch, null, types, foundIds);
+168             while (!ch.isLastChunk()) {
+169                 ch = ch.nextHeader();
+170                 previous = aggregateTypeForChunk(ch, previous, types, foundIds);
+171             }
+172         }
+173         return types;
+174     }
+175 
+176     private MetadataDescriptor aggregateTypeForChunk(ChunkHeader ch, MetadataDescriptor previous, List&lt;Type&gt; types, HashSet&lt;Long&gt; foundIds) throws IOException {
+177         MetadataDescriptor m = ch.readMetadata(previous);
+178         for (Type t : m.getTypes()) {
+179             if (!foundIds.contains(t.getId())) {
+180                 types.add(t);
+181                 foundIds.add(t.getId());
+182             }
+183         }
+184         return m;
+185     }
+186 
+187     private static MetadataDescriptor aggregateEventTypeForChunk(ChunkHeader ch,  MetadataDescriptor previous, List&lt;EventType&gt; types, HashSet&lt;Long&gt; foundIds) throws IOException {
+188         MetadataDescriptor m = ch.readMetadata(previous);
+189         for (EventType t : m.getEventTypes()) {
+190             if (!foundIds.contains(t.getId())) {
+191                 types.add(t);
+192                 foundIds.add(t.getId());
+193             }
+194         }
+195         return m;
+196     }
+197 
+198     /**
+199      * Closes this recording file and releases any system resources that are
+200      * associated with it.
+201      *
+202      * @throws IOException if an I/O error occurred
+203      */
+204     @Override
+205     public void close() throws IOException {
+206         if (input != null) {
+207             eof = true;
+208             input.close();
+209             chunkParser = null;
+210             input = null;
+211             nextEvent = null;
+212         }
+213     }
+214 
+215     /**
+216      * Filter out events and write them to a new file.
+217      *
+218      * @param destination path where the new file should be written, not
+219      *                    {@code null}
+220      *
+221      * @param filter      filter that determines if an event should be included, not
+222      *                    {@code null}
+223      * @throws IOException       if an I/O error occurred, it&#39;s not a Flight
+224      *                           Recorder file or a version of a JFR file that can&#39;t
+225      *                           be parsed
+226      *
+227      * @since 19
+228      */
+229     public void write(Path destination, Predicate&lt;RecordedEvent&gt; filter) throws IOException {
+230         Objects.requireNonNull(destination, &quot;destination&quot;);
+231         Objects.requireNonNull(filter, &quot;filter&quot;);
+232         try (ChunkWriter cw = new ChunkWriter(file.toPath(), destination, filter)) {
+233             try (RecordingFile rf = new RecordingFile(cw)) {
+234                 while (rf.hasMoreEvents()) {
+235                     rf.readEvent();
+236                 }
+237             }
+238         }
+239     }
+240 
+241     /**
+242      * Returns a list of all events in a file.
+243      * &lt;p&gt;
+244      * This method is intended for simple cases where it&#39;s convenient to read all
+245      * events in a single operation. It isn&#39;t intended for reading large files.
+246      * &lt;p&gt;
+247      * Only recording files from trusted sources should be used.
+248      *
+249      * @param path the path to the file, not {@code null}
+250      *
+251      * @return the events from the file as a {@code List} object; whether the
+252      *         {@code List} is modifiable or not is implementation dependent and
+253      *         therefore not specified, not {@code null}
+254      *
+255      * @throws IOException if an I/O error occurred, it&#39;s not a Flight Recorder
+256      *         file or a version of a JFR file that can&#39;t be parsed
+257      */
+258     public static List&lt;RecordedEvent&gt; readAllEvents(Path path) throws IOException {
+259         Objects.requireNonNull(path, &quot;path&quot;);
+260         try (RecordingFile r = new RecordingFile(path)) {
+261             List&lt;RecordedEvent&gt; list = new ArrayList&lt;&gt;();
+262             while (r.hasMoreEvents()) {
+263                 list.add(r.readEvent());
+264             }
+265             return list;
+266         }
+267     }
+268 
+269     // package protected
+270     File getFile() {
+271         return file;
+272     }
+273 
+274     // package protected
+275     boolean isLastEventInChunk() {
+276         return isLastEventInChunk;
+277     }
+278 
+279     // either sets next to an event or sets eof to true
+280     private void findNext() throws IOException {
+281         while (nextEvent == null) {
+282             if (chunkParser == null) {
+283                 chunkParser = createChunkParser();
+284             } else if (!chunkParser.isLastChunk()) {
+285                 chunkParser = nextChunkParser();
+286             } else {
+287                 endChunkParser();
+288                 eof = true;
+289                 return;
+290             }
+291             nextEvent = chunkParser.readEvent();
+292             while (nextEvent == ChunkParser.FLUSH_MARKER) {
+293                 nextEvent = chunkParser.readEvent();
+294             }
+295         }
+296     }
+297 
+298     private ChunkParser createChunkParser() throws IOException {
+299         if (chunkWriter != null) {
+300             boolean reuse = true;
+301             boolean ordered = false;
+302             ParserConfiguration pc = new ParserConfiguration(0, Long.MAX_VALUE, reuse, ordered, ParserFilter.ACCEPT_ALL, chunkWriter);
+303             ChunkParser chunkParser = new ChunkParser(chunkWriter.getInput(), pc, new ParserState());
+304             chunkWriter.beginChunk(chunkParser.getHeader());
+305             return chunkParser;
+306         } else {
+307             return new ChunkParser(input, parserState);
+308         }
+309     }
+310 
+311     private void endChunkParser() throws IOException {
+312         if (chunkWriter != null) {
+313             chunkWriter.endChunk(chunkParser.getHeader());
+314         }
+315     }
+316 
+317     private ChunkParser nextChunkParser() throws IOException {
+318         if (chunkWriter != null) {
+319             chunkWriter.endChunk(chunkParser.getHeader());
+320         }
+321         ChunkParser next = chunkParser.nextChunkParser();
+322         if (chunkWriter != null) {
+323             chunkWriter.beginChunk(next.getHeader());
+324         }
+325         return next;
+326     }
+327 
+328     private void ensureOpen() throws IOException {
+329         if (input == null) {
+330             throw new IOException(&quot;Stream Closed&quot;);
+331         }
+332     }
+333 }
+<a name="6" id="anc6"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="6" type="hidden" />
+</body>
+</html>

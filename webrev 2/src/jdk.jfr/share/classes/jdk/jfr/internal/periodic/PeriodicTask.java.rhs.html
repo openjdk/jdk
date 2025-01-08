@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/PeriodicTask.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.periodic;
+ 26 
+ 27 import jdk.jfr.internal.LogLevel;
+ 28 import jdk.jfr.internal.LogTag;
+ 29 import jdk.jfr.internal.Logger;
+ 30 
+ 31 /**
+ 32  * Base class that holds time related information for a periodic task.
+ 33  * &lt;p&gt;
+ 34  * Class hierarchy for periodic tasks:
+ 35  * &lt;pre&gt;
+ 36  *               PeriodicTask
+ 37  *                /        \
+ 38  *               /          \
+ 39  *          EventTask    FlushTask
+ 40  *           /     \
+ 41  *          /       \
+ 42  * JVMEventTask   JavaEventTask
+<a name="2" id="anc2"></a>
+
+
+ 43  * &lt;/pre&gt;
+ 44  * &lt;p&gt;
+ 45  * State modifications should only be done from the periodic task thread.
+ 46  */
+ 47 abstract class PeriodicTask {
+ 48     private final LookupKey lookupKey;
+ 49     private final String name;
+ 50     // State only to be modified by the periodic task thread
+ 51     private long counter;
+ 52     private long period;
+ 53     private Batch batch;
+ 54 
+ 55     public PeriodicTask(LookupKey lookupKey, String name) {
+ 56         this.lookupKey = lookupKey;
+ 57         this.name = name;
+ 58     }
+ 59 
+ 60     public abstract void execute(long timestamp, PeriodicType periodicType);
+ 61 
+ 62     public abstract boolean isSchedulable();
+ 63 
+ 64     protected abstract long fetchPeriod();
+ 65 
+ 66     public final LookupKey getLookupKey() {
+ 67         return lookupKey;
+ 68     }
+ 69 
+ 70     public final String getName() {
+ 71         return name;
+ 72     }
+ 73 
+ 74     // Only to be called from periodic task thread
+ 75     public void setBatch(Batch batch) {
+ 76         this.batch = batch;
+ 77     }
+ 78 
+ 79     // Only to be called from periodic task thread
+ 80     public Batch getBatch() {
+ 81         return batch;
+ 82     }
+ 83 
+ 84     // Only to be called from periodic task thread
+ 85     public final void tick() {
+ 86         long increment = batch.getPeriod();
+ 87         if (period != 0) {
+ 88             counter = (counter + increment) % period;
+ 89             if (Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.DEBUG)) {
+ 90                 boolean trace = Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.TRACE);
+ 91                 boolean run = shouldRun();
+ 92                 if (trace || run) {
+ 93                     logInterval(trace, run ? &quot;Run&quot; : &quot;Skip&quot;);
+ 94                 }
+ 95             }
+ 96         }
+ 97     }
+ 98 
+ 99     // Only to be called from periodic task thread
+100     public final boolean shouldRun() {
+101         return counter == 0 &amp;&amp; period != 0;
+102     }
+103 
+104     // Only to be called from periodic task thread
+105     public final void updatePeriod() {
+106         long p = fetchPeriod();
+107         // Reset counter if new period
+108         if (p != period) {
+109             counter = 0;
+110             period = p;
+111             batch = null;
+112         }
+113     }
+114 
+115     // Only to be called from periodic task thread
+116     public final long getPeriod() {
+117         return period;
+118     }
+119 
+120     public final void run(long timestamp, PeriodicType periodicType) {
+121         if (periodicType != PeriodicType.INTERVAL) {
+122             logChunk(periodicType);
+123         }
+124         try {
+125             execute(timestamp, periodicType);
+126         } catch (Throwable e) {
+<a name="3" id="anc3"></a><span class="line-modified">127             String msg = &quot;Exception occurred during execution of &quot; + name + &quot;. &quot; + e.getMessage();</span>
+<span class="line-modified">128             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, msg);</span>
+129         }
+130     }
+131 
+132     private void logChunk(PeriodicType periodicType) {
+133         if (Logger.shouldLog(LogTag.JFR_PERIODIC, LogLevel.DEBUG)) {
+134             String action = periodicType == PeriodicType.BEGIN_CHUNK ? &quot;beginChunk&quot; : &quot;endChunk&quot;;
+135             String message = &quot;Run &quot; + action + &quot; &quot; + getName();
+136             Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
+137         }
+138     }
+139 
+140     private void logInterval(boolean trace, String action) {
+141         String message = action + &quot; periodic &quot; + getName();
+142         if (trace) {
+143             // Makes the counter run on x/x instead of 0/x which looks strange.
+144             long a =  counter == 0 ? period : counter;
+145             Logger.log(LogTag.JFR_PERIODIC, LogLevel.TRACE, message + (&quot; &quot; + a + &quot;/&quot; + period));
+146         } else {
+147             Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG, message);
+148         }
+149     }
+150 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

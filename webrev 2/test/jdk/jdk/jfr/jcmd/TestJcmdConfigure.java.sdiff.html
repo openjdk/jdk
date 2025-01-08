@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff test/jdk/jdk/jfr/jcmd/TestJcmdConfigure.java</title>
+    <link rel="stylesheet" href="../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../../../../../src/jdk.management.jfr/share/classes/jdk/management/jfr/RemoteRecordingStream.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../index.html" target="_top">index</a> <a href="../jvm/MyCommitRegisteredFalseEvent.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>test/jdk/jdk/jfr/jcmd/TestJcmdConfigure.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.
+  8  *
+  9  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 10  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 11  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 12  * version 2 for more details (a copy is included in the LICENSE file that
+ 13  * accompanied this code).
+ 14  *
+ 15  * You should have received a copy of the GNU General Public License version
+ 16  * 2 along with this work; if not, write to the Free Software Foundation,
+ 17  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 18  *
+ 19  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 20  * or visit www.oracle.com if you need additional information or have any
+ 21  * questions.
+ 22  */
+ 23 
+ 24 package jdk.jfr.jcmd;
+ 25 
+ 26 import java.io.File;
+ 27 import java.nio.file.Files;
+
+ 28 import java.nio.file.Paths;
+ 29 import java.util.ArrayList;
+ 30 import java.util.List;
+ 31 
+ 32 import jdk.jfr.internal.Repository;
+<span class="line-removed"> 33 import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+ 34 import jdk.jfr.internal.Options;
+ 35 import jdk.test.lib.Asserts;
+ 36 import jdk.test.lib.Utils;
+ 37 
+ 38 /**
+ 39  * @test
+ 40  * @summary The test verifies JFR.configure command
+ 41  * @key jfr
+ 42  * @requires vm.hasJFR
+ 43  * @library /test/lib /test/jdk
+ 44  * @modules jdk.jfr/jdk.jfr.internal
+ 45  * @run main/othervm -Xlog:jfr=info:file=jfr_info.txt jdk.jfr.jcmd.TestJcmdConfigure
+ 46  */
+ 47 public class TestJcmdConfigure {
+ 48 
+ 49     private static final String DUMPPATH = &quot;dumppath&quot;;
+ 50     private static final String STACK_DEPTH = &quot;stackdepth&quot;;
+ 51     private static final String GLOBAL_BUFFER_COUNT = &quot;globalbuffercount&quot;;
+ 52     private static final String GLOBAL_BUFFER_SIZE = &quot;globalbuffersize&quot;;
+ 53     private static final String THREAD_BUFFER_SIZE = &quot;thread_buffer_size&quot;;
+</pre>
+<hr />
+<pre>
+114         }
+115     }
+116 
+117     private static Object getOption(String name) {
+118         switch (name) {
+119             case DUMPPATH: return Options.getDumpPath().toString();
+120             case STACK_DEPTH: return Options.getStackDepth();
+121             case GLOBAL_BUFFER_COUNT: return Options.getGlobalBufferCount();
+122             case GLOBAL_BUFFER_SIZE: return Options.getGlobalBufferSize();
+123             case THREAD_BUFFER_SIZE: return Options.getThreadBufferSize();
+124             case MAX_CHUNK_SIZE: return Options.getMaxChunkSize();
+125             default: throw new RuntimeException(&quot;Unknown option &quot; + name);
+126         }
+127     }
+128 
+129     private static void testRepository(){
+130         final String findWhat = &quot;[info][jfr] Same base repository path &quot; + REPOSITORYPATH_1 + &quot; is set&quot;;
+131 
+132         try {
+133             JcmdHelper.jcmd(&quot;JFR.configure&quot;, REPOSITORYPATH_SETTING_1);
+<span class="line-modified">134             SafePath initialPath = Repository.getRepository().getRepositoryPath();</span>
+135 
+136             JcmdHelper.jcmd(&quot;JFR.configure&quot;, REPOSITORYPATH_SETTING_1);
+<span class="line-modified">137             SafePath samePath = Repository.getRepository().getRepositoryPath();</span>
+138             Asserts.assertTrue(samePath.equals(initialPath));
+139 
+140             List&lt;String&gt; lines = Files.readAllLines(Paths.get(JFR_UNIFIED_LOG_FILE));
+141             Asserts.assertTrue(lines.stream().anyMatch(l-&gt;l.contains(findWhat)));
+142 
+143             JcmdHelper.jcmd(&quot;JFR.configure&quot;, REPOSITORYPATH_SETTING_2);
+<span class="line-modified">144             SafePath changedPath = Repository.getRepository().getRepositoryPath();</span>
+145 
+146             Asserts.assertFalse(changedPath.equals(initialPath));
+147 
+148         } catch(Exception e) {
+149             testExceptions.add(e);
+150         }
+151     }
+152 }
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.
+  8  *
+  9  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 10  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 11  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 12  * version 2 for more details (a copy is included in the LICENSE file that
+ 13  * accompanied this code).
+ 14  *
+ 15  * You should have received a copy of the GNU General Public License version
+ 16  * 2 along with this work; if not, write to the Free Software Foundation,
+ 17  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 18  *
+ 19  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 20  * or visit www.oracle.com if you need additional information or have any
+ 21  * questions.
+ 22  */
+ 23 
+ 24 package jdk.jfr.jcmd;
+ 25 
+ 26 import java.io.File;
+ 27 import java.nio.file.Files;
+<span class="line-added"> 28 import java.nio.file.Path;</span>
+ 29 import java.nio.file.Paths;
+ 30 import java.util.ArrayList;
+ 31 import java.util.List;
+ 32 
+ 33 import jdk.jfr.internal.Repository;
+
+ 34 import jdk.jfr.internal.Options;
+ 35 import jdk.test.lib.Asserts;
+ 36 import jdk.test.lib.Utils;
+ 37 
+ 38 /**
+ 39  * @test
+ 40  * @summary The test verifies JFR.configure command
+ 41  * @key jfr
+ 42  * @requires vm.hasJFR
+ 43  * @library /test/lib /test/jdk
+ 44  * @modules jdk.jfr/jdk.jfr.internal
+ 45  * @run main/othervm -Xlog:jfr=info:file=jfr_info.txt jdk.jfr.jcmd.TestJcmdConfigure
+ 46  */
+ 47 public class TestJcmdConfigure {
+ 48 
+ 49     private static final String DUMPPATH = &quot;dumppath&quot;;
+ 50     private static final String STACK_DEPTH = &quot;stackdepth&quot;;
+ 51     private static final String GLOBAL_BUFFER_COUNT = &quot;globalbuffercount&quot;;
+ 52     private static final String GLOBAL_BUFFER_SIZE = &quot;globalbuffersize&quot;;
+ 53     private static final String THREAD_BUFFER_SIZE = &quot;thread_buffer_size&quot;;
+</pre>
+<hr />
+<pre>
+114         }
+115     }
+116 
+117     private static Object getOption(String name) {
+118         switch (name) {
+119             case DUMPPATH: return Options.getDumpPath().toString();
+120             case STACK_DEPTH: return Options.getStackDepth();
+121             case GLOBAL_BUFFER_COUNT: return Options.getGlobalBufferCount();
+122             case GLOBAL_BUFFER_SIZE: return Options.getGlobalBufferSize();
+123             case THREAD_BUFFER_SIZE: return Options.getThreadBufferSize();
+124             case MAX_CHUNK_SIZE: return Options.getMaxChunkSize();
+125             default: throw new RuntimeException(&quot;Unknown option &quot; + name);
+126         }
+127     }
+128 
+129     private static void testRepository(){
+130         final String findWhat = &quot;[info][jfr] Same base repository path &quot; + REPOSITORYPATH_1 + &quot; is set&quot;;
+131 
+132         try {
+133             JcmdHelper.jcmd(&quot;JFR.configure&quot;, REPOSITORYPATH_SETTING_1);
+<span class="line-modified">134             Path initialPath = Repository.getRepository().getRepositoryPath();</span>
+135 
+136             JcmdHelper.jcmd(&quot;JFR.configure&quot;, REPOSITORYPATH_SETTING_1);
+<span class="line-modified">137             Path samePath = Repository.getRepository().getRepositoryPath();</span>
+138             Asserts.assertTrue(samePath.equals(initialPath));
+139 
+140             List&lt;String&gt; lines = Files.readAllLines(Paths.get(JFR_UNIFIED_LOG_FILE));
+141             Asserts.assertTrue(lines.stream().anyMatch(l-&gt;l.contains(findWhat)));
+142 
+143             JcmdHelper.jcmd(&quot;JFR.configure&quot;, REPOSITORYPATH_SETTING_2);
+<span class="line-modified">144             Path changedPath = Repository.getRepository().getRepositoryPath();</span>
+145 
+146             Asserts.assertFalse(changedPath.equals(initialPath));
+147 
+148         } catch(Exception e) {
+149             testExceptions.add(e);
+150         }
+151     }
+152 }
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="../../../../../src/jdk.management.jfr/share/classes/jdk/management/jfr/RemoteRecordingStream.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../index.html" target="_top">index</a> <a href="../jvm/MyCommitRegisteredFalseEvent.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

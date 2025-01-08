@@ -1,0 +1,37 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Disassemble.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Disassemble.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Disassemble.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Disassemble.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -39,11 +39,10 @@
+ import java.util.ArrayList;
+ import java.util.Deque;
+ import java.util.List;
+ 
+ import jdk.jfr.internal.consumer.ChunkHeader;
+-import jdk.jfr.internal.consumer.FileAccess;
+ import jdk.jfr.internal.consumer.RecordingInput;
+ import jdk.jfr.internal.util.UserDataException;
+ import jdk.jfr.internal.util.UserSyntaxException;
+ 
+ final class Disassemble extends Command {
+@@ -164,11 +163,11 @@
+             throw new UserDataException("no JFR chunks found in file.");
+         }
+     }
+ 
+     private List<Long> findChunkSizes(Path p) throws IOException {
+-        try (RecordingInput input = new RecordingInput(p.toFile(), FileAccess.UNPRIVILEGED)) {
++        try (RecordingInput input = new RecordingInput(p.toFile())) {
+             List<Long> sizes = new ArrayList<>();
+             ChunkHeader ch = new ChunkHeader(input);
+             sizes.add(ch.getSize());
+             while (!ch.isLastChunk()) {
+                 ch = ch.nextHeader();

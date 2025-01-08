@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecording.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import static jdk.jfr.internal.LogLevel.DEBUG;
+ 29 import static jdk.jfr.internal.LogLevel.ERROR;
+ 30 import static jdk.jfr.internal.LogLevel.INFO;
+ 31 import static jdk.jfr.internal.LogLevel.WARN;
+ 32 import static jdk.jfr.internal.LogTag.JFR;
+ 33 
+ 34 import java.io.IOException;
+ 35 import java.io.InputStream;
+ 36 import java.nio.channels.FileChannel;
+ 37 import java.nio.file.NoSuchFileException;
+ 38 import java.nio.file.StandardOpenOption;
+ 39 import java.security.AccessControlContext;
+ 40 import java.security.AccessController;
+ 41 import java.security.PrivilegedActionException;
+ 42 import java.security.PrivilegedExceptionAction;
+ 43 import java.time.Duration;
+ 44 import java.time.Instant;
+ 45 import java.time.LocalDateTime;
+ 46 import java.util.ArrayList;
+ 47 import java.util.Collections;
+ 48 import java.util.Date;
+ 49 import java.util.Iterator;
+ 50 import java.util.LinkedHashMap;
+ 51 import java.util.LinkedList;
+ 52 import java.util.List;
+ 53 import java.util.Map;
+ 54 import java.util.StringJoiner;
+ 55 import java.util.TimerTask;
+ 56 import java.util.TreeMap;
+ 57 
+ 58 import jdk.jfr.Configuration;
+ 59 import jdk.jfr.FlightRecorderListener;
+ 60 import jdk.jfr.Recording;
+ 61 import jdk.jfr.RecordingState;
+ 62 import jdk.jfr.internal.SecuritySupport.SafePath;
+ 63 import jdk.jfr.internal.util.Utils;
+ 64 import jdk.jfr.internal.util.ValueFormatter;
+ 65 
+ 66 public final class PlatformRecording implements AutoCloseable {
+ 67 
+ 68     private final PlatformRecorder recorder;
+ 69     private final long id;
+ 70     // Recording settings
+ 71     private Map&lt;String, String&gt; settings = new LinkedHashMap&lt;&gt;();
+ 72     private Duration duration;
+ 73     private Duration maxAge;
+ 74     private long maxSize;
+ 75 
+ 76     private WriteableUserPath destination;
+ 77 
+ 78     private boolean toDisk = true;
+ 79     private String name;
+ 80     private boolean dumpOnExit;
+ 81     private SafePath dumpDirectory;
+ 82     // Timestamp information
+ 83     private Instant stopTime;
+ 84     private Instant startTime;
+ 85 
+ 86     // Misc, information
+ 87     private RecordingState state = RecordingState.NEW;
+ 88     private long size;
+ 89     private final LinkedList&lt;RepositoryChunk&gt; chunks = new LinkedList&lt;&gt;();
+ 90     private volatile Recording recording;
+ 91     private TimerTask stopTask;
+ 92     private TimerTask startTask;
+ 93     @SuppressWarnings(&quot;removal&quot;)
+ 94     private final AccessControlContext dumpDirectoryControlContext;
+ 95     private boolean shouldWriteActiveRecordingEvent = true;
+ 96     private Duration flushInterval = Duration.ofSeconds(1);
+ 97     private long finalStartChunkNanos = Long.MIN_VALUE;
+ 98     private long startNanos = -1;
+ 99 
+100     @SuppressWarnings(&quot;removal&quot;)
+101     PlatformRecording(PlatformRecorder recorder, long id) {
+102         // Typically the access control context is taken
+103         // when you call dump(Path) or setDestination(Path),
+104         // but if no destination is set and the filename is auto-generated,
+105         // the control context of the recording is taken when the
+106         // Recording object is constructed. This works well for
+107         // -XX:StartFlightRecording and JFR.dump
+108         this.dumpDirectoryControlContext = AccessController.getContext();
+109         this.id = id;
+110         this.recorder = recorder;
+111         this.name = String.valueOf(id);
+112     }
+113 
+114     public long start() {
+115         RecordingState oldState;
+116         RecordingState newState;
+117         synchronized (recorder) {
+118             oldState = getState();
+119             if (!Utils.isBefore(state, RecordingState.RUNNING)) {
+120                 throw new IllegalStateException(&quot;Recording can only be started once.&quot;);
+121             }
+122             if (startTask != null) {
+123                 startTask.cancel();
+124                 startTask = null;
+125                 startTime = null;
+126             }
+127             startNanos = recorder.start(this);
+128             if (Logger.shouldLog(LogTag.JFR, LogLevel.INFO)) {
+129                 // Only print non-default values so it easy to see
+130                 // which options were added
+131                 StringJoiner options = new StringJoiner(&quot;, &quot;);
+132                 if (!toDisk) {
+133                     options.add(&quot;disk=false&quot;);
+134                 }
+135                 if (maxAge != null) {
+136                     options.add(&quot;maxage=&quot; + ValueFormatter.formatTimespan(maxAge, &quot;&quot;));
+137                 }
+138                 if (maxSize != 0) {
+139                     options.add(&quot;maxsize=&quot; + ValueFormatter.formatBytesCompact(maxSize));
+140                 }
+141                 if (dumpOnExit) {
+142                     options.add(&quot;dumponexit=true&quot;);
+143                 }
+144                 if (duration != null) {
+145                     options.add(&quot;duration=&quot; + ValueFormatter.formatTimespan(duration, &quot;&quot;));
+146                 }
+147                 if (destination != null) {
+148                     options.add(&quot;filename=&quot; + destination.getRealPathText());
+149                 }
+150                 String optionText = options.toString();
+151                 if (optionText.length() != 0) {
+152                     optionText = &quot;{&quot; + optionText + &quot;}&quot;;
+153                 }
+154                 Logger.log(LogTag.JFR, LogLevel.INFO,
+155                         &quot;Started recording \&quot;&quot; + getName() + &quot;\&quot; (&quot; + getId() + &quot;) &quot; + optionText);
+156             };
+157             newState = getState();
+158         }
+159         notifyIfStateChanged(oldState, newState);
+160 
+161         return startNanos;
+162     }
+163 
+164     public boolean stop(String reason) {
+165         RecordingState oldState;
+166         RecordingState newState;
+167         synchronized (recorder) {
+168             oldState = getState();
+169             if (stopTask != null) {
+170                 stopTask.cancel();
+171                 stopTask = null;
+172             }
+173             recorder.stop(this);
+174             String endText = reason == null ? &quot;&quot; : &quot;. Reason \&quot;&quot; + reason + &quot;\&quot;.&quot;;
+175             Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Stopped recording \&quot;&quot; + getName() + &quot;\&quot; (&quot; + getId() + &quot;)&quot; + endText);
+176             newState = getState();
+177         }
+178         WriteableUserPath dest = getDestination();
+179         if (dest == null &amp;&amp; dumpDirectory != null) {
+180             dest = makeDumpPath();
+181         }
+182         if (dest != null) {
+183             try {
+184                 dumpStopped(dest);
+185                 Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Wrote recording \&quot;&quot; + getName() + &quot;\&quot; (&quot; + getId() + &quot;) to &quot; + dest.getRealPathText());
+186                 notifyIfStateChanged(newState, oldState);
+187                 close(); // remove if copied out
+188             } catch(IOException e) {
+189                 Logger.log(LogTag.JFR, LogLevel.ERROR,
+190                            &quot;Unable to complete I/O operation when dumping recording \&quot;&quot; + getName() + &quot;\&quot; (&quot; + getId() + &quot;)&quot;);
+191             }
+192         } else {
+193             notifyIfStateChanged(newState, oldState);
+194         }
+195         return true;
+196     }
+197 
+198     @SuppressWarnings(&quot;removal&quot;)
+199     public WriteableUserPath makeDumpPath() {
+200         try {
+201             String name = JVMSupport.makeFilename(getRecording());
+202             return AccessController.doPrivileged(new PrivilegedExceptionAction&lt;WriteableUserPath&gt;() {
+203                 @Override
+204                 public WriteableUserPath run() throws Exception {
+205                     SafePath p = dumpDirectory;
+206                     if (p == null) {
+207                         p = new SafePath(&quot;.&quot;);
+208                     }
+209                     return new WriteableUserPath(p.toPath().resolve(name));
+210                 }
+211             }, dumpDirectoryControlContext);
+212         } catch (PrivilegedActionException e) {
+213             Throwable t = e.getCause();
+214             if (t instanceof SecurityException) {
+215                 Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Not allowed to create dump path for recording &quot; + recording.getId() + &quot; on exit.&quot;);
+216             }
+217             if (t instanceof IOException) {
+218                 Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Could not dump &quot; + recording.getId() + &quot; on exit.&quot;);
+219             }
+220             return null;
+221         }
+222     }
+223 
+224 
+225     public void scheduleStart(Duration delay) {
+226         synchronized (recorder) {
+227             ensureOkForSchedule();
+228 
+229             startTime = Instant.now().plus(delay);
+230             LocalDateTime now = LocalDateTime.now().plus(delay);
+231             setState(RecordingState.DELAYED);
+232             startTask = createStartTask();
+233             try {
+234                 recorder.getTimer().schedule(startTask, delay.toMillis());
+235                 Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Scheduled recording \&quot;&quot; + getName() + &quot;\&quot; (&quot; + getId() + &quot;) to start at &quot; + now);
+236             } catch (IllegalStateException ise) {
+237                 // This can happen in the unlikely case that a recording
+238                 // is scheduled after the Timer has been cancelled in
+239                 // the shutdown hook. Just ignore.
+240             }
+241         }
+242     }
+243 
+244     private void ensureOkForSchedule() {
+245         if (getState() != RecordingState.NEW) {
+246             throw new IllegalStateException(&quot;Only a new recording can be scheduled for start&quot;);
+247         }
+248     }
+249 
+250     private TimerTask createStartTask() {
+251         // Taking ref. to recording here.
+252         // Opens up for memory leaks.
+253         return new TimerTask() {
+254             @Override
+255             public void run() {
+256                 synchronized (recorder) {
+257                     if (getState() != RecordingState.DELAYED) {
+258                         return;
+259                     }
+260                     start();
+261                 }
+262             }
+263         };
+264     }
+265 
+266     void scheduleStart(Instant startTime) {
+267         synchronized (recorder) {
+268             ensureOkForSchedule();
+269             this.startTime = startTime;
+270             setState(RecordingState.DELAYED);
+271             startTask = createStartTask();
+272             recorder.getTimer().schedule(startTask, startTime.toEpochMilli());
+273         }
+274     }
+275 
+276     public Map&lt;String, String&gt; getSettings() {
+277         synchronized (recorder) {
+278             return settings;
+279         }
+280     }
+281 
+282     public long getSize() {
+283         return size;
+284     }
+285 
+286     public Instant getStopTime() {
+287         synchronized (recorder) {
+288             return stopTime;
+289         }
+290     }
+291 
+292     public Instant getStartTime() {
+293         synchronized (recorder) {
+294             return startTime;
+295         }
+296     }
+297 
+298     public Long getMaxSize() {
+299         synchronized (recorder) {
+300             return maxSize;
+301         }
+302     }
+303 
+304     public Duration getMaxAge() {
+305         synchronized (recorder) {
+306             return maxAge;
+307         }
+308     }
+309 
+310     public String getName() {
+311         synchronized (recorder) {
+312             return name;
+313         }
+314     }
+315 
+316     public RecordingState getState() {
+317         synchronized (recorder) {
+318             return state;
+319         }
+320     }
+321 
+322     @Override
+323     public void close() {
+324         RecordingState oldState;
+325         RecordingState newState;
+326 
+327         synchronized (recorder) {
+328             oldState = getState();
+329             if (RecordingState.CLOSED != getState()) {
+330                 if (startTask != null) {
+331                     startTask.cancel();
+332                     startTask = null;
+333                 }
+334                 recorder.finish(this);
+335                 for (RepositoryChunk c : chunks) {
+336                     removed(c);
+337                 }
+338                 chunks.clear();
+339                 setState(RecordingState.CLOSED);
+340                 Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Closed recording \&quot;&quot; + getName() + &quot;\&quot; (&quot; + getId() + &quot;)&quot;);
+341             }
+342             newState = getState();
+343         }
+344         notifyIfStateChanged(newState, oldState);
+345     }
+346 
+347     // To be used internally when doing dumps.
+348     // Caller must have recorder lock and close recording before releasing lock
+349     public PlatformRecording newSnapshotClone(String reason, Boolean pathToGcRoots) throws IOException {
+350         if(!Thread.holdsLock(recorder)) {
+351             throw new InternalError(&quot;Caller must have recorder lock&quot;);
+352         }
+353         RecordingState state = getState();
+354         if (state == RecordingState.CLOSED) {
+355             throw new IOException(&quot;Recording \&quot;&quot; + name + &quot;\&quot; (id=&quot; + id + &quot;) has been closed, no content to write&quot;);
+356         }
+357         if (state == RecordingState.DELAYED || state == RecordingState.NEW) {
+358             throw new IOException(&quot;Recording \&quot;&quot; + name + &quot;\&quot; (id=&quot; + id + &quot;) has not started, no content to write&quot;);
+359         }
+360 
+361         if (state == RecordingState.STOPPED) {
+362             if (!isToDisk()) {
+363                 throw new IOException(&quot;Recording \&quot;&quot; + name + &quot;\&quot; (id=&quot; + id + &quot;)&quot;
+364                     + &quot; is an in memory recording. No data to copy after it has been stopped.&quot;);
+365             }
+366             PlatformRecording clone = recorder.newTemporaryRecording();
+367             for (RepositoryChunk r : chunks) {
+368                 clone.add(r);
+369             }
+370             return clone;
+371         }
+372 
+373         // Recording is RUNNING, create a clone
+374         PlatformRecording clone = recorder.newTemporaryRecording();
+375         clone.setShouldWriteActiveRecordingEvent(false);
+376         clone.setName(getName());
+377         clone.setToDisk(true);
+378         clone.setMaxAge(getMaxAge());
+379         clone.setMaxSize(getMaxSize());
+380         // We purposely don&#39;t clone settings here, since
+381         // a union a == a
+382         if (!isToDisk()) {
+383             // force memory contents to disk
+384             clone.start();
+385         } else {
+386             // using existing chunks on disk
+387             for (RepositoryChunk c : chunks) {
+388                 clone.add(c);
+389             }
+390             clone.setState(RecordingState.RUNNING);
+391             clone.setStartTime(getStartTime());
+392         }
+393         if (pathToGcRoots == null) {
+394             clone.setSettings(getSettings()); // needed for old object sample
+395             clone.stop(reason); // dumps to destination path here
+396         } else {
+397             // Risk of violating lock order here, since
+398             // clone.stop() will take recorder lock inside
+399             // metadata lock, but OK if we already
+400             // have recorder lock when we entered metadata lock
+401             synchronized (MetadataRepository.getInstance()) {
+402                 clone.setSettings(OldObjectSample.createSettingsForSnapshot(this, pathToGcRoots));
+403                 clone.stop(reason);
+404             }
+405         }
+406         return clone;
+407     }
+408 
+409     public boolean isToDisk() {
+410         synchronized (recorder) {
+411             return toDisk;
+412         }
+413     }
+414 
+415     public void setMaxSize(long maxSize) {
+416         synchronized (recorder) {
+417             if (getState() == RecordingState.CLOSED) {
+418                 throw new IllegalStateException(&quot;Can&#39;t set max size when recording is closed&quot;);
+419             }
+420             this.maxSize = maxSize;
+421             trimToSize();
+422         }
+423     }
+424 
+425     public void setDestination(WriteableUserPath userSuppliedPath) throws IOException {
+426         synchronized (recorder) {
+427             checkSetDestination(userSuppliedPath);
+428             this.destination = userSuppliedPath;
+429         }
+430     }
+431 
+432     public void checkSetDestination(WriteableUserPath userSuppliedPath) throws IOException {
+433         synchronized (recorder) {
+434             if (Utils.isState(getState(), RecordingState.STOPPED, RecordingState.CLOSED)) {
+435                 throw new IllegalStateException(&quot;Destination can&#39;t be set on a recording that has been stopped/closed&quot;);
+436             }
+437         }
+438     }
+439 
+440     public WriteableUserPath getDestination() {
+441         synchronized (recorder) {
+442             return destination;
+443         }
+444     }
+445 
+446     void setState(RecordingState state) {
+447         synchronized (recorder) {
+448             this.state = state;
+449         }
+450     }
+451 
+452     void setStartTime(Instant startTime) {
+453         synchronized (recorder) {
+454             this.startTime = startTime;
+455         }
+456     }
+457 
+458     void setStopTime(Instant timeStamp) {
+459         synchronized (recorder) {
+460             stopTime = timeStamp;
+461         }
+462     }
+463 
+464     public long getId() {
+465         synchronized (recorder) {
+466             return id;
+467         }
+468     }
+469 
+470     public void setName(String name) {
+471         synchronized (recorder) {
+472             ensureNotClosed();
+473             this.name = name;
+474         }
+475     }
+476 
+477     private void ensureNotClosed() {
+478         if (getState() == RecordingState.CLOSED) {
+479             throw new IllegalStateException(&quot;Can&#39;t change name on a closed recording&quot;);
+480         }
+481     }
+482 
+483     public void setDumpOnExit(boolean dumpOnExit) {
+484         synchronized (recorder) {
+485             this.dumpOnExit = dumpOnExit;
+486         }
+487     }
+488 
+489     public boolean getDumpOnExit() {
+490         synchronized (recorder) {
+491             return dumpOnExit;
+492         }
+493     }
+494 
+495     public void setToDisk(boolean toDisk) {
+496         synchronized (recorder) {
+497             if (Utils.isState(getState(), RecordingState.NEW, RecordingState.DELAYED)) {
+498                 this.toDisk = toDisk;
+499             } else {
+500                 throw new IllegalStateException(&quot;Recording option disk can&#39;t be changed after recording has started&quot;);
+501             }
+502         }
+503     }
+504 
+505     public void setSetting(String id, String value) {
+506         synchronized (recorder) {
+507             this.settings.put(id, value);
+508             if (getState() == RecordingState.RUNNING) {
+509                 recorder.updateSettings(true);
+510             }
+511         }
+512     }
+513 
+514     public void setSettings(Map&lt;String, String&gt; settings) {
+515         setSettings(settings, true);
+516     }
+517 
+518     private void setSettings(Map&lt;String, String&gt; settings, boolean update) {
+519         if (Logger.shouldLog(LogTag.JFR_SETTING, LogLevel.INFO) &amp;&amp; update) {
+520             TreeMap&lt;String, String&gt; ordered = new TreeMap&lt;&gt;(settings);
+521             Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, &quot;New settings for recording \&quot;&quot; + getName() + &quot;\&quot; (&quot; + getId() + &quot;)&quot;);
+522             for (Map.Entry&lt;String, String&gt; entry : ordered.entrySet()) {
+523                 String text = entry.getKey() + &quot;=\&quot;&quot; + entry.getValue() + &quot;\&quot;&quot;;
+524                 Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, text);
+525             }
+526         }
+527         synchronized (recorder) {
+528             this.settings = new LinkedHashMap&lt;&gt;(settings);
+529             if (getState() == RecordingState.RUNNING &amp;&amp; update) {
+530                 recorder.updateSettings(true);
+531             }
+532         }
+533     }
+534 
+535     private void notifyIfStateChanged(RecordingState newState, RecordingState oldState) {
+536         if (oldState == newState) {
+537             return;
+538         }
+539         for (FlightRecorderListener cl : PlatformRecorder.getListeners()) {
+540             try {
+541                 // Skip internal recordings
+542                 if (recording != null) {
+543                     cl.recordingStateChanged(recording);
+544                 }
+545             } catch (RuntimeException re) {
+546                 Logger.log(JFR, WARN, &quot;Error notifying recorder listener:&quot; + re.getMessage());
+547             }
+548         }
+549     }
+550 
+551     public void setRecording(Recording recording) {
+552         this.recording = recording;
+553     }
+554 
+555     public Recording getRecording() {
+556         return recording;
+557     }
+558 
+559     @Override
+560     public String toString() {
+561         return getName() + &quot; (id=&quot; + getId() + &quot;) &quot; + getState();
+562     }
+563 
+564     public void setConfiguration(Configuration c) {
+565         setSettings(c.getSettings());
+566     }
+567 
+568     public void setMaxAge(Duration maxAge) {
+569         synchronized (recorder) {
+570             if (getState() == RecordingState.CLOSED) {
+571                 throw new IllegalStateException(&quot;Can&#39;t set max age when recording is closed&quot;);
+572             }
+573             this.maxAge = maxAge;
+574             if (maxAge != null) {
+575                 trimToAge(Instant.now().minus(maxAge));
+576             }
+577         }
+578     }
+579 
+580     void appendChunk(RepositoryChunk chunk) {
+581         if (!chunk.isFinished()) {
+582             throw new Error(&quot;not finished chunk &quot; + chunk.getStartTime());
+583         }
+584         synchronized (recorder) {
+585             if (!toDisk) {
+586                 return;
+587             }
+588             if (maxAge != null) {
+589                 trimToAge(chunk.getEndTime().minus(maxAge));
+590             }
+591             chunks.addLast(chunk);
+592             added(chunk);
+593             trimToSize();
+594         }
+595     }
+596 
+597     private void trimToSize() {
+598         if (maxSize == 0) {
+599             return;
+600         }
+601         while (size &gt; maxSize &amp;&amp; chunks.size() &gt; 1) {
+602             RepositoryChunk c = chunks.removeFirst();
+603             removed(c);
+604         }
+605     }
+606 
+607     private void trimToAge(Instant oldest) {
+608         while (!chunks.isEmpty()) {
+609             RepositoryChunk oldestChunk = chunks.peek();
+610             if (oldestChunk.getEndTime().isAfter(oldest)) {
+611                 return;
+612             }
+613             chunks.removeFirst();
+614             removed(oldestChunk);
+615         }
+616     }
+617 
+618     void add(RepositoryChunk c) {
+619         chunks.add(c);
+620         added(c);
+621     }
+622 
+623     private void added(RepositoryChunk c) {
+624         c.use();
+625         size += c.getSize();
+626         if (Logger.shouldLog(JFR, DEBUG)) {
+627             Logger.log(JFR, DEBUG, &quot;Recording \&quot;&quot; + name + &quot;\&quot; (&quot; + id + &quot;) added chunk &quot; + c.toString() + &quot;, current size=&quot; + size);
+628         }
+629     }
+630 
+631     private void removed(RepositoryChunk c) {
+632         size -= c.getSize();
+633         if (Logger.shouldLog(JFR, DEBUG)) {
+634             Logger.log(JFR, DEBUG, &quot;Recording \&quot;&quot; + name + &quot;\&quot; (&quot; + id + &quot;) removed chunk &quot; + c.toString() + &quot;, current size=&quot; + size);
+635         }
+636         c.release();
+637     }
+638 
+639     public List&lt;RepositoryChunk&gt; getChunks() {
+640         return chunks;
+641     }
+642 
+643     public InputStream open(Instant start, Instant end) throws IOException {
+644         synchronized (recorder) {
+645             if (getState() != RecordingState.STOPPED) {
+646                 throw new IOException(&quot;Recording must be stopped before it can be read.&quot;);
+647             }
+648             List&lt;RepositoryChunk&gt; chunksToUse = new ArrayList&lt;RepositoryChunk&gt;();
+649             for (RepositoryChunk chunk : chunks) {
+650                 if (chunk.isFinished()) {
+651                     Instant chunkStart = chunk.getStartTime();
+652                     Instant chunkEnd = chunk.getEndTime();
+653                     if (start == null || !chunkEnd.isBefore(start)) {
+654                         if (end == null || !chunkStart.isAfter(end)) {
+655                             chunksToUse.add(chunk);
+656                         }
+657                     }
+658                 }
+659             }
+660             if (chunksToUse.isEmpty()) {
+661                 return null;
+662             }
+663             return new ChunkInputStream(chunksToUse);
+664         }
+665     }
+666 
+667     public Duration getDuration() {
+668         synchronized (recorder) {
+669             return duration;
+670         }
+671     }
+672 
+673     void setInternalDuration(Duration duration) {
+674         this.duration = duration;
+675     }
+676 
+677     public void setDuration(Duration duration) {
+678         synchronized (recorder) {
+679             if (Utils.isState(getState(), RecordingState.STOPPED, RecordingState.CLOSED)) {
+680                 throw new IllegalStateException(&quot;Duration can&#39;t be set after a recording has been stopped/closed&quot;);
+681             }
+682             setInternalDuration(duration);
+683             if (getState() != RecordingState.NEW) {
+684                 updateTimer();
+685             }
+686         }
+687     }
+688 
+689     void updateTimer() {
+690         if (stopTask != null) {
+691             stopTask.cancel();
+692             stopTask = null;
+693         }
+694         if (getState() == RecordingState.CLOSED) {
+695             return;
+696         }
+697         if (duration != null) {
+698             stopTask = createStopTask();
+699             recorder.getTimer().schedule(stopTask, new Date(startTime.plus(duration).toEpochMilli()));
+700         }
+701     }
+702 
+703     TimerTask createStopTask() {
+704         return new TimerTask() {
+705             @Override
+706             public void run() {
+707                 try {
+708                     stop(&quot;End of duration reached&quot;);
+709                 } catch (Throwable t) {
+710                     // Prevent malicious user to propagate exception callback in the wrong context
+711                     Logger.log(LogTag.JFR, LogLevel.ERROR, &quot;Could not stop recording.&quot;);
+712                 }
+713             }
+714         };
+715     }
+716 
+717     public Recording newCopy(boolean stop) {
+718         return recorder.newCopy(this, stop);
+719     }
+720 
+721     void setStopTask(TimerTask stopTask) {
+722         synchronized (recorder) {
+723             this.stopTask = stopTask;
+724         }
+725     }
+726 
+727     void clearDestination() {
+728         destination = null;
+729     }
+730 
+731     void setShouldWriteActiveRecordingEvent(boolean shouldWrite) {
+732         this.shouldWriteActiveRecordingEvent = shouldWrite;
+733     }
+734 
+735     boolean shouldWriteMetadataEvent() {
+736         return shouldWriteActiveRecordingEvent;
+737     }
+738 
+739     // Dump running and stopped recordings
+740     public void dump(WriteableUserPath writeableUserPath) throws IOException {
+741         synchronized (recorder) {
+742             try(PlatformRecording p = newSnapshotClone(&quot;Dumped by user&quot;, null))  {
+743                 p.dumpStopped(writeableUserPath);
+744             }
+745         }
+746     }
+747 
+748     public void dumpStopped(WriteableUserPath userPath) throws IOException {
+749         synchronized (recorder) {
+750             transferChunksWithRetry(userPath);
+751         }
+752     }
+753 
+754     private void transferChunksWithRetry(WriteableUserPath userPath) throws IOException {
+755         userPath.doPrivilegedIO(() -&gt; {
+756             try {
+757                 transferChunks(userPath);
+758             } catch (NoSuchFileException nsfe) {
+759                 Logger.log(LogTag.JFR, LogLevel.ERROR, &quot;Missing chunkfile when writing recording \&quot;&quot; + name + &quot;\&quot; (&quot; + id + &quot;) to &quot; + userPath.getRealPathText() + &quot;.&quot;);
+760                 // if one chunkfile was missing, its likely more are missing
+761                 removeNonExistantPaths();
+762                 // and try the transfer again
+763                 transferChunks(userPath);
+764             }
+765             return null;
+766         });
+767     }
+768 
+769     private void transferChunks(WriteableUserPath userPath) throws IOException {
+770         try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
+771             long bytes = cc.transferTo(fc);
+772             Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Transferred &quot; + bytes + &quot; bytes from the disk repository&quot;);
+773             // No need to force if no data was transferred, which avoids IOException when device is /dev/null
+774             if (bytes != 0) {
+775                 fc.force(true);
+776             }
+777         }
+778     }
+779 
+780     public void filter(Instant begin, Instant end, Long maxSize) {
+781         synchronized (recorder) {
+782             List&lt;RepositoryChunk&gt; result = removeAfter(end, removeBefore(begin, new ArrayList&lt;&gt;(chunks)));
+783             if (maxSize != null) {
+784                 if (begin != null &amp;&amp; end == null) {
+785                     result = reduceFromBeginning(maxSize, result);
+786                 } else {
+787                     result = reduceFromEnd(maxSize, result);
+788                 }
+789             }
+790             long size = 0;
+791             for (RepositoryChunk r : result) {
+792                 size += r.getSize();
+793                 r.use();
+794             }
+795             this.size = size;
+796             for (RepositoryChunk r : chunks) {
+797                 r.release();
+798             }
+799             chunks.clear();
+800             chunks.addAll(result);
+801         }
+802     }
+803 
+804     private static List&lt;RepositoryChunk&gt; removeBefore(Instant time, List&lt;RepositoryChunk&gt; input) {
+805         if (time == null) {
+806             return input;
+807         }
+808         List&lt;RepositoryChunk&gt; result = new ArrayList&lt;&gt;(input.size());
+809         for (RepositoryChunk r : input) {
+810             if (!r.getEndTime().isBefore(time)) {
+811                 result.add(r);
+812             }
+813         }
+814         return result;
+815     }
+816 
+817     private static List&lt;RepositoryChunk&gt; removeAfter(Instant time, List&lt;RepositoryChunk&gt; input) {
+818         if (time == null) {
+819             return input;
+820         }
+821         List&lt;RepositoryChunk&gt; result = new ArrayList&lt;&gt;(input.size());
+822         for (RepositoryChunk r : input) {
+823             if (!r.getStartTime().isAfter(time)) {
+824                 result.add(r);
+825             }
+826         }
+827         return result;
+828     }
+829 
+830     private static List&lt;RepositoryChunk&gt; reduceFromBeginning(Long maxSize, List&lt;RepositoryChunk&gt; input) {
+831         if (maxSize == null || input.isEmpty()) {
+832             return input;
+833         }
+834         List&lt;RepositoryChunk&gt; result = new ArrayList&lt;&gt;(input.size());
+835         long total = 0;
+836         for (RepositoryChunk r : input) {
+837             total += r.getSize();
+838             if (total &gt; maxSize) {
+839                 break;
+840             }
+841             result.add(r);
+842         }
+843         // always keep at least one chunk
+844         if (result.isEmpty()) {
+845             result.add(input.getFirst());
+846         }
+847         return result;
+848     }
+849 
+850     private static List&lt;RepositoryChunk&gt; reduceFromEnd(Long maxSize, List&lt;RepositoryChunk&gt; input) {
+851         Collections.reverse(input);
+852         List&lt;RepositoryChunk&gt; result = reduceFromBeginning(maxSize, input);
+853         Collections.reverse(result);
+854         return result;
+855     }
+856 
+857     /**
+858      * Sets the dump directory.
+859      * &lt;p&gt;
+860      * Only to be used by DCmdStart.
+861      */
+862     public void setDumpDirectory(SafePath directory) {
+863        this.dumpDirectory = directory;
+864     }
+865 
+866     public void setFlushInterval(Duration interval) {
+867         synchronized (recorder) {
+868             if (getState() == RecordingState.CLOSED) {
+869                 throw new IllegalStateException(&quot;Can&#39;t set stream interval when recording is closed&quot;);
+870             }
+871             this.flushInterval = interval;
+872         }
+873     }
+874 
+875     public Duration getFlushInterval() {
+876         synchronized (recorder) {
+877             return flushInterval;
+878         }
+879     }
+880 
+881     public long getStreamIntervalMillis() {
+882         synchronized (recorder) {
+883             if (flushInterval != null) {
+884                 return flushInterval.toMillis();
+885             }
+886             return Long.MAX_VALUE;
+887         }
+888     }
+889 
+890     public long getStartNanos() {
+891         return startNanos;
+892     }
+893 
+894     public long getFinalChunkStartNanos() {
+895         return finalStartChunkNanos;
+896     }
+897 
+898     public void setFinalStartnanos(long chunkStartNanos) {
+899        this.finalStartChunkNanos = chunkStartNanos;
+900     }
+901 
+902     public void removeBefore(Instant timestamp) {
+903         synchronized (recorder) {
+904             while (!chunks.isEmpty()) {
+905                 RepositoryChunk oldestChunk = chunks.peek();
+906                 if (!oldestChunk.getEndTime().isBefore(timestamp)) {
+907                     return;
+908                 }
+909                 chunks.removeFirst();
+910                 removed(oldestChunk);
+911             }
+912         }
+913 
+914     }
+915 
+916     public void removePath(SafePath path) {
+917         synchronized (recorder) {
+918             Iterator&lt;RepositoryChunk&gt; it = chunks.iterator();
+919             while (it.hasNext()) {
+920                 RepositoryChunk c = it.next();
+921                 if (c.getFile().equals(path)) {
+922                     it.remove();
+923                     removed(c);
+924                     return;
+925                 }
+926             }
+927         }
+928     }
+929 
+930     void removeNonExistantPaths() {
+931         synchronized (recorder) {
+932             Iterator&lt;RepositoryChunk&gt; it = chunks.iterator();
+933             Logger.log(JFR, INFO, &quot;Checking for missing chunkfiles for recording \&quot;&quot; + name + &quot;\&quot; (&quot; + id + &quot;)&quot;);
+934             while (it.hasNext()) {
+935                 RepositoryChunk chunk = it.next();
+936                 if (chunk.isMissingFile()) {
+937                     String msg = &quot;Chunkfile \&quot;&quot; + chunk.getFile() + &quot;\&quot; is missing. &quot; +
+938                                  &quot;Data loss might occur from &quot; + chunk.getStartTime();
+939                     if (chunk.getEndTime() != null) {
+940                         msg += &quot; to &quot; + chunk.getEndTime();
+941                     }
+942                     Logger.log(JFR, ERROR, msg);
+943 
+944                     JVM.emitDataLoss(chunk.getSize());
+945 
+946                     it.remove();
+947                     removed(chunk);
+948                 }
+949             }
+950         }
+951     }
+952 }
+    </pre>
+  </body>
+</html>

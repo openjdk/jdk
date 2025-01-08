@@ -1,0 +1,63 @@
+diff a/src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java b/src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java
+--- a/src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java
++++ b/src/jdk.management.jfr/share/classes/jdk/management/jfr/MBeanUtils.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -23,12 +23,10 @@
+  * questions.
+  */
+ package jdk.management.jfr;
+ 
+ import java.io.IOException;
+-import java.lang.management.ManagementPermission;
+-import java.security.Permission;
+ import java.time.DateTimeException;
+ import java.time.Duration;
+ import java.time.Instant;
+ import java.time.format.DateTimeParseException;
+ import java.util.List;
+@@ -41,37 +39,18 @@
+ import jdk.jfr.Recording;
+ import jdk.jfr.internal.management.ManagementSupport;
+ 
+ final class MBeanUtils {
+ 
+-    private static final Permission monitor = new ManagementPermission("monitor");
+-    private static final Permission control = new ManagementPermission("control");
+-
+     static ObjectName createObjectName() {
+         try {
+             return new ObjectName(FlightRecorderMXBean.MXBEAN_NAME);
+         } catch (MalformedObjectNameException mne) {
+             throw new Error("Can't happen", mne);
+         }
+     }
+ 
+-    static void checkControl() {
+-        @SuppressWarnings("removal")
+-        SecurityManager secManager = System.getSecurityManager();
+-        if (secManager != null) {
+-            secManager.checkPermission(control);
+-        }
+-    }
+-
+-    static void checkMonitor() {
+-        @SuppressWarnings("removal")
+-        SecurityManager secManager = System.getSecurityManager();
+-        if (secManager != null) {
+-            secManager.checkPermission(monitor);
+-        }
+-    }
+-
+     static <T, R> List<R> transformList(List<T> source, Function<T, R> function) {
+         return source.stream().map(function).collect(Collectors.toList());
+     }
+ 
+     static boolean booleanValue(String s) {

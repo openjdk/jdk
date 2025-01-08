@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/OngoingStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="EventFileStream.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="RecordingInput.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/OngoingStream.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 24,16 ***</span>
+   */
+  package jdk.jfr.internal.consumer;
+  
+  import java.io.IOException;
+  import java.nio.ByteBuffer;
+  import java.nio.file.Path;
+  
+  import jdk.jfr.Recording;
+  import jdk.jfr.RecordingState;
+  import jdk.jfr.internal.SecuritySupport;
+<span class="line-removed">- import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+  import jdk.jfr.internal.management.EventByteStream;
+  import jdk.jfr.internal.management.HiddenWait;
+  import jdk.jfr.internal.management.ManagementSupport;
+  
+  public final class OngoingStream extends EventByteStream {
+<span class="line-new-header">--- 24,16 ---</span>
+   */
+  package jdk.jfr.internal.consumer;
+  
+  import java.io.IOException;
+  import java.nio.ByteBuffer;
+<span class="line-added">+ import java.nio.file.Files;</span>
+  import java.nio.file.Path;
+  
+  import jdk.jfr.Recording;
+  import jdk.jfr.RecordingState;
+  import jdk.jfr.internal.SecuritySupport;
+  import jdk.jfr.internal.management.EventByteStream;
+  import jdk.jfr.internal.management.HiddenWait;
+  import jdk.jfr.internal.management.ManagementSupport;
+  
+  public final class OngoingStream extends EventByteStream {
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 61,11 ***</span>
+          super();
+          this.recording = recording;
+          this.blockSize = blockSize;
+          this.startTimeNanos = startTimeNanos;
+          this.endTimeNanos = endTimeNanos;
+<span class="line-modified">!         this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null, false);</span>
+      }
+  
+      @Override
+      public synchronized byte[] read() throws IOException {
+          try {
+<span class="line-new-header">--- 61,11 ---</span>
+          super();
+          this.recording = recording;
+          this.blockSize = blockSize;
+          this.startTimeNanos = startTimeNanos;
+          this.endTimeNanos = endTimeNanos;
+<span class="line-modified">!         this.repositoryFiles = new RepositoryFiles(null, false);</span>
+      }
+  
+      @Override
+      public synchronized byte[] read() throws IOException {
+          try {
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 204,14 ***</span>
+          return EMPTY_ARRAY;
+      }
+  
+      private boolean ensureInput() throws IOException {
+          if (input == null) {
+<span class="line-modified">!             if (SecuritySupport.getFileSize(new SafePath(path)) &lt; HEADER_SIZE) {</span>
+                  return false;
+              }
+<span class="line-modified">!             input = new RecordingInput(path.toFile(), SecuritySupport.PRIVILEGED);</span>
+              input.setStreamed();
+              header = new ChunkHeader(input);
+          }
+          return true;
+      }
+<span class="line-new-header">--- 204,14 ---</span>
+          return EMPTY_ARRAY;
+      }
+  
+      private boolean ensureInput() throws IOException {
+          if (input == null) {
+<span class="line-modified">!             if (Files.size(path) &lt; HEADER_SIZE) {</span>
+                  return false;
+              }
+<span class="line-modified">!             input = new RecordingInput(path.toFile());</span>
+              input.setStreamed();
+              header = new ChunkHeader(input);
+          }
+          return true;
+      }
+</pre>
+<center><a href="EventFileStream.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="RecordingInput.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

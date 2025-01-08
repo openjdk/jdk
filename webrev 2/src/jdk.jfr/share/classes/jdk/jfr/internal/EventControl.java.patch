@@ -1,0 +1,42 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -278,11 +278,11 @@
+         try {
+             cc = settingControlClass.getDeclaredConstructors()[0];
+         } catch (Exception e) {
+             throw (Error) new InternalError("Could not get constructor for " + settingControlClass.getName()).initCause(e);
+         }
+-        SecuritySupport.setAccessible(cc);
++        cc.setAccessible(true);
+         try {
+             return (SettingControl) cc.newInstance();
+         } catch (IllegalArgumentException | InvocationTargetException e) {
+             throw new InternalError("Could not instantiate setting for class " + settingControlClass.getName());
+         }
+@@ -371,16 +371,9 @@
+ 
+     public String getSettingsId() {
+         return idName;
+     }
+ 
+-    /**
+-     * A malicious user must never be able to run a callback in the wrong
+-     * context. Methods on SettingControl must therefore never be invoked directly
+-     * by JFR, instead use jdk.jfr.internal.Control.
+-     *
+-     * The returned list is only to be used inside EventConfiguration
+-     */
+     public List<SettingControl> getSettingControls() {
+         return settingControls;
+     }
+ }

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/WriteableUserPath.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.io.BufferedWriter;
+ 29 import java.io.FileNotFoundException;
+ 30 import java.io.IOException;
+ 31 import java.nio.file.Files;
+ 32 import java.nio.file.Path;
+ 33 import java.security.AccessControlContext;
+ 34 import java.security.AccessController;
+ 35 import java.security.PrivilegedExceptionAction;
+ 36 import java.util.concurrent.Callable;
+ 37 
+ 38 /**
+ 39  * Purpose of this class is to simplify analysis of security risks.
+ 40  * &lt;p&gt;
+ 41  * Paths in the public API should be wrapped in this class so we
+ 42  * at all time know what kind of paths we are dealing with.
+ 43  * &lt;p&gt;
+ 44  * A user supplied path must never be used in an unsafe context, such as a
+ 45  * shutdown hook or any other thread created by JFR.
+ 46  * &lt;p&gt;
+ 47  * All operation using this path must happen in {@link #doPrivilegedIO(Callable)}
+ 48  */
+ 49 public final class WriteableUserPath {
+ 50     @SuppressWarnings(&quot;removal&quot;)
+ 51     private final AccessControlContext controlContext;
+ 52     private final Path original;
+ 53     private final Path real;
+ 54     private final String realPathText;
+ 55     private final String originalText;
+ 56 
+ 57     // Not to ensure security, but to help
+ 58     // against programming errors
+ 59     private volatile boolean inPrivileged;
+ 60 
+ 61     @SuppressWarnings(&quot;removal&quot;)
+ 62     public WriteableUserPath(Path path) throws IOException {
+ 63         controlContext = AccessController.getContext();
+ 64         // verify that the path is writeable
+ 65         if (Files.exists(path) &amp;&amp; !Files.isWritable(path)) {
+ 66             // throw same type of exception as FileOutputStream
+ 67             // constructor, if file can&#39;t be opened.
+ 68             throw new FileNotFoundException(&quot;Could not write to file: &quot; + path.toAbsolutePath());
+ 69         }
+ 70         // will throw if non-writeable
+ 71         BufferedWriter fw = Files.newBufferedWriter(path);
+ 72         fw.close();
+ 73         this.original = path;
+ 74         this.originalText = path.toString();
+ 75         this.real = path.toRealPath();
+ 76         this.realPathText = real.toString();
+ 77     }
+ 78 
+ 79     /**
+ 80      * Returns a potentially malicious path where the user may have implemented
+ 81      * their own version of Path. This method should never be called in an
+ 82      * unsafe context and the Path value should never be passed along to other
+ 83      * methods.
+ 84      *
+ 85      * @return path from a potentially malicious user
+ 86      */
+ 87     public Path getPotentiallyMaliciousOriginal() {
+ 88         return original;
+ 89     }
+ 90 
+ 91     /**
+ 92      * Returns a string representation of the real path.
+ 93      *
+ 94      * @return path as text
+ 95      */
+ 96     public String getRealPathText() {
+ 97         return realPathText;
+ 98     }
+ 99 
+100     /**
+101      * Returns a string representation of the original path.
+102      *
+103      * @return path as text
+104      */
+105     public String getOriginalText() {
+106         return originalText;
+107     }
+108 
+109 
+110     /**
+111      * Returns a potentially malicious path where the user may have implemented
+112      * their own version of Path. This method should never be called in an
+113      * unsafe context and the Path value should never be passed along to other
+114      * methods.
+115      *
+116      * @return path from a potentially malicious user
+117      */
+118     public Path getReal() {
+119         if (!inPrivileged) {
+120             throw new InternalError(&quot;A user path was accessed outside the context it was supplied in&quot;);
+121         }
+122         return real;
+123     }
+124 
+125     @SuppressWarnings(&quot;removal&quot;)
+126     public void doPrivilegedIO(Callable&lt;?&gt; function) throws IOException {
+127         try {
+128             inPrivileged = true;
+129             AccessController.doPrivileged(new PrivilegedExceptionAction&lt;Void&gt;() {
+130                 @Override
+131                 public Void run() throws Exception {
+132                     function.call();
+133                     return null;
+134                 }
+135             }, controlContext);
+136         } catch (Throwable t) {
+137             // prevent malicious user to propagate exception callback
+138             // in the wrong context
+139             Throwable cause = null;
+140             if (System.getSecurityManager() == null) {
+141                 cause = t;
+142             }
+143             throw new IOException(&quot;Unexpected error during I/O operation&quot;, cause);
+144         } finally {
+145             inPrivileged = false;
+146         }
+147     }
+148 }
+    </pre>
+  </body>
+</html>

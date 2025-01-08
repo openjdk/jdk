@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/FilePurger.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre> 1 /*
+<a name="1" id="anc1"></a><span class="line-modified"> 2  * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.</span>
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal;
+27 
+28 import java.io.IOException;
+<a name="2" id="anc2"></a>
+
+29 import java.util.ArrayList;
+30 import java.util.LinkedHashSet;
+31 import java.util.SequencedSet;
+32 
+<a name="3" id="anc3"></a><span class="line-removed">33 import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+<span class="line-removed">34 </span>
+35 // This class keeps track of files that can&#39;t be deleted
+36 // so they can at a later staged be removed.
+37 final class FilePurger {
+38 
+<a name="4" id="anc4"></a><span class="line-modified">39     private static final SequencedSet&lt;SafePath&gt; paths = new LinkedHashSet&lt;&gt;();</span>
+40 
+<a name="5" id="anc5"></a><span class="line-modified">41     public static synchronized void add(SafePath p) {</span>
+42         paths.add(p);
+43         if (paths.size() &gt; 1000) {
+44             removeOldest();
+45         }
+46     }
+47 
+48     public static synchronized void purge() {
+49         if (paths.isEmpty()) {
+50             return;
+51         }
+52 
+<a name="6" id="anc6"></a><span class="line-modified">53         for (SafePath p : new ArrayList&lt;&gt;(paths)) {</span>
+54             if (delete(p)) {
+55                 paths.remove(p);
+56             }
+57         }
+58     }
+59 
+60     private static void removeOldest() {
+61         paths.removeFirst();
+62     }
+63 
+<a name="7" id="anc7"></a><span class="line-modified">64     private static boolean delete(SafePath p) {</span>
+<span class="line-modified">65         try {</span>
+<span class="line-modified">66             if (!SecuritySupport.exists(p)) {</span>
+<span class="line-removed">67                 return true;</span>
+<span class="line-removed">68             }</span>
+<span class="line-removed">69         } catch (IOException e) {</span>
+<span class="line-removed">70             // ignore</span>
+71         }
+72         try {
+<a name="8" id="anc8"></a><span class="line-modified">73             SecuritySupport.delete(p);</span>
+74             return true;
+75         } catch (IOException e) {
+76             return false;
+77         }
+78     }
+79 }
+<a name="9" id="anc9"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="9" type="hidden" />
+</body>
+</html>

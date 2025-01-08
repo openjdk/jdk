@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Configure.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="Command.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="Disassemble.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/tool/Configure.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -36,11 +36,10 @@</span>
+  import java.util.Deque;
+  import java.util.LinkedHashMap;
+  import java.util.List;
+  import java.util.Map;
+  
+<span class="udiff-line-removed">- import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+  import jdk.jfr.internal.jfc.JFC;
+  import jdk.jfr.internal.jfc.model.AbortException;
+  import jdk.jfr.internal.jfc.model.JFCModel;
+  import jdk.jfr.internal.jfc.model.JFCModelException;
+  import jdk.jfr.internal.jfc.model.SettingsLog;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -127,11 +126,11 @@</span>
+      private void displayParameters(PrintStream stream, String name) {
+          stream.println();
+          stream.println(&quot;Options for &quot; + name + &quot;:&quot;);
+          stream.println();
+          try {
+<span class="udiff-line-modified-removed">-             SafePath path = JFC.createSafePath(name);</span>
+<span class="udiff-line-modified-added">+             Path path = JFC.ofPath(name);</span>
+              JFCModel parameters = JFCModel.create(path, l -&gt; stream.println(&quot;Warning! &quot; + l));
+              for (XmlInput input : parameters.getInputs()) {
+                  stream.println(&quot;  &quot; + input.getOptionSyntax());
+                  stream.println();
+              }
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -142,11 +141,11 @@</span>
+  
+      @Override
+      public void execute(Deque&lt;String&gt; options) throws UserSyntaxException, UserDataException {
+          boolean interactive = false;
+          boolean log = false;
+<span class="udiff-line-modified-removed">-         SafePath output = null;</span>
+<span class="udiff-line-modified-added">+         Path output = null;</span>
+          Map&lt;String, String&gt; keyValues = new LinkedHashMap&lt;&gt;();
+          int optionCount = options.size();
+          while (optionCount &gt; 0) {
+              if (acceptSwitch(options, &quot;--interactive&quot;)) {
+                  interactive = true;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -190,27 +189,27 @@</span>
+              return index &gt; 0 &amp;&amp; index &lt; keyValue.length() - 1;
+          }
+          return false;
+      }
+  
+<span class="udiff-line-modified-removed">-     private void configure(boolean interactive, boolean log, SafePath output, Map&lt;String, String&gt; options) throws UserDataException {</span>
+<span class="udiff-line-modified-added">+     private void configure(boolean interactive, boolean log, Path output, Map&lt;String, String&gt; options) throws UserDataException {</span>
+          UserInterface ui = new UserInterface();
+          if (log) {
+              SettingsLog.enable();
+          }
+          JFCModel model = new JFCModel(l -&gt; ui.println(&quot;Warning! &quot; + l));
+          model.setLabel(&quot;Custom&quot;);
+          for (String input : inputFiles) {
+              try {
+<span class="udiff-line-modified-removed">-                 model.parse(JFC.createSafePath(input));</span>
+<span class="udiff-line-modified-added">+                 model.parse(JFC.ofPath(input));</span>
+              } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
+                  throw new UserDataException(JFC.formatException(&quot;could not&quot;, e, input));
+              }
+          }
+          try {
+              if (output == null) {
+<span class="udiff-line-modified-removed">-                 output = new SafePath(Path.of(&quot;custom.jfc&quot;));</span>
+<span class="udiff-line-modified-added">+                 output = Path.of(&quot;custom.jfc&quot;);</span>
+              }
+              for (var option : options.entrySet()) {
+                  model.configure(option.getKey(), option.getValue());
+              }
+              SettingsLog.flush();
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -228,11 +227,11 @@</span>
+                  ui.println(&quot;Abort.&quot;);
+                  return;
+              }
+              model.saveToFile(output);
+              ui.println(&quot;Configuration written successfully to:&quot;);
+<span class="udiff-line-modified-removed">-             ui.println(output.toPath().toAbsolutePath().toString());</span>
+<span class="udiff-line-modified-added">+             ui.println(output.toAbsolutePath().toString());</span>
+          } catch (IllegalArgumentException iae) {
+              throw new UserDataException(iae.getMessage());
+          } catch (FileNotFoundException ffe) {
+              throw new UserDataException(&quot;could not find file: &quot; + ffe.getMessage());
+          } catch (IOException ioe) {
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -244,37 +243,37 @@</span>
+          if (inputFiles.isEmpty()) {
+              inputFiles.add(&quot;default.jfc&quot;);
+          }
+      }
+  
+<span class="udiff-line-modified-removed">-     private static SafePath filename(UserInterface ui, SafePath file) throws AbortException {</span>
+<span class="udiff-line-modified-added">+     private static Path filename(UserInterface ui, Path file) throws AbortException {</span>
+          ui.println();
+          ui.println(&quot;Filename: &quot; + file + &quot; (default)&quot;);
+          while (true) {
+              String line = ui.readLine();
+              try {
+                  if (line.isBlank()) {
+                      return file;
+                  }
+                  if (line.endsWith(&quot;.jfc&quot;)) {
+<span class="udiff-line-modified-removed">-                     return new SafePath(line);</span>
+<span class="udiff-line-modified-added">+                     return Path.of(line);</span>
+                  }
+                  ui.println(&quot;Filename must end with .jfc.&quot;);
+              } catch (InvalidPathException ipe) {
+                  ui.println(&quot;Not a valid filename. &quot; + ipe.getMessage());
+              }
+          }
+      }
+  
+<span class="udiff-line-modified-removed">-     private SafePath makeJFCPath(String file) throws UserDataException, UserSyntaxException {</span>
+<span class="udiff-line-modified-added">+     private Path makeJFCPath(String file) throws UserDataException, UserSyntaxException {</span>
+          if (file.startsWith(&quot;--&quot;)) {
+              throw new UserSyntaxException(&quot;missing file&quot;);
+          }
+          try {
+              Path path = Path.of(file).toAbsolutePath();
+              ensureFileExtension(path, &quot;.jfc&quot;);
+<span class="udiff-line-modified-removed">-             return new SafePath(path);</span>
+<span class="udiff-line-modified-added">+             return path;</span>
+          } catch (IOError ioe) {
+              throw new UserDataException(&quot;i/o error reading file &#39;&quot; + file + &quot;&#39;, &quot; + ioe.getMessage());
+          } catch (InvalidPathException ipe) {
+              throw new UserDataException(&quot;invalid path &#39;&quot; + file + &quot;&#39;&quot;);
+          }
+</pre>
+<center><a href="Command.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="Disassemble.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

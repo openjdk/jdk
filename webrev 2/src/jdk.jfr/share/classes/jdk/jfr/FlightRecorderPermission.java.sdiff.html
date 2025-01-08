@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/FlightRecorderPermission.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="FlightRecorder.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="Recording.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/FlightRecorderPermission.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+<span class="line-removed"> 28 import java.security.AccessControlContext;</span>
+ 29 import java.util.List;
+ 30 import java.util.Map;
+ 31 import java.util.Objects;
+ 32 
+ 33 import jdk.jfr.internal.PlatformEventType;
+ 34 import jdk.jfr.internal.PlatformRecorder;
+ 35 import jdk.jfr.internal.PlatformRecording;
+ 36 import jdk.jfr.internal.PrivateAccess;
+<span class="line-removed"> 37 import jdk.jfr.internal.SecuritySupport;</span>
+ 38 import jdk.jfr.internal.Type;
+ 39 import jdk.jfr.internal.management.EventSettingsModifier;
+ 40 
+ 41 /**
+ 42  * Permission for controlling access to Flight Recorder.
+ 43  *
+ 44  * @apiNote
+ 45  * This permission cannot be used for controlling access to resources
+ 46  * as the Security Manager is no longer supported.
+ 47  *
+ 48  * @since 9
+ 49  *
+ 50  * @see java.security.BasicPermission
+ 51  * @see java.security.Permission
+ 52  * @see java.security.Permissions
+ 53  * @see java.security.PermissionCollection
+ 54  * @see java.lang.SecurityManager
+ 55  *
+ 56  */
+ 57 @SuppressWarnings(&quot;serial&quot;)
+</pre>
+<hr />
+<pre>
+139         @Override
+140         public ValueDescriptor newValueDescriptor(Class&lt;?&gt; type, String name) {
+141             return new ValueDescriptor(type, name, List.of(), true);
+142         }
+143 
+144         @Override
+145         public SettingDescriptor newSettingDescriptor(Type type, String name, String defaultValue, List&lt;AnnotationElement&gt; annotations) {
+146             return new SettingDescriptor(type, name, defaultValue, annotations);
+147         }
+148 
+149         @Override
+150         public boolean isUnsigned(ValueDescriptor v) {
+151             return v.isUnsigned();
+152         }
+153 
+154         @Override
+155         public PlatformRecorder getPlatformRecorder() {
+156             return FlightRecorder.getFlightRecorder().getInternal();
+157         }
+158 
+<span class="line-removed">159         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed">160         @Override</span>
+<span class="line-removed">161         public AccessControlContext getContext(SettingControl settingControl) {</span>
+<span class="line-removed">162             return settingControl.getContext();</span>
+<span class="line-removed">163         }</span>
+<span class="line-removed">164 </span>
+165         @Override
+166         public EventSettings newEventSettings(EventSettingsModifier esm) {
+167             return new EventSettings.DelegatedEventSettings(esm);
+168         }
+169 
+170         @Override
+171         public boolean isVisible(EventType t) {
+172             return t.isVisible();
+173         }
+174     }
+175 
+176     /**
+177      * Constructs a {@code FlightRecorderPermission} with the specified name.
+178      *
+179      * @param name the permission name, must be either
+180      *        {@code &quot;accessFlightRecorder&quot;} or {@code &quot;registerEvent&quot;}, not
+181      *        {@code null}
+182      *
+183      * @throws IllegalArgumentException if {@code name} is empty or not valid
+184      */
+185     public FlightRecorderPermission(String name) {
+186         super(Objects.requireNonNull(name, &quot;name&quot;));
+<span class="line-modified">187         if (!name.equals(SecuritySupport.ACCESS_FLIGHT_RECORDER) &amp;&amp; !name.equals(SecuritySupport.REGISTER_EVENT)) {</span>
+188             throw new IllegalArgumentException(&quot;name: &quot; + name);
+189         }
+190     }
+191 }
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+
+ 28 import java.util.List;
+ 29 import java.util.Map;
+ 30 import java.util.Objects;
+ 31 
+ 32 import jdk.jfr.internal.PlatformEventType;
+ 33 import jdk.jfr.internal.PlatformRecorder;
+ 34 import jdk.jfr.internal.PlatformRecording;
+ 35 import jdk.jfr.internal.PrivateAccess;
+
+ 36 import jdk.jfr.internal.Type;
+ 37 import jdk.jfr.internal.management.EventSettingsModifier;
+ 38 
+ 39 /**
+ 40  * Permission for controlling access to Flight Recorder.
+ 41  *
+ 42  * @apiNote
+ 43  * This permission cannot be used for controlling access to resources
+ 44  * as the Security Manager is no longer supported.
+ 45  *
+ 46  * @since 9
+ 47  *
+ 48  * @see java.security.BasicPermission
+ 49  * @see java.security.Permission
+ 50  * @see java.security.Permissions
+ 51  * @see java.security.PermissionCollection
+ 52  * @see java.lang.SecurityManager
+ 53  *
+ 54  */
+ 55 @SuppressWarnings(&quot;serial&quot;)
+</pre>
+<hr />
+<pre>
+137         @Override
+138         public ValueDescriptor newValueDescriptor(Class&lt;?&gt; type, String name) {
+139             return new ValueDescriptor(type, name, List.of(), true);
+140         }
+141 
+142         @Override
+143         public SettingDescriptor newSettingDescriptor(Type type, String name, String defaultValue, List&lt;AnnotationElement&gt; annotations) {
+144             return new SettingDescriptor(type, name, defaultValue, annotations);
+145         }
+146 
+147         @Override
+148         public boolean isUnsigned(ValueDescriptor v) {
+149             return v.isUnsigned();
+150         }
+151 
+152         @Override
+153         public PlatformRecorder getPlatformRecorder() {
+154             return FlightRecorder.getFlightRecorder().getInternal();
+155         }
+156 
+
+
+
+
+
+
+157         @Override
+158         public EventSettings newEventSettings(EventSettingsModifier esm) {
+159             return new EventSettings.DelegatedEventSettings(esm);
+160         }
+161 
+162         @Override
+163         public boolean isVisible(EventType t) {
+164             return t.isVisible();
+165         }
+166     }
+167 
+168     /**
+169      * Constructs a {@code FlightRecorderPermission} with the specified name.
+170      *
+171      * @param name the permission name, must be either
+172      *        {@code &quot;accessFlightRecorder&quot;} or {@code &quot;registerEvent&quot;}, not
+173      *        {@code null}
+174      *
+175      * @throws IllegalArgumentException if {@code name} is empty or not valid
+176      */
+177     public FlightRecorderPermission(String name) {
+178         super(Objects.requireNonNull(name, &quot;name&quot;));
+<span class="line-modified">179         if (!name.equals(&quot;accessFlightRecorder&quot;) &amp;&amp; !name.equals(&quot;registerEvent&quot;)) {</span>
+180             throw new IllegalArgumentException(&quot;name: &quot; + name);
+181         }
+182     }
+183 }
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="FlightRecorder.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="Recording.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

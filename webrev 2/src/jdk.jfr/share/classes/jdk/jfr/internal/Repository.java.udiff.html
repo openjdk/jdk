@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/Repository.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="PrivateAccess.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="RepositoryChunk.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/Repository.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -24,41 +24,42 @@</span>
+   */
+  
+  package jdk.jfr.internal;
+  
+  import java.io.IOException;
+<span class="udiff-line-added">+ import java.nio.file.Files;</span>
+  import java.nio.file.Path;
+  import java.time.DateTimeException;
+  import java.time.LocalDateTime;
+  import java.time.ZoneOffset;
+  import java.util.HashSet;
+  import java.util.Set;
+  
+<span class="udiff-line-removed">- import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+  import jdk.jfr.internal.management.ChunkFilename;
+  import jdk.jfr.internal.util.ValueFormatter;
+<span class="udiff-line-added">+ import jdk.jfr.internal.util.DirectoryCleaner;</span>
+<span class="udiff-line-added">+ import jdk.jfr.internal.util.Utils;</span>
+  
+  public final class Repository {
+  
+<span class="udiff-line-added">+     private static final Path JAVA_IO_TMPDIR = Utils.getPathInProperty(&quot;java.io.tmpdir&quot;, null);</span>
+      private static final int MAX_REPO_CREATION_RETRIES = 1000;
+      private static final Repository instance = new Repository();
+<span class="udiff-line-removed">- </span>
+      private static final String JFR_REPOSITORY_LOCATION_PROPERTY = &quot;jdk.jfr.repository&quot;;
+<span class="udiff-line-modified-removed">- </span>
+<span class="udiff-line-modified-removed">-     private final Set&lt;SafePath&gt; cleanupDirectories = new HashSet&lt;&gt;();</span>
+<span class="udiff-line-modified-removed">-     private SafePath baseLocation;</span>
+<span class="udiff-line-removed">-     private SafePath repository;</span>
+<span class="udiff-line-modified-added">+     private final Set&lt;Path&gt; cleanupDirectories = new HashSet&lt;&gt;();</span>
+<span class="udiff-line-modified-added">+     private Path baseLocation;</span>
+<span class="udiff-line-modified-added">+     private Path repository;</span>
+      private ChunkFilename chunkFilename;
+  
+      private Repository() {
+      }
+  
+      public static Repository getRepository() {
+          return instance;
+      }
+  
+<span class="udiff-line-modified-removed">-     public synchronized void setBasePath(SafePath baseLocation) throws IOException {</span>
+<span class="udiff-line-modified-added">+     public synchronized void setBasePath(Path baseLocation) throws IOException {</span>
+          if(baseLocation.equals(this.baseLocation)) {
+              Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Same base repository path &quot; + baseLocation.toString() + &quot; is set&quot;);
+              return;
+          }
+          // Probe to see if repository can be created, needed for fail fast
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -66,38 +67,38 @@</span>
+          this.repository = createRepository(baseLocation);
+          this.chunkFilename = null;
+          try {
+              // Remove so we don&#39;t &quot;leak&quot; repositories, if JFR is never started
+              // and shutdown hook not added.
+<span class="udiff-line-modified-removed">-             SecuritySupport.delete(repository);</span>
+<span class="udiff-line-modified-added">+             Files.delete(repository);</span>
+          } catch (IOException ioe) {
+              Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Could not delete disk repository &quot; + repository);
+          }
+          this.baseLocation = baseLocation;
+      }
+  
+      public synchronized void ensureRepository() throws IOException {
+          if (baseLocation == null) {
+<span class="udiff-line-modified-removed">-             setBasePath(SecuritySupport.JAVA_IO_TMPDIR);</span>
+<span class="udiff-line-modified-added">+             setBasePath(JAVA_IO_TMPDIR);</span>
+          }
+      }
+  
+      synchronized RepositoryChunk newChunk() {
+          LocalDateTime timestamp = timestamp();
+          try {
+<span class="udiff-line-modified-removed">-             if (!SecuritySupport.existDirectory(repository)) {</span>
+<span class="udiff-line-modified-added">+             if (!Files.exists(repository)) {</span>
+                  this.repository = createRepository(baseLocation);
+                  JVM.setRepositoryLocation(repository.toString());
+<span class="udiff-line-modified-removed">-                 SecuritySupport.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, repository.toString());</span>
+<span class="udiff-line-modified-added">+                 System.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, repository.toString());</span>
+                  cleanupDirectories.add(repository);
+                  chunkFilename = null;
+              }
+              if (chunkFilename == null) {
+<span class="udiff-line-modified-removed">-                 chunkFilename = ChunkFilename.newPriviliged(repository.toPath());</span>
+<span class="udiff-line-modified-added">+                 chunkFilename = new ChunkFilename(repository);</span>
+              }
+              String filename = chunkFilename.next(timestamp);
+<span class="udiff-line-modified-removed">-             return new RepositoryChunk(new SafePath(filename));</span>
+<span class="udiff-line-modified-added">+             return new RepositoryChunk(Path.of(filename));</span>
+          } catch (Exception e) {
+              String errorMsg = String.format(&quot;Could not create chunk in repository %s, %s: %s&quot;, repository, e.getClass(), e.getMessage());
+              Logger.log(LogTag.JFR, LogLevel.ERROR, errorMsg);
+              JVM.abort(errorMsg);
+              throw new InternalError(&quot;Could not abort after JFR disk creation error&quot;);
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -111,85 +112,80 @@</span>
+              Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Could not create LocalDateTime with the default time zone. Using UTC time zone for chunk filename.&quot;);
+              return LocalDateTime.now(ZoneOffset.UTC);
+          }
+      }
+  
+<span class="udiff-line-modified-removed">-     private static SafePath createRepository(SafePath basePath) throws IOException {</span>
+<span class="udiff-line-modified-removed">-         SafePath canonicalBaseRepositoryPath = createRealBasePath(basePath);</span>
+<span class="udiff-line-modified-removed">-         SafePath f = null;</span>
+<span class="udiff-line-modified-added">+     private static Path createRepository(Path basePath) throws IOException {</span>
+<span class="udiff-line-modified-added">+         Path canonicalBaseRepositoryPath = createRealBasePath(basePath);</span>
+<span class="udiff-line-modified-added">+         Path f = null;</span>
+  
+          String basename = ValueFormatter.formatDateTime(timestamp()) + &quot;_&quot; + JVM.getPid();
+          String name = basename;
+  
+          int i = 0;
+          for (; i &lt; MAX_REPO_CREATION_RETRIES; i++) {
+<span class="udiff-line-modified-removed">-             f = new SafePath(canonicalBaseRepositoryPath.toPath().resolve(name));</span>
+<span class="udiff-line-modified-added">+             f = canonicalBaseRepositoryPath.resolve(name);</span>
+              if (tryToUseAsRepository(f)) {
+                  break;
+              }
+              name = basename + &quot;_&quot; + i;
+          }
+  
+          if (i == MAX_REPO_CREATION_RETRIES) {
+              throw new IOException(&quot;Unable to create JFR repository directory using base location (&quot; + basePath + &quot;)&quot;);
+          }
+<span class="udiff-line-modified-removed">-         return SecuritySupport.toRealPath(f);</span>
+<span class="udiff-line-modified-added">+         return f.toRealPath();</span>
+      }
+  
+<span class="udiff-line-modified-removed">-     private static SafePath createRealBasePath(SafePath safePath) throws IOException {</span>
+<span class="udiff-line-modified-removed">-         if (SecuritySupport.exists(safePath)) {</span>
+<span class="udiff-line-modified-removed">-             if (!SecuritySupport.isWritable(safePath)) {</span>
+<span class="udiff-line-modified-removed">-                 throw new IOException(&quot;JFR repository directory (&quot; + safePath.toString() + &quot;) exists, but isn&#39;t writable&quot;);</span>
+<span class="udiff-line-modified-added">+     private static Path createRealBasePath(Path path) throws IOException {</span>
+<span class="udiff-line-modified-added">+         if (Files.exists(path)) {</span>
+<span class="udiff-line-modified-added">+             if (!Files.isWritable(path)) {</span>
+<span class="udiff-line-modified-added">+                 throw new IOException(&quot;JFR repository directory (&quot; + path.toString() + &quot;) exists, but isn&#39;t writable&quot;);</span>
+              }
+<span class="udiff-line-modified-removed">-             return SecuritySupport.toRealPath(safePath);</span>
+<span class="udiff-line-modified-added">+             return path.toRealPath();</span>
+          }
+<span class="udiff-line-modified-removed">-         SafePath p = SecuritySupport.createDirectories(safePath);</span>
+<span class="udiff-line-removed">-         return SecuritySupport.toRealPath(p);</span>
+<span class="udiff-line-modified-added">+         return Files.createDirectories(path).toRealPath();</span>
+      }
+  
+<span class="udiff-line-modified-removed">-     private static boolean tryToUseAsRepository(final SafePath path) {</span>
+<span class="udiff-line-modified-removed">-         Path parent = path.toPath().getParent();</span>
+<span class="udiff-line-modified-added">+     private static boolean tryToUseAsRepository(Path path) {</span>
+<span class="udiff-line-modified-added">+         Path parent = path.getParent();</span>
+          if (parent == null) {
+              return false;
+          }
+          try {
+<span class="udiff-line-modified-removed">-             try {</span>
+<span class="udiff-line-modified-removed">-                 SecuritySupport.createDirectories(path);</span>
+<span class="udiff-line-modified-removed">-             } catch (Exception e) {</span>
+<span class="udiff-line-modified-removed">-                 // file already existed or some other problem occurred</span>
+<span class="udiff-line-modified-removed">-             }</span>
+<span class="udiff-line-modified-removed">-             if (!SecuritySupport.exists(path)) {</span>
+<span class="udiff-line-modified-removed">-                 return false;</span>
+<span class="udiff-line-modified-removed">-             }</span>
+<span class="udiff-line-removed">-             if (!SecuritySupport.isDirectory(path)) {</span>
+<span class="udiff-line-removed">-                 return false;</span>
+<span class="udiff-line-removed">-             }</span>
+<span class="udiff-line-removed">-             return true;</span>
+<span class="udiff-line-removed">-         } catch (IOException io) {</span>
+<span class="udiff-line-modified-added">+             Files.createDirectories(path);</span>
+<span class="udiff-line-modified-added">+         } catch (Exception e) {</span>
+<span class="udiff-line-modified-added">+             // file already existed or some other problem occurred</span>
+<span class="udiff-line-modified-added">+         }</span>
+<span class="udiff-line-modified-added">+         if (!Files.exists(path)) {</span>
+<span class="udiff-line-modified-added">+             return false;</span>
+<span class="udiff-line-modified-added">+         }</span>
+<span class="udiff-line-modified-added">+         if (!Files.isDirectory(path)) {</span>
+              return false;
+          }
+<span class="udiff-line-added">+         return true;</span>
+      }
+  
+      synchronized void clear() {
+          if (Options.getPreserveRepository()) {
+              return;
+          }
+  
+<span class="udiff-line-modified-removed">-         for (SafePath p : cleanupDirectories) {</span>
+<span class="udiff-line-modified-added">+         for (Path p : cleanupDirectories) {</span>
+              try {
+<span class="udiff-line-modified-removed">-                 SecuritySupport.clearDirectory(p);</span>
+<span class="udiff-line-modified-added">+                 DirectoryCleaner.clear(p);</span>
+                  Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Removed repository &quot; + p);
+              } catch (IOException e) {
+                  Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Repository &quot; + p + &quot; could not be removed at shutdown: &quot; + e.getMessage());
+              }
+          }
+      }
+  
+<span class="udiff-line-modified-removed">-     public synchronized SafePath getRepositoryPath() {</span>
+<span class="udiff-line-modified-added">+     public synchronized Path getRepositoryPath() {</span>
+          return repository;
+      }
+  
+<span class="udiff-line-modified-removed">-     public synchronized SafePath getBaseLocation() {</span>
+<span class="udiff-line-modified-added">+     public synchronized Path getBaseLocation() {</span>
+          return baseLocation;
+      }
+  
+  }
+</pre>
+<center><a href="PrivateAccess.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="RepositoryChunk.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

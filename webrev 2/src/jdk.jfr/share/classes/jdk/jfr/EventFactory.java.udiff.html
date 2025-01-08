@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/EventFactory.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="AnnotationElement.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="FlightRecorder.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/EventFactory.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -35,11 +35,10 @@</span>
+  
+  import jdk.internal.module.Checks;
+  import jdk.jfr.internal.EventClassBuilder;
+  import jdk.jfr.internal.JVMSupport;
+  import jdk.jfr.internal.MetadataRepository;
+<span class="udiff-line-removed">- import jdk.jfr.internal.SecuritySupport;</span>
+  import jdk.jfr.internal.Type;
+  import jdk.jfr.internal.util.Utils;
+  
+  /**
+   * Class for defining an event at runtime.
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -97,12 +96,10 @@</span>
+      public static EventFactory create(List&lt;AnnotationElement&gt; annotationElements, List&lt;ValueDescriptor&gt; fields) {
+          Objects.requireNonNull(annotationElements, &quot;annotationElements&quot;);
+          Objects.requireNonNull(fields, &quot;fields&quot;);
+          JVMSupport.ensureWithInternalError();
+  
+<span class="udiff-line-removed">-         SecuritySupport.checkRegisterPermission();</span>
+<span class="udiff-line-removed">- </span>
+          List&lt;AnnotationElement&gt; sanitizedAnnotation = Utils.sanitizeNullFreeList(annotationElements, AnnotationElement.class);
+          List&lt;ValueDescriptor&gt; sanitizedFields = Utils.sanitizeNullFreeList(fields, ValueDescriptor.class);
+          Set&lt;String&gt; nameSet = HashSet.newHashSet(sanitizedFields.size());
+          for (ValueDescriptor v : sanitizedFields) {
+              String name = v.getName();
+</pre>
+<center><a href="AnnotationElement.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="FlightRecorder.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

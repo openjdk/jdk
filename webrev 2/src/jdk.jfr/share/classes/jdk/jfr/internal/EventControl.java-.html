@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/EventControl.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.lang.annotation.Annotation;
+ 29 import java.lang.reflect.Constructor;
+ 30 import java.lang.reflect.InvocationTargetException;
+ 31 import java.lang.reflect.Method;
+ 32 import java.lang.reflect.Modifier;
+ 33 import java.util.ArrayList;
+ 34 import java.util.Collections;
+ 35 import java.util.List;
+ 36 
+ 37 import jdk.internal.module.Checks;
+ 38 import jdk.internal.module.Modules;
+ 39 import jdk.jfr.AnnotationElement;
+ 40 import jdk.jfr.Enabled;
+ 41 import jdk.jfr.Name;
+ 42 import jdk.jfr.Period;
+ 43 import jdk.jfr.SettingControl;
+ 44 import jdk.jfr.SettingDefinition;
+ 45 import jdk.jfr.StackTrace;
+ 46 import jdk.jfr.Threshold;
+ 47 import jdk.jfr.events.ActiveSettingEvent;
+ 48 import jdk.jfr.events.StackFilter;
+ 49 import jdk.jfr.internal.settings.CutoffSetting;
+ 50 import jdk.jfr.internal.settings.EnabledSetting;
+ 51 import jdk.jfr.internal.settings.LevelSetting;
+ 52 import jdk.jfr.internal.settings.PeriodSetting;
+ 53 import jdk.jfr.internal.settings.StackTraceSetting;
+ 54 import jdk.jfr.internal.settings.ThresholdSetting;
+ 55 import jdk.jfr.internal.settings.ThrottleSetting;
+ 56 import jdk.jfr.internal.util.Utils;
+ 57 
+ 58 // This class can&#39;t have a hard reference from PlatformEventType, since it
+ 59 // holds SettingControl instances that need to be released
+ 60 // when a class is unloaded (to avoid memory leaks).
+ 61 public final class EventControl {
+ 62     record NamedControl(String name, Control control) {
+ 63     }
+ 64     static final String FIELD_SETTING_PREFIX = &quot;setting&quot;;
+ 65     private static final Type TYPE_ENABLED = TypeLibrary.createType(EnabledSetting.class);
+ 66     private static final Type TYPE_THRESHOLD = TypeLibrary.createType(ThresholdSetting.class);
+ 67     private static final Type TYPE_STACK_TRACE = TypeLibrary.createType(StackTraceSetting.class);
+ 68     private static final Type TYPE_PERIOD = TypeLibrary.createType(PeriodSetting.class);
+ 69     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
+ 70     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
+ 71     private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
+ 72     private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
+ 73 
+ 74     private final ArrayList&lt;SettingControl&gt; settingControls = new ArrayList&lt;&gt;();
+ 75     private final ArrayList&lt;NamedControl&gt; namedControls = new ArrayList&lt;&gt;(5);
+ 76     private final PlatformEventType type;
+ 77     private final String idName;
+ 78 
+ 79     EventControl(PlatformEventType eventType) {
+ 80         if (eventType.hasThreshold()) {
+ 81             addControl(Threshold.NAME, defineThreshold(eventType));
+ 82         }
+ 83         if (eventType.hasStackTrace()) {
+ 84             addControl(StackTrace.NAME, defineStackTrace(eventType));
+ 85         }
+ 86         if (eventType.hasPeriod()) {
+ 87             addControl(Period.NAME, definePeriod(eventType));
+ 88         }
+ 89         if (eventType.hasCutoff()) {
+ 90             addControl(Cutoff.NAME, defineCutoff(eventType));
+ 91         }
+ 92         if (eventType.hasThrottle()) {
+ 93             addControl(Throttle.NAME, defineThrottle(eventType));
+ 94         }
+ 95         if (eventType.hasLevel()) {
+ 96             addControl(Level.NAME, defineLevel(eventType));
+ 97         }
+ 98         addControl(Enabled.NAME, defineEnabled(eventType));
+ 99 
+100         addStackFilters(eventType);
+101         List&lt;AnnotationElement&gt; aes = new ArrayList&lt;&gt;(eventType.getAnnotationElements());
+102         remove(eventType, aes, Threshold.class);
+103         remove(eventType, aes, Period.class);
+104         remove(eventType, aes, Enabled.class);
+105         remove(eventType, aes, StackTrace.class);
+106         remove(eventType, aes, Cutoff.class);
+107         remove(eventType, aes, Throttle.class);
+108         remove(eventType, aes, StackFilter.class);
+109         eventType.setAnnotations(aes);
+110         this.type = eventType;
+111         this.idName = String.valueOf(eventType.getId());
+112     }
+113 
+114     private void addStackFilters(PlatformEventType eventType) {
+115         String[] filter = getStackFilter(eventType);
+116         if (filter != null) {
+117             int size = filter.length;
+118             List&lt;String&gt; types = new ArrayList&lt;&gt;(size);
+119             List&lt;String&gt; methods = new ArrayList&lt;&gt;(size);
+120             for (String frame : filter) {
+121                 int index = frame.indexOf(&quot;::&quot;);
+122                 String clazz = null;
+123                 String method = null;
+124                 boolean valid = false;
+125                 if (index != -1) {
+126                     clazz = frame.substring(0, index);
+127                     method = frame.substring(index + 2);
+128                     if (clazz.isEmpty()) {
+129                         clazz = null;
+130                         valid = isValidMethod(method);
+131                     } else {
+132                         valid = isValidType(clazz) &amp;&amp; isValidMethod(method);
+133                     }
+134                 } else {
+135                     clazz = frame;
+136                     valid = isValidType(frame);
+137                 }
+138                 if (valid) {
+139                     if (clazz == null) {
+140                         types.add(null);
+141                     } else {
+142                         types.add(clazz.replace(&quot;.&quot;, &quot;/&quot;));
+143                     }
+144                     // If unqualified class name equals method name, it&#39;s a constructor
+145                     String className = clazz.substring(clazz.lastIndexOf(&quot;.&quot;) + 1);
+146                     if (className.equals(method)) {
+147                         method = &quot;&lt;init&gt;&quot;;
+148                     }
+149                     methods.add(method);
+150                 } else {
+151                     Logger.log(LogTag.JFR, LogLevel.WARN, &quot;@StackFrameFilter element ignored, not a valid Java identifier.&quot;);
+152                 }
+153             }
+154             if (!types.isEmpty()) {
+155                 String[] typeArray = types.toArray(new String[0]);
+156                 String[] methodArray = methods.toArray(new String[0]);
+157                 long id = MetadataRepository.getInstance().registerStackFilter(typeArray, methodArray);
+158                 eventType.setStackFilterId(id);
+159             }
+160         }
+161     }
+162 
+163     private String[] getStackFilter(PlatformEventType eventType) {
+164         for (var a : eventType.getAnnotationElements()) {
+165             if (a.getTypeId() == STACK_FILTER_ID) {
+166                 return (String[])a.getValue(&quot;value&quot;);
+167             }
+168         }
+169         return null;
+170     }
+171 
+172     private boolean isValidType(String className) {
+173         if (className.length() &lt; 1 || className.length() &gt; 65535) {
+174             return false;
+175         }
+176         return Checks.isClassName(className);
+177     }
+178 
+179     private boolean isValidMethod(String method) {
+180         if (method.length() &lt; 1 || method.length() &gt; 65535) {
+181             return false;
+182         }
+183         return Checks.isJavaIdentifier(method);
+184     }
+185 
+186     private boolean hasControl(String name) {
+187         for (NamedControl nc : namedControls) {
+188             if (name.equals(nc.name)) {
+189                 return true;
+190             }
+191         }
+192         return false;
+193     }
+194 
+195     private void addControl(String name, Control control) {
+196         namedControls.add(new NamedControl(name, control));
+197     }
+198 
+199     static void remove(PlatformEventType type, List&lt;AnnotationElement&gt; aes, Class&lt;? extends java.lang.annotation.Annotation&gt; clazz) {
+200         long id = Type.getTypeId(clazz);
+201         for (AnnotationElement a : type.getAnnotationElements()) {
+202             if (a.getTypeId() == id &amp;&amp; a.getTypeName().equals(clazz.getName())) {
+203                 aes.remove(a);
+204             }
+205         }
+206     }
+207 
+208     EventControl(PlatformEventType es, Class&lt;? extends jdk.internal.event.Event&gt; eventClass) {
+209         this(es);
+210         defineSettings(eventClass);
+211     }
+212 
+213     @SuppressWarnings(&quot;unchecked&quot;)
+214     private void defineSettings(Class&lt;?&gt; eventClass) {
+215         // Iterate up the class hierarchy and let
+216         // subclasses shadow base classes.
+217         boolean allowPrivateMethod = true;
+218         while (eventClass != null) {
+219             for (Method m : eventClass.getDeclaredMethods()) {
+220                 boolean isPrivate = Modifier.isPrivate(m.getModifiers());
+221                 if (m.getReturnType() == Boolean.TYPE &amp;&amp; m.getParameterCount() == 1 &amp;&amp; (!isPrivate || allowPrivateMethod)) {
+222                     SettingDefinition se = m.getDeclaredAnnotation(SettingDefinition.class);
+223                     if (se != null) {
+224                         Class&lt;?&gt; settingClass = m.getParameters()[0].getType();
+225                         if (!Modifier.isAbstract(settingClass.getModifiers()) &amp;&amp; SettingControl.class.isAssignableFrom(settingClass)) {
+226                             String name = m.getName();
+227                             Name n = m.getAnnotation(Name.class);
+228                             if (n != null) {
+229                                 name = Utils.validJavaIdentifier(n.value(), name);
+230                             }
+231 
+232                             if (!hasControl(name)) {
+233                                 defineSetting((Class&lt;? extends SettingControl&gt;) settingClass, m, type, name);
+234                             }
+235                         }
+236                     }
+237                 }
+238             }
+239             eventClass = eventClass.getSuperclass();
+240             allowPrivateMethod = false;
+241         }
+242     }
+243 
+244     private void defineSetting(Class&lt;? extends SettingControl&gt; settingsClass, Method method, PlatformEventType eventType, String settingName) {
+245         try {
+246             Module settingModule = settingsClass.getModule();
+247             Modules.addReads(settingModule, EventControl.class.getModule());
+248             SettingControl settingControl = instantiateSettingControl(settingsClass);
+249             Control c = new Control(settingControl, null);
+250             c.setDefault();
+251             String defaultValue = c.getValue();
+252             if (defaultValue != null) {
+253                 Type settingType = TypeLibrary.createType(settingsClass);
+254                 ArrayList&lt;AnnotationElement&gt; aes = new ArrayList&lt;&gt;();
+255                 for (Annotation a : method.getDeclaredAnnotations()) {
+256                     AnnotationElement ae = TypeLibrary.createAnnotation(a);
+257                     if (ae != null) {
+258                         aes.add(ae);
+259                     }
+260                 }
+261                 aes.trimToSize();
+262                 addControl(settingName, c);
+263                 eventType.add(PrivateAccess.getInstance().newSettingDescriptor(settingType, settingName, defaultValue, aes));
+264                 settingControls.add(settingControl);
+265             }
+266         } catch (InstantiationException e) {
+267             // Programming error by user, fail fast
+268             throw new InstantiationError(&quot;Could not instantiate setting &quot; + settingsClass.getName() + &quot; for event &quot; + eventType.getLogName() + &quot;. &quot; + e.getMessage());
+269         } catch (IllegalAccessException e) {
+270             // Programming error by user, fail fast
+271             throw new IllegalAccessError(&quot;Could not access setting &quot; + settingsClass.getName() + &quot; for event &quot; + eventType.getLogName() + &quot;. &quot; + e.getMessage());
+272         }
+273     }
+274 
+275     private SettingControl instantiateSettingControl(Class&lt;? extends SettingControl&gt; settingControlClass) throws IllegalAccessException, InstantiationException {
+276         SecuritySupport.makeVisibleToJFR(settingControlClass);
+277         final Constructor&lt;?&gt; cc;
+278         try {
+279             cc = settingControlClass.getDeclaredConstructors()[0];
+280         } catch (Exception e) {
+281             throw (Error) new InternalError(&quot;Could not get constructor for &quot; + settingControlClass.getName()).initCause(e);
+282         }
+283         SecuritySupport.setAccessible(cc);
+284         try {
+285             return (SettingControl) cc.newInstance();
+286         } catch (IllegalArgumentException | InvocationTargetException e) {
+287             throw new InternalError(&quot;Could not instantiate setting for class &quot; + settingControlClass.getName());
+288         }
+289     }
+290 
+291     private static Control defineEnabled(PlatformEventType type) {
+292         // Java events are enabled by default,
+293         // JVM events are not, maybe they should be? Would lower learning curve
+294         // there too.
+295         Boolean defaultValue = Boolean.valueOf(!type.isJVM());
+296         String def = type.getAnnotationValue(Enabled.class, defaultValue).toString();
+297         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_ENABLED, Enabled.NAME, def, Collections.emptyList()));
+298         return new Control(new EnabledSetting(type, def), def);
+299     }
+300 
+301     private static Control defineThreshold(PlatformEventType type) {
+302         String def = type.getAnnotationValue(Threshold.class, ThresholdSetting.DEFAULT_VALUE);
+303         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
+304         return new Control(new ThresholdSetting(type), def);
+305     }
+306 
+307     private static Control defineStackTrace(PlatformEventType type) {
+308         String def = type.getAnnotationValue(StackTrace.class, Boolean.TRUE).toString();
+309         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_STACK_TRACE, StackTrace.NAME, def, Collections.emptyList()));
+310         return new Control(new StackTraceSetting(type, def), def);
+311     }
+312 
+313     private static Control defineCutoff(PlatformEventType type) {
+314         String def = type.getAnnotationValue(Cutoff.class, CutoffSetting.DEFAULT_VALUE);
+315         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_CUTOFF, Cutoff.NAME, def, Collections.emptyList()));
+316         return new Control(new CutoffSetting(type), def);
+317     }
+318 
+319     private static Control defineThrottle(PlatformEventType type) {
+320         String def = type.getAnnotationValue(Throttle.class, ThrottleSetting.DEFAULT_VALUE);
+321         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
+322         return new Control(new ThrottleSetting(type), def);
+323     }
+324 
+325     private static Control defineLevel(PlatformEventType type) {
+326         String[] levels = type.getAnnotationValue(Level.class, new String[0]);
+327         String def = levels[0]; // Level value always exists
+328         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_LEVEL, Level.NAME, def, Collections.emptyList()));
+329         return new Control(new LevelSetting(type, levels), def);
+330     }
+331 
+332     private static Control definePeriod(PlatformEventType type) {
+333         String def = type.getAnnotationValue(Period.class, PeriodSetting.DEFAULT_VALUE);
+334         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
+335         return new Control(new PeriodSetting(type), def);
+336     }
+337 
+338     void disable() {
+339         for (NamedControl nc : namedControls) {
+340             if (nc.control.isType(EnabledSetting.class)) {
+341                 nc.control.setValue(&quot;false&quot;);
+342                 return;
+343             }
+344         }
+345     }
+346 
+347     void writeActiveSettingEvent(long timestamp) {
+348         if (!type.isRegistered()) {
+349             return;
+350         }
+351         for (NamedControl nc : namedControls) {
+352             if (nc.control.isVisible(type.hasEventHook()) &amp;&amp; type.isVisible()) {
+353                 String value = nc.control.getLastValue();
+354                 if (value == null) {
+355                     value = nc.control.getDefaultValue();
+356                 }
+357                 if (ActiveSettingEvent.enabled()) {
+358                     ActiveSettingEvent.commit(timestamp, type.getId(), nc.name(), value);
+359                 }
+360             }
+361         }
+362     }
+363 
+364     public ArrayList&lt;NamedControl&gt; getNamedControls() {
+365         return namedControls;
+366     }
+367 
+368     public PlatformEventType getEventType() {
+369         return type;
+370     }
+371 
+372     public String getSettingsId() {
+373         return idName;
+374     }
+375 
+376     /**
+377      * A malicious user must never be able to run a callback in the wrong
+378      * context. Methods on SettingControl must therefore never be invoked directly
+379      * by JFR, instead use jdk.jfr.internal.Control.
+380      *
+381      * The returned list is only to be used inside EventConfiguration
+382      */
+383     public List&lt;SettingControl&gt; getSettingControls() {
+384         return settingControls;
+385     }
+386 }
+    </pre>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/internal/ChunkInputStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../consumer/RecordingStream.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="Control.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/ChunkInputStream.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 26,10 ***</span>
+<span class="line-new-header">--- 26,11 ---</span>
+  package jdk.jfr.internal;
+  
+  import java.io.BufferedInputStream;
+  import java.io.IOException;
+  import java.io.InputStream;
+<span class="line-added">+ import java.nio.file.Files;</span>
+  import java.util.ArrayList;
+  import java.util.Iterator;
+  import java.util.List;
+  import java.util.Objects;
+  
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 63,11 ***</span>
+      private boolean nextStream() throws IOException {
+          if (!nextChunk()) {
+              return false;
+          }
+  
+<span class="line-modified">!         stream = new BufferedInputStream(SecuritySupport.newFileInputStream(currentChunk.getFile()));</span>
+          unstreamedSize -= currentChunk.getSize();
+          return true;
+      }
+  
+      private boolean nextChunk() {
+<span class="line-new-header">--- 64,11 ---</span>
+      private boolean nextStream() throws IOException {
+          if (!nextChunk()) {
+              return false;
+          }
+  
+<span class="line-modified">!         stream = new BufferedInputStream(Files.newInputStream(currentChunk.getFile()));</span>
+          unstreamedSize -= currentChunk.getSize();
+          return true;
+      }
+  
+      private boolean nextChunk() {
+</pre>
+<center><a href="../consumer/RecordingStream.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="Control.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

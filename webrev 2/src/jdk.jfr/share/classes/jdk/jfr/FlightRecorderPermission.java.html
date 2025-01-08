@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/FlightRecorderPermission.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import java.util.List;
+ 29 import java.util.Map;
+ 30 import java.util.Objects;
+ 31 
+ 32 import jdk.jfr.internal.PlatformEventType;
+ 33 import jdk.jfr.internal.PlatformRecorder;
+ 34 import jdk.jfr.internal.PlatformRecording;
+ 35 import jdk.jfr.internal.PrivateAccess;
+ 36 import jdk.jfr.internal.Type;
+ 37 import jdk.jfr.internal.management.EventSettingsModifier;
+ 38 
+ 39 /**
+ 40  * Permission for controlling access to Flight Recorder.
+ 41  *
+ 42  * @apiNote
+ 43  * This permission cannot be used for controlling access to resources
+ 44  * as the Security Manager is no longer supported.
+ 45  *
+ 46  * @since 9
+ 47  *
+ 48  * @see java.security.BasicPermission
+ 49  * @see java.security.Permission
+ 50  * @see java.security.Permissions
+ 51  * @see java.security.PermissionCollection
+ 52  * @see java.lang.SecurityManager
+ 53  *
+ 54  */
+ 55 @SuppressWarnings(&quot;serial&quot;)
+ 56 public final class FlightRecorderPermission extends java.security.BasicPermission {
+ 57 
+ 58     // Purpose of InternalAccess is to give classes in jdk.jfr.internal
+ 59     // access to package private methods in this package (jdk.jfr).
+ 60     //
+ 61     // The initialization could be done in any class in this package,
+ 62     // but this one was chosen because it is light weight and
+ 63     // lacks dependencies on other public classes.
+ 64     static {
+ 65         PrivateAccess.setPrivateAccess(new InternalAccess());
+ 66     }
+ 67 
+ 68     private static final class InternalAccess extends PrivateAccess {
+ 69 
+ 70         @Override
+ 71         public Type getType(Object o) {
+ 72             if (o instanceof AnnotationElement ae) {
+ 73                 return ae.getType();
+ 74             }
+ 75             if (o instanceof EventType et) {
+ 76                 return et.getType();
+ 77             }
+ 78             if (o instanceof ValueDescriptor vd) {
+ 79                 return vd.getType();
+ 80             }
+ 81             if (o instanceof SettingDescriptor sd) {
+ 82                 return sd.getType();
+ 83             }
+ 84             throw new Error(&quot;Unknown type &quot; + o.getClass());
+ 85         }
+ 86 
+ 87         @Override
+ 88         public Configuration newConfiguration(String name, String label, String description, String provider, Map&lt;String, String&gt; settings, String contents) {
+ 89             return new Configuration(name, label, description, provider, settings, contents);
+ 90         }
+ 91 
+ 92         @Override
+ 93         public EventType newEventType(PlatformEventType platformEventType) {
+ 94             return new EventType(platformEventType);
+ 95         }
+ 96 
+ 97         @Override
+ 98         public AnnotationElement newAnnotation(Type annotationType, List&lt;Object&gt; values, boolean boot) {
+ 99             return new AnnotationElement(annotationType, values, boot);
+100         }
+101 
+102         @Override
+103         public ValueDescriptor newValueDescriptor(String name, Type fieldType, List&lt;AnnotationElement&gt; annos, int dimension, boolean constantPool, String fieldName) {
+104             return new ValueDescriptor(fieldType, name, annos, dimension, constantPool, fieldName);
+105         }
+106 
+107         @Override
+108         public PlatformRecording getPlatformRecording(Recording r) {
+109             return r.getInternal();
+110         }
+111 
+112         @Override
+113         public PlatformEventType getPlatformEventType(EventType eventType) {
+114             return eventType.getPlatformEventType();
+115         }
+116 
+117         @Override
+118         public boolean isConstantPool(ValueDescriptor v) {
+119             return v.isConstantPool();
+120         }
+121 
+122         @Override
+123         public void setAnnotations(ValueDescriptor v, List&lt;AnnotationElement&gt; a) {
+124             v.setAnnotations(a);
+125         }
+126 
+127         @Override
+128         public void setAnnotations(SettingDescriptor s, List&lt;AnnotationElement&gt; a) {
+129            s.setAnnotations(a);
+130         }
+131 
+132         @Override
+133         public String getFieldName(ValueDescriptor v) {
+134             return v.getJavaFieldName();
+135         }
+136 
+137         @Override
+138         public ValueDescriptor newValueDescriptor(Class&lt;?&gt; type, String name) {
+139             return new ValueDescriptor(type, name, List.of(), true);
+140         }
+141 
+142         @Override
+143         public SettingDescriptor newSettingDescriptor(Type type, String name, String defaultValue, List&lt;AnnotationElement&gt; annotations) {
+144             return new SettingDescriptor(type, name, defaultValue, annotations);
+145         }
+146 
+147         @Override
+148         public boolean isUnsigned(ValueDescriptor v) {
+149             return v.isUnsigned();
+150         }
+151 
+152         @Override
+153         public PlatformRecorder getPlatformRecorder() {
+154             return FlightRecorder.getFlightRecorder().getInternal();
+155         }
+156 
+157         @Override
+158         public EventSettings newEventSettings(EventSettingsModifier esm) {
+159             return new EventSettings.DelegatedEventSettings(esm);
+160         }
+161 
+162         @Override
+163         public boolean isVisible(EventType t) {
+164             return t.isVisible();
+165         }
+166     }
+167 
+168     /**
+169      * Constructs a {@code FlightRecorderPermission} with the specified name.
+170      *
+171      * @param name the permission name, must be either
+172      *        {@code &quot;accessFlightRecorder&quot;} or {@code &quot;registerEvent&quot;}, not
+173      *        {@code null}
+174      *
+175      * @throws IllegalArgumentException if {@code name} is empty or not valid
+176      */
+177     public FlightRecorderPermission(String name) {
+178         super(Objects.requireNonNull(name, &quot;name&quot;));
+179         if (!name.equals(&quot;accessFlightRecorder&quot;) &amp;&amp; !name.equals(&quot;registerEvent&quot;)) {
+180             throw new IllegalArgumentException(&quot;name: &quot; + name);
+181         }
+182     }
+183 }
+    </pre>
+  </body>
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecorder.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import static jdk.jfr.internal.LogLevel.ERROR;
+ 29 import static jdk.jfr.internal.LogLevel.INFO;
+ 30 import static jdk.jfr.internal.LogLevel.TRACE;
+ 31 import static jdk.jfr.internal.LogLevel.WARN;
+ 32 import static jdk.jfr.internal.LogTag.JFR;
+ 33 import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
+ 34 
+ 35 import java.io.IOException;
+ 36 import java.security.AccessControlContext;
+ 37 import java.security.AccessController;
+ 38 import java.time.Duration;
+ 39 import java.time.Instant;
+ 40 import java.util.ArrayList;
+ 41 import java.util.Collections;
+ 42 import java.util.HashMap;
+ 43 import java.util.HashSet;
+ 44 import java.util.List;
+ 45 import java.util.Map;
+ 46 import java.util.Set;
+ 47 import java.util.Timer;
+ 48 import java.util.TimerTask;
+ 49 import java.util.concurrent.CopyOnWriteArrayList;
+ 50 
+ 51 import jdk.jfr.FlightRecorder;
+ 52 import jdk.jfr.FlightRecorderListener;
+ 53 import jdk.jfr.Recording;
+ 54 import jdk.jfr.RecordingState;
+ 55 import jdk.jfr.events.ActiveRecordingEvent;
+ 56 import jdk.jfr.events.ActiveSettingEvent;
+ 57 import jdk.jfr.internal.SecuritySupport.SafePath;
+ 58 import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
+ 59 import jdk.jfr.internal.consumer.EventLog;
+ 60 import jdk.jfr.internal.periodic.PeriodicEvents;
+ 61 import jdk.jfr.internal.util.Utils;
+ 62 
+ 63 public final class PlatformRecorder {
+ 64 
+ 65 
+ 66     private final ArrayList&lt;PlatformRecording&gt; recordings = new ArrayList&lt;&gt;();
+ 67     private static final List&lt;SecureRecorderListener&gt; changeListeners = new ArrayList&lt;&gt;();
+ 68     private final Repository repository;
+ 69     private final Thread shutdownHook;
+ 70 
+ 71     private Timer timer;
+ 72     private long recordingCounter = 0;
+ 73     private RepositoryChunk currentChunk;
+ 74     private boolean inShutdown;
+ 75     private boolean runPeriodicTask;
+ 76 
+ 77     public PlatformRecorder() throws Exception {
+ 78         repository = Repository.getRepository();
+ 79         Logger.log(JFR_SYSTEM, INFO, &quot;Initialized disk repository&quot;);
+ 80         repository.ensureRepository();
+ 81         JVMSupport.createJFR();
+ 82         Logger.log(JFR_SYSTEM, INFO, &quot;Created native&quot;);
+ 83         JDKEvents.initialize();
+ 84         Logger.log(JFR_SYSTEM, INFO, &quot;Registered JDK events&quot;);
+ 85         startDiskMonitor();
+ 86         shutdownHook = SecuritySupport.createThreadWitNoPermissions(&quot;JFR Shutdown Hook&quot;, new ShutdownHook(this));
+ 87         SecuritySupport.setUncaughtExceptionHandler(shutdownHook, new ShutdownHook.ExceptionHandler());
+ 88         SecuritySupport.registerShutdownHook(shutdownHook);
+ 89     }
+ 90 
+ 91 
+ 92     private static Timer createTimer() {
+ 93         try {
+ 94             List&lt;Timer&gt; result = new CopyOnWriteArrayList&lt;&gt;();
+ 95             Thread t = SecuritySupport.createThreadWitNoPermissions(&quot;Permissionless thread&quot;, ()-&gt; {
+ 96                 result.add(new Timer(&quot;JFR Recording Scheduler&quot;, true));
+ 97             });
+ 98             JVM.exclude(t);
+ 99             t.start();
+100             t.join();
+101             return result.getFirst();
+102         } catch (InterruptedException e) {
+103             throw new IllegalStateException(&quot;Not able to create timer task. &quot; + e.getMessage(), e);
+104         }
+105     }
+106 
+107     public synchronized PlatformRecording newRecording(Map&lt;String, String&gt; settings) {
+108         return newRecording(settings, ++recordingCounter);
+109     }
+110 
+111     // To be used internally when doing dumps.
+112     // Caller must have recorder lock and close recording before releasing lock
+113     public PlatformRecording newTemporaryRecording() {
+114         if(!Thread.holdsLock(this)) {
+115             throw new InternalError(&quot;Caller must have recorder lock&quot;);
+116         }
+117         return newRecording(new HashMap&lt;&gt;(), 0);
+118     }
+119 
+120     private synchronized PlatformRecording newRecording(Map&lt;String, String&gt; settings, long id) {
+121         PlatformRecording recording = new PlatformRecording(this, id);
+122         if (!settings.isEmpty()) {
+123             recording.setSettings(settings);
+124         }
+125         recordings.add(recording);
+126         return recording;
+127     }
+128 
+129     synchronized void finish(PlatformRecording recording) {
+130         if (recording.getState() == RecordingState.RUNNING) {
+131             recording.stop(&quot;Recording closed&quot;);
+132         }
+133         recordings.remove(recording);
+134     }
+135 
+136     public synchronized List&lt;PlatformRecording&gt; getRecordings() {
+137         return Collections.unmodifiableList(new ArrayList&lt;PlatformRecording&gt;(recordings));
+138     }
+139 
+140     public static synchronized void addListener(FlightRecorderListener changeListener) {
+141         @SuppressWarnings(&quot;removal&quot;)
+142         AccessControlContext context = AccessController.getContext();
+143         SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);
+144         boolean runInitialized;
+145         synchronized (PlatformRecorder.class) {
+146             runInitialized = FlightRecorder.isInitialized();
+147             changeListeners.add(sl);
+148         }
+149         if (runInitialized) {
+150             sl.recorderInitialized(FlightRecorder.getFlightRecorder());
+151         }
+152     }
+153 
+154     public static synchronized boolean removeListener(FlightRecorderListener changeListener) {
+155         for (SecureRecorderListener s : new ArrayList&lt;&gt;(changeListeners)) {
+156             if (s.getChangeListener() == changeListener) {
+157                 changeListeners.remove(s);
+158                 return true;
+159             }
+160         }
+161         return false;
+162     }
+163 
+164     static synchronized List&lt;FlightRecorderListener&gt; getListeners() {
+165         return new ArrayList&lt;&gt;(changeListeners);
+166     }
+167 
+168     synchronized Timer getTimer() {
+169         if (timer == null) {
+170             timer = createTimer();
+171         }
+172         return timer;
+173     }
+174 
+175     public static void notifyRecorderInitialized(FlightRecorder recorder) {
+176         Logger.log(JFR_SYSTEM, TRACE, &quot;Notifying listeners that Flight Recorder is initialized&quot;);
+177         for (FlightRecorderListener r : getListeners()) {
+178             r.recorderInitialized(recorder);
+179         }
+180     }
+181 
+182     synchronized void setInShutDown() {
+183         this.inShutdown = true;
+184     }
+185 
+186     // called by shutdown hook
+187     synchronized void destroy() {
+188         try {
+189             if (timer != null) {
+190                 timer.cancel();
+191             }
+192         } catch (Exception ex) {
+193             Logger.log(JFR_SYSTEM, WARN, &quot;Shutdown hook could not cancel timer&quot;);
+194         }
+195 
+196         for (PlatformRecording p : getRecordings()) {
+197             if (p.getState() == RecordingState.RUNNING) {
+198                 try {
+199                     p.stop(&quot;Shutdown&quot;);
+200                 } catch (Exception ex) {
+201                     Logger.log(JFR, WARN, &quot;Recording &quot; + p.getName() + &quot;:&quot; + p.getId() + &quot; could not be stopped&quot;);
+202                 }
+203             }
+204         }
+205 
+206         JDKEvents.remove();
+207 
+208         if (JVMSupport.hasJFR()) {
+209             if (JVM.isRecording()) {
+210                 JVM.endRecording();
+211             }
+212             JVMSupport.destroyJFR();
+213         }
+214         repository.clear();
+215     }
+216 
+217     synchronized long start(PlatformRecording recording) {
+218         // State can only be NEW or DELAYED because of previous checks
+219         Instant startTime = null;
+220         boolean toDisk = recording.isToDisk();
+221         boolean beginPhysical = true;
+222         long streamInterval = recording.getStreamIntervalMillis();
+223         for (PlatformRecording s : getRecordings()) {
+224             if (s.getState() == RecordingState.RUNNING) {
+225                 beginPhysical = false;
+226                 if (s.isToDisk()) {
+227                     toDisk = true;
+228                 }
+229                 streamInterval = Math.min(streamInterval, s.getStreamIntervalMillis());
+230             }
+231         }
+232         long startNanos = -1;
+233         if (beginPhysical) {
+234             RepositoryChunk newChunk = null;
+235             if (toDisk) {
+236                 newChunk = repository.newChunk();
+237                 if (EventLog.shouldLog()) {
+238                     EventLog.start();
+239                 }
+240                 MetadataRepository.getInstance().setOutput(newChunk.getFile().toString());
+241             } else {
+242                 MetadataRepository.getInstance().setOutput(null);
+243             }
+244             currentChunk = newChunk;
+245             JVM.beginRecording();
+246             startNanos = JVMSupport.getChunkStartNanos();
+247             startTime = Utils.epochNanosToInstant(startNanos);
+248             if (currentChunk != null) {
+249                 currentChunk.setStartTime(startTime);
+250             }
+251             recording.setState(RecordingState.RUNNING);
+252             updateSettings(false);
+253             recording.setStartTime(startTime);
+254             writeMetaEvents();
+255             setRunPeriodicTask(true);
+256         } else {
+257             RepositoryChunk newChunk = null;
+258             if (toDisk) {
+259                 newChunk = repository.newChunk();
+260                 if (EventLog.shouldLog()) {
+261                     EventLog.start();
+262                 }
+263                 PeriodicEvents.doChunkEnd();
+264                 String p = newChunk.getFile().toString();
+265                 startTime = MetadataRepository.getInstance().setOutput(p);
+266                 newChunk.setStartTime(startTime);
+267             }
+268             startNanos = JVMSupport.getChunkStartNanos();
+269             startTime = Utils.epochNanosToInstant(startNanos);
+270             recording.setStartTime(startTime);
+271             recording.setState(RecordingState.RUNNING);
+272             updateSettings(false);
+273             writeMetaEvents();
+274             if (currentChunk != null) {
+275                 finishChunk(currentChunk, startTime, recording);
+276             }
+277             currentChunk = newChunk;
+278         }
+279         if (toDisk) {
+280             PeriodicEvents.setFlushInterval(streamInterval);
+281         }
+282         PeriodicEvents.doChunkBegin();
+283         Duration duration = recording.getDuration();
+284         if (duration != null) {
+285             recording.setStopTime(startTime.plus(duration));
+286         }
+287         recording.updateTimer();
+288         return startNanos;
+289     }
+290 
+291     synchronized void stop(PlatformRecording recording) {
+292         RecordingState state = recording.getState();
+293         Instant stopTime;
+294 
+295         if (Utils.isAfter(state, RecordingState.RUNNING)) {
+296             throw new IllegalStateException(&quot;Can&#39;t stop an already stopped recording.&quot;);
+297         }
+298         if (Utils.isBefore(state, RecordingState.RUNNING)) {
+299             throw new IllegalStateException(&quot;Recording must be started before it can be stopped.&quot;);
+300         }
+301         boolean toDisk = false;
+302         boolean endPhysical = true;
+303         long streamInterval = Long.MAX_VALUE;
+304         for (PlatformRecording s : getRecordings()) {
+305             RecordingState rs = s.getState();
+306             if (s != recording &amp;&amp; RecordingState.RUNNING == rs) {
+307                 endPhysical = false;
+308                 if (s.isToDisk()) {
+309                     toDisk = true;
+310                 }
+311                 streamInterval = Math.min(streamInterval, s.getStreamIntervalMillis());
+312             }
+313         }
+314         OldObjectSample.emit(recording);
+315         recording.setFinalStartnanos(JVMSupport.getChunkStartNanos());
+316 
+317         if (endPhysical) {
+318             PeriodicEvents.doChunkEnd();
+319             if (recording.isToDisk()) {
+320                 if (inShutdown) {
+321                     JVM.markChunkFinal();
+322                 }
+323                 stopTime = MetadataRepository.getInstance().setOutput(null);
+324                 finishChunk(currentChunk, stopTime, null);
+325                 currentChunk = null;
+326             } else {
+327                 // last memory
+328                 stopTime = dumpMemoryToDestination(recording);
+329             }
+330             JVM.endRecording();
+331             recording.setStopTime(stopTime);
+332             disableEvents();
+333             setRunPeriodicTask(false);
+334         } else {
+335             RepositoryChunk newChunk = null;
+336             PeriodicEvents.doChunkEnd();
+337             updateSettingsButIgnoreRecording(recording, false);
+338 
+339             String path = null;
+340             if (toDisk) {
+341                 newChunk = repository.newChunk();
+342                 path = newChunk.getFile().toString();
+343             }
+344             stopTime = MetadataRepository.getInstance().setOutput(path);
+345             if (toDisk) {
+346                 newChunk.setStartTime(stopTime);
+347             }
+348             recording.setStopTime(stopTime);
+349             writeMetaEvents();
+350             if (currentChunk != null) {
+351                 finishChunk(currentChunk, stopTime, null);
+352             }
+353             currentChunk = newChunk;
+354             PeriodicEvents.doChunkBegin();
+355         }
+356 
+357         if (toDisk) {
+358             PeriodicEvents.setFlushInterval(streamInterval);
+359         } else {
+360             PeriodicEvents.setFlushInterval(Long.MAX_VALUE);
+361         }
+362         recording.setState(RecordingState.STOPPED);
+363         if (!isToDisk()) {
+364             EventLog.stop();
+365         }
+366     }
+367 
+368     private Instant dumpMemoryToDestination(PlatformRecording recording)  {
+369         WriteableUserPath dest = recording.getDestination();
+370         if (dest != null) {
+371             Instant t = MetadataRepository.getInstance().setOutput(dest.getRealPathText());
+372             recording.clearDestination();
+373             return t;
+374         }
+375         return Instant.now();
+376     }
+377     private void disableEvents() {
+378         MetadataRepository.getInstance().disableEvents();
+379     }
+380 
+381     void updateSettings(boolean writeSettingEvents) {
+382         updateSettingsButIgnoreRecording(null, writeSettingEvents);
+383     }
+384 
+385     void updateSettingsButIgnoreRecording(PlatformRecording ignoreMe, boolean writeSettingEvents) {
+386         List&lt;PlatformRecording&gt; recordings = getRunningRecordings();
+387         List&lt;Map&lt;String, String&gt;&gt; list = new ArrayList&lt;&gt;(recordings.size());
+388         for (PlatformRecording r : recordings) {
+389             if (r != ignoreMe) {
+390                 list.add(r.getSettings());
+391             }
+392         }
+393         MetadataRepository.getInstance().setSettings(list, writeSettingEvents);
+394     }
+395 
+396 
+397 
+398     synchronized void rotateDisk() {
+399         RepositoryChunk newChunk = repository.newChunk();
+400         PeriodicEvents.doChunkEnd();
+401         String path = newChunk.getFile().toString();
+402         Instant timestamp = MetadataRepository.getInstance().setOutput(path);
+403         newChunk.setStartTime(timestamp);
+404         writeMetaEvents();
+405         if (currentChunk != null) {
+406             finishChunk(currentChunk, timestamp, null);
+407         }
+408         currentChunk = newChunk;
+409         PeriodicEvents.doChunkBegin();
+410     }
+411 
+412     private List&lt;PlatformRecording&gt; getRunningRecordings() {
+413         List&lt;PlatformRecording&gt; runningRecordings = new ArrayList&lt;&gt;();
+414         for (PlatformRecording recording : getRecordings()) {
+415             if (recording.getState() == RecordingState.RUNNING) {
+416                 runningRecordings.add(recording);
+417             }
+418         }
+419         return runningRecordings;
+420     }
+421 
+422     public List&lt;RepositoryChunk&gt; makeChunkList(Instant startTime, Instant endTime) {
+423         Set&lt;RepositoryChunk&gt; chunkSet = new HashSet&lt;&gt;();
+424         for (PlatformRecording r : getRecordings()) {
+425             chunkSet.addAll(r.getChunks());
+426         }
+427         if (chunkSet.size() &gt; 0) {
+428             List&lt;RepositoryChunk&gt; chunks = new ArrayList&lt;&gt;(chunkSet.size());
+429             for (RepositoryChunk rc : chunkSet) {
+430                 if (rc.inInterval(startTime, endTime)) {
+431                     chunks.add(rc);
+432                 }
+433             }
+434             // n*log(n), should be able to do n*log(k) with a priority queue,
+435             // where k = number of recordings, n = number of chunks
+436             chunks.sort(RepositoryChunk.END_TIME_COMPARATOR);
+437             return chunks;
+438         }
+439 
+440         return new ArrayList&lt;&gt;();
+441     }
+442 
+443     private void startDiskMonitor() {
+444         Thread t = SecuritySupport.createThreadWitNoPermissions(&quot;JFR Periodic Tasks&quot;, () -&gt; periodicTask());
+445         SecuritySupport.setDaemonThread(t, true);
+446         t.start();
+447     }
+448 
+449     private void finishChunk(RepositoryChunk chunk, Instant time, PlatformRecording ignoreMe) {
+450         if (chunk.finish(time)) {
+451             for (PlatformRecording r : getRecordings()) {
+452                 if (r != ignoreMe &amp;&amp; r.getState() == RecordingState.RUNNING) {
+453                     r.appendChunk(chunk);
+454                 }
+455             }
+456         } else {
+457             if (chunk.isMissingFile()) {
+458                 // With one chunkfile found missing, its likely more could&#39;ve been removed too. Iterate through all recordings,
+459                 // and check for missing files. This will emit more error logs that can be seen in subsequent recordings.
+460                 for (PlatformRecording r : getRecordings()) {
+461                     r.removeNonExistantPaths();
+462                 }
+463             }
+464         }
+465         // Decrease initial reference count
+466         chunk.release();
+467         FilePurger.purge();
+468     }
+469 
+470     private void writeMetaEvents() {
+471         long timestamp = JVM.counterTime();
+472         if (ActiveRecordingEvent.enabled()) {
+473             for (PlatformRecording r : getRecordings()) {
+474                 if (r.getState() == RecordingState.RUNNING &amp;&amp; r.shouldWriteMetadataEvent()) {
+475                     WriteableUserPath path = r.getDestination();
+476                     Duration age = r.getMaxAge();
+477                     Duration flush = r.getFlushInterval();
+478                     Long size = r.getMaxSize();
+479                     Instant rStart = r.getStartTime();
+480                     Duration rDuration = r.getDuration();
+481                     ActiveRecordingEvent.commit(
+482                         timestamp,
+483                         r.getId(),
+484                         r.getName(),
+485                         path == null ? null : path.getRealPathText(),
+486                         r.isToDisk(),
+487                         age == null ? Long.MAX_VALUE : age.toMillis(),
+488                         flush == null ? Long.MAX_VALUE : flush.toMillis(),
+489                         size == null ? Long.MAX_VALUE : size,
+490                         rStart == null ? Long.MAX_VALUE : rStart.toEpochMilli(),
+491                         rDuration == null ? Long.MAX_VALUE : rDuration.toMillis()
+492                     );
+493                 }
+494             }
+495         }
+496         if (ActiveSettingEvent.enabled()) {
+497             for (EventControl ec : MetadataRepository.getInstance().getEventControls()) {
+498                 ec.writeActiveSettingEvent(timestamp);
+499             }
+500         }
+501     }
+502 
+503     private void periodicTask() {
+504         if (!JVMSupport.hasJFR()) {
+505             return;
+506         }
+507         while (true) {
+508             long wait = Options.getWaitInterval();
+509             try {
+510                 synchronized (this) {
+511                     if (JVM.shouldRotateDisk()) {
+512                         rotateDisk();
+513                     }
+514                     if (isToDisk()) {
+515                         EventLog.update();
+516                     }
+517                 }
+518                 long minDelta = PeriodicEvents.doPeriodic();
+519                 wait = Math.min(minDelta, Options.getWaitInterval());
+520             } catch (Throwable t) {
+521                 // Catch everything and log, but don&#39;t allow it to end the periodic task
+522                 Logger.log(JFR_SYSTEM, ERROR, &quot;Error in Periodic task: &quot; + t.getClass().getName());
+523             } finally {
+524                 takeNap(wait);
+525             }
+526         }
+527     }
+528 
+529     private boolean isToDisk() {
+530         // Use indexing to avoid Iterator allocation if nothing happens
+531         int count = recordings.size();
+532         for (int i = 0; i &lt; count; i++) {
+533             PlatformRecording r = recordings.get(i);
+534             if (r.isToDisk() &amp;&amp; r.getState() == RecordingState.RUNNING) {
+535                 return true;
+536             }
+537         }
+538         return false;
+539     }
+540 
+541     private void setRunPeriodicTask(boolean runPeriodicTask) {
+542         synchronized (JVM.CHUNK_ROTATION_MONITOR) {
+543             this.runPeriodicTask = runPeriodicTask;
+544             if (runPeriodicTask) {
+545                 JVM.CHUNK_ROTATION_MONITOR.notifyAll();
+546             }
+547         }
+548     }
+549 
+550     private void takeNap(long duration) {
+551         try {
+552             synchronized (JVM.CHUNK_ROTATION_MONITOR) {
+553                 if (!runPeriodicTask) {
+554                     duration = Long.MAX_VALUE;
+555                 }
+556                 JVM.CHUNK_ROTATION_MONITOR.wait(duration &lt; 10 ? 10 : duration);
+557             }
+558         } catch (InterruptedException e) {
+559             // Ignore
+560         }
+561     }
+562 
+563     synchronized Recording newCopy(PlatformRecording r, boolean stop) {
+564         Recording newRec = new Recording();
+565         PlatformRecording copy = PrivateAccess.getInstance().getPlatformRecording(newRec);
+566         copy.setSettings(r.getSettings());
+567         copy.setMaxAge(r.getMaxAge());
+568         copy.setMaxSize(r.getMaxSize());
+569         copy.setDumpOnExit(r.getDumpOnExit());
+570         copy.setName(&quot;Clone of &quot; + r.getName());
+571         copy.setToDisk(r.isToDisk());
+572         copy.setInternalDuration(r.getDuration());
+573         copy.setStartTime(r.getStartTime());
+574         copy.setStopTime(r.getStopTime());
+575         copy.setFlushInterval(r.getFlushInterval());
+576 
+577         if (r.getState() == RecordingState.NEW) {
+578             return newRec;
+579         }
+580         if (r.getState() == RecordingState.DELAYED) {
+581             copy.scheduleStart(r.getStartTime());
+582             return newRec;
+583         }
+584         copy.setState(r.getState());
+585         // recording has started, copy chunks
+586         for (RepositoryChunk c : r.getChunks()) {
+587             copy.add(c);
+588         }
+589         if (r.getState() == RecordingState.RUNNING) {
+590             if (stop) {
+591                 copy.stop(&quot;Stopped when cloning recording &#39;&quot; + r.getName() + &quot;&#39;&quot;);
+592             } else {
+593                 if (r.getStopTime() != null) {
+594                     TimerTask stopTask = copy.createStopTask();
+595                     copy.setStopTask(copy.createStopTask());
+596                     getTimer().schedule(stopTask, r.getStopTime().toEpochMilli());
+597                 }
+598             }
+599         }
+600         return newRec;
+601     }
+602 
+603     public synchronized void fillWithRecordedData(PlatformRecording target, Boolean pathToGcRoots) {
+604         boolean running = false;
+605         boolean toDisk = false;
+606 
+607         for (PlatformRecording r : recordings) {
+608             if (r.getState() == RecordingState.RUNNING) {
+609                 running = true;
+610                 if (r.isToDisk()) {
+611                     toDisk = true;
+612                 }
+613             }
+614         }
+615         // If needed, flush data from memory
+616         if (running) {
+617             if (toDisk) {
+618                 OldObjectSample.emit(recordings, pathToGcRoots);
+619                 rotateDisk();
+620             } else {
+621                 try (PlatformRecording snapshot = newTemporaryRecording()) {
+622                     snapshot.setToDisk(true);
+623                     snapshot.setShouldWriteActiveRecordingEvent(false);
+624                     snapshot.start();
+625                     OldObjectSample.emit(recordings, pathToGcRoots);
+626                     snapshot.stop(&quot;Snapshot dump&quot;);
+627                     fillWithDiskChunks(target);
+628                 }
+629                 return;
+630             }
+631         }
+632         fillWithDiskChunks(target);
+633     }
+634 
+635     private void fillWithDiskChunks(PlatformRecording target) {
+636         for (RepositoryChunk c : makeChunkList(null, null)) {
+637             target.add(c);
+638         }
+639         target.setState(RecordingState.STOPPED);
+640         Instant startTime = null;
+641         Instant endTime = null;
+642 
+643         for (RepositoryChunk c : target.getChunks()) {
+644             if (startTime == null || c.getStartTime().isBefore(startTime)) {
+645                 startTime = c.getStartTime();
+646             }
+647             if (endTime == null || c.getEndTime().isAfter(endTime)) {
+648                 endTime = c.getEndTime();
+649             }
+650         }
+651         Instant now = Instant.now();
+652         if (startTime == null) {
+653             startTime = now;
+654         }
+655         if (endTime == null) {
+656             endTime = now;
+657         }
+658         target.setStartTime(startTime);
+659         target.setStopTime(endTime);
+660         target.setInternalDuration(startTime.until(endTime));
+661     }
+662 
+663     public synchronized void migrate(SafePath repo) throws IOException {
+664         // Must set repository while holding recorder lock so
+665         // the final chunk in repository gets marked correctly
+666         Repository.getRepository().setBasePath(repo);
+667         boolean disk = false;
+668         for (PlatformRecording s : getRecordings()) {
+669             if (RecordingState.RUNNING == s.getState() &amp;&amp; s.isToDisk()) {
+670                 disk = true;
+671             }
+672         }
+673         if (disk) {
+674             JVM.markChunkFinal();
+675             rotateDisk();
+676         }
+677     }
+678 
+679     public RepositoryChunk getCurrentChunk() {
+680         return currentChunk;
+681     }
+682 }
+    </pre>
+  </body>
+</html>

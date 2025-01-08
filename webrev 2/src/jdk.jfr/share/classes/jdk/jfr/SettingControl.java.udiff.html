@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/SettingControl.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="Recording.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="ValueDescriptor.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/SettingControl.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -23,16 +23,12 @@</span>
+   * questions.
+   */
+  
+  package jdk.jfr;
+  
+<span class="udiff-line-removed">- import java.security.AccessControlContext;</span>
+<span class="udiff-line-removed">- import java.security.AccessController;</span>
+  import java.util.Set;
+  
+<span class="udiff-line-removed">- import jdk.jfr.internal.settings.JDKSettingControl;</span>
+<span class="udiff-line-removed">- </span>
+  /**
+   * Base class to extend to create setting controls.
+   * &lt;p&gt;
+   * The following example shows a naive implementation of a setting control for
+   * regular expressions:
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -75,34 +71,14 @@</span>
+   * @since 9
+   */
+  @MetadataDefinition
+  public abstract class SettingControl {
+  
+<span class="udiff-line-removed">-     @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="udiff-line-removed">-     private final AccessControlContext context;</span>
+<span class="udiff-line-removed">-     private final boolean initialized;</span>
+<span class="udiff-line-removed">- </span>
+      /**
+       * Constructor for invocation by subclass constructors.
+       */
+<span class="udiff-line-removed">-     @SuppressWarnings(&quot;removal&quot;)</span>
+      protected SettingControl() {
+<span class="udiff-line-removed">-         context = this instanceof JDKSettingControl ? null : AccessController.getContext();</span>
+<span class="udiff-line-removed">-         initialized = true;</span>
+<span class="udiff-line-removed">-     }</span>
+<span class="udiff-line-removed">- </span>
+<span class="udiff-line-removed">-     @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="udiff-line-removed">-     final AccessControlContext getContext() {</span>
+<span class="udiff-line-removed">-         // Ensure object state is safe</span>
+<span class="udiff-line-removed">-         if (!initialized) {</span>
+<span class="udiff-line-removed">-             throw new InternalError(&quot;Object must be initialized before security context can be retrieved&quot;);</span>
+<span class="udiff-line-removed">-         }</span>
+<span class="udiff-line-removed">-         AccessControlContext c = this.context;</span>
+<span class="udiff-line-removed">-         if (c == null &amp;&amp; !(this instanceof JDKSettingControl)) {</span>
+<span class="udiff-line-removed">-             throw new InternalError(&quot;Security context can only be null for trusted setting controls&quot;);</span>
+<span class="udiff-line-removed">-         }</span>
+<span class="udiff-line-removed">-         return c;</span>
+      }
+  
+      /**
+       * Combines the setting values for all running recordings into one value when
+       * multiple recordings are running at the same time,
+</pre>
+<center><a href="Recording.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../index.html" target="_top">index</a> <a href="ValueDescriptor.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

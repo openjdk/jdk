@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/AbstractDCmd.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../consumer/filter/ChunkWriter.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="DCmdConfigure.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/AbstractDCmd.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 41,12 ***</span>
+  import jdk.jfr.internal.util.Output;
+  import jdk.jfr.internal.JVMSupport;
+  import jdk.jfr.internal.LogLevel;
+  import jdk.jfr.internal.LogTag;
+  import jdk.jfr.internal.Logger;
+<span class="line-removed">- import jdk.jfr.internal.SecuritySupport;</span>
+<span class="line-removed">- import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+  import jdk.jfr.internal.util.ValueFormatter;
+  
+  /**
+   * Base class for JFR diagnostic commands
+   *
+<span class="line-new-header">--- 41,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 132,23 ***</span>
+          // The pid will not be exposed to running Java application, only when starting
+          // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
+          return JVM.getPid();
+      }
+  
+<span class="line-modified">!     protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {</span>
+          if (filename == null) {
+              return makeGenerated(recording, Paths.get(&quot;.&quot;));
+          }
+          Path path = Paths.get(filename);
+          if (Files.isDirectory(path)) {
+              return makeGenerated(recording, path);
+          }
+<span class="line-modified">!         return new SafePath(path.toAbsolutePath().normalize());</span>
+      }
+  
+<span class="line-modified">!     private SafePath makeGenerated(Recording recording, Path directory) {</span>
+<span class="line-modified">!         return new SafePath(directory.toAbsolutePath().resolve(JVMSupport.makeFilename(recording)).normalize());</span>
+      }
+  
+      protected final Recording findRecording(String name) throws DCmdException {
+          try {
+              return findRecordingById(Integer.parseInt(name));
+<span class="line-new-header">--- 130,23 ---</span>
+          // The pid will not be exposed to running Java application, only when starting
+          // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
+          return JVM.getPid();
+      }
+  
+<span class="line-modified">!     protected Path resolvePath(Recording recording, String filename) throws InvalidPathException {</span>
+          if (filename == null) {
+              return makeGenerated(recording, Paths.get(&quot;.&quot;));
+          }
+          Path path = Paths.get(filename);
+          if (Files.isDirectory(path)) {
+              return makeGenerated(recording, path);
+          }
+<span class="line-modified">!         return path.toAbsolutePath().normalize();</span>
+      }
+  
+<span class="line-modified">!     private Path makeGenerated(Recording recording, Path directory) {</span>
+<span class="line-modified">!         return directory.toAbsolutePath().resolve(JVMSupport.makeFilename(recording)).normalize();</span>
+      }
+  
+      protected final Recording findRecording(String name) throws DCmdException {
+          try {
+              return findRecordingById(Integer.parseInt(name));
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 156,21 ***</span>
+              // User specified a name, not an id.
+              return findRecordingByName(name);
+          }
+      }
+  
+<span class="line-modified">!     protected final void reportOperationComplete(String actionPrefix, String name, SafePath file) {</span>
+          print(actionPrefix);
+          print(&quot; recording&quot;);
+          if (name != null) {
+              print(&quot; \&quot;&quot; + name + &quot;\&quot;&quot;);
+          }
+          if (file != null) {
+              print(&quot;,&quot;);
+              try {
+                  print(&quot; &quot;);
+<span class="line-modified">!                 long bytes = SecuritySupport.getFileSize(file);</span>
+                  printBytes(bytes);
+              } catch (IOException e) {
+                  // Ignore, not essential
+              }
+              println(&quot; written to:&quot;);
+<span class="line-new-header">--- 154,21 ---</span>
+              // User specified a name, not an id.
+              return findRecordingByName(name);
+          }
+      }
+  
+<span class="line-modified">!     protected final void reportOperationComplete(String actionPrefix, String name, Path file) {</span>
+          print(actionPrefix);
+          print(&quot; recording&quot;);
+          if (name != null) {
+              print(&quot; \&quot;&quot; + name + &quot;\&quot;&quot;);
+          }
+          if (file != null) {
+              print(&quot;,&quot;);
+              try {
+                  print(&quot; &quot;);
+<span class="line-modified">!                 long bytes = Files.size(file);</span>
+                  printBytes(bytes);
+              } catch (IOException e) {
+                  // Ignore, not essential
+              }
+              println(&quot; written to:&quot;);
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 217,37 ***</span>
+  
+      protected final void printTimespan(Duration timespan, String separator) {
+          print(ValueFormatter.formatTimespan(timespan, separator));
+      }
+  
+<span class="line-modified">!     protected final void printPath(SafePath path) {</span>
+          if (path == null) {
+              print(&quot;N/A&quot;);
+              return;
+          }
+<span class="line-modified">!         try {</span>
+<span class="line-removed">-             printPath(SecuritySupport.getAbsolutePath(path).toPath());</span>
+<span class="line-removed">-         } catch (IOException ioe) {</span>
+<span class="line-removed">-             printPath(path.toPath());</span>
+<span class="line-removed">-         }</span>
+      }
+  
+      protected final void printHelpText() {
+          for (String line : getHelp()) {
+              println(line);
+          }
+      }
+  
+<span class="line-removed">-     protected final void printPath(Path path) {</span>
+<span class="line-removed">-         try {</span>
+<span class="line-removed">-             println(path.toAbsolutePath().toString());</span>
+<span class="line-removed">-         } catch (SecurityException e) {</span>
+<span class="line-removed">-             // fall back on filename</span>
+<span class="line-removed">-             println(path.toString());</span>
+<span class="line-removed">-         }</span>
+<span class="line-removed">-     }</span>
+<span class="line-removed">- </span>
+      private Recording findRecordingById(int id) throws DCmdException {
+          for (Recording r : getFlightRecorder().getRecordings()) {
+              if (r.getId() == id) {
+                  return r;
+              }
+<span class="line-new-header">--- 215,24 ---</span>
+  
+      protected final void printTimespan(Duration timespan, String separator) {
+          print(ValueFormatter.formatTimespan(timespan, separator));
+      }
+  
+<span class="line-modified">!     protected final void printPath(Path path) {</span>
+          if (path == null) {
+              print(&quot;N/A&quot;);
+              return;
+          }
+<span class="line-modified">!         println(path.toAbsolutePath().toString());</span>
+      }
+  
+      protected final void printHelpText() {
+          for (String line : getHelp()) {
+              println(line);
+          }
+      }
+  
+      private Recording findRecordingById(int id) throws DCmdException {
+          for (Recording r : getFlightRecorder().getRecordings()) {
+              if (r.getId() == id) {
+                  return r;
+              }
+</pre>
+<center><a href="../consumer/filter/ChunkWriter.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="DCmdConfigure.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

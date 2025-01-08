@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/JDKEvents.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.util.Properties;
+ 29 
+ 30 import jdk.internal.access.SharedSecrets;
+ 31 import jdk.internal.event.JFRTracing;
+ 32 import jdk.internal.event.ThrowableTracer;
+ 33 import jdk.internal.platform.Container;
+ 34 import jdk.internal.platform.Metrics;
+ 35 import jdk.jfr.Event;
+ 36 import jdk.jfr.events.ActiveRecordingEvent;
+ 37 import jdk.jfr.events.ActiveSettingEvent;
+ 38 import jdk.jfr.events.ContainerCPUThrottlingEvent;
+ 39 import jdk.jfr.events.ContainerCPUUsageEvent;
+ 40 import jdk.jfr.events.ContainerConfigurationEvent;
+ 41 import jdk.jfr.events.ContainerIOUsageEvent;
+ 42 import jdk.jfr.events.ContainerMemoryUsageEvent;
+ 43 import jdk.jfr.events.DirectBufferStatisticsEvent;
+ 44 import jdk.jfr.events.InitialSecurityPropertyEvent;
+ 45 import jdk.jfr.internal.periodic.PeriodicEvents;
+ 46 
+ 47 public final class JDKEvents {
+ 48 
+ 49     private static final Class&lt;?&gt;[] eventClasses = {
+ 50         ActiveSettingEvent.class,
+ 51         ActiveRecordingEvent.class,
+ 52         // jdk.internal.event.* classes need their mirror
+ 53         // event class to be listed in the MirrorEvents class.
+ 54         jdk.internal.event.DeserializationEvent.class,
+ 55         jdk.internal.event.ErrorThrownEvent.class,
+ 56         jdk.internal.event.ExceptionStatisticsEvent.class,
+ 57         jdk.internal.event.ExceptionThrownEvent.class,
+ 58         jdk.internal.event.FileForceEvent.class,
+ 59         jdk.internal.event.FileReadEvent.class,
+ 60         jdk.internal.event.FileWriteEvent.class,
+ 61         jdk.internal.event.ProcessStartEvent.class,
+ 62         jdk.internal.event.SecurityPropertyModificationEvent.class,
+ 63         jdk.internal.event.SecurityProviderServiceEvent.class,
+ 64         jdk.internal.event.SerializationMisdeclarationEvent.class,
+ 65         jdk.internal.event.SocketReadEvent.class,
+ 66         jdk.internal.event.SocketWriteEvent.class,
+ 67         jdk.internal.event.ThreadSleepEvent.class,
+ 68         jdk.internal.event.TLSHandshakeEvent.class,
+ 69         jdk.internal.event.VirtualThreadStartEvent.class,
+ 70         jdk.internal.event.VirtualThreadEndEvent.class,
+ 71         jdk.internal.event.VirtualThreadSubmitFailedEvent.class,
+ 72         jdk.internal.event.X509CertificateEvent.class,
+ 73         jdk.internal.event.X509ValidationEvent.class,
+ 74         DirectBufferStatisticsEvent.class,
+ 75         InitialSecurityPropertyEvent.class,
+ 76     };
+ 77 
+ 78     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;
+ 79     private static final Runnable emitDirectBufferStatistics = JDKEvents::emitDirectBufferStatistics;
+ 80     private static final Runnable emitContainerConfiguration = JDKEvents::emitContainerConfiguration;
+ 81     private static final Runnable emitContainerCPUUsage = JDKEvents::emitContainerCPUUsage;
+ 82     private static final Runnable emitContainerCPUThrottling = JDKEvents::emitContainerCPUThrottling;
+ 83     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
+ 84     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
+ 85     private static final Runnable emitInitialSecurityProperties = JDKEvents::emitInitialSecurityProperties;
+ 86     private static Metrics containerMetrics = null;
+ 87     private static boolean initializationTriggered;
+ 88 
+ 89     @SuppressWarnings(&quot;unchecked&quot;)
+ 90     public static synchronized void initialize() {
+ 91         try {
+ 92             if (initializationTriggered == false) {
+ 93                 for (Class&lt;?&gt; eventClass : eventClasses) {
+ 94                     SecuritySupport.registerEvent((Class&lt;? extends Event&gt;) eventClass);
+ 95                 }
+ 96                 PeriodicEvents.addJDKEvent(jdk.internal.event.ExceptionStatisticsEvent.class, emitExceptionStatistics);
+ 97                 PeriodicEvents.addJDKEvent(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+ 98                 PeriodicEvents.addJDKEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
+ 99 
+100                 initializeContainerEvents();
+101                 JFRTracing.enable();
+102                 initializationTriggered = true;
+103             }
+104         } catch (Exception e) {
+105             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, &quot;Could not initialize JDK events. &quot; + e.getMessage());
+106         }
+107     }
+108 
+109     private static void initializeContainerEvents() {
+110         if (JVM.isContainerized() ) {
+111             Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, &quot;JVM is containerized&quot;);
+112             containerMetrics = Container.metrics();
+113             if (containerMetrics != null) {
+114                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, &quot;Container metrics are available&quot;);
+115             }
+116         }
+117         // The registration of events and hooks are needed to provide metadata,
+118         // even when not running in a container
+119         SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
+120         SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
+121         SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
+122         SecuritySupport.registerEvent(ContainerMemoryUsageEvent.class);
+123         SecuritySupport.registerEvent(ContainerIOUsageEvent.class);
+124 
+125         PeriodicEvents.addJDKEvent(ContainerConfigurationEvent.class, emitContainerConfiguration);
+126         PeriodicEvents.addJDKEvent(ContainerCPUUsageEvent.class, emitContainerCPUUsage);
+127         PeriodicEvents.addJDKEvent(ContainerCPUThrottlingEvent.class, emitContainerCPUThrottling);
+128         PeriodicEvents.addJDKEvent(ContainerMemoryUsageEvent.class, emitContainerMemoryUsage);
+129         PeriodicEvents.addJDKEvent(ContainerIOUsageEvent.class, emitContainerIOUsage);
+130     }
+131 
+132     private static void emitExceptionStatistics() {
+133         ThrowableTracer.emitStatistics();
+134     }
+135 
+136     private static void emitContainerConfiguration() {
+137         if (containerMetrics != null) {
+138             ContainerConfigurationEvent t = new ContainerConfigurationEvent();
+139             t.containerType = containerMetrics.getProvider();
+140             t.cpuSlicePeriod = containerMetrics.getCpuPeriod();
+141             t.cpuQuota = containerMetrics.getCpuQuota();
+142             t.cpuShares = containerMetrics.getCpuShares();
+143             t.effectiveCpuCount = containerMetrics.getEffectiveCpuCount();
+144             t.memorySoftLimit = containerMetrics.getMemorySoftLimit();
+145             t.memoryLimit = containerMetrics.getMemoryLimit();
+146             t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
+147             t.hostTotalMemory = JVM.hostTotalMemory();
+148             t.hostTotalSwapMemory = JVM.hostTotalSwapMemory();
+149             t.commit();
+150         }
+151     }
+152 
+153     private static void emitContainerCPUUsage() {
+154         if (containerMetrics != null) {
+155             ContainerCPUUsageEvent event = new ContainerCPUUsageEvent();
+156 
+157             event.cpuTime = containerMetrics.getCpuUsage();
+158             event.cpuSystemTime = containerMetrics.getCpuSystemUsage();
+159             event.cpuUserTime = containerMetrics.getCpuUserUsage();
+160             event.commit();
+161         }
+162     }
+163     private static void emitContainerMemoryUsage() {
+164         if (containerMetrics != null) {
+165             ContainerMemoryUsageEvent event = new ContainerMemoryUsageEvent();
+166 
+167             event.memoryFailCount = containerMetrics.getMemoryFailCount();
+168             event.memoryUsage = containerMetrics.getMemoryUsage();
+169             event.swapMemoryUsage = containerMetrics.getMemoryAndSwapUsage();
+170             event.commit();
+171         }
+172     }
+173 
+174     private static void emitContainerIOUsage() {
+175         if (containerMetrics != null) {
+176             ContainerIOUsageEvent event = new ContainerIOUsageEvent();
+177 
+178             event.serviceRequests = containerMetrics.getBlkIOServiceCount();
+179             event.dataTransferred = containerMetrics.getBlkIOServiced();
+180             event.commit();
+181         }
+182     }
+183 
+184     private static void emitContainerCPUThrottling() {
+185         if (containerMetrics != null) {
+186             ContainerCPUThrottlingEvent event = new ContainerCPUThrottlingEvent();
+187 
+188             event.cpuElapsedSlices = containerMetrics.getCpuNumPeriods();
+189             event.cpuThrottledSlices = containerMetrics.getCpuNumThrottled();
+190             event.cpuThrottledTime = containerMetrics.getCpuThrottledTime();
+191             event.commit();
+192         }
+193     }
+194 
+195     public static void remove() {
+196         PeriodicEvents.removeEvent(emitExceptionStatistics);
+197         PeriodicEvents.removeEvent(emitDirectBufferStatistics);
+198         PeriodicEvents.removeEvent(emitInitialSecurityProperties);
+199 
+200         PeriodicEvents.removeEvent(emitContainerConfiguration);
+201         PeriodicEvents.removeEvent(emitContainerCPUUsage);
+202         PeriodicEvents.removeEvent(emitContainerCPUThrottling);
+203         PeriodicEvents.removeEvent(emitContainerMemoryUsage);
+204         PeriodicEvents.removeEvent(emitContainerIOUsage);
+205     }
+206 
+207     private static void emitDirectBufferStatistics() {
+208         DirectBufferStatisticsEvent e = new DirectBufferStatisticsEvent();
+209         e.commit();
+210     }
+211 
+212     private static void emitInitialSecurityProperties() {
+213         Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
+214         if (p != null) {
+215             for (String key : p.stringPropertyNames()) {
+216                 InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
+217                 e.key = key;
+218                 e.value = p.getProperty(key);
+219                 e.commit();
+220             }
+221         }
+222     }
+223 }
+    </pre>
+  </body>
+</html>

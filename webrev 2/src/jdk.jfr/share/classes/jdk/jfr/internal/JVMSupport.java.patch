@@ -1,0 +1,25 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMSupport.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMSupport.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMSupport.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMSupport.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -54,11 +54,11 @@
+     private static volatile boolean nativeOK;
+ 
+     private static boolean checkAvailability() {
+         // set jfr.unsupported.vm to true to test API on an unsupported VM
+         try {
+-            if (SecuritySupport.getBooleanProperty("jfr.unsupported.vm")) {
++            if (Boolean.getBoolean("jfr.unsupported.vm")) {
+                 return false;
+             }
+         } catch (NoClassDefFoundError cnfe) {
+             // May happen on JDK 8, where jdk.internal.misc.Unsafe can't be found
+             return false;

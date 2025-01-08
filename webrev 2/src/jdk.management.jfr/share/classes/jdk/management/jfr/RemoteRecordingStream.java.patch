@@ -1,0 +1,77 @@
+diff a/src/jdk.management.jfr/share/classes/jdk/management/jfr/RemoteRecordingStream.java b/src/jdk.management.jfr/share/classes/jdk/management/jfr/RemoteRecordingStream.java
+--- a/src/jdk.management.jfr/share/classes/jdk/management/jfr/RemoteRecordingStream.java
++++ b/src/jdk.management.jfr/share/classes/jdk/management/jfr/RemoteRecordingStream.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -30,23 +30,20 @@
+ import java.nio.channels.FileChannel;
+ import java.nio.file.Files;
+ import java.nio.file.Path;
+ import java.nio.file.Paths;
+ import java.nio.file.StandardOpenOption;
+-import java.security.AccessControlContext;
+-import java.security.AccessController;
+ import java.time.Duration;
+ import java.time.Instant;
+ import java.util.ArrayList;
+ import java.util.Collections;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Objects;
+ import java.util.concurrent.Future;
+ import java.util.function.Consumer;
+-import java.security.AccessControlException;
+ import javax.management.JMX;
+ import javax.management.MBeanServerConnection;
+ import javax.management.ObjectName;
+ 
+ import jdk.jfr.Configuration;
+@@ -147,12 +144,10 @@
+ 
+     final Path path;
+     final FlightRecorderMXBean mbean;
+     final long recordingId;
+     final EventStream stream;
+-    @SuppressWarnings("removal")
+-    final AccessControlContext accessControllerContext;
+     final DiskRepository repository;
+     final Instant creationTime;
+     final Object lock = new Object();
+     volatile Instant startTime;
+     volatile Instant endTime;
+@@ -203,13 +198,11 @@
+ 
+     @SuppressWarnings("removal")
+     private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
+         Objects.requireNonNull(connection, "connection");
+         Objects.requireNonNull(directory, "directory");
+-        accessControllerContext = AccessController.getContext();
+-        // Make sure users can't implement malicious version of a Path object.
+-        path = Paths.get(directory.toString());
++        path = directory;
+         if (!Files.exists(path)) {
+             throw new IOException("Download directory doesn't exist");
+         }
+ 
+         if (!Files.isDirectory(path)) {
+@@ -217,11 +210,11 @@
+         }
+         checkFileAccess(path);
+         creationTime = Instant.now();
+         mbean = createProxy(connection);
+         recordingId = createRecording();
+-        stream = ManagementSupport.newEventDirectoryStream(accessControllerContext, path, configurations(mbean));
++        stream = ManagementSupport.newEventDirectoryStream(path, configurations(mbean));
+         stream.setStartTime(Instant.MIN);
+         repository = new DiskRepository(path, delete);
+         ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
+     }
+ 

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Udiff src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecorder.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="Options.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="PlatformRecording.java.udiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/PlatformRecorder.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-new-header">@@ -1,7 +1,7 @@</span>
+  /*
+<span class="udiff-line-modified-removed">-  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+<span class="udiff-line-modified-added">+  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -31,12 +31,11 @@</span>
+  import static jdk.jfr.internal.LogLevel.WARN;
+  import static jdk.jfr.internal.LogTag.JFR;
+  import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
+  
+  import java.io.IOException;
+<span class="udiff-line-modified-removed">- import java.security.AccessControlContext;</span>
+<span class="udiff-line-removed">- import java.security.AccessController;</span>
+<span class="udiff-line-modified-added">+ import java.nio.file.Path;</span>
+  import java.time.Duration;
+  import java.time.Instant;
+  import java.util.ArrayList;
+  import java.util.Collections;
+  import java.util.HashMap;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -44,29 +43,26 @@</span>
+  import java.util.List;
+  import java.util.Map;
+  import java.util.Set;
+  import java.util.Timer;
+  import java.util.TimerTask;
+<span class="udiff-line-removed">- import java.util.concurrent.CopyOnWriteArrayList;</span>
+  
+  import jdk.jfr.FlightRecorder;
+  import jdk.jfr.FlightRecorderListener;
+  import jdk.jfr.Recording;
+  import jdk.jfr.RecordingState;
+  import jdk.jfr.events.ActiveRecordingEvent;
+  import jdk.jfr.events.ActiveSettingEvent;
+<span class="udiff-line-removed">- import jdk.jfr.internal.SecuritySupport.SafePath;</span>
+<span class="udiff-line-removed">- import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;</span>
+  import jdk.jfr.internal.consumer.EventLog;
+  import jdk.jfr.internal.periodic.PeriodicEvents;
+  import jdk.jfr.internal.util.Utils;
+  
+  public final class PlatformRecorder {
+  
+  
+      private final ArrayList&lt;PlatformRecording&gt; recordings = new ArrayList&lt;&gt;();
+<span class="udiff-line-modified-removed">-     private static final List&lt;SecureRecorderListener&gt; changeListeners = new ArrayList&lt;&gt;();</span>
+<span class="udiff-line-modified-added">+     private static final List&lt;FlightRecorderListener&gt; changeListeners = new ArrayList&lt;&gt;();</span>
+      private final Repository repository;
+      private final Thread shutdownHook;
+  
+      private Timer timer;
+      private long recordingCounter = 0;
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -81,29 +77,13 @@</span>
+          JVMSupport.createJFR();
+          Logger.log(JFR_SYSTEM, INFO, &quot;Created native&quot;);
+          JDKEvents.initialize();
+          Logger.log(JFR_SYSTEM, INFO, &quot;Registered JDK events&quot;);
+          startDiskMonitor();
+<span class="udiff-line-modified-removed">-         shutdownHook = SecuritySupport.createThreadWitNoPermissions(&quot;JFR Shutdown Hook&quot;, new ShutdownHook(this));</span>
+<span class="udiff-line-modified-removed">-         SecuritySupport.setUncaughtExceptionHandler(shutdownHook, new ShutdownHook.ExceptionHandler());</span>
+<span class="udiff-line-modified-removed">-         SecuritySupport.registerShutdownHook(shutdownHook);</span>
+<span class="udiff-line-removed">-     }</span>
+<span class="udiff-line-removed">- </span>
+<span class="udiff-line-removed">- </span>
+<span class="udiff-line-removed">-     private static Timer createTimer() {</span>
+<span class="udiff-line-removed">-         try {</span>
+<span class="udiff-line-removed">-             List&lt;Timer&gt; result = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="udiff-line-removed">-             Thread t = SecuritySupport.createThreadWitNoPermissions(&quot;Permissionless thread&quot;, ()-&gt; {</span>
+<span class="udiff-line-removed">-                 result.add(new Timer(&quot;JFR Recording Scheduler&quot;, true));</span>
+<span class="udiff-line-removed">-             });</span>
+<span class="udiff-line-removed">-             JVM.exclude(t);</span>
+<span class="udiff-line-removed">-             t.start();</span>
+<span class="udiff-line-removed">-             t.join();</span>
+<span class="udiff-line-removed">-             return result.getFirst();</span>
+<span class="udiff-line-removed">-         } catch (InterruptedException e) {</span>
+<span class="udiff-line-removed">-             throw new IllegalStateException(&quot;Not able to create timer task. &quot; + e.getMessage(), e);</span>
+<span class="udiff-line-removed">-         }</span>
+<span class="udiff-line-modified-added">+         shutdownHook = new ShutdownHook(this);</span>
+<span class="udiff-line-modified-added">+         shutdownHook.setUncaughtExceptionHandler(new ShutdownHook.ExceptionHandler());</span>
+<span class="udiff-line-modified-added">+         Runtime.getRuntime().addShutdownHook(shutdownHook);</span>
+      }
+  
+      public synchronized PlatformRecording newRecording(Map&lt;String, String&gt; settings) {
+          return newRecording(settings, ++recordingCounter);
+      }
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -136,40 +116,31 @@</span>
+      public synchronized List&lt;PlatformRecording&gt; getRecordings() {
+          return Collections.unmodifiableList(new ArrayList&lt;PlatformRecording&gt;(recordings));
+      }
+  
+      public static synchronized void addListener(FlightRecorderListener changeListener) {
+<span class="udiff-line-removed">-         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="udiff-line-removed">-         AccessControlContext context = AccessController.getContext();</span>
+<span class="udiff-line-removed">-         SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);</span>
+          boolean runInitialized;
+          synchronized (PlatformRecorder.class) {
+              runInitialized = FlightRecorder.isInitialized();
+<span class="udiff-line-modified-removed">-             changeListeners.add(sl);</span>
+<span class="udiff-line-modified-added">+             changeListeners.add(changeListener);</span>
+          }
+          if (runInitialized) {
+<span class="udiff-line-modified-removed">-             sl.recorderInitialized(FlightRecorder.getFlightRecorder());</span>
+<span class="udiff-line-modified-added">+             changeListener.recorderInitialized(FlightRecorder.getFlightRecorder());</span>
+          }
+      }
+  
+      public static synchronized boolean removeListener(FlightRecorderListener changeListener) {
+<span class="udiff-line-modified-removed">-         for (SecureRecorderListener s : new ArrayList&lt;&gt;(changeListeners)) {</span>
+<span class="udiff-line-removed">-             if (s.getChangeListener() == changeListener) {</span>
+<span class="udiff-line-removed">-                 changeListeners.remove(s);</span>
+<span class="udiff-line-removed">-                 return true;</span>
+<span class="udiff-line-removed">-             }</span>
+<span class="udiff-line-removed">-         }</span>
+<span class="udiff-line-removed">-         return false;</span>
+<span class="udiff-line-modified-added">+         return changeListeners.remove(changeListener);</span>
+      }
+  
+      static synchronized List&lt;FlightRecorderListener&gt; getListeners() {
+          return new ArrayList&lt;&gt;(changeListeners);
+      }
+  
+      synchronized Timer getTimer() {
+          if (timer == null) {
+<span class="udiff-line-modified-removed">-             timer = createTimer();</span>
+<span class="udiff-line-modified-added">+             timer = new Timer(&quot;JFR Recording Scheduler&quot;, true);</span>
+          }
+          return timer;
+      }
+  
+      public static void notifyRecorderInitialized(FlightRecorder recorder) {
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -364,11 +335,11 @@</span>
+              EventLog.stop();
+          }
+      }
+  
+      private Instant dumpMemoryToDestination(PlatformRecording recording)  {
+<span class="udiff-line-modified-removed">-         WriteableUserPath dest = recording.getDestination();</span>
+<span class="udiff-line-modified-added">+         WriteablePath dest = recording.getDestination();</span>
+          if (dest != null) {
+              Instant t = MetadataRepository.getInstance().setOutput(dest.getRealPathText());
+              recording.clearDestination();
+              return t;
+          }
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -439,12 +410,12 @@</span>
+  
+          return new ArrayList&lt;&gt;();
+      }
+  
+      private void startDiskMonitor() {
+<span class="udiff-line-modified-removed">-         Thread t = SecuritySupport.createThreadWitNoPermissions(&quot;JFR Periodic Tasks&quot;, () -&gt; periodicTask());</span>
+<span class="udiff-line-modified-removed">-         SecuritySupport.setDaemonThread(t, true);</span>
+<span class="udiff-line-modified-added">+         Thread t = new Thread(() -&gt; periodicTask(), &quot;JFR Periodic Tasks&quot;);</span>
+<span class="udiff-line-modified-added">+         t.setDaemon(true);</span>
+          t.start();
+      }
+  
+      private void finishChunk(RepositoryChunk chunk, Instant time, PlatformRecording ignoreMe) {
+          if (chunk.finish(time)) {
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -470,11 +441,11 @@</span>
+      private void writeMetaEvents() {
+          long timestamp = JVM.counterTime();
+          if (ActiveRecordingEvent.enabled()) {
+              for (PlatformRecording r : getRecordings()) {
+                  if (r.getState() == RecordingState.RUNNING &amp;&amp; r.shouldWriteMetadataEvent()) {
+<span class="udiff-line-modified-removed">-                     WriteableUserPath path = r.getDestination();</span>
+<span class="udiff-line-modified-added">+                     WriteablePath path = r.getDestination();</span>
+                      Duration age = r.getMaxAge();
+                      Duration flush = r.getFlushInterval();
+                      Long size = r.getMaxSize();
+                      Instant rStart = r.getStartTime();
+                      Duration rDuration = r.getDuration();
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -517,11 +488,11 @@</span>
+                  }
+                  long minDelta = PeriodicEvents.doPeriodic();
+                  wait = Math.min(minDelta, Options.getWaitInterval());
+              } catch (Throwable t) {
+                  // Catch everything and log, but don&#39;t allow it to end the periodic task
+<span class="udiff-line-modified-removed">-                 Logger.log(JFR_SYSTEM, ERROR, &quot;Error in Periodic task: &quot; + t.getClass().getName());</span>
+<span class="udiff-line-modified-added">+                 Logger.log(JFR_SYSTEM, WARN, &quot;Error in Periodic task: &quot; + t.getMessage());</span>
+              } finally {
+                  takeNap(wait);
+              }
+          }
+      }
+</pre>
+<hr />
+<pre>
+<span class="line-new-header">@@ -658,11 +629,11 @@</span>
+          target.setStartTime(startTime);
+          target.setStopTime(endTime);
+          target.setInternalDuration(startTime.until(endTime));
+      }
+  
+<span class="udiff-line-modified-removed">-     public synchronized void migrate(SafePath repo) throws IOException {</span>
+<span class="udiff-line-modified-added">+     public synchronized void migrate(Path repo) throws IOException {</span>
+          // Must set repository while holding recorder lock so
+          // the final chunk in repository gets marked correctly
+          Repository.getRepository().setBasePath(repo);
+          boolean disk = false;
+          for (PlatformRecording s : getRecordings()) {
+</pre>
+<center><a href="Options.java.udiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="PlatformRecording.java.udiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

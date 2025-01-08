@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/PeriodicEvents.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.periodic;
+ 26 
+ 27 import java.util.ArrayList;
+ 28 import java.util.List;
+ 29 import java.util.concurrent.atomic.AtomicLong;
+ 30 
+ 31 import jdk.internal.event.Event;
+ 32 import jdk.jfr.internal.JVM;
+ 33 import jdk.jfr.internal.LogLevel;
+ 34 import jdk.jfr.internal.LogTag;
+ 35 import jdk.jfr.internal.Logger;
+ 36 import jdk.jfr.internal.PlatformEventType;
+ 37 
+ 38 /**
+ 39  * Class that runs and schedules tasks for periodic events.
+ 40  * &lt;p&gt;
+ 41  * Events can run at the beginning of a chunk rotation, at the end of a chunk
+ 42  * rotation or at a periodic interval.
+ 43  * &lt;p&gt;
+ 44  * Events with the same period runs in the same order as users added them.
+ 45  * Temporarily disabling events don&#39;t impact the order of execution.
+ 46  * &lt;p&gt;
+ 47  * A best effort is made to run events with different periods at the same time.
+ 48  * For example, an event that runs every two seconds executes half of the time
+ 49  * with the events that run every second.
+ 50  */
+ 51 public final class PeriodicEvents {
+ 52     private static final TaskRepository taskRepository = new TaskRepository();
+ 53     private static final BatchManager batchManager = new BatchManager();
+ 54     private static final FlushTask flushTask = new FlushTask();
+ 55     private static final AtomicLong settingsIteration = new AtomicLong();
+ 56 
+ 57     // State only to be read and modified by periodic task thread
+ 58     private static long lastTimeMillis;
+ 59 
+ 60     public static void addJavaEvent(Class&lt;? extends Event&gt; eventClass, Runnable runnable) {
+ 61         taskRepository.add(new JavaEventTask(eventClass, runnable));
+ 62     }
+ 63 
+ 64     public static void addJVMEvent(PlatformEventType eventType) {
+ 65         taskRepository.add(new JVMEventTask(eventType));
+ 66     }
+ 67 
+ 68     public static boolean removeEvent(Runnable runnable) {
+ 69         return taskRepository.removeTask(runnable);
+ 70     }
+ 71 
+ 72     public static void doChunkBegin() {
+ 73         long timestamp = JVM.counterTime();
+ 74         for (EventTask task : taskRepository.getTasks()) {
+ 75             var eventType = task.getEventType();
+ 76             if (eventType.isEnabled() &amp;&amp; eventType.isBeginChunk()) {
+ 77                 task.run(timestamp, PeriodicType.BEGIN_CHUNK);
+ 78             }
+ 79         }
+ 80     }
+ 81 
+ 82     public static void doChunkEnd() {
+ 83         long timestamp = JVM.counterTime();
+ 84         for (EventTask task : taskRepository.getTasks()) {
+ 85             var eventType = task.getEventType();
+ 86             if (eventType.isEnabled() &amp;&amp; eventType.isEndChunk()) {
+ 87                 task.run(timestamp, PeriodicType.END_CHUNK);
+ 88             }
+ 89         }
+ 90     }
+ 91 
+ 92     // Only to be called from periodic task thread
+ 93     public static long doPeriodic() {
+ 94         long eventTimestamp = JVM.counterTime();
+ 95         // Code copied from prior native implementation
+ 96         long last = lastTimeMillis;
+ 97         // The interval for periodic events is typically at least 1 s, so
+ 98         // System.currentTimeMillis() is sufficient. JVM.counterTime() lacks
+ 99         // unit and has in the past been more unreliable.
+100         long now = System.currentTimeMillis();
+101         long min = 0;
+102         long delta = 0;
+103 
+104         if (last == 0) {
+105             last = now;
+106         }
+107 
+108         // time from then to now
+109         delta = now - last;
+110         if (delta &lt; 0) {
+111             // to handle time adjustments
+112             // for example Daylight Savings
+113             lastTimeMillis = now;
+114             return 0;
+115         }
+116         long iteration = settingsIteration.get();
+117         if (iteration &gt; batchManager.getIteration()) {
+118             List&lt;PeriodicTask&gt; tasks = new ArrayList&lt;&gt;();
+119             tasks.addAll(taskRepository.getTasks());
+120             tasks.add(flushTask);
+121             batchManager.refresh(iteration, tasks);
+122 
+123         }
+124         boolean flush = false;
+125         Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG,&quot;Periodic work started&quot;);
+126         for (Batch batch : batchManager.getBatches()) {
+127             long left = 0;
+128             long r_period = batch.getPeriod();
+129             long r_delta = batch.getDelta();
+130 
+131             // add time elapsed.
+132             r_delta += delta;
+133 
+134             // above threshold?
+135             if (r_delta &gt;= r_period) {
+136                 // Bug 9000556 - don&#39;t try to compensate
+137                 // for wait &gt; period
+138                 r_delta = 0;
+139                 for (PeriodicTask task : batch.getTasks()) {
+140                     task.tick();
+141                     if (task.shouldRun()) {
+142                         if (task instanceof FlushTask) {
+143                             flush = true;
+144                         } else {
+145                             task.run(eventTimestamp, PeriodicType.INTERVAL);
+146                         }
+147                     }
+148                 }
+149             }
+150 
+151             // calculate time left
+152             left = (r_period - r_delta);
+153 
+154             /*
+155              * nothing outside checks that a period is &gt;= 0, so left can end up negative
+156              * here. ex. (r_period =(-1)) - (r_delta = 0) if it is, handle it.
+157              */
+158             if (left &lt; 0) {
+159                 left = 0;
+160             }
+161 
+162             // assign delta back
+163             batch.setDelta(r_delta);
+164 
+165             if (min == 0 || left &lt; min) {
+166                 min = left;
+167             }
+168         }
+169         if (flush) {
+170             flushTask.run(eventTimestamp, PeriodicType.INTERVAL);
+171         }
+172         Logger.log(LogTag.JFR_PERIODIC, LogLevel.DEBUG,&quot;Periodic work ended&quot;);
+173         lastTimeMillis = now;
+174         return min;
+175     }
+176 
+177     /**
+178      * Marks that a change has happened to a periodic event.
+179      * &lt;p&gt;
+180      * This method should be invoked if a periodic event has:
+181      * &lt;ul&gt;
+182      * &lt;li&gt;been added&lt;/li&gt;
+183      * &lt;li&gt;been removed&lt;/li&gt;
+184      * &lt;li&gt;been enabled
+185      * &lt;li&gt;been disabled&lt;/li&gt;
+186      * &lt;li&gt;changed period&lt;/li&gt;
+187      * &lt;/ul&gt;
+188      * &lt;p&gt;
+189      * The periodic task thread will poll the changed state at least once every
+190      * second to see if a change has occurred. if that&#39;s the case, it will refresh
+191      * periodic tasks that need to be run.
+192      */
+193     public static void setChanged() {
+194         settingsIteration.incrementAndGet();
+195     }
+196 
+197     public static void setFlushInterval(long millis) {
+198         flushTask.setInterval(millis);
+199     }
+200 }
+    </pre>
+  </body>
+</html>

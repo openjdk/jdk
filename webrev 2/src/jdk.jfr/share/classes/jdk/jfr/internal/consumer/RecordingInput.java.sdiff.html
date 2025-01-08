@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RecordingInput.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="OngoingStream.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="RepositoryFiles.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/consumer/RecordingInput.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.DataInput;
+ 29 import java.io.EOFException;
+ 30 import java.io.File;
+ 31 import java.io.IOException;
+ 32 import java.io.RandomAccessFile;
+ 33 import java.nio.file.Path;
+ 34 
+ 35 import jdk.jfr.internal.management.HiddenWait;
+<span class="line-removed"> 36 import jdk.jfr.internal.util.Utils;</span>
+ 37 
+ 38 public final class RecordingInput implements DataInput, AutoCloseable {
+ 39 
+ 40     private static final int DEFAULT_BLOCK_SIZE = 64_000;
+ 41 
+ 42     private static final class Block {
+ 43         private byte[] bytes = new byte[0];
+ 44         private long blockPosition;
+ 45         private long blockPositionEnd;
+ 46 
+ 47         boolean contains(long position) {
+ 48             return position &gt;= blockPosition &amp;&amp; position &lt; blockPositionEnd;
+ 49         }
+ 50 
+ 51         public void read(RandomAccessFile file, int amount) throws IOException {
+ 52             blockPosition = file.getFilePointer();
+ 53             // reuse byte array, if possible
+ 54             if (amount &gt; bytes.length) {
+ 55                 bytes = new byte[amount];
+ 56             }
+ 57             this.blockPositionEnd = blockPosition + amount;
+ 58             file.readFully(bytes, 0, amount);
+ 59         }
+ 60 
+ 61         public byte get(long position) {
+ 62             return bytes[(int) (position - blockPosition)];
+ 63         }
+ 64 
+ 65         public void reset() {
+ 66             blockPosition = 0;
+ 67             blockPositionEnd = 0;
+ 68         }
+ 69     }
+ 70     private final int blockSize;
+<span class="line-removed"> 71     private final FileAccess fileAccess;</span>
+ 72     private final HiddenWait threadSleeper = new HiddenWait();
+ 73     private long pollCount = 1000;
+ 74     private RandomAccessFile file;
+ 75     private String filename;
+ 76     private Block currentBlock = new Block();
+ 77     private Block previousBlock = new Block();
+ 78     private long position;
+ 79     private long size = -1; // Fail fast if setSize(...) has not been called
+ 80                             // before parsing
+ 81 
+<span class="line-modified"> 82     RecordingInput(File f, FileAccess fileAccess, int blockSize) throws IOException {</span>
+ 83         this.blockSize = blockSize;
+<span class="line-removed"> 84         this.fileAccess = fileAccess;</span>
+ 85         initialize(f);
+ 86     }
+ 87 
+ 88     private void initialize(File f) throws IOException {
+<span class="line-modified"> 89         this.filename = fileAccess.getAbsolutePath(f);</span>
+<span class="line-modified"> 90         this.file = fileAccess.openRAF(f, &quot;r&quot;);</span>
+ 91         this.position = 0;
+ 92         this.size = -1;
+ 93         this.currentBlock.reset();
+ 94         previousBlock.reset();
+<span class="line-modified"> 95         if (fileAccess.length(f) &lt; 8) {</span>
+<span class="line-modified"> 96             throw new IOException(&quot;Not a valid Flight Recorder file. File length is only &quot; + fileAccess.length(f) + &quot; bytes.&quot;);</span>
+ 97         }
+ 98     }
+ 99 
+<span class="line-modified">100     public RecordingInput(File f, FileAccess fileAccess) throws IOException {</span>
+<span class="line-modified">101         this(f, fileAccess, DEFAULT_BLOCK_SIZE);</span>
+102     }
+103 
+104     void positionPhysical(long position) throws IOException {
+105         file.seek(position);
+106     }
+107 
+108     byte readPhysicalByte() throws IOException {
+109         return file.readByte();
+110     }
+111 
+112     long readPhysicalLong() throws IOException {
+113         return file.readLong();
+114     }
+115 
+116     @Override
+117     public final byte readByte() throws IOException {
+118         if (!currentBlock.contains(position)) {
+119             position(position);
+120         }
+121         return currentBlock.get(position++);
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+  1 /*
+<span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal.consumer;
+ 27 
+ 28 import java.io.DataInput;
+ 29 import java.io.EOFException;
+ 30 import java.io.File;
+ 31 import java.io.IOException;
+ 32 import java.io.RandomAccessFile;
+ 33 import java.nio.file.Path;
+ 34 
+ 35 import jdk.jfr.internal.management.HiddenWait;
+
+ 36 
+ 37 public final class RecordingInput implements DataInput, AutoCloseable {
+ 38 
+ 39     private static final int DEFAULT_BLOCK_SIZE = 64_000;
+ 40 
+ 41     private static final class Block {
+ 42         private byte[] bytes = new byte[0];
+ 43         private long blockPosition;
+ 44         private long blockPositionEnd;
+ 45 
+ 46         boolean contains(long position) {
+ 47             return position &gt;= blockPosition &amp;&amp; position &lt; blockPositionEnd;
+ 48         }
+ 49 
+ 50         public void read(RandomAccessFile file, int amount) throws IOException {
+ 51             blockPosition = file.getFilePointer();
+ 52             // reuse byte array, if possible
+ 53             if (amount &gt; bytes.length) {
+ 54                 bytes = new byte[amount];
+ 55             }
+ 56             this.blockPositionEnd = blockPosition + amount;
+ 57             file.readFully(bytes, 0, amount);
+ 58         }
+ 59 
+ 60         public byte get(long position) {
+ 61             return bytes[(int) (position - blockPosition)];
+ 62         }
+ 63 
+ 64         public void reset() {
+ 65             blockPosition = 0;
+ 66             blockPositionEnd = 0;
+ 67         }
+ 68     }
+ 69     private final int blockSize;
+
+ 70     private final HiddenWait threadSleeper = new HiddenWait();
+ 71     private long pollCount = 1000;
+ 72     private RandomAccessFile file;
+ 73     private String filename;
+ 74     private Block currentBlock = new Block();
+ 75     private Block previousBlock = new Block();
+ 76     private long position;
+ 77     private long size = -1; // Fail fast if setSize(...) has not been called
+ 78                             // before parsing
+ 79 
+<span class="line-modified"> 80     RecordingInput(File f, int blockSize) throws IOException {</span>
+ 81         this.blockSize = blockSize;
+
+ 82         initialize(f);
+ 83     }
+ 84 
+ 85     private void initialize(File f) throws IOException {
+<span class="line-modified"> 86         this.filename = f.getAbsolutePath();</span>
+<span class="line-modified"> 87         this.file = new RandomAccessFile(f, &quot;r&quot;);</span>
+ 88         this.position = 0;
+ 89         this.size = -1;
+ 90         this.currentBlock.reset();
+ 91         previousBlock.reset();
+<span class="line-modified"> 92         if (f.length() &lt; 8) {</span>
+<span class="line-modified"> 93             throw new IOException(&quot;Not a valid Flight Recorder file. File length is only &quot; + f.length() + &quot; bytes.&quot;);</span>
+ 94         }
+ 95     }
+ 96 
+<span class="line-modified"> 97     public RecordingInput(File f) throws IOException {</span>
+<span class="line-modified"> 98         this(f, DEFAULT_BLOCK_SIZE);</span>
+ 99     }
+100 
+101     void positionPhysical(long position) throws IOException {
+102         file.seek(position);
+103     }
+104 
+105     byte readPhysicalByte() throws IOException {
+106         return file.readByte();
+107     }
+108 
+109     long readPhysicalLong() throws IOException {
+110         return file.readLong();
+111     }
+112 
+113     @Override
+114     public final byte readByte() throws IOException {
+115         if (!currentBlock.contains(position)) {
+116             position(position);
+117         }
+118         return currentBlock.get(position++);
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="OngoingStream.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="RepositoryFiles.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

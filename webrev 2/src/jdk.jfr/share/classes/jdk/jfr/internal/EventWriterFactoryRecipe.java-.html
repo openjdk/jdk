@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/EventWriterFactoryRecipe.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+ 1 /*
+ 2  * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 package jdk.jfr.internal;
+26 
+27 import jdk.jfr.internal.event.EventWriter;
+28 
+29 // This class is not directly used but renamed to
+30 // jdk.jfr.internal.event.EventWriterFactory and loaded dynamically
+31 // when the first event class is bytecode instrumented.
+32 // See JVMUpcalls and EventWriterKey::ensureEventWriterFactory()
+33 public final class EventWriterFactoryRecipe {
+34     private static final long KEY = EventWriterKey.getKey();
+35 
+36     public static EventWriter getEventWriter(long key) {
+37         if (key == KEY) {
+38             EventWriter ew = JVM.getEventWriter();
+39             return ew != null ? ew : JVM.newEventWriter();
+40         }
+41         EventWriterKey.block();
+42         return null; // Can&#39;t reach here.
+43     }
+44 }
+    </pre>
+  </body>
+</html>

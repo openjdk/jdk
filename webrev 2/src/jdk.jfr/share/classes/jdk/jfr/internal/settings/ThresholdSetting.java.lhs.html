@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/settings/ThresholdSetting.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre> 1 /*
+<a name="1" id="anc1"></a><span class="line-modified"> 2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal.settings;
+27 
+28 import static jdk.jfr.internal.util.ValueParser.MISSING;
+29 
+30 import java.util.Objects;
+31 import java.util.Set;
+32 
+33 import jdk.jfr.Description;
+34 import jdk.jfr.Label;
+35 import jdk.jfr.MetadataDefinition;
+36 import jdk.jfr.Name;
+<a name="2" id="anc2"></a>
+37 import jdk.jfr.Timespan;
+38 import jdk.jfr.internal.PlatformEventType;
+39 import jdk.jfr.internal.Type;
+40 import jdk.jfr.internal.util.ValueParser;
+41 
+42 @MetadataDefinition
+43 @Label(&quot;Threshold&quot;)
+44 @Name(Type.SETTINGS_PREFIX + &quot;Threshold&quot;)
+45 @Description(&quot;Record event with duration above or equal to threshold&quot;)
+46 @Timespan
+<a name="3" id="anc3"></a><span class="line-modified">47 public final class ThresholdSetting extends JDKSettingControl {</span>
+48     public static final String DEFAULT_VALUE = &quot;0 ns&quot;;
+49     private static final long typeId = Type.getTypeId(ThresholdSetting.class);
+50     private String value = DEFAULT_VALUE;
+51     private final PlatformEventType eventType;
+52 
+53     public ThresholdSetting(PlatformEventType eventType) {
+54        this.eventType = Objects.requireNonNull(eventType);
+55     }
+56 
+57     @Override
+58     public String combine(Set&lt;String&gt; values) {
+59         Long min = null;
+60         String text = null;
+61         for (String value : values) {
+62             long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+63             if (nanos != MISSING) {
+64                 if (min == null || nanos &lt; min) {
+65                     text = value;
+66                     min = nanos;
+67                 }
+68             }
+69         }
+70         return Objects.requireNonNullElse(text, DEFAULT_VALUE);
+71     }
+72 
+73     @Override
+74     public void setValue(String value) {
+75         long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+76         if (nanos != MISSING) {
+77             eventType.setThreshold(nanos);
+78             this.value = value;
+79         }
+80     }
+81 
+82     @Override
+83     public String getValue() {
+84         return value;
+85     }
+86 
+87     public static boolean isType(long typeId) {
+88         return ThresholdSetting.typeId == typeId;
+89     }
+90 }
+<a name="4" id="anc4"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="4" type="hidden" />
+</body>
+</html>

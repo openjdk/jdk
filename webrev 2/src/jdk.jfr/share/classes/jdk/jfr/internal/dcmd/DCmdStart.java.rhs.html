@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdStart.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.jfr.internal.dcmd;
+ 26 
+ 27 import java.io.IOException;
+ 28 import java.nio.file.Files;
+ 29 import java.nio.file.InvalidPathException;
+ 30 import java.nio.file.Path;
+ 31 import java.nio.file.Paths;
+<a name="2" id="anc2"></a>
+
+ 32 import java.text.ParseException;
+ 33 import java.time.Duration;
+ 34 import java.util.HashSet;
+ 35 import java.util.LinkedHashMap;
+ 36 import java.util.List;
+ 37 import java.util.Map;
+ 38 import java.util.Set;
+ 39 
+ 40 import jdk.jfr.FlightRecorder;
+ 41 import jdk.jfr.Recording;
+ 42 import jdk.jfr.internal.JVM;
+ 43 import jdk.jfr.internal.LogLevel;
+ 44 import jdk.jfr.internal.LogTag;
+ 45 import jdk.jfr.internal.Logger;
+ 46 import jdk.jfr.internal.OldObjectSample;
+ 47 import jdk.jfr.internal.PlatformRecording;
+ 48 import jdk.jfr.internal.PrivateAccess;
+<a name="3" id="anc3"></a>
+
+ 49 import jdk.jfr.internal.Type;
+ 50 import jdk.jfr.internal.jfc.JFC;
+ 51 import jdk.jfr.internal.jfc.model.JFCModel;
+ 52 import jdk.jfr.internal.jfc.model.JFCModelException;
+ 53 import jdk.jfr.internal.jfc.model.XmlInput;
+ 54 import jdk.jfr.internal.util.Utils;
+ 55 
+ 56 /**
+ 57  * JFR.start
+ 58  *
+ 59  */
+ 60 //Instantiated by native
+ 61 final class DCmdStart extends AbstractDCmd {
+ 62 
+ 63     @Override
+ 64     public void execute(ArgumentParser parser) throws DCmdException {
+ 65         String name = parser.getOption(&quot;name&quot;);
+ 66         List&lt;String&gt; list = parser.getOption(&quot;settings&quot;);
+ 67         String[] settings = null;
+ 68         if (list == null) {
+ 69             settings = new String[] {&quot;default.jfc&quot;};
+ 70         } else {
+ 71             settings = list.toArray(new String[0]);
+ 72         }
+ 73         if (settings.length == 1 &amp;&amp; &quot;none&quot;.equals(settings[0])) {
+ 74             settings = new String[0];
+ 75         }
+ 76         Long delay = parser.getOption(&quot;delay&quot;);
+ 77         Long duration = parser.getOption(&quot;duration&quot;);
+ 78         Boolean disk = parser.getOption(&quot;disk&quot;);
+ 79         String path = parser.getOption(&quot;filename&quot;);
+ 80         Long maxAge = parser.getOption(&quot;maxage&quot;);
+ 81         Long maxSize = parser.getOption(&quot;maxsize&quot;);
+ 82         Long flush = parser.getOption(&quot;flush-interval&quot;);
+ 83         Boolean dumpOnExit = parser.getOption(&quot;dumponexit&quot;);
+ 84         Boolean pathToGcRoots = parser.getOption(&quot;path-to-gc-roots&quot;);
+ 85 
+ 86         if (name != null) {
+ 87             try {
+ 88                 Integer.parseInt(name);
+ 89                 throw new DCmdException(&quot;Name of recording can&#39;t be numeric&quot;);
+ 90             } catch (NumberFormatException nfe) {
+ 91                 // ok, can&#39;t be mixed up with name
+ 92             }
+ 93         }
+ 94 
+ 95         if (duration == null &amp;&amp; Boolean.FALSE.equals(dumpOnExit) &amp;&amp; path != null) {
+ 96             throw new DCmdException(&quot;Filename can only be set for a time bound recording or if dumponexit=true. Set duration/dumponexit or omit filename.&quot;);
+ 97         }
+ 98         if (settings.length == 1 &amp;&amp; settings[0].length() == 0) {
+ 99             throw new DCmdException(&quot;No settings specified. Use settings=none to start without any settings&quot;);
+100         }
+101 
+102         LinkedHashMap&lt;String, String&gt; s;
+103         if (parser.hasExtendedOptions()) {
+104            s = configureExtended(settings, parser);
+105         } else {
+106            s = configureStandard(settings);
+107         }
+108 
+109         OldObjectSample.updateSettingPathToGcRoots(s, pathToGcRoots);
+110 
+111         if (duration != null) {
+112             if (duration &lt; 1000L * 1000L * 1000L) {
+113                 // to avoid typo, duration below 1s makes no sense
+114                 throw new DCmdException(&quot;Could not start recording, duration must be at least 1 second.&quot;);
+115             }
+116         }
+117 
+118         if (delay != null) {
+119             if (delay &lt; 1000L * 1000L * 1000L) {
+120                 // to avoid typo, delay shorter than 1s makes no sense.
+121                 throw new DCmdException(&quot;Could not start recording, delay must be at least 1 second.&quot;);
+122             }
+123         }
+124 
+125         if (flush != null) {
+126             if (Boolean.FALSE.equals(disk)) {
+127                 throw new DCmdException(&quot;Flush can only be set for recordings that are to disk.&quot;);
+128             }
+129         }
+130 
+131         if (!FlightRecorder.isInitialized() &amp;&amp; delay == null) {
+132             initializeWithForcedInstrumentation(s);
+133         }
+134 
+135         Recording recording = new Recording();
+136         if (name != null) {
+137             recording.setName(name);
+138         }
+139 
+140         if (disk != null) {
+141             if (!disk) {
+142                 if (maxAge != null) {
+143                     logWarning(&quot;Option maxage has no effect with disk=false.&quot;);
+144                 }
+145                 if (maxSize != null) {
+146                     logWarning(&quot;Option maxsize has no effect with disk=false.&quot;);
+147                 }
+148             }
+149             recording.setToDisk(disk.booleanValue());
+150         }
+151 
+152         recording.setSettings(s);
+<a name="4" id="anc4"></a><span class="line-modified">153         Path dumpPath = null;</span>
+154 
+155         // Generate dump filename if user has specified a time-bound recording
+156         if (duration != null &amp;&amp; path == null) {
+157             path = resolvePath(recording, null).toString();
+158         }
+159 
+160         if (path != null) {
+161             try {
+162                 if (dumpOnExit == null) {
+163                     // default to dumponexit=true if user specified filename
+164                     dumpOnExit = Boolean.TRUE;
+165                 }
+166                 Path p = Paths.get(path);
+167                 if (Files.isDirectory(p)) {
+168                     // Decide destination filename at dump time
+169                     // Purposely avoid generating filename in Recording#setDestination due to
+170                     // security concerns
+171                     PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+<a name="5" id="anc5"></a><span class="line-modified">172                     pr.setDumpDirectory(p);</span>
+173                 } else {
+<a name="6" id="anc6"></a><span class="line-modified">174                     dumpPath = resolvePath(recording, path);</span>
+<span class="line-modified">175                     recording.setDestination(dumpPath);</span>
+176                 }
+177             } catch (IOException | InvalidPathException e) {
+178                 recording.close();
+179                 throw new DCmdException(&quot;Could not start recording, not able to write to file %s. %s &quot;, path, e.getMessage());
+180             }
+181         }
+182 
+183         if (maxAge != null) {
+184             recording.setMaxAge(Duration.ofNanos(maxAge));
+185         }
+186 
+187         if (flush != null) {
+188             PlatformRecording p = PrivateAccess.getInstance().getPlatformRecording(recording);
+189             p.setFlushInterval(Duration.ofNanos(flush));
+190         }
+191 
+192         if (maxSize != null) {
+193             recording.setMaxSize(maxSize);
+194         }
+195 
+196         if (duration != null) {
+197             recording.setDuration(Duration.ofNanos(duration));
+198         }
+199 
+200         if (dumpOnExit != null) {
+201             recording.setDumpOnExit(dumpOnExit);
+202         }
+203 
+204         if (delay != null) {
+205             Duration dDelay = Duration.ofNanos(delay);
+206             recording.scheduleStart(dDelay);
+207             print(&quot;Recording &quot; + recording.getId() + &quot; scheduled to start in &quot;);
+208             printTimespan(dDelay, &quot; &quot;);
+209             print(&quot;.&quot;);
+210         } else {
+211             recording.start();
+212             print(&quot;Started recording &quot; + recording.getId() + &quot;.&quot;);
+213         }
+214 
+215         if (recording.isToDisk() &amp;&amp; duration == null &amp;&amp; maxAge == null &amp;&amp; maxSize == null) {
+216             print(&quot; No limit specified, using maxsize=250MB as default.&quot;);
+217             recording.setMaxSize(250*1024L*1024L);
+218         }
+219 
+<a name="7" id="anc7"></a><span class="line-modified">220         if (dumpPath != null &amp;&amp; duration != null) {</span>
+221             println(&quot; The result will be written to:&quot;);
+222             println();
+<a name="8" id="anc8"></a><span class="line-modified">223             printPath(dumpPath);</span>
+224         } else {
+225             println();
+226             println();
+227             String cmd = duration == null ? &quot;dump&quot; : &quot;stop&quot;;
+228             String fileOption = path == null ? &quot;filename=FILEPATH &quot; : &quot;&quot;;
+229             String recordingspecifier = &quot;name=&quot; + recording.getId();
+230             // if user supplied a name, use it.
+231             if (name != null) {
+232                 recordingspecifier = &quot;name=&quot; + quoteIfNeeded(name);
+233             }
+234             print(&quot;Use jcmd &quot; + getPid() + &quot; JFR.&quot; + cmd + &quot; &quot; + recordingspecifier + &quot; &quot; + fileOption + &quot;to copy recording data to file.&quot;);
+235             println();
+236         }
+237     }
+238 
+239     private LinkedHashMap&lt;String, String&gt; configureStandard(String[] settings) throws DCmdException {
+240         LinkedHashMap&lt;String, String&gt; s = LinkedHashMap.newLinkedHashMap(settings.length);
+241         for (String configName : settings) {
+242             try {
+243                 s.putAll(JFC.createKnown(configName).getSettings());
+244             } catch (InvalidPathException | IOException | ParseException e) {
+245                 throw new DCmdException(JFC.formatException(&quot;Could not&quot;, e, configName), e);
+246             }
+247         }
+248         return s;
+249     }
+250 
+251     private LinkedHashMap&lt;String, String&gt; configureExtended(String[] settings, ArgumentParser parser) throws DCmdException {
+252         JFCModel model = new JFCModel(l -&gt; logWarning(l));
+253         for (String setting : settings) {
+254             try {
+<a name="9" id="anc9"></a><span class="line-modified">255                 model.parse(JFC.ofPath(setting));</span>
+256             } catch (InvalidPathException | IOException | JFCModelException | ParseException e) {
+257                 throw new DCmdException(JFC.formatException(&quot;Could not&quot;, e, setting), e);
+258             }
+259         }
+260         try {
+261             Set&lt;String&gt; jfcOptions = new HashSet&lt;&gt;();
+262             for (XmlInput input : model.getInputs()) {
+263                 jfcOptions.add(input.getName());
+264             }
+265             parser.checkSpelling(jfcOptions);
+266             Map&lt;String, String&gt; jfcSettings = model.getSettings();
+267             for (var entry : parser.getExtendedOptions().entrySet()) {
+268                 String value = (String)entry.getValue();
+269                 String optionName = entry.getKey();
+270                 boolean added = optionName.startsWith(&quot;+&quot;);
+271                 if (!added &amp;&amp; !jfcOptions.contains(optionName) &amp;&amp; !jfcSettings.containsKey(optionName)) {
+272                     // Option/setting doesn&#39;t exist and it is not a spelling error.
+273                     // By not throwing an exception, and instead print a warning,
+274                     // it is easier migrate to a newer JDK version without
+275                     // breaking startup scripts
+276                      logWarning(&quot;The .jfc option/setting &#39;&quot; + optionName + &quot;&#39; doesn&#39;t exist.&quot;);
+277                 } else {
+278                     model.configure(entry.getKey(), value);
+279                 }
+280             }
+281             return model.getSettings();
+282         } catch (IllegalArgumentException iae) {
+283              throw new DCmdException(iae.getMessage()); // spelling error, invalid value
+284         }
+285     }
+286 
+287     // Instruments JDK-events on class load to reduce startup time
+288     private void initializeWithForcedInstrumentation(Map&lt;String, String&gt; settings) {
+289         if (!hasJDKEvents(settings)) {
+290             return;
+291         }
+292         try {
+293             JVM.setForceInstrumentation(true);
+294             FlightRecorder.getFlightRecorder();
+295         } finally {
+296             JVM.setForceInstrumentation(false);
+297         }
+298     }
+299 
+300     private boolean hasJDKEvents(Map&lt;String, String&gt; settings) {
+301         String[] eventNames = new String[7];
+302         eventNames[0] = &quot;FileRead&quot;;
+303         eventNames[1] = &quot;FileWrite&quot;;
+304         eventNames[2] = &quot;SocketRead&quot;;
+305         eventNames[3] = &quot;SocketWrite&quot;;
+306         eventNames[4] = &quot;JavaErrorThrow&quot;;
+307         eventNames[5] = &quot;JavaExceptionThrow&quot;;
+308         eventNames[6] = &quot;FileForce&quot;;
+309         for (String eventName : eventNames) {
+310             if (&quot;true&quot;.equals(settings.get(Type.EVENT_NAME_PREFIX + eventName + &quot;#enabled&quot;))) {
+311                 return true;
+312             }
+313         }
+314         return false;
+315     }
+316 
+317     public String[] getStartupHelp() {
+318         Map&lt;String, String&gt; parameters = Map.of(
+319             &quot;$SYNTAX&quot;, &quot;-XX:StartFlightRecording:[options]&quot;,
+320             &quot;$SOURCE_NO_ARGUMENTS&quot;, &quot;-XX:StartFlightRecording&quot;,
+321             &quot;$SOURCE&quot;, &quot;-XX:StartFlightRecording:&quot;,
+322             &quot;$DELIMITER&quot;, &quot;,&quot;,
+323             &quot;$DELIMITER_NAME&quot;, &quot;comma&quot;,
+324             &quot;$DIRECTORY&quot;, exampleDirectory(),
+325             &quot;$JFC_OPTIONS&quot;, jfcOptions()
+326         );
+327         return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
+328     }
+329 
+330     @Override
+331     public String[] getHelp() {
+332         Map&lt;String, String&gt; parameters = Map.of(
+333            &quot;$SYNTAX&quot;, &quot;JFR.start [options]&quot;,
+334            &quot;$SOURCE_NO_ARGUMENTS&quot;, &quot;$ jcmd &lt;pid&gt; JFR.start&quot;,
+335            &quot;$SOURCE&quot;, &quot;$ jcmd &lt;pid&gt; JFR.start &quot;,
+336            &quot;$DELIMITER&quot;, &quot; &quot;,
+337            &quot;$DELIMITER_NAME&quot;, &quot;whitespace&quot;,
+338            &quot;$DIRECTORY&quot;, exampleDirectory(),
+339            &quot;$JFC_OPTIONS&quot;, jfcOptions()
+340         );
+341         return Utils.format(helpTemplate(), parameters).lines().toArray(String[]::new);
+342     }
+343 
+344     private static String helpTemplate() {
+345             // 0123456789001234567890012345678900123456789001234567890012345678900123456789001234567890
+346         return &quot;&quot;&quot;
+347                Syntax : $SYNTAX
+348 
+349                Options:
+350 
+351                  delay            (Optional) Length of time to wait before starting to record
+352                                   (INT followed by &#39;s&#39; for seconds &#39;m&#39; for minutes or h&#39; for
+353                                   hours, 0s)
+354 
+355                  disk             (Optional) Flag for also writing the data to disk while recording
+356                                   (BOOLEAN, true)
+357 
+358                  dumponexit       (Optional) Flag for writing the recording to disk when the Java
+359                                   Virtual Machine (JVM) shuts down. If set to &#39;true&#39; and no value
+360                                   is given for filename, the recording is written to a file in the
+361                                   directory where the process was started. The file name is a
+362                                   system-generated name that contains the process ID, the recording
+363                                   ID and the current time stamp. (For example:
+364                                   id-1-2021_09_14_09_00.jfr) (BOOLEAN, false)
+365 
+366                  duration         (Optional) Length of time to record. Note that 0s means forever
+367                                   (INT followed by &#39;s&#39; for seconds &#39;m&#39; for minutes or &#39;h&#39; for
+368                                   hours, 0s)
+369 
+370                  filename         (Optional) Name of the file to which the flight recording data is
+371                                   written when the recording is stopped. If no filename is given, a
+372                                   filename is generated from the PID and the current date and is
+373                                   placed in the directory where the process was started. The
+374                                   filename may also be a directory in which case, the filename is
+375                                   generated from the PID and the current date in the specified
+376                                   directory. (FILE, no default value)
+377 
+378                                   Note: If a filename is given, &#39;%p&#39; in the filename will be
+379                                   replaced by the PID, and &#39;%t&#39; will be replaced by the time in
+380                                   &#39;yyyy_MM_dd_HH_mm_ss&#39; format.
+381 
+382                  maxage           (Optional) Maximum time to keep the recorded data on disk. This
+383                                   parameter is valid only when the disk parameter is set to true.
+384                                   Note 0s means forever. (INT followed by &#39;s&#39; for seconds &#39;m&#39;
+385                                   for minutes or &#39;h&#39; for hours, 0s)
+386 
+387                  maxsize          (Optional) Maximum size of the data to keep on disk in bytes if
+388                                   one of the following suffixes is not used: &#39;m&#39; or &#39;M&#39; for
+389                                   megabytes OR &#39;g&#39; or &#39;G&#39; for gigabytes. This parameter is valid
+390                                   only when the disk parameter is set to &#39;true&#39;. The value must not
+391                                   be less than the value for the maxchunksize parameter set with
+392                                   the JFR.configure command. (STRING, 0 (no max size))
+393 
+394                  name             (Optional) Name of the recording. If no name is provided, a name
+395                                   is generated. Make note of the generated name that is shown in
+396                                   the response to the command so that you can use it with other
+397                                   commands. (STRING, system-generated default name)
+398 
+399                  path-to-gc-roots (Optional) Flag for saving the path to garbage collection (GC)
+400                                   roots at the end of a recording. The path information is useful
+401                                   for finding memory leaks but collecting it is time consuming.
+402                                   Turn on this flag only when you have an application that you
+403                                   suspect has a memory leak. If the settings parameter is set to
+404                                   &#39;profile&#39;, then the information collected includes the stack
+405                                   trace from where the potential leaking object was allocated.
+406                                   (BOOLEAN, false)
+407 
+408                  settings         (Optional) Name of the settings file that identifies which events
+409                                   to record. To specify more than one file, use the settings
+410                                   parameter repeatedly. Include the path if the file is not in
+411                                   JAVA-HOME/lib/jfr. The following profiles are included with the
+412                                   JDK in the JAVA-HOME/lib/jfr directory: &#39;default.jfc&#39;: collects a
+413                                   predefined set of information with low overhead, so it has minimal
+414                                   impact on performance and can be used with recordings that run
+415                                   continuously; &#39;profile.jfc&#39;: Provides more data than the
+416                                   &#39;default.jfc&#39; profile, but with more overhead and impact on
+417                                   performance. Use this configuration for short periods of time
+418                                   when more information is needed. Use none to start a recording
+419                                   without a predefined configuration file. (STRING,
+420                                   JAVA-HOME/lib/jfr/default.jfc)
+421 
+422                Event settings and .jfc options can also be specified using the following syntax:
+423 
+424                  jfc-option=value    (Optional) The option value to modify. To see available
+425                                      options for a .jfc file, use the &#39;jfr configure&#39; command.
+426 
+427                  event-setting=value (Optional) The event setting value to modify. Use the form:
+428                                      &lt;event-name&gt;#&lt;setting-name&gt;=&lt;value&gt;
+429                                      To add a new event setting, prefix the event name with &#39;+&#39;.
+430 
+431                In case of a conflict between a parameter and a .jfc option, the parameter will
+432                take  precedence. The whitespace character can be omitted for timespan values,
+433                i.e. 20s. For more information about the settings syntax, see Javadoc of the
+434                jdk.jfr package.
+435                $JFC_OPTIONS
+436                Options must be specified using the &lt;key&gt; or &lt;key&gt;=&lt;value&gt; syntax. Multiple
+437                options are separated with a $DELIMITER_NAME.
+438 
+439                Example usage:
+440 
+441                 $SOURCE_NO_ARGUMENTS
+442                 $SOURCEfilename=dump.jfr
+443                 $SOURCEfilename=$DIRECTORY
+444                 $SOURCEdumponexit=true
+445                 $SOURCEmaxage=1h$DELIMITERmaxsize=1000M
+446                 $SOURCEsettings=profile
+447                 $SOURCEdelay=5m$DELIMITERsettings=my.jfc
+448                 $SOURCEgc=high$DELIMITERmethod-profiling=high
+449                 $SOURCEjdk.JavaMonitorEnter#threshold=1ms
+450                 $SOURCE+HelloWorld#enabled=true$DELIMITER+HelloWorld#stackTrace=true
+451                 $SOURCEsettings=user.jfc$DELIMITERcom.example.UserDefined#enabled=true
+452                 $SOURCEsettings=none$DELIMITER+Hello#enabled=true
+453 
+454                Note, if the default event settings are modified, overhead may exceed 1%.
+455 
+456                &quot;&quot;&quot;;
+457     }
+458 
+459     private static String jfcOptions() {
+460         try {
+461             StringBuilder sb = new StringBuilder();
+<a name="10" id="anc10"></a><span class="line-modified">462             for (Path s : JFC.getPredefined()) {</span>
+<span class="line-modified">463                 String name = JFC.nameFromPath(s);</span>
+464                 JFCModel model = JFCModel.create(s, l -&gt; {});
+465                 sb.append(&#39;\n&#39;);
+466                 sb.append(&quot;Options for &quot;).append(name).append(&quot;:\n&quot;);
+467                 sb.append(&#39;\n&#39;);
+468                 for (XmlInput input : model.getInputs()) {
+469                     sb.append(&quot;  &quot;).append(input.getOptionSyntax()).append(&#39;\n&#39;);
+470                     sb.append(&#39;\n&#39;);
+471                 }
+472             }
+473             return sb.toString();
+474         } catch (IOException | JFCModelException | ParseException  e) {
+475             Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, &quot;Could not list .jfc options for JFR.start. &quot; + e.getMessage());
+476             return &quot;&quot;;
+477         }
+478     }
+479 
+480     @Override
+481     public Argument[] getArgumentInfos() {
+482         return new Argument[] {
+483             new Argument(&quot;name&quot;,
+484                 &quot;Name that can be used to identify recording, e.g. \\\&quot;My Recording\\\&quot;&quot;,
+485                 &quot;STRING&quot;, false, true, null, false),
+486             new Argument(&quot;settings&quot;,
+487                 &quot;Settings file(s), e.g. profile or default. See JAVA_HOME/lib/jfr&quot;,
+488                 &quot;STRING SET&quot;, false, true, &quot;default.jfc&quot;, true),
+489             new Argument(&quot;delay&quot;,
+490                 &quot;Delay recording start with (s)econds, (m)inutes), (h)ours), or (d)ays, e.g. 5h.&quot;,
+491                 &quot;NANOTIME&quot;, false, true, &quot;0s&quot;, false),
+492             new Argument(&quot;duration&quot;,
+493                 &quot;Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 300s.&quot;,
+494                 &quot;NANOTIME&quot;, false, true, null, false),
+495             new Argument(&quot;disk&quot;,
+496                 &quot;Recording should be persisted to disk&quot;,
+497                 &quot;BOOLEAN&quot;, false, true, &quot;true&quot;, false),
+498             new Argument(&quot;filename&quot;,
+499                 &quot;Resulting recording filename, e.g. \\\&quot;&quot; + exampleFilename() +  &quot;\\\&quot;&quot;,
+500                 &quot;FILE&quot;, false, true, &quot;hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr&quot;, false),
+501             new Argument(&quot;maxage&quot;,
+502                 &quot;Maximum time to keep recorded data (on disk) in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit&quot;,
+503                 &quot;NANOTIME&quot;, false, true, &quot;0&quot;, false),
+504             new Argument(&quot;maxsize&quot;,
+505                 &quot;Maximum amount of bytes to keep (on disk) in (k)B, (M)B or (G)B, e.g. 500M, or 0 for no limit&quot;,
+506                 &quot;MEMORY SIZE&quot;, false, true, &quot;250M&quot;, false),
+507             new Argument(&quot;flush-interval&quot;,
+508                 &quot;Minimum time before flushing buffers, measured in (s)econds, e.g. 4 s, or 0 for flushing when a recording ends&quot;,
+509                 &quot;NANOTIME&quot;, false, true, &quot;1s&quot;, false),
+510             new Argument(&quot;dumponexit&quot;,
+511                 &quot;Dump running recording when JVM shuts down&quot;,
+512                 &quot;BOOLEAN&quot;, false, true, &quot;false&quot;, false),
+513             new Argument(&quot;path-to-gc-roots&quot;,
+514                 &quot;Collect path to GC roots&quot;,
+515                 &quot;BOOLEAN&quot;, false, true, &quot;false&quot;, false)
+516         };
+517     }
+518 }
+<a name="11" id="anc11"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="11" type="hidden" />
+</body>
+</html>

@@ -1,0 +1,55 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdDump.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdDump.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdDump.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/dcmd/DCmdDump.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -38,13 +38,12 @@
+ import jdk.jfr.FlightRecorder;
+ import jdk.jfr.Recording;
+ import jdk.jfr.internal.PlatformRecorder;
+ import jdk.jfr.internal.PlatformRecording;
+ import jdk.jfr.internal.PrivateAccess;
+-import jdk.jfr.internal.SecuritySupport.SafePath;
+ import jdk.jfr.internal.util.ValueParser;
+-import jdk.jfr.internal.WriteableUserPath;
++import jdk.jfr.internal.WriteablePath;
+ 
+ /**
+  * JFR.dump
+  *
+  */
+@@ -124,21 +123,20 @@
+                 throw new DCmdException("Dump failed. No data found in the specified interval.");
+             }
+             // If a filename exist, use it
+             // if a filename doesn't exist, use destination set earlier
+             // if destination doesn't exist, generate a filename
+-            WriteableUserPath wup = null;
++            WriteablePath wp = null;
+             if (recording != null) {
+                 PlatformRecording pRecording = PrivateAccess.getInstance().getPlatformRecording(recording);
+-                wup = pRecording.getDestination();
++                wp = pRecording.getDestination();
+             }
+-            if (filename != null || (filename == null && wup == null) ) {
+-                SafePath safe = resolvePath(recording, filename);
+-                wup = new WriteableUserPath(safe.toPath());
++            if (filename != null || (filename == null && wp == null) ) {
++                wp = new WriteablePath(resolvePath(recording, filename));
+             }
+-            r.dumpStopped(wup);
+-            reportOperationComplete("Dumped", name, new SafePath(wup.getRealPathText()));
++            r.dumpStopped(wp);
++            reportOperationComplete("Dumped", name, wp.getReal());
+         }
+     }
+ 
+     private Instant parseTime(String time, String parameter) throws DCmdException {
+         if (time == null) {

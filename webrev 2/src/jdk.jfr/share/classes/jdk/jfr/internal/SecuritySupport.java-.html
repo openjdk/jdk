@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Old src/jdk.jfr/share/classes/jdk/jfr/internal/SecuritySupport.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.io.File;
+ 29 import java.io.FileNotFoundException;
+ 30 import java.io.IOException;
+ 31 import java.io.InputStream;
+ 32 import java.io.RandomAccessFile;
+ 33 import java.io.Reader;
+ 34 import java.lang.invoke.MethodHandles;
+ 35 import java.lang.reflect.Constructor;
+ 36 import java.lang.reflect.Method;
+ 37 import java.lang.reflect.ReflectPermission;
+ 38 import java.nio.channels.FileChannel;
+ 39 import java.nio.channels.ReadableByteChannel;
+ 40 import java.nio.file.DirectoryStream;
+ 41 import java.nio.file.FileVisitResult;
+ 42 import java.nio.file.Files;
+ 43 import java.nio.file.LinkOption;
+ 44 import java.nio.file.Path;
+ 45 import java.nio.file.Paths;
+ 46 import java.nio.file.SimpleFileVisitor;
+ 47 import java.nio.file.StandardOpenOption;
+ 48 import java.nio.file.attribute.BasicFileAttributes;
+ 49 import java.nio.file.attribute.FileTime;
+ 50 import java.security.AccessControlContext;
+ 51 import java.security.AccessController;
+ 52 import java.security.Permission;
+ 53 import java.security.PrivilegedAction;
+ 54 import java.security.PrivilegedActionException;
+ 55 import java.security.PrivilegedExceptionAction;
+ 56 import java.util.ArrayList;
+ 57 import java.util.List;
+ 58 import java.util.Objects;
+ 59 import java.util.PropertyPermission;
+ 60 import java.util.concurrent.Callable;
+ 61 
+ 62 import jdk.internal.module.Modules;
+ 63 import jdk.jfr.Event;
+ 64 import jdk.jfr.FlightRecorder;
+ 65 import jdk.jfr.FlightRecorderListener;
+ 66 import jdk.jfr.FlightRecorderPermission;
+ 67 import jdk.jfr.Recording;
+ 68 import jdk.jfr.internal.consumer.FileAccess;
+ 69 
+ 70 /**
+ 71  * Contains JFR code that does
+ 72  * {@link AccessController#doPrivileged(PrivilegedAction)}
+ 73  */
+ 74 public final class SecuritySupport {
+ 75     private static final String EVENTS_PACKAGE_NAME = &quot;jdk.jfr.events&quot;;
+ 76     private static final String EVENT_PACKAGE_NAME = &quot;jdk.jfr.internal.event&quot;;
+ 77 
+ 78     public static final String REGISTER_EVENT = &quot;registerEvent&quot;;
+ 79     public static final String ACCESS_FLIGHT_RECORDER = &quot;accessFlightRecorder&quot;;
+ 80     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+ 81     private static final Module JFR_MODULE = Event.class.getModule();
+ 82     public  static final SafePath JFC_DIRECTORY = getPathInProperty(&quot;java.home&quot;, &quot;lib/jfr&quot;);
+ 83     public static final FileAccess PRIVILEGED = new Privileged();
+ 84     static final SafePath JAVA_IO_TMPDIR = getPathInProperty(&quot;java.io.tmpdir&quot;, null);
+ 85 
+ 86     static {
+ 87         // ensure module java.base can read module jdk.jfr as early as possible
+ 88         addReadEdge(Object.class);
+ 89         addInternalEventExport(Object.class);
+ 90         addEventsExport(Object.class);
+ 91     }
+ 92 
+ 93     static final class SecureRecorderListener implements FlightRecorderListener {
+ 94 
+ 95         @SuppressWarnings(&quot;removal&quot;)
+ 96         private final AccessControlContext context;
+ 97         private final FlightRecorderListener changeListener;
+ 98 
+ 99         SecureRecorderListener(@SuppressWarnings(&quot;removal&quot;) AccessControlContext context, FlightRecorderListener changeListener) {
+100             this.context = Objects.requireNonNull(context);
+101             this.changeListener = Objects.requireNonNull(changeListener);
+102         }
+103 
+104         @SuppressWarnings(&quot;removal&quot;)
+105         @Override
+106         public void recordingStateChanged(Recording recording) {
+107             AccessController.doPrivileged((PrivilegedAction&lt;Void&gt;) () -&gt; {
+108                 try {
+109                     changeListener.recordingStateChanged(recording);
+110                 } catch (Throwable t) {
+111                     // Prevent malicious user to propagate exception callback in the wrong context
+112                     Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Unexpected exception in listener &quot; + changeListener.getClass()+ &quot; at recording state change&quot;);
+113                 }
+114                 return null;
+115             }, context);
+116         }
+117 
+118         @SuppressWarnings(&quot;removal&quot;)
+119         @Override
+120         public void recorderInitialized(FlightRecorder recorder) {
+121             AccessController.doPrivileged((PrivilegedAction&lt;Void&gt;) () -&gt; {
+122                 try  {
+123                     changeListener.recorderInitialized(recorder);
+124                 } catch (Throwable t) {
+125                     // Prevent malicious user to propagate exception callback in the wrong context
+126                     Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Unexpected exception in listener &quot; + changeListener.getClass()+ &quot; when initializing FlightRecorder&quot;);
+127                 }
+128                 return null;
+129             }, context);
+130         }
+131 
+132         public FlightRecorderListener getChangeListener() {
+133             return changeListener;
+134         }
+135     }
+136 
+137     private static final class DirectoryCleaner extends SimpleFileVisitor&lt;Path&gt; {
+138         @Override
+139         public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+140             Files.delete(path);
+141             return FileVisitResult.CONTINUE;
+142         }
+143 
+144         @Override
+145         public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+146             if (exc != null) {
+147                 throw exc;
+148             }
+149             Files.delete(dir);
+150             return FileVisitResult.CONTINUE;
+151         }
+152     }
+153 
+154     /**
+155      * Path created by the default file provider, and not
+156      * a malicious provider.
+157      *
+158      */
+159     public static final class SafePath implements Comparable&lt;SafePath&gt; {
+160         private final Path path;
+161         private final String text;
+162 
+163         public SafePath(Path p) {
+164             // sanitize
+165             text = p.toString();
+166             path = Paths.get(text);
+167         }
+168 
+169         public SafePath(String path) {
+170             this(Paths.get(path));
+171         }
+172 
+173         public Path toPath() {
+174             return path;
+175         }
+176 
+177         public File toFile() {
+178             return path.toFile();
+179         }
+180 
+181         @Override
+182         public String toString() {
+183             return text;
+184         }
+185 
+186         @Override
+187         public int compareTo(SafePath that) {
+188             return that.text.compareTo(this.text);
+189         }
+190 
+191         @Override
+192         public boolean equals(Object other) {
+193             if(other != null &amp;&amp; other instanceof SafePath s){
+194                 return this.toPath().equals(s.toPath());
+195             }
+196             return false;
+197         }
+198 
+199         @Override
+200         public int hashCode() {
+201             return this.toPath().hashCode();
+202         }
+203     }
+204 
+205     private interface RunnableWithCheckedException {
+206         public void run() throws Exception;
+207     }
+208 
+209     private interface CallableWithoutCheckException&lt;T&gt; {
+210         public T call();
+211     }
+212 
+213     public static void checkAccessFlightRecorder() throws SecurityException {
+214         @SuppressWarnings(&quot;removal&quot;)
+215         SecurityManager sm = System.getSecurityManager();
+216         if (sm != null) {
+217             sm.checkPermission(new FlightRecorderPermission(ACCESS_FLIGHT_RECORDER));
+218         }
+219     }
+220 
+221     public static void checkRegisterPermission() throws SecurityException {
+222         @SuppressWarnings(&quot;removal&quot;)
+223         SecurityManager sm = System.getSecurityManager();
+224         if (sm != null) {
+225             sm.checkPermission(new FlightRecorderPermission(REGISTER_EVENT));
+226         }
+227     }
+228 
+229     @SuppressWarnings(&quot;removal&quot;)
+230     private static &lt;U&gt; U doPrivilegedIOWithReturn(Callable&lt;U&gt; function) throws IOException {
+231         try {
+232             return AccessController.doPrivileged(new PrivilegedExceptionAction&lt;U&gt;() {
+233                 @Override
+234                 public U run() throws Exception {
+235                     return function.call();
+236                 }
+237             }, null);
+238         } catch (PrivilegedActionException e) {
+239             Throwable t = e.getCause();
+240             if (t instanceof IOException) {
+241                 throw (IOException) t;
+242             }
+243             throw new IOException(&quot;Unexpected error during I/O operation. &quot; + t.getMessage(), t);
+244         }
+245     }
+246 
+247     private static void doPriviligedIO(RunnableWithCheckedException function) throws IOException {
+248         doPrivilegedIOWithReturn(() -&gt; {
+249             function.run();
+250             return null;
+251         });
+252     }
+253 
+254     @SuppressWarnings(&quot;removal&quot;)
+255     private static void doPrivileged(Runnable function, Permission... perms) {
+256         AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {
+257             @Override
+258             public Void run() {
+259                 function.run();
+260                 return null;
+261             }
+262         }, null, perms);
+263     }
+264 
+265     @SuppressWarnings(&quot;removal&quot;)
+266     private static void doPrivileged(Runnable function) {
+267         AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {
+268             @Override
+269             public Void run() {
+270                 function.run();
+271                 return null;
+272             }
+273         });
+274     }
+275 
+276     @SuppressWarnings(&quot;removal&quot;)
+277     private static &lt;T&gt; T doPrivilegedWithReturn(CallableWithoutCheckException&lt;T&gt; function, Permission... perms) {
+278         return AccessController.doPrivileged(new PrivilegedAction&lt;T&gt;() {
+279             @Override
+280             public T run() {
+281                 return function.call();
+282             }
+283         }, null, perms);
+284     }
+285 
+286     public static List&lt;SafePath&gt; getPredefinedJFCFiles() {
+287         List&lt;SafePath&gt; list = new ArrayList&lt;&gt;();
+288         try (var ds = doPrivilegedIOWithReturn(() -&gt; Files.newDirectoryStream(JFC_DIRECTORY.toPath()))) {
+289             for (Path path : ds) {
+290                 SafePath s = new SafePath(path);
+291                 String text = s.toString();
+292                 if (text.endsWith(&quot;.jfc&quot;) &amp;&amp; !SecuritySupport.isDirectory(s)) {
+293                     list.add(s);
+294                 }
+295             }
+296         } catch (IOException ioe) {
+297             Logger.log(LogTag.JFR, LogLevel.WARN, &quot;Could not access .jfc-files in &quot; + JFC_DIRECTORY + &quot;, &quot; + ioe.getMessage());
+298         }
+299         return list;
+300     }
+301 
+302     static void makeVisibleToJFR(Class&lt;?&gt; clazz) {
+303         Module classModule = clazz.getModule();
+304         Modules.addReads(JFR_MODULE, classModule);
+305         if (clazz.getPackage() != null) {
+306             String packageName = clazz.getPackage().getName();
+307             Modules.addExports(classModule, packageName, JFR_MODULE);
+308             Modules.addOpens(classModule, packageName, JFR_MODULE);
+309         }
+310     }
+311 
+312     /**
+313      * Adds a qualified export of the internal.jdk.jfr.internal.event package
+314      * (for EventConfiguration and EventWriter)
+315      */
+316     static void addInternalEventExport(Class&lt;?&gt; clazz) {
+317         Modules.addExports(JFR_MODULE, EVENT_PACKAGE_NAME, clazz.getModule());
+318     }
+319 
+320     static void addEventsExport(Class&lt;?&gt; clazz) {
+321         Modules.addExports(JFR_MODULE, EVENTS_PACKAGE_NAME, clazz.getModule());
+322     }
+323 
+324     static void addReadEdge(Class&lt;?&gt; clazz) {
+325         Modules.addReads(clazz.getModule(), JFR_MODULE);
+326     }
+327 
+328     public static void registerEvent(Class&lt;? extends jdk.internal.event.Event&gt; eventClass) {
+329         doPrivileged(() -&gt;  MetadataRepository.getInstance().register(eventClass), new FlightRecorderPermission(REGISTER_EVENT));
+330     }
+331 
+332     public static void setProperty(String propertyName, String value) {
+333         doPrivileged(() -&gt; System.setProperty(propertyName, value), new PropertyPermission(propertyName, &quot;write&quot;));
+334     }
+335 
+336     static boolean getBooleanProperty(String propertyName) {
+337         return doPrivilegedWithReturn(() -&gt; Boolean.getBoolean(propertyName), new PropertyPermission(propertyName, &quot;read&quot;));
+338     }
+339 
+340     private static SafePath getPathInProperty(String prop, String subPath) {
+341         return doPrivilegedWithReturn(() -&gt; {
+342             String path = System.getProperty(prop);
+343             if (path == null) {
+344                 return null;
+345             }
+346             File file = subPath == null ? new File(path) : new File(path, subPath);
+347             return new SafePath(file.getAbsolutePath());
+348         }, new PropertyPermission(&quot;*&quot;, &quot;read&quot;));
+349     }
+350 
+351     // Called by JVM during initialization of JFR
+352     static Thread createRecorderThread(ThreadGroup systemThreadGroup, ClassLoader contextClassLoader) {
+353         // The thread should have permission = new Permission[0], and not &quot;modifyThreadGroup&quot; and &quot;modifyThread&quot; on the stack,
+354         // but it&#39;s hard circumvent if we are going to pass in system thread group in the constructor
+355         Thread thread = doPrivilegedWithReturn(() -&gt; new Thread(systemThreadGroup, &quot;JFR Recorder Thread&quot;), new RuntimePermission(&quot;modifyThreadGroup&quot;), new RuntimePermission(&quot;modifyThread&quot;));
+356         doPrivileged(() -&gt; thread.setContextClassLoader(contextClassLoader), new RuntimePermission(&quot;setContextClassLoader&quot;), new RuntimePermission(&quot;modifyThread&quot;));
+357         return thread;
+358     }
+359 
+360     static void registerShutdownHook(Thread shutdownHook) {
+361         doPrivileged(() -&gt; Runtime.getRuntime().addShutdownHook(shutdownHook), new RuntimePermission(&quot;shutdownHooks&quot;));
+362     }
+363 
+364     static void setUncaughtExceptionHandler(Thread thread, Thread.UncaughtExceptionHandler eh) {
+365         doPrivileged(() -&gt; thread.setUncaughtExceptionHandler(eh), new RuntimePermission(&quot;modifyThread&quot;));
+366     }
+367 
+368     static void clearDirectory(SafePath safePath) throws IOException {
+369         doPriviligedIO(() -&gt; Files.walkFileTree(safePath.toPath(), new DirectoryCleaner()));
+370     }
+371 
+372     static SafePath toRealPath(SafePath safePath, LinkOption... options) throws IOException {
+373         return new SafePath(doPrivilegedIOWithReturn(() -&gt; safePath.toPath().toRealPath(options)));
+374     }
+375 
+376     static boolean existDirectory(SafePath directory) throws IOException {
+377         return doPrivilegedIOWithReturn(() -&gt; Files.exists(directory.toPath()));
+378     }
+379 
+380     static RandomAccessFile createRandomAccessFile(SafePath path) throws Exception {
+381         return doPrivilegedIOWithReturn(() -&gt; new RandomAccessFile(path.toPath().toFile(), &quot;rw&quot;));
+382     }
+383 
+384     public static InputStream newFileInputStream(SafePath safePath) throws IOException {
+385         return doPrivilegedIOWithReturn(() -&gt; Files.newInputStream(safePath.toPath()));
+386     }
+387 
+388     public static long getFileSize(SafePath safePath) throws IOException {
+389         return doPrivilegedIOWithReturn(() -&gt; Files.size(safePath.toPath()));
+390     }
+391 
+392     static SafePath createDirectories(SafePath safePath) throws IOException {
+393         Path p = doPrivilegedIOWithReturn(() -&gt; Files.createDirectories(safePath.toPath()));
+394         return new SafePath(p);
+395     }
+396 
+397     public static boolean exists(SafePath safePath) throws IOException {
+398         // Files.exist(path) is allocation intensive
+399         return doPrivilegedIOWithReturn(() -&gt; safePath.toPath().toFile().exists());
+400     }
+401 
+402     public static boolean isDirectory(SafePath safePath) throws IOException {
+403         return doPrivilegedIOWithReturn(() -&gt; Files.isDirectory(safePath.toPath()));
+404     }
+405 
+406     static void delete(SafePath localPath) throws IOException {
+407         doPriviligedIO(() -&gt; Files.delete(localPath.toPath()));
+408     }
+409 
+410     static boolean isWritable(SafePath safePath) throws IOException {
+411         return doPrivilegedIOWithReturn(() -&gt; Files.isWritable(safePath.toPath()));
+412     }
+413 
+414     static ReadableByteChannel newFileChannelToRead(SafePath safePath) throws IOException {
+415         return doPrivilegedIOWithReturn(() -&gt; FileChannel.open(safePath.toPath(), StandardOpenOption.READ));
+416     }
+417 
+418     public static InputStream getResourceAsStream(String name) throws IOException {
+419         return doPrivilegedIOWithReturn(() -&gt; SecuritySupport.class.getResourceAsStream(name));
+420     }
+421 
+422     public static Reader newFileReader(SafePath safePath) throws FileNotFoundException, IOException {
+423         return doPrivilegedIOWithReturn(() -&gt; Files.newBufferedReader(safePath.toPath()));
+424     }
+425 
+426     static void setAccessible(Method method) {
+427         doPrivileged(() -&gt; method.setAccessible(true), new ReflectPermission(&quot;suppressAccessChecks&quot;));
+428     }
+429 
+430     static void setAccessible(Constructor&lt;?&gt; constructor) {
+431         doPrivileged(() -&gt; constructor.setAccessible(true), new ReflectPermission(&quot;suppressAccessChecks&quot;));
+432     }
+433 
+434     @SuppressWarnings(&quot;removal&quot;)
+435     public static void ensureClassIsInitialized(Class&lt;?&gt; clazz) {
+436         try {
+437             MethodHandles.Lookup lookup;
+438             if (System.getSecurityManager() == null) {
+439                 lookup = MethodHandles.privateLookupIn(clazz, LOOKUP);
+440             } else {
+441                 lookup = AccessController.doPrivileged(new PrivilegedExceptionAction&lt;&gt;() {
+442                     @Override
+443                     public MethodHandles.Lookup run() throws IllegalAccessException {
+444                         return MethodHandles.privateLookupIn(clazz, LOOKUP);
+445                     }
+446                 }, null, new ReflectPermission(&quot;suppressAccessChecks&quot;));
+447             }
+448             lookup.ensureInitialized(clazz);
+449         } catch (IllegalAccessException e) {
+450             throw new InternalError(e);
+451         } catch (PrivilegedActionException e) {
+452             throw new InternalError(e.getCause());
+453         }
+454     }
+455 
+456     @SuppressWarnings(&quot;removal&quot;)
+457     static Class&lt;?&gt; defineClass(Class&lt;?&gt; lookupClass, byte[] bytes) {
+458         return AccessController.doPrivileged(new PrivilegedAction&lt;Class&lt;?&gt;&gt;() {
+459             @Override
+460             public Class&lt;?&gt; run() {
+461                 try {
+462                     return MethodHandles.privateLookupIn(lookupClass, LOOKUP).defineClass(bytes);
+463                 } catch (IllegalAccessException e) {
+464                     throw new InternalError(e);
+465                 }
+466             }
+467         });
+468     }
+469 
+470     public static Thread createThreadWitNoPermissions(String threadName, Runnable runnable) {
+471         return doPrivilegedWithReturn(() -&gt; new Thread(runnable, threadName), new Permission[0]);
+472     }
+473 
+474     public static void setDaemonThread(Thread t, boolean daemon) {
+475       doPrivileged(()-&gt; t.setDaemon(daemon), new RuntimePermission(&quot;modifyThread&quot;));
+476     }
+477 
+478     public static SafePath getAbsolutePath(SafePath path) throws IOException {
+479         return new SafePath(doPrivilegedIOWithReturn((()-&gt; path.toPath().toAbsolutePath())));
+480     }
+481 
+482     private static final class Privileged extends FileAccess {
+483         @Override
+484         public RandomAccessFile openRAF(File f, String mode) throws IOException {
+485             return doPrivilegedIOWithReturn( () -&gt; new RandomAccessFile(f, mode));
+486         }
+487 
+488         @Override
+489         public  DirectoryStream&lt;Path&gt; newDirectoryStream(Path directory)  throws IOException  {
+490             return doPrivilegedIOWithReturn( () -&gt; Files.newDirectoryStream(directory));
+491         }
+492 
+493         @Override
+494         public  String getAbsolutePath(File f) throws IOException {
+495             return doPrivilegedIOWithReturn( () -&gt; f.getAbsolutePath());
+496         }
+497         @Override
+498         public long length(File f) throws IOException {
+499             return doPrivilegedIOWithReturn( () -&gt; f.length());
+500         }
+501 
+502         @Override
+503         public  long fileSize(Path p) throws IOException {
+504             return doPrivilegedIOWithReturn( () -&gt; Files.size(p));
+505         }
+506 
+507         @Override
+508         public boolean exists(Path p) throws IOException {
+509             return doPrivilegedIOWithReturn( () -&gt; Files.exists(p));
+510         }
+511 
+512         @Override
+513         public boolean isDirectory(Path p) {
+514             return doPrivilegedWithReturn( () -&gt; Files.isDirectory(p));
+515         }
+516 
+517         @Override
+518         public FileTime getLastModified(Path p) throws IOException {
+519             // Timestamp only needed when examining repository for other JVMs,
+520             // in which case an unprivileged mode should be used.
+521             throw new InternalError(&quot;Should not reach here&quot;);
+522         }
+523     }
+524 
+525 
+526 }
+    </pre>
+  </body>
+</html>

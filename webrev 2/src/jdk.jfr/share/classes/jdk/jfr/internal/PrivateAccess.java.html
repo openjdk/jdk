@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/internal/PrivateAccess.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.util.List;
+ 29 import java.util.Map;
+ 30 
+ 31 import jdk.jfr.AnnotationElement;
+ 32 import jdk.jfr.Configuration;
+ 33 import jdk.jfr.EventSettings;
+ 34 import jdk.jfr.EventType;
+ 35 import jdk.jfr.FlightRecorderPermission;
+ 36 import jdk.jfr.Recording;
+ 37 import jdk.jfr.SettingDescriptor;
+ 38 import jdk.jfr.ValueDescriptor;
+ 39 import jdk.jfr.internal.management.EventSettingsModifier;
+ 40 
+ 41 /**
+ 42  * Provides access to package private function in jdk.jfr.
+ 43  * &lt;p&gt;
+ 44  * The static initializer in this class loads the Settings class, which will
+ 45  * call {@link #setPrivateAccess(PrivateAccess)} on this class, which can be
+ 46  * used call to package protected methods.
+ 47  *
+ 48  * This is similar to how java.lang accesses package private methods in
+ 49  * java.lang.reflect.
+ 50  */
+ 51 public abstract class PrivateAccess {
+ 52     private static volatile PrivateAccess instance;
+ 53 
+ 54     public static PrivateAccess getInstance() {
+ 55         // Can&#39;t be initialized in &lt;clinit&gt; because it may
+ 56         // deadlock with FlightRecorderPermission.&lt;clinit&gt;
+ 57         if (instance == null) {
+ 58             // Will trigger
+ 59             // FlightRecorderPermission.&lt;clinit&gt;
+ 60             // which will call PrivateAccess.setPrivateAccess
+ 61             new FlightRecorderPermission(&quot;accessFlightRecorder&quot;);
+ 62         }
+ 63         return instance;
+ 64     }
+ 65 
+ 66     public static void setPrivateAccess(PrivateAccess pa) {
+ 67         instance = pa;
+ 68     }
+ 69 
+ 70     public abstract Type getType(Object o);
+ 71 
+ 72     public abstract Configuration newConfiguration(String name, String label, String description, String provider, Map&lt;String,String&gt; settings, String contents);
+ 73 
+ 74     public abstract EventType newEventType(PlatformEventType eventTypes);
+ 75 
+ 76     public abstract AnnotationElement newAnnotation(Type annotationType, List&lt;Object&gt; values, boolean boot);
+ 77 
+ 78     public abstract ValueDescriptor newValueDescriptor(String name, Type fieldType, List&lt;AnnotationElement&gt; annotations, int dimension, boolean constantPool, String fieldName);
+ 79 
+ 80     public abstract PlatformRecording getPlatformRecording(Recording r);
+ 81 
+ 82     public abstract PlatformEventType getPlatformEventType(EventType eventType);
+ 83 
+ 84     public abstract boolean isConstantPool(ValueDescriptor v);
+ 85 
+ 86     public abstract String getFieldName(ValueDescriptor v);
+ 87 
+ 88     public abstract ValueDescriptor newValueDescriptor(Class&lt;?&gt; type, String name);
+ 89 
+ 90     public abstract SettingDescriptor newSettingDescriptor(Type type, String name, String def, List&lt;AnnotationElement&gt; aes);
+ 91 
+ 92     public abstract void setAnnotations(ValueDescriptor v, List&lt;AnnotationElement&gt; a);
+ 93 
+ 94     public abstract void setAnnotations(SettingDescriptor s, List&lt;AnnotationElement&gt; a);
+ 95 
+ 96     public abstract boolean isUnsigned(ValueDescriptor v);
+ 97 
+ 98     public abstract PlatformRecorder getPlatformRecorder();
+ 99 
+100     public abstract EventSettings newEventSettings(EventSettingsModifier esm);
+101 
+102     public abstract boolean isVisible(EventType t);
+103 }
+    </pre>
+  </body>
+</html>

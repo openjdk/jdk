@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.management.jfr/share/classes/jdk/management/jfr/DiskRepository.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 package jdk.management.jfr;
+ 26 
+ 27 import java.io.Closeable;
+ 28 import java.io.IOException;
+ 29 import java.io.RandomAccessFile;
+ 30 import java.nio.ByteBuffer;
+ 31 import java.nio.channels.FileChannel;
+ 32 import java.nio.file.Files;
+ 33 import java.nio.file.Path;
+ 34 import java.nio.file.Paths;
+ 35 import java.nio.file.StandardOpenOption;
+ 36 import java.time.Duration;
+ 37 import java.time.Instant;
+ 38 import java.time.LocalDateTime;
+ 39 import java.time.OffsetDateTime;
+ 40 import java.time.ZoneOffset;
+ 41 import java.util.ArrayDeque;
+ 42 import java.util.ArrayList;
+ 43 import java.util.Collections;
+ 44 import java.util.Deque;
+ 45 import java.util.Iterator;
+ 46 import java.util.List;
+ 47 import java.util.Objects;
+ 48 import java.util.Queue;
+ 49 
+ 50 import jdk.jfr.internal.management.ChunkFilename;
+ 51 import jdk.jfr.internal.management.ManagementSupport;
+ 52 import jdk.jfr.internal.management.StreamBarrier;
+ 53 
+ 54 final class DiskRepository implements Closeable {
+ 55 
+ 56     static final class DiskChunk {
+ 57         final Path path;
+ 58         final long startTimeNanos;
+ 59         final DiskRepository repository;
+ 60         int referenceCount;
+ 61         Instant endTime;
+ 62         long size;
+ 63         long endTimeNanos;
+ 64 
+ 65         DiskChunk(DiskRepository repository, Path path, long startNanos) {
+ 66             this.repository = repository;
+ 67             this.path = path;
+ 68             this.startTimeNanos = startNanos;
+ 69             this.referenceCount = 1;
+ 70         }
+ 71 
+ 72         public void acquire() {
+ 73             referenceCount++;
+ 74         }
+ 75 
+ 76         public void release() {
+ 77             referenceCount--;
+ 78             if (referenceCount == 0) {
+ 79                 destroy();
+ 80             }
+ 81             if (referenceCount &lt; 0) {
+ 82                 throw new InternalError(&quot;Reference count below zero&quot;);
+ 83             }
+ 84         }
+ 85 
+ 86         private void destroy() {
+ 87             try {
+ 88                 Files.delete(path);
+ 89             } catch (IOException e) {
+ 90                 // Schedule for deletion later.
+ 91                 this.repository.deadChunks.add(this);
+ 92             }
+ 93         }
+ 94 
+ 95         public boolean isDead() {
+ 96             return referenceCount == 0;
+ 97         }
+ 98 
+ 99         public Path path() {
+100             return path;
+101         }
+102     }
+103 
+104     enum State {
+105         HEADER, EVENT_SIZE, EVENT_TYPE, CHECKPOINT_EVENT_TIMESTAMP, CHECKPOINT_EVENT_DURATION, CHECKPOINT_EVENT_DELTA,
+106         CHECKPOINT_EVENT_FLUSH_TYPE, CHECKPOINT_EVENT_POOL_COUNT, CHECKPOINT_EVENT_HEADER_TYPE,
+107         CHECKPOINT_EVENT_HEADER_ITEM_COUNT, CHECKPOINT_EVENT_HEADER_KEY, CHECKPOINT_EVENT_HEADER_BYTE_ARRAY_LENGTH,
+108         CHECKPOINT_EVENT_HEADER_BYTE_ARRAY_CONTENT, EVENT_PAYLOAD;
+109 
+110         public State next() {
+111             return State.values()[ordinal() + 1];
+112         }
+113     }
+114 
+115     static final byte CHECKPOINT_WITH_HEADER = (byte) 2;
+116     static final byte MODIFYING_STATE = (byte) 255;
+117     static final byte COMPLETE_STATE = (byte) 0;
+118     static final int HEADER_FILE_STATE_POSITION = 64;
+119     static final int HEADER_START_NANOS_POSITION = 32;
+120     static final int HEADER_SIZE = 68;
+121     static final int HEADER_FILE_DURATION = 40;
+122 
+123     private final Deque&lt;DiskChunk&gt; chunks = new ArrayDeque&lt;&gt;();
+124     private final Deque&lt;DiskChunk&gt; deadChunks = new ArrayDeque&lt;&gt;();
+125     private final Deque&lt;FileDump&gt; fileDumps = new ArrayDeque&lt;&gt;();
+126     private final boolean deleteDirectory;
+127     private final ByteBuffer buffer = ByteBuffer.allocate(256);
+128     private final Path directory;
+129     private final ChunkFilename chunkFilename;
+130     private final StreamBarrier barrier = new StreamBarrier();
+131 
+132     private RandomAccessFile raf;
+133     private RandomAccessFile previousRAF;
+134     private byte previousRAFstate;
+135     private int index;
+136     private int bufferIndex;
+137     private State state = State.HEADER;
+138     private byte[] currentByteArray;
+139     private long typeId;
+140     private int typeIdshift;
+141     private int sizeShift;
+142     private long payLoadSize;
+143     private int longValueshift;
+144     private int eventFieldSize;
+145     private int lastFlush;
+146     private DiskChunk currentChunk;
+147     private Duration maxAge;
+148     private long maxSize;
+149     private long size;
+150 
+151     public DiskRepository(Path path, boolean deleteDirectory) throws IOException {
+152         this.directory = path;
+153         this.deleteDirectory = deleteDirectory;
+<a name="2" id="anc2"></a><span class="line-modified">154         this.chunkFilename = ChunkFilename.newUnpriviliged(path);</span>
+155     }
+156 
+157     public synchronized void write(byte[] bytes) throws IOException {
+158         barrier.check();
+159         index = 0;
+160         lastFlush = 0;
+161         currentByteArray = bytes;
+162         while (index &lt; bytes.length) {
+163             switch (state) {
+164             case HEADER:
+165                 processInitialHeader();
+166                 break;
+167             case EVENT_SIZE:
+168                 processEventSize();
+169                 break;
+170             case EVENT_TYPE:
+171                 processEventTypeId();
+172                 break;
+173             case CHECKPOINT_EVENT_TIMESTAMP:
+174             case CHECKPOINT_EVENT_DURATION:
+175             case CHECKPOINT_EVENT_DELTA:
+176             case CHECKPOINT_EVENT_POOL_COUNT:
+177             case CHECKPOINT_EVENT_HEADER_TYPE:
+178             case CHECKPOINT_EVENT_HEADER_ITEM_COUNT:
+179             case CHECKPOINT_EVENT_HEADER_KEY:
+180             case CHECKPOINT_EVENT_HEADER_BYTE_ARRAY_LENGTH:
+181                 processNumericValueInEvent();
+182                 bufferIndex = 0;
+183                 break;
+184             case CHECKPOINT_EVENT_HEADER_BYTE_ARRAY_CONTENT:
+185                 processCheckpointHeader();
+186                 break;
+187             case CHECKPOINT_EVENT_FLUSH_TYPE:
+188                 processFlush();
+189                 break;
+190             case EVENT_PAYLOAD:
+191                 processEvent();
+192                 break;
+193             default:
+194                 break;
+195             }
+196         }
+197         // Don&#39;t write before header/file is complete
+198         if (raf == null) {
+199             return;
+200         }
+201         flush();
+202     }
+203 
+204     private void processFlush() throws IOException {
+205         byte b = nextByte(true);
+206         if ((b &amp; CHECKPOINT_WITH_HEADER) != 0) {
+207             state = State.CHECKPOINT_EVENT_POOL_COUNT;
+208         } else {
+209             state = State.EVENT_PAYLOAD;
+210         }
+211     }
+212 
+213     private void processNumericValueInEvent() {
+214         int b = nextByte(true);
+215         // longValue += (((long) (b &amp; 0x7FL)) &lt;&lt; longValueshift);
+216         if (b &gt;= 0 || longValueshift == 56) {
+217             state = state.next();
+218             // longValue = 0;
+219             longValueshift = 0;
+220         } else {
+221             longValueshift += 7;
+222         }
+223     }
+224 
+225     private void processEvent() {
+226         int left = currentByteArray.length - index;
+227         if (left &gt;= payLoadSize) {
+228             index = index + (int)payLoadSize;
+229             payLoadSize = 0;
+230             state = State.EVENT_SIZE;
+231         } else {
+232             index += left;
+233             payLoadSize -= left;
+234         }
+235     }
+236 
+237     private void processEventTypeId() {
+238         byte b = nextByte(true);
+239         long v = (b &amp; 0x7FL);
+240         typeId += (v &lt;&lt; typeIdshift);
+241         if (b &gt;= 0) {
+242             if (typeId == 1) {
+243                 state = State.CHECKPOINT_EVENT_TIMESTAMP;
+244             } else {
+245                 state = State.EVENT_PAYLOAD;
+246             }
+247             typeIdshift = 0;
+248             typeId = 0;
+249         } else {
+250             typeIdshift += 7;
+251         }
+252     }
+253 
+254     private void processEventSize() throws IOException {
+255         // End of chunk
+256         if (previousRAF != null) {
+257             flush();
+258             state = State.HEADER;
+259             return;
+260         }
+261 
+262         eventFieldSize++;
+263         byte b = nextByte(false);
+264         long v = (b &amp; 0x7F);
+265         payLoadSize += (v &lt;&lt; sizeShift);
+266         if (b &gt;= 0) {
+267             if (payLoadSize == 0) {
+268                 throw new IOException(&quot;Event size can&#39;t be null.&quot; + index);
+269             }
+270             state = State.EVENT_TYPE;
+271             sizeShift = 0;
+272             payLoadSize -= eventFieldSize;
+273             eventFieldSize = 0;
+274         } else {
+275             sizeShift += 7;
+276         }
+277     }
+278 
+279     private void processInitialHeader() throws IOException {
+280         buffer.put(bufferIndex, nextByte(false));
+281         if (bufferIndex == HEADER_SIZE) {
+282             writeInitialHeader();
+283             state = State.EVENT_SIZE;
+284             bufferIndex = 0;
+285             if (index != lastFlush + HEADER_SIZE) {
+286                 throw new IOException(&quot;Expected data before header to be flushed&quot;);
+287             }
+288             lastFlush = index;
+289         }
+290     }
+291 
+292     private void processCheckpointHeader() throws IOException {
+293         buffer.put(bufferIndex, nextByte(true));
+294         if (bufferIndex == HEADER_SIZE) {
+295             writeCheckpointHeader();
+296             state = State.EVENT_PAYLOAD;
+297             bufferIndex = 0;
+298         }
+299     }
+300 
+301     private void writeInitialHeader() throws IOException {
+302         DiskChunk previous = currentChunk;
+303         currentChunk = nextChunk();
+304         raf = new RandomAccessFile(currentChunk.path.toFile(), &quot;rw&quot;);
+305         byte fileState = buffer.get(HEADER_FILE_STATE_POSITION);
+306         buffer.put(HEADER_FILE_STATE_POSITION, MODIFYING_STATE);
+307         raf.write(buffer.array(), 0, HEADER_SIZE);
+308         // Complete previous chunk
+309         completePrevious(previous);
+310 
+311         raf.seek(HEADER_FILE_STATE_POSITION);
+312         raf.writeByte(fileState);
+313         raf.seek(HEADER_SIZE);
+314     }
+315 
+316     private void completePrevious(DiskChunk previous) throws IOException {
+317         if (previousRAF != null) {
+318             previousRAF.seek(HEADER_FILE_STATE_POSITION);
+319             previousRAF.writeByte(previousRAFstate);
+320             previousRAF.close();
+321             addChunk(previous);
+322             previousRAF = null;
+323             previousRAFstate = (byte) 0;
+324         }
+325     }
+326 
+327     private void writeCheckpointHeader() throws IOException {
+328         Objects.requireNonNull(raf);
+329         byte state = buffer.get(HEADER_FILE_STATE_POSITION);
+330         boolean complete = state == COMPLETE_STATE;
+331         buffer.put(HEADER_FILE_STATE_POSITION, MODIFYING_STATE);
+332         flush();
+333         long position = raf.getFilePointer();
+334         raf.seek(HEADER_FILE_STATE_POSITION);
+335         raf.writeByte(MODIFYING_STATE);
+336         raf.seek(0);
+337         raf.write(buffer.array(), 0, HEADER_SIZE);
+338         if (!complete) {
+339             raf.seek(HEADER_FILE_STATE_POSITION);
+340             raf.writeByte(state);
+341         } else {
+342             // will set state to complete when
+343             // header of next file is created.
+344             previousRAF = raf;
+345             previousRAFstate = state;
+346             currentChunk.size = Files.size(currentChunk.path);
+347             long durationNanos = buffer.getLong(HEADER_FILE_DURATION);
+348             long endTimeNanos = currentChunk.startTimeNanos + durationNanos;
+349             currentChunk.endTimeNanos = endTimeNanos;
+350             currentChunk.endTime = ManagementSupport.epochNanosToInstant(endTimeNanos);
+351             if (currentChunk.endTime.toEpochMilli() == barrier.getStreamEnd()) {
+352                 // Recording has been stopped, need to complete last chunk
+353                 completePrevious(currentChunk);
+354             }
+355         }
+356         raf.seek(position);
+357     }
+358 
+359     private void flush() throws IOException {
+360         int length = index - lastFlush;
+361         if (length != 0) {
+362             raf.write(currentByteArray, lastFlush, length);
+363             lastFlush = index;
+364         }
+365     }
+366 
+367     private byte nextByte(boolean inEvent) {
+368         byte b = currentByteArray[index];
+369         index++;
+370         bufferIndex++;
+371         if (inEvent) {
+372             payLoadSize--;
+373         }
+374         return b;
+375     }
+376 
+377     private DiskChunk nextChunk() throws IOException {
+378         long nanos = buffer.getLong(HEADER_START_NANOS_POSITION);
+379         long epochSecond = nanos / 1_000_000_000;
+380         int nanoOfSecond = (int) (nanos % 1_000_000_000);
+381         ZoneOffset z = OffsetDateTime.now().getOffset();
+382         LocalDateTime d = LocalDateTime.ofEpochSecond(epochSecond, nanoOfSecond, z);
+383         String filename = chunkFilename.next(d);
+384         return new DiskChunk(this, Paths.get(filename), nanos);
+385     }
+386 
+387     @Override
+388     public synchronized void close() throws IOException {
+389         completePrevious(currentChunk);
+390         if (raf != null) {
+391             raf.close();
+392         }
+393         for (FileDump dump: fileDumps) {
+394             dump.close();
+395         }
+396         deadChunks.addAll(chunks);
+397         if (currentChunk != null) {
+398             deadChunks.add(currentChunk);
+399         }
+400         cleanUpDeadChunk(Integer.MAX_VALUE);
+401         if (deleteDirectory) {
+402             try {
+403                 Files.delete(directory);
+404             } catch (IOException ioe) {
+405                 ManagementSupport.logDebug(&quot;Could not delete temp stream repository: &quot; + ioe.getMessage());
+406             }
+407         }
+408     }
+409 
+410     public synchronized void setMaxAge(Duration maxAge) {
+411         this.maxAge = maxAge;
+412         if (maxAge != null) {
+413             trimToAge(Instant.now().minus(maxAge));
+414         }
+415     }
+416 
+417     public synchronized void setMaxSize(long maxSize) {
+418         this.maxSize = maxSize;
+419         trimToSize();
+420     }
+421 
+422     private void trimToSize() {
+423         if (maxSize == 0) {
+424             return;
+425         }
+426         int count = 0;
+427         while (size &gt; maxSize &amp;&amp; chunks.size() &gt; 1) {
+428             removeOldestChunk();
+429             count++;
+430         }
+431         cleanUpDeadChunk(count + 10);
+432     }
+433 
+434 
+435     private void trimToAge(Instant oldest) {
+436         if (maxAge == null) {
+437             return;
+438         }
+439         int count = 0;
+440         while (chunks.size() &gt; 1) {
+441             DiskChunk oldestChunk = chunks.peekLast();
+442             if (oldestChunk.endTime.isAfter(oldest)) {
+443                 return;
+444             }
+445             removeOldestChunk();
+446             count++;
+447         }
+448         cleanUpDeadChunk(count + 10);
+449     }
+450 
+451     private void removeOldestChunk() {
+452         DiskChunk chunk = chunks.pollLast();
+453         chunk.release();
+454         size -= chunk.size;
+455     }
+456 
+457     public synchronized void onChunkComplete(long endTimeNanos) {
+458         while (!chunks.isEmpty()) {
+459             DiskChunk oldestChunk = chunks.peekLast();
+460             if (oldestChunk.startTimeNanos &lt; endTimeNanos) {
+461                 removeOldestChunk();
+462             } else {
+463                 break;
+464             }
+465         }
+466     }
+467 
+468     private void addChunk(DiskChunk chunk) {
+469         if (maxAge != null) {
+470             trimToAge(chunk.endTime.minus(maxAge));
+471         }
+472         chunks.addFirst(chunk);
+473         size += chunk.size;
+474         trimToSize();
+475 
+476         for (FileDump fd : fileDumps) {
+477             fd.add(chunk);
+478         }
+479         fileDumps.removeIf(FileDump::isComplete);
+480     }
+481 
+482     private void cleanUpDeadChunk(int maxCount) {
+483         int count = 0;
+484         Iterator&lt;DiskChunk&gt; iterator = deadChunks.iterator();
+485         while (iterator.hasNext()) {
+486             DiskChunk chunk = iterator.next();
+487             count++;
+488             try {
+489                 Files.delete(chunk.path);
+490                 iterator.remove();
+491             } catch (IOException e) {
+492                 // ignore
+493             }
+494             if (count == maxCount) {
+495                 return;
+496             }
+497         }
+498     }
+499 
+500     public synchronized void complete() {
+501         if (currentChunk != null) {
+502             try {
+503                 completePrevious(currentChunk);
+504             } catch (IOException ioe) {
+505                 ManagementSupport.logDebug(&quot;Could not complete chunk &quot; + currentChunk.path + &quot; : &quot; + ioe.getMessage());
+506             }
+507         }
+508     }
+509 
+510     public synchronized FileDump newDump(long endTime) {
+511         FileDump fd = new FileDump(endTime);
+512         // replay history by iterating from oldest to most recent
+513         Iterator&lt;DiskChunk&gt; it = chunks.descendingIterator();
+514         while (it.hasNext()) {
+515             DiskChunk dc = it.next();
+516             fd.add(dc);
+517         }
+518 
+519         if (!fd.isComplete()) {
+520             fileDumps.add(fd);
+521         }
+522         return fd;
+523     }
+524 
+525     public StreamBarrier activateStreamBarrier() {
+526         barrier.activate();
+527         return barrier;
+528     }
+529 }
+<a name="3" id="anc3"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="3" type="hidden" />
+</body>
+</html>

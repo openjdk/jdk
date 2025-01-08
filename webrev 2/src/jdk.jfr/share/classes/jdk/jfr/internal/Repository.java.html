@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/internal/Repository.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr.internal;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.nio.file.Files;
+ 30 import java.nio.file.Path;
+ 31 import java.time.DateTimeException;
+ 32 import java.time.LocalDateTime;
+ 33 import java.time.ZoneOffset;
+ 34 import java.util.HashSet;
+ 35 import java.util.Set;
+ 36 
+ 37 import jdk.jfr.internal.management.ChunkFilename;
+ 38 import jdk.jfr.internal.util.ValueFormatter;
+ 39 import jdk.jfr.internal.util.DirectoryCleaner;
+ 40 import jdk.jfr.internal.util.Utils;
+ 41 
+ 42 public final class Repository {
+ 43 
+ 44     private static final Path JAVA_IO_TMPDIR = Utils.getPathInProperty(&quot;java.io.tmpdir&quot;, null);
+ 45     private static final int MAX_REPO_CREATION_RETRIES = 1000;
+ 46     private static final Repository instance = new Repository();
+ 47     private static final String JFR_REPOSITORY_LOCATION_PROPERTY = &quot;jdk.jfr.repository&quot;;
+ 48     private final Set&lt;Path&gt; cleanupDirectories = new HashSet&lt;&gt;();
+ 49     private Path baseLocation;
+ 50     private Path repository;
+ 51     private ChunkFilename chunkFilename;
+ 52 
+ 53     private Repository() {
+ 54     }
+ 55 
+ 56     public static Repository getRepository() {
+ 57         return instance;
+ 58     }
+ 59 
+ 60     public synchronized void setBasePath(Path baseLocation) throws IOException {
+ 61         if(baseLocation.equals(this.baseLocation)) {
+ 62             Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Same base repository path &quot; + baseLocation.toString() + &quot; is set&quot;);
+ 63             return;
+ 64         }
+ 65         // Probe to see if repository can be created, needed for fail fast
+ 66         // during JVM startup or JFR.configure
+ 67         this.repository = createRepository(baseLocation);
+ 68         this.chunkFilename = null;
+ 69         try {
+ 70             // Remove so we don&#39;t &quot;leak&quot; repositories, if JFR is never started
+ 71             // and shutdown hook not added.
+ 72             Files.delete(repository);
+ 73         } catch (IOException ioe) {
+ 74             Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Could not delete disk repository &quot; + repository);
+ 75         }
+ 76         this.baseLocation = baseLocation;
+ 77     }
+ 78 
+ 79     public synchronized void ensureRepository() throws IOException {
+ 80         if (baseLocation == null) {
+ 81             setBasePath(JAVA_IO_TMPDIR);
+ 82         }
+ 83     }
+ 84 
+ 85     synchronized RepositoryChunk newChunk() {
+ 86         LocalDateTime timestamp = timestamp();
+ 87         try {
+ 88             if (!Files.exists(repository)) {
+ 89                 this.repository = createRepository(baseLocation);
+ 90                 JVM.setRepositoryLocation(repository.toString());
+ 91                 System.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, repository.toString());
+ 92                 cleanupDirectories.add(repository);
+ 93                 chunkFilename = null;
+ 94             }
+ 95             if (chunkFilename == null) {
+ 96                 chunkFilename = new ChunkFilename(repository);
+ 97             }
+ 98             String filename = chunkFilename.next(timestamp);
+ 99             return new RepositoryChunk(Path.of(filename));
+100         } catch (Exception e) {
+101             String errorMsg = String.format(&quot;Could not create chunk in repository %s, %s: %s&quot;, repository, e.getClass(), e.getMessage());
+102             Logger.log(LogTag.JFR, LogLevel.ERROR, errorMsg);
+103             JVM.abort(errorMsg);
+104             throw new InternalError(&quot;Could not abort after JFR disk creation error&quot;);
+105         }
+106     }
+107 
+108     private static LocalDateTime timestamp() {
+109         try {
+110             return LocalDateTime.now();
+111         } catch (DateTimeException d) {
+112             Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Could not create LocalDateTime with the default time zone. Using UTC time zone for chunk filename.&quot;);
+113             return LocalDateTime.now(ZoneOffset.UTC);
+114         }
+115     }
+116 
+117     private static Path createRepository(Path basePath) throws IOException {
+118         Path canonicalBaseRepositoryPath = createRealBasePath(basePath);
+119         Path f = null;
+120 
+121         String basename = ValueFormatter.formatDateTime(timestamp()) + &quot;_&quot; + JVM.getPid();
+122         String name = basename;
+123 
+124         int i = 0;
+125         for (; i &lt; MAX_REPO_CREATION_RETRIES; i++) {
+126             f = canonicalBaseRepositoryPath.resolve(name);
+127             if (tryToUseAsRepository(f)) {
+128                 break;
+129             }
+130             name = basename + &quot;_&quot; + i;
+131         }
+132 
+133         if (i == MAX_REPO_CREATION_RETRIES) {
+134             throw new IOException(&quot;Unable to create JFR repository directory using base location (&quot; + basePath + &quot;)&quot;);
+135         }
+136         return f.toRealPath();
+137     }
+138 
+139     private static Path createRealBasePath(Path path) throws IOException {
+140         if (Files.exists(path)) {
+141             if (!Files.isWritable(path)) {
+142                 throw new IOException(&quot;JFR repository directory (&quot; + path.toString() + &quot;) exists, but isn&#39;t writable&quot;);
+143             }
+144             return path.toRealPath();
+145         }
+146         return Files.createDirectories(path).toRealPath();
+147     }
+148 
+149     private static boolean tryToUseAsRepository(Path path) {
+150         Path parent = path.getParent();
+151         if (parent == null) {
+152             return false;
+153         }
+154         try {
+155             Files.createDirectories(path);
+156         } catch (Exception e) {
+157             // file already existed or some other problem occurred
+158         }
+159         if (!Files.exists(path)) {
+160             return false;
+161         }
+162         if (!Files.isDirectory(path)) {
+163             return false;
+164         }
+165         return true;
+166     }
+167 
+168     synchronized void clear() {
+169         if (Options.getPreserveRepository()) {
+170             return;
+171         }
+172 
+173         for (Path p : cleanupDirectories) {
+174             try {
+175                 DirectoryCleaner.clear(p);
+176                 Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Removed repository &quot; + p);
+177             } catch (IOException e) {
+178                 Logger.log(LogTag.JFR, LogLevel.INFO, &quot;Repository &quot; + p + &quot; could not be removed at shutdown: &quot; + e.getMessage());
+179             }
+180         }
+181     }
+182 
+183     public synchronized Path getRepositoryPath() {
+184         return repository;
+185     }
+186 
+187     public synchronized Path getBaseLocation() {
+188         return baseLocation;
+189     }
+190 
+191 }
+    </pre>
+  </body>
+</html>

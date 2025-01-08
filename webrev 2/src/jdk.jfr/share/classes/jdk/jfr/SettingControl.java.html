@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.jfr/share/classes/jdk/jfr/SettingControl.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import java.util.Set;
+ 29 
+ 30 /**
+ 31  * Base class to extend to create setting controls.
+ 32  * &lt;p&gt;
+ 33  * The following example shows a naive implementation of a setting control for
+ 34  * regular expressions:
+ 35  *
+ 36  * {@snippet class=&quot;Snippets&quot; region=&quot;SettingControlOverview1&quot;}
+ 37  *
+ 38  * The {@code setValue(String)}, {@code getValue()} and
+ 39  * {@code combine(Set&lt;String&gt;)} methods are invoked when a setting value
+ 40  * changes, which typically happens when a recording is started or stopped. The
+ 41  * {@code combine(Set&lt;String&gt;)} method is invoked to resolve what value to use
+ 42  * when multiple recordings are running at the same time.
+ 43  * &lt;p&gt;
+ 44  * The setting control must have a default constructor that can be invoked when
+ 45  * the event is registered.
+ 46  * &lt;p&gt;
+ 47  * To use a setting control with an event, add a method that returns a
+ 48  * {@code boolean} value and takes the setting control as a parameter. Annotate
+ 49  * the method with the {@code @SettingDefinition} annotation. By default, the
+ 50  * method name is used as the setting name, but the name can be set explicitly
+ 51  * by using the {@code @Name} annotation. If the method returns {@code true},
+ 52  * the event will be committed.
+ 53  * &lt;p&gt;
+ 54  * It is recommended that the {@code setValue(String)} method updates an
+ 55  * efficient data structure that can be quickly checked when the event is
+ 56  * committed.
+ 57  * &lt;p&gt;
+ 58  * The following example shows how to create an event that uses the
+ 59  * regular expression filter defined above.
+ 60  *
+ 61  * {@snippet class=&quot;Snippets&quot; region=&quot;SettingControlOverview2&quot;}
+ 62  *
+ 63  * &lt;p&gt;
+ 64  * The following example shows how an event can be filtered by assigning the
+ 65  * {@code &quot;uriFilter&quot;} setting with the specified regular expressions.
+ 66  *
+ 67  * {@snippet class=&quot;Snippets&quot; region=&quot;SettingControlOverview3&quot;}
+ 68  *
+ 69  * @see SettingDefinition
+ 70  *
+ 71  * @since 9
+ 72  */
+ 73 @MetadataDefinition
+ 74 public abstract class SettingControl {
+ 75 
+ 76     /**
+ 77      * Constructor for invocation by subclass constructors.
+ 78      */
+ 79     protected SettingControl() {
+ 80     }
+ 81 
+ 82     /**
+ 83      * Combines the setting values for all running recordings into one value when
+ 84      * multiple recordings are running at the same time,
+ 85      * &lt;p&gt;
+ 86      * The semantics of how setting values are combined depends on the setting
+ 87      * control that is implemented, but all recordings should get at least all the
+ 88      * events they request.
+ 89      * &lt;p&gt;
+ 90      * This method should have no side effects, because the caller might cache values.
+ 91      * This method should never return {@code null} or throw an exception. If a
+ 92      * value is not valid for this setting control, the value should be ignored.
+ 93      * &lt;p&gt;
+ 94      * Examples:
+ 95      * &lt;p&gt;
+ 96      * if the setting control represents a threshold and three recordings are
+ 97      * running at the same time with the setting values {@code &quot;10 ms&quot;},
+ 98      * {@code &quot;8 s&quot;}, and {@code  &quot;1 ms&quot;}, this method returns {@code &quot;1 ms&quot;}
+ 99      * because it means that all recordings get at least all the requested data.
+100      * &lt;p&gt;
+101      * If the setting control represents a set of names and two recordings are
+102      * running at the same time with the setting values {@code &quot;Smith, Jones&quot;} and {@code &quot;Jones,
+103      * Williams&quot;} the returned value is {@code &quot;Smith, Jones, Williams&quot;} because all names would be accepted.
+104      * &lt;p&gt;
+105      * If the setting control represents a boolean condition and four recordings are
+106      * running at the same time with the following values {@code &quot;true&quot;}, {@code &quot;false&quot;}, {@code &quot;false&quot;}, and
+107      * {@code &quot;incorrect&quot;}, this method returns {@code &quot;true&quot;}, because all
+108      * recordings get at least all the requested data.
+109      *
+110      * @param settingValues the set of values, not {@code null}
+111      *
+112      * @return the value to use, not {@code null}
+113      */
+114     public abstract String combine(Set&lt;String&gt; settingValues);
+115 
+116     /**
+117      * Sets the value for this setting.
+118      * &lt;p&gt;
+119      * If the setting value is not valid for this setting, this method
+120      * does not throw an exception. Instead, the value is ignored.
+121      *
+122      * @param settingValue the string value, not {@code null}
+123      */
+124     public abstract void setValue(String settingValue);
+125 
+126     /**
+127      * Returns the currently used value for this setting, not {@code null}.
+128      * &lt;p&gt;
+129      * The value returned by this method is valid as an argument to both
+130      * the {@code setValue(String)} method and {@code combine(Set)} method.
+131      * &lt;p&gt;
+132      * This method is invoked when an event is registered to obtain the
+133      * default value. It is therefore important that a valid value can be
+134      * returned immediately after an instance of this class is created. It is
+135      * not valid to return {@code null}.
+136      *
+137      * @return the setting value, not {@code null}
+138      */
+139     public abstract String getValue();
+140 }
+    </pre>
+  </body>
+</html>

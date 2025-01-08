@@ -1,0 +1,37 @@
+diff a/test/jdk/jdk/jfr/tool/TestAssemble.java b/test/jdk/jdk/jfr/tool/TestAssemble.java
+--- a/test/jdk/jdk/jfr/tool/TestAssemble.java
++++ b/test/jdk/jdk/jfr/tool/TestAssemble.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.
+@@ -33,11 +33,10 @@
+ import jdk.jfr.Name;
+ import jdk.jfr.Recording;
+ import jdk.jfr.consumer.RecordedEvent;
+ import jdk.jfr.consumer.RecordingFile;
+ import jdk.jfr.internal.Repository;
+-import jdk.jfr.internal.SecuritySupport.SafePath;
+ import jdk.test.lib.Asserts;
+ import jdk.test.lib.process.OutputAnalyzer;
+ 
+ /**
+  * @test
+@@ -78,11 +77,11 @@
+             Path tmp = dir.resolve("chunk-part-" + i + ".jfr");
+             recordings[i].dump(tmp);
+             expectedCount += countEventInRecording(tmp);
+         }
+ 
+-        SafePath repository = Repository.getRepository().getRepositoryPath();
++        Path repository = Repository.getRepository().getRepositoryPath();
+         Path destinationPath = Paths.get("reconstructed.jfr");
+ 
+         String directory = repository.toString();
+         String destination = destinationPath.toAbsolutePath().toString();
+ 

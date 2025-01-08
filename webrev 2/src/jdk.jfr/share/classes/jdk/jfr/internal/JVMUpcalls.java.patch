@@ -1,0 +1,48 @@
+diff a/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMUpcalls.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMUpcalls.java
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMUpcalls.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/JVMUpcalls.java
+@@ -1,7 +1,7 @@
+ /*
+- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
++ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  *
+  * This code is free software; you can redistribute it and/or modify it
+  * under the terms of the GNU General Public License version 2 only, as
+  * published by the Free Software Foundation.  Oracle designates this
+@@ -62,11 +62,10 @@
+             if (jdk.internal.event.Event.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
+                 if (!JVMSupport.shouldInstrument(Utils.isJDKClass(clazz), clazz.getName())) {
+                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + clazz.getName() + " since container support is missing");
+                     return oldBytes;
+                 }
+-                EventWriterKey.ensureEventWriterFactory();
+                 EventConfiguration configuration = JVMSupport.getConfiguration(clazz.asSubclass(jdk.internal.event.Event.class));
+                 if (configuration == null) {
+                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "No event configuration found for " + clazz.getName() + ". Ignoring instrumentation request.");
+                     // Probably triggered by some other agent
+                     return oldBytes;
+@@ -122,11 +121,10 @@
+                 if (!mr.isEnabled(ei.getEventName()) && !ei.isEnabled() || !ei.isRegistered()) {
+                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for event type " + eventName + " since event was disabled on class load");
+                     return oldBytes;
+                 }
+             }
+-            EventWriterKey.ensureEventWriterFactory();
+             Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
+             byte[] bytes = ei.buildInstrumented();
+             Bytecode.log(ei.getClassName() + "(" + traceId + ")", bytes);
+             return bytes;
+         } catch (Throwable t) {
+@@ -153,8 +151,10 @@
+      * @param contextClassLoader the context class loader.
+      *
+      * @return a new thread
+      */
+     static Thread createRecorderThread(ThreadGroup systemThreadGroup, ClassLoader contextClassLoader) {
+-        return SecuritySupport.createRecorderThread(systemThreadGroup, contextClassLoader);
++        Thread thread = new Thread(systemThreadGroup, "JFR Recorder Thread");
++        thread.setContextClassLoader(contextClassLoader);
++        return thread;
+     }
+ }

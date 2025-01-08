@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/consumer/RecordingStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="RecordingFile.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="../internal/ChunkInputStream.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/consumer/RecordingStream.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 25,12 ***</span>
+  
+  package jdk.jfr.consumer;
+  
+  import java.io.IOException;
+  import java.nio.file.Path;
+<span class="line-removed">- import java.security.AccessControlContext;</span>
+<span class="line-removed">- import java.security.AccessController;</span>
+  import java.time.Duration;
+  import java.time.Instant;
+  import java.util.Collections;
+  import java.util.List;
+  import java.util.Map;
+<span class="line-new-header">--- 25,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 43,11 ***</span>
+  import jdk.jfr.EventType;
+  import jdk.jfr.Recording;
+  import jdk.jfr.RecordingState;
+  import jdk.jfr.internal.PlatformRecording;
+  import jdk.jfr.internal.PrivateAccess;
+<span class="line-removed">- import jdk.jfr.internal.SecuritySupport;</span>
+  import jdk.jfr.internal.util.Utils;
+  import jdk.jfr.internal.consumer.EventDirectoryStream;
+  import jdk.jfr.internal.management.StreamBarrier;
+  
+  /**
+<span class="line-new-header">--- 41,10 ---</span>
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 96,22 ***</span>
+      public RecordingStream() {
+          this(Map.of());
+      }
+  
+      private RecordingStream(Map&lt;String, String&gt; settings) {
+<span class="line-removed">-         SecuritySupport.checkAccessFlightRecorder();</span>
+<span class="line-removed">-         @SuppressWarnings(&quot;removal&quot;)</span>
+<span class="line-removed">-         AccessControlContext acc = AccessController.getContext();</span>
+          this.recording = new Recording();
+          this.creationTime = Instant.now();
+          this.recording.setName(&quot;Recording Stream: &quot; + creationTime);
+          try {
+              PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+              this.directoryStream = new EventDirectoryStream(
+<span class="line-removed">-                 acc,</span>
+                  null,
+<span class="line-removed">-                 SecuritySupport.PRIVILEGED,</span>
+                  pr,
+                  configurations(),
+                  false
+              );
+          } catch (IOException ioe) {
+<span class="line-new-header">--- 93,17 ---</span>
+</pre>
+<center><a href="RecordingFile.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../index.html" target="_top">index</a> <a href="../internal/ChunkInputStream.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

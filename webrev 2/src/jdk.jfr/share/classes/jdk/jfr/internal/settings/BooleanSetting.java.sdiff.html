@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sdiff src/jdk.jfr/share/classes/jdk/jfr/internal/settings/BooleanSetting.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="../periodic/PeriodicTask.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="CutoffSetting.java.sdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/settings/BooleanSetting.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<table>
+<tr valign="top">
+<td>
+<hr />
+<pre>
+ 1 /*
+<span class="line-modified"> 2  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.</span>
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal.settings;
+27 
+28 import java.util.Objects;
+29 import java.util.Set;
+30 
+
+31 import jdk.jfr.internal.PlatformEventType;
+32 
+<span class="line-modified">33 abstract class BooleanSetting extends JDKSettingControl {</span>
+34     private final PlatformEventType eventType;
+35     private final String defaultValue;
+36     private String value;
+37 
+38     public BooleanSetting(PlatformEventType eventType, String defaultValue) {
+39         this.eventType = Objects.requireNonNull(eventType);
+40         this.defaultValue = defaultValue;
+41         this.value = defaultValue;
+42         if (parse(defaultValue) == null) {
+43             throw new InternalError(&quot;Only &#39;true&#39; or &#39;false&#39; is allowed with class BooleanSetting&quot;);
+44         }
+45     }
+46 
+47     protected abstract void apply(PlatformEventType eventType, boolean value);
+48 
+49     @Override
+50     public String combine(Set&lt;String&gt; values) {
+51         if (values.contains(&quot;true&quot;)) {
+52             return &quot;true&quot;;
+53         }
+</pre>
+</td>
+<td>
+<hr />
+<pre>
+ 1 /*
+<span class="line-modified"> 2  * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+ 3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 4  *
+ 5  * This code is free software; you can redistribute it and/or modify it
+ 6  * under the terms of the GNU General Public License version 2 only, as
+ 7  * published by the Free Software Foundation.  Oracle designates this
+ 8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+ 9  * by Oracle in the LICENSE file that accompanied this code.
+10  *
+11  * This code is distributed in the hope that it will be useful, but WITHOUT
+12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+14  * version 2 for more details (a copy is included in the LICENSE file that
+15  * accompanied this code).
+16  *
+17  * You should have received a copy of the GNU General Public License version
+18  * 2 along with this work; if not, write to the Free Software Foundation,
+19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+20  *
+21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+22  * or visit www.oracle.com if you need additional information or have any
+23  * questions.
+24  */
+25 
+26 package jdk.jfr.internal.settings;
+27 
+28 import java.util.Objects;
+29 import java.util.Set;
+30 
+<span class="line-added">31 import jdk.jfr.SettingControl;</span>
+32 import jdk.jfr.internal.PlatformEventType;
+33 
+<span class="line-modified">34 abstract class BooleanSetting extends SettingControl {</span>
+35     private final PlatformEventType eventType;
+36     private final String defaultValue;
+37     private String value;
+38 
+39     public BooleanSetting(PlatformEventType eventType, String defaultValue) {
+40         this.eventType = Objects.requireNonNull(eventType);
+41         this.defaultValue = defaultValue;
+42         this.value = defaultValue;
+43         if (parse(defaultValue) == null) {
+44             throw new InternalError(&quot;Only &#39;true&#39; or &#39;false&#39; is allowed with class BooleanSetting&quot;);
+45         }
+46     }
+47 
+48     protected abstract void apply(PlatformEventType eventType, boolean value);
+49 
+50     @Override
+51     public String combine(Set&lt;String&gt; values) {
+52         if (values.contains(&quot;true&quot;)) {
+53             return &quot;true&quot;;
+54         }
+</pre>
+</td>
+</tr>
+</table>
+<center><a href="../periodic/PeriodicTask.java.sdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="CutoffSetting.java.sdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>

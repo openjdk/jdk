@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>New src/jdk.management.jfr/share/classes/jdk/management/jfr/RemoteRecordingStream.java</title>
+    <link rel="stylesheet" href="../../../../../../../style.css" />
+  </head>
+  <body>
+    <pre>
+  1 /*
+  2  * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.management.jfr;
+ 27 
+ 28 import java.io.IOException;
+ 29 import java.io.RandomAccessFile;
+ 30 import java.nio.channels.FileChannel;
+ 31 import java.nio.file.Files;
+ 32 import java.nio.file.Path;
+ 33 import java.nio.file.Paths;
+ 34 import java.nio.file.StandardOpenOption;
+ 35 import java.time.Duration;
+ 36 import java.time.Instant;
+ 37 import java.util.ArrayList;
+ 38 import java.util.Collections;
+ 39 import java.util.HashMap;
+ 40 import java.util.List;
+ 41 import java.util.Map;
+ 42 import java.util.Objects;
+ 43 import java.util.concurrent.Future;
+ 44 import java.util.function.Consumer;
+ 45 import javax.management.JMX;
+ 46 import javax.management.MBeanServerConnection;
+ 47 import javax.management.ObjectName;
+ 48 
+ 49 import jdk.jfr.Configuration;
+ 50 import jdk.jfr.EventSettings;
+ 51 import jdk.jfr.EventType;
+ 52 import jdk.jfr.Recording;
+ 53 import jdk.jfr.RecordingState;
+ 54 import jdk.jfr.consumer.EventStream;
+ 55 import jdk.jfr.consumer.MetadataEvent;
+ 56 import jdk.jfr.consumer.RecordedEvent;
+ 57 import jdk.jfr.consumer.RecordingStream;
+ 58 import jdk.jfr.internal.management.EventSettingsModifier;
+ 59 import jdk.jfr.internal.management.ManagementSupport;
+ 60 import jdk.jfr.internal.management.StreamBarrier;
+ 61 import jdk.management.jfr.DiskRepository.DiskChunk;
+ 62 import jdk.jfr.internal.management.EventByteStream;
+ 63 
+ 64 /**
+ 65  * An implementation of an {@link EventStream} that can serialize events over
+ 66  * the network using an {@link MBeanServerConnection}.
+ 67  * &lt;p&gt;
+ 68  * The following example shows how to record garbage collection pauses and CPU
+ 69  * usage on a remote host and print the events to standard out.
+ 70  *
+ 71  * &lt;pre&gt;
+ 72  *     {@literal
+ 73  *     String host = &quot;com.example&quot;;
+ 74  *     int port = 4711;
+ 75  *
+ 76  *     String url = &quot;service:jmx:rmi:///jndi/rmi://&quot; + host + &quot;:&quot; + port + &quot;/jmxrmi&quot;;
+ 77  *
+ 78  *     JMXServiceURL u = new JMXServiceURL(url);
+ 79  *     JMXConnector c = JMXConnectorFactory.connect(u);
+ 80  *     MBeanServerConnection conn = c.getMBeanServerConnection();
+ 81  *
+ 82  *     try (var rs = new RemoteRecordingStream(conn)) {
+ 83  *         rs.enable(&quot;jdk.GCPhasePause&quot;).withoutThreshold();
+ 84  *         rs.enable(&quot;jdk.CPULoad&quot;).withPeriod(Duration.ofSeconds(1));
+ 85  *         rs.onEvent(&quot;jdk.CPULoad&quot;, System.out::println);
+ 86  *         rs.onEvent(&quot;jdk.GCPhasePause&quot;, System.out::println);
+ 87  *         rs.start();
+ 88  *     }
+ 89  *     }
+ 90  * &lt;/pre&gt;
+ 91  *
+ 92  * @since 16
+ 93  */
+ 94 public final class RemoteRecordingStream implements EventStream {
+ 95     private static final String ENABLED = &quot;enabled&quot;;
+ 96 
+ 97     static final class RemoteSettings implements EventSettingsModifier {
+ 98 
+ 99         private final FlightRecorderMXBean mbean;
+100         private final long recordingId;
+101 
+102         RemoteSettings(FlightRecorderMXBean mbean, long recordingId) {
+103             this.mbean = mbean;
+104             this.recordingId = recordingId;
+105         }
+106 
+107         @Override
+108         public void with(String name, String value) {
+109             Objects.requireNonNull(name, &quot;name&quot;);
+110             Objects.requireNonNull(value, &quot;value&quot;);
+111             // FlightRecorderMXBean implementation always returns
+112             // new instance of Map so no need to create new here.
+113             Map&lt;String, String&gt; newSettings = getEventSettings();
+114             newSettings.put(name, value);
+115             mbean.setRecordingSettings(recordingId, newSettings);
+116         }
+117 
+118         @Override
+119         public Map&lt;String, String&gt; toMap() {
+120             return getEventSettings();
+121         }
+122 
+123         private Map&lt;String, String&gt; getEventSettings() {
+124             return mbean.getRecordingSettings(recordingId);
+125         }
+126     }
+127 
+128     // Reference to stream is released when EventStream::close is called
+129     static final class ChunkConsumer implements Consumer&lt;Long&gt; {
+130 
+131         private final DiskRepository repository;
+132 
+133         ChunkConsumer(DiskRepository repository) {
+134             this.repository = repository;
+135         }
+136 
+137         @Override
+138         public void accept(Long endNanos) {
+139             repository.onChunkComplete(endNanos);
+140         }
+141     }
+142 
+143     private static final ObjectName OBJECT_NAME = MBeanUtils.createObjectName();
+144 
+145     final Path path;
+146     final FlightRecorderMXBean mbean;
+147     final long recordingId;
+148     final EventStream stream;
+149     final DiskRepository repository;
+150     final Instant creationTime;
+151     final Object lock = new Object();
+152     volatile Instant startTime;
+153     volatile Instant endTime;
+154     volatile boolean closed;
+155     // always guarded by lock
+156     private boolean started;
+157     private Duration maxAge;
+158     private long maxSize;
+159 
+160     /**
+161      * Creates an event stream that operates against a {@link MBeanServerConnection}
+162      * that has a registered {@link FlightRecorderMXBean}.
+163      * &lt;p&gt;
+164      * To configure event settings, use {@link #setSettings(Map)}.
+165      *
+166      * @param connection the {@code MBeanServerConnection} where the
+167      *                   {@code FlightRecorderMXBean} is registered, not
+168      *                   {@code null}
+169      *
+170      * @throws IOException       if a stream can&#39;t be opened, an I/O error occurs
+171      *                           when trying to access the repository or the
+172      *                           {@code FlightRecorderMXBean}
+173      */
+174     public RemoteRecordingStream(MBeanServerConnection connection) throws IOException {
+175         this(connection, makeTempDirectory(), true);
+176     }
+177 
+178     /**
+179      * Creates an event stream that operates against a {@link MBeanServerConnection}
+180      * that has a registered {@link FlightRecorderMXBean}.
+181      * &lt;p&gt;
+182      * To configure event settings, use {@link #setSettings(Map)}.
+183      *
+184      * @param connection the {@code MBeanServerConnection} where the
+185      *                   {@code FlightRecorderMXBean} is registered, not
+186      *                   {@code null}
+187      *
+188      * @param directory  the directory to store event data that is downloaded, not
+189      *                   {@code null}
+190      *
+191      * @throws IOException       if a stream can&#39;t be opened, an I/O error occurs
+192      *                           when trying to access the repository or the
+193      *                           {@code FlightRecorderMXBean}
+194      */
+195     public RemoteRecordingStream(MBeanServerConnection connection, Path directory) throws IOException {
+196         this(connection, directory, false);
+197     }
+198 
+199     @SuppressWarnings(&quot;removal&quot;)
+200     private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
+201         Objects.requireNonNull(connection, &quot;connection&quot;);
+202         Objects.requireNonNull(directory, &quot;directory&quot;);
+203         path = directory;
+204         if (!Files.exists(path)) {
+205             throw new IOException(&quot;Download directory doesn&#39;t exist&quot;);
+206         }
+207 
+208         if (!Files.isDirectory(path)) {
+209             throw new IOException(&quot;Download location must be a directory&quot;);
+210         }
+211         checkFileAccess(path);
+212         creationTime = Instant.now();
+213         mbean = createProxy(connection);
+214         recordingId = createRecording();
+215         stream = ManagementSupport.newEventDirectoryStream(path, configurations(mbean));
+216         stream.setStartTime(Instant.MIN);
+217         repository = new DiskRepository(path, delete);
+218         ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
+219     }
+220 
+221     private List&lt;Configuration&gt; configurations(FlightRecorderMXBean mbean) {
+222         List&lt;ConfigurationInfo&gt; cis = mbean.getConfigurations();
+223         List&lt;Configuration&gt; confs = new ArrayList&lt;&gt;(cis.size());
+224         for (ConfigurationInfo ci : cis) {
+225             confs.add(ManagementSupport.newConfiguration(ci.getName(), ci.getLabel(), ci.getDescription(),
+226                     ci.getProvider(), ci.getSettings(), ci.getContents()));
+227         }
+228         return Collections.unmodifiableList(confs);
+229     }
+230 
+231     @Override
+232     public void onMetadata(Consumer&lt;MetadataEvent&gt; action) {
+233         stream.onMetadata(action);
+234     }
+235 
+236     private static void checkFileAccess(Path directory) throws IOException {
+237         RandomAccessFile f = null;
+238         try {
+239             Path testFile = directory.resolve(&quot;test-access&quot;);
+240             f = new RandomAccessFile(testFile.toFile(), &quot;rw&quot;);
+241             f.write(0);
+242             f.seek(0);
+243             f.read();
+244             f.close();
+245             Files.delete(testFile);
+246         } catch (Exception e) {
+247             closeSilently(f);
+248             throw new IOException(&quot;Could not read/write/delete in directory&quot; + directory + &quot; :&quot; + e.getMessage());
+249         }
+250     }
+251 
+252     private static void closeSilently(RandomAccessFile f) {
+253         if (f == null) {
+254             return;
+255         }
+256         try {
+257             f.close();
+258         } catch (IOException ioe) {
+259             // ignore
+260         }
+261     }
+262 
+263     private static FlightRecorderMXBean createProxy(MBeanServerConnection connection) throws IOException {
+264         try {
+265             return JMX.newMXBeanProxy(connection, OBJECT_NAME, FlightRecorderMXBean.class);
+266         } catch (Exception e) {
+267             throw new IOException(&quot;Could not create proxy for FlightRecorderMXBean: &quot; + e.getMessage(), e);
+268         }
+269     }
+270 
+271     private long createRecording() throws IOException {
+272         try {
+273             long id = mbean.newRecording();
+274             Map&lt;String, String&gt; options = new HashMap&lt;&gt;();
+275             options.put(&quot;name&quot;, EventByteStream.NAME + &quot;: &quot; + creationTime);
+276             mbean.setRecordingOptions(id, options);
+277             return id;
+278         } catch (Exception e) {
+279             throw new IOException(&quot;Could not create new recording: &quot; + e.getMessage(), e);
+280         }
+281     }
+282 
+283     /**
+284      * Replaces all settings for this recording stream.
+285      * &lt;p&gt;
+286      * The following example connects to a remote host and stream events using
+287      * settings from the &quot;default&quot; configuration.
+288      *
+289      * &lt;pre&gt;
+290      * {
+291      *     {@literal
+292      *
+293      *     String host = &quot;com.example&quot;;
+294      *     int port = 4711;
+295      *
+296      *     String url = &quot;service:jmx:rmi:///jndi/rmi://&quot; + host + &quot;:&quot; + port + &quot;/jmxrmi&quot;;
+297      *
+298      *     JMXServiceURL u = new JMXServiceURL(url);
+299      *     JMXConnector c = JMXConnectorFactory.connect(u);
+300      *     MBeanServerConnection conn = c.getMBeanServerConnection();
+301      *
+302      *     try (final var rs = new RemoteRecordingStream(conn)) {
+303      *         rs.onMetadata(e -&gt; {
+304      *             for (Configuration c : e.getConfigurations()) {
+305      *                 if (c.getName().equals(&quot;default&quot;)) {
+306      *                     rs.setSettings(c.getSettings());
+307      *                 }
+308      *             }
+309      *         });
+310      *         rs.onEvent(System.out::println);
+311      *         rs.start();
+312      *     }
+313      *
+314      * }
+315      * &lt;/pre&gt;
+316      *
+317      * @param settings the settings to set, not {@code null}
+318      *
+319      * @see Recording#setSettings(Map)
+320      */
+321     public void setSettings(Map&lt;String, String&gt; settings) {
+322         Objects.requireNonNull(settings, &quot;settings&quot;);
+323         try {
+324             mbean.setRecordingSettings(recordingId, settings);
+325         } catch (Exception e) {
+326             ManagementSupport.logDebug(e.getMessage());
+327             close();
+328         }
+329     };
+330 
+331     /**
+332      * Disables event with the specified name.
+333      * &lt;p&gt;
+334      * If multiple events with same name (for example, the same class is loaded in
+335      * different class loaders), then all events that match the name are disabled.
+336      *
+337      * @param name the settings for the event, not {@code null}
+338      *
+339      * @return an event setting for further configuration, not {@code null}
+340      *
+341      */
+342     public EventSettings disable(String name) {
+343         Objects.requireNonNull(name, &quot;name&quot;);
+344         EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId));
+345         try {
+346             return s.with(name + &quot;#&quot; + ENABLED, &quot;false&quot;);
+347         } catch (Exception e) {
+348             ManagementSupport.logDebug(e.getMessage());
+349             close();
+350             return s;
+351         }
+352     }
+353 
+354     /**
+355      * Enables the event with the specified name.
+356      * &lt;p&gt;
+357      * If multiple events have the same name (for example, the same class is loaded
+358      * in different class loaders), then all events that match the name are enabled.
+359      *
+360      * @param name the settings for the event, not {@code null}
+361      *
+362      * @return an event setting for further configuration, not {@code null}
+363      *
+364      * @see EventType
+365      */
+366     public EventSettings enable(String name) {
+367         Objects.requireNonNull(name, &quot;name&quot;);
+368         EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId));
+369         try {
+370             return s.with(name + &quot;#&quot; + ENABLED, &quot;true&quot;);
+371         } catch (Exception e) {
+372             ManagementSupport.logDebug(e.getMessage());
+373             close();
+374             return s;
+375         }
+376     }
+377 
+378     /**
+379      * Determines how far back data is kept for the stream.
+380      * &lt;p&gt;
+381      * To control the amount of recording data stored on disk, the maximum length of
+382      * time to retain the data can be specified. Data stored on disk that is older
+383      * than the specified length of time is removed by the Java Virtual Machine
+384      * (JVM).
+385      * &lt;p&gt;
+386      * If neither maximum limit or the maximum age is set, the size of the recording
+387      * may grow indefinitely if events are not consumed.
+388      *
+389      * @param maxAge the length of time that data is kept, or {@code null} if
+390      *               infinite
+391      *
+392      * @throws IllegalArgumentException if {@code maxAge} is negative
+393      *
+394      * @throws IllegalStateException    if the recording is in the {@code CLOSED}
+395      *                                  state
+396      */
+397     public void setMaxAge(Duration maxAge) {
+398         synchronized (lock) {
+399             repository.setMaxAge(maxAge);
+400             this.maxAge = maxAge;
+401             updateOnCompleteHandler();
+402         }
+403     }
+404 
+405     /**
+406      * Determines how much data is kept for the stream.
+407      * &lt;p&gt;
+408      * To control the amount of recording data that is stored on disk, the maximum
+409      * amount of data to retain can be specified. When the maximum limit is
+410      * exceeded, the Java Virtual Machine (JVM) removes the oldest chunk to make
+411      * room for a more recent chunk.
+412      * &lt;p&gt;
+413      * If neither maximum limit or the maximum age is set, the size of the recording
+414      * may grow indefinitely if events are not consumed.
+415      * &lt;p&gt;
+416      * The size is measured in bytes.
+417      *
+418      * @param maxSize the amount of data to retain, {@code 0} if infinite
+419      *
+420      * @throws IllegalArgumentException if {@code maxSize} is negative
+421      *
+422      * @throws IllegalStateException    if the recording is in {@code CLOSED} state
+423      */
+424     public void setMaxSize(long maxSize) {
+425         if (maxSize &lt; 0) {
+426             throw new IllegalArgumentException(&quot;Max size of recording can&#39;t be negative&quot;);
+427         }
+428         synchronized (lock) {
+429             repository.setMaxSize(maxSize);
+430             this.maxSize = maxSize;
+431             updateOnCompleteHandler();
+432         }
+433     }
+434 
+435     @Override
+436     public void onEvent(Consumer&lt;RecordedEvent&gt; action) {
+437         stream.onEvent(action);
+438     }
+439 
+440     @Override
+441     public void onEvent(String eventName, Consumer&lt;RecordedEvent&gt; action) {
+442         stream.onEvent(eventName, action);
+443     }
+444 
+445     @Override
+446     public void onFlush(Runnable action) {
+447         stream.onFlush(action);
+448     }
+449 
+450     @Override
+451     public void onError(Consumer&lt;Throwable&gt; action) {
+452         stream.onError(action);
+453     }
+454 
+455     @Override
+456     public void onClose(Runnable action) {
+457         stream.onClose(action);
+458     }
+459 
+460     @Override
+461     public void close() {
+462         synchronized (lock) { // ensure one closer
+463             if (closed) {
+464                 return;
+465             }
+466             closed = true;
+467         }
+468         ManagementSupport.setOnChunkCompleteHandler(stream, null);
+469         stream.close();
+470         try {
+471             mbean.closeRecording(recordingId);
+472         } catch (IOException e) {
+473             ManagementSupport.logDebug(e.getMessage());
+474         }
+475         try {
+476             repository.close();
+477         } catch (IOException e) {
+478             ManagementSupport.logDebug(e.getMessage());
+479         }
+480     }
+481 
+482     @Override
+483     public boolean remove(Object action) {
+484         return stream.remove(action);
+485     }
+486 
+487     @Override
+488     public void setReuse(boolean reuse) {
+489         stream.setReuse(reuse);
+490     }
+491 
+492     @Override
+493     public void setOrdered(boolean ordered) {
+494         stream.setOrdered(ordered);
+495     }
+496 
+497     @Override
+498     public void setStartTime(Instant startTime) {
+499         stream.setStartTime(startTime);
+500         this.startTime = startTime;
+501     }
+502 
+503     @Override
+504     public void setEndTime(Instant endTime) {
+505         stream.setEndTime(endTime);
+506         this.endTime = endTime;
+507     }
+508 
+509     @Override
+510     public void start() {
+511         ensureStartable();
+512         try {
+513             try {
+514                 mbean.startRecording(recordingId);
+515             } catch (IllegalStateException ise) {
+516                 throw ise;
+517             }
+518             startDownload();
+519         } catch (Exception e) {
+520             ManagementSupport.logDebug(e.getMessage());
+521             close();
+522             return;
+523         }
+524         stream.start();
+525     }
+526 
+527     @Override
+528     public void startAsync() {
+529         ensureStartable();
+530         stream.startAsync();
+531         try {
+532             mbean.startRecording(recordingId);
+533             startDownload();
+534         } catch (Exception e) {
+535             ManagementSupport.logDebug(e.getMessage());
+536             close();
+537         }
+538     }
+539 
+540     /**
+541      * Stops the recording stream.
+542      * &lt;p&gt;
+543      * Stops a started stream and waits until all events in the recording have
+544      * been consumed.
+545      * &lt;p&gt;
+546      * Invoking this method in an action, for example in the
+547      * {@link #onEvent(Consumer)} method, could block the stream indefinitely.
+548      * To stop the stream abruptly, use the {@link #close} method.
+549      * &lt;p&gt;
+550      * The following code snippet illustrates how this method can be used in
+551      * conjunction with the {@link #startAsync()} method to monitor what happens
+552      * during a test method:
+553      * {@snippet :
+554      *   AtomicLong bytesWritten = new AtomicLong();
+555      *   try (var r = new RemoteRecordingStream(connection)) {
+556      *     r.setMaxSize(Long.MAX_VALUE);
+557      *     r.enable(&quot;jdk.FileWrite&quot;).withoutThreshold();
+558      *     r.onEvent(event -&gt;
+559      *       bytesWritten.addAndGet(event.getLong(&quot;bytesWritten&quot;))
+560      *     );
+561      *     r.startAsync();
+562      *     testFoo();
+563      *     r.stop();
+564      *     if (bytesWritten.get() &gt; 1_000_000L) {
+565      *       r.dump(Path.of(&quot;file-write-events.jfr&quot;));
+566      *       throw new AssertionError(&quot;testFoo() writes too much data to disk&quot;);
+567      *     }
+568      *   }
+569      * }
+570      * @return {@code true} if recording is stopped, {@code false} otherwise
+571      *
+572      * @throws IllegalStateException if the recording is not started or is already stopped
+573      *
+574      * @since 20
+575      */
+576     public boolean stop() {
+577         synchronized (lock) {
+578             if (closed) {
+579                 throw new IllegalStateException(&quot;Event stream is closed&quot;);
+580             }
+581             if (!started) {
+582                 throw new IllegalStateException(&quot;Event stream must be started before it can stopped&quot;);
+583             }
+584             try {
+585                 boolean stopped = false;
+586                 try (StreamBarrier pb = ManagementSupport.activateStreamBarrier(stream)) {
+587                     try (StreamBarrier rb = repository.activateStreamBarrier()) {
+588                         stopped = mbean.stopRecording(recordingId);
+589                         ManagementSupport.setCloseOnComplete(stream, false);
+590                         long stopTime = getRecordingInfo(mbean.getRecordings(), recordingId).getStopTime();
+591                         pb.setStreamEnd(stopTime);
+592                         rb.setStreamEnd(stopTime);
+593                     }
+594                 }
+595                 try {
+596                     stream.awaitTermination();
+597                 } catch (InterruptedException e) {
+598                     // OK
+599                 }
+600                 return stopped;
+601             } catch (Exception e) {
+602                 ManagementSupport.logDebug(e.getMessage());
+603                 return false;
+604             }
+605         }
+606     }
+607 
+608     private void ensureStartable() {
+609         synchronized (lock) {
+610             if (closed) {
+611                 throw new IllegalStateException(&quot;Event stream is closed&quot;);
+612             }
+613             if (started) {
+614                 throw new IllegalStateException(&quot;Event stream can only be started once&quot;);
+615             }
+616             started = true;
+617         }
+618     }
+619 
+620     /**
+621      * Writes recording data to a file.
+622      * &lt;p&gt;
+623      * The recording stream must be started, but not closed.
+624      * &lt;p&gt;
+625      * It&#39;s highly recommended that a max age or max size is set before
+626      * starting the stream. Otherwise, the dump may not contain any events.
+627      *
+628      * @param destination the location where recording data is written, not
+629      *        {@code null}
+630      *
+631      * @throws IOException if the recording data can&#39;t be copied to the specified
+632      *         location, or if the stream is closed, or not started.
+633      *
+634      * @see RemoteRecordingStream#setMaxAge(Duration)
+635      * @see RemoteRecordingStream#setMaxSize(long)
+636      *
+637      * @since 17
+638      */
+639     public void dump(Path destination) throws IOException {
+640         Objects.requireNonNull(destination, &quot;destination&quot;);
+641         long id = -1;
+642         try {
+643             FileDump fileDump;
+644             synchronized (lock) { // ensure running state while preparing dump
+645                 if (closed) {
+646                     throw new IOException(&quot;Recording stream has been closed, no content to write&quot;);
+647                 }
+648                 if (!started) {
+649                     throw new IOException(&quot;Recording stream has not been started, no content to write&quot;);
+650                 }
+651                 // Take repository lock to prevent new data to be flushed
+652                 // client-side after clone has been created on the server.
+653                 synchronized (repository) {
+654                     id = mbean.cloneRecording(recordingId, true);
+655                     RecordingInfo ri = getRecordingInfo(mbean.getRecordings(), id);
+656                     fileDump = repository.newDump(ri.getStopTime());
+657                 }
+658             }
+659             // Write outside lock
+660             fileDump.write(destination);
+661         } catch (IOException ioe) {
+662             throw ioe;
+663         } catch (Exception e) {
+664             ManagementSupport.logDebug(e.getMessage());
+665             close();
+666         } finally {
+667             if (id != -1) {
+668                 try {
+669                     mbean.closeRecording(id);
+670                 } catch (Exception e) {
+671                     ManagementSupport.logDebug(e.getMessage());
+672                     close();
+673                 }
+674             }
+675         }
+676     }
+677 
+678     private RecordingInfo getRecordingInfo(List&lt;RecordingInfo&gt; infos, long id) throws IOException {
+679         for (RecordingInfo info : infos) {
+680             if (info.getId() == id) {
+681                 return info;
+682             }
+683         }
+684         throw new IOException(&quot;Unable to find id of dumped recording&quot;);
+685     }
+686 
+687     @Override
+688     public void awaitTermination(Duration timeout) throws InterruptedException {
+689         stream.awaitTermination(timeout);
+690     }
+691 
+692     @Override
+693     public void awaitTermination() throws InterruptedException {
+694         stream.awaitTermination();
+695     }
+696 
+697     private static Path makeTempDirectory() throws IOException {
+698         return Files.createTempDirectory(&quot;jfr-streaming&quot;);
+699     }
+700 
+701     private void updateOnCompleteHandler() {
+702         if (maxAge != null || maxSize != 0) {
+703             // User has set a chunk removal policy
+704             ManagementSupport.setOnChunkCompleteHandler(stream, null);
+705         } else {
+706             ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
+707         }
+708     }
+709 
+710     private void startDownload() {
+711         String name = &quot;JFR: Download Thread &quot; + creationTime;
+712         Thread downLoadThread = new DownLoadThread(this, name);
+713         downLoadThread.start();
+714     }
+715 
+716     boolean isClosed() {
+717         return closed;
+718     }
+719 }
+    </pre>
+  </body>
+</html>

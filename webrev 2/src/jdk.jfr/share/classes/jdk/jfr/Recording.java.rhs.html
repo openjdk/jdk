@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Frames src/jdk.jfr/share/classes/jdk/jfr/Recording.java</title>
+    <link rel="stylesheet" href="../../../../../../style.css" />
+    <script type="text/javascript" src="../../../../../../navigation.js"></script>
+  </head>
+<body onkeypress="keypress(event);">
+<a name="0"></a>
+<hr />
+<pre>  1 /*
+<a name="1" id="anc1"></a><span class="line-modified">  2  * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+  3  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+  4  *
+  5  * This code is free software; you can redistribute it and/or modify it
+  6  * under the terms of the GNU General Public License version 2 only, as
+  7  * published by the Free Software Foundation.  Oracle designates this
+  8  * particular file as subject to the &quot;Classpath&quot; exception as provided
+  9  * by Oracle in the LICENSE file that accompanied this code.
+ 10  *
+ 11  * This code is distributed in the hope that it will be useful, but WITHOUT
+ 12  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ 13  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ 14  * version 2 for more details (a copy is included in the LICENSE file that
+ 15  * accompanied this code).
+ 16  *
+ 17  * You should have received a copy of the GNU General Public License version
+ 18  * 2 along with this work; if not, write to the Free Software Foundation,
+ 19  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 20  *
+ 21  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ 22  * or visit www.oracle.com if you need additional information or have any
+ 23  * questions.
+ 24  */
+ 25 
+ 26 package jdk.jfr;
+ 27 
+ 28 import java.io.Closeable;
+ 29 import java.io.IOException;
+ 30 import java.io.InputStream;
+ 31 import java.nio.file.Path;
+ 32 import java.time.Duration;
+ 33 import java.time.Instant;
+ 34 import java.util.HashMap;
+ 35 import java.util.Map;
+ 36 import java.util.Objects;
+ 37 
+ 38 import jdk.jfr.internal.PlatformRecorder;
+ 39 import jdk.jfr.internal.PlatformRecording;
+ 40 import jdk.jfr.internal.Type;
+ 41 import jdk.jfr.internal.util.Utils;
+<a name="2" id="anc2"></a><span class="line-modified"> 42 import jdk.jfr.internal.WriteablePath;</span>
+ 43 
+ 44 /**
+ 45  * Provides means to configure, start, stop and dump recording data to disk.
+ 46  * &lt;p&gt;
+ 47  * The following example shows how configure, start, stop and dump recording data to disk.
+ 48  *
+ 49  * {@snippet class=&quot;Snippets&quot; region=&quot;RecordingOverview&quot;}
+ 50  *
+ 51  * @since 9
+ 52  */
+ 53 public final class Recording implements Closeable {
+ 54 
+ 55     private static class RecordingSettings extends EventSettings {
+ 56 
+ 57         private final Recording recording;
+ 58         private final String identifier;
+ 59 
+ 60         RecordingSettings(Recording r, String identifier) {
+ 61             this.recording = r;
+ 62             this.identifier = identifier;
+ 63         }
+ 64 
+ 65         RecordingSettings(Recording r, Class&lt;? extends Event&gt; eventClass) {
+ 66             Utils.ensureValidEventSubclass(eventClass);
+ 67             this.recording = r;
+ 68             this.identifier = String.valueOf(Type.getTypeId(eventClass));
+ 69         }
+ 70 
+ 71         @Override
+ 72         public EventSettings with(String name, String value) {
+ 73             Objects.requireNonNull(name, &quot;name&quot;);
+ 74             Objects.requireNonNull(value, &quot;value&quot;);
+ 75             recording.setSetting(identifier + &quot;#&quot; + name, value);
+ 76             return this;
+ 77         }
+ 78 
+ 79         @Override
+ 80         public Map&lt;String, String&gt; toMap() {
+ 81             return recording.getSettings();
+ 82         }
+ 83     }
+ 84 
+ 85     private final PlatformRecording internal;
+ 86 
+ 87     /**
+ 88      * Creates a recording with settings from a map of name-value pairs.
+ 89      * &lt;p&gt;
+ 90      * A newly created recording is in the {@link RecordingState#NEW} state. To start
+ 91      * the recording, invoke the {@link Recording#start()} method.
+ 92      *
+ 93      * @param settings settings as a map of name-value pairs, not {@code null}
+ 94      *
+ 95      * @throws IllegalStateException if Flight Recorder can&#39;t be created (for
+ 96      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
+ 97      *         support, or if the file repository can&#39;t be created or accessed)
+ 98      *
+ 99      * @see jdk.jfr
+100      * @since 11
+101      */
+102     public Recording(Map&lt;String, String&gt; settings) {
+103         Objects.requireNonNull(settings, &quot;settings&quot;);
+104         Map&lt;String, String&gt; sanitized = Utils.sanitizeNullFreeStringMap(settings);
+105         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
+106         synchronized (r) {
+107             this.internal = r.newRecording(sanitized);
+108             this.internal.setRecording(this);
+109             if (internal.getRecording() != this) {
+110                 throw new InternalError(&quot;Internal recording not properly setup&quot;);
+111             }
+112         }
+113     }
+114 
+115     /**
+116      * Creates a recording without any settings.
+117      * &lt;p&gt;
+118      * A newly created recording is in the {@link RecordingState#NEW} state. To start
+119      * the recording, invoke the {@link Recording#start()} method.
+120      *
+121      * @throws IllegalStateException if Flight Recorder can&#39;t be created (for
+122      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
+123      *         support, or if the file repository can&#39;t be created or accessed)
+124      */
+125     public Recording() {
+126         this(Map.of());
+127      }
+128 
+129     /**
+130      * Creates a recording with settings from a configuration.
+131      * &lt;p&gt;
+132      * The following example shows how create a recording that uses a predefined configuration.
+133      *
+134      * {@snippet :
+135      * Recording r = new Recording(Configuration.getConfiguration(&quot;default&quot;));
+136      * }
+137      *
+138      * The newly created recording is in the {@link RecordingState#NEW} state. To
+139      * start the recording, invoke the {@link Recording#start()} method.
+140      *
+141      * @param configuration configuration that contains the settings to be use, not
+142      *        {@code null}
+143      *
+144      * @throws IllegalStateException if Flight Recorder can&#39;t be created (for
+145      *         example, if the Java Virtual Machine (JVM) lacks Flight Recorder
+146      *         support, or if the file repository can&#39;t be created or accessed)
+147      *
+148      * @see Configuration
+149      */
+150     public Recording(Configuration configuration) {
+151         this(Objects.requireNonNull(configuration, &quot;configuration&quot;).getSettings());
+152     }
+153 
+154     /**
+155      * Starts this recording.
+156      * &lt;p&gt;
+157      * It&#39;s recommended that the recording options and event settings are configured
+158      * before calling this method. The benefits of doing so are a more consistent
+159      * state when analyzing the recorded data, and improved performance because the
+160      * configuration can be applied atomically.
+161      * &lt;p&gt;
+162      * After a successful invocation of this method, this recording is in the
+163      * {@code RUNNING} state.
+164      *
+165      * @throws IllegalStateException if recording is already started or is in the
+166      *         {@code CLOSED} state
+167      */
+168     public void start() {
+169         internal.start();
+170     }
+171 
+172     /**
+173      * Starts this recording after a delay.
+174      * &lt;p&gt;
+175      * After a successful invocation of this method, this recording is in the
+176      * {@code DELAYED} state.
+177      *
+178      * @param delay the time to wait before starting this recording, not
+179      *        {@code null}
+180      * @throws IllegalStateException if the recording is not it the {@code NEW} state
+181      */
+182     public void scheduleStart(Duration delay) {
+183         Objects.requireNonNull(delay, &quot;delay&quot;);
+184         internal.scheduleStart(delay);
+185     }
+186 
+187     /**
+188      * Stops this recording.
+189      * &lt;p&gt;
+190      * When a recording is stopped it can&#39;t be restarted. If this
+191      * recording has a destination, data is written to that destination and
+192      * the recording is closed. After a recording is closed, the data is no longer
+193      * available.
+194      * &lt;p&gt;
+195      * After a successful invocation of this method, this recording will be
+196      * in the {@code STOPPED} state.
+197      *
+198      * @return {@code true} if recording is stopped, {@code false} otherwise
+199      *
+200      * @throws IllegalStateException if the recording is not started or is already stopped
+201      *
+202      * @see #setDestination(Path)
+203      *
+204      */
+205     public boolean stop() {
+206         return internal.stop(&quot;Stopped by user&quot;);
+207     }
+208 
+209     /**
+210      * Returns settings used by this recording.
+211      * &lt;p&gt;
+212      * Modifying the returned {@code Map} will not change the settings for this recording.
+213      * &lt;p&gt;
+214      * If no settings are set for this recording, an empty {@code Map} is
+215      * returned.
+216      *
+217      * @return recording settings, not {@code null}
+218      */
+219     public Map&lt;String, String&gt; getSettings() {
+220         return new HashMap&lt;&gt;(internal.getSettings());
+221     }
+222 
+223     /**
+224      * Returns the current size of this recording in the disk repository,
+225      * measured in bytes.
+226      * &lt;p&gt;
+227      * The size is updated when recording buffers are flushed. If the recording is
+228      * not written to the disk repository the returned size is always {@code 0}.
+229      *
+230      * @return amount of recorded data, measured in bytes, or {@code 0} if the
+231      *         recording is not written to the disk repository
+232      */
+233     public long getSize() {
+234         return internal.getSize();
+235     }
+236 
+237     /**
+238      * Returns the time when this recording was stopped.
+239      *
+240      * @return the time, or {@code null} if this recording is not stopped
+241      */
+242     public Instant getStopTime() {
+243         return internal.getStopTime();
+244     }
+245 
+246     /**
+247      * Returns the time when this recording was started.
+248      *
+249      * @return the time, or {@code null} if this recording is not started
+250      */
+251     public Instant getStartTime() {
+252         return internal.getStartTime();
+253     }
+254 
+255     /**
+256      * Returns the maximum size, measured in bytes, at which data is no longer kept in the disk repository.
+257      *
+258      * @return maximum size in bytes, or {@code 0} if no maximum size is set
+259      */
+260     public long getMaxSize() {
+261         return internal.getMaxSize();
+262     }
+263 
+264     /**
+265      * Returns the length of time that the data is kept in the disk repository
+266      * before it is removed.
+267      *
+268      * @return maximum length of time, or {@code null} if no maximum length of time
+269      *         has been set
+270      */
+271     public Duration getMaxAge() {
+272         return internal.getMaxAge();
+273     }
+274 
+275     /**
+276      * Returns the name of this recording.
+277      * &lt;p&gt;
+278      * By default, the name is the same as the recording ID.
+279      *
+280      * @return the recording name, not {@code null}
+281      */
+282     public String getName() {
+283         return internal.getName();
+284     }
+285 
+286     /**
+287      * Replaces all settings for this recording.
+288      * &lt;p&gt;
+289      * The following example shows how to set event settings for a recording.
+290      *
+291      * {@snippet :
+292      *     Map&lt;String, String&gt; settings = new HashMap&lt;&gt;();
+293      *     settings.putAll(EventSettings.enabled(&quot;jdk.CPUSample&quot;).withPeriod(Duration.ofSeconds(2)).toMap());
+294      *     settings.putAll(EventSettings.enabled(MyEvent.class).withThreshold(Duration.ofSeconds(2)).withoutStackTrace().toMap());
+295      *     settings.put(&quot;jdk.ExecutionSample#period&quot;, &quot;10 ms&quot;);
+296      *     recording.setSettings(settings);
+297      * }
+298      *
+299      * The following example shows how to merge settings.
+300      *
+301      * {@snippet :
+302      *     Map&lt;String, String&gt; settings = recording.getSettings();
+303      *     settings.putAll(additionalSettings);
+304      *     recording.setSettings(settings);
+305      * }
+306      *
+307      * @param settings the settings to set, not {@code null}
+308      */
+309     public void setSettings(Map&lt;String, String&gt; settings) {
+310         Objects.requireNonNull(settings, &quot;settings&quot;);
+311         Map&lt;String, String&gt; sanitized = Utils.sanitizeNullFreeStringMap(settings);
+312         internal.setSettings(sanitized);
+313     }
+314 
+315     /**
+316      * Returns the recording state that this recording is currently in.
+317      *
+318      * @return the recording state, not {@code null}
+319      *
+320      * @see RecordingState
+321      */
+322     public RecordingState getState() {
+323         return internal.getState();
+324     }
+325 
+326     /**
+327      * Releases all data that is associated with this recording.
+328      * &lt;p&gt;
+329      * After a successful invocation of this method, this recording is in the
+330      * {@code CLOSED} state.
+331      */
+332     @Override
+333     public void close() {
+334         internal.close();
+335     }
+336 
+337     /**
+338      * Returns a clone of this recording, with a new recording ID and name.
+339      * &lt;p&gt;
+340      * Clones are useful for dumping data without stopping the recording. After
+341      * a clone is created, the amount of data to copy is constrained
+342      * with the {@link #setMaxAge(Duration)} method and the {@link #setMaxSize(long)}method.
+343      *
+344      * @param stop {@code true} if the newly created copy should be stopped
+345      *        immediately, {@code false} otherwise
+346      * @return the recording copy, not {@code null}
+347      */
+348     public Recording copy(boolean stop) {
+349         return internal.newCopy(stop);
+350     }
+351 
+352     /**
+353      * Writes recording data to a file.
+354      * &lt;p&gt;
+355      * For a dump to succeed, the recording must either be 1) running, or 2) stopped
+356      * and to disk. If the recording is in any other state, an
+357      * {@link IOException} is thrown.
+358      *
+359      * @param destination the location where recording data is written, not
+360      *        {@code null}
+361      *
+362      * @throws IOException if recording data can&#39;t be copied to the specified
+363      *         location, for example, if the recording is closed or the
+364      *         destination path is not writable
+365      *
+366      * @see #getState()
+367      * @see #isToDisk()
+368      */
+369     public void dump(Path destination) throws IOException {
+370         Objects.requireNonNull(destination, &quot;destination&quot;);
+<a name="3" id="anc3"></a><span class="line-modified">371         internal.dump(new WriteablePath(destination));</span>
+372     }
+373 
+374     /**
+375      * Returns {@code true} if this recording uses the disk repository, {@code false} otherwise.
+376      * &lt;p&gt;
+377      * If no value is set, {@code true} is returned.
+378      *
+379      * @return {@code true} if the recording uses the disk repository, {@code false}
+380      *         otherwise
+381      */
+382     public boolean isToDisk() {
+383         return internal.isToDisk();
+384     }
+385 
+386     /**
+387      * Determines how much data is kept in the disk repository.
+388      * &lt;p&gt;
+389      * To control the amount of recording data that is stored on disk, the maximum
+390      * amount of data to retain can be specified. When the maximum limit is
+391      * exceeded, the Java Virtual Machine (JVM) removes the oldest chunk to make
+392      * room for a more recent chunk.
+393      * &lt;p&gt;
+394      * If neither maximum limit or the maximum age is set, the size of the
+395      * recording may grow indefinitely.
+396      *
+397      * @param maxSize the amount of data to retain, {@code 0} if infinite
+398      *
+399      * @throws IllegalArgumentException if {@code maxSize} is negative
+400      *
+401      * @throws IllegalStateException if the recording is in {@code CLOSED} state
+402      */
+403     public void setMaxSize(long maxSize) {
+404         if (maxSize &lt; 0) {
+405             throw new IllegalArgumentException(&quot;Max size of recording can&#39;t be negative&quot;);
+406         }
+407         internal.setMaxSize(maxSize);
+408     }
+409 
+410     /**
+411      * Returns how often events are made available for streaming purposes.
+412      *
+413      * @return the flush interval, or {@code null} if no interval has been set
+414      *
+415      * @since 14
+416      */
+417     /*package private*/ Duration getFlushInterval() {
+418         return internal.getFlushInterval();
+419     }
+420 
+421     /**
+422      * Determines how far back data is kept in the disk repository.
+423      * &lt;p&gt;
+424      * To control the amount of recording data stored on disk, the maximum length of
+425      * time to retain the data can be specified. Data stored on disk that is older
+426      * than the specified length of time is removed by the Java Virtual Machine (JVM).
+427      * &lt;p&gt;
+428      * If neither maximum limit or the maximum age is set, the size of the
+429      * recording may grow indefinitely.
+430      *
+431      * @param maxAge the length of time that data is kept, or {@code null} if infinite
+432      *
+433      * @throws IllegalArgumentException if {@code maxAge} is negative
+434      *
+435      * @throws IllegalStateException if the recording is in the {@code CLOSED} state
+436      */
+437     public void setMaxAge(Duration maxAge) {
+438         if (maxAge != null &amp;&amp; maxAge.isNegative()) {
+439             throw new IllegalArgumentException(&quot;Max age of recording can&#39;t be negative&quot;);
+440         }
+441         internal.setMaxAge(maxAge);
+442     }
+443 
+444     /**
+445      * Sets a location where data is written on recording stop, or
+446      * {@code null} if data is not to be dumped.
+447      * &lt;p&gt;
+448      * If a destination is set, this recording is automatically closed
+449      * after data is successfully copied to the destination path.
+450      * &lt;p&gt;
+451      * If a destination is &lt;em&gt;not&lt;/em&gt; set, Flight Recorder retains the
+452      * recording data until this recording is closed. Use the {@link #dump(Path)} method to
+453      * manually write data to a file.
+454      *
+455      * @param destination the destination path, or {@code null} if recording should
+456      *        not be dumped at stop
+457      *
+458      * @throws IllegalStateException if recording is in the {@code STOPPED} or
+459      *         {@code CLOSED} state.
+460      *
+461      * @throws IOException if the path is not writable
+462      */
+463     public void setDestination(Path destination) throws IOException {
+<a name="4" id="anc4"></a><span class="line-modified">464         internal.setDestination(destination != null ? new WriteablePath(destination) : null);</span>
+465     }
+466 
+467     /**
+468      * Returns the destination file, where recording data is written when the
+469      * recording stops, or {@code null} if no destination is set.
+470      *
+471      * @return the destination file, or {@code null} if not set.
+472      */
+473     public Path getDestination() {
+<a name="5" id="anc5"></a><span class="line-modified">474         WriteablePath wp = internal.getDestination();</span>
+<span class="line-modified">475         if (wp == null) {</span>
+476             return null;
+477         } else {
+<a name="6" id="anc6"></a><span class="line-modified">478             return wp.getPath();</span>
+479         }
+480     }
+481 
+482     /**
+483      * Returns a unique ID for this recording.
+484      *
+485      * @return the recording ID
+486      */
+487     public long getId() {
+488         return internal.getId();
+489     }
+490 
+491     /**
+492      * Sets a human-readable name (for example, {@code &quot;My Recording&quot;}).
+493      *
+494      * @param name the recording name, not {@code null}
+495      *
+496      * @throws IllegalStateException if the recording is in {@code CLOSED} state
+497      */
+498     public void setName(String name) {
+499         Objects.requireNonNull(name, &quot;name&quot;);
+500         internal.setName(name);
+501     }
+502 
+503     /**
+504      * Sets whether this recording is dumped to disk when the JVM exits.
+505      *
+506      * @param dumpOnExit if this recording should be dumped when the JVM exits
+507      */
+508     public void setDumpOnExit(boolean dumpOnExit) {
+509         internal.setDumpOnExit(dumpOnExit);
+510     }
+511 
+512     /**
+513      * Returns whether this recording is dumped to disk when the JVM exits.
+514      * &lt;p&gt;
+515      * If dump on exit is not set, {@code false} is returned.
+516      *
+517      * @return {@code true} if the recording is dumped on exit, {@code false}
+518      *         otherwise.
+519      */
+520     public boolean getDumpOnExit() {
+521         return internal.getDumpOnExit();
+522     }
+523 
+524     /**
+525      * Determines whether this recording is continuously flushed to the disk
+526      * repository or data is constrained to what is available in memory buffers.
+527      *
+528      * @param disk {@code true} if this recording is written to disk,
+529      *        {@code false} if in-memory
+530      *
+531      */
+532     public void setToDisk(boolean disk) {
+533         internal.setToDisk(disk);
+534     }
+535 
+536     /**
+537      * Creates a data stream for a specified interval.
+538      * &lt;p&gt;
+539      * The stream may contain some data outside the specified range.
+540      * &lt;p&gt;
+541      * If the recording is not to disk, a stream can&#39;t be created
+542      * and {@code null} is returned.
+543      *
+544      * @param start the start time for the stream, or {@code null} to get data from
+545      *        start time of the recording
+546      *
+547      * @param end the end time for the stream, or {@code null} to get data until the
+548      *        present time.
+549      *
+550      * @return an input stream, or {@code null} if no data is available in the
+551      *         interval, or the recording was not recorded to disk
+552      *
+553      * @throws IllegalArgumentException if {@code end} happens before
+554      *         {@code start}
+555      *
+556      * @throws IOException if a stream can&#39;t be opened
+557      *
+558      * @see #setToDisk(boolean)
+559      */
+560     public InputStream getStream(Instant start, Instant end) throws IOException {
+561         if (start != null &amp;&amp; end != null &amp;&amp; end.isBefore(start)) {
+562             throw new IllegalArgumentException(&quot;End time of requested stream must not be before start time&quot;);
+563         }
+564         return internal.open(start, end);
+565     }
+566 
+567     /**
+568      * Returns the specified duration for this recording, or {@code null} if no
+569      * duration is set.
+570      * &lt;p&gt;
+571      * The duration can be set only when the recording is in the
+572      * {@link RecordingState#NEW} state.
+573      *
+574      * @return the desired duration of the recording, or {@code null} if no duration
+575      *         has been set.
+576      */
+577     public Duration getDuration() {
+578         return internal.getDuration();
+579     }
+580 
+581     /**
+582      * Sets a duration for how long a recording runs before it stops.
+583      * &lt;p&gt;
+584      * By default, a recording has no duration ({@code null}).
+585      *
+586      * @param duration the duration, or {@code null} if no duration is set
+587      *
+588      * @throws IllegalStateException if recording is in the {@code STOPPED} or {@code CLOSED} state
+589      */
+590     public void setDuration(Duration duration) {
+591         internal.setDuration(duration);
+592     }
+593 
+594     /**
+595      * Enables the event with the specified name.
+596      * &lt;p&gt;
+597      * If multiple events have the same name (for example, the same class is loaded
+598      * in different class loaders), then all events that match the name are enabled. To
+599      * enable a specific class, use the {@link #enable(Class)} method or a {@code String}
+600      * representation of the event type ID.
+601      *
+602      * @param name the settings for the event, not {@code null}
+603      *
+604      * @return an event setting for further configuration, not {@code null}
+605      *
+606      * @see EventType
+607      */
+608     public EventSettings enable(String name) {
+609         Objects.requireNonNull(name, &quot;name&quot;);
+610         RecordingSettings rs = new RecordingSettings(this, name);
+611         rs.with(&quot;enabled&quot;, &quot;true&quot;);
+612         return rs;
+613     }
+614 
+615     /**
+616      * Disables event with the specified name.
+617      * &lt;p&gt;
+618      * If multiple events with same name (for example, the same class is loaded
+619      * in different class loaders), then all events that match the
+620      * name is disabled. To disable a specific class, use the
+621      * {@link #disable(Class)} method or a {@code String} representation of the event
+622      * type ID.
+623      *
+624      * @param name the settings for the event, not {@code null}
+625      *
+626      * @return an event setting for further configuration, not {@code null}
+627      *
+628      */
+629     public EventSettings disable(String name) {
+630         Objects.requireNonNull(name, &quot;name&quot;);
+631         RecordingSettings rs = new RecordingSettings(this, name);
+632         rs.with(&quot;enabled&quot;, &quot;false&quot;);
+633         return rs;
+634     }
+635 
+636     /**
+637      * Enables event.
+638      *
+639      * @param eventClass the event to enable, not {@code null}
+640      *
+641      * @throws IllegalArgumentException if {@code eventClass} is an abstract
+642      *         class or not a subclass of {@link Event}
+643      *
+644      * @return an event setting for further configuration, not {@code null}
+645      */
+646     public EventSettings enable(Class&lt;? extends Event&gt; eventClass) {
+647         Objects.requireNonNull(eventClass, &quot;eventClass&quot;);
+648         RecordingSettings rs = new RecordingSettings(this, eventClass);
+649         rs.with(&quot;enabled&quot;, &quot;true&quot;);
+650         return rs;
+651     }
+652 
+653     /**
+654      * Disables event.
+655      *
+656      * @param eventClass the event to enable, not {@code null}
+657      *
+658      * @throws IllegalArgumentException if {@code eventClass} is an abstract
+659      *         class or not a subclass of {@link Event}
+660      *
+661      * @return an event setting for further configuration, not {@code null}
+662      *
+663      */
+664     public EventSettings disable(Class&lt;? extends Event&gt; eventClass) {
+665         Objects.requireNonNull(eventClass, &quot;eventClass&quot;);
+666         RecordingSettings rs = new RecordingSettings(this, eventClass);
+667         rs.with(&quot;enabled&quot;, &quot;false&quot;);
+668         return rs;
+669     }
+670 
+671     // package private
+672     PlatformRecording getInternal() {
+673         return internal;
+674     }
+675 
+676     private void setSetting(String id, String value) {
+677         Objects.requireNonNull(id, &quot;id&quot;);
+678         Objects.requireNonNull(value, &quot;value&quot;);
+679         internal.setSetting(id, value);
+680     }
+681 
+682 }
+<a name="7" id="anc7"></a><b style="font-size: large; color: red">--- EOF ---</b>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<input id="eof" value="7" type="hidden" />
+</body>
+</html>

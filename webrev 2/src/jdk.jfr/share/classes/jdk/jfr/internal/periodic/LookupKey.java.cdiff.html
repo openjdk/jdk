@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cdiff src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/LookupKey.java</title>
+    <link rel="stylesheet" href="../../../../../../../../style.css" />
+  </head>
+<body>
+<center><a href="JavaEventTask.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="PeriodicEvents.java.cdiff.html" target="_top">next &gt;</a></center>    <h2>src/jdk.jfr/share/classes/jdk/jfr/internal/periodic/LookupKey.java</h2>
+     <a class="print" href="javascript:print()">Print this page</a>
+<hr />
+<pre>
+<span class="line-old-header">*** 1,7 ***</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+<span class="line-new-header">--- 1,7 ---</span>
+  /*
+<span class="line-modified">!  * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.</span>
+   * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+   *
+   * This code is free software; you can redistribute it and/or modify it
+   * under the terms of the GNU General Public License version 2 only, as
+   * published by the Free Software Foundation.  Oracle designates this
+</pre>
+<hr />
+<pre>
+<span class="line-old-header">*** 23,15 ***</span>
+   * questions.
+   */
+  package jdk.jfr.internal.periodic;
+  
+  /**
+<span class="line-modified">!  * Lookup key that can safely be used in a {@code Map}.</span>
+<span class="line-modified">!  * &lt;p&gt;</span>
+<span class="line-removed">-  * {@code Runnable} objects can&#39;t be used with {@code LinkedHashMap} as it</span>
+<span class="line-removed">-  * invokes {@code hashCode} and {@code equals}, for example when resizing the</span>
+<span class="line-removed">-  * {@code Map}, possibly in a non-secure context.</span>
+   * &lt;p&gt;
+   * {@code IdentityHashMap} can&#39;t be used as it will not preserve order.
+   */
+  final class LookupKey {
+      private final Object object;
+<span class="line-new-header">--- 23,12 ---</span>
+   * questions.
+   */
+  package jdk.jfr.internal.periodic;
+  
+  /**
+<span class="line-modified">!  * Lookup key that can be used in a {@code Map} in</span>
+<span class="line-modified">!  * case hashCode and equals are incorrectly overridden.</span>
+   * &lt;p&gt;
+   * {@code IdentityHashMap} can&#39;t be used as it will not preserve order.
+   */
+  final class LookupKey {
+      private final Object object;
+</pre>
+<center><a href="JavaEventTask.java.cdiff.html" target="_top">&lt; prev</a> <a href="../../../../../../../../index.html" target="_top">index</a> <a href="PeriodicEvents.java.cdiff.html" target="_top">next &gt;</a></center>  </body>
+</html>
