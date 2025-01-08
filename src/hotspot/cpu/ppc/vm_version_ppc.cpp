@@ -305,7 +305,7 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
+  if (FLAG_IS_DEFAULT(UseGHASHIntrinsics) && VM_Version::has_vsx()) {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
   }
 
