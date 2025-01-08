@@ -201,7 +201,7 @@ class ModuleSourceLauncherTests {
         var command = List.of(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                 "-p", ".",
-                "--enable-native-access", "foo,bar,baz",
+                "--enable-native-access", "foo,bar,baz,ALL-UNNAMED",
                 "bar/bar/Prog1.java");
         var redirectedOut = base.resolve("out.redirected");
         var redirectedErr = base.resolve("err.redirected");

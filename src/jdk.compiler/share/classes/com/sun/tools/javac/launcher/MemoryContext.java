@@ -243,21 +243,30 @@ final class MemoryContext {
         return ModuleFinder.of(paths.toArray(Path[]::new));
     }
 
+    /**
+     * Grants native access to modules selected using the --enable-native-access
+     * command line option.
+     */
     @SuppressWarnings("restricted")
     private void enableNativeAccess(ModuleLayer.Controller controller, boolean shouldWarn) {
         var layer = controller.layer();
         for (var name : options.enableNativeAccessForModules()) {
+            if (name.equals("ALL-UNNAMED")) {
+                continue; // was taken care of by module bootstrap
+            }
             var found = layer.findModule(name);
-            if (found.isPresent()) {
-                var module = found.get();
-                if (!module.isNativeAccessEnabled()) {
-                    controller.enableNativeAccess(module);
+            if (found.isEmpty()) {
+                if (shouldWarn) {
+                    // same message as ModuleBootstrap.warnUnknownModule(ENABLE_NATIVE_ACCESS, name);
+                    out.println("WARNING: Unknown module: " + name + " specified to --enable-native-access");
                 }
                 continue;
             }
-            if (shouldWarn) {
-                out.println("WARNING: Unknown module: " + name + " specified to --enable-native-access");
+            var module = found.get();
+            if (module.isNativeAccessEnabled()) {
+                continue;
             }
+            controller.enableNativeAccess(module);
         }
     }
 
