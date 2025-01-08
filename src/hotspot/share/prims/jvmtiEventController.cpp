@@ -598,7 +598,7 @@ JvmtiEventControllerPrivate::recompute_thread_enabled(JvmtiThreadState *state) {
   }
   // compute interp_only mode
   bool should_be_interp = (any_env_enabled & INTERP_EVENT_BITS) != 0 || has_frame_pops;
-  bool is_now_interp = state->is_interp_only_mode();
+  bool is_now_interp = state->is_interp_only_mode() || state->is_pending_interp_only_mode();
 
   if (should_be_interp != is_now_interp) {
     if (should_be_interp) {
