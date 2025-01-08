@@ -5915,8 +5915,13 @@ bool LibraryCallKit::inline_arraycopy() {
     record_for_igvn(slow_region);
 
     // (1) src and dest are arrays.
+    // Keep track of the information that src/dest are arrays to prevent below array specific accesses from floating above.
     generate_non_array_guard(load_object_klass(src), slow_region);
+    const Type* tary = TypeAryPtr::make(TypePtr::BotPTR, TypeAry::make(Type::BOTTOM, TypeInt::POS), nullptr, false, Type::OffsetBot);
+    src = _gvn.transform(new CheckCastPPNode(control(), src, tary));
+
     generate_non_array_guard(load_object_klass(dest), slow_region);
+    dest = _gvn.transform(new CheckCastPPNode(control(), dest, tary));
 
     // (2) src and dest arrays must have elements of the same BasicType
     // done at macro expansion or at Ideal transformation time
