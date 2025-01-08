@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,7 +404,6 @@ public final class PassFailJFrame {
      * with the given title, instructions and timeout as well as
      * the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
-     * The screenshot feature is not enabled, if you use this constructor.
      * <p>
      * See {@link #PassFailJFrame(String,String,long,int,int)} for
      * more details.
