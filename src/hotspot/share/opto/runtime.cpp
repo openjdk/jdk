@@ -195,8 +195,8 @@ bool OptoRuntime::generate(ciEnv* env) {
 const TypeFunc* OptoRuntime::_new_instance_Type                   = nullptr;
 const TypeFunc* OptoRuntime::_new_array_Type                      = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray2_Type                = nullptr;
-const TypeFunc* OptoRuntime::_multianewarray4_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray3_Type                = nullptr;
+const TypeFunc* OptoRuntime::_multianewarray4_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray5_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarrayN_Type                = nullptr;
 const TypeFunc* OptoRuntime::_complete_monitor_enter_Type         = nullptr;
@@ -1944,8 +1944,8 @@ void OptoRuntime::initialize_types() {
   _new_instance_Type                  = make_new_instance_Type();
   _new_array_Type                     = make_new_array_Type();
   _multianewarray2_Type               = multianewarray_Type(2);
-  _multianewarray4_Type               = multianewarray_Type(3);
-  _multianewarray3_Type               = multianewarray_Type(4);
+  _multianewarray3_Type               = multianewarray_Type(3);
+  _multianewarray4_Type               = multianewarray_Type(4);
   _multianewarray5_Type               = multianewarray_Type(5);
   _multianewarrayN_Type               = make_multianewarrayN_Type();
   _complete_monitor_enter_Type        = make_complete_monitor_enter_Type();
