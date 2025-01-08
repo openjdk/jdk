@@ -23,37 +23,65 @@
 
 package compiler.lib.generators;
 
+import java.util.List;
+import java.util.TreeMap;
+import java.util.function.Function;
+
 /**
- * Mixed results between two different generators with configurable weights.
+ * Mixed results between different generators with configurable weights.
  */
-class MixedGenerator<T> extends BoundGenerator<T> {
-    private final Generator<T> a;
-    private final Generator<T> b;
-    private final int weightA;
-    private final int weightB;
+class MixedGenerator<G extends Generator<T>, T> extends BoundGenerator<T> {
+    private final TreeMap<Integer, G> generators = new TreeMap<>();
+    private final int totalWeight;
 
     /**
-     * Creates a new {@link MixedGenerator}, which samples from two generators A and B,
+     * Creates a new {@link MixedGenerator}, which samples from a list of generators at random,
      * according to specified weights.
-     *
-     * @param weightA Weight for the distribution for a.
-     * @param weightB Weight for the distribution for b.
      */
-    MixedGenerator(Generators g, Generator<T> a, Generator<T> b, int weightA, int weightB) {
+    MixedGenerator(Generators g, List<G> generators, List<Integer> weights) {
         super(g);
-        this.a = a;
-        this.b = b;
-        this.weightA = weightA;
-        this.weightB = weightB;
+        if (weights.size() != generators.size()) {
+            throw new IllegalArgumentException("weights and generators must have the same size.");
+        }
+        int acc = 0;
+        for (int i = 0; i < generators.size(); i++) {
+            acc += weights.get(i);
+            this.generators.put(acc, generators.get(i));
+        }
+        this.totalWeight = acc;
+    }
+
+    /**
+     * Creates a new mixed generator by mapping each generator of the old generator to a new value or removing it.
+     * @param other The generator to copy from.
+     * @param generatorMapper A function that is called for each subgenerator in the old generator. Either return a
+     *                        generator that takes the role of the old generator (might be the same) or null to remove
+     *                        the generator completely. In this case, the weights of the other generators stay the same.
+     */
+    MixedGenerator(MixedGenerator<G, T> other, Function<G, G> generatorMapper) {
+        super(other.g);
+        int acc = 0;
+        int prevKey = 0;
+        for (var entry : other.generators.entrySet()) {
+            var gen = generatorMapper.apply(entry.getValue());
+            if (gen != null) {
+                // entry.getKey() is the sum of all generator weights up to this one.
+                // We compute this generator's weight by taking the difference to the previous key
+                int weight = entry.getKey() - prevKey;
+                acc += weight;
+                this.generators.put(acc, gen);
+            }
+            prevKey = entry.getKey();
+        }
+        if (this.generators.isEmpty()) {
+            throw new EmptyGeneratorException();
+        }
+        this.totalWeight = acc;
     }
 
     @Override
     public T next() {
-        int r = g.random.nextInt(0, weightA + weightB);
-        if (r < weightA) {
-            return a.next();
-        } else {
-            return b.next();
-        }
+        int r = g.random.nextInt(0, totalWeight);
+        return generators.higherEntry(r).getValue().next();
     }
 }

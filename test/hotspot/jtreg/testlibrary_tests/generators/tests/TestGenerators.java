@@ -43,6 +43,10 @@ import static compiler.lib.generators.Generators.G;
 
 
 public class TestGenerators {
+    // As it's hard to write tests with real randomness, we mock the randomness source so we can control which "random"
+    // values are fed to the generators. Thus, a lot of the tests below are white-box tests, that have knowledge about
+    // the internals of when randomness is consumed. There are also black-box tests which refer to Generators.G.
+    // Please also see MockRandomness to learn more about this class.
     static MockRandomness mockRandomness = new MockRandomness();
     static Generators mockGS = new Generators(mockRandomness);
 
@@ -66,15 +70,82 @@ public class TestGenerators {
     static void testMixed() {
         mockRandomness
                 .checkEmpty()
-                .enqueueInteger(0, 10, 7)
-                .enqueueInteger(0, 10, 5)
-                .enqueueInteger(0, 31, 4)
-                .enqueueInteger(0, 10, 1)
-                .enqueueInteger(0, 31, 18);
-        var g = mockGS.mixed(mockGS.uniformInts(0, 30), mockGS.single(-1), 7, 3);
-        Asserts.assertEQ(g.next(), -1);
-        Asserts.assertEQ(g.next(), 4);
-        Asserts.assertEQ(g.next(), 18);
+                .enqueueInteger(0, 10, 7)  // MixedGenerator chooses a generator: single
+                // single was chosen but does not consume randomness
+                .enqueueInteger(0, 10, 5)  // MixedGenerator chooses a generator: uniform ints
+                .enqueueInteger(0, 31, 4)  // uniform ints samples
+                .enqueueInteger(0, 10, 1)  // MixedGenerator chooses a generator: uniform ints
+                .enqueueInteger(0, 31, 18); // uniform ints samples
+        var g0 = mockGS.mixed(mockGS.uniformInts(0, 30), mockGS.single(-1), 7, 3);
+        Asserts.assertEQ(g0.next(), -1);
+        Asserts.assertEQ(g0.next(), 4);
+        Asserts.assertEQ(g0.next(), 18);
+
+        mockRandomness
+                .checkEmpty()
+                .enqueueInteger(0, 10, 1)  // MixedGenerator chooses a generator: the first uniform ints
+                .enqueueInteger(0, 31, 24) // uniform ints (1) samples
+                .enqueueInteger(0, 10, 2) // MixedGenerator chooses a generator: single
+                // single does not use randomness
+                .enqueueInteger(0, 10, 7) // MixedGenerator chooses a generator: the second uniform ints
+                .enqueueInteger(-10, 0, -2) // uniform ints (2) samples
+                .enqueueInteger(0, 10, 9) // MixedGenerator chooses a generator: the second uniform ints
+                .enqueueInteger(-10, 0, -4) // uniform ints (2) samples
+                .enqueueInteger(0, 10, 1) // MixedGenerator chooses a generator: the first uniform ints
+                .enqueueInteger(0, 31, 29); // uniform ints (1) samples
+
+        var g1 = mockGS.mixed(
+                List.of(2, 5, 3),
+                mockGS.uniformInts(0, 30), mockGS.single(-1), mockGS.uniformInts(-10, -1)
+        );
+        Asserts.assertEQ(g1.next(), 24);
+        Asserts.assertEQ(g1.next(), -1);
+        Asserts.assertEQ(g1.next(), -2);
+        Asserts.assertEQ(g1.next(), -4);
+        Asserts.assertEQ(g1.next(), 29);
+
+        mockRandomness
+            .checkEmpty()
+            .enqueueInteger(0, 10, 7)  // MixedGenerator chooses a generator: single
+            // single was chosen but does not consume randomness
+            .enqueueInteger(0, 10, 5)  // MixedGenerator chooses a generator: uniform ints
+            .enqueueInteger(0, 21, 18);  // uniform ints samples
+        var g0r0 = g0.restricted(-1, 20);
+        Asserts.assertEQ(g0r0.next(), -1);
+        Asserts.assertEQ(g0r0.next(), 18);
+
+        mockRandomness
+            .checkEmpty()
+            .enqueueInteger(0, 7, 6)  // MixedGenerator chooses a generator (weight for single will have been removed): uniform ints
+            .enqueueInteger(4, 21, 9);  // MixedGenerator chooses a generator: uniform ints
+        var g0r1 = g0.restricted(4, 20);
+        Asserts.assertEQ(g0r1.next(), 9);
+
+        mockRandomness
+            .checkEmpty()
+            .enqueueInteger(0, 10, 1)  // MixedGenerator chooses a generator: the first uniform ints
+            .enqueueInteger(0, 21, 2) // uniform ints (1) samples
+            .enqueueInteger(0, 10, 2) // MixedGenerator chooses a generator: single
+            // single does not use randomness
+            .enqueueInteger(0, 10, 7) // MixedGenerator chooses a generator: the second uniform ints
+            .enqueueInteger(-1, 0, -1);
+        var g1r0 = g1.restricted(-1, 20);
+        Asserts.assertEQ(g1r0.next(), 2);
+        Asserts.assertEQ(g1r0.next(), -1);
+        Asserts.assertEQ(g1r0.next(), -1);
+
+        mockRandomness
+                .checkEmpty()
+                .enqueueInteger(0, 10, 1)  // MixedGenerator chooses a generator: the first uniform ints
+                .enqueueInteger(0, 21, 2) // uniform ints (1) samples
+                .enqueueInteger(0, 10, 2) // MixedGenerator chooses a generator: single
+                // single does not use randomness
+                .enqueueInteger(0, 10, 7) // MixedGenerator chooses a generator: the second uniform ints
+                .enqueueInteger(-1, 0, -1);
+        var g1r1 = g1.restricted(-1, 20);
+        Asserts.assertEQ(g1r1.next(), 2);
+        Asserts.assertEQ(g1r1.next(), -1);
+        Asserts.assertEQ(g1r1.next(), -1);
     }
 
     static void testSpecialFloat() {
@@ -220,6 +291,30 @@ public class TestGenerators {
         mockRandomness.checkEmpty().enqueueInteger(19, 29, 17);
         Asserts.assertEQ(mockGS.uniformInts(Integer.MIN_VALUE, Integer.MAX_VALUE).restricted(10, 28).restricted(19, 33).next(), 17);
 
+        // inside interval positive
+        mockRandomness.checkEmpty().enqueueInteger(12, 19, 17);
+        Asserts.assertEQ(mockGS.uniformInts(10, 20).restricted(12, 18).next(), 17);
+
+        // inside interval negative
+        mockRandomness.checkEmpty().enqueueInteger(-18, -11, -17);
+        Asserts.assertEQ(mockGS.uniformInts(-20, -10).restricted(-18, -12).next(), -17);
+
+        // left interval positive
+        mockRandomness.checkEmpty().enqueueInteger(10, 13, 11);
+        Asserts.assertEQ(mockGS.uniformInts(10, 20).restricted(5, 12).next(), 11);
+
+        // left interval negative
+        mockRandomness.checkEmpty().enqueueInteger(-12, -9, -11);
+        Asserts.assertEQ(mockGS.uniformInts(-20, -10).restricted(-12, -5).next(), -11);
+
+        // right interval positive
+        mockRandomness.checkEmpty().enqueueInteger(17, 21, 19);
+        Asserts.assertEQ(mockGS.uniformInts(10, 20).restricted(17, 22).next(), 19);
+
+        // right interval negative
+        mockRandomness.checkEmpty().enqueueInteger(-20, -16, -19);
+        Asserts.assertEQ(mockGS.uniformInts(-20, -10).restricted(-22, -17).next(), -19);
+
         mockRandomness.checkEmpty().enqueueInteger(144);
         Asserts.assertEQ(mockGS.uniformInts().next(), 144);
 
@@ -320,6 +415,32 @@ public class TestGenerators {
 
         Asserts.assertThrows(EmptyGeneratorException.class, () -> G.single(10).restricted(0, 1));
         Asserts.assertNotNull(G.single(10).restricted(9, 10));
+
+        Asserts.assertThrows(EmptyGeneratorException.class, () -> G.mixed(G.uniformInts(0, 10), G.uniformInts(15, 20), 5, 5).restricted(30, 34));
+        Asserts.assertNotNull(G.mixed(G.uniformInts(0, 10), G.uniformInts(15, 20), 5, 5).restricted(5, 18));
+        Asserts.assertNotNull(G.mixed(G.uniformInts(0, 10), G.uniformInts(15, 20), 5, 5).restricted(5, 7));
+        Asserts.assertNotNull(G.mixed(G.uniformInts(0, 10), G.uniformInts(15, 20), 5, 5).restricted(16, 18));
+
+        Asserts.assertThrows(EmptyGeneratorException.class, () -> G.mixed(
+                List.of(3, 4, 6),
+                G.uniformInts(0, 10), G.uniformInts(15, 20), G.uniformInts(30, 40)
+        ).restricted(80, 83));
+        Asserts.assertNotNull(G.mixed(
+                List.of(3, 4, 6),
+                G.uniformInts(0, 10), G.uniformInts(15, 20), G.uniformInts(30, 40)
+        ).restricted(10, 35));
+        Asserts.assertNotNull(G.mixed(
+                List.of(3, 4, 6),
+                G.uniformInts(0, 10), G.uniformInts(15, 20), G.uniformInts(30, 40)
+        ).restricted(5, 8));
+        Asserts.assertNotNull(G.mixed(
+                List.of(3, 4, 6),
+                G.uniformInts(0, 10), G.uniformInts(15, 20), G.uniformInts(30, 40)
+        ).restricted(17, 19));
+        Asserts.assertNotNull(G.mixed(
+                List.of(3, 4, 6),
+                G.uniformInts(0, 10), G.uniformInts(15, 20), G.uniformInts(30, 40)
+        ).restricted(31, 38));
     }
 
     static void testFill() {

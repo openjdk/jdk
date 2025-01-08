@@ -43,17 +43,9 @@ abstract class UniformIntersectionRestrictableGenerator<T extends Comparable<T>>
      * The probability of each element occurring in the new generator stay the same relative to each other.
      */
     @Override
-    public RestrictableGenerator<T> restricted(T newLo, T newHi) {
-        if (newLo.compareTo(newHi) > 0) throw new EmptyGeneratorException();
-        if (newHi.compareTo(lo()) <= 0) {  // new interval is to the left
-            if (newHi.compareTo(lo()) < 0) throw new EmptyGeneratorException();
-            return doRestrictionFromIntersection(newLo, hi());
-        } else if (hi().compareTo(newLo) <= 0) {  // new interval is to the right
-            if (hi().compareTo(newLo) < 0) throw new EmptyGeneratorException();
-            return doRestrictionFromIntersection(lo(), newHi);
-        } else {  // old and new interval intersect
-            return doRestrictionFromIntersection(max(newLo, lo()), min(newHi, hi()));
-        }
+    public RestrictableGenerator<T> restricted(T newLo /*as*/, T newHi /*ae*/) {
+        if (lo().compareTo(newHi) > 0 || newLo.compareTo(hi()) > 0) throw new EmptyGeneratorException();
+        return doRestrictionFromIntersection(max(newLo, lo()), min(newHi, hi()));
     }
 
     private T max(T a, T b) {

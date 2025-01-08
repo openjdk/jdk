@@ -215,9 +215,41 @@ public final class Generators {
 
     /**
      * Returns a new generator that samples its next element from either generator A or B, with assignable weights.
+     * An overload for restrictable generators exists.
      */
     public <T> Generator<T> mixed(Generator<T> a, Generator<T> b, int weightA, int weightB) {
-        return new MixedGenerator<>(this, a, b, weightA, weightB);
+        return new MixedGenerator<>(this, List.of(a, b), List.of(weightA, weightB));
+    }
+
+    /**
+     * Returns a new generator that samples its next element randomly from one of the provided generators with
+     * assignable weights.
+     * An overload for restrictable generators exists.
+     */
+    @SafeVarargs
+    public final <T> Generator<T> mixed(List<Integer> weights, Generator<T>... generators) {
+        return new MixedGenerator<>(this, Arrays.asList(generators), weights);
+    }
+
+    /**
+     * Returns a new restrictable generator that samples its next element from either generator A or B, with assignable weights.
+     * Restricting this generator restricts each subgenerator. Generators which become empty by the restriction are
+     * removed from the new mixed generator. Weights stay their original value if a generator is removed. If the mixed
+     * generator would become empty by applying a restriction {@link EmptyGeneratorException} is thrown.
+     */
+    public <T extends Comparable<T>> RestrictableGenerator<T> mixed(RestrictableGenerator<T> a, RestrictableGenerator<T> b, int weightA, int weightB) {
+        return new RestrictableMixedGenerator<>(this, List.of(a, b), List.of(weightA, weightB));
+    }
+
+    /**
+     * Returns a new restrictable generator that samples its next element randomly from one of the provided restrictable
+     * generators with assignable weights.
+     * See {@link #mixed(RestrictableGenerator, RestrictableGenerator, int, int)} for details about restricting this
+     * generator.
+     */
+    @SafeVarargs
+    public final <T extends Comparable<T>> RestrictableGenerator<T> mixed(List<Integer> weights, RestrictableGenerator<T>... generators) {
+        return new RestrictableMixedGenerator<>(this, Arrays.asList(generators), weights);
     }
 
     /**
@@ -225,7 +257,7 @@ public final class Generators {
      *
      * @return Random int generator.
      */
-    public Generator<Integer> ints() {
+    public RestrictableGenerator<Integer> ints() {
         switch(random.nextInt(0, 6)) {
             case 0  -> { return uniformInts(); }
             case 1  -> { return specialInts(0); }
@@ -254,7 +286,7 @@ public final class Generators {
         return orderedRandomElement(set);
     }
 
-    public Generator<Integer> mixedWithSpecialInts(int weightA, int weightB, int rangeSpecial) {
+    public RestrictableGenerator<Integer> mixedWithSpecialInts(int weightA, int weightB, int rangeSpecial) {
         return mixed(uniformInts(), specialInts(rangeSpecial), weightA, weightB);
     }
 
@@ -263,7 +295,7 @@ public final class Generators {
      *
      * @return Random long generator.
      */
-    public Generator<Long> longs() {
+    public RestrictableGenerator<Long> longs() {
         switch(random.nextInt(0, 6)) {
             case 0  -> { return uniformLongs(); }
             case 1  -> { return specialLongs(0); }
@@ -280,7 +312,7 @@ public final class Generators {
      * is close to a power of two p if it is in the interval [p - range, p + range]. Note that we also consider negative
      * values as powers of two.
      */
-    public Generator<Long> specialLongs(int range) {
+    public RestrictableGenerator<Long> specialLongs(int range) {
         TreeSet<Long> set = new TreeSet<>();
         for (int i = 0; i < 64; i++) {
             long pow2 = 1L << i;
@@ -292,7 +324,7 @@ public final class Generators {
         return orderedRandomElement(set);
     }
 
-    public Generator<Long> mixedWithSpecialLongs(int weightA, int weightB, int rangeSpecial) {
+    public RestrictableGenerator<Long> mixedWithSpecialLongs(int weightA, int weightB, int rangeSpecial) {
         return mixed(uniformLongs(), specialLongs(rangeSpecial), weightA, weightB);
     }
 
@@ -358,6 +390,14 @@ public final class Generators {
         return mixed(background, SPECIAL_DOUBLES, weightNormal, weightSpecial);
     }
 
+    /**
+     * Returns a restrictable mixed generator that mixes the provided background generator and SPECIAL_DOUBLES with the provided
+     * weights.
+     */
+    public RestrictableGenerator<Double> mixedWithSpecialDoubles(RestrictableGenerator<Double> background, int weightNormal, int weightSpecial) {
+        return mixed(background, SPECIAL_DOUBLES, weightNormal, weightSpecial);
+    }
+
     /*
      * Generates interesting double values, which often are corner cases such as, 0, 1, -1, NaN, +/- Infinity, Min,
      * Max.
@@ -379,6 +419,14 @@ public final class Generators {
      * weights.
      */
     public Generator<Float> mixedWithSpecialFloats(Generator<Float> background, int weightNormal, int weightSpecial) {
+        return mixed(background, SPECIAL_FLOATS, weightNormal, weightSpecial);
+    }
+
+    /**
+     * Returns a restrictable mixed generator that mixes the provided background generator and SPECIAL_FLOATS with the provided
+     * weights.
+     */
+    public RestrictableGenerator<Float> mixedWithSpecialFloats(RestrictableGenerator<Float> background, int weightNormal, int weightSpecial) {
         return mixed(background, SPECIAL_FLOATS, weightNormal, weightSpecial);
     }
 
