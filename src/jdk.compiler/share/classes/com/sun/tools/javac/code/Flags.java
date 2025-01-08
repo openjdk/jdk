@@ -402,7 +402,7 @@ public class Flags {
     /**
      * Flag to indicate type annotations have been queued for field initializers.
      */
-    public static final long FIELD_INIT_TYPE_ANNOTATIONS_QUEUED = 1L<<62; // VarSymbols
+    public static final long FIELD_INIT_TYPE_ANNOTATIONS_QUEUED = 1L<<53; // VarSymbols
 
     /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.
