@@ -263,8 +263,8 @@ public final class Generators {
             case 1  -> { return specialInts(0); }
             case 2  -> { return specialInts(2); }
             case 3  -> { return specialInts(16); }
-            case 4  -> { return mixedWithSpecialInts(1, 1, 16); }
-            case 5  -> { return mixedWithSpecialInts(1, 2, 2); }
+            case 4  -> { return uniformIntsMixedWithSpecials(1, 1, 16); }
+            case 5  -> { return uniformIntsMixedWithSpecials(1, 2, 2); }
             default -> { throw new RuntimeException("impossible"); }
         }
     }
@@ -286,7 +286,7 @@ public final class Generators {
         return orderedRandomElement(set);
     }
 
-    public RestrictableGenerator<Integer> mixedWithSpecialInts(int weightA, int weightB, int rangeSpecial) {
+    public RestrictableGenerator<Integer> uniformIntsMixedWithSpecials(int weightA, int weightB, int rangeSpecial) {
         return mixed(uniformInts(), specialInts(rangeSpecial), weightA, weightB);
     }
 
@@ -301,8 +301,8 @@ public final class Generators {
             case 1  -> { return specialLongs(0); }
             case 2  -> { return specialLongs(2); }
             case 3  -> { return specialLongs(16); }
-            case 4  -> { return mixedWithSpecialLongs(1, 1, 16); }
-            case 5  -> { return mixedWithSpecialLongs(1, 2, 2); }
+            case 4  -> { return uniformLongsMixedWithSpecials(1, 1, 16); }
+            case 5  -> { return uniformLongsMixedWithSpecials(1, 2, 2); }
             default -> { throw new RuntimeException("impossible"); }
         }
     }
@@ -324,7 +324,7 @@ public final class Generators {
         return orderedRandomElement(set);
     }
 
-    public RestrictableGenerator<Long> mixedWithSpecialLongs(int weightA, int weightB, int rangeSpecial) {
+    public RestrictableGenerator<Long> uniformLongsMixedWithSpecials(int weightA, int weightB, int rangeSpecial) {
         return mixed(uniformLongs(), specialLongs(rangeSpecial), weightA, weightB);
     }
 

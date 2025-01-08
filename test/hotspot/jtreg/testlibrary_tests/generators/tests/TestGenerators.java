@@ -26,7 +26,7 @@
  * @summary Test functionality of the Generators library.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @build MockRandomness
+ * @build MockRandomnessSource
  * @run driver testlibrary_tests.generators.tests.TestGenerators
  */
 
