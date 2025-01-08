@@ -1159,6 +1159,29 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // added to the worklist because it would be too expensive to walk
     // down the graph for 1000 nodes and put all on the worklist.
     case Op_RangeCheck:
+
+    // In AddNode::Ideal, we call "commute", which swaps the inputs so
+    // that smaller idx are first. Tracking it back, it led me to
+    // PhaseIdealLoop::remix_address_expressions which swapped the edges.
+    //
+    // Example:
+    //   Before PhaseIdealLoop::remix_address_expressions
+    //     154  AddI  === _ 12 144
+    //   After PhaseIdealLoop::remix_address_expressions
+    //     154  AddI  === _ 144 12
+    //   After AddNode::Ideal
+    //     154  AddI  === _ 12 144
+    //
+    // I suspect that the node should be added to the IGVN worklist after
+    // PhaseIdealLoop::remix_address_expressions
+    //
+    // This is the only case I looked at, there may be others. Found like this:
+    //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
+    case Op_AddI:
+
+    // We do not even call Ideal for all the exceptions above. If first
+    // called Ideal on them, then we may already have modified the graph
+    // and cannot undo that.
       return false;
   }
 
