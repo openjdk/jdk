@@ -52,6 +52,7 @@ import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 
 import static java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class ButtonGroupFocusTest {
@@ -65,6 +66,8 @@ public final class ButtonGroupFocusTest {
     private static final CountDownLatch button2FocusLatch = new CountDownLatch(1);
     private static final CountDownLatch button3FocusLatch = new CountDownLatch(1);
     private static final CountDownLatch button4FocusLatch = new CountDownLatch(1);
+
+    private static final CountDownLatch button2FocusLatch2 = new CountDownLatch(2);
 
     private static final long FOCUS_TIMEOUT = 3;
 
@@ -101,6 +104,8 @@ public final class ButtonGroupFocusTest {
             button2.addFocusListener(new LatchFocusListener(button2FocusLatch));
             button3.addFocusListener(new LatchFocusListener(button3FocusLatch));
             button4.addFocusListener(new LatchFocusListener(button4FocusLatch));
+
+            button2.addFocusListener(new LatchFocusListener(button2FocusLatch2));
 
             button2.setSelected(true);
 
@@ -143,6 +148,10 @@ public final class ButtonGroupFocusTest {
             }
             robot.waitForIdle();
             robot.delay(200);
+
+            if (button2FocusLatch2.await(1, MILLISECONDS)) {
+                throw new RuntimeException("Focus moved back to Button 2");
+            }
 
             SwingUtilities.invokeAndWait(() -> button3.setSelected(true));
             robot.waitForIdle();
