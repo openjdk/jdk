@@ -87,18 +87,9 @@ vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java
 vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 generic-all
 
 ###
-# The test first suspends a vthread and all the carriers and then it resumes the vthread expecting it
-# to run to completion. In mainline it only works because the suspension step happens while the vthread is
-# pinned to the carrier blocked on synchronized. So the carrier only actually suspends on the next unmount
-# transition which in this test happens once the vthread has finished executing the expected code.
-
+# Fails because resume of a virtual thread is not enough to allow the virtual thread
+# to make progress when all other threads are currently suspended.
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
-
-###
-# The test sends a StopThread to a vthread expecting that is currently pinned to the carrier blocked on
-# synchronized. Since the vthread is now unmounted StopThread returns JVMTI_ERROR_OPAQUE_FRAME error.
-
-vmTestbase/nsk/jdb/kill/kill001/kill001.java 8338714 generic-all
 
 ###
 # Fails on Windows because of additional memory allocation.
