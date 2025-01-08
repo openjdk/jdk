@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1057,7 +1057,9 @@ void PhaseIterGVN::optimize() {
 
 #ifdef ASSERT
 void PhaseIterGVN::verify_optimize() {
-  if (is_verify_Value()) {
+  if (is_verify_Value() ||
+      is_verify_Ideal() ||
+      is_verify_Identity()) {
     ResourceMark rm;
     Unique_Node_List worklist;
     bool failure = false;
@@ -1065,7 +1067,9 @@ void PhaseIterGVN::verify_optimize() {
     worklist.push(C->root());
     for (uint j = 0; j < worklist.size(); ++j) {
       Node* n = worklist.at(j);
-      failure |= verify_node_value(n);
+      if (is_verify_Value())    { failure |= verify_node_Value(n); }
+      if (is_verify_Ideal())    { failure |= verify_node_Ideal(n); }
+      if (is_verify_Identity()) { failure |= verify_node_Identity(n); }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
         if (n->in(i) != nullptr) {
@@ -1089,7 +1093,7 @@ void PhaseIterGVN::verify_optimize() {
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
-bool PhaseIterGVN::verify_node_value(Node* n) {
+bool PhaseIterGVN::verify_node_Value(Node* n) {
   // If we assert inside type(n), because the type is still a null, then maybe
   // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
@@ -1144,6 +1148,16 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
   tnew->dump_on(tty);
   tty->cr();
   return true;
+}
+
+bool PhaseIterGVN::verify_node_Ideal(Node* n) {
+  assert(false, "TODO Ideal"); // TODO
+  return false;
+}
+
+bool PhaseIterGVN::verify_node_Identity(Node* n) {
+  assert(false, "TODO Identity"); // TODO
+  return false;
 }
 #endif
 
@@ -1840,12 +1854,12 @@ void PhaseCCP::analyze() {
 
 #ifdef ASSERT
 // For every node n on verify list, check if type(n) == n->Value()
-// We have a list of exceptions, see comments in verify_node_value.
+// We have a list of exceptions, see comments in verify_node_Value.
 void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
   bool failure = false;
   while (worklist_verify.size()) {
     Node* n = worklist_verify.pop();
-    failure |= verify_node_value(n);
+    failure |= verify_node_Value(n);
   }
   // If we get this assert, check why the reported nodes were not processed again in CCP.
   // We should either make sure that these nodes are properly added back to the CCP worklist

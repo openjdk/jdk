@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
 
 JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
   uint original_value = value;
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 4; i++) {
     if (value % 10 > 1) {
       JVMFlag::printError(verbose,
                           "Invalid value (" UINT32_FORMAT ") "
@@ -313,7 +313,7 @@ JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
   if (value != 0) {
     JVMFlag::printError(verbose,
                         "Invalid value (" UINT32_FORMAT ") "
-                        "for VerifyIterativeGVN: maximal 2 digits\n", original_value);
+                        "for VerifyIterativeGVN: maximal 4 digits\n", original_value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
