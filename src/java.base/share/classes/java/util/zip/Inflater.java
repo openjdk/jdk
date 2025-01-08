@@ -627,11 +627,10 @@ public class Inflater implements AutoCloseable {
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
      *
-     * @throws IllegalStateException if the Inflater is closed
-     *
      * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of compressed bytes input so far
+     * @throws IllegalStateException if the Inflater is closed
      */
     @Deprecated(since = "23")
     public int getTotalIn() {
@@ -660,11 +659,10 @@ public class Inflater implements AutoCloseable {
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
      *
-     * @throws IllegalStateException if the Inflater is closed
-     *
      * @deprecated Use {@link #getBytesWritten()} instead
      *
      * @return the total number of uncompressed bytes output so far
+     * @throws IllegalStateException if the Inflater is closed
      */
     @Deprecated(since = "23")
     public int getTotalOut() {

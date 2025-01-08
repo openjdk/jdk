@@ -442,9 +442,9 @@ public class Deflater implements AutoCloseable {
      * @param output the buffer for the compressed data
      * @param off the start offset of the data
      * @param len the maximum number of bytes of compressed data
-     * @throws IllegalStateException if the Deflater is closed
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
+     * @throws IllegalStateException if the Deflater is closed
      */
     public int deflate(byte[] output, int off, int len) {
         return deflate(output, off, len, NO_FLUSH);
@@ -462,9 +462,9 @@ public class Deflater implements AutoCloseable {
      * {@code deflater.deflate(b, 0, b.length, Deflater.NO_FLUSH)}.
      *
      * @param output the buffer for the compressed data
-     * @throws IllegalStateException if the Deflater is closed
      * @return the actual number of bytes of compressed data written to the
      *         output buffer
+     * @throws IllegalStateException if the Deflater is closed
      */
     public int deflate(byte[] output) {
         return deflate(output, 0, output.length, NO_FLUSH);
@@ -812,11 +812,10 @@ public class Deflater implements AutoCloseable {
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
      *
-     * @throws IllegalStateException if the Deflater is closed
-     *
      * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of uncompressed bytes input so far
+     * @throws IllegalStateException if the Deflater is closed
      */
     @Deprecated(since = "23")
     public int getTotalIn() {
@@ -845,11 +844,10 @@ public class Deflater implements AutoCloseable {
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
      *
-     * @throws IllegalStateException if the Deflater is closed
-     *
      * @deprecated Use {@link #getBytesWritten()} instead
      *
      * @return the total number of compressed bytes output so far
+     * @throws IllegalStateException if the Deflater is closed
      */
     @Deprecated(since = "23")
     public int getTotalOut() {
