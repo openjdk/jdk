@@ -225,6 +225,6 @@ public final class HexDigits {
         long m = (x + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
         return ((m << 1) + (m >> 1) - (m >> 4))
                 + 0x3030_3030_3030_3030L
-                + (x & 0x0F0F_0F0F_0F0F_0F0FL);
+                + x;
     }
 }
