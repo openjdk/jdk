@@ -308,6 +308,12 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
     FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
+
+  // The OptoScheduling information is not maintained in s390.ad.
+  if (OptoScheduling) {
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
+  }
 #endif
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
@@ -322,12 +328,6 @@ void VM_Version::initialize() {
   // Unaligned accesses are not atomic, of course.
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
-  }
-
-  // The OptoScheduling information is not maintained in s390.ad.
-  if (OptoScheduling) {
-    warning("OptoScheduling is not supported on this CPU.");
-    FLAG_SET_DEFAULT(OptoScheduling, false);
   }
 }
 

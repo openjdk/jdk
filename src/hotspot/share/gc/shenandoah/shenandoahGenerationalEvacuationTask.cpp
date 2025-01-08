@@ -202,7 +202,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   while (obj_addr < tams) {
     oop obj = cast_to_oop(obj_addr);
     if (marking_context->is_marked(obj)) {
-      assert(obj->klass() != nullptr, "klass should not be NULL");
+      assert(obj->klass() != nullptr, "klass should not be null");
       // This thread is responsible for registering all objects in this region.  No need for lock.
       scanner->register_object_without_lock(obj_addr);
       obj_addr += obj->size();

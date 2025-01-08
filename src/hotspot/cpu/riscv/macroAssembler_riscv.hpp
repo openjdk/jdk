@@ -1362,7 +1362,8 @@ public:
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
 
-  void ctzc_bit(Register Rd, Register Rs, bool isLL = false, Register tmp1 = t0, Register tmp2 = t1);
+  void ctzc_bits(Register Rd, Register Rs, bool isLL = false,
+                 Register tmp1 = t0, Register tmp2 = t1);
 
   void zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
@@ -1518,16 +1519,16 @@ public:
         sltu(Rt, zr, Rt);
         break;
       case T_CHAR   :
-        zero_extend(Rt, Rt, 16);
+        zext(Rt, Rt, 16);
         break;
       case T_BYTE   :
-        sign_extend(Rt, Rt, 8);
+        sext(Rt, Rt, 8);
         break;
       case T_SHORT  :
-        sign_extend(Rt, Rt, 16);
+        sext(Rt, Rt, 16);
         break;
       case T_INT    :
-        sign_extend(Rt, Rt, 32);
+        sext(Rt, Rt, 32);
         break;
       case T_LONG   : /* nothing to do */        break;
       case T_VOID   : /* nothing to do */        break;
@@ -1542,8 +1543,8 @@ public:
   void double_compare(Register result, FloatRegister Rs1, FloatRegister Rs2, int unordered_result);
 
   // Zero/Sign-extend
-  void zero_extend(Register dst, Register src, int bits);
-  void sign_extend(Register dst, Register src, int bits);
+  void zext(Register dst, Register src, int bits);
+  void sext(Register dst, Register src, int bits);
 
 private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);

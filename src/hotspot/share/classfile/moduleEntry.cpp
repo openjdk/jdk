@@ -742,7 +742,7 @@ void ModuleEntryTable::modules_do(ModuleClosure* closure) {
 void ModuleEntry::print(outputStream* st) {
   st->print_cr("entry " PTR_FORMAT " name %s module " PTR_FORMAT " loader %s version %s location %s strict %s",
                p2i(this),
-               name() == nullptr ? UNNAMED_MODULE : name()->as_C_string(),
+               name_as_C_string(),
                p2i(module()),
                loader_data()->loader_name_and_id(),
                version() != nullptr ? version()->as_C_string() : "nullptr",

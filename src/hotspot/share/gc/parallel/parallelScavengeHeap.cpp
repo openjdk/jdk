@@ -45,8 +45,8 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/universe.hpp"
-#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
@@ -74,7 +74,7 @@ jint ParallelScavengeHeap::initialize() {
   ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
-  PSCardTable* card_table = new PSCardTable(heap_rs.region());
+  PSCardTable* card_table = new PSCardTable(_reserved);
   card_table->initialize(old_rs.base(), young_rs.base());
 
   CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
@@ -130,7 +130,7 @@ jint ParallelScavengeHeap::initialize() {
 
   ParallelInitLogger::print();
 
-  FullGCForwarding::initialize(heap_rs.region());
+  FullGCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }
