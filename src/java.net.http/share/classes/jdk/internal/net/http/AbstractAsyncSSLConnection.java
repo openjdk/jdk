@@ -152,7 +152,7 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
      * configure the {@link SSLEngine} used by this connection.
      * <p>
      * The given {@code serverName} is given preference, and if it is not null and
-     * is not a IP address literal, then the returned list will contain only one
+     * is not an IP address literal, then the returned list will contain only one
      * {@code SNIServerName} formed out of the {@code serverName}. If {@code serverName}
      * is null or is an IP address literal then the {@code SNIServerName}(s)
      * configured through {@link HttpClient#sslParameters()} will be returned. If none have
