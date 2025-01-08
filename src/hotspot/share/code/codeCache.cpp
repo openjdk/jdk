@@ -249,7 +249,7 @@ void CodeCache::initialize_heaps() {
   }
 
   // Compatibility.
-  size_t non_nmethod_min_size = min_cache_size + compiler_buffer_size;
+  size_t non_nmethod_min_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3) + compiler_buffer_size;
   if (!non_nmethod.set && profiled.set && non_profiled.set) {
     set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size, non_nmethod_min_size);
   }
