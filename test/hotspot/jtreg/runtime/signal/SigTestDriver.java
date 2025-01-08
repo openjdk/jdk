@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,8 @@ public class SigTestDriver {
         boolean passed = true;
 
         for (String mode : new String[] {"sigset", "sigaction"}) {
+            // Scenarios postpre and postpost requires libjsig.
+            // The other scenarios are run with libjsig to validate the deprecation warning.
             for (String scenario : new String[] {"nojvm", "prepre", "prepost", "postpre#libjsig", "postpost#libjsig",
                     "nojvm#libjsig", "prepre#libjsig", "prepost#libjsig", }) {
                 cmd.set(modeIdx, mode);
@@ -128,12 +130,12 @@ public class SigTestDriver {
                             boolean sigUsedByJVM = sigIsUsedByJVM(signame);
                             if (deprecatedSigFunctionUsed && jvmInvolved && sigUsedByJVM) {
                                 if (!warningPrinted) {
-                                    failureMessage = "FAILED Missing deprecation warning for mode " + mode +
+                                    failureMessage = "FAILED: Missing deprecation warning for mode " + mode +
                                                      ", scenario: "+ scenario + ", signal " + signame;
                                     passed = false;
                                 }
                             } else if (warningPrinted) {
-                                failureMessage = "FAILED Deprecation warning shouldn't be printed for mode " + mode +
+                                failureMessage = "FAILED: Deprecation warning shouldn't be printed for mode " + mode +
                                                  ", scenario: "+ scenario + ", signal " + signame;
                                 passed = false;
                             }
@@ -172,8 +174,7 @@ public class SigTestDriver {
     }
 
     /**
-     * Return true for all signals used by the JVM. This only covers the
-     * case where the JVM is started normally, and not with -Xrs.
+     * Return true for the chainable signals that are used by the JVM.
      * See src/hotspot/os/posix/signals_posix.cpp
      * @param signame
      * @return true if signal is used by JVM, false otherwise
