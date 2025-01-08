@@ -172,7 +172,8 @@ static bool vma_touches_thread_stack(const void* from, const void* to, const Thr
   // Very rarely however is a VMA backing a thread stack folded together with another adjacent VMA by the
   // kernel. That can happen, e.g., for non-java threads that don't have guard pages.
   // Therefore we go for the simplest way here and check for intersection between VMA and thread stack.
-  return range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base());
+  // Note it is possible to encounter a brand new thread that has not yet initialized its stack fields.
+  return range_intersects(from, to, (const void*)t->stack_end(), (const void*)t->stack_base_or_null());
 }
 
 struct GCThreadClosure : public ThreadClosure {

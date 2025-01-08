@@ -28,10 +28,12 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
-#include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
 inline bool match_F_R(jshort flags) {
