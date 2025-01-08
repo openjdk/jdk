@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,17 +70,17 @@ public class QName implements Serializable {
     private static final long serialVersionUID = -9120448754896609940L;
 
     /**
-     * <p>Namespace URI of this <code>QName</code>.</p>
+     * @serial <p>Namespace URI of this <code>QName</code>.</p>
      */
     private final String namespaceURI;
 
     /**
-     * <p>local part of this <code>QName</code>.</p>
+     * @serial <p>local part of this <code>QName</code>.</p>
      */
     private final String localPart;
 
     /**
-     * <p>prefix of this <code>QName</code>.</p>
+     * @serial <p>prefix of this <code>QName</code>.</p>
      */
     private final String prefix;
 
