@@ -353,9 +353,10 @@ final class FieldBuilder {
                 var subFields = we.field().getFields().reversed();
                 if (!subFields.isEmpty() && !KNOWN_TYPES.contains(we.field().getTypeName())) {
                     for (ValueDescriptor subField : subFields) {
-                        String n = we.name + "." + subField.getName();
-                        String l = we.label + " : " + makeLabel(subField, false);
-                        if (stack.size() < 2) { // Limit depth to 2
+                        // Limit depth to 2
+                        if (!we.name.contains(".")) {
+                            String n = we.name + "." + subField.getName();
+                            String l = we.label + " : " + makeLabel(subField, false);
                             stack.push(new WildcardElement(n, l, subField));
                         }
                     }
