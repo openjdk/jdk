@@ -7135,7 +7135,7 @@ instruct incI_rReg_ndd(rRegI dst, rRegI src, immI_1 val)
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ eincrementl($dst$$Register, $src$$Register, true);
+    __ eincl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7147,7 +7147,7 @@ instruct incI_rReg_mem_ndd(rRegI dst, memory src, immI_1 val)
 
   format %{ "eincl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ eincrementl($dst$$Register, $src$$Address, true);
+    __ eincl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7187,7 +7187,7 @@ instruct decI_rReg_ndd(rRegI dst, rRegI src, immI_M1 val)
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ edecrementl($dst$$Register, $src$$Register, true);
+    __ edecl($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7199,7 +7199,7 @@ instruct decI_rReg_mem_ndd(rRegI dst, memory src, immI_M1 val)
 
   format %{ "edecl    $dst, $src\t# int ndd" %}
   ins_encode %{
-    __ edecrementl($dst$$Register, $src$$Address, true);
+    __ edecl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7423,7 +7423,7 @@ instruct incL_rReg_ndd(rRegI dst, rRegI src, immL1 val)
 
   format %{ "eincq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ eincrementq($dst$$Register, $src$$Register, true);
+    __ eincq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7435,7 +7435,7 @@ instruct incL_rReg_mem_ndd(rRegI dst, memory src, immL1 val)
 
   format %{ "eincq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ eincrementq($dst$$Register, $src$$Address, true);
+    __ eincq($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7475,7 +7475,7 @@ instruct decL_rReg_ndd(rRegL dst, rRegL src, immL_M1 val)
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ edecrementq($dst$$Register, $src$$Register, true);
+    __ edecq($dst$$Register, $src$$Register, true);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -7487,7 +7487,7 @@ instruct decL_rReg_mem_ndd(rRegL dst, memory src, immL_M1 val)
 
   format %{ "edecq    $dst, $src\t# long ndd" %}
   ins_encode %{
-    __ edecrementq($dst$$Register, $src$$Address, true);
+    __ edecq($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
