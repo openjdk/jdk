@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_RBTREE_HPP
 #define SHARE_UTILITIES_RBTREE_HPP
 
+#include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -90,14 +91,6 @@ public:
     // Move node down to the right, and left child up
     RBNode* rotate_right();
 
-    // Visit all RBNodes in ascending order.
-    template <typename F>
-    void visit_in_order_inner(F f);
-
-    // Visit all RBNodes in ascending order whose keys are in range [from, to).
-    template <typename F>
-    void visit_range_in_order_inner(const K& from, const K& to, F f);
-
   #ifdef ASSERT
     bool is_correct(unsigned int num_blacks, unsigned int maximum_depth, unsigned int current_depth) const;
     size_t count_nodes() const;
@@ -109,9 +102,7 @@ private:
 
   RBNode* allocate_node(const K& k, const V& v) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
-    if (node_place == nullptr) {
-      return nullptr;
-    }
+    assert(node_place != nullptr, "rb-tree allocator must exit on failure");
     _num_nodes++;
     return new (node_place) RBNode(k, v);
   }
@@ -131,6 +122,7 @@ private:
 
   RBNode* find_node(RBNode* curr, const K& k);
 
+   // If the node with key k already exist, the value is updated instead.
   RBNode* insert_node(const K& k, const V& v);
 
   void fix_insert_violations(RBNode* node);
@@ -139,8 +131,6 @@ private:
 
   // Assumption: node has at most one child. Two children is handled in `remove()`
   void remove_from_tree(RBNode* node);
-
-  void remove_all_inner(RBNode* node);
 
 public:
   NONCOPYABLE(RBTree);
@@ -170,7 +160,16 @@ public:
 
   // Removes all existing nodes from the tree.
   void remove_all() {
-    remove_all_inner(_root);
+    GrowableArrayCHeap<RBNode*, mtInternal> to_delete(2 * log2i(_num_nodes + 1));
+    to_delete.push(_root);
+
+    while (!to_delete.is_empty()) {
+      RBNode* head = to_delete.pop();
+      if (head == nullptr) continue;
+      to_delete.push(head->_left);
+      to_delete.push(head->_right);
+      _allocator.free(head);
+    }
     _num_nodes = 0;
     _root = nullptr;
   }
@@ -239,18 +238,11 @@ public:
 
   // Visit all RBNodes in ascending order, calling f on each node.
   template <typename F>
-  void visit_in_order(F f) const {
-    _root->visit_in_order_inner(f);
-  }
+  void visit_in_order(F f);
 
   // Visit all RBNodes in ascending order whose keys are in range [from, to), calling f on each node.
   template <typename F>
-  void visit_range_in_order(const K& from, const K& to, F f) {
-    if (_root == nullptr) {
-      return;
-    }
-    _root->visit_range_in_order_inner(from, to, f);
-  }
+  void visit_range_in_order(const K& from, const K& to, F f);
 
 #ifdef ASSERT
   // Verifies that the tree is correct and holds rb-properties
@@ -263,7 +255,6 @@ private:
   private:
     const RBTree* const _tree;
     GrowableArrayCHeap<RBNode*, mtInternal> _to_visit;
-    RBNode* _next;
 
     void push_left(RBNode* node);
     void push_right(RBNode* node);
@@ -272,6 +263,7 @@ private:
     NONCOPYABLE(IteratorImpl);
 
     IteratorImpl(const RBTree* tree) : _tree(tree) {
+      _to_visit.reserve(2 * log2i(_tree->_num_nodes + 1));
       Forward ? push_left(tree->_root) : push_right(tree->_root);
     }
 

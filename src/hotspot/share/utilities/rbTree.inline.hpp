@@ -87,35 +87,6 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_right() {
   return old_left;
 }
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-template <typename F>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::visit_in_order_inner(F f) {
-  if (_left != nullptr) {
-    _left->visit_in_order_inner(f);
-  }
-  f(this);
-  if (_right != nullptr) {
-    _right->visit_in_order_inner(f);
-  }
-}
-
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-template <typename F>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::visit_range_in_order_inner(
-    const K& from, const K& to, F f) {
-  int cmp_from = COMPARATOR::cmp(from, key());
-  int cmp_to = COMPARATOR::cmp(to, key());
-  if (_left != nullptr && cmp_from < 0) { // from < key
-    _left->visit_range_in_order_inner(from, to, f);
-  }
-  if (cmp_from <= 0 && cmp_to > 0) { // from <= key && to > key
-    f(this);
-  }
-  if (_right != nullptr && cmp_to > 0) { // to > key
-    _right->visit_range_in_order_inner(from, to, f);
-  }
-}
-
 #ifdef ASSERT
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::is_correct(
@@ -164,11 +135,11 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::find_node(RBNode* curr, const K& k) {
   while (curr != nullptr) {
     int key_cmp_k = COMPARATOR::cmp(k, curr->key());
 
-    if (key_cmp_k == 0) {       // k == key
+    if (key_cmp_k == 0) {
       return curr;
-    } else if (key_cmp_k < 0) { // k < key
+    } else if (key_cmp_k < 0) {
       curr = curr->_left;
-    } else {                    // k > key
+    } else {
       curr = curr->_right;
     }
   }
@@ -189,15 +160,15 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& k, const V& v) {
   while (curr != nullptr) {
     int key_cmp_k = COMPARATOR::cmp(k, curr->key());
 
-    if (key_cmp_k == 0) { // k == key
+    if (key_cmp_k == 0) {
       curr->_value = v;
       return curr;
     }
 
     parent = curr;
-    if (key_cmp_k < 0) { // k < key
+    if (key_cmp_k < 0) {
       curr = curr->_left;
-    } else {             // k > key
+    } else {
       curr = curr->_right;
     }
   }
@@ -207,9 +178,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& k, const V& v) {
   node->_parent = parent;
 
   int key_cmp_k = COMPARATOR::cmp(k, parent->key());
-  if (key_cmp_k < 0) { // k < key
+  if (key_cmp_k < 0) {
     parent->_left = node;
-  } else {             // k > key
+  } else {
     parent->_right = node;
   }
 
@@ -410,16 +381,6 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) 
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_all_inner(RBNode* node) {
-  if (node == nullptr) {
-    return;
-  }
-  remove_all_inner(node->_left);
-  remove_all_inner(node->_right);
-  free_node(node);
-}
-
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
   if (node == nullptr) {
     return false;
@@ -440,6 +401,54 @@ inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
   remove_from_tree(node);
   free_node(node);
   return true;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+template <typename F>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) {
+  GrowableArrayCHeap<RBNode*, mtInternal> to_visit(2 * log2i(_num_nodes + 1));
+  RBNode* head = _root;
+  while (!to_visit.is_empty() || head != nullptr) {
+    while (head != nullptr) {
+      to_visit.push(head);
+      head = head->_left;
+    }
+    head = to_visit.pop();
+    f(head);
+    head = head->_right;
+  }
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+template <typename F>
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& from, const K& to, F f) {
+  assert(COMPARATOR::cmp(from, to) <= 0, "from must be less or equal to to");
+  GrowableArrayCHeap<RBNode*, mtInternal> to_visit;
+  RBNode* head = _root;
+  while (!to_visit.is_empty() || head != nullptr) {
+    while (head != nullptr) {
+      int cmp_from = COMPARATOR::cmp(head->_key, from);
+      to_visit.push(head);
+      if (cmp_from >= 0) {
+        head = head->_left;
+      } else {
+        // We've reached a node which is strictly less than from
+        // We don't need to visit any further to the left.
+        break;
+      }
+    }
+    head = to_visit.pop();
+    const int cmp_from = COMPARATOR::cmp(head->_key, from);
+    const int cmp_to = COMPARATOR::cmp(head->_key, to);
+    if (cmp_from >= 0 && cmp_to < 0) {
+      f(head);
+    }
+    if (cmp_to < 0) {
+      head = head->_right;
+    } else {
+      head = nullptr;
+    }
+  }
 }
 
 #ifdef ASSERT

@@ -279,7 +279,15 @@ public:
     }
   }
 
-  void test_iterator() {
+  void test_empty_iterator() {
+    RBTreeInt tree;
+    RBTreeInt::Iterator iterator(&tree);
+    RBTreeInt::ReverseIterator reverse_iterator(&tree);
+    EXPECT_FALSE(iterator.has_next());
+    EXPECT_FALSE(reverse_iterator.has_next());
+  }
+
+    void test_iterator() {
     constexpr const int num_nodes = 100;
     RBTreeInt tree;
     for (int n = 0; n <= num_nodes; n++) {
@@ -291,12 +299,14 @@ public:
       EXPECT_TRUE(iterator.has_next());
       EXPECT_EQ(iterator.next()->val(), n);
     }
+    EXPECT_FALSE(iterator.has_next());
 
     RBTreeInt::ReverseIterator reverse_iterator(&tree);
     for (int n = num_nodes; n >= 0; n--) {
       EXPECT_TRUE(reverse_iterator.has_next());
       EXPECT_EQ(reverse_iterator.next()->val(), n);
     }
+    EXPECT_FALSE(reverse_iterator.has_next());
   }
 
 #ifdef ASSERT
@@ -367,6 +377,10 @@ TEST_VM_F(RBTreeTest, TestVisitors) {
 
 TEST_VM_F(RBTreeTest, TestClosestLeq) {
   this->test_closest_leq();
+}
+
+TEST_VM_F(RBTreeTest, EmptyIteratorTest) {
+  this->test_empty_iterator();
 }
 
 TEST_VM_F(RBTreeTest, IteratorTest) {
