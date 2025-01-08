@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8281429
+ * @bug 8341293
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
  * @requires vm.debug == true & vm.flagless & vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
