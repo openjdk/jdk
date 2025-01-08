@@ -1916,23 +1916,24 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
                     shared_region_name[i], p2i(requested_addr));
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
-      // Note that this may either be a "fresh" mapping into unreserved address
-      // space (Windows, first mapping attempt), or a mapping into pre-reserved
-      // space (Posix). See also comment in MetaspaceShared::map_archives().
-      char* mapped_base = r->mapped_base();
-      size_t size = r->used_aligned();
-
-      assert(mapped_base != nullptr, "must be initialized");
-      assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
-               PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
-               p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
-      r->set_in_reserved_space(rs.is_reserved());
+      assert(r->mapped_base() != nullptr, "must be initialized");
       return MAP_ARCHIVE_SUCCESS;
     }
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
     // space (Windows, first mapping attempt), or a mapping into pre-reserved
     // space (Posix). See also comment in MetaspaceShared::map_archives().
+    char* mapped_base = r->mapped_base();
+    size_t size = r->used_aligned();
+
+    // Only for Posix: verify that the region is inside the reserved space
+    if (rs.is_reserved()) {
+      assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
+                PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
+                p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
+    }
+    r->set_in_reserved_space(rs.is_reserved());
+
     char* base = map_memory(_fd, _full_path, r->file_offset(),
                             requested_addr, size, r->read_only(),
                             r->allow_exec(), mtClassShared);
