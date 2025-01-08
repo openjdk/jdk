@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6802846 8172529 8227758 8260960
+ * @bug 6802846 8172529 8227758 8260960 8345134
  * @summary jarsigner needs enhanced cert validation(options)
  * @library /test/lib
  * @run main/timeout=240 ConciseJarsigner
@@ -256,9 +256,9 @@ public class ConciseJarsigner {
 
         // This certchain contains a cross-signed weak catwo.cert
         Files.write(Path.of("ee2"), List.of(
-                kt("-gencert -alias catwo -rfc -infile ee.req").getOutput(),
+                kt("-gencert -alias catwo -rfc -infile ee.req -startdate -1M").getOutput(),
                 kt("-gencert -alias caone -sigalg MD5withRSA -rfc "
-                        + "-infile catwo.req").getOutput()));
+                        + "-infile catwo.req -startdate -1M").getOutput()));
 
         kt("-importcert -alias ee -file ee2");
 
