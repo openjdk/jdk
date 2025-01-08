@@ -97,7 +97,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
         // different current directory.
         initAppImageLayouts(pkg.appImageLayout(), appImageRoot.toAbsolutePath().normalize());
 
-        launchers = toCollection(Optional.ofNullable(pkg.app().launchers()).orElseGet(List::of));
+        launchers = toCollection(pkg.app().launchers());
 
         shortcutFolders = ShortcutsFolder.getForPackage(pkg);
 
