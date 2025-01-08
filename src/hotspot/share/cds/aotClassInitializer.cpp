@@ -109,11 +109,11 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   // ==========================================
   //
   // When CDSConfig::is_initing_classes_at_dump_time() is enabled,
-  // HeapShared::find_all_aot_initialized_classes() finds the classes of all
+  // AOTArtifactFinder::find_artifacts() finds the classes of all
   // heap objects that are reachable from HeapShared::_run_time_special_subgraph,
   // and mark these classes as aot-inited. This preserves the initialized
   // mirrors of these classes, and their <clinit> methods are NOT executed
-  // at runtime.
+  // at runtime. See aotArtifactFinder.hpp for more info.
   //
   // For example, with -XX:+AOTInvokeDynamicLinking, _run_time_special_subgraph
   // will contain some DirectMethodHandle objects. As a result, the DirectMethodHandle
@@ -260,9 +260,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       // everybody's favorite super
       {"java/lang/Object"},
 
-      // above we selected all enums; we must include their super as well
-      {"java/lang/Enum"},
-     {nullptr}
+      {nullptr}
     };
     if (is_allowed(specs, ik)) {
       return true;
