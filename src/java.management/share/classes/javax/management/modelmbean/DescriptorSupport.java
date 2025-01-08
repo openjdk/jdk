@@ -201,12 +201,15 @@ public class DescriptorSupport
      * @exception XMLParseException XML parsing problem while parsing
      * the input String
      * @exception MBeanException Wraps a distributed communication Exception.
+     * @deprecated This constructor exists for historical reasons.  It enables
+     * read from XML, which is unnecessary.
      */
     /* At some stage we should rewrite this code to be cleverer.  Using
        a StringTokenizer as we do means, first, that we accept a lot of
        bogus strings without noticing they are bogus, and second, that we
        split the string being parsed at characters like > even if they
        occur in the middle of a field value. */
+    @Deprecated(since="25", forRemoval=true)
     public DescriptorSupport(String inStr)
             throws MBeanException, RuntimeOperationsException,
                    XMLParseException {
@@ -967,7 +970,10 @@ public class DescriptorSupport
      * field Names or field Values.  If the XML formatted string
      * construction fails for any reason, this exception will be
      * thrown.
+     * @deprecated This method exists for historical reaons. It
+     * enables writing as XML, which is unnecessary.
      */
+    @Deprecated(since="25", forRemoval=true)
     public synchronized String toXMLString() {
         final StringBuilder buf = new StringBuilder("<Descriptor>");
         Set<Map.Entry<String, Object>> returnedSet = descriptorMap.entrySet();
