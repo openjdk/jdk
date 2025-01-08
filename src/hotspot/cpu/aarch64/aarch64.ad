@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2024, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -5152,9 +5152,9 @@ operand indIndex(iRegP reg, iRegL lreg)
   %}
 %}
 
-// "off" is probably not within the encoding range for LDR/STR instructions
-// with an immediate offset. legitimize_address() will fix out-of-range
-// operands by generating a lea before the address can be used.
+// "off" may not be within the encoding range for LDR/STR instructions
+// with an immediate offset. In that case, legitimize_address() will fix
+// out-of-range operands by generating a lea before the address is used.
 operand indOffI(iRegP reg, immIOffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5169,9 +5169,9 @@ operand indOffI(iRegP reg, immIOffset off)
   %}
 %}
 
-// "off" is probably not within the encoding range for LDR/STR instructions
-// with an immediate offset. legitimize_address() will fix out-of-range
-// operands by generating a lea before the address can be used.
+// "off" may not be within the encoding range for LDR/STR instructions
+// with an immediate offset. In that case, legitimize_address() will fix
+// out-of-range operands by generating a lea before the address is used.
 operand indOffL(iRegP reg, immLOffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5200,9 +5200,9 @@ operand indirectX2P(iRegL reg)
   %}
 %}
 
-// "off" is probably not within the encoding range for LDR/STR instructions
-// with an immediate offset. legitimize_address() will fix out-of-range
-// operands by generating a lea before the address can be used.
+// "off" may not be within the encoding range for LDR/STR instructions
+// with an immediate offset. In that case, legitimize_address() will fix
+// out-of-range operands by generating a lea before the address is used.
 operand indOffX2P(iRegL reg, immLOffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5292,9 +5292,9 @@ operand indIndexN(iRegN reg, iRegL lreg)
   %}
 %}
 
-// "off" is probably not within the encoding range for LDR/STR instructions
-// with an immediate offset. legitimize_address() will fix out-of-range
-// operands by generating a lea before the address can be used.
+// "off" may not be within the encoding range for LDR/STR instructions
+// with an immediate offset. In that case, legitimize_address() will fix
+// out-of-range operands by generating a lea before the address is used.
 operand indOffIN(iRegN reg, immIOffset off)
 %{
   predicate(CompressedOops::shift() == 0);
@@ -5310,9 +5310,9 @@ operand indOffIN(iRegN reg, immIOffset off)
   %}
 %}
 
-// "off" is probably not within the encoding range for LDR/STR instructions
-// with an immediate offset. legitimize_address() will fix out-of-range
-// operands by generating a lea before the address can be used.
+// "off" may not be within the encoding range for LDR/STR instructions
+// with an immediate offset. In that case, legitimize_address() will fix
+// out-of-range operands by generating a lea before the address is used.
 operand indOffLN(iRegN reg, immLOffset off)
 %{
   predicate(CompressedOops::shift() == 0);
