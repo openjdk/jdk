@@ -50,6 +50,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceCounters.hpp"
@@ -956,11 +957,18 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   }
 
   // Now create the space.
-  ReservedHeapSpace total_rs(total_reserved, alignment, page_size, AllocateHeapAt);
+  ReservedHeapSpace rhs = HeapReserver::reserve(total_reserved, alignment, page_size, AllocateHeapAt);
 
-  if (total_rs.is_reserved()) {
-    assert((total_reserved == total_rs.size()) && ((uintptr_t)total_rs.base() % alignment == 0),
-           "must be exactly of required size and alignment");
+  if (rhs.is_reserved()) {
+    assert(total_reserved == rhs.size(),    "must be exactly of required size");
+    assert(is_aligned(rhs.base(),alignment),"must be exactly of required alignment");
+
+    assert(markWord::encode_pointer_as_mark(rhs.base()).decode_pointer() == rhs.base(),
+           "area must be distinguishable from marks for mark-sweep");
+    assert(markWord::encode_pointer_as_mark(&rhs.base()[rhs.size()]).decode_pointer() ==
+           &rhs.base()[rhs.size()],
+           "area must be distinguishable from marks for mark-sweep");
+
     // We are good.
 
     if (AllocateHeapAt != nullptr) {
@@ -968,12 +976,12 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
     }
 
     if (UseCompressedOops) {
-      CompressedOops::initialize(total_rs);
+      CompressedOops::initialize(rhs);
     }
 
-    Universe::calculate_verify_data((HeapWord*)total_rs.base(), (HeapWord*)total_rs.end());
+    Universe::calculate_verify_data((HeapWord*)rhs.base(), (HeapWord*)rhs.end());
 
-    return total_rs;
+    return rhs;
   }
 
   vm_exit_during_initialization(
@@ -982,7 +990,6 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   // satisfy compiler
   ShouldNotReachHere();
-  return ReservedHeapSpace(0, 0, os::vm_page_size());
 }
 
 OopStorage* Universe::vm_weak() {
