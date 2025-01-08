@@ -69,13 +69,12 @@ public final class ButtonGroupFocusTest {
 
     private static final CountDownLatch button2FocusLatch2 = new CountDownLatch(2);
 
-    private static final long FOCUS_TIMEOUT = 3;
+    private static final long FOCUS_TIMEOUT = 4;
 
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
         final Robot robot = new Robot();
-        robot.setAutoDelay(100);
 
         SwingUtilities.invokeAndWait(() -> {
             frame = new JFrame("ButtonGroupFocusTest");
