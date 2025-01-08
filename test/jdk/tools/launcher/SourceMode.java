@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @bug 8192920 8204588 8210275 8286571
  * @summary Test source mode
  * @modules jdk.compiler jdk.jlink
+ * @comment Test is being run in othervm to support JEP 493 enabled
+ *          JDKs which don't allow patched modules
  * @run main/othervm SourceMode
  */
 
