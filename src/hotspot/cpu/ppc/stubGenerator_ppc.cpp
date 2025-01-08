@@ -630,13 +630,14 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-// Generate stub for ghash process  blocks.
+// Generate stub for ghash process blocks.
 //
 // Arguments for generated stub:
 //      state:  R3_ARG1
 //      subkeyH:    R4_ARG2
 //      data: R5_ARG3
-//
+//      blocks: R6_ARG4
+//     
 address generate_ghash_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "ghash");
   address start = __ function_entry();
@@ -651,68 +652,50 @@ address generate_ghash_processBlocks() {
   Register temp3 = R10;
   Register temp4 = R11;
   Register align = data;
+  Register load = R12;
   // Vector Registers
-  VectorRegister vH = VR0;
-  VectorSRegister vHS = VSR32;
-  VectorRegister vX = VR1;
-  VectorRegister vH_shift = VR2;
-  VectorRegister vTmp1 = VR3;
-  VectorRegister vTmp2 = VR4;
-  VectorRegister vSwappedH = VR5;
-  VectorRegister vTmp4 = VR6;
-  VectorRegister loadOrder = VR7;
-  VectorRegister vMSB = VR8;
-  VectorRegister vLowerH = VR9;
-  VectorRegister vHigherH = VR10;
-  VectorRegister vZero = VR11;
-  VectorRegister vConst1 = VR12;
-  VectorRegister vConst7 = VR13;
-  VectorRegister vConstC2 = VR14;
-  VectorRegister vTmp3 = VR16;
-  VectorRegister vTmp5 = VR17;
-  VectorRegister vTmp6 = VR18;
-  VectorRegister vTmp7 = VR19;
-  VectorRegister vHigh = VR20;
-  VectorRegister vLow = VR21;
-  VectorRegister vPerm = VR22;
-  VectorRegister vZero_Stored = VR23;
-  VectorSRegister vZero_StoredS = VSR55;
-  VectorRegister vMask = VR24;
-  VectorRegister vS = VR25;
-  VectorSRegister vXS = VSR33;
+  VectorRegister vZero = VR0;
+  VectorRegister vH = VR1;
+  VectorRegister vLowerH = VR2;
+  VectorRegister vHigherH = VR3;
+  VectorRegister vTmp4 = VR4;
+  VectorRegister vTmp5 = VR5;
+  VectorRegister vTmp6 = VR6;
+  VectorRegister vTmp7 = VR7;
+  VectorRegister vTmp8 = VR8;
+  VectorRegister vTmp9 = VR9;
+  VectorRegister vTmp10 = VR10;
+  VectorRegister vTmp11 = VR11;
+  VectorRegister vTmp12 = VR12;
+  VectorRegister loadOrder = VR13;
+  VectorRegister vHigh = VR14;
+  VectorRegister vLow = VR15;
+  VectorRegister vState = VR16;
+  VectorRegister vConstC2 = VR19;
   Label L_end, L_aligned;
-
-  static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
+  __ vxor(vZero, vZero, vZero);
   // Load the vector from memory into vConstC2
-  __ vxor(vConstC2, vConstC2, vConstC2);
   __ mtvrd(vConstC2, temp1);
-  __ vxor(vZero, vZero, vZero);
-  __ lxvd2x(vHS, subkeyH);
-  __ lxvd2x(vZero_StoredS, state);
+  __ lxvd2x(vH->to_vsr(), subkeyH);
+  __ lxvd2x(vState->to_vsr(), state);
   // Operations to obtain lower and higher bytes of subkey H.
-  __ vspltisb(vConst1, 1);
-  __ vspltisb(vConst7, 7);
-  __ vsldoi(vTmp4, vZero, vConst1, 1);          // 0x1
-  __ vor(vTmp4, vConstC2, vTmp4);               // 0xC2...1
-  __ vsplt(vMSB, 0, vH);                        // MSB of H
-  __ vxor(vH_shift, vH_shift, vH_shift);
-  __ vsl(vH_shift, vH, vConst1);                // Carry = H<<7
-  __ vsrab(vMSB, vMSB, vConst7);
-  __ vand(vMSB, vMSB, vTmp4);                   // Carry
-  __ vxor(vTmp2, vH_shift, vMSB);
+  __ vspltisb(vTmp7, 1);
+  __ vspltisb(vTmp10, 7);
+  __ vsldoi(vTmp8, vZero, vTmp7, 1);          // 0x1
+  __ vor(vTmp8, vConstC2, vTmp8);               // 0xC2...1
+  __ vsplt(vTmp9, 0, vH);                        // MSB of H
+  __ vsl(vH, vH, vTmp7);                // Carry = H<<7
+  __ vsrab(vTmp9, vTmp9, vTmp10);
+  __ vand(vTmp9, vTmp9, vTmp8);                   // Carry
+  __ vxor(vTmp10, vH, vTmp9);
   __ vsldoi(vConstC2, vZero, vConstC2, 8);
-  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);        // swap Lower and Higher Halves of subkey H
-  __ vsldoi(vLowerH, vZero, vSwappedH, 8);      // H.L
-  __ vsldoi(vHigherH, vSwappedH, vZero, 8);     // H.H
-  __ vxor(vTmp1, vTmp1, vTmp1);
-  __ vxor(vZero, vZero, vZero);
+  __ vsldoi(vTmp11, vTmp10, vTmp10, 8);        // swap Lower and Higher Halves of subkey H
+  __ vsldoi(vLowerH, vZero, vTmp11, 8);      // H.L
+  __ vsldoi(vHigherH, vTmp11, vZero, 8);     // H.H
   __ mtctr(blocks);
-  __ li(temp1, 0);
-  __ load_const_optimized(temp2, (uintptr_t)&perm_pattern);
-  __ lvx(loadOrder, temp2);
   // Performing Karatsuba multiplication in Galois fields
   Label loop;
   __ bind(loop);
@@ -724,39 +707,45 @@ address generate_ghash_processBlocks() {
     __ beq(CCR0, L_aligned);                      // Check if address is aligned (mask lower 4 bits)
     __ li(temp1, 0);
     __ lvx(vHigh, temp1, data);
-    __ lvsl(vPerm, temp1, data);
+    __ lvsl(loadOrder, temp1, data);
     __ addi(data, data, 16);
     __ lvx(vLow, temp1, data);
-    __ vec_perm(vX, vHigh, vLow, vPerm);
+    __ vec_perm(vH, vHigh, vLow, loadOrder);
     __ subi(data, data, 16);
     __ b(L_end);
     __ bind(L_aligned);
     __ li(temp1, 0);
-    __ lvx(vX, temp1, data);
+    __ lvx(vH, temp1, data);
     __ bind(L_end);
-    __ vec_perm(vX, vX, vX, loadOrder);
-    __ vxor(vX, vX, vZero_Stored);
+    __ li(temp1, 0);
+    __ lvsl(loadOrder, temp1);
+    #ifdef VM_LITTLE_ENDIAN
+      __ vspltisb(vTmp12, 0xf);
+      __ vxor(loadOrder, loadOrder, vTmp12);
+    #endif
+    __ vec_perm(vH, vH, vH, loadOrder);
+    __ vxor(vH, vH, vState);
       // Perform GCM multiplication
-    __ vpmsumd(vTmp1, vLowerH, vX);             // L : Lower Half of subkey H
-    __ vpmsumd(vTmp2, vSwappedH, vX);           // M : Combined halves of subkey H
-    __ vpmsumd(vTmp3, vHigherH, vX);            // H :  Higher Half of subkeyH
-    __ vpmsumd(vTmp4, vTmp1, vConstC2);         // reduction
-    __ vsldoi(vTmp5, vTmp2, vZero, 8);          // mL : Extract the lower 64 bits of M
-    __ vsldoi(vTmp6, vZero, vTmp2, 8);          // mH : Extract the higher 64 bits of M
-    __ vxor(vTmp1, vTmp1, vTmp5);               // LL + LL : Combine L and mL (partial result for lower half)
-    __ vxor(vTmp3, vTmp3, vTmp6);               // HH + HH : Combine H and mH (partial result for upper half)
-    __ vsldoi(vTmp1, vTmp1, vTmp1, 8);          // swap
-    __ vxor(vTmp1, vTmp1, vTmp4);               // reduction using  the reduction constant
-    __ vsldoi(vTmp7, vTmp1, vTmp1, 8);          // swap
-    __ vpmsumd(vTmp1, vTmp1, vConstC2);         // reduction using the reduction constant
-    __ vxor(vTmp7, vTmp7, vTmp3);               // Combine the reduced Low and High products
-    __ vxor(vZero, vTmp1, vTmp7);
-    __ vmr(vZero_Stored, vZero);
+    __ vpmsumd(vTmp4, vLowerH, vH);             // L : Lower Half of subkey H
+    __ vpmsumd(vTmp5, vTmp11, vH);              // M : Combined halves of subkey H
+    __ vpmsumd(vTmp6, vHigherH, vH);            // H :  Higher Half of subkeyH
+    __ vpmsumd(vTmp7, vTmp4, vConstC2);         // reduction
+    __ vsldoi(vTmp8, vTmp5, vZero, 8);          // mL : Extract the lower 64 bits of M
+    __ vsldoi(vTmp9, vZero, vTmp5, 8);          // mH : Extract the higher 64 bits of M
+    __ vxor(vTmp4, vTmp4, vTmp8);               // LL + LL : Combine L and mL (partial result for lower half)
+    __ vxor(vTmp6, vTmp6, vTmp9);               // HH + HH : Combine H and mH (partial result for upper half)
+    __ vsldoi(vTmp4, vTmp4, vTmp4, 8);          // swap
+    __ vxor(vTmp4, vTmp4, vTmp7);               // reduction using  the reduction constant
+    __ vsldoi(vTmp10, vTmp4, vTmp4, 8);          // swap
+    __ vpmsumd(vTmp4, vTmp4, vConstC2);         // reduction using the reduction constant
+    __ vxor(vTmp10, vTmp10, vTmp6);               // Combine the reduced Low and High products
+    __ vxor(vZero, vTmp4, vTmp10);
+    __ vmr(vState, vZero);
     __ addi(data, data, 16);
     __ bdnz(loop);
   __ stxvd2x(vZero->to_vsr(), state);
-  __ blr();                                     // Return from function
-
+  
+  __ blr();
   return start;
 }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
