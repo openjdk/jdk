@@ -104,7 +104,7 @@ public class HelloUnload {
             urlClassLoader = null; c = null; o = null;
             Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
             System.out.println("Is CustomLoadee alive? " + wb.isClassAlive(className));
-            ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should have bee unloaded: " + aliveClasses);
+            ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should have been unloaded: " + aliveClasses);
 
         }
     }
