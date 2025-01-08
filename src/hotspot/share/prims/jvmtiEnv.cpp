@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3149,7 +3149,7 @@ jvmtiError
 JvmtiEnv::GetFieldModifiers(fieldDescriptor* fdesc_ptr, jint* modifiers_ptr) {
 
   AccessFlags resultFlags = fdesc_ptr->access_flags();
-  jint result = resultFlags.as_int();
+  jint result = resultFlags.as_field_flags();
   *modifiers_ptr = result;
 
   return JVMTI_ERROR_NONE;
@@ -3228,7 +3228,7 @@ JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
 jvmtiError
 JvmtiEnv::GetMethodModifiers(Method* method, jint* modifiers_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
-  (*modifiers_ptr) = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
+  (*modifiers_ptr) = method->access_flags().as_method_flags();
   return JVMTI_ERROR_NONE;
 } /* end GetMethodModifiers */
 
