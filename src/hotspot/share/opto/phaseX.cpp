@@ -1162,6 +1162,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     case Op_RangeCheck:
+      return false;
 
     // In AddNode::Ideal, we call "commute", which swaps the inputs so
     // that smaller idx are first. Tracking it back, it led me to
@@ -1180,7 +1181,21 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //
     // This is the only case I looked at, there may be others. Found like this:
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
+    //
+    // The following hit the same logic in PhaseIdealLoop::remix_address_expressions.
     case Op_AddI:
+    case Op_AddL:
+    case Op_AddF:
+    case Op_AddD:
+    case Op_MulI:
+    case Op_MulL:
+    case Op_MulF:
+    case Op_MulD:
+      if (n->in(1)->_idx > n->in(2)->_idx) {
+        // Expect "commute" to revert this case.
+        return false;
+      }
+      break; // keep verifying
 
     // SubTypeCheckNode::Ideal calls SubTypeCheckNode::verify_helper, which does
     //   Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
@@ -1192,10 +1207,6 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     case Op_SubTypeCheck:
-
-    // We do not even call Ideal for all the exceptions above. If first
-    // called Ideal on them, then we may already have modified the graph
-    // and cannot undo that.
       return false;
   }
 
