@@ -673,7 +673,6 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
 static bool AndIL_is_zero_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
 
 const Type* AndINode::Value(PhaseGVN* phase) const {
-  // Match patterns similar to (v << n) & [0..n).
   if (AndIL_is_zero_under_mask(phase, in(1), in(2), T_INT) ||
       AndIL_is_zero_under_mask(phase, in(2), in(1), T_INT)) {
     return TypeInt::ZERO;
@@ -805,7 +804,6 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
 }
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
-  // Match patterns similar to (v << n) & [0..n).
   if (AndIL_is_zero_under_mask(phase, in(1), in(2), T_LONG) ||
       AndIL_is_zero_under_mask(phase, in(2), in(1), T_LONG)) {
     return TypeLong::ZERO;
