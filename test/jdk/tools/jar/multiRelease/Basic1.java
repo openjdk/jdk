@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,22 +52,22 @@ public class Basic1 extends MRTestBase {
         Path base = classes.resolve("base");
         Files.createDirectories(base);
         Path source = Paths.get(src, "data", test, "base", "version");
-        javac(base, source.resolve("Main.java"), source.resolve("Version.java"));
+        javac(8, base, source.resolve("Main.java"), source.resolve("Version.java"));
 
         Path v9 = classes.resolve("v9");
         Files.createDirectories(v9);
         source = Paths.get(src, "data", test, "v9", "version");
-        javac(v9, source.resolve("Version.java"));
+        javac(9, v9, source.resolve("Version.java"));
 
         Path v10 = classes.resolve("v10");
         Files.createDirectories(v10);
         source = Paths.get(src, "data", test, "v10", "version");
-        javac(v10, source.resolve("Version.java"));
+        javac(10, v10, source.resolve("Version.java"));
 
         Path v10_1 = classes.resolve("v10_1").resolve("META-INF").resolve("versions").resolve("v10");
         Files.createDirectories(v10_1);
         source = Paths.get(src, "data", test, "v10", "version");
-        javac(v10_1, source.resolve("Version.java"));
+        javac(10, v10_1, source.resolve("Version.java"));
     }
 
     @Test

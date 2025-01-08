@@ -132,10 +132,14 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     }
 #endif
 
-    if (!JVM_IsStaticallyLinked()) {
+    if (JVM_IsStaticallyLinked()) {
+        awtHandle = dlopen(NULL, RTLD_LAZY);
+    } else {
         /* Get address of this library and the directory containing it. */
         dladdr((void *)AWT_OnLoad, &dlinfo);
-        realpath((char *)dlinfo.dli_fname, buf);
+        if (realpath((char *)dlinfo.dli_fname, buf) == NULL) {
+            perror((char *)dlinfo.dli_fname);
+        }
         len = strlen(buf);
         p = strrchr(buf, '/');
 

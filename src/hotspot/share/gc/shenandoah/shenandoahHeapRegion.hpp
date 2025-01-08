@@ -165,6 +165,7 @@ private:
   }
 
   void report_illegal_transition(const char* method);
+  void recycle_internal();
 
 public:
   static int region_states_num() {
@@ -188,33 +189,35 @@ public:
   void make_uncommitted();
   void make_committed_bypass();
 
-  // Individual states:
-  bool is_empty_uncommitted()      const { return _state == _empty_uncommitted; }
-  bool is_empty_committed()        const { return _state == _empty_committed; }
-  bool is_regular()                const { return _state == _regular; }
-  bool is_humongous_continuation() const { return _state == _humongous_cont; }
+  // Primitive state predicates
+  bool is_empty_uncommitted()      const { return state() == _empty_uncommitted; }
+  bool is_empty_committed()        const { return state() == _empty_committed; }
+  bool is_regular()                const { return state() == _regular; }
+  bool is_humongous_continuation() const { return state() == _humongous_cont; }
+  bool is_regular_pinned()         const { return state() == _pinned; }
+  bool is_trash()                  const { return state() == _trash; }
 
-  // Participation in logical groups:
-  bool is_empty()                  const { return is_empty_committed() || is_empty_uncommitted(); }
-  bool is_active()                 const { return !is_empty() && !is_trash(); }
-  bool is_trash()                  const { return _state == _trash; }
-  bool is_humongous_start()        const { return _state == _humongous_start || _state == _pinned_humongous_start; }
-  bool is_humongous()              const { return is_humongous_start() || is_humongous_continuation(); }
+  // Derived state predicates (boolean combinations of individual states)
+  bool static is_empty_state(RegionState state) { return state == _empty_committed || state == _empty_uncommitted; }
+  bool static is_humongous_start_state(RegionState state) { return state == _humongous_start || state == _pinned_humongous_start; }
+  bool is_empty()                  const { return is_empty_state(this->state()); }
+  bool is_active()                 const { auto cur_state = state(); return !is_empty_state(cur_state) && cur_state != _trash; }
+  bool is_humongous_start()        const { return is_humongous_start_state(state()); }
+  bool is_humongous()              const { auto cur_state = state(); return is_humongous_start_state(cur_state) || cur_state == _humongous_cont; }
   bool is_committed()              const { return !is_empty_uncommitted(); }
-  bool is_cset()                   const { return _state == _cset   || _state == _pinned_cset; }
-  bool is_pinned()                 const { return _state == _pinned || _state == _pinned_cset || _state == _pinned_humongous_start; }
-  bool is_regular_pinned()         const { return _state == _pinned; }
+  bool is_cset()                   const { auto cur_state = state(); return cur_state == _cset || cur_state == _pinned_cset; }
+  bool is_pinned()                 const { auto cur_state = state(); return cur_state == _pinned || cur_state == _pinned_cset || cur_state == _pinned_humongous_start; }
 
   inline bool is_young() const;
   inline bool is_old() const;
   inline bool is_affiliated() const;
 
   // Macro-properties:
-  bool is_alloc_allowed()          const { return is_empty() || is_regular() || _state == _pinned; }
-  bool is_stw_move_allowed()       const { return is_regular() || _state == _cset || (ShenandoahHumongousMoves && _state == _humongous_start); }
+  bool is_alloc_allowed()          const { auto cur_state = state(); return is_empty_state(cur_state) || cur_state == _regular || cur_state == _pinned; }
+  bool is_stw_move_allowed()       const { auto cur_state = state(); return cur_state == _regular || cur_state == _cset || (ShenandoahHumongousMoves && cur_state == _humongous_start); }
 
-  RegionState state()              const { return _state; }
-  int  state_ordinal()             const { return region_state_to_ordinal(_state); }
+  RegionState state()              const { return Atomic::load(&_state); }
+  int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
   void record_pin();
   void record_unpin();
@@ -243,7 +246,7 @@ private:
   HeapWord* _top_before_promoted;
 
   // Seldom updated fields
-  RegionState _state;
+  volatile RegionState _state;
   HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
@@ -260,6 +263,8 @@ private:
 
   uint _age;
   CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
+
+  ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -376,7 +381,9 @@ public:
 
   void print_on(outputStream* st) const;
 
-  void recycle();
+  void try_recycle_under_lock();
+
+  void try_recycle();
 
   inline void begin_preemptible_coalesce_and_fill() {
     _coalesce_and_fill_boundary = _bottom;

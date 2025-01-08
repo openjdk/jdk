@@ -28,7 +28,7 @@
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"

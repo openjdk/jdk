@@ -36,9 +36,45 @@ import java.util.logging.Level;
  * There is a single instance of this class, which can be obtained
  * with a getInstance() call.
  *
+ * This class also contains a couple static methods for creating
+ * threads. The methods allow the choice of the Runnable for the
+ * new thread to execute, the name of the new thread (which will
+ * be prefixed with "RMI "), and whether or not it will be a daemon
+ * thread.
+ *
+ * The new thread may be created in the system thread group (the root
+ * of the thread group tree) or an internally created non-system
+ * thread group (the "user" thread group).
+ *
+ * The new thread will have the system class loader as its initial
+ * context class loader (that is, its context class loader will NOT be
+ * inherited from the current thread).
+ *
  * @author      Peter Jones
  **/
 public final class RuntimeUtil {
+
+    /**
+     * Cached reference to the system (root) thread group.
+     */
+    private static final ThreadGroup systemThreadGroup;
+    static {
+        ThreadGroup group = Thread.currentThread().getThreadGroup();
+        ThreadGroup parent;
+        while ((parent = group.getParent()) != null) {
+            group = parent;
+        }
+        systemThreadGroup = group;
+    }
+
+    /**
+     * Special child of the system thread group for running tasks that
+     * may execute user code. The need for a separate thread group may
+     * be a vestige of it having had a different security policy from
+     * the system thread group, so this might no longer be necessary.
+     */
+    private static final ThreadGroup userThreadGroup =
+        new ThreadGroup(systemThreadGroup, "RMI Runtime");
 
     /** runtime package log */
     private static final Log runtimeLog =
@@ -54,6 +90,14 @@ public final class RuntimeUtil {
     /** thread pool for scheduling delayed tasks */
     private final ScheduledThreadPoolExecutor scheduler;
 
+    /**
+     * Creates the single instance of RuntimeUtil. Note that this is called
+     * from a static initializer, and it has a ThreadFactory that calls
+     * static methods on this class, possibly from other threads. This
+     * should be ok, as the ScheduledThreadPoolExecutor constructor
+     * returns immediately without blocking on the creation of threads
+     * by the factory.
+     */
     private RuntimeUtil() {
         scheduler = new ScheduledThreadPoolExecutor(
             schedulerThreads,
@@ -61,9 +105,10 @@ public final class RuntimeUtil {
                 private final AtomicInteger count = new AtomicInteger();
                 public Thread newThread(Runnable runnable) {
                     try {
-                        return new NewThreadAction(runnable,
+                        return newSystemThread(
+                            runnable,
                             "Scheduler(" + count.getAndIncrement() + ")",
-                            true).run();
+                            true);
                     } catch (Throwable t) {
                         runtimeLog.log(Level.WARNING,
                                        "scheduler thread factory throws", t);
@@ -92,5 +137,49 @@ public final class RuntimeUtil {
      **/
     public ScheduledThreadPoolExecutor getScheduler() {
         return scheduler;
+    }
+
+    // Thread creation methods.
+
+    /**
+     * Internal method to create a new thread with the given settings.
+     *
+     * @param group the thread group, should be systemThreadGroup or userThreadGroup
+     * @param runnable the thread's task
+     * @param name the thread's name, which will be prefixed with "RMI "
+     * @param daemon whether the thread should be a daemon
+     * @return the newly created thread
+     */
+    private static Thread newThread(ThreadGroup group, Runnable runnable, String name, boolean daemon) {
+        Thread t = new Thread(group, runnable, "RMI " + name);
+        t.setContextClassLoader(ClassLoader.getSystemClassLoader());
+        t.setDaemon(daemon);
+        return t;
+    }
+
+    /**
+     * Creates and returns, but does not start, a new thread with the given settings.
+     * The thread will be in the system ("root") thread group.
+     *
+     * @param runnable the thread's task
+     * @param name the thread's name, which will be prefixed with "RMI "
+     * @param daemon whether the thread should be a daemon
+     * @return the newly created thread
+     */
+    public static Thread newSystemThread(Runnable runnable, String name, boolean daemon) {
+        return newThread(systemThreadGroup, runnable, name, daemon);
+    }
+
+    /**
+     * Creates and returns, but does not start, a new thread with the given settings.
+     * The thread will be in the RMI user thread group.
+     *
+     * @param runnable the thread's task
+     * @param name the thread's name, which will be prefixed with "RMI "
+     * @param daemon whether the thread should be a daemon
+     * @return the newly created thread
+     */
+    public static Thread newUserThread(Runnable runnable, String name, boolean daemon) {
+        return newThread(userThreadGroup, runnable, name, daemon);
     }
 }

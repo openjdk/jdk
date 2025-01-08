@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ class oopDesc;
 //  _X_0  - print as hexadecimal, with leading 0s: 0x00012345
 //  _W(w) - prints w sized string with the given value right
 //          adjusted. Use -w to print left adjusted.
+//  _0    - print as hexadecimal, with leading 0s, without 0x prefix: 0012345
 //
 // Note that the PTR format specifiers print using 0x with leading zeros,
 // just like the _X_0 version for integers.
@@ -131,6 +132,7 @@ class oopDesc;
 #define UINT64_FORMAT_X          "0x%"        PRIx64
 #define UINT64_FORMAT_X_0        "0x%016"     PRIx64
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
+#define UINT64_FORMAT_0          "%016"       PRIx64
 
 // Format integers which change size between 32- and 64-bit.
 #define SSIZE_FORMAT             "%"          PRIdPTR
@@ -183,6 +185,11 @@ class oopDesc;
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
   return (intptr_t) p;
+}
+
+// Convert pointer to uintptr_t
+inline uintptr_t p2u(const volatile void* p) {
+  return (uintptr_t) p;
 }
 
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
@@ -559,6 +566,9 @@ const jint min_jintFloat = (jint)(0x00000001);
 const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
+
+// A named constant for the integral representation of a Java null.
+const intptr_t NULL_WORD = 0;
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions

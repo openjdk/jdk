@@ -128,6 +128,8 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
@@ -138,10 +140,10 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
 #endif // LINUX
-#if defined(LINUX) || defined(_WIN64)
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemMapDCmd>(full_export, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<SystemDumpMapDCmd>(full_export, true,false));
-#endif // LINUX or WINDOWS
+#endif // LINUX or WINDOWS or MacOS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
@@ -1073,13 +1075,6 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
 
   Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
   Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
 
   // invoke the ThreadDump method to dump to file
   JavaValue result(T_OBJECT);
@@ -1110,6 +1105,45 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   output()->print_raw((const char*)addr, ba->length());
 }
 
+// Calls a static no-arg method on jdk.internal.vm.JcmdVThreadCommands that returns a byte[] with
+// the output. If the method completes successfully then the bytes are copied to the output stream.
+// If the method fails then the exception is printed to the output stream.
+static void execute_vthread_command(Symbol* method_name, outputStream* output, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_JcmdVThreadCommands(), true, CHECK);
+
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  JavaCalls::call_static(&result,
+                         k,
+                         method_name,
+                         vmSymbols::void_byte_array_signature(),
+                         &args,
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output);
+    output->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // copy the bytes to the output stream
+  oop res = cast_to_oop(result.get_jobject());
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
+  output->print_raw((const char*)addr, ba->length());
+}
+
+void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
+  execute_vthread_command(vmSymbols::printScheduler_name(), output(), CHECK);
+}
+
+void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
+  execute_vthread_command(vmSymbols::printPollers_name(), output(), CHECK);
+}
+
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
   _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
@@ -1124,7 +1158,7 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
 
-#if defined(LINUX) || defined(_WIN64)
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 

@@ -1,0 +1,191 @@
+#
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+
+include CopyFiles.gmk
+include DebugInfoUtils.gmk
+include Modules.gmk
+include modules/LauncherCommon.gmk
+
+################################################################################
+#
+# Create the static java launcher
+#
+################################################################################
+
+STATIC_JDK_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/static-jdk
+STATIC_LAUNCHER_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/static-native/launcher
+HOTSPOT_STATIC_LIB_PATH := $(HOTSPOT_OUTPUTDIR)/*/libjvm/objs/static
+
+ifneq ($(word 2, $(wildcard $(HOTSPOT_STATIC_LIB_PATH))), )
+  $(error Cannot perform static linking when building more than one JVM library)
+endif
+
+# Find all modules with static libraries
+STATIC_LIB_MODULES := $(patsubst $(SUPPORT_OUTPUTDIR)/modules_static-libs/%, \
+    %, $(wildcard $(SUPPORT_OUTPUTDIR)/modules_static-libs/*))
+
+# Filter out known broken libraries. This is a temporary measure until
+# proper support for these libraries can be provided.
+ifeq ($(call isTargetOs, linux), true)
+  # libsplashscreen has a name conflict with libawt in the function
+  # BitmapToYXBandedRectangles, so we exclude it for now.
+  BROKEN_STATIC_LIBS += splashscreen
+else ifeq ($(call isTargetOs, macosx), true)
+  # libosxsecurity has a name conflict with libosxapp in the function
+  # JavaStringToNSString, so we exclude it for now.
+  BROKEN_STATIC_LIBS += osxsecurity
+else ifeq ($(call isTargetOs, windows), true)
+  # libsplashscreen has a name conflict with libawt in the function
+  # BitmapToYXBandedRectangles, so we exclude it for now.
+  BROKEN_STATIC_LIBS += splashscreen
+  # libsspi_bridge has name conflicts with sunmscapi
+  BROKEN_STATIC_LIBS += sspi_bridge
+  # These libs define DllMain which conflict with Hotspot
+  BROKEN_STATIC_LIBS += awt dt_shmem dt_socket
+  # These libs are dependent on any of the above disabled libs
+  BROKEN_STATIC_LIBS += fontmanager jawt lcms net nio
+endif
+
+$(foreach module, $(STATIC_LIB_MODULES), \
+    $(eval LIBS_$(module) := $(filter-out $(BROKEN_STATIC_LIBS), $(shell cat \
+    $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(module)/module-included-libs.txt))) \
+)
+
+STATIC_LIB_FILES := $(foreach module, $(STATIC_LIB_MODULES), \
+    $(foreach lib, $(LIBS_$(module)), \
+    $(SUPPORT_OUTPUTDIR)/native/$(module)/lib$(lib)/static/$(LIBRARY_PREFIX)$(lib)$(STATIC_LIBRARY_SUFFIX)))
+
+# Add Hotspot
+STATIC_LIB_FILES += $(wildcard $(HOTSPOT_STATIC_LIB_PATH)/$(LIBRARY_PREFIX)jvm$(STATIC_LIBRARY_SUFFIX))
+
+# Figure out what external libraries are required to link these static JDK
+# libraries.
+LIB_FLAGS_FILES := $(addsuffix .lib-flags.txt, $(STATIC_LIB_FILES))
+
+# Gather the lib flags from all individual libraries. There are many duplicates,
+# so sort and just keep unique instances. On macOS, a common pattern is
+# "-framework FooFramework", so we must make sure we keep the two words together.
+EXTERNAL_LIBS := $(strip $(shell $(CAT) $(LIB_FLAGS_FILES) | \
+    $(SED) -e 's/-framework /-framework_/g' | $(TR) ' ' '\n' | $(SORT) -u | \
+    $(SED) -e 's/-framework_/-framework /g'))
+
+ifeq ($(call isTargetOs, macosx), true)
+  STATIC_LIBS := $(addprefix -force_load$(SPACE), $(STATIC_LIB_FILES))
+else ifeq ($(call isTargetOs, linux), true)
+  STATIC_LIBS := -Wl,--export-dynamic -Wl,--whole-archive $(STATIC_LIB_FILES) -Wl,--no-whole-archive
+else ifeq ($(call isTargetOs, windows), true)
+  STATIC_LIBS := $(addprefix -wholearchive:, $(STATIC_LIB_FILES))
+else
+  $(error Unsupported platform)
+endif
+
+$(eval $(call SetupBuildLauncher, java, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
+    EXTRA_RCFLAGS := $(JAVA_RCFLAGS), \
+    VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
+    OPTIMIZATION := HIGH, \
+    STATIC_LAUNCHER := true, \
+    LDFLAGS := $(LDFLAGS_STATIC_JDK), \
+    LIBS := $(STATIC_LIBS) $(EXTERNAL_LIBS), \
+    LINK_TYPE := C++, \
+    OUTPUT_DIR := $(STATIC_LAUNCHER_OUTPUT_DIR), \
+    OBJECT_DIR := $(STATIC_LAUNCHER_OUTPUT_DIR), \
+))
+
+$(java): $(STATIC_LIB_FILES)
+
+TARGETS += $(java)
+
+JAVA_LAUNCHER := $(BUILD_LAUNCHER_java_TARGET)
+
+static-launcher: $(java)
+
+################################################################################
+#
+# Create the static-jdk image with the statically built java launcher
+#
+################################################################################
+
+# Until we get proper support in jlink for generating an image with static
+# builds, we need to create the image ourselves. We base it on a normal
+# dynamically linked JDK image.
+
+# All these files/dirs should be copied as-is
+JDK_IMAGE_COPY_FILES := $(addprefix $(JDK_IMAGE_DIR)/, conf demo include jmods \
+    legal man/man1/java.1 release README)
+
+# We need to copy some files from lib, but not the dynamic libraries themselves
+ALL_LIB_FILES := $(call FindFiles, $(JDK_IMAGE_DIR)/lib)
+
+# Remove all dynamic libraries from the list
+JDK_IMAGE_COPY_LIB_FILES := $(filter-out %$(SHARED_LIBRARY_SUFFIX), $(ALL_LIB_FILES))
+# Remove all debug files from the list
+ifeq ($(call isTargetOs, macosx), true)
+  JDK_IMAGE_COPY_LIB_FILES := $(call not-containing, .dSYM, $(JDK_IMAGE_COPY_LIB_FILES))
+else
+  JDK_IMAGE_COPY_LIB_FILES := $(filter-out %.debuginfo %.pdb %.map, $(JDK_IMAGE_COPY_LIB_FILES))
+endif
+
+static-jdk-info:
+	$(call LogWarn, Creating static-jdk image)
+
+$(eval $(call SetupCopyFiles, copy-from-jdk-image, \
+    SRC := $(JDK_IMAGE_DIR), \
+    DEST := $(STATIC_JDK_IMAGE_DIR), \
+    FILES := $(call FindFiles, $(JDK_IMAGE_COPY_FILES)) \
+        $(JDK_IMAGE_COPY_LIB_FILES), \
+))
+
+TARGETS += $(copy-from-jdk-image)
+
+$(copy-from-jdk-image): | static-jdk-info
+
+$(eval $(call SetupCopyFiles, copy-static-launcher, \
+    FILES := $(JAVA_LAUNCHER), \
+    DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+))
+
+TARGETS += $(copy-static-launcher)
+
+$(eval $(call SetupCopyFiles, copy-static-launcher-debuginfo, \
+    SRC := $(STATIC_LAUNCHER_OUTPUT_DIR), \
+    DEST := $(STATIC_JDK_IMAGE_DIR)/bin, \
+    FILES := $(call FindDebuginfoFiles, $(STATIC_LAUNCHER_OUTPUT_DIR)), \
+))
+
+TARGETS += $(copy-static-launcher-debuginfo)
+
+static-jdk-image: $(copy-from-jdk-image) $(copy-static-launcher) $(copy-static-launcher-debuginfo)
+
+TARGETS += static-jdk-image
+
+all: $(TARGETS)
+
+.PHONY: all static-launcher static-jdk-image
