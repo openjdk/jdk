@@ -170,7 +170,7 @@ public class TestShiftAndMask {
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = { IRNode.ADD_I, "2", IRNode.LSHIFT_I, "1" })
     public static int addShiftPlusConstDisjointMaskInt(int i, int j) {
-        return (j + ((i + ADD_CONST) << 2)) & 32; // NOT transformed even though (5<<2) & 32 == 0
+        return (j + ((i + 5) << 2)) & 32; // NOT transformed even though (5<<2) & 32 == 0
     }
 
     @Test

@@ -670,11 +670,11 @@ const Type *AndINode::mul_ring( const Type *t0, const Type *t1 ) const {
   return and_value<TypeInt>(r0, r1);
 }
 
-static bool AndIL_is_zero_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
+static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt);
 
 const Type* AndINode::Value(PhaseGVN* phase) const {
-  if (AndIL_is_zero_under_mask(phase, in(1), in(2), T_INT) ||
-      AndIL_is_zero_under_mask(phase, in(2), in(1), T_INT)) {
+  if (AndIL_is_zero_element_under_mask(phase, in(1), in(2), T_INT) ||
+      AndIL_is_zero_element_under_mask(phase, in(2), in(1), T_INT)) {
     return TypeInt::ZERO;
   }
 
@@ -804,8 +804,8 @@ const Type *AndLNode::mul_ring( const Type *t0, const Type *t1 ) const {
 }
 
 const Type* AndLNode::Value(PhaseGVN* phase) const {
-  if (AndIL_is_zero_under_mask(phase, in(1), in(2), T_LONG) ||
-      AndIL_is_zero_under_mask(phase, in(2), in(1), T_LONG)) {
+  if (AndIL_is_zero_element_under_mask(phase, in(1), in(2), T_LONG) ||
+      AndIL_is_zero_element_under_mask(phase, in(2), in(1), T_LONG)) {
     return TypeLong::ZERO;
   }
 
@@ -2099,7 +2099,7 @@ static jint AndIL_min_trailing_zeros(const PhaseGVN* phase, const Node* expr, Ba
 //   (AndI (ConI (_ << #N)) #M)
 //   (AndL (ConL (_ << #N)) #M)
 // The M and N values must satisfy ((-1 << N) & M) == 0.
-static bool AndIL_is_zero_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
+static bool AndIL_is_zero_element_under_mask(const PhaseGVN* phase, const Node* expr, const Node* mask, BasicType bt) {
   const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
   if (mask_t == nullptr) {
     return false;
@@ -2128,10 +2128,10 @@ Node* MulNode::AndIL_sum_and_mask(PhaseGVN* phase, BasicType bt) {
   if (addidx > 0) {
     Node* add1 = add->in(1);
     Node* add2 = add->in(2);
-    if (AndIL_is_zero_under_mask(phase, add1, mask, bt)) {
+    if (AndIL_is_zero_element_under_mask(phase, add1, mask, bt)) {
       set_req_X(addidx, add2, phase);
       return this;
-    } else if (AndIL_is_zero_under_mask(phase, add2, mask, bt)) {
+    } else if (AndIL_is_zero_element_under_mask(phase, add2, mask, bt)) {
       set_req_X(addidx, add1, phase);
       return this;
     }
