@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -42,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 3)
-public class WriteBarrier {
+public abstract class WriteBarrier {
 
     // For array references
     public static final int NUM_REFERENCES_SMALL = 32;
@@ -50,14 +51,13 @@ public class WriteBarrier {
 
     // For array update tests
     private Object[] theArraySmall;
-    private Object[] realReferencesSmall;
-    private Object[] nullReferencesSmall;
     private int[] indicesSmall;
 
     private Object[] theArrayLarge;
-    private Object[] realReferencesLarge;
-    private Object[] nullReferencesLarge;
     private int[] indicesLarge;
+
+    private Object nullRef;
+    private Object realRef;
 
     // For field update tests
     public Referencer head = null;
@@ -84,13 +84,9 @@ public class WriteBarrier {
     @Setup
     public void setup() {
         theArraySmall = new Object[NUM_REFERENCES_SMALL];
-        realReferencesSmall = new Object[NUM_REFERENCES_SMALL];
-        nullReferencesSmall = new Object[NUM_REFERENCES_SMALL];
         indicesSmall = new int[NUM_REFERENCES_SMALL];
 
         theArrayLarge = new Object[NUM_REFERENCES_LARGE];
-        realReferencesLarge = new Object[NUM_REFERENCES_LARGE];
-        nullReferencesLarge = new Object[NUM_REFERENCES_LARGE];
         indicesLarge = new int[NUM_REFERENCES_LARGE];
 
         m_w = (int) System.currentTimeMillis();
@@ -99,13 +95,13 @@ public class WriteBarrier {
 
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             indicesSmall[i] = get_random() % (NUM_REFERENCES_SMALL - 1);
-            realReferencesSmall[i] = new Object();
         }
 
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             indicesLarge[i] = get_random() % (NUM_REFERENCES_LARGE - 1);
-            realReferencesLarge[i] = new Object();
         }
+
+        realRef = new Object();
 
         // Build a small linked structure
         this.head = new Referencer();
@@ -124,31 +120,40 @@ public class WriteBarrier {
         return Math.abs((m_z << 16) + m_w);  /* 32-bit result */
     }
 
+    // This and the other testArrayWriteBarrierFast benchmarks below should not
+    // be inlined into the JMH-generated harness method. If the methods were
+    // inlined, we might spill in the main loop (on x64) depending on very
+    // subtle conditions (such as whether LinuxPerfAsmProfiler is enabled!),
+    // which could distort the results.
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
-            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realReferencesSmall[indicesSmall[i]];
+            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realRef;
         }
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
-            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullReferencesSmall[indicesSmall[i]];
+            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullRef;
         }
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
-            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realReferencesLarge[indicesLarge[i]];
+            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realRef;
         }
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
-            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullReferencesLarge[indicesLarge[i]];
+            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullRef;
         }
     }
 
@@ -160,4 +165,15 @@ public class WriteBarrier {
         this.head.append(this.tail);
         this.tail.clear();
     }
+
+    // This run is useful to compare different GC barrier models without being
+    // affected by C2 unrolling the main loop differently for each model.
+    @Fork(value = 3, jvmArgs = {"-XX:LoopUnrollLimit=1"})
+    public static class WithoutUnrolling extends WriteBarrier {}
+
+    // This run is useful to study the interaction of GC barriers and loop
+    // unrolling. Check that the main loop in the testArray benchmarks is
+    // unrolled (or not) as expected for the studied GC barrier model.
+    @Fork(value = 3)
+    public static class WithDefaultUnrolling extends WriteBarrier {}
 }

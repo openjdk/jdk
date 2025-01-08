@@ -49,7 +49,7 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm/timeout=1200 -Xmx1400m PackagedModulesVsRuntimeImageLinkTest
+ * @run main/othervm/timeout=1200 -Xmx1g PackagedModulesVsRuntimeImageLinkTest
  */
 public class PackagedModulesVsRuntimeImageLinkTest extends AbstractLinkableRuntimeTest {
 
@@ -76,7 +76,6 @@ public class PackagedModulesVsRuntimeImageLinkTest extends AbstractLinkableRunti
                 .output(helper.createNewImageDir("java-se-jmodfull"))
                 .addMods("java.se").call().assertSuccess();
 
-        System.out.println("Now comparing jmod-less and jmod-full) images");
         compareRecursively(javaSEruntimeLink, javaSEJmodFull);
     }
 
