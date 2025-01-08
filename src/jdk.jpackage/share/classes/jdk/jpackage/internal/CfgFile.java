@@ -63,13 +63,13 @@ final class CfgFile {
         } else if (startupInfo instanceof LauncherJarStartupInfo jarStartupInfo) {
             Path mainJarPath = appCfgLayout.appDirectory().resolve(jarStartupInfo.jarPath());
 
-            if (jarStartupInfo.isClassNameFromMainJar()) {
+            if (jarStartupInfo.isJarWithMainClass()) {
                 content.add(Map.entry("app.mainjar", mainJarPath));
             } else {
                 content.add(Map.entry("app.classpath", mainJarPath));
             }
 
-            if (!jarStartupInfo.isClassNameFromMainJar()) {
+            if (!jarStartupInfo.isJarWithMainClass()) {
                 content.add(Map.entry("app.mainclass", startupInfo.qualifiedClassName()));
             }
         } else {
