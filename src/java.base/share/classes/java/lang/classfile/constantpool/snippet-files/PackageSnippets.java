@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.constantpool;
+package java.lang.classfile.constantpool.snippet;
 
-import java.lang.classfile.Attributes;
-import java.lang.constant.ConstantDesc;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.constantpool.Utf8Entry;
 
-/**
- * Marker interface for constant pool entries that can represent constant values
- * in the {@link Attributes#constantValue() ConstantValue} attribute.
- *
- * @see ConstantPoolBuilder#constantValueEntry
- *      ConstantPoolBuilder::constantValueEntry
- * @sealedGraph
- * @since 24
- */
-public sealed interface ConstantValueEntry extends LoadableConstantEntry
-        permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, StringEntry {
+class PackageSnippets {
 
-    /**
-     * {@return the constant value}  The constant value will be an {@link
-     * Integer}, {@link Long}, {@link Float}, {@link Double}, or {@link String}.
-     *
-     * @see ConstantPoolBuilder#constantValueEntry(ConstantDesc)
-     */
-    @Override
-    ConstantDesc constantValue();
+    // @start region=isStaticWorkMethod
+    boolean isStaticWorkMethod(MethodModel method) {
+        // check static flag first to avoid unnecessary evaluation of UTF-8 entry
+        return (method.flags().flagsMask() & ClassFile.ACC_STATIC) != 0
+                // use equalsString to avoid full conversion to String for comparison
+                // the Utf8Entry can also act as a basic CharSequence without full conversion
+                // @link substring="methodName" target="MethodModel#methodName" :
+                && method.methodName().equalsString("work"); // @link substring="equalsString" target="Utf8Entry#equalsString"
+    }
+    // @end
 }
