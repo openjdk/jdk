@@ -54,7 +54,7 @@ import java.util.Objects;
  * parentheses.
  * <ul>
  * <li>{@code AES}</li>
- * <li>{@code ChaCha20}</li>
+ * <li>{@code ChaCha20-Poly1305}</li>
  * <li>{@code DESede}</li>
  * <li>{@code DiffieHellman}</li>
  * <li>{@code DSA}</li>
