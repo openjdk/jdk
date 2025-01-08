@@ -43,7 +43,7 @@ import jdk.test.lib.process.ProcessTools;
  *          as expected
  * @requires vm.hasJFR
  * @library /test/lib
- * @run driver jdk.jfr.jvm.TestModularImage
+ * @run main/othervm jdk.jfr.jvm.TestModularImage
  */
 public class TestModularImage {
     private static final String STARTED_RECORDING = "Started recording";

@@ -26,7 +26,7 @@
  * @bug 8192920 8204588 8210275 8286571
  * @summary Test source mode
  * @modules jdk.compiler jdk.jlink
- * @run main SourceMode
+ * @run main/othervm SourceMode
  */
 
 
