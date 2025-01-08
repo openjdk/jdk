@@ -23,6 +23,7 @@
 package jdk.jpackage.internal.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 
 
@@ -254,5 +255,58 @@ public class CompositeProxyTest {
         });
 
         assertEquals("ciao,bye", proxy.talk());
+    }
+
+    @Test
+    public void testJavadocExample() {
+        interface Sailboat {
+            default void trimSails() {}
+        }
+
+        interface WithMain {
+            void trimMain();
+        }
+
+        interface WithJib {
+            void trimJib();
+        }
+
+        interface Sloop extends Sailboat, WithMain, WithJib {
+            @Override
+            public default void trimSails() {
+                System.out.println("On the sloop:");
+                trimMain();
+                trimJib();
+            }
+        }
+
+        interface Catboat extends Sailboat, WithMain {
+            @Override
+            public default void trimSails() {
+                System.out.println("On the catboat:");
+                trimMain();
+            }
+        }
+
+        final var withMain = new WithMain() {
+            @Override
+            public void trimMain() {
+                System.out.println("  trim the main");
+            }
+        };
+
+        final var withJib = new WithJib() {
+            @Override
+            public void trimJib() {
+                System.out.println("  trim the jib");
+            }
+        };
+
+        Sloop sloop = CompositeProxy.create(Sloop.class, new Sailboat() {}, withMain, withJib);
+
+        Catboat catboat = CompositeProxy.create(Catboat.class, new Sailboat() {}, withMain);
+
+        sloop.trimSails();
+        catboat.trimSails();
     }
 }
