@@ -400,7 +400,7 @@ public sealed interface ConstantPoolBuilder
      *
      * @param refKind the reference kind of the method handle
      * @param reference the {@code MemberRefEntry}
-     * @see MethodHandleInfo##refKinds Reference kinds
+     * @see MethodHandleInfo##refkinds Reference kinds
      * @see MethodHandleEntry#kind() MethodHandleEntry::kind
      * @see MethodHandleEntry#reference() MethodHandleEntry::reference
      */
