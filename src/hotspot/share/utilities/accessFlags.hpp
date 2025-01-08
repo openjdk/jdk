@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,28 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-// AccessFlags is an abstraction over Java ACC flags.
-// See generated file classfile_constants.h for shared JVM_ACC_XXX access flags
+// AccessFlags is an abstraction over Java access flags.
 
 class outputStream;
+
+enum {
+  // See jvm.h for shared JVM_ACC_XXX access flags
+
+  // flags actually put in .class file
+  JVM_ACC_WRITTEN_FLAGS           = 0x00007FFF,
+
+  // Do not add new ACC flags here.
+};
+
 
 class AccessFlags {
   friend class VMStructs;
  private:
-  u2 _flags;
+  jint _flags;  // TODO: move 4 access flags above to Klass and change to u2
 
  public:
   AccessFlags() : _flags(0) {}
-  explicit AccessFlags(u2 flags) : _flags(flags) {}
+  explicit AccessFlags(jint flags) : _flags(flags) {}
 
   // Java access flags
   bool is_public      () const         { return (_flags & JVM_ACC_PUBLIC      ) != 0; }
@@ -61,10 +70,15 @@ class AccessFlags {
   // Attribute flags
   bool is_synthetic   () const         { return (_flags & JVM_ACC_SYNTHETIC   ) != 0; }
 
-  // get as integral value
-  u2 as_unsigned_short() const         { return _flags; }
+  // get .class file flags
+  jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
 
-  void set_flags(u2 flags)            { _flags = flags; }
+  // Initialization
+  void set_field_flags(jint flags)      {
+    assert((flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == flags, "only recognized flags");
+    _flags = (flags & JVM_RECOGNIZED_FIELD_MODIFIERS);
+  }
+  void set_flags(jint flags)            { _flags = (flags & JVM_ACC_WRITTEN_FLAGS); }
 
  private:
   friend class Klass;
@@ -76,22 +90,11 @@ class AccessFlags {
   void set_is_synthetic()              { _flags |= JVM_ACC_SYNTHETIC; }
 
  public:
-  inline friend AccessFlags accessFlags_from(u2 flags);
+  // Conversion
+  jshort as_short() const              { return (jshort)_flags; }
+  jint   as_int() const                { return _flags; }
 
-  u2 as_method_flags() const {
-    assert((_flags & JVM_RECOGNIZED_METHOD_MODIFIERS) == _flags, "only recognized flags");
-    return _flags;
-  }
-
-  u2 as_field_flags() const  {
-    assert((_flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == _flags, "only recognized flags");
-    return _flags;
-  }
-
-  u2 as_class_flags() const  {
-    assert((_flags & JVM_RECOGNIZED_CLASS_MODIFIERS) == _flags, "only recognized flags");
-    return _flags;
-  }
+  inline friend AccessFlags accessFlags_from(jint flags);
 
   // Printing/debugging
 #if INCLUDE_JVMTI
@@ -101,7 +104,7 @@ class AccessFlags {
 #endif
 };
 
-inline AccessFlags accessFlags_from(u2 flags) {
+inline AccessFlags accessFlags_from(jint flags) {
   AccessFlags af;
   af._flags = flags;
   return af;
