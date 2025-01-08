@@ -315,11 +315,13 @@ public class Main {
                     // error("Warning: -v option ignored");
                     vflag = false;
                 }
-                final String tmpbase = (fname == null)
+                String tmpFilePrefix = (fname == null)
                         ? "tmpjar"
                         : fname.substring(fname.indexOf(File.separatorChar) + 1);
-
-                tmpFile = createTemporaryFile(tmpbase, ".jar");
+                if (tmpFilePrefix.length() < 3) {
+                    tmpFilePrefix = "tmpjar" + tmpFilePrefix;
+                }
+                tmpFile = createTemporaryFile(tmpFilePrefix, ".jar");
                 try (OutputStream out = new FileOutputStream(tmpFile)) {
                     create(new BufferedOutputStream(out, 4096), manifest);
                 }
@@ -420,8 +422,9 @@ public class Main {
                     file = new File(fname);
                 } else {
                     file = createTemporaryFile("tmpJar", ".jar");
-                    try (InputStream in = new FileInputStream(FileDescriptor.in)) {
-                        Files.copy(in, file.toPath());
+                    try (InputStream in = new FileInputStream(FileDescriptor.in);
+                         OutputStream os = Files.newOutputStream(file.toPath())) {
+                        in.transferTo(os);
                     }
                 }
                 ok = validateJar(file);
@@ -1774,11 +1777,12 @@ public class Main {
             // Unable to create file due to permission violation or security exception
         }
         if (tmpfile == null) {
-            // Were unable to create temporary file, fall back to temporary file in the same folder
+            // We were unable to create temporary file, fall back to temporary file in the
+            // same folder as the JAR file
             if (fname != null) {
                 try {
                     File tmpfolder = new File(fname).getAbsoluteFile().getParentFile();
-                    tmpfile = File.createTempFile(fname, ".tmp" + suffix, tmpfolder);
+                    tmpfile = File.createTempFile(tmpbase, ".tmp" + suffix, tmpfolder);
                 } catch (IOException ioe) {
                     // Last option failed - fall gracefully
                     fatalError(ioe);

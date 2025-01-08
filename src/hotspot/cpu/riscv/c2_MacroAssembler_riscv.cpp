@@ -787,7 +787,8 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   j(NOMATCH);
 
   bind(HIT);
-  ctzc_bit(trailing_char, match_mask, isL, ch1, result);
+  // count bits of trailing zero chars
+  ctzc_bits(trailing_char, match_mask, isL, ch1, result);
   srli(trailing_char, trailing_char, 3);
   addi(cnt1, cnt1, 8);
   ble(cnt1, trailing_char, NOMATCH);
@@ -1536,7 +1537,8 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     // compute their difference.
     bind(DIFFERENCE);
     xorr(tmp3, tmp1, tmp2);
-    ctzc_bit(result, tmp3, isLL); // count zero from lsb to msb
+    // count bits of trailing zero chars
+    ctzc_bits(result, tmp3, isLL);
     srl(tmp1, tmp1, result);
     srl(tmp2, tmp2, result);
     if (isLL) {

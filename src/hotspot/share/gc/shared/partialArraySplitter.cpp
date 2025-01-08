@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,6 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-module m {
+
+#include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/partialArraySplitter.hpp"
+#include "gc/shared/partialArrayState.hpp"
+#include "utilities/macros.hpp"
+
+PartialArraySplitter::PartialArraySplitter(PartialArrayStateManager* manager,
+                                           uint num_workers)
+  : _allocator(manager),
+    _stepper(num_workers, ParGCArrayScanChunk)
+    TASKQUEUE_STATS_ONLY(COMMA _stats())
+{}
+
+#if TASKQUEUE_STATS
+PartialArrayTaskStats* PartialArraySplitter::stats() {
+  return &_stats;
 }
+#endif // TASKQUEUE_STATS

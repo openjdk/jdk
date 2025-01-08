@@ -525,7 +525,7 @@ AttachAPIVersion AttachListener::get_supported_version() {
 }
 
 
-int AttachOperation::RequestReader::read_uint() {
+int AttachOperation::RequestReader::read_uint(bool may_be_empty) {
   const int MAX_VALUE = INT_MAX / 20;
   char ch;
   int value = 0;
@@ -534,7 +534,9 @@ int AttachOperation::RequestReader::read_uint() {
     if (n != 1) {
       // IO errors (n < 0) are logged by read().
       if (n == 0) { // EOF
-        log_error(attach)("Failed to read int value: EOF");
+        if (!may_be_empty || value != 0) { // value != 0 means this is not the 1st read
+          log_error(attach)("Failed to read int value: EOF");
+        }
       }
       return -1;
     }
@@ -615,8 +617,11 @@ bool AttachOperation::read_request_data(AttachOperation::RequestReader* reader,
   return true;
 }
 
-bool AttachOperation::read_request(RequestReader* reader) {
-  uint ver = reader->read_uint();
+bool AttachOperation::read_request(RequestReader* reader, ReplyWriter* error_writer) {
+  int ver = reader->read_uint(true); // do not log error if this is "empty" connection
+  if (ver < 0) {
+    return false;
+  }
   int buffer_size = 0;
   // Read conditions:
   int min_str_count = 0; // expected number of strings in the request
@@ -631,6 +636,7 @@ bool AttachOperation::read_request(RequestReader* reader) {
   case ATTACH_API_V2: // <ver>0<size>0<cmd>0(<arg>0)* (any number of arguments)
     if (AttachListener::get_supported_version() < 2) {
         log_error(attach)("Failed to read request: v2 is unsupported or disabled");
+        write_reply(error_writer, ATTACH_ERROR_BADVERSION, "v2 is unsupported or disabled");
         return false;
     }
 
@@ -652,10 +658,26 @@ bool AttachOperation::read_request(RequestReader* reader) {
     break;
   default:
     log_error(attach)("Failed to read request: unknown version (%d)", ver);
+    write_reply(error_writer, ATTACH_ERROR_BADVERSION, "unknown version");
     return false;
   }
 
-  return read_request_data(reader, buffer_size, min_str_count, min_read_size);
+  bool result = read_request_data(reader, buffer_size, min_str_count, min_read_size);
+  if (result && ver == ATTACH_API_V1) {
+    // We know the whole request does not exceed buffer_size,
+    // for v1 also name/arguments should not exceed name_length_max/arg_length_max.
+    if (strlen(name()) > AttachOperation::name_length_max) {
+      log_error(attach)("Failed to read request: operation name is too long");
+      return false;
+    }
+    for (int i = 0; i < arg_count(); i++) {
+      if (strlen(arg(i)) > AttachOperation::arg_length_max) {
+        log_error(attach)("Failed to read request: operation argument is too long");
+        return false;
+      }
+    }
+  }
+  return result;
 }
 
 bool AttachOperation::ReplyWriter::write_fully(const void* buffer, int size) {
@@ -671,16 +693,23 @@ bool AttachOperation::ReplyWriter::write_fully(const void* buffer, int size) {
   return true;
 }
 
-bool AttachOperation::write_reply(ReplyWriter* writer, jint result, bufferedStream* result_stream) {
-  char msg[32];
-  os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
-  if (!writer->write_fully(msg, (int)strlen(msg))) {
+bool AttachOperation::write_reply(ReplyWriter * writer, jint result, const char* message, int message_len) {
+  if (message_len < 0) {
+    message_len = (int)strlen(message);
+  }
+  char buf[32];
+  os::snprintf_checked(buf, sizeof(buf), "%d\n", result);
+  if (!writer->write_fully(buf, (int)strlen(buf))) {
     return false;
   }
-  if (!writer->write_fully(result_stream->base(), (int)result_stream->size())) {
+  if (!writer->write_fully(message, message_len)) {
     return false;
   }
   writer->flush();
   return true;
+}
+
+bool AttachOperation::write_reply(ReplyWriter* writer, jint result, bufferedStream* result_stream) {
+  return write_reply(writer, result, result_stream->base(), (int)result_stream->size());
 }
 
