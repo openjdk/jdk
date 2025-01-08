@@ -431,6 +431,54 @@ public final class Generators {
     }
 
     /**
+     * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
+     * exception is raised, but instead a uniform int generator for the range is returned.
+     */
+    public RestrictableGenerator<Integer> safeRestrictInt(RestrictableGenerator<Integer> g, int lo, int hi) {
+        try {
+            return g.restricted(lo, hi);
+        } catch (EmptyGeneratorException e) {
+            return uniformInts(lo, hi);
+        }
+    }
+
+    /**
+     * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
+     * exception is raised, but instead a uniform long generator for the range is returned.
+     */
+    public RestrictableGenerator<Long> safeRestrictLong(RestrictableGenerator<Long> g, long lo, long hi) {
+        try {
+            return g.restricted(lo, hi);
+        } catch (EmptyGeneratorException e) {
+            return uniformLongs(lo, hi);
+        }
+    }
+
+    /**
+     * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
+     * exception is raised, but instead a uniform double generator for the range is returned.
+     */
+    public RestrictableGenerator<Double> safeRestrictDouble(RestrictableGenerator<Double> g, double lo, double hi) {
+        try {
+            return g.restricted(lo, hi);
+        } catch (EmptyGeneratorException e) {
+            return uniformDoubles(lo, hi);
+        }
+    }
+
+    /**
+     * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
+     * exception is raised, but instead a uniform float generator for the range is returned.
+     */
+    public RestrictableGenerator<Float> safeRestrictFloat(RestrictableGenerator<Float> g, float lo, float hi) {
+        try {
+            return g.restricted(lo, hi);
+        } catch (EmptyGeneratorException e) {
+            return uniformFloats(lo, hi);
+        }
+    }
+
+    /**
      * Fills the memory segments with doubles obtained by calling next on the generator.
      *
      * @param generator The generator from which to source the values.

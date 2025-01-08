@@ -64,6 +64,7 @@ public class TestGenerators {
         specialLong();
         testSpecialFloat();
         testSpecialDouble();
+        testSafeRestrict();
         testFill();
     }
 
@@ -441,6 +442,42 @@ public class TestGenerators {
                 List.of(3, 4, 6),
                 G.uniformInts(0, 10), G.uniformInts(15, 20), G.uniformInts(30, 40)
         ).restricted(31, 38));
+    }
+
+    static void testSafeRestrict() {
+        // normal restrictions
+        mockSource.checkEmpty().enqueueInteger(4, 6, 4);
+        var g1 = mockGS.safeRestrictInt(mockGS.uniformInts(4, 5),2, 5);
+        Asserts.assertEQ(g1.next(), 4);
+
+        mockSource.checkEmpty().enqueueLong(4, 6, 4);
+        var g2 = mockGS.safeRestrictLong(mockGS.uniformLongs(4, 5),2, 5);
+        Asserts.assertEQ(g2.next(), 4L);
+
+        mockSource.checkEmpty().enqueueDouble(4, 5, 4);
+        var g3 = mockGS.safeRestrictDouble(mockGS.uniformDoubles(4, 5),2, 5);
+        Asserts.assertEQ(g3.next(), 4d);
+
+        mockSource.checkEmpty().enqueueFloat(4, 5, 4);
+        var g4 = mockGS.safeRestrictFloat(mockGS.uniformFloats(4, 5),2, 5);
+        Asserts.assertEQ(g4.next(), 4f);
+
+        // fallbacks
+        mockSource.checkEmpty().enqueueInteger(2, 6, 4);
+        var f1 = mockGS.safeRestrictInt(mockGS.uniformInts(0, 1),2, 5);
+        Asserts.assertEQ(f1.next(), 4);
+
+        mockSource.checkEmpty().enqueueLong(2, 6, 4);
+        var f2 = mockGS.safeRestrictLong(mockGS.uniformLongs(0, 1),2, 5);
+        Asserts.assertEQ(f2.next(), 4L);
+
+        mockSource.checkEmpty().enqueueDouble(2, 5, 4);
+        var f3 = mockGS.safeRestrictDouble(mockGS.uniformDoubles(0, 1),2, 5);
+        Asserts.assertEQ(f3.next(), 4d);
+
+        mockSource.checkEmpty().enqueueFloat(2, 5, 4);
+        var f4 = mockGS.safeRestrictFloat(mockGS.uniformFloats(0, 1),2, 5);
+        Asserts.assertEQ(f4.next(), 4f);
     }
 
     static void testFill() {

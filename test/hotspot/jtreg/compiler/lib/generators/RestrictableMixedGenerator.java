@@ -12,7 +12,6 @@ final class RestrictableMixedGenerator<T extends Comparable<T>> extends MixedGen
             try {
                 return generator.restricted(newLo, newHi);
             } catch (EmptyGeneratorException e) {
-                System.out.println("kicking out " + generator);
                 return null;
             }
         });
