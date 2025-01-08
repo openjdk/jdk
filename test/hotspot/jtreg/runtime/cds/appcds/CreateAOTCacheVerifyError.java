@@ -21,35 +21,29 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.layout.Vertex;
-import java.awt.Point;
-import java.util.Set;
+/*
+ * @test
+ * @bug 8346457
+ * @summary VM should not crash during AOT cache creation when encountering a
+ *          class with VerifyError.
+ * @requires vm.cds
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @compile test-classes/BadLookupSwitch.jcod
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar badlookupswitch.jar BadLookupSwitch
+ * @run driver CreateAOTCacheVerifyError
+ */
 
-public interface LayoutMover {
-    /**
-     * Moves a link by shifting its position along the X-axis.
-     *
-     * @param linkPos The current position of the link.
-     * @param shiftX  The amount to shift the link along the X-axis.
-     */
-    void moveLink(Point linkPos, int shiftX);
+import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
 
-    /**
-     * Moves a set of vertices.
-     *
-     * @param movedVertices A set of vertices to be moved.
-     */
-    void moveVertices(Set<? extends Vertex> movedVertices);
+public class CreateAOTCacheVerifyError {
 
-    /**
-     * Moves a single vertex.
-     *
-     * @param movedVertex The vertex to be moved.
-     */
-    void moveVertex(Vertex movedVertex);
-
-    boolean isFreeForm();
+    public static void main(String[] args) throws Exception {
+        String appJar = ClassFileInstaller.getJarPath("badlookupswitch.jar");
+        String classList[] = { BadLookupSwitch.class.getName() };
+        OutputAnalyzer out = TestCommon.testDump(appJar, classList);
+        out.shouldContain("Preload Warning: Verification failed for BadLookupSwitch");
+        out.shouldHaveExitValue(0);
+    }
 }
-

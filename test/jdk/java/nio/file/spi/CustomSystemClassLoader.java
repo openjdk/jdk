@@ -19,37 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.layout.Vertex;
-import java.awt.Point;
-import java.util.Set;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 
-public interface LayoutMover {
-    /**
-     * Moves a link by shifting its position along the X-axis.
-     *
-     * @param linkPos The current position of the link.
-     * @param shiftX  The amount to shift the link along the X-axis.
-     */
-    void moveLink(Point linkPos, int shiftX);
+/**
+ * Use by tests in SetDefaultProvider to test startup with a custom default file system
+ * provider and a custom system class loader.
+ */
 
-    /**
-     * Moves a set of vertices.
-     *
-     * @param movedVertices A set of vertices to be moved.
-     */
-    void moveVertices(Set<? extends Vertex> movedVertices);
+public class CustomSystemClassLoader extends ClassLoader {
+    public CustomSystemClassLoader(ClassLoader parent) {
+        super(parent);
 
-    /**
-     * Moves a single vertex.
-     *
-     * @param movedVertex The vertex to be moved.
-     */
-    void moveVertex(Vertex movedVertex);
-
-    boolean isFreeForm();
+        // use default file system
+        FileSystem fs = FileSystems.getDefault();
+        var path = fs.getPath("foo");
+    }
 }
-
