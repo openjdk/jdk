@@ -470,7 +470,6 @@ public final class PassFailJFrame {
      * @see JTextArea#JTextArea(int,int) JTextArea(int rows, int columns)
      * @see Builder Builder
      */
-
     public PassFailJFrame(String title, String instructions,
                           long testTimeOut,
                           int rows, int columns)
@@ -479,7 +478,7 @@ public final class PassFailJFrame {
                                    testTimeOut,
                                    rows, columns));
     }
-    
+
     /**
      * Configures {@code PassFailJFrame} using the builder.
      * It creates test UI specified using {@code testUI} or {@code splitUI}
