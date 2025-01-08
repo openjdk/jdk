@@ -26,7 +26,7 @@
  * @bug 8072008
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
- * @library /asm
+ * @library /testlibrary/asm
  * @library /test/lib / ../patches
  * @requires vm.jvmti
  *

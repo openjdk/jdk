@@ -26,7 +26,7 @@
  * @bug 8279822
  * @requires vm.flagless
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  *
  * @run main compiler.runtime.TestConstantsInError
  */

@@ -45,7 +45,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @run main/othervm/native -agentlib:getclfld007 nsk.jvmti.GetClassFields.getclfld007
  */
 

@@ -25,7 +25,7 @@
  * @test
  * @bug 8051344
  * @summary Force OSR compilation with non-empty stack at the OSR entry point.
- * @library /asm
+ * @library /testlibrary/asm
  * @run main/othervm -XX:CompileCommand=compileonly,TestCase::test
  *                   compiler.osr.TestOSRWithNonEmptyStack
  */

@@ -25,7 +25,7 @@
  * @test
  * @summary Tests a hidden class that implements interfaces with default methods.
  * @library /testlibrary
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.management
  * @run main HiddenDefMeths
  */

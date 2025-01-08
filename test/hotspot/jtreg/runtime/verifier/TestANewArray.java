@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Test that anewarray bytecode is valid only if it specifies 254 or fewer dimensions.
  *          255 is invalid because the anewarray would then create an array with 256 dimensions.
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @compile -XDignore.symbol.file TestANewArray.java
  * @run driver TestANewArray 49
  * @run driver TestANewArray 52

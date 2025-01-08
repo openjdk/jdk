@@ -26,7 +26,7 @@
  * @bug 8030976 8059226
  * @requires !vm.graal.enabled & (vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps)
  * @library /test/lib /
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management

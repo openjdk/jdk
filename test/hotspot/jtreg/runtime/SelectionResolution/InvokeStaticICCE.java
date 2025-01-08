@@ -25,7 +25,7 @@
  * @test
  * @summary Test of invokestatic method selection and resolution cases that
  * generate IncompatibleClassChangeError
- * @library /asm
+ * @library /testlibrary/asm
  * @library /runtime/SelectionResolution/classes
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies InvokeStaticICCE
  */

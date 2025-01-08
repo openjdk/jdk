@@ -26,7 +26,7 @@
  * @bug 8042235
  * @summary redefining method used by multiple MethodHandles crashes VM
  * @library /
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.compiler
  *          java.instrument
  *          jdk.attach

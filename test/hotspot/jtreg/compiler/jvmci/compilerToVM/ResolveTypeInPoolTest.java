@@ -28,7 +28,7 @@
  * @summary Testing compiler.jvmci.CompilerToVM.resolveTypeInPool method
  * @library /test/lib /
  * @library ../common/patches
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.reflect
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot

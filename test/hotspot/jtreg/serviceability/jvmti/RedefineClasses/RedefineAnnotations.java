@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @summary Test that type annotations are retained after a retransform
  * @requires vm.jvmti
  * @modules java.base/jdk.internal.misc

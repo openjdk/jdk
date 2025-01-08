@@ -24,7 +24,7 @@
 /*
  * @test
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @library /vmTestbase /test/lib
  *
  * @comment build retransform.jar in current dir

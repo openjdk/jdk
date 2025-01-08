@@ -25,7 +25,7 @@
  * @test
  * $bug 8087223
  * @summary Adding constantTag to keep method call consistent with it.
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file IntfMethod.java

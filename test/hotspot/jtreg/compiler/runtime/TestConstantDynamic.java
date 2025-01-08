@@ -25,7 +25,7 @@
  * @test
  * @bug 8280473
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  *
  * @run main/othervm -XX:+TieredCompilation -XX:TieredStopAtLevel=1
  *                   -Xbatch -XX:CompileThreshold=100 -XX:CompileCommand=compileonly,*::test

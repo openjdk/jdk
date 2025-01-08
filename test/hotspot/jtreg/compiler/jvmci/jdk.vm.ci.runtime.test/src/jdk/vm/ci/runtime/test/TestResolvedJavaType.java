@@ -25,7 +25,7 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
- * @library /asm
+ * @library /testlibrary/asm
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java

@@ -25,7 +25,7 @@
  * @test
  * @summary tests on constant folding of unsafe get operations
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  *
  * @requires vm.flavor == "server" & !vm.emulatedClient
  *

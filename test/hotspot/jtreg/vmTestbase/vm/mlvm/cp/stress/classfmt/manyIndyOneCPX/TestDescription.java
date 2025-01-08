@@ -33,7 +33,7 @@
  *        The test creates and executes a class containing lot of invokedynamic instructions
  *        pointing to just one constant pool CONSTANT_InvokeDynamic entry.
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

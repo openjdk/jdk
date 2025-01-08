@@ -25,7 +25,7 @@
  * @test
  * @bug 8144992
  * @requires vm.jvmti
- * @library /asm
+ * @library /testlibrary/asm
  * @run main/othervm/native -agentlib:TestManyBreakpoints
  *                          -Xlog:gc+metaspace
  *                          -Xint

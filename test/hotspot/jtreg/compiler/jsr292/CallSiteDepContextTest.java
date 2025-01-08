@@ -26,7 +26,7 @@
  * @bug 8057967
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
- * @library /asm
+ * @library /testlibrary/asm
  * @library patches /
  *
  * @build java.base/java.lang.invoke.MethodHandleHelper

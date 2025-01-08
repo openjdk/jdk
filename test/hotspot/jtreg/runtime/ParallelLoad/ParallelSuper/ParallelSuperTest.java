@@ -26,7 +26,7 @@
  * @bug 8262046
  * @summary Call handle_parallel_super_load, loading parallel threads that throw CCE
  * @modules java.base/jdk.internal.misc
- * @library /asm
+ * @library /testlibrary/asm
  * @library /test/lib
  * @compile -XDignore.symbol.file AsmClasses.java
  * @compile test-classes/ClassInLoader.java test-classes/A.java test-classes/B.java ../share/ThreadPrint.java

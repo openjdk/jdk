@@ -28,7 +28,7 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @library ../common/patches
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code

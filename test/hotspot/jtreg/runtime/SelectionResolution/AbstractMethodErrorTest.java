@@ -26,7 +26,7 @@
  * @summary Test of method selection and resolution cases that
  * generate AbstractMethodErrorTest
  * @requires vm.opt.final.ClassUnloading
- * @library /asm
+ * @library /testlibrary/asm
  * @library /runtime/SelectionResolution/classes
  * @run main/othervm/timeout=300 -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies AbstractMethodErrorTest
  */

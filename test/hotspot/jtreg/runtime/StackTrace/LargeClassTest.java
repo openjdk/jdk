@@ -26,7 +26,7 @@
  * @bug 8194246
  * @summary JVM crashes on stack trace for large number of methods.
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @run driver LargeClassTest
  */

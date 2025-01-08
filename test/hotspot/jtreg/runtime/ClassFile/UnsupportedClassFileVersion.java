@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver UnsupportedClassFileVersion

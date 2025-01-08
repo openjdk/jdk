@@ -27,7 +27,7 @@
  * @requires vm.jvmci & !vm.graal.enabled & vm.compMode == "Xmixed" & vm.opt.TieredStopAtLevel == null
  * @library / /test/lib
  * @library ../common/patches
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.code

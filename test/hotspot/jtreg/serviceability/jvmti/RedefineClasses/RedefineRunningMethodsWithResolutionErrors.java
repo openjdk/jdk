@@ -27,7 +27,7 @@
  * @summary Redefine running methods that have cached resolution errors
  * @requires vm.jvmti
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @modules java.instrument
  *          jdk.jartool/sun.tools.jar

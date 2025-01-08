@@ -25,7 +25,7 @@
  * @test
  * @requires vm.jvmci
  * @summary Test CONSTANT_Dynamic resolution by HotSpotConstantPool.
- * @library /asm
+ * @library /testlibrary/asm
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot:+open
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.meta

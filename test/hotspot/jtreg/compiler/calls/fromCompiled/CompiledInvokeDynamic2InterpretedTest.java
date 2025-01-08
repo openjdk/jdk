@@ -25,7 +25,7 @@
  * @test
  * @summary check calls from compiled to interpreted using InvokeDynamic
  * @library /test/lib /
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *
  * @build jdk.test.whitebox.WhiteBox

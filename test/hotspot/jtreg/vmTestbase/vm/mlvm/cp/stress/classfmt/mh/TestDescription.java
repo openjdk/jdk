@@ -33,7 +33,7 @@
  *     ldc commands. Verify that the class is loaded without errors.
  *     The maximum is determined dynamically.
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

@@ -27,7 +27,7 @@
  * @summary Verifies class redefinition correctly updates generic_signature and source_file_name attributes
  * @requires vm.jvmti
  * @modules java.instrument
- * @library /asm
+ * @library /testlibrary/asm
  * @library /test/lib
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar --add-opens=java.base/java.lang=ALL-UNNAMED RedefineGenericSignatureTest

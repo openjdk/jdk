@@ -27,7 +27,7 @@
  * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
- * @library /asm
+ * @library /testlibrary/asm
  * @library /test/lib /
  * @compile Utils.java
  * @build jdk.test.whitebox.WhiteBox

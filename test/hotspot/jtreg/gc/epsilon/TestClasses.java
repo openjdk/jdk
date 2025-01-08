@@ -28,7 +28,7 @@ package gc.epsilon;
  * @requires vm.gc.Epsilon
  * @summary Epsilon is able to allocate a lot of classes, resizing Metaspace
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *
  * @run main/othervm -Xmx256m

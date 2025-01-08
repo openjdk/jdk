@@ -28,7 +28,7 @@
  * @summary Run invokevirtual invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
  *
@@ -41,7 +41,7 @@
  * @summary Run invokevirtual invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
  *
@@ -54,7 +54,7 @@
  * @summary Run invokevirtual invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @compile invokevirtual/Checker.java invokevirtual/ClassGenerator.java invokevirtual/Generator.java
  *

@@ -25,7 +25,7 @@
  * @test
  * @bug 8028553
  * @summary Test that VerifyError is not thrown when 'overriding' a static method.
- * @library /asm
+ * @library /testlibrary/asm
  * @run main FinalStatic
  */
 

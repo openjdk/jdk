@@ -36,7 +36,7 @@
  *     So previous implementation of MethodType.methodType() throws OOM exception
  *     in this test case.
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *

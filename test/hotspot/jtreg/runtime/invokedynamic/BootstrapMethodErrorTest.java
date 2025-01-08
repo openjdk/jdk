@@ -25,7 +25,7 @@
  * @test
  * @bug 8051045 8166974
  * @summary Test exceptions from invokedynamic and the bootstrap method
- * @library /asm
+ * @library /testlibrary/asm
  * @run main BootstrapMethodErrorTest
  */
 

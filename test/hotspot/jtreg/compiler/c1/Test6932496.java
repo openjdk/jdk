@@ -25,7 +25,7 @@
  * @test
  * @bug 6932496
  * @summary incorrect deopt of jsr subroutine on 64 bit c1
- * @library /asm
+ * @library /testlibrary/asm
  *
  * @run main/othervm -Xcomp
  *      -XX:CompileCommand=compileonly,compiler.c1.Test6932496::test

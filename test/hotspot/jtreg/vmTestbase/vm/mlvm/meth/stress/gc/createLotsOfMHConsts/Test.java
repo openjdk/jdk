@@ -33,7 +33,7 @@
  *     using different classloaders) to see if they are garbage collected and don't overflow
  *     different generations of heap.
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

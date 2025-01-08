@@ -28,7 +28,7 @@
  * @summary Run invokeinterface invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java
  *          invokeinterface/Generator.java
@@ -42,7 +42,7 @@
  * @summary Run invokeinterface invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java
  *          invokeinterface/Generator.java
@@ -56,7 +56,7 @@
  * @summary Run invokeinterface invocation tests
  * @requires vm.flagless
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  * @compile invokeinterface/Checker.java invokeinterface/ClassGenerator.java
  *          invokeinterface/Generator.java

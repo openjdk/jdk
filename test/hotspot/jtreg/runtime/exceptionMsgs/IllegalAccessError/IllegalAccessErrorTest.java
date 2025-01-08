@@ -27,7 +27,7 @@
  * @test
  * @summary Test messages of IllegalAccessError.
  * @modules java.base/java.lang:open
- * @library /asm
+ * @library /testlibrary/asm
  * @compile IAE_Loader1.java IAE_Loader2.java IAE78_A.java IAE78_B.java
  *          IllegalAccessErrorTest.java
  * @run main/othervm -Xbootclasspath/a:. test.IllegalAccessErrorTest

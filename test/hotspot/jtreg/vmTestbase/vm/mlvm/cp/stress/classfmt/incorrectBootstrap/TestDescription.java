@@ -34,7 +34,7 @@
  *     exception is thrown for each invokedynamic command and bootstrap/target methods are never invoked.
  *     The maximum number of invokedynamic calls is determined dynamically.
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *          /vmTestbase/vm/mlvm/patches

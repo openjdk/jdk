@@ -23,7 +23,7 @@
 
 /*
  * @test 8163808
- * @library /asm
+ * @library /testlibrary/asm
  * @run main TransitiveOverrideCFV50
  */
 

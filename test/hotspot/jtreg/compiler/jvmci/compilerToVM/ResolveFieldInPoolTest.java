@@ -27,7 +27,7 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @library ../common/patches
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect

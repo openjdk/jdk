@@ -27,7 +27,7 @@
  * @bug 8228604
  *
  * @requires vm.jvmti
- * @library /asm
+ * @library /testlibrary/asm
  * @library /test/lib
  *
  * @run main/othervm/native -agentlib:MissedStackMapFrames MissedStackMapFrames

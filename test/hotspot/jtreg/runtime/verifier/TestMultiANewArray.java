@@ -33,7 +33,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test TestMultiANewArray
  * @bug 8038076
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file TestMultiANewArray.java

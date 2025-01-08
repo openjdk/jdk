@@ -27,7 +27,7 @@
  * @summary C2 can not handle returns with inccompatible interface arrays
  * @requires vm.compMode == "Xmixed" & vm.flavor == "server"
  * @modules java.base/jdk.internal.misc
- * @library /asm
+ * @library /testlibrary/asm
  * @library /test/lib /
  *
  * @build jdk.test.whitebox.WhiteBox

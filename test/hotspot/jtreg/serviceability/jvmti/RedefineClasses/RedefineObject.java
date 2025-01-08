@@ -27,7 +27,7 @@
  * @summary Ensure Object natives stay registered after redefinition
  * @requires vm.jvmti
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.instrument

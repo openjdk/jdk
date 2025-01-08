@@ -25,7 +25,7 @@
  * @test
  * @bug 8025260 8016839 8046171
  * @summary Ensure that correct exceptions are thrown, not NullPointerException
- * @library /asm
+ * @library /testlibrary/asm
  * @library / .
  *
  * @build p.*

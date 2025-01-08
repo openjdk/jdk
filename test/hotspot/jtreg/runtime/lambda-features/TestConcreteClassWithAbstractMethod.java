@@ -25,7 +25,7 @@
  * @test
  * @bug 8032010
  * @summary method lookup on an abstract method in a concrete class should be successful
- * @library /asm
+ * @library /testlibrary/asm
  * @run main TestConcreteClassWithAbstractMethod
  */
 

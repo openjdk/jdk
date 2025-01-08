@@ -27,7 +27,7 @@
  * @summary Redefine VerifyError to get a VerifyError should not throw SOE
  * @requires vm.jvmti
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.instrument

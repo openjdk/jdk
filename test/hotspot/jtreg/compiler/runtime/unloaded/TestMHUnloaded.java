@@ -27,7 +27,7 @@
  * @test
  * @bug 8322726
  * @library /test/lib
- * @library /asm
+ * @library /testlibrary/asm
  *
  * @compile TestMHUnloaded.java TestMHUnloadedHelper.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.runtime.unloaded.TestMHUnloadedHelper

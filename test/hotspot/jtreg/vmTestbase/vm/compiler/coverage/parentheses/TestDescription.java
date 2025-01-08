@@ -43,7 +43,7 @@
  *     For generation instructions test using right parentheses sequence. Open parenthesis "(" is correspondent to
  *     stack increasing instructions, ")" is corresponded stack decreasing instructions.
  *
- * @library /asm
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm vm.compiler.coverage.parentheses.Parentheses
