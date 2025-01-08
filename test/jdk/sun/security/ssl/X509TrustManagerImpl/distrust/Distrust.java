@@ -198,7 +198,13 @@ public final class Distrust {
         public boolean[] getSubjectUniqueID() {
             return cert.getSubjectUniqueID();
         }
-        public boolean[] getKeyUsage() { return cert.getKeyUsage(); }
+        public boolean[] getKeyUsage() {
+            // Turn on the Digital Signature bit. Some certs that we want
+            // to use as test certs don't have this bit turned on.
+            boolean[] withDigitalSignature = cert.getKeyUsage();
+            withDigitalSignature[0] = true;
+            return withDigitalSignature;
+        }
         public int getBasicConstraints() { return cert.getBasicConstraints(); }
         public byte[] getEncoded() throws CertificateEncodingException {
             return cert.getEncoded();
