@@ -93,11 +93,6 @@ size_t ShenandoahGenerationalMemoryPool::used_in_bytes() {
   return _generation->used();
 }
 
-size_t ShenandoahGenerationalMemoryPool::max_size() const {
-  return _generation->max_capacity();
-}
-
-
 ShenandoahYoungGenMemoryPool::ShenandoahYoungGenMemoryPool(ShenandoahHeap* heap) :
         ShenandoahGenerationalMemoryPool(heap,
                              "Shenandoah Young Gen",
