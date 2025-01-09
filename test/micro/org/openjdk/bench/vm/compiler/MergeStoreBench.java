@@ -25,13 +25,9 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
-import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.options.Options;
-import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -41,18 +37,19 @@ import jdk.internal.misc.Unsafe;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 3, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgs = {"--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
+@Fork(value = 1, jvmArgs = {"--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED"})
 public class MergeStoreBench {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    final static VarHandle INT_L  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.LITTLE_ENDIAN);
-    final static VarHandle INT_B  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.BIG_ENDIAN);
-    final static VarHandle LONG_L = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
-    final static VarHandle LONG_B = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
-    final static VarHandle CHAR_L = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.LITTLE_ENDIAN);
-    final static VarHandle CHAR_B = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN);
+    final static VarHandle
+            INT_L  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.LITTLE_ENDIAN),
+            INT_B  = MethodHandles.byteArrayViewVarHandle(int[].class , ByteOrder.BIG_ENDIAN),
+            LONG_L = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN),
+            LONG_B = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN),
+            CHAR_L = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.LITTLE_ENDIAN),
+            CHAR_B = MethodHandles.byteArrayViewVarHandle(char[].class, ByteOrder.BIG_ENDIAN);
 
     final static int NUMBERS = 8192;
 
@@ -90,115 +87,6 @@ public class MergeStoreBench {
      */
 
     @Benchmark
-    public void getIntB(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntB(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntBU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntBU(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntBV(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += (int) INT_B.get(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntL(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntL(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntLU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntLU(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntLV(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += (int) INT_L.get(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntRB(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntRB(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntRBU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntRBU(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntRL(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntRL(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntRLU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += getIntRLU(bytes4, i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntRU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += Integer.reverseBytes(
-                    UNSAFE.getInt(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 4));
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getIntU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += UNSAFE.getInt(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 4);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
     public void setIntB(Blackhole BH) {
         int sum = 0;
         for (int i = 0; i < ints.length; i++) {
@@ -211,613 +99,396 @@ public class MergeStoreBench {
 
     @Benchmark
     public void setIntBU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            setIntBU(bytes4, i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            setIntBU(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntBV(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            INT_B.set(bytes4, i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            INT_B.set(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntL(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            setIntL(bytes4, i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            setIntL(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntLU(Blackhole BH) {
-        int sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            setIntLU(bytes4, i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            setIntLU(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntLV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            INT_L.set(bytes4, i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            INT_L.set(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntRB(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            setIntRB(bytes4, i * 4, ints[i]);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            setIntRB(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntRBU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            setIntRBU(bytes4, i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            setIntRBU(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntRL(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            setIntRL(bytes4, i * 4, ints[i]);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            setIntRL(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntRLU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            setIntRLU(bytes4, i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            setIntRLU(bytes4, off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntRU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            v = Integer.reverseBytes(v);
-            UNSAFE.putInt(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            UNSAFE.putInt(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, Integer.reverseBytes(ints[i]));
+            off += 4;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setIntU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            int v = ints[i];
-            UNSAFE.putInt(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 4, v);
-            sum += v;
+        int off = 0;
+        for (int i = ints.length - 1; i >= 0; i--) {
+            UNSAFE.putInt(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, ints[i]);
+            off += 4;
         }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongB(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongB(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongBU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongBU(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongBV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += (long) LONG_B.get(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongL(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongL(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongLU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongLU(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongLV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < ints.length; i++) {
-            sum += (long) LONG_L.get(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongRB(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongRB(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongRBU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongRBU(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongRL(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongRL(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongRLU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += getLongRLU(bytes8, i * 8);
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongRU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += Long.reverseBytes(
-                    UNSAFE.getLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 8));
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getLongU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            sum += UNSAFE.getLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 8);
-        }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongB(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongB(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongB(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongBU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongBU(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongBU(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongBV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            LONG_B.set(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            LONG_B.set(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongL(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongL(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongL(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongLU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongLU(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongLU(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongLV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            LONG_L.set(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            LONG_L.set(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongRB(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongRB(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongRB(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongRBU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongRBU(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongRBU(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongRL(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongRL(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongRL(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongRLU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            setLongRLU(bytes8, i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            setLongRLU(bytes8, off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongRU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            v = Long.reverseBytes(v);
-            UNSAFE.putLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            UNSAFE.putLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, Long.reverseBytes(longs[i]));
+            off += 8;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setLongU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            long v = longs[i];
-            UNSAFE.putLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 8, v);
-            sum += v;
+        int off = 0;
+        for (int i = longs.length - 1; i >= 0; i--) {
+            UNSAFE.putLong(bytes8, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, longs[i]);
+            off += 8;
         }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getCharB(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = getCharB(bytes4, i);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getCharBV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = (char) CHAR_B.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getCharBU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = getCharBU(bytes4, i);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getCharL(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = getCharL(bytes4, i);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-    @Benchmark
-    public void getCharLU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = getCharLU(bytes4, i);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-
-    @Benchmark
-    public void getCharLV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = (char) CHAR_L.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
-            sum += c;
-        }
-        BH.consume(sum);
-    }
-
-    @Benchmark
-    public void getCharC(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            char c = UNSAFE.getChar(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
-            sum += c;
-        }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setCharBS(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            putShortB(bytes4, i * 2, c);
-            sum += c;
+        int off = 0;
+        for (int i = chars.length - 1; i >= 0; i--) {
+            putShortB(bytes4, off, chars[i]);
+            off += 2;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setCharBV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            CHAR_B.set(bytes4, i * 2, c);
-            sum += c;
+        int off = 0;
+        for (int i = chars.length - 1; i >= 0; i--) {
+            CHAR_B.set(bytes4, off, chars[i]);
+            off += 2;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setCharLS(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            putShortL(bytes4, i * 2, c);
-            sum += c;
+        int off = 0;
+        for (int i = chars.length - 1; i >= 0; i--) {
+            putShortL(bytes4, off, chars[i]);
+            off += 2;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setCharLV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            CHAR_L.set(bytes4, i * 2, c);
-            sum += c;
+        int off = 0;
+        for (int i = chars.length - 1; i >= 0; i--) {
+            CHAR_L.set(bytes4, off, chars[i]);
+            off += 2;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void setCharC(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            UNSAFE.putChar(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2, c);
-            sum += c;
+        int off = 0;
+        for (int i = chars.length - 1; i >= 0; i--) {
+            UNSAFE.putChar(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + off, chars[i]);
+            off += 2;
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     /*
-     * putChars4 Test whether four constant chars can be MergeStored
+     * putChars4 and putBytes4 Test whether four constant chars can be MergeStored
      *
      */
     @Benchmark
-    public void putChars4B(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4B(bytes8, i * 4);
-            sum += longs[i];
+    public void putBytes4(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putBytes4(bytes4, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
+        BH.consume(off);
+    }
+
+    @Benchmark
+    public void putBytes4X(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putBytes4X(bytes4, off, 'n', 'u', 'l', 'l');
+        }
+        BH.consume(off);
+    }
+
+    @Benchmark
+    public void putBytes4U(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putBytes4U(bytes4, off, 'n', 'u', 'l', 'l');
+        }
+        BH.consume(off);
+    }
+
+    @Benchmark
+    @SuppressWarnings("deprecation")
+    public void putBytes4GetBytes(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            "null".getBytes(0, 4, bytes4, off);
+            off += 4;
+        }
+        BH.consume(off);
+    }
+
+    @Benchmark
+    public void putChars4B(Blackhole BH) {
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4B(bytes8, off, 'n', 'u', 'l', 'l');
+        }
+        BH.consume(off);
     }
 
     @Benchmark
     public void putChars4BU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4BU(bytes8, i * 4);
-            sum += longs[i];
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4BU(bytes8, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void putChars4BV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4BV(bytes8, i * 4);
-            sum += longs[i];
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4BV(bytes8, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void putChars4L(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4L(bytes8, i * 4);
-            sum += longs[i];
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4L(bytes8, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void putChars4LU(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4LU(bytes8, i * 4);
-            sum += longs[i];
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4LU(bytes8, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void putChars4LV(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4LV(bytes8, i * 4);
-            sum += longs[i];
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4LV(bytes8, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void putChars4C(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4C(bytes8, i * 4);
-            sum += longs[i];
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4C(bytes8, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
+        BH.consume(off);
     }
 
     @Benchmark
     public void putChars4S(Blackhole BH) {
-        long sum = 0;
-        for (int i = 0; i < longs.length; i++) {
-            putChars4S(bytes8, i * 4);
-            sum += longs[i];
+        int off = 0;
+        for (int i = 0; i < NUMBERS; i++) {
+            off = putChars4S(bytes8, off, 'n', 'u', 'l', 'l');
         }
-        BH.consume(sum);
-    }
-
-    static int getIntB(byte[] array, int offset) {
-        return ((array[offset    ] & 0xff) << 24)
-             | ((array[offset + 1] & 0xff) << 16)
-             | ((array[offset + 2] & 0xff) <<  8)
-             | ((array[offset + 3] & 0xff)      );
-    }
-
-    static int getIntBU(byte[] array, int offset) {
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return ((UNSAFE.getByte(array, address    ) & 0xff) << 24)
-             | ((UNSAFE.getByte(array, address + 1) & 0xff) << 16)
-             | ((UNSAFE.getByte(array, address + 2) & 0xff) <<  8)
-             | ((UNSAFE.getByte(array, address + 3) & 0xff)      );
-    }
-
-    static int getIntL(byte[] array, int offset) {
-        return ((array[offset       ] & 0xff)      )
-                | ((array[offset + 1] & 0xff) <<  8)
-                | ((array[offset + 2] & 0xff) << 16)
-                | ((array[offset + 3] & 0xff) << 24);
-    }
-
-    static int getIntRB(byte[] array, int offset) {
-        return Integer.reverseBytes(getIntB(array, offset));
-    }
-
-    static int getIntRBU(byte[] array, int offset) {
-        return Integer.reverseBytes(getIntBU(array, offset));
-    }
-
-    static int getIntRL(byte[] array, int offset) {
-        return Integer.reverseBytes(getIntL(array, offset));
-    }
-
-    static int getIntRLU(byte[] array, int offset) {
-        return Integer.reverseBytes(getIntLU(array, offset));
+        BH.consume(off);
     }
 
     static void setIntB(byte[] array, int offset, int value) {
@@ -868,68 +539,6 @@ public class MergeStoreBench {
     public static void setIntRBU(byte[] array, int offset, int value) {
         value = Integer.reverseBytes(value);
         setIntBU(array, offset, value);
-    }
-
-    static long getLongB(byte[] array, int offset) {
-        return (((long) array[offset    ] & 0xff) << 56)
-             | (((long) array[offset + 1] & 0xff) << 48)
-             | (((long) array[offset + 2] & 0xff) << 40)
-             | (((long) array[offset + 3] & 0xff) << 32)
-             | (((long) array[offset + 4] & 0xff) << 24)
-             | (((long) array[offset + 5] & 0xff) << 16)
-             | (((long) array[offset + 6] & 0xff) << 8)
-             | (((long) array[offset + 7] & 0xff)     );
-    }
-
-    static long getLongBU(byte[] array, int offset) {
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return (((long)(UNSAFE.getByte(array, address)     & 0xff)) << 56)
-             | (((long)(UNSAFE.getByte(array, address + 1) & 0xff)) << 48)
-             | (((long)(UNSAFE.getByte(array, address + 2) & 0xff)) << 40)
-             | (((long)(UNSAFE.getByte(array, address + 3) & 0xff)) << 32)
-             | (((long)(UNSAFE.getByte(array, address + 4) & 0xff)) << 24)
-             | (((long)(UNSAFE.getByte(array, address + 5) & 0xff)) << 16)
-             | (((long)(UNSAFE.getByte(array, address + 6) & 0xff)) <<  8)
-             | (((long)(UNSAFE.getByte(array, address + 7) & 0xff))      );
-    }
-
-    public static long getLongL(byte[] array, int offset) {
-        return (((long) array[offset    ] & 0xff)      )
-             | (((long) array[offset + 1] & 0xff) <<  8)
-             | (((long) array[offset + 2] & 0xff) << 16)
-             | (((long) array[offset + 3] & 0xff) << 24)
-             | (((long) array[offset + 4] & 0xff) << 32)
-             | (((long) array[offset + 5] & 0xff) << 40)
-             | (((long) array[offset + 6] & 0xff) << 48)
-             | (((long) array[offset + 7] & 0xff) << 56);
-    }
-
-    static long getLongLU(byte[] array, int offset) {
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return (((long)(UNSAFE.getByte(array, address    ) & 0xff))      )
-             | (((long)(UNSAFE.getByte(array, address + 1) & 0xff)) <<  8)
-             | (((long)(UNSAFE.getByte(array, address + 2) & 0xff)) << 16)
-             | (((long)(UNSAFE.getByte(array, address + 3) & 0xff)) << 24)
-             | (((long)(UNSAFE.getByte(array, address + 4) & 0xff)) << 32)
-             | (((long)(UNSAFE.getByte(array, address + 5) & 0xff)) << 40)
-             | (((long)(UNSAFE.getByte(array, address + 6) & 0xff)) << 48)
-             | (((long)(UNSAFE.getByte(array, address + 7) & 0xff)) << 56);
-    }
-
-    static long getLongRB(byte[] array, int offset) {
-        return getLongB(array, offset);
-    }
-
-    static long getLongRBU(byte[] array, int offset) {
-        return getLongBU(array, offset);
-    }
-
-    static long getLongRL(byte[] array, int offset) {
-        return getLongL(array, offset);
-    }
-
-    static long getLongRLU(byte[] array, int offset) {
-        return getLongLU(array, offset);
     }
 
     static void setLongB(byte[] array, int offset, long value) {
@@ -998,112 +607,95 @@ public class MergeStoreBench {
         UNSAFE.putByte(array, address + 7, (byte) (value >> 56));
     }
 
-    public static int getIntLU(byte[] array, int offset) {
+    public int putBytes4(byte[] bytes, int offset, int c0, int c1, int c2, int c3) {
+        bytes[offset    ] = (byte) c0;
+        bytes[offset + 1] = (byte) c1;
+        bytes[offset + 2] = (byte) c2;
+        bytes[offset + 3] = (byte) c3;
+        return offset + 4;
+    }
+
+    public int putBytes4X(byte[] bytes, int offset, int c0, int c1, int c2, int c3) {
+        bytes[offset++] = (byte) c0;
+        bytes[offset++] = (byte) c1;
+        bytes[offset++] = (byte) c2;
+        bytes[offset++] = (byte) c3;
+        return offset;
+    }
+
+    public int putBytes4U(byte[] bytes, int offset, int c0, int c1, int c2, int c3) {
         final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
-        return ((UNSAFE.getByte(array, address    ) & 0xff)      )
-             | ((UNSAFE.getByte(array, address + 1) & 0xff) <<  8)
-             | ((UNSAFE.getByte(array, address + 2) & 0xff) << 16)
-             | ((UNSAFE.getByte(array, address + 3) & 0xff) << 24);
+        UNSAFE.putByte(bytes, address    , (byte) c0);
+        UNSAFE.putByte(bytes, address + 1, (byte) c1);
+        UNSAFE.putByte(bytes, address + 2, (byte) c2);
+        UNSAFE.putByte(bytes, address + 3, (byte) c3);
+        return offset + 4;
     }
 
-    public static char getCharB(byte[] val, int index) {
-        index <<= 1;
-        return (char)(((val[index    ] & 0xff) << 8)
-                    | ((val[index + 1] & 0xff)));
-    }
-
-    public static char getCharBR(byte[] val, int index) {
-        return Character.reverseBytes(getCharB(val, index));
-    }
-
-    public static char getCharL(byte[] val, int index) {
-        index <<= 1;
-        return (char)(((val[index    ] & 0xff))
-                    | ((val[index + 1] & 0xff) << 8));
-    }
-
-    public static char getCharLR(byte[] val, int index) {
-        return Character.reverseBytes(getCharL(val, index));
-    }
-
-    public static char getCharBU(byte[] array, int offset) {
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
-        return (char) (((UNSAFE.getByte(array, address    ) & 0xff) << 8)
-                     | ((UNSAFE.getByte(array, address + 1) & 0xff)     ));
-    }
-
-    public static char getCharLU(byte[] array, int offset) {
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
-        return (char) (((UNSAFE.getByte(array, address    ) & 0xff)     )
-                     | ((UNSAFE.getByte(array, address + 1) & 0xff) << 8));
-    }
-
-    public void putChars4B(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+    public int putChars4B(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
         putShortB(bytes, offset    , c0);
         putShortB(bytes, offset + 1, c1);
         putShortB(bytes, offset + 2, c2);
         putShortB(bytes, offset + 3, c3);
+        return offset + 4;
     }
 
-    public void putChars4BU(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+    public int putChars4BU(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
         putShortBU(bytes, offset    , c0);
         putShortBU(bytes, offset + 1, c1);
         putShortBU(bytes, offset + 2, c2);
         putShortBU(bytes, offset + 3, c3);
+        return offset + 4;
     }
 
-    public void putChars4BV(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
-        offset <<= 1;
-        CHAR_B.set(bytes, offset    , c0);
+    public int putChars4BV(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
+        CHAR_B.set(bytes, offset     , c0);
         CHAR_B.set(bytes, offset + 2, c1);
         CHAR_B.set(bytes, offset + 4, c2);
         CHAR_B.set(bytes, offset + 6, c3);
+        return offset + 8;
     }
 
-    public void putChars4L(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+    public int putChars4L(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
         putShortL(bytes, offset    , c0);
         putShortL(bytes, offset + 1, c1);
         putShortL(bytes, offset + 2, c2);
         putShortL(bytes, offset + 3, c3);
+        return offset + 4;
     }
 
-    public void putChars4LV(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
-        offset <<= 1;
+    public int putChars4LV(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
         CHAR_L.set(bytes, offset    , c0);
         CHAR_L.set(bytes, offset + 2, c1);
         CHAR_L.set(bytes, offset + 4, c2);
         CHAR_L.set(bytes, offset + 6, c3);
+        return offset + 8;
     }
 
-    public void putChars4LU(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
+    public int putChars4LU(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
         putShortLU(bytes, offset    , c0);
         putShortLU(bytes, offset + 1, c1);
         putShortLU(bytes, offset + 2, c2);
         putShortLU(bytes, offset + 3, c3);
+        return offset + 4;
     }
 
-    public void putChars4C(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+    public int putChars4C(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
         UNSAFE.putChar(bytes, address    , c0);
         UNSAFE.putChar(bytes, address + 2, c1);
         UNSAFE.putChar(bytes, address + 4, c2);
         UNSAFE.putChar(bytes, address + 6, c3);
+        return offset + 8;
     }
 
-    public void putChars4S(byte[] bytes, int offset) {
-        char c0 = 'n', c1 = 'u', c2 = 'l', c3 = 'l';
-        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + (offset << 1);
+    public int putChars4S(byte[] bytes, int offset, char c0, char c1, char c2, char c3) {
+        final long address = Unsafe.ARRAY_BYTE_BASE_OFFSET + offset;
         UNSAFE.putShort(bytes, address    , (short) c0);
         UNSAFE.putShort(bytes, address + 2, (short) c1);
         UNSAFE.putShort(bytes, address + 4, (short) c2);
         UNSAFE.putShort(bytes, address + 6, (short) c3);
+        return offset + 8;
     }
 
     private static void putShortB(byte[] val, int index, int c) {
@@ -1129,4 +721,9 @@ public class MergeStoreBench {
         UNSAFE.putByte(array, address    , (byte) (c     ));
         UNSAFE.putByte(array, address + 1, (byte) (c >> 8));
     }
+
+    @Fork(value = 1, jvmArgs = {
+            "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED", "-XX:+UnlockDiagnosticVMOptions", "-XX:-MergeStores"
+    })
+    public static class MergeStoresDisabled extends MergeStoreBench {}
 }
