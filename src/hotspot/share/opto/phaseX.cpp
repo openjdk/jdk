@@ -1469,6 +1469,23 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     case Op_LoadN:
       return false;
+
+    // In SubNode::Identity, we do:
+    //   Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
+    // In the example, the AddI had an input replaced, the AddI is
+    // added to the IGVN worklist, but the SubI is one link further
+    // down and is not added. I checked add_users_of_use_to_worklist
+    // where I would expect the SubI would be added, and I cannot
+    // find the pattern, only this one:
+    //   If changed AddI/SubI inputs, check CmpU for range check optimization.
+    //
+    // Fix this "notification" issue and check if there are any other
+    // issues.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
+    case Op_SubI:
+      return false;
   }
 
   Node* i = n->Identity(this);
