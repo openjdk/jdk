@@ -833,7 +833,7 @@ public:
     Flag_is_removed_by_peephole      = 1 << 16,
     Flag_is_predicated_using_blend   = 1 << 17,
     Flag_is_commutative_vector_oper  = 1 << 18,
-    _last_flag                       = Flag_is_predicated_using_blend
+    _last_flag                       = Flag_is_commutative_vector_oper
   };
 
   class PD;
