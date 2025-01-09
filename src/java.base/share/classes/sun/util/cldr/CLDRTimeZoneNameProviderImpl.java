@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.TimeZone;
+
+import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
@@ -93,7 +94,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 case "":
                     // Fill in empty elements
                     deriveFallbackName(namesSuper, i, locale,
-                                       TimeZone.getTimeZone(id).toZoneId().getRules().isFixedOffset());
+                                       ZoneInfo.getTimeZone(id).toZoneId().getRules().isFixedOffset());
                     break;
                 case NO_INHERITANCE_MARKER:
                     // CLDR's "no inheritance marker"
@@ -131,7 +132,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
     // Derive fallback time zone name according to LDML's logic
     private void deriveFallbackNames(String[] names, Locale locale) {
-        boolean noDST = TimeZone.getTimeZone(names[0]).toZoneId().getRules().isFixedOffset();
+        boolean noDST = ZoneInfo.getTimeZone(names[0]).toZoneId().getRules().isFixedOffset();
 
         for (int i = INDEX_STD_LONG; i <= INDEX_GEN_SHORT; i++) {
             deriveFallbackName(names, i, locale, noDST);
