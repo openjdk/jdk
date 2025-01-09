@@ -37,7 +37,6 @@ import java.lang.ref.SoftReference;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Test that verifies that classes are not unloaded when specific types of references are kept to them.

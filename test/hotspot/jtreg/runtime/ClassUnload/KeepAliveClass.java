@@ -70,7 +70,6 @@ public class KeepAliveClass {
     }
     c = null;
     escape = null;
-    ClassUnloadCommon.triggerUnloading();
 
     Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
     ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "testClass (3) should be unloaded: " + aliveClasses);

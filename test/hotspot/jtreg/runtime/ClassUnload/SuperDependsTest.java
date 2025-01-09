@@ -77,7 +77,6 @@ public class SuperDependsTest {
     public static void main(String args[]) throws Throwable {
         SuperDependsTest d = new SuperDependsTest();
         d.test();
-        System.out.println("Should unload MyTest and p2.c2 just now");
         Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(MY_TEST, "p2.c2"));
         ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should be unloaded: " + aliveClasses);
     }
