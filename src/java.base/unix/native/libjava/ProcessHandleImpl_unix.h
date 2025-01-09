@@ -56,12 +56,9 @@ extern jfieldID ProcessHandleImpl_Info_userID;
  * 'total' will contain the running time of 'pid' in nanoseconds.
  * 'start' will contain the start time of 'pid' in milliseconds since epoch.
  */
-extern pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
-                                         jlong *total, jlong *start);
 extern pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t pid,
                                        jlong *total, jlong *start);
 
-extern void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid);
 extern void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid);
 
 extern jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray array,

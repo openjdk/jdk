@@ -78,7 +78,7 @@
  *   ProcessHandleImpl_unix.h which is included into every
  *   ProcessHandleImpl_<os>.c file.
  *
- * Example 1:
+ * Example :
  * ----------
  * The implementation of Java_java_lang_ProcessHandleImpl_initNative()
  * is the same on all platforms except on Linux where it initializes one
@@ -86,17 +86,6 @@
  * Java_java_lang_ProcessHandleImpl_initNative() but add call to
  * os_init() at the end of the function which is empty on all platforms
  * except Linux where it performs the additionally initializations.
- *
- * Example 2:
- * ----------
- * The implementation of Java_java_lang_ProcessHandleImpl_00024Info_info0 is the
- * same on Solaris and AIX but different on Linux and MacOSX. We therefore simply
- * call the helpers os_getParentPidAndTimings() and os_getCmdlineAndUserInfo().
- * The Linux and MaxOS X versions of these functions (in the corresponding files
- * ProcessHandleImpl_linux.c and ProcessHandleImpl_macosx.c) directly contain
- * the platform specific implementations while the Solaris and AIX
- * implementations simply call back to unix_getParentPidAndTimings() and
- * unix_getCmdlineAndUserInfo() which are implemented right in this file.
  *
  * The term "same implementation" is still a question of interpretation. It my
  * be acceptable to have a few ifdef'ed lines if that allows the sharing of a
@@ -600,97 +589,3 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 
 #endif // defined (__linux__)
 
-/*
- * The following functions are for AIX.
- */
-
-#if defined(_AIX)
-
-/**
- * Helper function to get the 'psinfo_t' data from "/proc/%d/psinfo".
- * Returns 0 on success and -1 on error.
- */
-static int getPsinfo(pid_t pid, psinfo_t *psinfo) {
-    FILE* fp;
-    char fn[32];
-    size_t ret;
-
-    /*
-     * Try to open /proc/%d/psinfo
-     */
-    snprintf(fn, sizeof fn, "/proc/%d/psinfo", pid);
-    fp = fopen(fn, "r");
-    if (fp == NULL) {
-        return -1;
-    }
-
-    ret = fread(psinfo, 1, sizeof(psinfo_t), fp);
-    fclose(fp);
-    if (ret < sizeof(psinfo_t)) {
-        return -1;
-    }
-    return 0;
-}
-
-/**
- * Read /proc/<pid>/psinfo and return the ppid, total cputime and start time.
- * Return: -1 is fail;  >=  0 is parent pid
- * 'total' will contain the running time of 'pid' in nanoseconds.
- * 'start' will contain the start time of 'pid' in milliseconds since epoch.
- */
-pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
-                                  jlong *totalTime, jlong* startTime) {
-    psinfo_t psinfo;
-
-    if (getPsinfo(pid, &psinfo) < 0) {
-        return -1;
-    }
-
-    // Validate the pid before returning the info
-    if (kill(pid, 0) < 0) {
-        return -1;
-    }
-
-    *totalTime = psinfo.pr_time.tv_sec * 1000000000L + psinfo.pr_time.tv_nsec;
-
-    *startTime = psinfo.pr_start.tv_sec * (jlong)1000 +
-                 psinfo.pr_start.tv_nsec / 1000000;
-
-    return (pid_t) psinfo.pr_ppid;
-}
-
-void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
-    psinfo_t psinfo;
-    char prargs[PRARGSZ + 1];
-    jstring cmdexe = NULL;
-
-    /*
-     * Now try to open /proc/%d/psinfo
-     */
-    if (getPsinfo(pid, &psinfo) < 0) {
-        unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe, NULL);
-        return;
-    }
-
-    unix_getUserInfo(env, jinfo, psinfo.pr_uid);
-
-    /*
-     * Now read psinfo.pr_psargs which contains the first PRARGSZ characters of the
-     * argument list (i.e. arg[0] arg[1] ...). Unfortunately, PRARGSZ is usually set
-     * to 80 characters only. Nevertheless it's better than nothing :)
-     */
-    strncpy(prargs, psinfo.pr_psargs, PRARGSZ);
-    prargs[PRARGSZ] = '\0';
-    if (prargs[0] == '\0') {
-        /* If psinfo.pr_psargs didn't contain any strings, use psinfo.pr_fname
-         * (which only contains the last component of exec()ed pathname) as a
-         * last resort. This is true for AIX kernel processes for example.
-         */
-        strncpy(prargs, psinfo.pr_fname, PRARGSZ);
-        prargs[PRARGSZ] = '\0';
-    }
-    unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe,
-                      prargs[0] == '\0' ? NULL : prargs);
-}
-
-#endif // defined(_AIX)
