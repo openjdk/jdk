@@ -130,8 +130,7 @@ public class MinMaxRed_Long {
     }
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "true"},
-        applyIfCPUFeatureOr = { "avx512", "true" },
+    @IR(applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
         counts = {IRNode.MIN_REDUCTION_V, " > 0"})
     public static long minReductionImplement(long[] a, long res) {
         for (int i = 0; i < a.length; i++) {
@@ -142,8 +141,7 @@ public class MinMaxRed_Long {
     }
 
     @Test
-    @IR(applyIf = {"SuperWordReductions", "true"},
-        applyIfCPUFeatureOr = { "avx512", "true" },
+    @IR(applyIfAnd = {"SuperWordReductions", "true", "MaxVectorSize", ">=32"},
         counts = {IRNode.MAX_REDUCTION_V, " > 0"})
     public static long maxReductionImplement(long[] a, long res) {
         for (int i = 0; i < a.length; i++) {
