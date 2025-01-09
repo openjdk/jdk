@@ -1429,8 +1429,33 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     // phase->C->post_loop_opts_phase() and call record_for_post_loop_opts_igvn.
     //
     // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     case Op_SafePoint:
+      return false;
+
+    // MergeMemNode::Identity replaces the MergeMem with its base_memory if it
+    // does not record any other memory splits.
+    //
+    // I did not deeply investigate, but it looks like MergeMemNode::Identity
+    // never got called during IGVN for this node, investigate why.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
+    case Op_MergeMem:
+      return false;
+
+    // ConstraintCastNode::Identity finds casts that are the same, except that
+    // the control is "higher up", i.e. dominates. The call goes via
+    // ConstraintCastNode::dominating_cast to PhaseGVN::is_dominator_helper,
+    // which traverses up to 100 idom steps. If anything gets optimized somewhere
+    // away from the cast, but within 100 idom steps, the cast may not be
+    // put on the IGVN worklist any more.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
+    case Op_CastPP:
+    case Op_CastII:
+    case Op_CastLL:
       return false;
   }
 
