@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng/othervm -XX:+UsePerfData -XX:-UseZGC SystemMapTest
+ * @run testng/othervm -XX:+UsePerfData SystemMapTest
  */
 
 /*
