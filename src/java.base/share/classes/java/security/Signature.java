@@ -109,8 +109,8 @@ import sun.security.util.KnownOIDs;
  *      hash algorithms)</li>
  * <li>{@code SHA1withDSA}</li>
  * <li>{@code SHA256withDSA}</li>
- * <li>{@code SHA256withECDSA} (secp256r1 curve)</li>
- * <li>{@code SHA384withECDSA} (secp384r1 curve)</li>
+ * <li>{@code SHA256withECDSA} (secp256r1)</li>
+ * <li>{@code SHA384withECDSA} (secp384r1)</li>
  * <li>{@code SHA1withRSA}</li>
  * <li>{@code SHA256withRSA}</li>
  * <li>{@code SHA384withRSA}</li>
