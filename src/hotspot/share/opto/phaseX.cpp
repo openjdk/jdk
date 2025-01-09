@@ -1208,6 +1208,26 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     case Op_SubTypeCheck:
       return false;
+
+    // LoopLimitNode::Ideal when stride is constant power-of-2, we can do a lowering
+    // to other nodes: Conv, Add, Sub, Mul, And ...
+    //
+    //  107  ConI  === 0  [[ ... ]]  #int:2
+    //   84  LoadRange  === _ 7 83
+    //   50  ConI  === 0  [[ ... ]]  #int:0
+    //  549  LoopLimit  === _ 50 84 107
+    //
+    // I stepped backward, to see how the node was generated, and I found that it was
+    // created in PhaseIdealLoop::exact_limit and not changed since. It is added to the
+    // IGVN worklist. I quickly checked when it goes into LoopLimitNode::Ideal after
+    // that, and it seems we want to skip lowering it until after loop-opts, but never
+    // add call record_for_post_loop_opts_igvn. This would be an easy fix, but there
+    // could be other issues too.
+    //
+    // Fond with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_LoopLimit:
+      return false;
   }
 
   Node* i = n->Ideal(this, true); // TODO also with false?
