@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,6 +393,7 @@ public final class ProcessTools {
 
         final List<String> doubleWordArgs = List.of(
                 "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports", "--enable-native-access",
+                "-Xbootclasspath/a:",
                 "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
 
         ArrayList<String> args = new ArrayList<>();
