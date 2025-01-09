@@ -1260,7 +1260,7 @@ void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure) {
   return owned_monitors_iterate_filtered(closure, all_filter);
 }
 
-static bool monitors_used_above_threshold(MonitorList* list) {
+bool ObjectSynchronizer::monitors_used_above_threshold(MonitorList* list) {
   if (MonitorUsedDeflationThreshold == 0) {  // disabled case is easy
     return false;
   }
@@ -1788,7 +1788,6 @@ void ObjectMonitorDeflationSafepointer::block_for_safepoint(const char* op_name,
 // ObjectMonitors.
 size_t ObjectSynchronizer::deflate_idle_monitors() {
   JavaThread* current = JavaThread::current();
-  assert(current->is_monitor_deflation_thread(), "The only monitor deflater");
 
   // The async deflation request has been processed.
   _last_async_deflation_time_ns = os::javaTimeNanos();

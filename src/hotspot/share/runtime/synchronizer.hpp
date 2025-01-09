@@ -181,25 +181,31 @@ public:
   // Initialize the gInflationLocks
   static void initialize();
 
+  // Deflate idle monitors:
+ private:
+  friend class MonitorDeflationThread;
+
   // We currently use aggressive monitor deflation policy;
   // basically we try to deflate all monitors that are not busy.
   static size_t deflate_idle_monitors();
 
-  // Deflate idle monitors:
   static size_t deflate_monitor_list(ObjectMonitorDeflationSafepointer* safepointer);
   static size_t in_use_list_ceiling();
-  static void dec_in_use_list_ceiling();
-  static void inc_in_use_list_ceiling();
   static void set_in_use_list_ceiling(size_t new_value);
+  static bool monitors_used_above_threshold(MonitorList* list);
   static bool is_async_deflation_needed();
   static bool is_async_deflation_requested() { return _is_async_deflation_requested; }
   static bool is_final_audit() { return _is_final_audit; }
   static void set_is_final_audit() { _is_final_audit = true; }
   static jlong last_async_deflation_time_ns() { return _last_async_deflation_time_ns; }
-  static void request_deflate_idle_monitors();
-  static bool request_deflate_idle_monitors_from_wb();  // for whitebox test support
   static void set_is_async_deflation_requested(bool new_value) { _is_async_deflation_requested = new_value; }
   static jlong time_since_last_async_deflation_ms();
+
+ public:
+  static void dec_in_use_list_ceiling();
+  static void inc_in_use_list_ceiling();
+  static void request_deflate_idle_monitors();
+  static bool request_deflate_idle_monitors_from_wb();  // for whitebox test support
 
   // debugging
   static void audit_and_print_stats(outputStream* out, bool on_exit);
