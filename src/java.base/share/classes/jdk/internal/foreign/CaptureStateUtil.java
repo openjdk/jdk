@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,10 +134,10 @@ public final class CaptureStateUtil {
         Objects.requireNonNull(stateName);
 
         if (!(returnType.equals(int.class) || returnType.equals(long.class))) {
-            throw illegalArgNot(target, "return an int or a long");
+            throw illegalArgDoesNot(target, "return an int or a long");
         }
         if (target.type().parameterType(0) != MemorySegment.class) {
-            throw illegalArgNot(target, "have a MemorySegment as the first parameter");
+            throw illegalArgDoesNot(target, "have a MemorySegment as the first parameter");
         }
 
         // (int | long)(int | long)
@@ -199,7 +199,7 @@ public final class CaptureStateUtil {
         UNSAFE.freeMemory(segment.address());
     }
 
-    private static IllegalArgumentException illegalArgNot(MethodHandle target, String info) {
+    private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
         return new IllegalArgumentException("The provided target " + target
                 + " does not " + info);
     }
