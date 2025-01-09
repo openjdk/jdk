@@ -128,12 +128,11 @@ public class JimageDiffGenerator {
         byte[] buf2 = new byte[1024];
         int bytesRead1, bytesRead2;
         try (is1; is2) {
-            while ((bytesRead1 = is1.readNBytes(buf1, 0, buf1.length)) != 0) {
+            while (true) {
+                bytesRead1 = is1.readNBytes(buf1, 0, buf1.length);
                 bytesRead2 = is2.readNBytes(buf2, 0, buf2.length);
-                if (bytesRead2 == 0) {
-                    // first input stream didn't return the end of stream
-                    // but the second did?
-                    return false;
+                if (bytesRead1 == 0 || bytesRead2 == 0) {
+                    break; // no more bytes for a stream
                 }
                 if (bytesRead1 != bytesRead2) {
                     return false;
@@ -143,10 +142,15 @@ public class JimageDiffGenerator {
                     return false;
                 }
             }
+            // Streams are equal only if we've read them both to the end
+            if (bytesRead1 == 0 &&
+                bytesRead2 == 0) {
+                return true;
+            }
         } catch (IOException e) {
             throw new UncheckedIOException("IO exception when comparing bytes", e);
         }
-        return true;
+        return false;
     }
 
 }

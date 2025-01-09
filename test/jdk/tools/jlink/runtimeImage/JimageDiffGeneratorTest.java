@@ -241,8 +241,44 @@ public class JimageDiffGeneratorTest {
         assertEquals(result.get(0).getResourceBytes(), bytesBase[0]);
     }
 
+    /*
+     * Expect a difference since entry 'a' on the optimized version is
+     * one byte longer.
+     */
+    @Test
+    public void testBytesDifferExactBufferSize() throws Exception {
+        List<String> entriesBase = List.of("a", "b", "c", "d");
+        byte[][] bytesBase = new byte[][] {
+            { }, /* a */
+            { 0x08, 0x04, 0x04 }, /* b */
+            { 0x09, 0x11, 0x11 }, /* c */
+            { 0x11, 0x12, 0x31 }, /* d */
+        };
+        byte[][] bytesOpt = new byte[][] {
+            { }, /* a */
+            { 0x08, 0x04, 0x04 }, /* b */
+            { 0x09, 0x11, 0x11 }, /* c */
+            { 0x11, 0x12, 0x31 }, /* d */
+        };
+        bytesBase[0] = genBytesOfSize(1024);    // exact buffer size
+        bytesOpt[0] = genBytesOfSize(1024 + 1); // buffer size + 1
+
+        ImageResource base = new BasicImageResource(entriesBase, bytesBase);
+        ImageResource opt = new BasicImageResource(entriesBase, bytesOpt);
+        JimageDiffGenerator gen = new JimageDiffGenerator();
+        List<ResourceDiff> result = gen.generateDiff(base, opt);
+        assertEquals(result.size(), 1);
+        assertEquals(result.get(0).getKind(), ResourceDiff.Kind.MODIFIED);
+        assertEquals(result.get(0).getName(), "a");
+        assertEquals(result.get(0).getResourceBytes(), bytesBase[0]);
+    }
+
     private byte[] generateBytes() {
         int size = 1024 + 254;
+        return genBytesOfSize(size);
+    }
+
+    private byte[] genBytesOfSize(int size) {
         byte[] result = new byte[size];
         for (int i = 0; i < size; i++) {
             result[i] = (byte)(i % Byte.MAX_VALUE);
