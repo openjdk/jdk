@@ -35,6 +35,7 @@ package testlibrary_tests.generators.tests;
 import compiler.lib.generators.EmptyGeneratorException;
 import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
+import compiler.lib.generators.RestrictableGenerator;
 import jdk.test.lib.Asserts;
 
 import java.util.*;
@@ -66,6 +67,7 @@ public class TestGenerators {
         testSpecialDouble();
         testSafeRestrict();
         testFill();
+        testFuzzy();
     }
 
     static void testMixed() {
@@ -178,14 +180,6 @@ public class TestGenerators {
         Asserts.assertEQ(mockGS.uniformFloats(-1, 10).next(), 3.14159f);
         mockSource.checkEmpty().enqueueFloat(0, 1, 3.14159f);
         Asserts.assertEQ(mockGS.uniformFloats(0, 1).next(), 3.14159f);
-
-        float lo = 0.13f, hi = 13.532f;
-        var gb = G.uniformFloats(lo, hi);
-        for (int i = 0; i < 10_000; i++) {
-            float x = gb.next();
-            Asserts.assertGreaterThanOrEqual(x, lo);
-            Asserts.assertLessThan(x, hi);
-        }
     }
 
     static void testUniformDouble() {
@@ -193,14 +187,6 @@ public class TestGenerators {
         Asserts.assertEQ(mockGS.uniformDoubles(-1, 10).next(), 3.14159d);
         mockSource.checkEmpty().enqueueDouble(0, 1, 3.14159d);
         Asserts.assertEQ(mockGS.uniformDoubles(0, 1).next(), 3.14159d);
-
-        double lo = 0.13, hi = 13.532;
-        var gb = G.uniformDoubles(lo, hi);
-        for (int i = 0; i < 10_000; i++) {
-            double x = gb.next();
-            Asserts.assertGreaterThanOrEqual(x, lo);
-            Asserts.assertLessThan(x, hi);
-        }
     }
 
     static void testRandomElement() {
@@ -320,14 +306,6 @@ public class TestGenerators {
         Asserts.assertEQ(mockGS.uniformInts().next(), 144);
 
         mockSource.checkEmpty();
-
-        int lo = -345555, hi = 11123;
-        var gb = G.uniformInts(lo, hi);
-        for (int i = 0; i < 10_000; i++) {
-            int x = gb.next();
-            Asserts.assertGreaterThanOrEqual(x, lo);
-            Asserts.assertLessThanOrEqual(x, hi);
-        }
     }
 
     static void testUniformLongs() {
@@ -360,14 +338,6 @@ public class TestGenerators {
         Asserts.assertEQ(mockGS.uniformLongs().next(), 144L);
 
         mockSource.checkEmpty();
-
-        long lo = -344223244511L, hi = 29;
-        var gb = G.uniformLongs(lo, hi);
-        for (int i = 0; i < 10_000; i++) {
-            long x = gb.next();
-            Asserts.assertGreaterThanOrEqual(x, lo);
-            Asserts.assertLessThanOrEqual(x, hi);
-        }
     }
 
     static void testAnyBits() {
@@ -537,5 +507,87 @@ public class TestGenerators {
         int[] ints = new int[5];
         mockGS.fill(intGen, ints);
         Asserts.assertTrue(Arrays.equals(ints, (new int[] {1, 2, 3, 4, 5})));
+    }
+
+    static void testFuzzy() {
+        var intBoundGen = G.uniformInts();
+        for (int j = 0; j < 500; j++) {
+            int a = intBoundGen.next(), b = intBoundGen.next();
+            int lo = Math.min(a, b), hi = Math.max(a, b);
+            RestrictableGenerator<Integer> gb;
+            try {
+                gb = G.ints().restricted(lo, hi);
+            } catch (EmptyGeneratorException e) {
+                continue;
+            }
+            for (int i = 0; i < 10_000; i++) {
+                int x = gb.next();
+                Asserts.assertGreaterThanOrEqual(x, lo);
+                Asserts.assertLessThanOrEqual(x, hi);
+            }
+        }
+
+        for (int j = 0; j < 500; j++) {
+            int a = intBoundGen.next(), b = intBoundGen.next();
+            int lo = Math.min(a, b), hi = Math.max(a, b);
+            var gb = G.uniformInts(lo, hi);
+            for (int i = 0; i < 10_000; i++) {
+                int x = gb.next();
+                Asserts.assertGreaterThanOrEqual(x, lo);
+                Asserts.assertLessThanOrEqual(x, hi);
+            }
+        }
+
+        var longBoundGen = G.uniformLongs();
+        for (int j = 0; j < 500; j++) {
+            long a = longBoundGen.next(), b = longBoundGen.next();
+            long lo = Math.min(a, b), hi = Math.max(a, b);
+            RestrictableGenerator<Long> gb;
+            try {
+                gb = G.longs().restricted(lo, hi);
+            } catch (EmptyGeneratorException e) {
+                continue;
+            }
+            for (int i = 0; i < 10_000; i++) {
+                long x = gb.next();
+                Asserts.assertGreaterThanOrEqual(x, lo);
+                Asserts.assertLessThanOrEqual(x, hi);
+            }
+        }
+
+        for (int j = 0; j < 500; j++) {
+            long a = longBoundGen.next(), b = longBoundGen.next();
+            long lo = Math.min(a, b), hi = Math.max(a, b);
+            var gb = G.uniformLongs(lo, hi);
+            for (int i = 0; i < 10_000; i++) {
+                long x = gb.next();
+                Asserts.assertGreaterThanOrEqual(x, lo);
+                Asserts.assertLessThanOrEqual(x, hi);
+            }
+        }
+
+        var floatBoundGen = G.uniformFloats();
+        for (int j = 0; j < 500; j++) {
+            float a = floatBoundGen.next(), b = floatBoundGen.next();
+            float lo = Math.min(a, b), hi = Math.max(a, b);
+            var gb = G.uniformFloats(lo, hi);
+            for (int i = 0; i < 10_000; i++) {
+                float x = gb.next();
+                Asserts.assertGreaterThanOrEqual(x, lo);
+                Asserts.assertLessThan(x, hi);
+            }
+        }
+
+        var doubleBoundGen = G.uniformDoubles();
+        for (int j = 0; j < 500; j++) {
+            double a = doubleBoundGen.next(), b = doubleBoundGen.next();
+            double lo = Math.min(a, b), hi = Math.max(a, b);
+            var gb = G.uniformDoubles(lo, hi);
+            for (int i = 0; i < 10_000; i++) {
+                double x = gb.next();
+                Asserts.assertGreaterThanOrEqual(x, lo);
+                Asserts.assertLessThan(x, hi);
+            }
+        }
     }
 }
