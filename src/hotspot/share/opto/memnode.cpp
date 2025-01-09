@@ -2017,7 +2017,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   // If we are loading from a freshly-allocated object, produce a zero,
   // if the load is provably beyond the header of the object.
   // (Also allow a variable load from a fresh array to produce zero.)
-  const TypeOopPtr *tinst = tp->isa_oopptr();
+  const TypeOopPtr* tinst = tp->isa_oopptr();
   bool is_instance = (tinst != nullptr) && tinst->is_known_instance_field();
   Node* value = can_see_stored_value(mem, phase);
   if (value != nullptr && value->is_Con()) {
