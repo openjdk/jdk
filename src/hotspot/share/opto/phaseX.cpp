@@ -1194,7 +1194,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    case Op_Range:
+    case Op_Region:
       return false;
 
     // In AddNode::Ideal, we call "commute", which swaps the inputs so
