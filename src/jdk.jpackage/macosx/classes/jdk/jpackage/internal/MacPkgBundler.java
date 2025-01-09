@@ -54,9 +54,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
@@ -678,9 +675,9 @@ public class MacPkgBundler extends MacBaseInstallerBundler {
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////
-    // Implement Bundler
-    //////////////////////////////////////////////////////////////////////////
+    /*
+     * Implement Bundler
+     */
 
     @Override
     public String getName() {

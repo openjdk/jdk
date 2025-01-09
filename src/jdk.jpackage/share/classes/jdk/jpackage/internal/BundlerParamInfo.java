@@ -94,7 +94,6 @@ class BundlerParamInfo<T> {
         return stringConverter;
     }
 
-    @SuppressWarnings("unchecked")
     final T fetchFrom(Map<String, ? super Object> params) {
         return fetchFrom(params, true);
     }

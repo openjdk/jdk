@@ -63,10 +63,4 @@ public class BundleParams {
     public String getName() {
         return APP_NAME.fetchFrom(params);
     }
-
-    private void putUnlessNull(String param, Object value) {
-        if (value != null) {
-            params.put(param, value);
-        }
-    }
 }

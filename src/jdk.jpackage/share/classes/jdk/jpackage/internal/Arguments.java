@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -90,7 +89,6 @@ public class Arguments {
     private List<CLIOptions> allOptions = null;
 
     private boolean hasMainJar = false;
-    private boolean hasMainClass = false;
     private boolean hasMainModule = false;
     public boolean userProvidedBuildRoot = false;
 
@@ -154,7 +152,6 @@ public class Arguments {
         VENDOR ("vendor", OptionCategories.PROPERTY),
 
         APPCLASS ("main-class", OptionCategories.PROPERTY, () -> {
-            context().hasMainClass = true;
             setOptionValue("main-class", popArg());
         }),
 
@@ -403,9 +400,7 @@ public class Arguments {
 
         private final String id;
         private final String shortId;
-        private final OptionCategories category;
         private final Runnable action;
-        private static Arguments argContext;
 
         private CLIOptions(String id, OptionCategories category) {
             this(id, null, category, null);
@@ -426,7 +421,6 @@ public class Arguments {
             this.id = id;
             this.shortId = shortId;
             this.action = action;
-            this.category = category;
         }
 
         public static Arguments context() {

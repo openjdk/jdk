@@ -331,7 +331,7 @@ public class DeployParams {
             StandardBundlerParam.JLINK_OPTIONS.getID()
     ));
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void addBundleArgument(String key, Object value) {
         // special hack for multi-line arguments
         if (multi_args.contains(key)) {
