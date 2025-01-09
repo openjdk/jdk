@@ -74,9 +74,7 @@ class StringList {
       }
     }
     assert0(_cap > _num);
-    BEGIN_ALLOW_FORBIDDEN_FUNCTIONS // Temp. until use of forbidden ::strdup fixed.
-    char* s2 = ::strdup(s);
-    END_ALLOW_FORBIDDEN_FUNCTIONS
+    char* s2 = permit_forbidden_function::strdup(s);
     if (!s2) {
       return nullptr;
     }

@@ -61,6 +61,8 @@ inline void free(void* ptr) { return ::free(ptr); }
 inline void* calloc(size_t nmemb, size_t size) { return ::calloc(nmemb, size); }
 inline void* realloc(void* ptr, size_t size) { return ::realloc(ptr, size); }
 
+inline char* strdup(const char* s) { return ::strdup(s); }
+
 END_ALLOW_FORBIDDEN_FUNCTIONS
 } // namespace permit_forbidden_function
 
