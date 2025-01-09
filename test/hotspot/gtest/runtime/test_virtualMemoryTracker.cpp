@@ -92,7 +92,6 @@ public:
   static void test_add_committed_region_adjacent() {
 
     size_t size  = 0x01000000;
-
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     MemTracker::NmtVirtualMemoryLocker nvml;
 
@@ -169,7 +168,6 @@ public:
   static void test_add_committed_region_adjacent_overlapping() {
 
     size_t size  = 0x01000000;
-
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     MemTracker::NmtVirtualMemoryLocker nvml;
 
@@ -431,8 +429,8 @@ public:
   }
 
   static void test_remove_uncommitted_region() {
-    size_t size  = 0x01000000;
 
+    size_t size  = 0x01000000;
     ReservedSpace rs = MemoryReserver::reserve(size, mtTest);
     MemTracker::NmtVirtualMemoryLocker nvml;
 

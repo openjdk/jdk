@@ -155,7 +155,7 @@ public:
         return false;
     }
     NonJavaThread::Iterator njti;
-    return njti->current() == nullptr;
+    return njti.end();
   }
 
   struct Test;                  // For private gtest access.
