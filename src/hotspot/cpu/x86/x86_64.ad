@@ -6316,7 +6316,7 @@ instruct cmovI_regU(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src) %{
 %}
 
 
-instruct cmovI_regU_ndd(cmpOpU cop, rFlagsRegU cr, rRegI dst, rRegI src1, rRegI src2) %{
+instruct cmovI_regU_ndd(rRegI dst, cmpOpU cop, rFlagsRegU cr, rRegI src1, rRegI src2) %{
   predicate(UseAPX);
   match(Set dst (CMoveI (Binary cop cr) (Binary src1 src2)));
 
