@@ -1279,6 +1279,19 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     case Op_StoreN:
       return false;
 
+    // MemBarNode::Ideal does "Eliminate volatile MemBars for scalar replaced objects".
+    // For examle "The allocated object does not escape".
+    //
+    // It seems the difference to earlier calls to MemBarNode::Ideal, is that there
+    // alloc->as_Allocate()->does_not_escape_thread() returned false, but in verification
+    // it returned true. Why does the MemBarStoreStore not get added to the IGVN
+    // worklist when this change happens?
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_MemBarStoreStore:
+      return false;
+
     // ConvI2LNode::Ideal converts
     //   648  AddI  === _ 583 645  [[ 661 ]]
     //   661  ConvI2L  === _ 648  [[ 664 ]]  #long:0..maxint-1:www
