@@ -100,6 +100,7 @@ class oopDesc;
 //  _X_0  - print as hexadecimal, with leading 0s: 0x00012345
 //  _W(w) - prints w sized string with the given value right
 //          adjusted. Use -w to print left adjusted.
+//  _0    - print as hexadecimal, with leading 0s, without 0x prefix: 0012345
 //
 // Note that the PTR format specifiers print using 0x with leading zeros,
 // just like the _X_0 version for integers.
@@ -132,6 +133,7 @@ class oopDesc;
 #define UINT64_FORMAT_X          "0x%"        PRIx64
 #define UINT64_FORMAT_X_0        "0x%016"     PRIx64
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
+#define UINT64_FORMAT_0          "%016"       PRIx64
 
 // Format integers which change size between 32- and 64-bit.
 #define SSIZE_FORMAT             "%"          PRIdPTR

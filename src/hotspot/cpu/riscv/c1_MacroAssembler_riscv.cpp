@@ -199,16 +199,16 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   Label done;
 
   // len_in_bytes is positive and ptr sized
-  sub(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
+  subi(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   beqz(len_in_bytes, done);
 
   // Preserve obj
   if (hdr_size_in_bytes) {
-    add(obj, obj, hdr_size_in_bytes);
+    addi(obj, obj, hdr_size_in_bytes);
   }
   zero_memory(obj, len_in_bytes, tmp);
   if (hdr_size_in_bytes) {
-    sub(obj, obj, hdr_size_in_bytes);
+    subi(obj, obj, hdr_size_in_bytes);
   }
 
   bind(done);
@@ -262,7 +262,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
       j(entry_point);
 
       bind(loop);
-      sub(index, index, 1);
+      subi(index, index, 1);
       for (int i = -unroll; i < 0; i++) {
         if (-i == remainder) {
           bind(entry_point);
@@ -272,7 +272,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
       if (remainder == 0) {
         bind(entry_point);
       }
-      add(t0, t0, unroll * wordSize);
+      addi(t0, t0, unroll * wordSize);
       bnez(index, loop);
     }
   }
