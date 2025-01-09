@@ -1217,19 +1217,51 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     //
     // The following hit the same logic in PhaseIdealLoop::remix_address_expressions.
-    case Op_AddF:
+    //
+    // Note: currently all of these fail also for other reasons, for example
+    // because of "commute" doing the reordering with the phi below. Once
+    // that is resolved, we can come back to this issue here.
+    //
+    // case Op_AddD:
+    // case Op_AddI:
+    // case Op_AddL:
+    // case Op_AddF:
+    // case Op_MulI:
+    // case Op_MulL:
+    // case Op_MulF:
+    // case Op_MulD:
+    //   if (n->in(1)->_idx > n->in(2)->_idx) {
+    //     // Expect "commute" to revert this case.
+    //     return false;
+    //   }
+    //   break; // keep verifying
+
+    // AddFNode::Ideal calls "commute", which can reorder the inputs for this:
+    //   Check for tight loop increments: Loop-phi of Add of loop-phi
+    // It wants to take the phi into in(1):
+    //    471  Phi  === 435 38 390
+    //    390  AddF  === _ 471 391
+    //
+    // Other Associative operators are also affected equally.
+    //
+    // Investigate why this does not happen earlier during IGVN.
+    //
+    // Found with:
+    //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
+    //   -XX:VerifyIterativeGVN=1110
     case Op_AddD:
-    //case Op_AddI: // also belongs to the list, but is separately covered for other reasons.
-    //case Op_AddL: // also belongs to the list, but is separately covered for other reasons.
+    //case Op_AddI: // Also affected for other reasons.
+    //case Op_AddL: // Also affected for other reasons.
+    case Op_AddF:
     case Op_MulI:
     case Op_MulL:
     case Op_MulF:
     case Op_MulD:
-      if (n->in(1)->_idx > n->in(2)->_idx) {
-        // Expect "commute" to revert this case.
-        return false;
-      }
-      break; // keep verifying
+    case Op_MinF:
+    case Op_MinD:
+    case Op_MaxF:
+    case Op_MaxD:
+      return false;
 
     // SubLNode::Ideal does transform like:
     //   Convert "c1 - (y+c0)" into "(c1-c0) - y"
