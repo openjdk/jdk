@@ -1152,6 +1152,9 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
 
 // Check that all Ideal optimizations that could be done were done.
 bool PhaseIterGVN::verify_node_Ideal(Node* n) {
+  // First, we check a list of exceptions, which are known cases where Ideal
+  // can optimize after IGVN. Some may be expected and cannot be fixed, and
+  // others should be fixed.
   switch (n->Opcode()) {
     // RangeCheckNode::Ideal looks up the chain for about 999 nodes
     // see "Range-Check scan limit". So it is possible that something
@@ -1250,6 +1253,19 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_Phi:
+      return false;
+
+    // StoreNode::Ideal can do this:
+    //  // Capture an unaliased, unconditional, simple store into an initializer.
+    //  // Or, if it is independent of the allocation, hoist it above the allocation.
+    // That replaces the Store with a MergeMem.
+    //
+    // We have to investigate why this does not happen during IGVN in this case.
+    // There could also be other issues - I did not investigate further yet.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_StoreN:
       return false;
   }
 
