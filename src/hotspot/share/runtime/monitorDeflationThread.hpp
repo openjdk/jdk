@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,42 @@
 
 #include "runtime/javaThread.hpp"
 
-// A hidden from external view JavaThread for deflating idle monitors.
+// A hidden from external view JavaThread for asynchronously deflating idle monitors.
+// The API for requesting/querying async deflation is mostly maintained here,
+// but some functions are also exposed through ObjectSynchronizer to provide
+// an external, public API.
 
 class MonitorDeflationThread : public JavaThread {
   friend class VMStructs;
+  friend class ObjectSynchronizer;
+  friend class ObjectMonitorDeflationLogging;
+
  private:
 
   static void monitor_deflation_thread_entry(JavaThread* thread, TRAPS);
   MonitorDeflationThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
+
+  static volatile bool _is_async_deflation_requested;
+  static jlong         _last_async_deflation_time_ns;
+
+  static bool is_async_deflation_needed();
+  static void set_is_async_deflation_requested(bool new_value) { _is_async_deflation_requested = new_value; }
+  static void set_last_async_deflation_time_ns(jlong ns) { _last_async_deflation_time_ns = ns; }
+
+  static void request_deflate_idle_monitors();
+  static bool request_deflate_idle_monitors_from_wb();  // for whitebox test support
+
+  static size_t in_use_list_ceiling();
+  static void dec_in_use_list_ceiling();
+  static void inc_in_use_list_ceiling();
+  static void update_heuristics(size_t deflated_count);
+  static bool monitors_used_above_threshold();
 
  public:
   static void initialize();
 
   // Hide this thread from external view.
   bool is_hidden_from_external_view() const { return true; }
-
-  bool is_monitor_deflation_thread() const { return true; }
 };
 
 #endif // SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP
