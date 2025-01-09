@@ -387,15 +387,35 @@ inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
   }
 
   if (node->_left != nullptr && node->_right != nullptr) { // node has two children
-    // Copy the k/v from the in-order successor and delete that node instead
+    // Swap place with the in-order successor and delete there instead
     RBNode* curr = node->_right;
     while (curr->_left != nullptr) {
       curr = curr->_left;
     }
-    node->_key = curr->key();
-    node->_value = curr->val();
 
-    node = curr;
+    if (_root == node) _root = curr;
+
+    std::swap(curr->_left, node->_left);
+    std::swap(curr->_color, node->_color);
+
+    // If node is curr's parent, swapping right/parent severs the node connection
+    if (node->_right == curr) {
+      node->_right = curr->_right;
+      curr->_parent = node->_parent;
+      node->_parent = curr;
+      curr->_right = node;
+    } else {
+      std::swap(curr->_right, node->_right);
+      std::swap(curr->_parent, node->_parent);
+      node->_parent->replace_child(curr, node);
+      curr->_right->_parent = curr;
+    }
+
+    if (curr->_parent != nullptr) curr->_parent->replace_child(node, curr);
+    curr->_left->_parent = curr;
+
+    if (node->_left != nullptr) node->_left->_parent = node;
+    if (node->_right != nullptr) node->_right->_parent = node;
   }
 
   remove_from_tree(node);

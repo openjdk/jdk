@@ -279,6 +279,34 @@ public:
     }
   }
 
+  void test_stable_nodes() {
+    using Node = RBTreeInt::RBNode;
+    RBTreeInt rbtree;
+    ResourceMark rm;
+    GrowableArray<Node*> a(10000);
+    for (int i = 0; i < 10000; i++) {
+      rbtree.upsert(i, i);
+      a.push(rbtree.find_node(rbtree._root, i));
+    }
+
+    for (int i = 0; i < 2000; i++) {
+      int r = os::random() % 10000;
+      Node* to_delete = rbtree.find_node(rbtree._root, r);
+      if (to_delete != nullptr && to_delete->_left != nullptr &&
+          to_delete->_right != nullptr) {
+        rbtree.remove(to_delete);
+      }
+    }
+
+    // After deleting, nodes should have been moved around but kept their values
+    for (int i = 0; i < 10000; i++) {
+      Node* n = rbtree.find_node(rbtree._root, i);
+      if (n != nullptr) {
+        assert(a.at(i) == n, "must be same");
+      }
+    }
+  }
+
   void test_empty_iterator() {
     RBTreeInt tree;
     RBTreeInt::Iterator iterator(&tree);
@@ -377,6 +405,10 @@ TEST_VM_F(RBTreeTest, TestVisitors) {
 
 TEST_VM_F(RBTreeTest, TestClosestLeq) {
   this->test_closest_leq();
+}
+
+TEST_VM_F(RBTreeTest, NodeStableTest) {
+  this->test_stable_nodes();
 }
 
 TEST_VM_F(RBTreeTest, EmptyIteratorTest) {

@@ -29,6 +29,7 @@
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
+#include <type_traits>
 
 // COMPARATOR must have a static function `cmp(a,b)` which returns:
 //     - an int < 0 when a < b
@@ -36,6 +37,8 @@
 //     - an int > 0 when a > b
 // ALLOCATOR must check for oom and exit, as RBTree currently does not handle the
 // allocation failing.
+// Key needs to be of a type that is trivially destructable
+// The tree will call a value's destructor when its node is removed
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class RBTree {
@@ -48,13 +51,14 @@ private:
 public:
   class RBNode {
     friend RBTree;
+    friend class RBTreeTest;
 
   private:
     RBNode* _parent;
     RBNode* _left;
     RBNode* _right;
 
-    K _key;
+    const K _key;
     V _value;
 
     enum Color : uint8_t { BLACK, RED };
@@ -108,6 +112,7 @@ private:
   }
 
   void free_node(RBNode* node) {
+    node->_value.~V();
     _allocator.free(node);
     _num_nodes--;
   }
@@ -135,7 +140,9 @@ private:
 public:
   NONCOPYABLE(RBTree);
 
-  RBTree() : _allocator(), _num_nodes(0), _root(nullptr) {}
+  RBTree() : _allocator(), _num_nodes(0), _root(nullptr) {
+    static_assert(std::is_trivially_destructible<K>::value, "key type must be trivially destructable");
+  }
   ~RBTree() { this->remove_all(); }
 
   size_t size() { return _num_nodes; }
@@ -168,7 +175,7 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
-      _allocator.free(head);
+      free_node(head);
     }
     _num_nodes = 0;
     _root = nullptr;
