@@ -26,6 +26,7 @@
 #define OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
 
 #include "utilities/compilerWarnings.hpp"
+
 #include <stddef.h> // for size_t
 
 // _fullpath with a null first argument mallocs a string for the result.

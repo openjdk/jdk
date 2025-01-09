@@ -67,4 +67,3 @@ END_ALLOW_FORBIDDEN_FUNCTIONS
 } // namespace permit_forbidden_function
 
 #endif // SHARE_UTILITIES_PERMITFORBIDDENFUNCTIONS_HPP
-

@@ -25,6 +25,7 @@
 #define UNITTEST_HPP
 
 #include "utilities/globalDefinitions.hpp"
+
 #include <stdlib.h>
 #include <stdio.h>
 

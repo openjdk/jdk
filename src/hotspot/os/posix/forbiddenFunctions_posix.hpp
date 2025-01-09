@@ -26,6 +26,7 @@
 #define OS_POSIX_FORBIDDENFUNCTIONS_POSIX_HPP
 
 #include "utilities/compilerWarnings.hpp"
+
 #include <stddef.h> // for size_t
 #include <unistd.h> // clang workaround for _exit - see FORBID macro.
 

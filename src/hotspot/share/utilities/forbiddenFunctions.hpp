@@ -27,6 +27,7 @@
 
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/macros.hpp"
+
 #include <stdarg.h> // for va_list
 #include <stddef.h> // for size_t
 #include <stdlib.h> // clang workaround for exit, _exit, _Exit - see FORBID macro.
