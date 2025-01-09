@@ -2600,7 +2600,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
           call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
         }
-        call->copy_call_debug_info(&_igvn, call);
         _igvn.replace_node(mod_macro, call);
         transform_later(call);
         break;
