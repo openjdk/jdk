@@ -136,4 +136,274 @@ public class VectorCommutativeOperSharingTest {
             testVectorIRSharing3(i);
         }
     }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 2 "})
+    public void testVectorIRSharing4(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec1) + (vec1 + vec1)
+        vec1.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing4")
+    public void testVectorIRSharingDriver4() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing4(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing5(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec1) + (vec1 + vec2)
+        vec1.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec2))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing5")
+    public void testVectorIRSharingDriver5() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing5(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing6(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec1) + (vec2 + vec1)
+        vec1.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing6")
+    public void testVectorIRSharingDriver6() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing6(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing7(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec1) + (vec2 + vec2)
+        vec1.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec2))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing7")
+    public void testVectorIRSharingDriver7() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing7(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing8(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec2) + (vec1 + vec1)
+        vec1.lanewise(VectorOperators.ADD, vec2)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing8")
+    public void testVectorIRSharingDriver8() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing8(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 2 "})
+    public void testVectorIRSharing9(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec2) + (vec1 + vec2)
+        vec1.lanewise(VectorOperators.ADD, vec2)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec2))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing9")
+    public void testVectorIRSharingDriver9() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing9(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 2 "})
+    public void testVectorIRSharing10(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec2) + (vec2 + vec1)
+        vec1.lanewise(VectorOperators.ADD, vec2)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing10")
+    public void testVectorIRSharingDriver10() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing10(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing11(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec1 + vec2) + (vec2 + vec2)
+        vec1.lanewise(VectorOperators.ADD, vec2)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec2))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing11")
+    public void testVectorIRSharingDriver11() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing11(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing12(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec2 + vec1) + (vec1 + vec1)
+        vec2.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing12")
+    public void testVectorIRSharingDriver12() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing12(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 2 "})
+    public void testVectorIRSharing13(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec2 + vec1) + (vec1 + vec2)
+        vec2.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec2))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing13")
+    public void testVectorIRSharingDriver13() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing13(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 2 "})
+    public void testVectorIRSharing14(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec2 + vec1) + (vec2 + vec1)
+        vec2.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing14")
+    public void testVectorIRSharingDriver14() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing14(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing15(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec2 + vec1) + (vec2 + vec2)
+        vec2.lanewise(VectorOperators.ADD, vec1)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec2))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing15")
+    public void testVectorIRSharingDriver15() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing15(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing16(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec2 + vec2) + (vec1 + vec1)
+        vec2.lanewise(VectorOperators.ADD, vec2)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing16")
+    public void testVectorIRSharingDriver16() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing16(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing17(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec2 + vec2) + (vec1 + vec2)
+        vec2.lanewise(VectorOperators.ADD, vec2)
+            .lanewise(VectorOperators.ADD, vec1.lanewise(VectorOperators.ADD, vec2))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing17")
+    public void testVectorIRSharingDriver17() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing17(i);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, " 3 "})
+    public void testVectorIRSharing18(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // (vec2 + vec2) + (vec2 + vec1)
+        vec2.lanewise(VectorOperators.ADD, vec2)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing18")
+    public void testVectorIRSharingDriver18() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing18(i);
+        }
+    }
 }

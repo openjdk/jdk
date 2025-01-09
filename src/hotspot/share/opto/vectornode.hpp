@@ -74,7 +74,8 @@ class VectorNode : public TypeNode {
   }
 
   virtual uint hash() const {
-    if (is_commutative_operation()) {
+    if (is_commutative_vector_operation()) {
+      assert(req() == 3, "");
       return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
     } else {
       return Node::hash();
@@ -186,7 +187,7 @@ class SaturatingVectorNode : public VectorNode {
 class AddVBNode : public VectorNode {
  public:
   AddVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -196,7 +197,7 @@ class AddVBNode : public VectorNode {
 class AddVSNode : public VectorNode {
  public:
   AddVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -206,7 +207,7 @@ class AddVSNode : public VectorNode {
 class AddVINode : public VectorNode {
  public:
   AddVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -216,7 +217,7 @@ class AddVINode : public VectorNode {
 class AddVLNode : public VectorNode {
 public:
   AddVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -226,7 +227,7 @@ public:
 class AddVFNode : public VectorNode {
 public:
   AddVFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -236,7 +237,7 @@ public:
 class AddVDNode : public VectorNode {
 public:
   AddVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -408,7 +409,7 @@ class SubVLNode : public VectorNode {
 class SaturatingAddVNode : public SaturatingVectorNode {
  public:
   SaturatingAddVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -442,7 +443,7 @@ class SubVDNode : public VectorNode {
 class MulVBNode : public VectorNode {
  public:
   MulVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -452,7 +453,7 @@ class MulVBNode : public VectorNode {
 class MulVSNode : public VectorNode {
  public:
   MulVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -462,7 +463,7 @@ class MulVSNode : public VectorNode {
 class MulVINode : public VectorNode {
  public:
   MulVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -473,7 +474,7 @@ class MulVLNode : public VectorNode {
 public:
   MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
     init_class_id(Class_MulVL);
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
   bool has_int_inputs() const;
@@ -485,7 +486,7 @@ public:
 class MulVFNode : public VectorNode {
 public:
   MulVFNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -495,7 +496,7 @@ public:
 class MulVDNode : public VectorNode {
 public:
   MulVDNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -639,7 +640,7 @@ public:
 class MinVNode : public VectorNode {
 public:
   MinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -648,7 +649,7 @@ class UMinVNode : public VectorNode {
  public:
   UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -658,7 +659,7 @@ class UMinVNode : public VectorNode {
 class MaxVNode : public VectorNode {
  public:
   MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -667,7 +668,7 @@ class UMaxVNode : public VectorNode {
  public:
   UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -941,7 +942,7 @@ class RShiftCntVNode : public VectorNode {
 class AndVNode : public VectorNode {
  public:
   AndVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
@@ -960,7 +961,7 @@ class AndReductionVNode : public ReductionNode {
 class OrVNode : public VectorNode {
  public:
   OrVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
@@ -979,7 +980,7 @@ class OrReductionVNode : public ReductionNode {
 class XorVNode : public VectorNode {
  public:
   XorVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
@@ -1389,7 +1390,7 @@ class MaskAllNode : public VectorNode {
 class AndVMaskNode : public AndVNode {
  public:
   AndVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : AndVNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -1398,7 +1399,7 @@ class AndVMaskNode : public AndVNode {
 class OrVMaskNode : public OrVNode {
  public:
   OrVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : OrVNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };
@@ -1407,7 +1408,7 @@ class OrVMaskNode : public OrVNode {
 class XorVMaskNode : public XorVNode {
  public:
   XorVMaskNode(Node* in1, Node* in2, const TypeVect* vt) : XorVNode(in1, in2, vt) {
-    add_flag(Node::Flag_is_commutative_operation);
+    add_flag(Node::Flag_is_commutative_vector_oper);
   }
   virtual int Opcode() const;
 };

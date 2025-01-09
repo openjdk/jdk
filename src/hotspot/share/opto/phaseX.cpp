@@ -62,6 +62,31 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   memset(_table,0,sizeof(Node*)*_max);
 }
 
+//-----------------------------------------------------------------------------
+
+bool NodeHash::check_for_collision(const Node* n, const Node* k) {
+  // For commutative operations with same controlling edge
+  // perform order agnostic input edge comparison to promote
+  // node sharing.
+  uint req = n->req();
+  if (n->is_commutative_vector_operation()) {
+    assert(req == 3, "");
+    assert(k->is_commutative_vector_operation(), "");
+    if ((k->in(0) != n->in(0)) ||
+        ((k->in(1) != n->in(1) || k->in(2) != n->in(2)) &&
+         (k->in(1) != n->in(2) || k->in(2) != n->in(1)))) {
+      return true;
+    }
+  } else {
+    for(uint i=0; i<req; i++) {
+      if(n->in(i) != k->in(i)) { // Different inputs?
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 //------------------------------hash_find--------------------------------------
 // Find in hash table
 Node *NodeHash::hash_find( const Node *n ) {
@@ -85,15 +110,12 @@ Node *NodeHash::hash_find( const Node *n ) {
   while( 1 ) {                  // While probing hash table
     if( k->req() == req &&      // Same count of inputs
         k->Opcode() == op ) {   // Same Opcode
-      for( uint i=0; i<req; i++ )
-        if( n->in(i)!=k->in(i)) // Different inputs?
-          goto collision;       // "goto" is a speed hack...
-      if( n->cmp(*k) ) {        // Check for any special bits
+      bool collision = check_for_collision(n, k);
+      if (collision == false && n->cmp(*k)) {  // Check for any special bits
         NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
-  collision:
     NOT_PRODUCT( _look_probes++ );
     key = (key + stride/*7*/) & (_max-1); // Stride through table with relative prime
     k = _table[key];            // Get hashed value
@@ -137,25 +159,12 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   while( 1 ) {                  // While probing hash table
     if( k->req() == req &&      // Same count of inputs
         k->Opcode() == op ) {   // Same Opcode
-      // For commutative operation with same controlling edges
-      // perform order agnostic input edge comparison to promote
-      // node sharing.
-      if (n->is_commutative_operation() && k->in(0) == n->in(0) && req == 3) {
-        if (!((n->in(1) == k->in(1) && n->in(2) == k->in(2)) ||
-              (n->in(1) == k->in(2) && n->in(2) == k->in(1)))) {
-          goto collision;
-        }
-      } else {
-        for( uint i=0; i<req; i++ )
-          if( n->in(i)!=k->in(i)) // Different inputs?
-            goto collision;       // "goto" is a speed hack...
-      }
-      if( n->cmp(*k) ) {        // Check for any special bits
+      bool collision = check_for_collision(n, k);
+      if (collision == false && n->cmp(*k)) {        // Check for any special bits
         NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
-  collision:
     NOT_PRODUCT( _look_probes++ );
     key = (key + stride) & (_max-1); // Stride through table w/ relative prime
     k = _table[key];            // Get hashed value
