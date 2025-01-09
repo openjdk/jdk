@@ -1457,6 +1457,18 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     case Op_CastII:
     case Op_CastLL:
       return false;
+
+    // LoadNode::Identity tries to look for an earier store value via
+    // can_see_stored_value. I found an example where this led to
+    // an Allocation, where we could assume the value was still zero.
+    // So the LoadN can be replaced with a zerocon.
+    //
+    // Investigate why this was not already done during IGVN.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
+    case Op_LoadN:
+      return false;
   }
 
   Node* i = n->Identity(this);
