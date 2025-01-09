@@ -1167,6 +1167,17 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     case Op_RangeCheck:
       return false;
 
+    // IfNode::Ideal does:
+    //   Node* prev_dom = search_identical(dist, igvn);
+    // which means we seach up the CFG, traversing at most up to a distance.
+    // If anything happens rather far away from the If, we may not put the If
+    // back on the worklist.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_If:
+      return false;
+
     // In AddNode::Ideal, we call "commute", which swaps the inputs so
     // that smaller idx are first. Tracking it back, it led me to
     // PhaseIdealLoop::remix_address_expressions which swapped the edges.
