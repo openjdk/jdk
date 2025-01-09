@@ -164,9 +164,8 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t pid, jlong *total, jlong *start) {
     pid_t the_pid = pid;
     struct procentry64 ProcessBuffer;
-    struct fdsinfo64 FileDescBuffer;
 
-    if (getprocs64(&ProcessBuffer, sizeof(ProcessBuffer), NULL, sizeof(FileDescBuffer), &the_pid, 1 ) <= 0) {
+    if (getprocs64(&ProcessBuffer, sizeof(ProcessBuffer), NULL, sizeof(struct fdsinfo64), &the_pid, 1 ) <= 0) {
         return -1;
     }
 
