@@ -678,7 +678,7 @@ public class KeyAgreement {
      * initialized or if {@code doPhase} has not been called to supply the
      * keys for all parties in the agreement
      * @exception NoSuchAlgorithmException if the specified secret-key
-     * algorithm is not available
+     * algorithm is not supported
      * @exception InvalidKeyException if the shared secret-key material cannot
      * be used to generate a secret key of the specified algorithm (e.g.,
      * the key material is too short)
