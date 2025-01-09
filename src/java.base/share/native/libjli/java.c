@@ -758,10 +758,10 @@ checkMode(int mode, int newMode, const char *arg) {
  */
 static jboolean IsSourceFile(const char *arg) {
     struct stat st;
-    if (JLI_HasSuffix(arg, ".java") == JNI_TRUE)
-        return JNI_TRUE;
     if (stat(arg, &st) != 0)
         return JNI_FALSE;
+    if (JLI_HasSuffix(arg, ".java") == JNI_TRUE)
+        return JNI_TRUE;
     if (st.st_size < 2)
         return JNI_FALSE;
     /*
