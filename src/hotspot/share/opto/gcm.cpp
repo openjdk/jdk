@@ -776,21 +776,21 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   Block* initial_mem_block = get_block_for_node(initial_mem);
   assert(initial_mem_block != nullptr, "sanity");
   if (load->in(0) != nullptr) {
+    assert(initial_mem_block->dominates(early), "invariant");
     // If the load has an explicit control input, walk up the dominator tree
     // from the early block (inclusive) to the initial memory block
     // (inclusive). When traversing the blocks, we look for Phi(s) that can alias
     // initial_mem, these are also potential initial memory states and there
-    // may be further required anti-dependences due to them.
-    assert(initial_mem_block->dominates(early), "invariant");
-    Block* b = early;
-    // Stop searching when we step past the initial memory block (b ==
-    // initial_mem_block->_idom). The loop below always terminates because the
-    // root block strictly dominates initial_mem_block.
-    while (b != initial_mem_block->_idom) {
+    // may be further required anti-dependences due to them. Stop searching
+    // when we step past the initial memory block. The loop below always
+    // terminates because the root block strictly dominates initial_mem_block.
+    for(Block* b = early; b != initial_mem_block->_idom; b = b->_idom) {
       assert(b != nullptr, "sanity");
       if (b == initial_mem_block && !initial_mem->is_Phi()) {
         // If we are in the initial memory block, and initial_mem is not itself
-        // a Phi, no Phis in the block can be initial memory states.
+        // a Phi, it necessarily means that initial_mem is defined after all
+        // Phis in the block. Therefore, no Phis in the block can be initial
+        // memory states.
         break;
       }
       // We need to process all memory Phi nodes in the block. We may not have
@@ -804,7 +804,6 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
           worklist_def_use_mem_states.push(nullptr, n);
         }
       }
-      b = b->_idom;
     }
   }
   while (worklist_def_use_mem_states.is_nonempty()) {
