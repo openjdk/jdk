@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8137121 8137230
+ * @modules java.base/jdk.internal.util
  * @summary (fc) Infinite loop FileChannel.truncate
  * @library /test/lib
  * @build jdk.test.lib.Utils
@@ -31,12 +32,13 @@
  */
 
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.channels.ClosedByInterruptException;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import static java.nio.file.StandardOpenOption.*;
 import java.util.concurrent.TimeUnit;
+import jdk.internal.util.StaticProperty;
+import static java.nio.file.StandardOpenOption.*;
 import static jdk.test.lib.Utils.adjustTimeout;
 
 public class LoopingTruncate {
@@ -48,7 +50,8 @@ public class LoopingTruncate {
     static long TIMEOUT = adjustTimeout(20_000);
 
     public static void main(String[] args) throws Throwable {
-        Path path = Files.createTempFile("LoopingTruncate.tmp", null);
+        Path dir = Path.of(StaticProperty.userDir());
+        Path path = Files.createTempFile(dir, "LoopingTruncate.tmp", null);
         try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
             fc.position(FATEFUL_SIZE + 1L);
             System.out.println("  Writing large file...");
