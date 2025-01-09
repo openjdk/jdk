@@ -334,8 +334,8 @@ public final class Generators {
     /**
      * A convenience helper to mix {@link #specialLongs(int)} with {@link #uniformLongs(long, long)}.
      */
-    public RestrictableGenerator<Long> uniformLongsMixedWithSpecials(int weightA, int weightB, int rangeSpecial) {
-        return mixed(uniformLongs(), specialLongs(rangeSpecial), weightA, weightB);
+    public RestrictableGenerator<Long> uniformLongsMixedWithSpecials(int weightUniform, int weightSpecial, int rangeSpecial) {
+        return mixed(uniformLongs(), specialLongs(rangeSpecial), weightUniform, weightSpecial);
     }
 
     /**
