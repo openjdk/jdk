@@ -1898,7 +1898,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 when = System.nanoTime() - d;
             else
                 when += d;
-            p.scheduleDelayedTask(this);
+            p.scheduleDelayedTask(this, 0L, true);
             return false;
         }
         final T compute() throws Exception {
@@ -1914,9 +1914,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final boolean cancel(boolean mayInterruptIfRunning) {
             ForkJoinPool p;
             boolean stat = super.cancel(mayInterruptIfRunning);
-            if (heapIndex >= 0 && status < 0 && (p = pool) != null &&
-                !p.isShutdown())
-                p.scheduleDelayedTask(this); // for heap cleanup
+            if (heapIndex >= 0 && status < 0 && (p = pool) != null)
+                p.removeCancelledDelayedTask(this); // for heap cleanup
             return stat;
         }
         public final long getDelay(TimeUnit unit) {
