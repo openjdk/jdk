@@ -778,7 +778,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   if (load->in(0) != nullptr) {
     // If the load has an explicit control input, walk up the dominator tree
     // from the early block (inclusive) to the initial memory block
-    // (inclusive). If we in a block find memory Phi(s) that can alias
+    // (inclusive). When traversing the blocks, we look for Phi(s) that can alias
     // initial_mem, these are also potential initial memory states and there
     // may be further required anti-dependences due to them.
     assert(initial_mem_block->dominates(early), "invariant");
