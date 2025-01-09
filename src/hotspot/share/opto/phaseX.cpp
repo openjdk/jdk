@@ -1267,6 +1267,22 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_StoreN:
       return false;
+
+    // ConvI2LNode::Ideal converts
+    //   648  AddI  === _ 583 645  [[ 661 ]]
+    //   661  ConvI2L  === _ 648  [[ 664 ]]  #long:0..maxint-1:www
+    // into
+    //   772  ConvI2L  === _ 645  [[ 773 ]]  #long:-120..maxint-61:www
+    //   771  ConvI2L  === _ 583  [[ 773 ]]  #long:60..120:www
+    //   773  AddL  === _ 771 772  [[ ]]
+    //
+    // We have to investigate why this does not happen during IGVN in this case.
+    // There could also be other issues - I did not investigate further yet.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_ConvI2L:
+      return false;
   }
 
   Node* i = n->Ideal(this, true); // TODO also with false?
