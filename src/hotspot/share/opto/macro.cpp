@@ -2221,7 +2221,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   mem_phi->init_req(2, mem);
 
   // Make slow path call
-  CallNode *call = make_slow_call(lock, OptoRuntime::complete_monitor_enter_Type(),
+  CallNode* call = make_slow_call(lock, OptoRuntime::complete_monitor_enter_Type(),
                                   OptoRuntime::complete_monitor_locking_Java(), nullptr, slow_path,
                                   obj, box, nullptr);
 
