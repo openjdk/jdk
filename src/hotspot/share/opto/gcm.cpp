@@ -780,7 +780,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     // If the load has an explicit control input, walk up the dominator tree
     // from the early block (inclusive) to the initial memory block
     // (inclusive). When traversing the blocks, we look for Phi(s) that can alias
-    // initial_mem, these are also potential initial memory states and there
+    // initial_mem; these are also potential initial memory states and there
     // may be further required anti-dependences due to them. Stop searching
     // when we step past the initial memory block. The loop below always
     // terminates because the root block strictly dominates initial_mem_block.
