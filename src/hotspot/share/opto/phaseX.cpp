@@ -1211,6 +1211,35 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
       }
       break; // keep verifying
 
+    // SubLNode::Ideal does transform like:
+    //   Convert "c1 - (y+c0)" into "(c1-c0) - y"
+    //
+    // In IGVN before verification:
+    //   8423  ConvI2L  === _ 3519  [[ 8424 ]]  #long:-2
+    //   8422  ConvI2L  === _ 8399  [[ 8424 ]]  #long:3..256:www
+    //   8424  AddL  === _ 8422 8423  [[ 8383 ]]  !orig=[8382]
+    //   8016  ConL  === 0  [[ 8383 ]]  #long:0
+    //   8383  SubL  === _ 8016 8424  [[ 8156 ]]  !orig=[8154]
+    //
+    // And then in verification:
+    //   8338  ConL  === 0  [[ 8339 8424 ]]  #long:-2
+    //   8422  ConvI2L  === _ 8399  [[ 8424 ]]  #long:3..256:www
+    //   8424  AddL  === _ 8422 8338  [[ 8383 ]]  !orig=[8382]
+    //   8016  ConL  === 0  [[ 8383 ]]  #long:0
+    //   8383  SubL  === _ 8016 8424  [[ 8156 ]]  !orig=[8154]
+    //
+    // So the form changed from:
+    //   c1 - (y + [8423  ConvI2L])
+    // to
+    //   c1 - (y + -2)
+    // but the SubL was not added to the IGVN worklist. Investigate why.
+    // There could be other issues too.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_SubL:
+      return false;
+
     // SubTypeCheckNode::Ideal calls SubTypeCheckNode::verify_helper, which does
     //   Node* cmp = phase->transform(new CmpPNode(subklass, in(SuperKlass)));
     //   record_for_cleanup(cmp, phase);
