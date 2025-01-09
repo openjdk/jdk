@@ -46,6 +46,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -413,9 +415,7 @@ public class IncludeLocalesPluginTest {
                            "present.");
 
         helper = Helper.newHelper(isLinkableRuntime);
-        if (helper == null) {
-            fail("Helper could not be initialized");
-        }
+        assertNotNull(helper, "Helper could not be initialized");
     }
 
     @ParameterizedTest
@@ -480,11 +480,8 @@ public class IncludeLocalesPluginTest {
                          + (len < availableLocales.size() ? " ..." : "");
 
         int status = proc.waitFor();
-        if (status == 0) {
-            System.out.println("\tDone\t" + command);
-        } else {
-            fail("\tExit " + status + "\t" + command);
-        }
+        assertTrue(status == 0, "\tExit " + status + "\t" + command);
+        System.out.println("\tDone\t" + command);
         System.out.println();
     }
 }
