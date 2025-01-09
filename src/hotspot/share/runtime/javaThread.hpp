@@ -721,6 +721,8 @@ private:
   bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
   void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
 
+  bool hide_jvmti_events() const                 { return _is_in_VTMS_transition || _is_disable_suspend; }
+
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
 
