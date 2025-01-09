@@ -1413,7 +1413,28 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
 
 // Check that all Identity optimizations that could be done were done.
 bool PhaseIterGVN::verify_node_Identity(Node* n) {
-  Node* i = n->Ideal(this, true); // TODO also with false?
+  // First, we check a list of exceptions, which are known cases where Ideal
+  // can optimize after IGVN. Some may be expected and cannot be fixed, and
+  // others should be fixed.
+  switch (n->Opcode()) {
+    // SafePointNode::Identity can remove SafePoints, but wants to wait until
+    // after loopopts:
+    //   // Transforming long counted loops requires a safepoint node. Do not
+    //   // eliminate a safepoint until loop opts are over.
+    //   if (in(0)->is_Proj() && !phase->C->major_progress()) {
+    //
+    // I think the check for major_progress does delay it until after loopopts
+    // but it does not ensure that the node is on the IGVN worklist after
+    // loopopts. I think we should try to instead check for
+    // phase->C->post_loop_opts_phase() and call record_for_post_loop_opts_igvn.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_SafePoint:
+      return false;
+  }
+
+  Node* i = n->Identity(this);
   // If we cannot find any other Identity, we are happy.
   if (i == n) {
     return false;
@@ -1426,7 +1447,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
   n->dump_bfs(1, nullptr, "");
   tty->print_cr("New node:");
   i->dump_bfs(1, nullptr, "");
-  return false;
+  return true;
 }
 #endif
 
