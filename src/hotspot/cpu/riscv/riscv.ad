@@ -1626,7 +1626,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
       case rc_int:
         if (dst_lo_rc == rc_int) {  // gpr --> gpr copy
           if (!is64 && this->ideal_reg() != Op_RegI) { // zero extended for narrow oop or klass
-            __ zero_extend(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]), 32);
+            __ zext(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]), 32);
           } else {
             __ mv(as_Register(Matcher::_regEncode[dst_lo]), as_Register(Matcher::_regEncode[src_lo]));
           }
@@ -8079,7 +8079,7 @@ instruct convI2L_reg_reg(iRegLNoSp dst, iRegIorL2I src)
   ins_cost(ALU_COST);
   format %{ "addw  $dst, $src, zr\t#@convI2L_reg_reg" %}
   ins_encode %{
-    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
+    __ sext(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
   ins_pipe(ialu_reg);
 %}
@@ -8091,7 +8091,7 @@ instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   format %{ "addw  $dst, $src, zr\t#@convL2I_reg" %}
 
   ins_encode %{
-    __ sign_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
+    __ sext(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
   ins_pipe(ialu_reg);
@@ -8103,10 +8103,10 @@ instruct convI2UL_reg_reg(iRegLNoSp dst, iRegIorL2I src, immL_32bits mask)
   match(Set dst (AndL (ConvI2L src) mask));
 
   ins_cost(ALU_COST * 2);
-  format %{ "zero_extend $dst, $src, 32\t# i2ul, #@convI2UL_reg_reg" %}
+  format %{ "zext $dst, $src, 32\t# i2ul, #@convI2UL_reg_reg" %}
 
   ins_encode %{
-    __ zero_extend(as_Register($dst$$reg), as_Register($src$$reg), 32);
+    __ zext(as_Register($dst$$reg), as_Register($src$$reg), 32);
   %}
 
   ins_pipe(ialu_reg_shift);
@@ -8283,10 +8283,10 @@ instruct convP2I(iRegINoSp dst, iRegP src) %{
   match(Set dst (ConvL2I (CastP2X src)));
 
   ins_cost(ALU_COST * 2);
-  format %{ "zero_extend $dst, $src, 32\t# ptr -> int, #@convP2I" %}
+  format %{ "zext $dst, $src, 32\t# ptr -> int, #@convP2I" %}
 
   ins_encode %{
-    __ zero_extend($dst$$Register, $src$$Register, 32);
+    __ zext($dst$$Register, $src$$Register, 32);
   %}
 
   ins_pipe(ialu_reg);
