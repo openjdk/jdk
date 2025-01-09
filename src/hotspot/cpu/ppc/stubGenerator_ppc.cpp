@@ -672,7 +672,7 @@ address generate_ghash_processBlocks() {
   VectorRegister vLow = VR15;
   VectorRegister vState = VR16;
   VectorRegister vConstC2 = VR19;
-  Label L_end, L_aligned;
+  Label L_end, L_aligned, L_error;
 
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
@@ -695,6 +695,10 @@ address generate_ghash_processBlocks() {
   __ vsldoi(vTmp11, vTmp10, vTmp10, 8);        // swap Lower and Higher Halves of subkey H
   __ vsldoi(vLowerH, vZero, vTmp11, 8);      // H.L
   __ vsldoi(vHigherH, vTmp11, vZero, 8);     // H.H
+  #ifdef ASSERT
+    __ cmpwi(CCR0, blocks, 0);
+    __ beq(CCR0, L_error);
+  #endif
   __ clrldi(blocks, blocks, 32);
   __ mtctr(blocks);
   // Performing Karatsuba multiplication in Galois fields
@@ -745,8 +749,11 @@ address generate_ghash_processBlocks() {
     __ addi(data, data, 16);
     __ bdnz(loop);
   __ stxvd2x(vZero->to_vsr(), state);
-
   __ blr();
+  #ifdef ASSERT
+    __ bind(L_error);
+    __ stop("Number of blocks must be positive");
+  #endif
   return start;
 }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
