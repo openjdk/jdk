@@ -1198,7 +1198,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //
     // The following hit the same logic in PhaseIdealLoop::remix_address_expressions.
     case Op_AddI:
-    case Op_AddL:
+    //case Op_AddL: // also belongs to the list, but is separately covered for other reasons.
     case Op_AddF:
     case Op_AddD:
     case Op_MulI:
@@ -1222,7 +1222,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //   8383  SubL  === _ 8016 8424  [[ 8156 ]]  !orig=[8154]
     //
     // And then in verification:
-    //   8338  ConL  === 0  [[ 8339 8424 ]]  #long:-2
+    //   8338  ConL  === 0  [[ 8339 8424 ]]  #long:-2     <----- Was constant folded.
     //   8422  ConvI2L  === _ 8399  [[ 8424 ]]  #long:3..256:www
     //   8424  AddL  === _ 8422 8338  [[ 8383 ]]  !orig=[8382]
     //   8016  ConL  === 0  [[ 8383 ]]  #long:0
@@ -1241,6 +1241,34 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_SubL:
+      return false;
+
+    // AddNode::IdealIL does transform like:
+    //   Convert x + (con - y) into "(x - y) + con"
+    //
+    // In IGVN before verification:
+    //   8382  ConvI2L
+    //   8381  ConvI2L  === _ 791  [[ 8383 ]]  #long:0
+    //   8383  SubL  === _ 8381 8382
+    //   8168  ConvI2L
+    //   8156  AddL  === _ 8168 8383  [[ 8158 ]]
+    //
+    // And then in verification:
+    //   8424  AddL
+    //   8016  ConL  === 0  [[ 8383 ]]  #long:0  <--- Was constant folded.
+    //   8383  SubL  === _ 8016 8424
+    //   8168  ConvI2L
+    //   8156  AddL  === _ 8168 8383  [[ 8158 ]]
+    //
+    // So the form changed from:
+    //   x + (ConvI2L(0) - [8382  ConvI2L])
+    // to
+    //   x + (0 - [8424  AddL])
+    // but the AddL was not added to the IGVN worklist. Investigate why.
+    // There could be other issues too. For example with "commute", see above.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_AddL:
       return false;
 
