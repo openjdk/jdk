@@ -107,8 +107,8 @@ import java.util.List;
  * @see X509Extension
  */
 
-public abstract class X509Certificate extends Certificate
-implements X509Extension {
+public abstract non-sealed class X509Certificate extends Certificate
+implements X509Extension, DEREncodable {
 
     @java.io.Serial
     private static final long serialVersionUID = -2491127588187038216L;
