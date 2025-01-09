@@ -41,11 +41,15 @@ class MixedGenerator<G extends Generator<T>, T> extends BoundGenerator<T> {
     MixedGenerator(Generators g, List<G> generators, List<Integer> weights) {
         super(g);
         if (weights.size() != generators.size()) {
-            throw new IllegalArgumentException("weights and generators must have the same size.");
+            throw new IllegalArgumentException("weights and generators must have the same size");
         }
         int acc = 0;
         for (int i = 0; i < generators.size(); i++) {
-            acc += weights.get(i);
+            int weight = weights.get(i);
+            if (weight <= 0) {
+                throw new IllegalArgumentException("weights must be positive");
+            }
+            acc += weight;
             this.generators.put(acc, generators.get(i));
         }
         this.totalWeight = acc;
@@ -60,8 +64,13 @@ class MixedGenerator<G extends Generator<T>, T> extends BoundGenerator<T> {
      */
     MixedGenerator(MixedGenerator<G, T> other, Function<G, G> generatorMapper) {
         super(other.g);
+        // We could map and create new lists and delegate to the other constructor but that would allocate
+        // two additional lists, so in the interest of memory efficiency we construct the new TreeMap ourselves.
         int acc = 0;
         int prevKey = 0;
+        // entrySet: "The set's iterator returns the entries in ascending key order." (documentation)
+        // This means we iterate over the generators exactly in the order they were inserted as we insert with ascending
+        // keys (due to summing positive numbers).
         for (var entry : other.generators.entrySet()) {
             var gen = generatorMapper.apply(entry.getValue());
             if (gen != null) {
