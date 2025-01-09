@@ -83,7 +83,7 @@ import jdk.test.lib.Utils;
  * generator that provides true with 60 percent probably and false with 40 percent probably, one can simply write:
  * <pre><code>G.mixed(G.single(true), G.single(false), 60, 40)</code></pre>
  * <p>
- * Generators are also by no means limited to work with numbers. Restrictable generators can work with any type that
+ * Generators are by no means limited to work with numbers. Restrictable generators can work with any type that
  * implements {@link Comparable} while generators such as {@link #randomElement(Collection)} and {@link #single(Object)}
  * work with any type. Note that there are separate restrictable versions of the last two generators
  * (namely, {@link #orderedRandomElement(Collection)} and {@link #single(Comparable)}) that work with comparable types.
@@ -94,6 +94,11 @@ import jdk.test.lib.Utils;
  * always inclusive of both the lower and upper bound, while floating point generators are always inclusive of the
  * lower bound but always exclusive of the upper bound. This also applies to all generators obtained by restricting
  * these generators further.
+ * <p>
+ * Unless you have reasons to pick a specific distribution, you are encouraged to rely on {@link #ints()},
+ * {@link #longs()}, {@link #doubles()} and {@link #floats()}, which will randomly pick an interesting distribution.
+ * This is best practice, because that allows the test to be run under different conditions – maybe only a single
+ * distribution can trigger a bug.
  */
 public final class Generators {
     /**
