@@ -1455,6 +1455,16 @@ public class IRNode {
         vectorNode(REPLICATE_D, "Replicate", TYPE_DOUBLE);
     }
 
+    public static final String REVERSE_BYTES_I = PREFIX + "REVERSE_BYTES_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_I, "ReverseBytesI");
+    }
+
+    public static final String REVERSE_BYTES_L = PREFIX + "REVERSE_BYTES_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_L, "ReverseBytesL");
+    }
+
     public static final String REVERSE_BYTES_VB = VECTOR_PREFIX + "REVERSE_BYTES_VB" + POSTFIX;
     static {
         vectorNode(REVERSE_BYTES_VB, "ReverseBytesV", TYPE_BYTE);
