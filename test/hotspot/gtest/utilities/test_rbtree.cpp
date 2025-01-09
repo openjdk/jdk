@@ -303,7 +303,7 @@ public:
     for (int i = 0; i < 10000; i++) {
       Node* n = rbtree.find_node(rbtree._root, i);
       if (n != nullptr) {
-        assert(a.at(i) == n, "must be same");
+        EXPECT_EQ(a.at(i), n);
       }
     }
   }
@@ -329,7 +329,7 @@ public:
 
     // After deleting, values should have remained consistant
     rbtree.visit_in_order([&](Node* node) {
-      assert(node == node->val(), "node value must be its own address");
+      EXPECT_EQ(node, node->val());
     });
   }
 
