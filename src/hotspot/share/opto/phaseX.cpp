@@ -1228,6 +1228,29 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_LoopLimit:
       return false;
+
+    // PhiNode::Ideal calls split_flow_path, which tries to do this:
+    // "This optimization tries to find two or more inputs of phi with the same constant
+    // value. It then splits them into a separate Phi, and according Region."
+    //
+    // Example:
+    //   130  DecodeN  === _ 129
+    //    50  ConP  === 0  [[ 18 91 99 18 ]]  #null
+    //    18  Phi  === 14 50 130 50  [[ 133 ]]  #java/lang/Object *  Oop:java/lang/Object *
+    //
+    //  turns into:
+    //
+    //    50  ConP  === 0  [[ 99 91 18 ]]  #null
+    //   130  DecodeN  === _ 129  [[ 18 ]]
+    //    18  Phi  === 14 130 50  [[ 133 ]]  #java/lang/Object *  Oop:java/lang/Object *
+    //
+    // We would have to investigate why this optimization does not happen during IGVN.
+    // There could also be other issues - I did not investigate further yet.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_Phi:
+      return false;
   }
 
   Node* i = n->Ideal(this, true); // TODO also with false?
