@@ -31,8 +31,8 @@
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/partialArraySplitter.inline.hpp"
 #include "gc/shared/partialArrayState.hpp"
-#include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
@@ -121,7 +121,7 @@ void PSPromotionManager::pre_scavenge() {
 bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
   bool promotion_failure_occurred = false;
 
-  TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(print_and_reset_taskqueue_stats());
   for (uint i = 0; i < ParallelGCThreads; i++) {
     PSPromotionManager* manager = manager_array(i);
     assert(manager->claimed_stack_depth()->is_empty(), "should be empty");
@@ -145,49 +145,29 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
 }
 
 #if TASKQUEUE_STATS
-void
-PSPromotionManager::print_local_stats(outputStream* const out, uint i) const {
-  #define FMT " " SIZE_FORMAT_W(10)
-  out->print_cr("%3u" FMT FMT FMT FMT,
-                i, _array_chunk_pushes, _array_chunk_steals,
-                _arrays_chunked, _array_chunks_processed);
-  #undef FMT
-}
 
-static const char* const pm_stats_hdr[] = {
-  "    ----partial array----     arrays      array",
-  "thr       push      steal    chunked     chunks",
-  "--- ---------- ---------- ---------- ----------"
-};
+void PSPromotionManager::print_and_reset_taskqueue_stats() {
+  stack_array_depth()->print_and_reset_taskqueue_stats("Oop Queue");
 
-void PSPromotionManager::print_taskqueue_stats() {
-  if (!log_is_enabled(Trace, gc, task, stats)) {
-    return;
-  }
-  Log(gc, task, stats) log;
-  ResourceMark rm;
-  LogStream ls(log.trace());
-
-  stack_array_depth()->print_taskqueue_stats(&ls, "Oop Queue");
-
-  const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
-  for (uint i = 0; i < hlines; ++i) ls.print_cr("%s", pm_stats_hdr[i]);
+  auto get_pa_stats = [&](uint i) {
+    return manager_array(i)->partial_array_task_stats();
+  };
+  PartialArrayTaskStats::log_set(ParallelGCThreads, get_pa_stats,
+                                 "Partial Array Task Stats");
   for (uint i = 0; i < ParallelGCThreads; ++i) {
-    manager_array(i)->print_local_stats(&ls, i);
+    get_pa_stats(i)->reset();
   }
 }
 
-void PSPromotionManager::reset_stats() {
-  claimed_stack_depth()->stats.reset();
-  _array_chunk_pushes = _array_chunk_steals = 0;
-  _arrays_chunked = _array_chunks_processed = 0;
+PartialArrayTaskStats* PSPromotionManager::partial_array_task_stats() {
+  return _partial_array_splitter.stats();
 }
+
 #endif // TASKQUEUE_STATS
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_state_allocator(_partial_array_state_manager),
-    _partial_array_stepper(ParallelGCThreads, ParGCArrayScanChunk)
+  : _partial_array_splitter(_partial_array_state_manager, ParallelGCThreads)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
@@ -221,8 +201,6 @@ void PSPromotionManager::reset() {
   _old_gen_is_full = false;
 
   _promotion_failed_info.reset();
-
-  TASKQUEUE_STATS_ONLY(reset_stats());
 }
 
 void PSPromotionManager::register_preserved_marks(PreservedMarks* preserved_marks) {
@@ -246,12 +224,12 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
     // claimed stack while we work.
     while (tq->pop_overflow(task)) {
       if (!tq->try_push_to_taskqueue(task)) {
-        process_popped_location_depth(task);
+        process_popped_location_depth(task, false);
       }
     }
 
     while (tq->pop_local(task, threshold)) {
-      process_popped_location_depth(task);
+      process_popped_location_depth(task, false);
     }
   } while (!tq->overflow_empty());
 
@@ -279,9 +257,8 @@ void PSPromotionManager::flush_labs() {
   }
 }
 
-template <class T> void PSPromotionManager::process_array_chunk_work(
-                                                 oop obj,
-                                                 int start, int end) {
+template <class T>
+void PSPromotionManager::process_array_chunk_work(oop obj, int start, int end) {
   assert(start <= end, "invariant");
   T* const base      = (T*)objArrayOop(obj)->base();
   T* p               = base + start;
@@ -292,29 +269,18 @@ template <class T> void PSPromotionManager::process_array_chunk_work(
   }
 }
 
-void PSPromotionManager::process_array_chunk(PartialArrayState* state) {
-  TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
-
-  // Claim a chunk.  Push additional tasks before processing the claimed
-  // chunk to allow other workers to steal while we're processing.
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.next(state);
-  if (step._ncreate > 0) {
-    state->add_references(step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      push_depth(ScannerTask(state));
-    }
-    TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
-  }
-  int start = checked_cast<int>(step._index);
-  int end = checked_cast<int>(step._index + _partial_array_stepper.chunk_size());
-  assert(start < end, "invariant");
+void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
+  // Access before release by claim().
+  oop new_obj = state->destination();
+  PartialArraySplitter::Claim claim =
+    _partial_array_splitter.claim(state, &_claimed_stack_depth, stolen);
+  int start = checked_cast<int>(claim._start);
+  int end = checked_cast<int>(claim._end);
   if (UseCompressedOops) {
-    process_array_chunk_work<narrowOop>(state->destination(), start, end);
+    process_array_chunk_work<narrowOop>(new_obj, start, end);
   } else {
-    process_array_chunk_work<oop>(state->destination(), start, end);
+    process_array_chunk_work<oop>(new_obj, start, end);
   }
-  // Release reference to state, now that we're done with it.
-  _partial_array_state_allocator.release(state);
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
@@ -322,25 +288,16 @@ void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   assert(old_obj->forwardee() == new_obj, "precondition");
   assert(new_obj->is_objArray(), "precondition");
 
-  size_t array_length = objArrayOop(new_obj)->length();
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
-
-  if (step._ncreate > 0) {
-    TASKQUEUE_STATS_ONLY(++_arrays_chunked);
-    PartialArrayState* state =
-      _partial_array_state_allocator.allocate(old_obj, new_obj,
-                                              step._index,
-                                              array_length,
-                                              step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      push_depth(ScannerTask(state));
-    }
-    TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
-  }
+  objArrayOop to_array = objArrayOop(new_obj);
+  size_t array_length = to_array->length();
+  size_t initial_chunk_size =
+    // The source array is unused when processing states.
+    _partial_array_splitter.start(&_claimed_stack_depth, nullptr, to_array, array_length);
+  int end = checked_cast<int>(initial_chunk_size);
   if (UseCompressedOops) {
-    process_array_chunk_work<narrowOop>(new_obj, 0, checked_cast<int>(step._index));
+    process_array_chunk_work<narrowOop>(to_array, 0, end);
   } else {
-    process_array_chunk_work<oop>(new_obj, 0, checked_cast<int>(step._index));
+    process_array_chunk_work<oop>(to_array, 0, end);
   }
 }
 

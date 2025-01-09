@@ -540,8 +540,6 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
-com/sun/management/DiagnosticCommandMBean/DcmdMBeanPermissionsTest.java 8340401 windows-all
-
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
@@ -584,8 +582,6 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 ############################################################################
 
 # jdk_nio
-
-java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
 
@@ -729,6 +725,8 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 
 # jdk_jdi
 
+com/sun/jdi/ProcessAttachTest.java         8346827 linux-all
+com/sun/jdi/ReattachStressTest.java        8346827 linux-all
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
