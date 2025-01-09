@@ -666,7 +666,7 @@ public class Robot {
     /**
      * Sets whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
-     * <p>
+     *
      * @apiNote Setting this to true means you cannot call mouse and key-controlling events
      * on the AWT Event Dispatching Thread
      *
