@@ -1508,6 +1508,7 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, b
   _crc = crc;
   _mapped_from_file = false;
   _mapped_base = nullptr;
+  _in_reserved_space = false;
 }
 
 void FileMapRegion::init_oopmap(size_t offset, size_t size_in_bits) {
@@ -1893,6 +1894,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   assert(requested_addr != nullptr, "must be specified");
 
   r->set_mapped_from_file(false);
+  r->set_in_reserved_space(false);
 
   if (MetaspaceShared::use_windows_memory_mapping()) {
     // Windows cannot remap read-only shared memory to read-write when required for
