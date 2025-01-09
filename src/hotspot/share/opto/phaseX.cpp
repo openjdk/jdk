@@ -1068,7 +1068,8 @@ void PhaseIterGVN::verify_optimize() {
     for (uint j = 0; j < worklist.size(); ++j) {
       Node* n = worklist.at(j);
       if (is_verify_Value())    { failure |= verify_node_Value(n); }
-      if (is_verify_Ideal())    { failure |= verify_node_Ideal(n); }
+      if (is_verify_Ideal())    { failure |= verify_node_Ideal(n, false); }
+      if (is_verify_Ideal())    { failure |= verify_node_Ideal(n, true); }
       if (is_verify_Identity()) { failure |= verify_node_Identity(n); }
       // traverse all inputs and outputs
       for (uint i = 0; i < n->req(); i++) {
@@ -1151,7 +1152,7 @@ bool PhaseIterGVN::verify_node_Value(Node* n) {
 }
 
 // Check that all Ideal optimizations that could be done were done.
-bool PhaseIterGVN::verify_node_Ideal(Node* n) {
+bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
   // First, we check a list of exceptions, which are known cases where Ideal
   // can optimize after IGVN. Some may be expected and cannot be fixed, and
   // others should be fixed.
@@ -1390,7 +1391,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
       return false;
   }
 
-  Node* i = n->Ideal(this, true); // TODO also with false?
+  Node* i = n->Ideal(this, can_reshape);
   // If there was no new Idealization, we are happy.
   if (i == nullptr) {
     return false;

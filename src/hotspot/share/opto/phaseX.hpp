@@ -495,7 +495,7 @@ public:
 #ifdef ASSERT
   void verify_optimize();
   bool verify_node_Value(Node* n);
-  bool verify_node_Ideal(Node* n);
+  bool verify_node_Ideal(Node* n, bool can_reshape);
   bool verify_node_Identity(Node* n);
 #endif
 
