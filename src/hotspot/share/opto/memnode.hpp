@@ -196,7 +196,7 @@ private:
   // non-pinned LoadNode by the pinned LoadNode.
   ControlDependency _control_dependency;
 
-  // On platforms with weak memory ordering (e.g., PPC, Ia64) we distinguish
+  // On platforms with weak memory ordering (e.g., PPC) we distinguish
   // loads that can be reordered, and such requiring acquire semantics to
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.
@@ -566,7 +566,7 @@ public:
 // Store value; requires Store, Address and Value
 class StoreNode : public MemNode {
 private:
-  // On platforms with weak memory ordering (e.g., PPC, Ia64) we distinguish
+  // On platforms with weak memory ordering (e.g., PPC) we distinguish
   // stores that can be reordered, and such requiring release semantics to
   // adhere to the Java specification.  The required behaviour is stored in
   // this field.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
  *          javac crash while creating LVT entry for a local variable defined in
  *          an inner block
  * @library /tools/javac/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor LVTHarness
  * @run main LVTHarness
  */

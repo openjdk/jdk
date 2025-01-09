@@ -29,6 +29,8 @@
 #include "cds/dumpAllocStats.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/reservedSpace.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
@@ -343,8 +345,18 @@ public:
 
   template <typename T>
   u4 any_to_offset_u4(T p) const {
+    assert(p != nullptr, "must not be null");
     uintx offset = any_to_offset((address)p);
     return to_offset_u4(offset);
+  }
+
+  template <typename T>
+  u4 any_or_null_to_offset_u4(T p) const {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return any_to_offset_u4<T>(p);
+    }
   }
 
   template <typename T>

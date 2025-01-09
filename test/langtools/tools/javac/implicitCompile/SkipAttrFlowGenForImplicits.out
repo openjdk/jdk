@@ -1,4 +1,5 @@
 [attribute Explicit]
 [flow Explicit]
+[warn Explicit]
 [desugar Explicit]
 [generate code Explicit]

@@ -1448,7 +1448,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
   // do the compilation
   if (method->is_native()) {
     if (!PreferInterpreterNativeStubs || method->is_method_handle_intrinsic()) {
-#if defined(X86) && !defined(ZERO)
+#if defined(IA32) && !defined(ZERO)
       // The following native methods:
       //
       // java.lang.Float.intBitsToFloat
@@ -1470,7 +1470,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
             method->intrinsic_id() == vmIntrinsics::_doubleToRawLongBits))) {
         return nullptr;
       }
-#endif // X86 && !ZERO
+#endif // IA32 && !ZERO
 
       // To properly handle the appendix argument for out-of-line calls we are using a small trampoline that
       // pops off the appendix argument and jumps to the target (see gen_special_dispatch in SharedRuntime).
@@ -2532,6 +2532,11 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   // C1 and C2 counters are counting both successful and unsuccessful compiles
   _t_total_compilation.add(time);
 
+  // Update compilation times. Used by the implementation of JFR CompilerStatistics
+  // and java.lang.management.CompilationMXBean.
+  _perf_total_compilation->inc(time.ticks());
+  _peak_compilation_time = MAX2(time.milliseconds(), _peak_compilation_time);
+
   if (!success) {
     _total_bailout_count++;
     if (UsePerfData) {
@@ -2550,12 +2555,6 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
     _t_invalidated_compilation.add(time);
   } else {
     // Compilation succeeded
-
-    // update compilation ticks - used by the implementation of
-    // java.lang.management.CompilationMXBean
-    _perf_total_compilation->inc(time.ticks());
-    _peak_compilation_time = time.milliseconds() > _peak_compilation_time ? time.milliseconds() : _peak_compilation_time;
-
     if (CITime) {
       int bytes_compiled = method->code_size() + task->num_inlined_bytecodes();
       if (is_osr) {

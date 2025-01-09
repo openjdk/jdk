@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -144,9 +144,9 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // TODO PPC port: requires change in shared code.
     //assert(in_bytes(AccessFlags::flags_offset()) == 0,
     //       "MethodDesc._access_flags == MethodDesc._access_flags._flags");
-    // _access_flags must be a 32 bit value.
-    assert(sizeof(AccessFlags) == 4, "wrong size");
-    __ lwa(R11_scratch1/*access_flags*/, method_(access_flags));
+    // _access_flags must be a 16 bit value.
+    assert(sizeof(AccessFlags) == 2, "wrong size");
+    __ lhz(R11_scratch1/*access_flags*/, method_(access_flags));
     // testbit with condition register.
     __ testbitdi(CCR0, R0, R11_scratch1/*access_flags*/, JVM_ACC_STATIC_BIT);
     __ btrue(CCR0, L);
@@ -823,7 +823,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 
   {
     if (!flags_preloaded) {
-      __ lwz(Rflags, method_(access_flags));
+      __ lhz(Rflags, method_(access_flags));
     }
 
 #ifdef ASSERT
@@ -1155,6 +1155,44 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  if (!VM_Version::supports_float16()) return nullptr;
+
+  address entry = __ pc();
+
+  __ lfs(F1, Interpreter::stackElementSize, R15_esp);
+  __ f2hf(R3_RET, F1, F0);
+
+  // Restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
+  __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
+  __ blr();
+
+  __ flush();
+
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  if (!VM_Version::supports_float16()) return nullptr;
+
+  address entry = __ pc();
+
+  // Note: Could also use:
+  //__ li(R3, Interpreter::stackElementSize);
+  //__ lfiwax(F1_RET, R15_esp, R3); // short stored as 32 bit integer
+  //__ xscvhpdp(F1_RET->to_vsr(), F1_RET->to_vsr());
+  __ lwa(R3, Interpreter::stackElementSize, R15_esp);
+  __ hf2f(F1_RET, R3);
+
+  // Restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
+  __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
+  __ blr();
+
+  __ flush();
+
+  return entry;
+}
+
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Quick & dirty stack overflow checking: bang the stack & handle trap.
   // Note that we do the banging after the frame is setup, since the exception
@@ -1263,8 +1301,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   assert(__ nonvolatile_accross_vthread_preemtion(access_flags),
          "access_flags not preserved");
   // Type check.
-  assert(4 == sizeof(AccessFlags), "unexpected field size");
-  __ lwz(access_flags, method_(access_flags));
+  assert(2 == sizeof(AccessFlags), "unexpected field size");
+  __ lhz(access_flags, method_(access_flags));
 
   // We don't want to reload R19_method and access_flags after calls
   // to some helper functions.
@@ -1731,7 +1769,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
   else {
     Label Lok;
-    __ lwz(R0, in_bytes(Method::access_flags_offset()), R19_method);
+    __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
     __ andi_(R0, R0, JVM_ACC_SYNCHRONIZED);
     __ asm_assert_eq("method needs synchronization");
     __ bind(Lok);
@@ -1965,8 +2003,6 @@ address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { re
 address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 // =============================================================================
 // Exceptions

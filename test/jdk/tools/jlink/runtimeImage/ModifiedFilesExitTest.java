@@ -40,7 +40,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1400m ModifiedFilesExitTest
+ * @run main/othervm -Xmx1g ModifiedFilesExitTest
  */
 public class ModifiedFilesExitTest extends ModifiedFilesTest {
 
@@ -78,7 +78,7 @@ public class ModifiedFilesExitTest extends ModifiedFilesTest {
         }
         analyzer.stdoutShouldContain(modifiedFile.toString() + " has been modified");
         // Verify the error message is reasonable
-        analyzer.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        analyzer.stdoutShouldNotContain("IOException");
         analyzer.stdoutShouldNotContain("java.lang.IllegalArgumentException");
     }
 
