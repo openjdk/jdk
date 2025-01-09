@@ -718,7 +718,7 @@ void CallNode::dump_spec(outputStream *st) const {
 
 const Type *CallNode::bottom_type() const { return tf()->range(); }
 const Type* CallNode::Value(PhaseGVN* phase) const {
-  if (!in(0) || phase->type(in(0)) == Type::TOP) {
+  if (in(0) == nullptr || phase->type(in(0)) == Type::TOP) {
     return Type::TOP;
   }
   return tf()->range();
