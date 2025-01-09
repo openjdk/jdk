@@ -32,28 +32,24 @@
 package testlibrary_tests.generators.tests;
 
 import compiler.lib.generators.Generator;
-import compiler.lib.ir_framework.*;
 
 import static compiler.lib.generators.Generators.G;
 
 
 public class ExampleTest {
+    static class FakeException extends RuntimeException {}
+
     static class UnderTest {
         private enum State { STAND_BY, FIRST, SECOND };
 
-        private final String name;
         private State state = State.STAND_BY;
-
-        UnderTest(String name) {
-            this.name = name;
-        }
 
         void doIt(int x) {
             state = switch (state) {
                 case State.STAND_BY -> x == (1 << 10) + 3 ? State.FIRST : State.STAND_BY;
                 case State.FIRST -> x == (1 << 5) - 2 ? State.SECOND : State.STAND_BY;
                 case State.SECOND -> {
-                    if (x == (1 << 4)) throw new RuntimeException("Assert triggered for " + name);
+                    if (x == (1 << 4)) throw new FakeException();
                     yield State.STAND_BY;
                 }
             };
@@ -61,21 +57,24 @@ public class ExampleTest {
     }
 
     public static void main(String[] args) {
-        TestFramework.run();
+        // This test should print "Assertion triggered by special" (see the math below) but almost never
+        // "Assertion triggered by uniform" as the chance of triggering is about 2^-96.
+        try {
+            test(G.uniformInts());
+        } catch (FakeException e) {
+            System.out.println("Assertion triggered by uniform");
+        }
+        try {
+            // 408 ints => 1/408 * 1/408 * 1/408 => 1/67_917_312 => with 70_000_000 loop iterations we should trigger
+            test(G.specialInts(3));
+        } catch (FakeException e) {
+            System.out.println("Assertion triggered by special");
+        }
     }
 
-    @Run(test = {"test"})
-    public void run() {
-        // Usually, we will fail with "Assert triggered for special" as uniform is unlikely to input the triggering
-        // sequence to UnderTest but special has a good chance of doing so.
-        test(G.uniformInts(), "uniform");
-        test(G.specialInts(3), "special");
-    }
-
-    @Test
-    public void test(Generator<Integer> g, String name) {
-        UnderTest underTest = new UnderTest(name);
-        for (int i = 0; i < 10_000; i++) {
+    public static void test(Generator<Integer> g) {
+        UnderTest underTest = new UnderTest();
+        for (int i = 0; i < 70_000_000; i++) {
             for (int j = 0; j < 3; j++) {
                 underTest.doIt(g.next());
             }
