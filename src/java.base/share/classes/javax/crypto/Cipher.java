@@ -148,7 +148,8 @@ import sun.security.util.KnownOIDs;
  * <li>{@code AES/CBC/PKCS5Padding} (128)</li>
  * <li>{@code AES/ECB/NoPadding} (128)</li>
  * <li>{@code AES/ECB/PKCS5Padding} (128)</li>
- * <li>{@code AES/GCM/NoPadding} (128)</li>
+ * <li>{@code AES/GCM/NoPadding} (128, 256)</li>
+ * <li>{@code ChaCha20-Poly1305}</li>
  * <li>{@code DESede/CBC/NoPadding} (168)</li>
  * <li>{@code DESede/CBC/PKCS5Padding} (168)</li>
  * <li>{@code DESede/ECB/NoPadding} (168)</li>
