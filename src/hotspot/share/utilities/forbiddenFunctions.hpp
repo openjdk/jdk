@@ -31,7 +31,11 @@
 #include <stddef.h> // for size_t
 #include <stdlib.h> // clang workaround for exit, _exit, _Exit - see FORBID macro.
 
-#include OS_HEADER(forbiddenFunctions)
+#ifdef _WINDOWS
+#include "forbiddenFunctions_windows.hpp"
+#else
+#include "forbiddenFunctions_posix.hpp"
+#endif
 
 // Forbid the use of various C library functions.  Some of these have os::
 // replacements that should be used instead.  Others are considered obsolete
