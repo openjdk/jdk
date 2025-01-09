@@ -928,7 +928,7 @@ public:
 
   void ror(Register dst, Register src, uint32_t shift, Register tmp = t0);
   void rolw(Register dst, Register src, uint32_t shift, Register tmp = t0);
-  void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
+
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 
 // Load and Store Instructions
