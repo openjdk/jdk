@@ -205,7 +205,7 @@ public abstract class KeyAgreementSpi {
      * {@code generateSecret} to change the private information used in
      * subsequent operations.
      *
-     * @param algorithm the requested secret-key algorithm. This is different
+     * @param algorithm the requested secret key algorithm. This is different
      *      from the {@code KeyAgreement} algorithm provided to the
      *      {@code getInstance} method. See the SecretKey Algorithms section in the
      *      <a href="{@docRoot}/../specs/security/standard-names.html#secretkey-algorithms">
@@ -223,7 +223,7 @@ public abstract class KeyAgreementSpi {
      * @exception IllegalStateException if this key agreement has not been
      * initialized or if {@code doPhase} has not been called to supply the
      * keys for all parties in the agreement
-     * @exception NoSuchAlgorithmException if the specified secret-key
+     * @exception NoSuchAlgorithmException if the specified secret key
      * algorithm is not supported
      * @exception InvalidKeyException if the shared secret key material cannot
      * be used to generate a secret key of the requested algorithm type (e.g.,
