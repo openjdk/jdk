@@ -27,7 +27,10 @@
  * @summary Test source mode
  * @modules jdk.compiler jdk.jlink
  * @comment Test is being run in othervm to support JEP 493 enabled
- *          JDKs which don't allow patched modules
+ *          JDKs which don't allow patched modules. Note that jtreg patches
+ *          module java.base to add java.lang.JTRegModuleHelper. If then a
+ *          jlink run is attempted in-process - using the ToolProvider API -
+ *          on a JEP 493 enabled JDK, the test fails.
  * @run main/othervm SourceMode
  */
 
