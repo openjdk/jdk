@@ -40,7 +40,7 @@ import vm.runtime.defmeth.shared.data.method.body.ReturnNewInstanceBody;
 import vm.runtime.defmeth.shared.data.method.body.ReturnNullBody;
 import vm.runtime.defmeth.shared.data.method.body.ThrowExBody;
 import vm.runtime.defmeth.shared.data.method.param.Param;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 import vm.runtime.defmeth.shared.data.ConcreteClass;
 
 /**

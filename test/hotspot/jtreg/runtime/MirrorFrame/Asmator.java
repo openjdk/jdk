@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 class Asmator {
     static byte[] fixup(byte[] buf) throws java.io.IOException {

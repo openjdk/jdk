@@ -45,7 +45,7 @@ import vm.runtime.defmeth.shared.data.method.param.*;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.builder.TestBuilder;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**

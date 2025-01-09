@@ -35,10 +35,10 @@
  */
 
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class IntfMethod {
     static byte[] dumpC() {

@@ -25,7 +25,7 @@ package vm.runtime.defmeth.shared;
 
 import java.util.List;
 import java.util.ArrayList;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.data.method.*;

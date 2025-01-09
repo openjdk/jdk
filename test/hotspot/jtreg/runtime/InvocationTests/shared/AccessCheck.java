@@ -24,7 +24,7 @@
 
 package shared;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 /*
  * @author vi158347

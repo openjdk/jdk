@@ -29,7 +29,7 @@ import java.util.*;
 
 import nsk.share.Pair;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 import nsk.share.TestFailure;
 import vm.runtime.defmeth.shared.ClassFileGenerator;

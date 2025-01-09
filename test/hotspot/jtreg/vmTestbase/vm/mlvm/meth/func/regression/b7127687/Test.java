@@ -33,8 +33,8 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.ArrayList;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.ClassWriter;
+import static org.objectweb.asm.Opcodes.*;
 
 public class Test extends MlvmTest {
 

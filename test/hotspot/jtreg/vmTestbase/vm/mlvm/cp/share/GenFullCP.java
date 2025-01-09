@@ -23,12 +23,12 @@
 
 package vm.mlvm.cp.share;
 
-import jdk.internal.org.objectweb.asm.ByteVector;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.ClassWriterExt;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import org.objectweb.asm.ByteVector;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassWriterExt;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import vm.mlvm.share.ClassfileGenerator;
 import vm.mlvm.share.Env;

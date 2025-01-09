@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.internal.org.objectweb.asm;
+package org.objectweb.asm;
 
 import java.lang.reflect.InaccessibleObjectException;
 

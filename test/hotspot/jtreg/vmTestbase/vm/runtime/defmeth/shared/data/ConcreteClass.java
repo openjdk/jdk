@@ -23,7 +23,7 @@
 
 package vm.runtime.defmeth.shared.data;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 import vm.runtime.defmeth.shared.data.method.Method;
 
 /**

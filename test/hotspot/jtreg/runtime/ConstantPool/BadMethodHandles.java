@@ -32,13 +32,13 @@
  * @run main/othervm BadMethodHandles
  */
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class BadMethodHandles {
 

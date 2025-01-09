@@ -23,7 +23,7 @@
 
 package vm.mlvm.cp.share;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 
 public enum HandleType {
     GETFIELD(Opcodes.H_GETFIELD),

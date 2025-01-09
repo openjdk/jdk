@@ -48,8 +48,8 @@ import vm.share.options.Option;
 import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import static java.lang.String.format;
-import static jdk.internal.org.objectweb.asm.Opcodes.V17;
-import static jdk.internal.org.objectweb.asm.Opcodes.V1_5;
+import static org.objectweb.asm.Opcodes.V17;
+import static org.objectweb.asm.Opcodes.V1_5;
 
 import vm.runtime.defmeth.RedefineTest;
 

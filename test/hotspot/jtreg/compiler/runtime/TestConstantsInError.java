@@ -32,7 +32,7 @@
  */
 package compiler.runtime;
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -46,8 +46,8 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.ClassWriter.*;
+import static org.objectweb.asm.Opcodes.*;
 
 interface OutputProcessor {
     default void process(OutputAnalyzer output, boolean isC1) {}

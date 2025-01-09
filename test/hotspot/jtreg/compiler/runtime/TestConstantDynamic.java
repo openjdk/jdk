@@ -39,7 +39,7 @@
 
 package compiler.runtime;
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -51,8 +51,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.ClassWriter.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class TestConstantDynamic {
     static final Class<TestConstantDynamic> THIS_CLASS = TestConstantDynamic.class;

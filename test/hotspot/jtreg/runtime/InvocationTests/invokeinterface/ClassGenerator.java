@@ -24,7 +24,7 @@
 
 package invokeinterface;
 
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 import shared.GenericClassGenerator;
 
 /*******************************************************************/

@@ -43,8 +43,8 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import jdk.internal.org.objectweb.asm.*;
+import static org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.*;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 

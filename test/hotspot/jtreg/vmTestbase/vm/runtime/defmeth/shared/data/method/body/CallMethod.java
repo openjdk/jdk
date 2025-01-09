@@ -24,7 +24,7 @@
 package vm.runtime.defmeth.shared.data.method.body;
 
 import vm.runtime.defmeth.shared.data.method.param.Param;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 import vm.runtime.defmeth.shared.data.Visitor;
 import vm.runtime.defmeth.shared.data.Clazz;
 import vm.runtime.defmeth.shared.data.Interface;

@@ -23,8 +23,8 @@
 package compiler.cha;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.NMethod;
@@ -39,9 +39,9 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
-import static jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.ClassWriter.COMPUTE_FRAMES;
+import static org.objectweb.asm.ClassWriter.COMPUTE_MAXS;
+import static org.objectweb.asm.Opcodes.*;
 import static jdk.test.lib.Asserts.assertTrue;
 
 public class Utils {

@@ -30,7 +30,7 @@ import vm.runtime.defmeth.shared.data.ConcreteClass;
 import vm.runtime.defmeth.shared.data.Interface;
 import vm.runtime.defmeth.shared.data.method.Method;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 import vm.runtime.defmeth.shared.data.ConcreteClassImpl;
 
 /**

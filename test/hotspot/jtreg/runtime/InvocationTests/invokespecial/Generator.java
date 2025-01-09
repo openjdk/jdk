@@ -239,7 +239,7 @@
 
 package invokespecial;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 import shared.AbstractGenerator;
 import shared.AccessType;
 

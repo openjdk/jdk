@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 public class AsmClasses implements Opcodes {
 

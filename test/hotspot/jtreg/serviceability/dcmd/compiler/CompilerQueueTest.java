@@ -71,7 +71,7 @@ public class CompilerQueueTest {
      * 762       3       java.lang.invoke.MethodType::basicType (8 bytes)
      * 763       3       java.util.ArrayList::rangeCheck (22 bytes)
      * 764       3       java.util.ArrayList::elementData (7 bytes)
-     * 765       3       jdk.internal.org.objectweb.asm.MethodVisitor::<init> (35 bytes)
+     * 765       3       org.objectweb.asm.MethodVisitor::<init> (35 bytes)
      * 766       1       CompilerQueueTest::testcaseMethod1 (1 bytes)
      * 767       2       CompilerQueueTest::testcaseMethod2 (1 bytes)
      * 768       3       CompilerQueueTest::testcaseMethod3 (1 bytes)

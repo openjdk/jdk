@@ -55,7 +55,7 @@ import vm.share.options.OptionSupport;
 import vm.share.options.Options;
 import jdk.test.lib.Utils;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.DefMethTest.MAX_MAJOR_VER;
 import static vm.runtime.defmeth.shared.DefMethTest.MIN_MAJOR_VER;
 

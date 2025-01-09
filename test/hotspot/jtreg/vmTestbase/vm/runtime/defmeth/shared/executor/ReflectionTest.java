@@ -43,7 +43,7 @@ import vm.runtime.defmeth.shared.data.method.body.ReturnIntBody;
 import vm.runtime.defmeth.shared.data.method.body.ThrowExBody;
 import vm.runtime.defmeth.shared.data.method.result.IntResult;
 import vm.runtime.defmeth.shared.data.method.result.ThrowExResult;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 
 import java.lang.reflect.*;
 import java.util.Arrays;

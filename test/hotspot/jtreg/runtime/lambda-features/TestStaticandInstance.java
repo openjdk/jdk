@@ -31,8 +31,8 @@
 
 
 import java.util.*;
-import jdk.internal.org.objectweb.asm.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.*;
+import static org.objectweb.asm.Opcodes.*;
 
 public class TestStaticandInstance {
   static final String stringC = "C";

@@ -50,7 +50,7 @@ import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.executor.TestExecutor;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.*;
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**

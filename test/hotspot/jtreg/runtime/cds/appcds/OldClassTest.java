@@ -40,7 +40,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import java.nio.file.Files;
 
 import java.util.*;
-import jdk.internal.org.objectweb.asm.*;
+import org.objectweb.asm.*;
 
 public class OldClassTest implements Opcodes {
 
@@ -134,7 +134,7 @@ public class Hello {
 }
 EOF
 javac Hello.java
-java jdk.internal.org.objectweb.asm.util.ASMifier Hello.class
+java org.objectweb.asm.util.ASMifier Hello.class
 
  */
 
