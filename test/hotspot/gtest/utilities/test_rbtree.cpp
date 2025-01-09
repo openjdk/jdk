@@ -28,6 +28,7 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/rbTree.hpp"
 #include "utilities/rbTree.inline.hpp"
 
 
@@ -307,6 +308,31 @@ public:
     }
   }
 
+  void test_stable_nodes_addresses() {
+    using Tree = RBTreeCHeap<int, void*, Cmp, mtOther>;
+    using Node = Tree::RBNode;
+    Tree rbtree;
+    for (int i = 0; i < 10000; i++) {
+      rbtree.upsert(i, nullptr);
+      Node* inserted_node = rbtree.find_node(rbtree._root, i);
+      inserted_node->val() = inserted_node;
+    }
+
+    for (int i = 0; i < 2000; i++) {
+      int r = os::random() % 10000;
+      Node* to_delete = rbtree.find_node(rbtree._root, r);
+      if (to_delete != nullptr && to_delete->_left != nullptr &&
+          to_delete->_right != nullptr) {
+        rbtree.remove(to_delete);
+      }
+    }
+
+    // After deleting, values should have remained consistant
+    rbtree.visit_in_order([&](Node* node) {
+      assert(node == node->val(), "node value must be its own address");
+    });
+  }
+
   void test_empty_iterator() {
     RBTreeInt tree;
     RBTreeInt::Iterator iterator(&tree);
@@ -409,6 +435,10 @@ TEST_VM_F(RBTreeTest, TestClosestLeq) {
 
 TEST_VM_F(RBTreeTest, NodeStableTest) {
   this->test_stable_nodes();
+}
+
+TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
+  this->test_stable_nodes_addresses();
 }
 
 TEST_VM_F(RBTreeTest, EmptyIteratorTest) {
