@@ -1235,9 +1235,13 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // but the SubL was not added to the IGVN worklist. Investigate why.
     // There could be other issues too.
     //
+    // There seems to be a related AddL IGVN optimization that triggers
+    // the same SubL optimization, so investigate that too.
+    //
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_SubL:
+    case Op_AddL:
       return false;
 
     // SubTypeCheckNode::Ideal calls SubTypeCheckNode::verify_helper, which does
