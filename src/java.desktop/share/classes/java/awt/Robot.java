@@ -57,7 +57,7 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * events are generated in the platform's native input
  * queue. For example, {@code Robot.mouseMove} will actually move
  * the mouse cursor instead of just generating mouse move events.
- * <p>
+ *
  * @apiNote When {@code autoWaitForIdle()} is enabled, mouse and key related methods
  * cannot be called on the AWT EDT. This is because when {@code autoWaitForIdle()}
  * is enabled, the mouse and key methods implicitly call {@code waitForIdle()}
@@ -666,7 +666,7 @@ public class Robot {
     /**
      * Sets whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
-     * <p>
+     *
      * @apiNote Setting this to true means you cannot call mouse and key-controlling events
      * on the AWT Event Dispatching Thread
      *
