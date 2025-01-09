@@ -1096,8 +1096,9 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 #endif
 }
 
-Node* Parse::floating_point_mod(Node* a, Node* b, bool dbl) {
-  CallNode* mod = dbl ? static_cast<CallNode*>(new ModDNode(C, a, b)) : new ModFNode(C, a, b);
+Node* Parse::floating_point_mod(Node* a, Node* b, BasicType type) {
+  assert(type == BasicType::T_FLOAT || type == BasicType::T_DOUBLE, "only float and double are floating points");
+  CallNode* mod = type == BasicType::T_DOUBLE ? static_cast<CallNode*>(new ModDNode(C, a, b)) : new ModFNode(C, a, b);
 
   Node* prev_mem = set_predefined_input_for_runtime_call(mod);
   mod = _gvn.transform(mod)->as_Call();
@@ -2288,7 +2289,7 @@ void Parse::do_one_bytecode() {
     // Generate a ModF node.
     b = pop();
     a = pop();
-    push(floating_point_mod(a, b, false));
+    push(floating_point_mod(a, b, BasicType::T_FLOAT));
     break;
 
   case Bytecodes::_fcmpl:
@@ -2413,7 +2414,7 @@ void Parse::do_one_bytecode() {
     // Generate a ModD node.
     b = pop_pair();
     a = pop_pair();
-    push_pair(floating_point_mod(a, b, true));
+    push_pair(floating_point_mod(a, b, BasicType::T_DOUBLE));
     break;
 
   case Bytecodes::_dcmpl:
