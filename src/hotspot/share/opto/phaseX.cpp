@@ -1217,10 +1217,10 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   java -XX:VerifyIterativeGVN=0100 -Xbatch --version
     //
     // The following hit the same logic in PhaseIdealLoop::remix_address_expressions.
-    case Op_AddI:
-    //case Op_AddL: // also belongs to the list, but is separately covered for other reasons.
     case Op_AddF:
     case Op_AddD:
+    //case Op_AddI: // also belongs to the list, but is separately covered for other reasons.
+    //case Op_AddL: // also belongs to the list, but is separately covered for other reasons.
     case Op_MulI:
     case Op_MulL:
     case Op_MulF:
@@ -1388,6 +1388,20 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_ConvI2L:
+      return false;
+
+    // AddNode::IdealIL can do this transform (and similar other ones):
+    //   Convert "a*b+a*c into a*(b+c)
+    // The example had AddI(MulI(a, b), MulI(a, c)). Why did this not happen
+    // during IGVN? There was a mutation for one of the MulI, and only
+    // after that the pattern was as needed for the optimization. The MulI
+    // was added to the IGVN worklist, but not the AddI. This probably
+    // can be fixed by adding the correct pattern in add_users_of_use_to_worklist.
+    //
+    // Found with:
+    //   test/hotspot/jtreg/compiler/loopopts/superword/ReductionPerf.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_AddI:
       return false;
   }
 
