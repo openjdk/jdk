@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2024, 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,39 +126,27 @@ public class JimageDiffGenerator {
     private boolean compareStreams(InputStream is1, InputStream is2) {
         byte[] buf1 = new byte[1024];
         byte[] buf2 = new byte[1024];
-        int bytesRead1, bytesRead2 = 0;
-        try {
-            try (is1; is2) {
-                while ((bytesRead1 = is1.read(buf1)) != -1 &&
-                       (bytesRead2 = is2.read(buf2)) != -1) {
-                    if (bytesRead1 != bytesRead2) {
-                        return false;
-                    }
-                    if (bytesRead1 == buf1.length) {
-                        if (!Arrays.equals(buf1, buf2)) {
-                            return false;
-                        }
-                    } else {
-                        for (int i = 0; i < bytesRead1; i++) {
-                            if (buf1[i] != buf2[i]) {
-                                return false;
-                            }
-                        }
-                    }
+        int bytesRead1, bytesRead2;
+        try (is1; is2) {
+            while ((bytesRead1 = is1.readNBytes(buf1, 0, buf1.length)) != 0) {
+                bytesRead2 = is2.readNBytes(buf2, 0, buf2.length);
+                if (bytesRead2 == 0) {
+                    // first input stream didn't return the end of stream
+                    // but the second did?
+                    return false;
                 }
-                // ensure we read both to the end
-                if (bytesRead1 == -1) {
-                    bytesRead2 = is2.read(buf2);
-                    if (bytesRead2 != -1) {
-                        return false;
-                    }
-                    return true;
+                if (bytesRead1 != bytesRead2) {
+                    return false;
+                }
+                if (!Arrays.equals(buf1, 0, bytesRead1,
+                                   buf2, 0, bytesRead2)) {
+                    return false;
                 }
             }
         } catch (IOException e) {
             throw new UncheckedIOException("IO exception when comparing bytes", e);
         }
-        return false;
+        return true;
     }
 
 }
