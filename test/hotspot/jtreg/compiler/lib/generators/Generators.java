@@ -53,7 +53,7 @@ import jdk.test.lib.Utils;
  * can write a test function as below:
  *
  * <pre><code>
- * void test(Generator<Integer> g) {
+ * void test(Generator{@literal <Integer>} g) {
  *     h(g.restricted(1, 10).next(), g.next(), g.restricted(-10, 100).next());
  * }
  * </code></pre>
@@ -81,7 +81,6 @@ import jdk.test.lib.Utils;
  * Thus, the generators provided by this class are composable and therefore extensible. This allows to easily
  * create random generators even with types and distributions that are not predefined. For example, to create a
  * generator that provides true with 60 percent probably and false with 40 percent probably, one can simply write:
- * <p>
  * <pre><code>G.mixed(G.single(true), G.single(false), 60, 40)</code></pre>
  * <p>
  * Generators are also by no means limited to work with numbers. Restrictable generators can work with any type that
@@ -286,6 +285,9 @@ public final class Generators {
         return orderedRandomElement(set);
     }
 
+    /**
+     * A convenience helper to mix {@link #specialInts(int)} with {@link #uniformInts(int, int)}.
+     */
     public RestrictableGenerator<Integer> uniformIntsMixedWithSpecials(int weightA, int weightB, int rangeSpecial) {
         return mixed(uniformInts(), specialInts(rangeSpecial), weightA, weightB);
     }
@@ -324,6 +326,9 @@ public final class Generators {
         return orderedRandomElement(set);
     }
 
+    /**
+     * A convenience helper to mix {@link #specialLongs(int)} with {@link #uniformLongs(long, long)}.
+     */
     public RestrictableGenerator<Long> uniformLongsMixedWithSpecials(int weightA, int weightB, int rangeSpecial) {
         return mixed(uniformLongs(), specialLongs(rangeSpecial), weightA, weightB);
     }
@@ -366,7 +371,7 @@ public final class Generators {
         }
     }
 
-    /*
+    /**
      * Generates interesting double values, which often are corner cases such as, 0, 1, -1, NaN, +/- Infinity, Min,
      * Max.
      */
@@ -398,7 +403,7 @@ public final class Generators {
         return mixed(background, SPECIAL_DOUBLES, weightNormal, weightSpecial);
     }
 
-    /*
+    /**
      * Generates interesting double values, which often are corner cases such as, 0, 1, -1, NaN, +/- Infinity, Min,
      * Max.
      */
