@@ -1395,9 +1395,6 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( i1->get_con() % i2->get_con() );
 }
 
-
-//=============================================================================
-//------------------------------Idealize---------------------------------------
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return unsigned_mod_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
