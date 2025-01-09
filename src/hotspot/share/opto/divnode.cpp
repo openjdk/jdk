@@ -1412,7 +1412,7 @@ Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   const Type* t1 = phase->type(dividend());
   const Type* t2 = phase->type(divisor());
   if (t1 == Type::TOP || t2 == Type::TOP) {
-    return nullptr;
+    return phase->C->top();
   }
 
   // If either number is not a constant, we know nothing.
