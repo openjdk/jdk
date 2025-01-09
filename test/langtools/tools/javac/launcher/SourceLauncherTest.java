@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896 8340380
  * @summary Test source launcher
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
