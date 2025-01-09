@@ -66,6 +66,8 @@ public class ExampleTest {
 
     @Run(test = {"test"})
     public void run() {
+        // Usually, we will fail with "Assert triggered for special" as uniform is unlikely to input the triggering
+        // sequence to UnderTest but special has a good chance of doing so.
         test(G.uniformInts(), "uniform");
         test(G.specialInts(3), "special");
     }
