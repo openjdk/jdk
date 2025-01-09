@@ -60,7 +60,7 @@ import static jdk.internal.util.OperatingSystem.WINDOWS;
 
 public final class ErrorTest {
 
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // non-existent arg
             {"Hello",

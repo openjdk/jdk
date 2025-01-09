@@ -251,11 +251,6 @@ public final class TKit {
     }
 
     public static void createPropertiesFile(Path propsFilename,
-            Map.Entry<String, String>... props) {
-        createPropertiesFile(propsFilename, List.of(props));
-    }
-
-    public static void createPropertiesFile(Path propsFilename,
             Map<String, String> props) {
         createPropertiesFile(propsFilename, props.entrySet());
     }

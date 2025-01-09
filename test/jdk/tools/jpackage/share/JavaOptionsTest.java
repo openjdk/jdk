@@ -58,7 +58,7 @@ public class JavaOptionsTest {
     private final String[] expected;
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> result = new ArrayList<>();
         for (var app : List.of("Hello", "com.other/com.other.Hello")) {
             result.add(new Object[]{app, new String[]{"--java-options", ARG1},

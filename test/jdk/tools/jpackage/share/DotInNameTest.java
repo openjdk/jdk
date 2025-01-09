@@ -24,8 +24,6 @@
 
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 
 

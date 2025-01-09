@@ -36,17 +36,17 @@ public class CommandArguments<T> {
 
     public final T clearArguments() {
         args.clear();
-        return (T) this;
+        return thiz();
     }
 
     public final T addArgument(String v) {
         args.add(v);
-        return (T) this;
+        return thiz();
     }
 
     public final T addArguments(List<String> v) {
         args.addAll(v);
-        return (T) this;
+        return thiz();
     }
 
     public final T addArgument(Path v) {
@@ -75,6 +75,11 @@ public class CommandArguments<T> {
 
     protected boolean isMutable() {
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private T thiz() {
+        return (T) this;
     }
 
     protected List<String> args;

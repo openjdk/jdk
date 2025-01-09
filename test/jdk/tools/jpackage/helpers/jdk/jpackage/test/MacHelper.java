@@ -367,7 +367,7 @@ public final class MacHelper {
             }
 
             NodeList childList = list.item(0).getChildNodes();
-            List<String> values = new ArrayList(childList.getLength());
+            List<String> values = new ArrayList<>(childList.getLength());
             for (int i = 0; i < childList.getLength(); i++) {
                 if (childList.item(i).getNodeName().equals("string")) {
                     values.add(childList.item(i).getTextContent());

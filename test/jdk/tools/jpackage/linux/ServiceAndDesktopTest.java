@@ -22,7 +22,6 @@
  */
 
 import java.nio.file.Path;
-import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.LauncherAsServiceVerifier;

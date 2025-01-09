@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 import java.nio.file.Path;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
@@ -111,7 +110,7 @@ public final class NoMPathRuntimeTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
 
         final List<String[]> paths = new ArrayList<>();
         paths.add(new String[] { "", "" });

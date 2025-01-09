@@ -22,12 +22,11 @@
  */
 
 
-import java.nio.file.Path;
-import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaAppDesc;
 
 /*
  * @test

@@ -21,7 +21,6 @@
  * questions.
  */
 
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Test;

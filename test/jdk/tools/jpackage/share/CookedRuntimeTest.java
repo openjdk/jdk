@@ -112,7 +112,7 @@ public final class CookedRuntimeTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         final List<String> javaAppDescs = List.of("Hello",
                 "com.foo/com.foo.main.Aloha");
 

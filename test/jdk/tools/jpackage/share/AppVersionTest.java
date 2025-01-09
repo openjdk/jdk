@@ -47,7 +47,7 @@ import jdk.jpackage.test.TKit;
 public final class AppVersionTest {
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
 
         data.addAll(List.of(new Object[][]{

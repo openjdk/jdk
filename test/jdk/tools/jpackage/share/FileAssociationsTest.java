@@ -23,13 +23,13 @@
 
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.List;
-import jdk.jpackage.test.TKit;
+
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.FileAssociations;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.FileAssociations;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --file-associations parameter. Output of the test should be

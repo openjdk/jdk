@@ -87,8 +87,13 @@ public class AdditionalLauncher {
     }
 
     public final AdditionalLauncher addRawProperties(
-            Map.Entry<String, String>... v) {
+            Map.Entry<String, String> v) {
         return addRawProperties(List.of(v));
+    }
+
+    public final AdditionalLauncher addRawProperties(
+            Map.Entry<String, String> v, Map.Entry<String, String> v2) {
+        return addRawProperties(List.of(v, v2));
     }
 
     public final AdditionalLauncher addRawProperties(

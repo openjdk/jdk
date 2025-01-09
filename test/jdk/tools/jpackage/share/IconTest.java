@@ -113,7 +113,7 @@ public class IconTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         List<Object[]> data = new ArrayList<>();
 
         var withLinuxShortcut = Set.of(IconType.DefaultIcon, IconType.NoIcon);

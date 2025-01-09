@@ -56,7 +56,7 @@ import jdk.jpackage.test.TKit;
 public final class InOutPathTest {
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
 
         for (var packageTypeAlias : PackageTypeAlias.values()) {

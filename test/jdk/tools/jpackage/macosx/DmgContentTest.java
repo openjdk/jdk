@@ -57,7 +57,7 @@ public class DmgContentTest {
             "non-existant").toString();
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
         data.addAll(List.of(new Object[][] {
             {"0", PackageType.MAC_DMG, new String[] {TEST_JAVA, TEST_DUKE}},

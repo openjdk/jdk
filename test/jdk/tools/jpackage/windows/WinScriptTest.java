@@ -102,6 +102,9 @@ public class WinScriptTest {
                     msiScriptData.assertJPackageOutput(result.getOutput());
                 });
                 break;
+
+            default:
+                throw new UnsupportedOperationException();
         }
 
         test.run();

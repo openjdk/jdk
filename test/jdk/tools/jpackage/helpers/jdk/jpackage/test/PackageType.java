@@ -97,7 +97,7 @@ public enum PackageType {
 
     private static boolean isBundlerSupportedImpl(String bundlerClass) {
         try {
-            Class clazz = Class.forName(bundlerClass);
+            Class<?> clazz = Class.forName(bundlerClass);
             Method supported = clazz.getMethod("supported", boolean.class);
             return ((Boolean) supported.invoke(
                     clazz.getConstructor().newInstance(), true));

@@ -266,7 +266,7 @@ public class LicenseTest {
         }
 
         private List<String> licenseFileText(String copyright, String licenseText) {
-            List<String> lines = new ArrayList(List.of(
+            List<String> lines = new ArrayList<>(List.of(
                     String.format("Copyright=%s", copyright),
                     "Foo",
                     "Bar",

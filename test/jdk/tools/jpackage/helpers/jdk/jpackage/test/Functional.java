@@ -47,15 +47,7 @@ public class Functional {
         return v;
     }
 
-    public static <T, R> Function<T, R> identity(Function<T, R> v) {
-        return v;
-    }
-
     public static <T, R> Function<T, R> identityFunction(Function<T, R> v) {
-        return v;
-    }
-
-    public static <T> Predicate<T> identity(Predicate<T> v) {
         return v;
     }
 

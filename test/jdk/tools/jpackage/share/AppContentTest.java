@@ -70,7 +70,7 @@ public class AppContentTest {
     private final List<String> testPathArgs;
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         return List.of(new String[][]{
             {TEST_JAVA, TEST_DUKE}, // include two files in two options
             {TEST_JAVA, TEST_BAD},  // try to include non-existant content

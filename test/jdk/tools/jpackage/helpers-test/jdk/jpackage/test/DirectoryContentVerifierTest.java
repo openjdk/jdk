@@ -106,7 +106,7 @@ public class DirectoryContentVerifierTest {
     }
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
         buildArgs().applyVariantsTo(data);
         buildArgs().actualPaths("foo").assertOp(CONTAINS).applyTo(data);

@@ -166,11 +166,15 @@ public final class MainClassTest {
                 } else {
                     cmd.setArgumentValue("--main-class", nonExistingMainClass);
                 }
+
+            case SetRight:
+                // NOP
+                break;
         }
     }
 
     @Parameters
-    public static Collection scripts() {
+    public static Collection<?> scripts() {
         final var withMainClass = Set.of(Script.MainClassType.SetWrong,
                 Script.MainClassType.SetRight);
 

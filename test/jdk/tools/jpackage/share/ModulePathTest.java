@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Parameter;
@@ -53,7 +52,7 @@ import jdk.jpackage.test.Annotations.Test;
 public final class ModulePathTest {
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         return List.of(new String[][]{
             {GOOD_PATH, EMPTY_DIR, NON_EXISTING_DIR},
             {EMPTY_DIR, NON_EXISTING_DIR, GOOD_PATH},
@@ -79,8 +78,6 @@ public final class ModulePathTest {
         JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
 
         Path goodModulePath = TKit.createTempDirectory("modules");
-
-        Path appBundle = HelloApp.createBundle(appDesc, goodModulePath);
 
         JPackageCommand cmd = new JPackageCommand()
                 .setArgumentValue("--dest", TKit.workDir().resolve("output"))

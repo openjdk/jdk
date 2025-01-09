@@ -45,7 +45,7 @@ public final class NonExistentTest {
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // non-existent icon
             {"Hello",

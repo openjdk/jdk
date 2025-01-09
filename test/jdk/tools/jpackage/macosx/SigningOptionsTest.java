@@ -69,7 +69,7 @@ public final class SigningOptionsTest {
             "apps/dukeplug.png").toString();
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // --mac-signing-key-user-name and --mac-app-image-sign-identity
             {"Hello",

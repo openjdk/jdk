@@ -56,7 +56,7 @@ public final class PredefinedAppImageErrorTest {
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() throws IOException {
+    public static Collection<?> input() throws IOException {
         return List.of(new Object[][]{
             // --mac-sign is required
             {"Hello",

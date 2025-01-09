@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.TKit;
 

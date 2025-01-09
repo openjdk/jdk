@@ -108,7 +108,7 @@ public final class ModulePathTest3 {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         final List<String[]> paths = new ArrayList<>();
         paths.add(new String[] { "", "" });
         if (TKit.isOSX()) {

@@ -28,7 +28,6 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
 
 /*
@@ -67,7 +66,7 @@ public class JavaOptionsEqualsTest {
     private final JPackageCommand cmd;
 
     @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             {"Hello", new String[]{"--java-options", OPTION1,
                                    "--java-options", OPTION2 },
