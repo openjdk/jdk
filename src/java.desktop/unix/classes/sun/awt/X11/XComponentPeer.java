@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return System.getProperty("sun.awt.X11.XComponentPeer.reparentNotSupported", "false").equals("false");
     }
 
-    @SuppressWarnings("deprecation")
     public boolean isObscured() {
         Container container  = (target instanceof Container) ?
             (Container)target : target.getParent();
@@ -244,7 +243,6 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     }
 
     // TODO: consider moving it to KeyboardFocusManagerPeerImpl
-    @SuppressWarnings("deprecation")
     public final boolean requestFocus(Component lightweightChild, boolean temporary,
                                       boolean focusedWindowChangeAllowed, long time,
                                       FocusEvent.Cause cause)

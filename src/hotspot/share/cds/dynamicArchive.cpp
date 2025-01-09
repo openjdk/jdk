@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -509,12 +509,9 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   JavaThread* THREAD = current; // For TRAPS processing related to link_shared_classes
   MetaspaceShared::link_shared_classes(false/*not from jcmd*/, THREAD);
   if (!HAS_PENDING_EXCEPTION) {
-    // copy shared path table to saved.
-    if (!HAS_PENDING_EXCEPTION) {
-      VM_PopulateDynamicDumpSharedSpace op(archive_name);
-      VMThread::execute(&op);
-      return;
-    }
+    VM_PopulateDynamicDumpSharedSpace op(archive_name);
+    VMThread::execute(&op);
+    return;
   }
 
   // One of the prepatory steps failed

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,20 @@ import java.lang.classfile.TypeKind;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
- * Models a {@code CONSTANT_Double_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures
+ * Models a {@code CONSTANT_Double_info} structure, representing a {@code
+ * double} constant, in the constant pool of a {@code class} file.
+ * <p>
+ * The use of a {@code DoubleEntry} is modeled by a {@code double}.  Conversions
+ * are through {@link ConstantPoolBuilder#doubleEntry} and {@link #doubleValue()}.
+ * In the conversions, all NaN values of the {@code double} may be collapsed
+ * into a single {@linkplain Double#NaN "canonical" NaN value}.
+ * <p>
+ * A double entry has a {@linkplain #width() width} of {@code 2}, making its
+ * subsequent constant pool index valid and unusable.
  *
+ * @see ConstantPoolBuilder#doubleEntry ConstantPoolBuilder::doubleEntry
+ * @jvms 4.4.5 The {@code CONSTANT_Long_info} and {@code CONSTANT_Double_info}
+ *             Structures
  * @since 24
  */
 public sealed interface DoubleEntry
@@ -40,13 +50,13 @@ public sealed interface DoubleEntry
         permits AbstractPoolEntry.DoubleEntryImpl {
 
     /**
-     * {@return the double value}
+     * {@return the {@code double} value}
+     *
+     * @see ConstantPoolBuilder#doubleEntry(double)
+     *      ConstantPoolBuilder::doubleEntry(double)
      */
     double doubleValue();
 
-    /**
-     * {@return the type of the constant}
-     */
     @Override
     default TypeKind typeKind() {
         return TypeKind.DOUBLE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -641,7 +641,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ lwu(t0, Address(xmethod, Method::access_flags_offset()));
+      __ load_unsigned_short(t0, Address(xmethod, Method::access_flags_offset()));
       __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
       __ beqz(t1, L_skip_barrier); // non-static
     }
