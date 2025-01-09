@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/z/zAbort.inline.hpp"
@@ -49,6 +48,7 @@
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStackWatermark.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zStringDedup.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThreadLocalAllocBuffer.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
@@ -389,24 +389,8 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-static void try_deduplicate(ZMarkContext* context, oop obj) {
-  if (!StringDedup::is_enabled()) {
-    // Not enabled
-    return;
-  }
-
-  if (!java_lang_String::is_instance(obj)) {
-    // Not a String object
-    return;
-  }
-
-  if (java_lang_String::test_and_set_deduplication_requested(obj)) {
-    // Already requested deduplication
-    return;
-  }
-
-  // Request deduplication
-  context->string_dedup_requests()->add(obj);
+static void maybe_string_dedup(ZMarkContext* context, zaddress addr) {
+  context->string_dedup_context()->request_for_marked(addr);
 }
 
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
@@ -453,8 +437,8 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
       follow_object(obj, finalizable);
 
       if (!finalizable) {
-        // Try deduplicate
-        try_deduplicate(context, obj);
+        // Maybe deduplicate
+        maybe_string_dedup(context, addr);
       }
     }
   }

@@ -115,6 +115,10 @@
           "Young generation tenuring threshold, -1 for dynamic computation")\
           range(-1, static_cast<int>(ZPageAgeMax))                          \
                                                                             \
+  product(bool, ZStringDedupAtPromotion, true, DIAGNOSTIC,                  \
+          "String deduplication happens when objects are promoted instead " \
+          "during marking")                                                 \
+                                                                            \
   develop(bool, ZVerifyOops, false,                                         \
           "Verify accessed oops")                                           \
                                                                             \

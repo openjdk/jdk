@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,46 @@
  * questions.
  */
 
-#ifndef SHARE_GC_Z_ZMARKCONTEXT_HPP
-#define SHARE_GC_Z_ZMARKCONTEXT_HPP
+#ifndef SHARE_GC_Z_ZSTRINGDEDUP_INLINE_HPP
+#define SHARE_GC_Z_ZSTRINGDEDUP_INLINE_HPP
 
-#include "gc/z/zMarkCache.hpp"
 #include "gc/z/zStringDedup.hpp"
-#include "memory/allocation.hpp"
 
-class ZMarkStripe;
-class ZMarkThreadLocalStacks;
+#include "classfile/javaClasses.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 
-class ZMarkContext : public StackObj {
-private:
-  ZMarkCache                    _cache;
-  ZMarkStripe*                  _stripe;
-  ZMarkThreadLocalStacks* const _stacks;
-  size_t                        _nstripes;
-  ZStringDedupContext           _string_dedup_context;
+inline void ZStringDedupContext::request(zaddress addr) {
+  if (!StringDedup::is_enabled()) {
+    // Not enabled
+    return;
+  }
 
-public:
-  ZMarkContext(size_t nstripes,
-               ZMarkStripe* stripe,
-               ZMarkThreadLocalStacks* stacks);
+  oop obj = to_oop(addr);
 
-  ZMarkCache* cache();
-  ZMarkStripe* stripe();
-  void set_stripe(ZMarkStripe* stripe);
-  ZMarkThreadLocalStacks* stacks();
-  ZStringDedupContext* string_dedup_context();
+  if (!java_lang_String::is_instance(obj)) {
+    // Not a String object
+    return;
+  }
 
-  size_t nstripes();
-  void set_nstripes(size_t nstripes);
-};
+  if (java_lang_String::test_and_set_deduplication_requested(obj)) {
+    // Already requested deduplication
+    return;
+  }
 
-#endif // SHARE_GC_Z_ZMARKCONTEXT_HPP
+  // Request deduplication
+  _requests.add(obj);
+}
+
+inline void ZStringDedupContext::request_for_marked(zaddress addr) {
+  if (!ZStringDedupAtPromotion) {
+    request(addr);
+  }
+}
+
+inline void ZStringDedupContext::request_for_promoted(zaddress addr) {
+  if (ZStringDedupAtPromotion) {
+    return request(addr);
+  }
+}
+
+#endif // SHARE_GC_Z_ZSTRINGDEDUP_INLINE_HPP

@@ -33,7 +33,7 @@ inline ZMarkContext::ZMarkContext(size_t nstripes,
     _stripe(stripe),
     _stacks(stacks),
     _nstripes(nstripes),
-    _string_dedup_requests() {}
+    _string_dedup_context() {}
 
 inline ZMarkCache* ZMarkContext::cache() {
   return &_cache;
@@ -51,8 +51,8 @@ inline ZMarkThreadLocalStacks* ZMarkContext::stacks() {
   return _stacks;
 }
 
-inline StringDedup::Requests* ZMarkContext::string_dedup_requests() {
-  return &_string_dedup_requests;
+inline ZStringDedupContext* ZMarkContext::string_dedup_context() {
+  return &_string_dedup_context;
 }
 
 inline size_t ZMarkContext::nstripes() {
