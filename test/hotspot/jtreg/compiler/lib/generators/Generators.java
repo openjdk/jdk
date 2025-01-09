@@ -288,8 +288,8 @@ public final class Generators {
     /**
      * A convenience helper to mix {@link #specialInts(int)} with {@link #uniformInts(int, int)}.
      */
-    public RestrictableGenerator<Integer> uniformIntsMixedWithSpecials(int weightA, int weightB, int rangeSpecial) {
-        return mixed(uniformInts(), specialInts(rangeSpecial), weightA, weightB);
+    public RestrictableGenerator<Integer> uniformIntsMixedWithSpecials(int weightUniform, int weightSpecial, int rangeSpecial) {
+        return mixed(uniformInts(), specialInts(rangeSpecial), weightUniform, weightSpecial);
     }
 
     /**

@@ -44,7 +44,9 @@ abstract class UniformIntersectionRestrictableGenerator<T extends Comparable<T>>
      */
     @Override
     public RestrictableGenerator<T> restricted(T newLo /*as*/, T newHi /*ae*/) {
-        if (lo().compareTo(newHi) > 0 || newLo.compareTo(hi()) > 0) throw new EmptyGeneratorException();
+        if (lo().compareTo(newHi) > 0 || newLo.compareTo(hi()) > 0) {
+            throw new EmptyGeneratorException();
+        }
         return doRestrictionFromIntersection(max(newLo, lo()), min(newHi, hi()));
     }
 

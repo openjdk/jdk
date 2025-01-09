@@ -74,10 +74,8 @@ public class ExampleTest {
 
     public static void test(Generator<Integer> g) {
         UnderTest underTest = new UnderTest();
-        for (int i = 0; i < 70_000_000; i++) {
-            for (int j = 0; j < 3; j++) {
-                underTest.doIt(g.next());
-            }
+        for (int i = 0; i < 70_000_000 * 3; i++) {
+            underTest.doIt(g.next());
         }
     }
 }
