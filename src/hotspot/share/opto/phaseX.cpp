@@ -1178,6 +1178,25 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     case Op_If:
       return false;
 
+    // RegionNode::Ideal does "Skip around the useless IF diamond".
+    //   245  IfTrue  === 244
+    //   258  If  === 245 257
+    //   259  IfTrue  === 258  [[ 263 ]]
+    //   260  IfFalse  === 258  [[ 263 ]]
+    //   263  Region  === 263 260 259  [[ 263 268 ]]
+    // to
+    //   245  IfTrue  === 244
+    //   263  Region  === 263 245 _  [[ 263 268 ]]
+    //
+    // "Useless" means that there is no code in either branch of the If.
+    // I found a case where this was not done yet during IGVN.
+    // Why does the Region not get added to IGVN worklist when the If diamond becomes useles?
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    case Op_Range:
+      return false;
+
     // In AddNode::Ideal, we call "commute", which swaps the inputs so
     // that smaller idx are first. Tracking it back, it led me to
     // PhaseIdealLoop::remix_address_expressions which swapped the edges.
@@ -1338,6 +1357,7 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
     case Op_StoreN:
+    case Op_StoreB:
       return false;
 
     // MemBarNode::Ideal does "Eliminate volatile MemBars for scalar replaced objects".
