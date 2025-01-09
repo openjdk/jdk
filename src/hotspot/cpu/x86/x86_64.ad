@@ -6467,7 +6467,7 @@ instruct cmovI_rReg_rReg_memUCF_ndd(rRegI dst, cmpOpUCF cop, rFlagsRegUCF cr, rR
 // Conditional move
 instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6479,7 +6479,6 @@ instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
 %}
 
 // Conditional move ndd
-/*
 instruct cmovN_reg_ndd(rRegN dst, rRegN src1, rRegN src2, rFlagsReg cr, cmpOp cop)
 %{
   predicate(UseAPX);
@@ -6491,12 +6490,12 @@ instruct cmovN_reg_ndd(rRegN dst, rRegN src1, rRegN src2, rFlagsReg cr, cmpOp co
     __ ecmovl((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);
-%}*/
+%}
 
 // Conditional move
 instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6508,7 +6507,7 @@ instruct cmovN_regU(cmpOpU cop, rFlagsRegU cr, rRegN dst, rRegN src)
 %}
 
 instruct cmovN_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -6517,7 +6516,6 @@ instruct cmovN_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
 %}
 
 // Conditional move ndd
-/*
 instruct cmovN_regU_ndd(rRegN dst, cmpOpU cop, rFlagsRegU cr, rRegN src1, rRegN src2)
 %{
   predicate(UseAPX);
@@ -6539,7 +6537,7 @@ instruct cmovN_regUCF_ndd(rRegN dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegN src1, 
   expand %{
     cmovN_regU_ndd(dst, cop, cr, src1, src2);
   %}
-%}*/
+%}
 
 instruct cmovN_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
@@ -6574,7 +6572,7 @@ instruct cmovN_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegN dst, rRegN src) 
 // Conditional move
 instruct cmovP_reg(rRegP dst, rRegP src, rFlagsReg cr, cmpOp cop)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6586,7 +6584,6 @@ instruct cmovP_reg(rRegP dst, rRegP src, rFlagsReg cr, cmpOp cop)
 %}
 
 // Conditional move ndd
-/*
 instruct cmovP_reg_ndd(rRegP dst, rRegP src1, rRegP src2, rFlagsReg cr, cmpOp cop)
 %{
   predicate(UseAPX);
@@ -6598,12 +6595,12 @@ instruct cmovP_reg_ndd(rRegP dst, rRegP src1, rRegP src2, rFlagsReg cr, cmpOp co
     __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg);  // XXX
-%}*/
+%}
 
 // Conditional move
 instruct cmovP_regU(cmpOpU cop, rFlagsRegU cr, rRegP dst, rRegP src)
 %{
-  //predicate(!UseAPX);
+  predicate(!UseAPX);
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
@@ -6615,7 +6612,6 @@ instruct cmovP_regU(cmpOpU cop, rFlagsRegU cr, rRegP dst, rRegP src)
 %}
 
 // Conditional move ndd
-/*
 instruct cmovP_regU_ndd(rRegP dst, cmpOpU cop, rFlagsRegU cr, rRegP src1, rRegP src2)
 %{
   predicate(UseAPX);
@@ -6627,7 +6623,7 @@ instruct cmovP_regU_ndd(rRegP dst, cmpOpU cop, rFlagsRegU cr, rRegP src1, rRegP 
     __ ecmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_cmov_reg); // XXX
-%}*/
+%}
 
 instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
   match(Set dst (CMoveP (Binary cop cr) (Binary dst src)));
@@ -6637,14 +6633,13 @@ instruct cmovP_regUCF(cmpOpUCF cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
   %}
 %}
 
-/*
 instruct cmovP_regUCF_ndd(rRegP dst, cmpOpUCF cop, rFlagsRegUCF cr, rRegP src1, rRegP src2) %{
   match(Set dst (CMoveP (Binary cop cr) (Binary src1 src2)));
   ins_cost(200);
   expand %{
     cmovP_regU_ndd(dst, cop, cr, src1, src2);
   %}
-%}*/
+%}
 
 instruct cmovP_regUCF2_ne(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) %{
   predicate(n->in(1)->in(1)->as_Bool()->_test._test == BoolTest::ne);
