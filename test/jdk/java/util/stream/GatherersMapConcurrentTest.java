@@ -301,7 +301,7 @@ public class GatherersMapConcurrentTest {
 
     @ParameterizedTest
     @MethodSource("concurrencyConfigurations")
-    public void behavesAsExpectedWhenShortCircuited(ConcurrencyConfig cc) {
+    public void shortCircuits(ConcurrencyConfig cc) {
         final var limitTo = Math.max(cc.config().streamSize() / 2, 1);
 
         final var expectedResult = cc.config().stream()
@@ -319,7 +319,7 @@ public class GatherersMapConcurrentTest {
 
     @ParameterizedTest
     @MethodSource("concurrencyConfigurations")
-    public void behavesAsExpectedWhenCallerIsInterrupted(ConcurrencyConfig cc) {
+    public void ignoresAndRestoresCallingThreadInterruption(ConcurrencyConfig cc) {
         final var limitTo = Math.max(cc.config().streamSize() / 2, 1);
 
         final var expectedResult = cc.config().stream()
@@ -346,7 +346,7 @@ public class GatherersMapConcurrentTest {
 
     @ParameterizedTest
     @MethodSource("concurrencyConfigurations")
-    public void behavesAsExpectedWhenHeadOfLineBlocking(ConcurrencyConfig cc) {
+    public void limitsWorkInProgressToMaxConcurrency(ConcurrencyConfig cc) {
         final var elementNum = new AtomicLong(0);
         final var wipCount = new AtomicLong(0);
         final var limitTo = Math.max(cc.config().streamSize() / 2, 1);

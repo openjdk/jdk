@@ -387,13 +387,15 @@ public final class Gatherers {
                 try {
                     boolean proceed = !downstream.isRejecting();
                     MapConcurrentTask current;
-                    while (proceed
+                    while (
+                        proceed
                         && (current = wip.peekFirst()) != null
-                        && (current.isDone() || atLeastN > 0)) {
+                        && (current.isDone() || atLeastN > 0)
+                    ) {
                         R result;
 
                         // Ensure that the task is done before proceeding
-                        for(;;) {
+                        for (;;) {
                             try {
                                 result = current.get();
                                 break;
@@ -418,13 +420,13 @@ public final class Gatherers {
                     // Clean up work-in-progress
                     if (!success && !wip.isEmpty()) {
                         // First signal cancellation for all tasks in progress
-                        for(var task : wip)
+                        for (var task : wip)
                             task.cancel(true);
 
                         // Then wait for all in progress task Threads to exit
                         MapConcurrentTask next;
                         while ((next = wip.pollFirst()) != null) {
-                            while(next.thread.isAlive()) {
+                            while (next.thread.isAlive()) {
                                 try {
                                     next.thread.join();
                                 } catch (InterruptedException ie) {
