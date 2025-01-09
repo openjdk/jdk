@@ -3361,6 +3361,7 @@ public class ForkJoinPool extends AbstractExecutorService
         static final int INITIAL_HEAP_CAPACITY = 1 << 6;
         final Thread scheduler;
         final ConcurrentLinkedQueue<DelayedTask<?>> pending;
+        final ConcurrentLinkedQueue<DelayedTask<?>> pendingRemoval;
         final ReentrantLock heapLock;
         final ForkJoinPool pool;
         DelayedTask<?>[] heap;
@@ -3371,6 +3372,7 @@ public class ForkJoinPool extends AbstractExecutorService
             pool = p;
             heap = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
             pending = new ConcurrentLinkedQueue<DelayedTask<?>>();
+            pendingRemoval = new ConcurrentLinkedQueue<DelayedTask<?>>();
             heapLock = new ReentrantLock();
             scheduler = new Thread(this);
         }
@@ -3417,7 +3419,9 @@ public class ForkJoinPool extends AbstractExecutorService
                         }
                     }
                     ConcurrentLinkedQueue<DelayedTask<?>> ts = pending;
+                    ConcurrentLinkedQueue<DelayedTask<?>> rs = pendingRemoval;
                     while (task != null ||        // add or remove pending tasts
+                           (rs != null && (task = rs.poll()) != null) ||
                            (ts != null && (task = ts.poll()) != null)) {
                         int s = heapSize, idx = task.heapIndex, newCap;
                         if (task.status >= 0) {
@@ -3534,7 +3538,7 @@ public class ForkJoinPool extends AbstractExecutorService
 
         final void shutdown() {
             ReentrantLock lock; DelayedTask<?>[] h;
-            Thread st; ConcurrentLinkedQueue<DelayedTask<?>> ts;
+            Thread st; ConcurrentLinkedQueue<DelayedTask<?>> ts, rs;
             if ((lock = this.heapLock) != null) {
                 lock.lock();
                 try {
@@ -3544,9 +3548,12 @@ public class ForkJoinPool extends AbstractExecutorService
                             DelayedTask<?> t; int s;
                             if ((t = h[s = --heapSize]) != null) {
                                 h[s] = null;
-                                try {
-                                    t.cancel(false);
-                                } catch (Throwable ignore) {
+                                t.heapIndex = -1;
+                                if (t.status >= 0) {
+                                    try {
+                                        t.cancel(false);
+                                    } catch (Throwable ignore) {
+                                    }
                                 }
                             }
                         }
@@ -3561,6 +3568,9 @@ public class ForkJoinPool extends AbstractExecutorService
                                 }
                             }
                         }
+                    }
+                    if ((rs = pendingRemoval) != null) {
+                        while (rs.poll() != null) ;
                     }
                 } finally {
                     lock.unlock();
@@ -3651,14 +3661,14 @@ public class ForkJoinPool extends AbstractExecutorService
 
     final void removeCancelledDelayedTask(DelayedTask<?> task) {
         DelayScheduler ds; ReentrantLock lock;
-        ConcurrentLinkedQueue<DelayedTask<?>> ts;
+        ConcurrentLinkedQueue<DelayedTask<?>> rs;
         if ((runState & STOP) == 0L &&
             (ds = delayer) != null && (lock = ds.heapLock) != null &&
-            (ts = ds.pending) != null && task != null) {
+            (rs = ds.pendingRemoval) != null && task != null) {
             if (!lock.tryLock()) {
                 if (task.heapIndex < 0)
                     return;
-                ts.offer(task);
+                rs.offer(task);
                 if (lock.isLocked() || !lock.tryLock())
                     return;
                 task = null;
