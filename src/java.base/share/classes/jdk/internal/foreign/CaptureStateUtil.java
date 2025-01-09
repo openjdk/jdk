@@ -30,6 +30,7 @@ import jdk.internal.misc.Unsafe;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -43,6 +44,7 @@ public final class CaptureStateUtil {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final long SIZE = Linker.Option.captureStateLayout().byteSize();
 
     private static final TerminatingThreadLocal<MemorySegment> TL = new TerminatingThreadLocal<>() {
         @Override
@@ -69,14 +71,16 @@ public final class CaptureStateUtil {
     private static final Map<Class<?>, Map<String, MethodHandle>> RETURN_FILTERS;
 
     static {
-        Map<Class<?>, Map<String, MethodHandle>> classMap = new HashMap<>();
+
+        final StructLayout stateLayout = Linker.Option.captureStateLayout();
+        final Map<Class<?>, Map<String, MethodHandle>> classMap = new HashMap<>();
         for (var clazz : new Class<?>[]{int.class, long.class}) {
-            Map<String, MethodHandle> handles = Linker.Option.captureStateLayout()
+            Map<String, MethodHandle> handles = stateLayout
                     .memberLayouts().stream()
                     .collect(Collectors.toUnmodifiableMap(
-                            l -> l.name().orElseThrow(),
-                            l -> {
-                                MethodHandle mh = getAsIntHandle(l);
+                            member -> member.name().orElseThrow(),
+                            member -> {
+                                MethodHandle mh = getAsIntHandle(stateLayout, member);
                                 MethodHandle returnFilter = clazz.equals(int.class)
                                         ? INT_RETURN_FILTER_MH
                                         : LONG_RETURN_FILTER_MH;
@@ -190,9 +194,8 @@ public final class CaptureStateUtil {
 
     @SuppressWarnings("restricted")
     private static MemorySegment malloc() {
-        final long size = Linker.Option.captureStateLayout().byteSize();
-        final long address = UNSAFE.allocateMemory(size);
-        return MemorySegment.ofAddress(address).reinterpret(size);
+        final long address = UNSAFE.allocateMemory(SIZE);
+        return MemorySegment.ofAddress(address).reinterpret(SIZE);
     }
 
     private static void free(MemorySegment segment) {
@@ -204,9 +207,9 @@ public final class CaptureStateUtil {
                 + " does not " + info);
     }
 
-    private static MethodHandle getAsIntHandle(MemoryLayout layout) {
-        MethodHandle handle = MhUtil.findStatic(LOOKUP, "getStateAsInt", MethodType.methodType(int.class, VarHandle.class));
-        return handle.bindTo(layout.varHandle());
+    private static MethodHandle getAsIntHandle(StructLayout parent, MemoryLayout layout) {
+        final MethodHandle handle = MhUtil.findStatic(LOOKUP, "getStateAsInt", MethodType.methodType(int.class, VarHandle.class));
+        return handle.bindTo(parent.varHandle(MemoryLayout.PathElement.groupElement(layout.name().orElseThrow())));
     }
 
     // Used reflectively by `getAsIntHandle(MemoryLayout layout)`
