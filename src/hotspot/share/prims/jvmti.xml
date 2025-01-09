@@ -3084,6 +3084,9 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
         </error>
+        <error id="JVMTI_ERROR_DUPLICATE">
+          There is already a frame pop event request at the specified depth.
+        </error>
       </errors>
     </function>
 
