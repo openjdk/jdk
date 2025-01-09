@@ -28,7 +28,11 @@
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include OS_HEADER(permitForbiddenFunctions)
+#ifdef _WINDOWS
+#include "permitForbiddenFunctions_windows.hpp"
+#else
+#include "permitForbiddenFunctions_posix.hpp"
+#endif
 
 // Provide wrappers for some functions otherwise forbidden from use in HotSpot.
 //
