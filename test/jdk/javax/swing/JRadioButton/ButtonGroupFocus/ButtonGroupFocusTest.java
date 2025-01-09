@@ -35,13 +35,10 @@ import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
-import java.awt.event.AWTEventListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
 
@@ -111,22 +108,14 @@ public final class ButtonGroupFocusTest {
             // Debugging aid: log focus owner changes...
             KeyboardFocusManager focusManager = getCurrentKeyboardFocusManager();
             focusManager.addPropertyChangeListener("focusOwner",
-                    new PropertyChangeListener() {
-                        @Override
-                        public void propertyChange(PropertyChangeEvent evt) {
-                            System.out.println(evt.getPropertyName()
-                                               + "\n\t" + evt.getOldValue()
-                                               + "\n\t" + evt.getNewValue());
-                        }
-                    });
+                    e -> System.out.println(e.getPropertyName()
+                                            + "\n\t" + e.getOldValue()
+                                            + "\n\t" + e.getNewValue()));
 
             // ...and dispatched key events
-            Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
-                @Override
-                public void eventDispatched(AWTEvent event) {
-                    System.out.println("Dispatched " + event);
-                }
-            }, AWTEvent.KEY_EVENT_MASK);
+            Toolkit.getDefaultToolkit().addAWTEventListener(
+                    e -> System.out.println("Dispatched " + e),
+                    AWTEvent.KEY_EVENT_MASK);
 
             frame.pack();
             frame.setLocationRelativeTo(null);
