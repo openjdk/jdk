@@ -237,8 +237,9 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     ShenandoahGenerationalHeap::heap()->complete_concurrent_cycle();
   }
 
-  // Instead of always reset before collect, some reset can be done after collect to save
-  // the time before before the cycle so the cycle can be started as soon as possible.
+  // Instead of always resetting immediately before the start of a new GC, we can often reset at the end of the
+  // previous GC. This allows us to start the next GC cycle more quickly after a trigger condition is detected,
+  // reducing the likelihood that GC will degenerate.
   entry_reset_after_collect();
 
   return true;
@@ -1205,11 +1206,14 @@ void ShenandoahConcurrentGC::op_reset_after_collect() {
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (heap->mode()->is_generational()) {
-    //if (!_do_old_gc_bootstrap && !heap->is_concurrent_old_mark_in_progress()) {
-      // Only reset for young generation, bitmap for old generation must be retained,
-      // except there is collection(global/old/degen/full) trigged to collect regions in old gen.
+    // Resetting bitmaps of young gen when bootstrap old GC or there is preempted old GC
+    // causes crash due to remembered set violation, hence condition is added to fix the crash.
+    // Assuming bitmaps of young gen are not used at all after the cycle, the crash should not
+    // have happend, it seems to tickle a bug in remembered set scan. Root causing and fixing of the bug
+    // will be tracked via ticket https://bugs.openjdk.org/browse/JDK-8347371
+    if (!_do_old_gc_bootstrap && !heap->is_concurrent_old_mark_in_progress()) {
       heap->young_generation()->reset_mark_bitmap<false>();
-    //}
+    }
   } else {
     _generation->reset_mark_bitmap<false>();
   }
