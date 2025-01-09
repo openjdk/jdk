@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ inline void Mapper<CON>::map_field_info(const FieldInfo& fi) {
   _consumer->accept_uint(fi.name_index());
   _consumer->accept_uint(fi.signature_index());
   _consumer->accept_uint(fi.offset());
-  _consumer->accept_uint(fi.access_flags().as_int());
+  _consumer->accept_uint(fi.access_flags().as_field_flags());
   _consumer->accept_uint(fi.field_flags().as_uint());
   if(fi.field_flags().has_any_optionals()) {
     if (fi.field_flags().is_initialized()) {

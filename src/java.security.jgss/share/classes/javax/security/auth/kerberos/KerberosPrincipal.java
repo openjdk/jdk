@@ -176,19 +176,6 @@ public final class KerberosPrincipal
             throw new IllegalArgumentException(e.getMessage());
         }
 
-        if (krb5Principal.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    sm.checkPermission(new ServicePermission(
-                            "@" + krb5Principal.getRealmAsString(), "-"));
-                } catch (SecurityException se) {
-                    // Swallow the actual exception to hide info
-                    throw new SecurityException("Cannot read realm info");
-                }
-            }
-        }
         this.nameType = nameType;
         fullName = krb5Principal.toString();
         realm = krb5Principal.getRealmString();

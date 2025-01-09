@@ -61,7 +61,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import jdk.jpackage.internal.util.XmlUtils;
 
-public final class AppImageFile {
+final class AppImageFile {
 
     // These values will be loaded from AppImage xml file.
     private final String appVersion;

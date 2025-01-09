@@ -198,10 +198,6 @@ objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   return o;
 }
 
-jint ArrayKlass::compute_modifier_flags() const {
-  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
-}
-
 // JVMTI support
 
 jint ArrayKlass::jvmti_class_status() const {

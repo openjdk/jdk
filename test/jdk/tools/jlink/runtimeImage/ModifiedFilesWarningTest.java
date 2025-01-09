@@ -39,7 +39,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1400m ModifiedFilesWarningTest
+ * @run main/othervm -Xmx1g ModifiedFilesWarningTest
  */
 public class ModifiedFilesWarningTest extends ModifiedFilesTest {
 
@@ -70,6 +70,6 @@ public class ModifiedFilesWarningTest extends ModifiedFilesTest {
         // verify we get the warning message
         out.stdoutShouldMatch("Warning: .* has been modified");
         out.stdoutShouldNotContain("java.lang.IllegalArgumentException");
-        out.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        out.stdoutShouldNotContain("IOException");
     }
 }

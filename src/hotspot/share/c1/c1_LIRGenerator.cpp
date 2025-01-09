@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1337,7 +1337,7 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
   __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
   // Get the answer.
-  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_INT), result);
+  __ move(new LIR_Address(klass, in_bytes(Klass::modifier_flags_offset()), T_CHAR), result);
 }
 
 void LIRGenerator::do_getObjectSize(Intrinsic* x) {
