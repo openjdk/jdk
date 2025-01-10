@@ -117,24 +117,24 @@ abstract class WindowUpdateSender {
      *             the caller wants to buffer.
      */
     boolean canBufferUnprocessedBytes(int len) {
-        long buffered, rcv;
+        long buffered, processed;
         // get received before unprocessed in order to avoid counting
         // unprocessed bytes that might get unbuffered asynchronously
         // twice.
-        rcv = received.get();
+        processed = received.get();
         buffered = unprocessed.addAndGet(len);
-        return !checkWindowSizeExceeded(rcv, buffered);
+        return !checkWindowSizeExceeded(processed, buffered);
     }
 
     // adds the provided amount to the amount of already
-    // received and processed bytes and checks whether the
+    // processed and processed bytes and checks whether the
     // flow control window is exceeded. If so, take
     // corrective actions and return true.
-    private boolean checkWindowSizeExceeded(long received, long len) {
+    private boolean checkWindowSizeExceeded(long processed, long len) {
         // because windowSize is bound by Integer.MAX_VALUE
         // we will never reach the point where received.get() + len
         // could overflow
-        long rcv = received + len;
+        long rcv = processed + len;
         return rcv > windowSize && windowSizeExceeded(rcv);
     }
 
