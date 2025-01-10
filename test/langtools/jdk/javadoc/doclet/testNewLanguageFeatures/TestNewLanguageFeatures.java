@@ -218,8 +218,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <dl class="notes">
                     <dt>All Implemented Interfaces:</dt>
                     <dd><code><a href="SubInterface.html" title="interface in pkg">SubInterface</a>&\
-                    lt;E&gt;</code>, <code><a href="SuperInterface.html" title="interface in pkg">Su\
-                    perInterface</a>&lt;E&gt;</code></dd>
+                    lt;E&gt;, <a href="SuperInterface.html" title="interface in pkg">SuperInterface<\
+                    /a>&lt;E&gt;</code></dd>
                     </dl>""");
 
         checkOutput("pkg/SuperInterface.html", true,

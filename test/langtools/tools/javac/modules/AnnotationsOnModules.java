@@ -804,7 +804,7 @@ public class AnnotationsOnModules extends ModuleTestBase {
                 .writeAll()
                 .getOutputLines(OutputKind.DIRECT);
         List<String> expectedErrors = List.of(
-            "- compiler.err.cant.access: m.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.bad.requires.flag: ACC_TRANSITIVE (0x0020))",
+            "- compiler.err.cant.access: m.module-info, (compiler.misc.bad.class.file.header: module-info.class, (compiler.misc.bad.requires.flag: ACC_TRANSITIVE (0x0020)))",
             "1 error"
         );
 

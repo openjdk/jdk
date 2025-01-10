@@ -30,7 +30,7 @@
  *
  * @requires vm.compiler2.enabled
  * @requires vm.opt.TieredCompilation == null
- * @requires os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires os.arch=="aarch64"
  * @requires vm.debug
  *
  * @run driver compiler.sharedstubs.SharedTrampolineTest -XX:-TieredCompilation

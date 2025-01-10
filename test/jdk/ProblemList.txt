@@ -540,16 +540,14 @@ java/io/IO/IO.java                                              8337935 linux-pp
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
-com/sun/management/DiagnosticCommandMBean/DcmdMBeanPermissionsTest.java 8340401 windows-all
-
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8308807 aix-ppc64
-sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8308807 aix-ppc64
-sun/management/jdp/JdpSpecificAddressTest.java                  8308807 aix-ppc64
+sun/management/jdp/JdpDefaultsTest.java                         8308807,8241865 aix-ppc64,macosx-aarch64
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8308807,8241865 aix-ppc64,macosx-aarch64
+sun/management/jdp/JdpSpecificAddressTest.java                  8308807,8241865 aix-ppc64,macosx-aarch64
 sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc64
 
 ############################################################################
@@ -584,8 +582,6 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 ############################################################################
 
 # jdk_nio
-
-java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
 
@@ -720,6 +716,8 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 
 # core_tools
 
+tools/jlink/runtimeImage/JavaSEReproducibleTest.java 8347376 generic-all
+tools/jlink/runtimeImage/PackagedModulesVsRuntimeImageLinkTest.java 8347376 generic-all
 
 ############################################################################
 
@@ -729,6 +727,8 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 
 # jdk_jdi
 
+com/sun/jdi/ProcessAttachTest.java         8346827 linux-all
+com/sun/jdi/ReattachStressTest.java        8346827 linux-all
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all

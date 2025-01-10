@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.AccessFlag;
@@ -138,21 +140,56 @@ public sealed interface ClassFile
 
     /**
      * Option describing whether to preserve the original constant pool when
-     * transforming a classfile.  Reusing the constant pool enables significant
-     * optimizations in processing time and minimizes differences between the
-     * original and transformed classfile, but may result in a bigger classfile
-     * when a classfile is significantly transformed.
-     * Default is {@code SHARED_POOL} to preserve the original constant
-     * pool.
+     * transforming a {@code class} file.  Reusing the constant pool enables
+     * significant optimizations in processing time and minimizes differences
+     * between the original and transformed {@code class} files, but may result
+     * in a bigger transformed {@code class} file when many elements of the
+     * original {@code class} file are dropped and many original constant
+     * pool entries become unused.  Default is {@link #SHARED_POOL} to preserve
+     * the original constant pool.
      *
+     * @see ConstantPoolBuilder
+     * @see #build(ClassEntry, ConstantPoolBuilder, Consumer)
+     * @see #transformClass(ClassModel, ClassTransform)
      * @since 24
      */
     enum ConstantPoolSharingOption implements Option {
 
-        /** Preserves the original constant pool when transforming classfile */
+        /**
+         * Preserves the original constant pool when transforming the {@code
+         * class} file.
+         * <p>
+         * These two transformations below are equivalent:
+         * {@snippet lang=java :
+         * ClassModel originalClass = null; // @replace substring=null; replacement=...
+         * ClassDesc resultClassName = null; // @replace substring=null; replacement=...
+         * ClassTransform classTransform = null; // @replace substring=null; replacement=...
+         * var resultOne = ClassFile.of(ConstantPoolSharingOption.SHARED_POOL)
+         *         .transformClass(originalClass, resultClassName, classTransform);
+         * var resultTwo = ClassFile.of().build(resultClassName, ConstantPoolBuilder.of(originalClass),
+         *         clb -> clb.transform(originalClass, classTransform));
+         * }
+         *
+         * @see ConstantPoolBuilder#of(ClassModel) ConstantPoolBuilder::of(ClassModel)
+         */
         SHARED_POOL,
 
-        /** Creates a new constant pool when transforming classfile */
+        /**
+         * Creates a new constant pool when transforming the {@code class} file.
+         * <p>
+         * These two transformations below are equivalent:
+         * {@snippet lang=java :
+         * ClassModel originalClass = null; // @replace substring=null; replacement=...
+         * ClassDesc resultClassName = null; // @replace substring=null; replacement=...
+         * ClassTransform classTransform = null; // @replace substring=null; replacement=...
+         * var resultOne = ClassFile.of(ConstantPoolSharingOption.NEW_POOL)
+         *         .transformClass(originalClass, resultClassName, classTransform);
+         * var resultTwo = ClassFile.of().build(resultClassName, ConstantPoolBuilder.of(),
+         *         clb -> clb.transform(originalClass, classTransform));
+         * }
+         *
+         * @see ConstantPoolBuilder#of() ConstantPoolBuilder::of()
+         */
         NEW_POOL
     }
 
@@ -230,17 +267,35 @@ public sealed interface ClassFile
     /**
      * Option describing whether to automatically rewrite short jumps to
      * long when necessary.
-     * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
+     * Default is {@link #FIX_SHORT_JUMPS} to automatically rewrite jump
      * instructions.
+     * <p>
+     * Due to physical restrictions, some types of instructions cannot encode
+     * certain jump targets with bci offsets less than -32768 or greater than
+     * 32767, as they use a {@code s2} to encode such an offset.  (The maximum
+     * length of the {@code code} array is 65535.)  These types of instructions
+     * are called "short jumps".
      *
+     * @see BranchInstruction
+     * @see DiscontinuedInstruction.JsrInstruction
      * @since 24
      */
     enum ShortJumpsOption implements Option {
 
-        /** Automatically convert short jumps to long when necessary */
+        /**
+         * Automatically convert short jumps to long when necessary.
+         * <p>
+         * For an invalid instruction model, a {@link CodeBuilder} may generate
+         * another or a few other instructions to accomplish the same effect.
+         */
         FIX_SHORT_JUMPS,
 
-        /** Fail if short jump overflows */
+        /**
+         * Fail with an {@link IllegalArgumentException} if short jump overflows.
+         * <p>
+         * This is useful to ensure the physical accuracy of a generated {@code
+         * class} file.
+         */
         FAIL_ON_SHORT_JUMPS
     }
 
