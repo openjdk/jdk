@@ -250,9 +250,9 @@ const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
-JFR_ONLY(
-  const TypeFunc* OptoRuntime::_class_id_load_barrier_Type        = nullptr;
-)
+#ifdef INCLUDE_JFR
+const TypeFunc* OptoRuntime::_class_id_load_barrier_Type          = nullptr;
+#endif // INCLUDE_JFR
 #ifdef INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
 #endif // INCLUDE_JVMTI
@@ -626,7 +626,7 @@ static const TypeFunc* make_new_array_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::multianewarray_Type(int ndim) {
+const TypeFunc* OptoRuntime::multianewarray_Type(int ndim) {
   // create input type (domain)
   const int nargs = ndim + 1;
   const Type **fields = TypeTuple::fields(nargs);
@@ -780,7 +780,7 @@ static const TypeFunc* make_Math_D_D_Type() {
   return TypeFunc::make(domain, range);
 }
 
-const TypeFunc *OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type) {
+const TypeFunc* OptoRuntime::Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type) {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(num_arg);
   // Symbol* name of class to be loaded

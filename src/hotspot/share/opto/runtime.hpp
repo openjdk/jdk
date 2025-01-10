@@ -132,70 +132,72 @@ class OptoRuntime : public AllStatic {
 #undef C2_JVMTI_STUB_FIELD_DECLARE
 
   // static TypeFunc* data members
-  static const TypeFunc *_new_instance_Type;
-  static const TypeFunc *_new_array_Type;
-  static const TypeFunc *_multianewarray2_Type;
-  static const TypeFunc *_multianewarray3_Type;
-  static const TypeFunc *_multianewarray4_Type;
-  static const TypeFunc *_multianewarray5_Type;
-  static const TypeFunc *_multianewarrayN_Type;
-  static const TypeFunc *_complete_monitor_enter_Type;
-  static const TypeFunc *_complete_monitor_exit_Type;
-  static const TypeFunc *_monitor_notify_Type;
-  static const TypeFunc *_uncommon_trap_Type;
-  static const TypeFunc *_athrow_Type;
-  static const TypeFunc *_rethrow_Type;
-  static const TypeFunc *_Math_D_D_Type;
-  static const TypeFunc *_Math_DD_D_Type;
-  static const TypeFunc *_modf_Type;
-  static const TypeFunc *_l2f_Type;
-  static const TypeFunc *_void_long_Type;
-  static const TypeFunc *_void_void_Type;
-  static const TypeFunc *_jfr_write_checkpoint_Type;
-  static const TypeFunc *_flush_windows_Type;
-  static const TypeFunc *_fast_arraycopy_Type;
-  static const TypeFunc *_checkcast_arraycopy_Type;
-  static const TypeFunc *_generic_arraycopy_Type;
-  static const TypeFunc *_slow_arraycopy_Type;
-  static const TypeFunc *_unsafe_setmemory_Type;
-  static const TypeFunc *_array_fill_Type;
-  static const TypeFunc *_array_sort_Type;
-  static const TypeFunc *_array_partition_Type;
-  static const TypeFunc *_aescrypt_block_Type;
-  static const TypeFunc *_cipherBlockChaining_aescrypt_Type;
-  static const TypeFunc *_electronicCodeBook_aescrypt_Type;
-  static const TypeFunc *_counterMode_aescrypt_Type;
-  static const TypeFunc *_galoisCounterMode_aescrypt_Type;
-  static const TypeFunc *_digestBase_implCompress_with_sha3_Type;
-  static const TypeFunc *_digestBase_implCompress_without_sha3_Type;
-  static const TypeFunc *_digestBase_implCompressMB_with_sha3_Type;
-  static const TypeFunc *_digestBase_implCompressMB_without_sha3_Type;
-  static const TypeFunc *_multiplyToLen_Type;
-  static const TypeFunc *_montgomeryMultiply_Type;
-  static const TypeFunc *_montgomerySquare_Type;
-  static const TypeFunc *_squareToLen_Type;
-  static const TypeFunc *_mulAdd_Type;
-  static const TypeFunc *_bigIntegerShift_Type;
-  static const TypeFunc *_vectorizedMismatch_Type;
-  static const TypeFunc *_ghash_processBlocks_Type;
-  static const TypeFunc *_chacha20Block_Type;
-  static const TypeFunc *_base64_encodeBlock_Type;
-  static const TypeFunc *_base64_decodeBlock_Type;
-  static const TypeFunc *_string_IndexOf_Type;
-  static const TypeFunc *_poly1305_processBlocks_Type;
-  static const TypeFunc *_intpoly_montgomeryMult_P256_Type;
-  static const TypeFunc *_intpoly_assign_Type;
-  static const TypeFunc *_updateBytesCRC32_Type;
-  static const TypeFunc *_updateBytesCRC32C_Type;
-  static const TypeFunc *_updateBytesAdler32_Type;
-  static const TypeFunc *_osr_end_Type;
-  static const TypeFunc *_register_finalizer_Type;
-  JFR_ONLY(static const TypeFunc *_class_id_load_barrier_Type;)
+  static const TypeFunc* _new_instance_Type;
+  static const TypeFunc* _new_array_Type;
+  static const TypeFunc* _multianewarray2_Type;
+  static const TypeFunc* _multianewarray3_Type;
+  static const TypeFunc* _multianewarray4_Type;
+  static const TypeFunc* _multianewarray5_Type;
+  static const TypeFunc* _multianewarrayN_Type;
+  static const TypeFunc* _complete_monitor_enter_Type;
+  static const TypeFunc* _complete_monitor_exit_Type;
+  static const TypeFunc* _monitor_notify_Type;
+  static const TypeFunc* _uncommon_trap_Type;
+  static const TypeFunc* _athrow_Type;
+  static const TypeFunc* _rethrow_Type;
+  static const TypeFunc* _Math_D_D_Type;
+  static const TypeFunc* _Math_DD_D_Type;
+  static const TypeFunc* _modf_Type;
+  static const TypeFunc* _l2f_Type;
+  static const TypeFunc* _void_long_Type;
+  static const TypeFunc* _void_void_Type;
+  static const TypeFunc* _jfr_write_checkpoint_Type;
+  static const TypeFunc* _flush_windows_Type;
+  static const TypeFunc* _fast_arraycopy_Type;
+  static const TypeFunc* _checkcast_arraycopy_Type;
+  static const TypeFunc* _generic_arraycopy_Type;
+  static const TypeFunc* _slow_arraycopy_Type;
+  static const TypeFunc* _unsafe_setmemory_Type;
+  static const TypeFunc* _array_fill_Type;
+  static const TypeFunc* _array_sort_Type;
+  static const TypeFunc* _array_partition_Type;
+  static const TypeFunc* _aescrypt_block_Type;
+  static const TypeFunc* _cipherBlockChaining_aescrypt_Type;
+  static const TypeFunc* _electronicCodeBook_aescrypt_Type;
+  static const TypeFunc* _counterMode_aescrypt_Type;
+  static const TypeFunc* _galoisCounterMode_aescrypt_Type;
+  static const TypeFunc* _digestBase_implCompress_with_sha3_Type;
+  static const TypeFunc* _digestBase_implCompress_without_sha3_Type;
+  static const TypeFunc* _digestBase_implCompressMB_with_sha3_Type;
+  static const TypeFunc* _digestBase_implCompressMB_without_sha3_Type;
+  static const TypeFunc* _multiplyToLen_Type;
+  static const TypeFunc* _montgomeryMultiply_Type;
+  static const TypeFunc* _montgomerySquare_Type;
+  static const TypeFunc* _squareToLen_Type;
+  static const TypeFunc* _mulAdd_Type;
+  static const TypeFunc* _bigIntegerShift_Type;
+  static const TypeFunc* _vectorizedMismatch_Type;
+  static const TypeFunc* _ghash_processBlocks_Type;
+  static const TypeFunc* _chacha20Block_Type;
+  static const TypeFunc* _base64_encodeBlock_Type;
+  static const TypeFunc* _base64_decodeBlock_Type;
+  static const TypeFunc* _string_IndexOf_Type;
+  static const TypeFunc* _poly1305_processBlocks_Type;
+  static const TypeFunc* _intpoly_montgomeryMult_P256_Type;
+  static const TypeFunc* _intpoly_assign_Type;
+  static const TypeFunc* _updateBytesCRC32_Type;
+  static const TypeFunc* _updateBytesCRC32C_Type;
+  static const TypeFunc* _updateBytesAdler32_Type;
+  static const TypeFunc* _osr_end_Type;
+  static const TypeFunc* _register_finalizer_Type;
+#ifdef INCLUDE_JFR
+  static const TypeFunc* _class_id_load_barrier_Type;
+#endif // INCLUDE_JFR
 #ifdef INCLUDE_JVMTI
-  static const TypeFunc *_notify_jvmti_vthread_Type;
+  static const TypeFunc* _notify_jvmti_vthread_Type;
 #endif // INCLUDE_JVMTI
-  static const TypeFunc *_dtrace_method_entry_exit_Type;
-  static const TypeFunc *_dtrace_object_alloc_Type;
+  static const TypeFunc* _dtrace_method_entry_exit_Type;
+  static const TypeFunc* _dtrace_object_alloc_Type;
 
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
@@ -308,113 +310,113 @@ private:
   // Type functions
   // ======================================================
 
-  static inline const TypeFunc *new_instance_Type() {
+  static inline const TypeFunc* new_instance_Type() {
     assert(_new_instance_Type != nullptr, "should be initialized");
     return _new_instance_Type;
   }
 
-  static inline const TypeFunc *new_array_Type() {
+  static inline const TypeFunc* new_array_Type() {
     assert(_new_array_Type != nullptr, "should be initialized");
     return _new_array_Type;
   }
 
-  static inline const TypeFunc *new_array_nozero_Type() {
+  static inline const TypeFunc* new_array_nozero_Type() {
     return new_array_Type();
   }
 
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
 
-  static inline const TypeFunc *multianewarray2_Type() {
+  static inline const TypeFunc* multianewarray2_Type() {
     assert(_multianewarray2_Type != nullptr, "should be initialized");
     return _multianewarray2_Type;
   }
 
-  static inline const TypeFunc *multianewarray3_Type() {
+  static inline const TypeFunc* multianewarray3_Type() {
     assert(_multianewarray3_Type != nullptr, "should be initialized");
     return _multianewarray3_Type;
   }
 
-  static inline const TypeFunc *multianewarray4_Type() {
+  static inline const TypeFunc* multianewarray4_Type() {
     assert(_multianewarray4_Type != nullptr, "should be initialized");
     return _multianewarray4_Type;
   }
 
-  static inline const TypeFunc *multianewarray5_Type() {
+  static inline const TypeFunc* multianewarray5_Type() {
     assert(_multianewarray5_Type != nullptr, "should be initialized");
     return _multianewarray5_Type;
   }
 
-  static inline const TypeFunc *multianewarrayN_Type() {
+  static inline const TypeFunc* multianewarrayN_Type() {
     assert(_multianewarrayN_Type != nullptr, "should be initialized");
     return _multianewarrayN_Type;
   }
 
-  static inline const TypeFunc *complete_monitor_enter_Type() {
+  static inline const TypeFunc* complete_monitor_enter_Type() {
     assert(_complete_monitor_enter_Type != nullptr, "should be initialized");
     return _complete_monitor_enter_Type;
   }
 
-  static inline const TypeFunc *complete_monitor_locking_Type() {
+  static inline const TypeFunc* complete_monitor_locking_Type() {
     return complete_monitor_enter_Type();
   }
 
-  static inline const TypeFunc *complete_monitor_exit_Type() {
+  static inline const TypeFunc* complete_monitor_exit_Type() {
     assert(_complete_monitor_exit_Type != nullptr, "should be initialized");
     return _complete_monitor_exit_Type;
   }
 
-  static inline const TypeFunc *monitor_notify_Type() {
+  static inline const TypeFunc* monitor_notify_Type() {
     assert(_monitor_notify_Type != nullptr, "should be initialized");
     return _monitor_notify_Type;
   }
 
-  static inline const TypeFunc *monitor_notifyAll_Type() {
+  static inline const TypeFunc* monitor_notifyAll_Type() {
     return monitor_notify_Type();
   }
 
-  static inline const TypeFunc *uncommon_trap_Type() {
+  static inline const TypeFunc* uncommon_trap_Type() {
     assert(_uncommon_trap_Type != nullptr, "should be initialized");
     return _uncommon_trap_Type;
   }
 
-  static inline const TypeFunc *athrow_Type() {
+  static inline const TypeFunc* athrow_Type() {
     assert(_athrow_Type != nullptr, "should be initialized");
     return _athrow_Type;
   }
 
-  static inline const TypeFunc *rethrow_Type() {
+  static inline const TypeFunc* rethrow_Type() {
     assert(_rethrow_Type != nullptr, "should be initialized");
     return _rethrow_Type;
   }
 
-  static inline const TypeFunc *Math_D_D_Type() {
+  static inline const TypeFunc* Math_D_D_Type() {
     assert(_Math_D_D_Type != nullptr, "should be initialized");
     return _Math_D_D_Type;
   }
 
-  static inline const TypeFunc *Math_DD_D_Type() {
+  static inline const TypeFunc* Math_DD_D_Type() {
     assert(_Math_DD_D_Type != nullptr, "should be initialized");
     return _Math_DD_D_Type;
   }
 
   static const TypeFunc* Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type);
 
-  static inline const TypeFunc *modf_Type() {
+  static inline const TypeFunc* modf_Type() {
     assert(_modf_Type != nullptr, "should be initialized");
     return _modf_Type;
   }
 
-  static inline const TypeFunc *l2f_Type() {
+  static inline const TypeFunc* l2f_Type() {
     assert(_l2f_Type != nullptr, "should be initialized");
     return _l2f_Type;
   }
 
-  static inline const TypeFunc *void_long_Type() {
+  static inline const TypeFunc* void_long_Type() {
     assert(_void_long_Type != nullptr, "should be initialized");
     return _void_long_Type;
   }
 
-  static inline const TypeFunc *void_void_Type() {
+  static inline const TypeFunc* void_void_Type() {
     assert(_void_void_Type != nullptr, "should be initialized");
     return _void_void_Type;
   }
@@ -430,7 +432,7 @@ private:
   }
 
   // arraycopy routine types
-  static inline const TypeFunc *fast_arraycopy_Type() {
+  static inline const TypeFunc* fast_arraycopy_Type() {
     assert(_fast_arraycopy_Type != nullptr, "should be initialized");
     // This signature is simple:  Two base pointers and a size_t.
     return _fast_arraycopy_Type;
