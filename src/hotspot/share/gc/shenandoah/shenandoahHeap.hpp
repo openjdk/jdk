@@ -364,9 +364,7 @@ private:
   size_t _gc_no_progress_count;
 
   // This updates the singular, global gc state. This call must happen on a safepoint.
-  // However, in some cases (init update refs, e.g.), the gc state may change concurrently
-  // and will be propagated to all threads by a handshake operation.
-  void set_gc_state(uint mask, bool value);
+  void set_gc_state_at_safepoint(uint mask, bool value);
 
 public:
   // This returns the raw value of the singular, global gc state.
@@ -375,7 +373,9 @@ public:
   // Compares the given state against either the global gc state, or the thread local state.
   // The global gc state may change on a safepoint and is the correct value to use until
   // the global gc state has been propagated to all threads (after which, this method will
-  // compare against the thread local state).
+  // compare against the thread local state). The thread local gc state may also be changed
+  // by a handshake operation, in which case, this function continues using the updated thread
+  // local value.
   bool is_gc_state(GCState state) const;
 
   // This copies the global gc state into a thread local variable for all threads.
