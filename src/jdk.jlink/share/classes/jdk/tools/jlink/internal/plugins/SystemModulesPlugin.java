@@ -29,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.module.Configuration;
@@ -38,7 +37,6 @@ import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
-import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
@@ -46,7 +44,6 @@ import java.lang.module.ResolvedModule;
 import java.lang.reflect.ClassFileFormatVersion;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -60,7 +57,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -78,14 +74,21 @@ import java.lang.classfile.attribute.ModulePackagesAttribute;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.TypeKind;
-import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.CodeBuilder;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
+
+import static java.lang.classfile.ClassFile.*;
+import static jdk.tools.jlink.internal.Snippets.*;
+import static jdk.tools.jlink.internal.Snippets.CollectionSnippetBuilder.ENUM_PAGE_SIZE;
+import static jdk.tools.jlink.internal.Snippets.CollectionSnippetBuilder.STRING_PAGE_SIZE;
 
 /**
  * Jlink plugin to reconstitute module descriptors and other attributes for system
@@ -329,6 +332,17 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         SystemModulesClassGenerator generator
             = new SystemModulesClassGenerator(className, moduleInfos, moduleDescriptorsPerMethod);
         byte[] bytes = generator.genClassBytes(cf);
+        // Diagnosis help, can be removed
+        if (Boolean.parseBoolean(System.getProperty("jlink.dumpSystemModuleClass", "false"))) {
+            try {
+                var filePath = Path.of(className + ".class").toAbsolutePath();
+                System.err.println("Write " + filePath.toString());
+                Files.createDirectories(filePath.getParent());
+                Files.write(filePath, bytes);
+            } catch (IOException ioe) {
+                ioe.printStackTrace(System.err);
+            }
+        }
         String rn = "/java.base/" + className + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, bytes);
         out.add(e);
@@ -513,14 +527,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
     static class SystemModulesClassGenerator {
         private static final ClassDesc CD_MODULE_DESCRIPTOR =
             ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor");
-        private static final ClassDesc CD_MODULE_BUILDER =
-            ClassDesc.ofInternalName("jdk/internal/module/Builder");
-        private static final ClassDesc CD_REQUIRES_MODIFIER =
-            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires$Modifier");
-        private static final ClassDesc CD_EXPORTS_MODIFIER =
-            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports$Modifier");
-        private static final ClassDesc CD_OPENS_MODIFIER =
-            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens$Modifier");
         private static final ClassDesc CD_MODULE_TARGET =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleTarget");
         private static final ClassDesc CD_MODULE_HASHES =
@@ -538,16 +544,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private static final MethodTypeDesc MTD_Map = MethodTypeDesc.of(CD_Map);
         private static final MethodTypeDesc MTD_MapEntry_Object_Object = MethodTypeDesc.of(CD_Map_Entry, CD_Object, CD_Object);
         private static final MethodTypeDesc MTD_Map_MapEntryArray = MethodTypeDesc.of(CD_Map, CD_Map_Entry.arrayType());
-        private static final MethodTypeDesc MTD_Set_ObjectArray = MethodTypeDesc.of(CD_Set, CD_Object.arrayType());
 
         private static final int MAX_LOCAL_VARS = 256;
 
-        private final int MD_VAR         = 1;  // variable for ModuleDescriptor
         private final int MT_VAR         = 1;  // variable for ModuleTarget
         private final int MH_VAR         = 1;  // variable for ModuleHashes
-        private final int DEDUP_LIST_VAR = 2;
-        private final int BUILDER_VAR    = 3;
-        private int nextLocalVar         = 4;  // index to next local variable
+        private final int BUILDER_VAR    = 2;
 
         // name of class to generate
         private final ClassDesc classDesc;
@@ -560,8 +562,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         // A builder to create one single Set instance for a given set of
         // names or modifiers to reduce the footprint
         // e.g. target modules of qualified exports
-        private final DedupSetBuilder dedupSetBuilder
-            = new DedupSetBuilder(this::getNextLocalVar);
+        private final DedupSetBuilder dedupSetBuilder;
+        private final ArrayList<Snippet> clinitSnippets = new ArrayList<>();
 
         public SystemModulesClassGenerator(String className,
                                            List<ModuleInfo> moduleInfos,
@@ -569,11 +571,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             this.classDesc = ClassDesc.ofInternalName(className);
             this.moduleInfos = moduleInfos;
             this.moduleDescriptorsPerMethod = moduleDescriptorsPerMethod;
+            this.dedupSetBuilder = new DedupSetBuilder(this.classDesc);
             moduleInfos.forEach(mi -> dedups(mi.descriptor()));
-        }
-
-        private int getNextLocalVar() {
-            return nextLocalVar++;
         }
 
         /*
@@ -636,6 +635,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                         // generate moduleReads
                         genModuleReads(clb, cf);
+
+                        // generate static initializer
+                        genClassInitializer(clb);
                     });
         }
 
@@ -652,6 +654,19 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                              INIT_NAME,
                                              MTD_void)
                               .return_());
+        }
+
+        private void genClassInitializer(ClassBuilder clb) {
+            if (!clinitSnippets.isEmpty()) {
+                clb.withMethodBody(
+                        CLASS_INIT_NAME,
+                        MTD_void,
+                        ACC_STATIC,
+                        cob -> {
+                            clinitSnippets.forEach(s -> s.emit(cob));
+                            cob.return_();
+                        });
+            }
         }
 
         /**
@@ -694,146 +709,25 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate bytecode for moduleDescriptors method
          */
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
-            if (moduleInfos.size() <= moduleDescriptorsPerMethod) {
-                clb.withMethodBody(
-                        "moduleDescriptors",
-                        MTD_ModuleDescriptorArray,
-                        ACC_PUBLIC,
-                        cob -> {
-                            cob.loadConstant(moduleInfos.size())
-                               .anewarray(CD_MODULE_DESCRIPTOR)
-                               .astore(MD_VAR);
+            var dedupSets = dedupSetBuilder.build(clb);
+            dedupSets.cacheSetupSnippet().ifPresent(clinitSnippets::add);
 
-                            for (int index = 0; index < moduleInfos.size(); index++) {
-                                ModuleInfo minfo = moduleInfos.get(index);
-                                new ModuleDescriptorBuilder(cob,
-                                                            minfo.descriptor(),
-                                                            minfo.packages(),
-                                                            index).build();
-                            }
-                            cob.aload(MD_VAR)
-                               .areturn();
-                        });
-                return;
-            }
-
-
-            // Split the module descriptors be created by multiple helper methods.
-            // Each helper method "subi" creates the maximum N number of module descriptors
-            //     mi, m{i+1} ...
-            // to avoid exceeding the 64kb limit of method length.  Then it will call
-            // "sub{i+1}" to creates the next batch of module descriptors m{i+n}, m{i+n+1}...
-            // and so on.  During the construction of the module descriptors, the string sets and
-            // modifier sets are deduplicated (see SystemModulesClassGenerator.DedupSetBuilder)
-            // and cached in the locals. These locals are saved in an array list so
-            // that the helper method can restore the local variables that may be
-            // referenced by the bytecode generated for creating module descriptors.
-            // Pseudo code looks like this:
-            //
-            // void subi(ModuleDescriptor[] mdescs, ArrayList<Object> localvars) {
-            //      // assign localvars to local variables
-            //      var l3 = localvars.get(0);
-            //      var l4 = localvars.get(1);
-            //        :
-            //      // fill mdescs[i] to mdescs[i+n-1]
-            //      mdescs[i] = ...
-            //      mdescs[i+1] = ...
-            //        :
-            //      // save new local variables added
-            //      localvars.add(lx)
-            //      localvars.add(l{x+1})
-            //        :
-            //      sub{i+i}(mdescs, localvars);
-            // }
-
-            List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
-            List<ModuleInfo> currentModuleInfos = null;
-            for (int index = 0; index < moduleInfos.size(); index++) {
-                if (index % moduleDescriptorsPerMethod == 0) {
-                    currentModuleInfos = new ArrayList<>();
-                    splitModuleInfos.add(currentModuleInfos);
-                }
-                currentModuleInfos.add(moduleInfos.get(index));
-            }
-
-            String helperMethodNamePrefix = "sub";
-            ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
+            var converter = new ModuleDescriptorBuilder(clb, dedupSets, classDesc);
+            var elementSnippets = converter.buildAll(moduleInfos);
+            var moduleDescriptors = new ArraySnippetBuilder(CD_MODULE_DESCRIPTOR)
+                    .classBuilder(clb)
+                    .ownerClassDesc(classDesc)
+                    .enablePagination("sub", moduleDescriptorsPerMethod)
+                    .build(elementSnippets);
 
             clb.withMethodBody(
                     "moduleDescriptors",
                     MTD_ModuleDescriptorArray,
                     ACC_PUBLIC,
                     cob -> {
-                        cob.loadConstant(moduleInfos.size())
-                           .anewarray(CD_MODULE_DESCRIPTOR)
-                           .dup()
-                           .astore(MD_VAR);
-                        cob.new_(arrayListClassDesc)
-                           .dup()
-                           .loadConstant(moduleInfos.size())
-                           .invokespecial(arrayListClassDesc, INIT_NAME, MethodTypeDesc.of(CD_void, CD_int))
-                           .astore(DEDUP_LIST_VAR);
-                        cob.aload(0)
-                           .aload(MD_VAR)
-                           .aload(DEDUP_LIST_VAR)
-                           .invokevirtual(
-                                   this.classDesc,
-                                   helperMethodNamePrefix + "0",
-                                   MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc)
-                           )
-                           .areturn();
+                        moduleDescriptors.emit(cob);
+                        cob.areturn();
                     });
-
-            int dedupVarStart = nextLocalVar;
-            for (int n = 0, count = 0; n < splitModuleInfos.size(); count += splitModuleInfos.get(n).size(), n++) {
-                int index = n;       // the index of which ModuleInfo being processed in the current batch
-                int start = count;   // the start index to the return ModuleDescriptor array for the current batch
-                int curDedupVar = nextLocalVar;
-                clb.withMethodBody(
-                        helperMethodNamePrefix + index,
-                        MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
-                        ACC_PUBLIC,
-                        cob -> {
-                            if (curDedupVar > dedupVarStart) {
-                                for (int i = dedupVarStart; i < curDedupVar; i++) {
-                                    cob.aload(DEDUP_LIST_VAR)
-                                       .loadConstant(i - dedupVarStart)
-                                       .invokevirtual(arrayListClassDesc, "get", MethodTypeDesc.of(CD_Object, CD_int))
-                                       .astore(i);
-                                }
-                            }
-
-                            List<ModuleInfo> currentBatch = splitModuleInfos.get(index);
-                            for (int j = 0; j < currentBatch.size(); j++) {
-                                ModuleInfo minfo = currentBatch.get(j);
-                                new ModuleDescriptorBuilder(cob,
-                                                            minfo.descriptor(),
-                                                            minfo.packages(),
-                                                            start + j).build();
-                            }
-
-                            if (index < splitModuleInfos.size() - 1) {
-                                if (nextLocalVar > curDedupVar) {
-                                    for (int i = curDedupVar; i < nextLocalVar; i++) {
-                                        cob.aload(DEDUP_LIST_VAR)
-                                           .aload(i)
-                                           .invokevirtual(arrayListClassDesc, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
-                                           .pop();
-                                    }
-                                }
-                                cob.aload(0)
-                                   .aload(MD_VAR)
-                                   .aload(DEDUP_LIST_VAR)
-                                   .invokevirtual(
-                                           this.classDesc,
-                                           helperMethodNamePrefix + (index+1),
-                                           MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc)
-                                   );
-                            }
-
-                            cob.return_();
-                        });
-            }
         }
 
         /**
@@ -977,6 +871,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                         // map of Set -> local
                         Map<Set<String>, Integer> locals;
+                        int setBuilt = 0;
 
                         // generate code to create the sets that are duplicated
                         if (dedup) {
@@ -988,7 +883,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             locals = new HashMap<>();
                             int index = 1;
                             for (Set<String> s : duplicateSets) {
-                                genImmutableSet(cob, s);
+                                genImmutableSet(clb, cob, s, methodName + setBuilt++);
                                 cob.astore(index);
                                 locals.put(s, index);
                                 if (++index >= MAX_LOCAL_VARS) {
@@ -1015,7 +910,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             // if de-duplicated then load the local, otherwise generate code
                             Integer varIndex = locals.get(s);
                             if (varIndex == null) {
-                                genImmutableSet(cob, s);
+                                genImmutableSet(clb, cob, s, methodName + setBuilt++);
                             } else {
                                 cob.aload(varIndex);
                             }
@@ -1040,449 +935,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         /**
          * Generate code to generate an immutable set.
          */
-        private void genImmutableSet(CodeBuilder cob, Set<String> set) {
-            int size = set.size();
-
-            // use Set.of(Object[]) when there are more than 2 elements
-            // use Set.of(Object) or Set.of(Object, Object) when fewer
-            if (size > 2) {
-                cob.loadConstant(size)
-                   .anewarray(CD_String);
-                int i = 0;
-                for (String element : sorted(set)) {
-                    cob.dup()
-                       .loadConstant(i)
-                       .loadConstant(element)
-                       .aastore();
-                    i++;
-                }
-                cob.invokestatic(CD_Set,
-                                 "of",
-                                 MTD_Set_ObjectArray,
-                                 true);
-            } else {
-                for (String element : sorted(set)) {
-                    cob.loadConstant(element);
-                }
-                var mtdArgs = new ClassDesc[size];
-                Arrays.fill(mtdArgs, CD_Object);
-                cob.invokestatic(CD_Set,
-                                 "of",
-                                 MethodTypeDesc.of(CD_Set, mtdArgs),
-                                 true);
-            }
-        }
-
-        class ModuleDescriptorBuilder {
-            static final ClassDesc CD_EXPORTS =
-                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports");
-            static final ClassDesc CD_OPENS =
-                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens");
-            static final ClassDesc CD_PROVIDES =
-                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Provides");
-            static final ClassDesc CD_REQUIRES =
-                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires");
-
-            // method signature for static Builder::newExports, newOpens,
-            // newProvides, newRequires methods
-            static final MethodTypeDesc MTD_EXPORTS_MODIFIER_SET_STRING_SET =
-                MethodTypeDesc.of(CD_EXPORTS, CD_Set, CD_String, CD_Set);
-            static final MethodTypeDesc MTD_EXPORTS_MODIFIER_SET_STRING =
-                MethodTypeDesc.of(CD_EXPORTS, CD_Set, CD_String);
-            static final MethodTypeDesc MTD_OPENS_MODIFIER_SET_STRING_SET =
-                MethodTypeDesc.of(CD_OPENS, CD_Set, CD_String, CD_Set);
-            static final MethodTypeDesc MTD_OPENS_MODIFIER_SET_STRING =
-                MethodTypeDesc.of(CD_OPENS, CD_Set, CD_String);
-            static final MethodTypeDesc MTD_PROVIDES_STRING_LIST =
-                MethodTypeDesc.of(CD_PROVIDES, CD_String, CD_List);
-            static final MethodTypeDesc MTD_REQUIRES_SET_STRING =
-                MethodTypeDesc.of(CD_REQUIRES, CD_Set, CD_String);
-            static final MethodTypeDesc MTD_REQUIRES_SET_STRING_STRING =
-                MethodTypeDesc.of(CD_REQUIRES, CD_Set, CD_String, CD_String);
-
-            // method signature for Builder instance methods that
-            // return this Builder instance
-            static final MethodTypeDesc MTD_EXPORTS_ARRAY =
-                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_EXPORTS.arrayType());
-            static final MethodTypeDesc MTD_OPENS_ARRAY =
-                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_OPENS.arrayType());
-            static final MethodTypeDesc MTD_PROVIDES_ARRAY =
-                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_PROVIDES.arrayType());
-            static final MethodTypeDesc MTD_REQUIRES_ARRAY =
-                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_REQUIRES.arrayType());
-            static final MethodTypeDesc MTD_SET = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_Set);
-            static final MethodTypeDesc MTD_STRING = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_String);
-            static final MethodTypeDesc MTD_BOOLEAN = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_boolean);
-            static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
-            static final MethodTypeDesc MTD_ModuleDescriptor_int = MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int);
-            static final MethodTypeDesc MTD_List_ObjectArray = MethodTypeDesc.of(CD_List, CD_Object.arrayType());
-
-            final CodeBuilder cob;
-            final ModuleDescriptor md;
-            final Set<String> packages;
-            final int index;
-
-            ModuleDescriptorBuilder(CodeBuilder cob, ModuleDescriptor md, Set<String> packages, int index) {
-                if (md.isAutomatic()) {
-                    throw new InternalError("linking automatic module is not supported");
-                }
-                this.cob = cob;
-                this.md = md;
-                this.packages = packages;
-                this.index = index;
-            }
-
-            void build() {
-                // new jdk.internal.module.Builder
-                newBuilder();
-
-                // requires
-                requires(md.requires());
-
-                // exports
-                exports(md.exports());
-
-                // opens
-                opens(md.opens());
-
-                // uses
-                uses(md.uses());
-
-                // provides
-                provides(md.provides());
-
-                // all packages
-                packages(packages);
-
-                // version
-                md.version().ifPresent(this::version);
-
-                // main class
-                md.mainClass().ifPresent(this::mainClass);
-
-                putModuleDescriptor();
-            }
-
-            void newBuilder() {
-                cob.new_(CD_MODULE_BUILDER)
-                   .dup()
-                   .loadConstant(md.name())
-                   .invokespecial(CD_MODULE_BUILDER,
-                                  INIT_NAME,
-                                  MTD_void_String)
-                   .astore(BUILDER_VAR);
-
-                if (md.isOpen()) {
-                    setModuleBit("open", true);
-                }
-                if (md.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC)) {
-                    setModuleBit("synthetic", true);
-                }
-                if (md.modifiers().contains(ModuleDescriptor.Modifier.MANDATED)) {
-                    setModuleBit("mandated", true);
-                }
-            }
-
-            /*
-             * Invoke Builder.<methodName>(boolean value)
-             */
-            void setModuleBit(String methodName, boolean value) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(value ? 1 : 0)
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  methodName,
-                                  MTD_BOOLEAN)
-                   .pop();
-            }
-
-            /*
-             * Put ModuleDescriptor into the modules array
-             */
-            void putModuleDescriptor() {
-                cob.aload(MD_VAR)
-                   .loadConstant(index)
-                   .aload(BUILDER_VAR)
-                   .loadConstant(md.hashCode())
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  "build",
-                                  MTD_ModuleDescriptor_int)
-                   .aastore();
-            }
-
-            /*
-             * Call Builder::newRequires to create Requires instances and
-             * then pass it to the builder by calling:
-             *      Builder.requires(Requires[])
-             *
-             */
-            void requires(Set<Requires> requires) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(requires.size())
-                   .anewarray(CD_REQUIRES);
-                int arrayIndex = 0;
-                for (Requires require : sorted(requires)) {
-                    String compiledVersion = null;
-                    if (require.compiledVersion().isPresent()) {
-                        compiledVersion = require.compiledVersion().get().toString();
-                    }
-
-                    cob.dup()               // arrayref
-                       .loadConstant(arrayIndex++);
-                    newRequires(require.modifiers(), require.name(), compiledVersion);
-                    cob.aastore();
-                }
-                cob.invokevirtual(CD_MODULE_BUILDER,
-                                  "requires",
-                                  MTD_REQUIRES_ARRAY)
-                    .pop();
-            }
-
-            /*
-             * Invoke Builder.newRequires(Set<Modifier> mods, String mn, String compiledVersion)
-             *
-             * Set<Modifier> mods = ...
-             * Builder.newRequires(mods, mn, compiledVersion);
-             */
-            void newRequires(Set<Requires.Modifier> mods, String name, String compiledVersion) {
-                int varIndex = dedupSetBuilder.indexOfRequiresModifiers(cob, mods);
-                cob.aload(varIndex)
-                   .loadConstant(name);
-                if (compiledVersion != null) {
-                    cob.loadConstant(compiledVersion)
-                       .invokestatic(CD_MODULE_BUILDER,
-                                     "newRequires",
-                                     MTD_REQUIRES_SET_STRING_STRING);
-                } else {
-                    cob.invokestatic(CD_MODULE_BUILDER,
-                                     "newRequires",
-                                     MTD_REQUIRES_SET_STRING);
-                }
-            }
-
-            /*
-             * Call Builder::newExports to create Exports instances and
-             * then pass it to the builder by calling:
-             *      Builder.exports(Exports[])
-             *
-             */
-            void exports(Set<Exports> exports) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(exports.size())
-                   .anewarray(CD_EXPORTS);
-                int arrayIndex = 0;
-                for (Exports export : sorted(exports)) {
-                    cob.dup()    // arrayref
-                       .loadConstant(arrayIndex++);
-                    newExports(export.modifiers(), export.source(), export.targets());
-                    cob.aastore();
-                }
-                cob.invokevirtual(CD_MODULE_BUILDER,
-                                  "exports",
-                                  MTD_EXPORTS_ARRAY)
-                    .pop();
-            }
-
-            /*
-             * Invoke
-             *     Builder.newExports(Set<Exports.Modifier> ms, String pn,
-             *                        Set<String> targets)
-             * or
-             *     Builder.newExports(Set<Exports.Modifier> ms, String pn)
-             *
-             * Set<String> targets = new HashSet<>();
-             * targets.add(t);
-             * :
-             * :
-             *
-             * Set<Modifier> mods = ...
-             * Builder.newExports(mods, pn, targets);
-             */
-            void newExports(Set<Exports.Modifier> ms, String pn, Set<String> targets) {
-                int modifiersSetIndex = dedupSetBuilder.indexOfExportsModifiers(cob, ms);
-                if (!targets.isEmpty()) {
-                    int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
-                    cob.aload(modifiersSetIndex)
-                       .loadConstant(pn)
-                       .aload(stringSetIndex)
-                       .invokestatic(CD_MODULE_BUILDER,
-                                     "newExports",
-                                     MTD_EXPORTS_MODIFIER_SET_STRING_SET);
-                } else {
-                    cob.aload(modifiersSetIndex)
-                       .loadConstant(pn)
-                       .invokestatic(CD_MODULE_BUILDER,
-                                     "newExports",
-                                     MTD_EXPORTS_MODIFIER_SET_STRING);
-                }
-            }
-
-
-            /**
-             * Call Builder::newOpens to create Opens instances and
-             * then pass it to the builder by calling:
-             * Builder.opens(Opens[])
-             */
-            void opens(Set<Opens> opens) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(opens.size())
-                   .anewarray(CD_OPENS);
-                int arrayIndex = 0;
-                for (Opens open : sorted(opens)) {
-                    cob.dup()    // arrayref
-                       .loadConstant(arrayIndex++);
-                    newOpens(open.modifiers(), open.source(), open.targets());
-                    cob.aastore();
-                }
-                cob.invokevirtual(CD_MODULE_BUILDER,
-                                  "opens",
-                                  MTD_OPENS_ARRAY)
-                    .pop();
-            }
-
-            /*
-             * Invoke
-             *     Builder.newOpens(Set<Opens.Modifier> ms, String pn,
-             *                        Set<String> targets)
-             * or
-             *     Builder.newOpens(Set<Opens.Modifier> ms, String pn)
-             *
-             * Set<String> targets = new HashSet<>();
-             * targets.add(t);
-             * :
-             * :
-             *
-             * Set<Modifier> mods = ...
-             * Builder.newOpens(mods, pn, targets);
-             */
-            void newOpens(Set<Opens.Modifier> ms, String pn, Set<String> targets) {
-                int modifiersSetIndex = dedupSetBuilder.indexOfOpensModifiers(cob, ms);
-                if (!targets.isEmpty()) {
-                    int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
-                    cob.aload(modifiersSetIndex)
-                       .loadConstant(pn)
-                       .aload(stringSetIndex)
-                       .invokestatic(CD_MODULE_BUILDER,
-                                     "newOpens",
-                                     MTD_OPENS_MODIFIER_SET_STRING_SET);
-                } else {
-                    cob.aload(modifiersSetIndex)
-                       .loadConstant(pn)
-                       .invokestatic(CD_MODULE_BUILDER,
-                                     "newOpens",
-                                     MTD_OPENS_MODIFIER_SET_STRING);
-                }
-            }
-
-            /*
-             * Invoke Builder.uses(Set<String> uses)
-             */
-            void uses(Set<String> uses) {
-                int varIndex = dedupSetBuilder.indexOfStringSet(cob, uses);
-                cob.aload(BUILDER_VAR)
-                   .aload(varIndex)
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  "uses",
-                                  MTD_SET)
-                   .pop();
-            }
-
-            /*
-            * Call Builder::newProvides to create Provides instances and
-            * then pass it to the builder by calling:
-            *      Builder.provides(Provides[] provides)
-            *
-            */
-            void provides(Collection<Provides> provides) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(provides.size())
-                   .anewarray(CD_PROVIDES);
-                int arrayIndex = 0;
-                for (Provides provide : sorted(provides)) {
-                    cob.dup()    // arrayref
-                       .loadConstant(arrayIndex++);
-                    newProvides(provide.service(), provide.providers());
-                    cob.aastore();
-                }
-                cob.invokevirtual(CD_MODULE_BUILDER,
-                                  "provides",
-                                  MTD_PROVIDES_ARRAY)
-                    .pop();
-            }
-
-            /*
-             * Invoke Builder.newProvides(String service, Set<String> providers)
-             *
-             * Set<String> providers = new HashSet<>();
-             * providers.add(impl);
-             * :
-             * :
-             * Builder.newProvides(service, providers);
-             */
-            void newProvides(String service, List<String> providers) {
-                cob.loadConstant(service)
-                   .loadConstant(providers.size())
-                   .anewarray(CD_String);
-                int arrayIndex = 0;
-                for (String provider : providers) {
-                    cob.dup()    // arrayref
-                       .loadConstant(arrayIndex++)
-                       .loadConstant(provider)
-                       .aastore();
-                }
-                cob.invokestatic(CD_List,
-                                 "of",
-                                 MTD_List_ObjectArray,
-                                 true)
-                   .invokestatic(CD_MODULE_BUILDER,
-                                 "newProvides",
-                                 MTD_PROVIDES_STRING_LIST);
-            }
-
-            /*
-             * Invoke Builder.packages(String pn)
-             */
-            void packages(Set<String> packages) {
-                int varIndex = dedupSetBuilder.newStringSet(cob, packages);
-                cob.aload(BUILDER_VAR)
-                   .aload(varIndex)
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  "packages",
-                                  MTD_SET)
-                   .pop();
-            }
-
-            /*
-             * Invoke Builder.mainClass(String cn)
-             */
-            void mainClass(String cn) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(cn)
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  "mainClass",
-                                  MTD_STRING)
-                   .pop();
-            }
-
-            /*
-             * Invoke Builder.version(Version v);
-             */
-            void version(Version v) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(v.toString())
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  "version",
-                                  MTD_STRING)
-                   .pop();
-            }
-
-            void invokeBuilderMethod(String methodName, String value) {
-                cob.aload(BUILDER_VAR)
-                   .loadConstant(value)
-                   .invokevirtual(CD_MODULE_BUILDER,
-                                  methodName,
-                                  MTD_STRING)
-                   .pop();
-            }
+        private void genImmutableSet(ClassBuilder clb, CodeBuilder cob, Set<String> set, String methodNamePrefix) {
+            var snippets = Snippet.buildAll(sorted(set), Snippet::loadConstant);
+            new SetSnippetBuilder(CD_String)
+                    .classBuilder(clb)
+                    .ownerClassDesc(classDesc)
+                    .enablePagination(methodNamePrefix, STRING_PAGE_SIZE)
+                    .build(snippets)
+                    .emit(cob);
         }
 
         class ModuleHashesBuilder {
@@ -1578,239 +1038,233 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         /*
+         * Snippets to load the deduplicated set onto the operand stack.
+         * Set referenced more than once will be read from the cache, cacheSetupSnippet contains
+         * the bytecode to populate that cache.
+         */
+        static record DedupSnippets(Map<Set<String>, Snippet> stringSets,
+                                    Map<Set<Requires.Modifier>, Snippet> requiresModifiersSets,
+                                    Map<Set<Opens.Modifier>, Snippet> opensModifiersSets,
+                                    Map<Set<Exports.Modifier>, Snippet> exportsModifiersSets,
+                                    Optional<Snippet> cacheSetupSnippet) {};
+
+        /*
          * Wraps set creation, ensuring identical sets are properly deduplicated.
          */
         static class DedupSetBuilder {
-            // map Set<String> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<String>, SetBuilder<String>> stringSets = new HashMap<>();
-
-            // map Set<Requires.Modifier> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<Requires.Modifier>, EnumSetBuilder<Requires.Modifier>>
+            final Map<Set<String>, RefCounter<String>> stringSets = new HashMap<>();
+            final Map<Set<Requires.Modifier>, RefCounter<Requires.Modifier>>
                 requiresModifiersSets = new HashMap<>();
-
-            // map Set<Exports.Modifier> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<Exports.Modifier>, EnumSetBuilder<Exports.Modifier>>
+            final Map<Set<Exports.Modifier>, RefCounter<Exports.Modifier>>
                 exportsModifiersSets = new HashMap<>();
-
-            // map Set<Opens.Modifier> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<Opens.Modifier>, EnumSetBuilder<Opens.Modifier>>
+            final Map<Set<Opens.Modifier>, RefCounter<Opens.Modifier>>
                 opensModifiersSets = new HashMap<>();
 
-            private final int stringSetVar;
-            private final int enumSetVar;
-            private final IntSupplier localVarSupplier;
+            final ClassDesc owner;
+            final CacheBuilder cacheBuilder = new CacheBuilder();
+            int setBuilt = 0;
 
-            DedupSetBuilder(IntSupplier localVarSupplier) {
-                this.stringSetVar = localVarSupplier.getAsInt();
-                this.enumSetVar = localVarSupplier.getAsInt();
-                this.localVarSupplier = localVarSupplier;
+            DedupSetBuilder(ClassDesc owner) {
+                this.owner = owner;
             }
 
             /*
              * Add the given set of strings to this builder.
              */
             void stringSet(Set<String> strings) {
-                stringSets.computeIfAbsent(strings,
-                    s -> new SetBuilder<>(s, stringSetVar, localVarSupplier)
-                ).increment();
+                stringSets.computeIfAbsent(strings, RefCounter<String>::new).increment();
             }
 
             /*
              * Add the given set of Exports.Modifiers
              */
             void exportsModifiers(Set<Exports.Modifier> mods) {
-                exportsModifiersSets.computeIfAbsent(mods, s ->
-                                new EnumSetBuilder<>(s, CD_EXPORTS_MODIFIER,
-                                        enumSetVar, localVarSupplier)
-                ).increment();
+                exportsModifiersSets.computeIfAbsent(mods, RefCounter<Exports.Modifier>::new).increment();
             }
 
             /*
              * Add the given set of Opens.Modifiers
              */
             void opensModifiers(Set<Opens.Modifier> mods) {
-                opensModifiersSets.computeIfAbsent(mods, s ->
-                                new EnumSetBuilder<>(s, CD_OPENS_MODIFIER,
-                                        enumSetVar, localVarSupplier)
-                ).increment();
+                opensModifiersSets.computeIfAbsent(mods, RefCounter::new).increment();
             }
 
             /*
              * Add the given set of Requires.Modifiers
              */
             void requiresModifiers(Set<Requires.Modifier> mods) {
-                requiresModifiersSets.computeIfAbsent(mods, s ->
-                    new EnumSetBuilder<>(s, CD_REQUIRES_MODIFIER,
-                                         enumSetVar, localVarSupplier)
-                ).increment();
+                requiresModifiersSets.computeIfAbsent(mods, RefCounter::new).increment();
             }
 
             /*
-             * Retrieve the index to the given set of Strings. Emit code to
-             * generate it when SetBuilder::build is called.
+             * Generate bytecode to load a set onto the operand stack.
+             * Use cache if the set is referenced more than once.
              */
-            int indexOfStringSet(CodeBuilder cob, Set<String> names) {
-                return stringSets.get(names).build(cob);
+            private Snippet buildStringSet(ClassBuilder clb, RefCounter<String> setRef) {
+                return cacheBuilder.transform(setRef,
+                        new SetSnippetBuilder(CD_String)
+                                .classBuilder(clb)
+                                .ownerClassDesc(owner)
+                                .enablePagination("dedupSet" + setBuilt++, STRING_PAGE_SIZE)
+                                .build(Snippet.buildAll(setRef.sortedList(), Snippet::loadConstant)));
             }
 
             /*
-             * Retrieve the index to the given set of Exports.Modifier.
-             * Emit code to generate it when EnumSetBuilder::build is called.
+             * Generate the mapping from a set to the bytecode loading the set onto the operand stack.
+             * Ordering the sets to ensure same generated bytecode.
              */
-            int indexOfExportsModifiers(CodeBuilder cob, Set<Exports.Modifier> mods) {
-                return exportsModifiersSets.get(mods).build(cob);
-            }
-
-            /**
-             * Retrieve the index to the given set of Opens.Modifier.
-             * Emit code to generate it when EnumSetBuilder::build is called.
-             */
-            int indexOfOpensModifiers(CodeBuilder cob, Set<Opens.Modifier> mods) {
-                return opensModifiersSets.get(mods).build(cob);
-            }
-
-
-            /*
-             * Retrieve the index to the given set of Requires.Modifier.
-             * Emit code to generate it when EnumSetBuilder::build is called.
-             */
-            int indexOfRequiresModifiers(CodeBuilder cob, Set<Requires.Modifier> mods) {
-                return requiresModifiersSets.get(mods).build(cob);
+            private Map<Set<String>, Snippet> buildStringSets(ClassBuilder clb, Map<Set<String>, RefCounter<String>> map) {
+                Map<Set<String>, Snippet> snippets = new HashMap<>(map.size());
+                map.entrySet().stream()
+                        .sorted(Map.Entry.comparingByValue())
+                        .forEach(e -> snippets.put(e.getKey(), buildStringSet(clb, e.getValue())));
+                return snippets;
             }
 
             /*
-             * Build a new string set without any attempt to deduplicate it.
+             * Enum set support
              */
-            int newStringSet(CodeBuilder cob, Set<String> names) {
-                int index = new SetBuilder<>(names, stringSetVar, localVarSupplier).build(cob);
-                assert index == stringSetVar;
-                return index;
+            private <T extends Enum<T>> Snippet buildEnumSet(ClassBuilder clb, RefCounter<T> setRef) {
+                return cacheBuilder.transform(setRef,
+                        new SetSnippetBuilder(CD_Object)
+                                .classBuilder(clb)
+                                .ownerClassDesc(owner)
+                                .enablePagination("dedupSet" + setBuilt++, ENUM_PAGE_SIZE)
+                                .build(Snippet.buildAll(setRef.sortedList(), Snippet::loadEnum)));
             }
-        }
 
-        /*
-         * SetBuilder generates bytecode to create one single instance of Set
-         * for a given set of elements and assign to a local variable slot.
-         * When there is only one single reference to a Set<T>,
-         * it will reuse defaultVarIndex.  For a Set with multiple references,
-         * it will use a new local variable retrieved from the nextLocalVar
-         */
-        static class SetBuilder<T extends Comparable<T>> {
-            private static final MethodTypeDesc MTD_Set_ObjectArray = MethodTypeDesc.of(
-                    CD_Set, CD_Object.arrayType());
-
-            private final Set<T> elements;
-            private final int defaultVarIndex;
-            private final IntSupplier nextLocalVar;
-            private int refCount;
-            private int localVarIndex;
-
-            SetBuilder(Set<T> elements,
-                       int defaultVarIndex,
-                       IntSupplier nextLocalVar) {
-                this.elements = elements;
-                this.defaultVarIndex = defaultVarIndex;
-                this.nextLocalVar = nextLocalVar;
+            private <T extends Enum<T>> Map<Set<T>, Snippet> buildEnumSets(ClassBuilder clb, Map<Set<T>, RefCounter<T>> map) {
+                Map<Set<T>, Snippet> snippets = new HashMap<>(map.size());
+                map.entrySet().stream()
+                        .sorted(Map.Entry.comparingByValue())
+                        .forEach(e -> snippets.put(e.getKey(), buildEnumSet(clb, e.getValue())));
+                return snippets;
             }
 
             /*
-             * Increments the number of references to this particular set.
+             * Build snippets for all sets and optionally the cache.
              */
-            final void increment() {
-                refCount++;
-            }
-
-            /**
-             * Generate the appropriate instructions to load an object reference
-             * to the element onto the stack.
-             */
-            void visitElement(T element, CodeBuilder cob) {
-                cob.loadConstant((ConstantDesc)element);
+            DedupSnippets build(ClassBuilder clb) {
+                return new DedupSnippets(
+                    buildStringSets(clb, stringSets),
+                    buildEnumSets(clb, requiresModifiersSets),
+                    buildEnumSets(clb, opensModifiersSets),
+                    buildEnumSets(clb, exportsModifiersSets),
+                    cacheBuilder.build(clb)
+                );
             }
 
             /*
-             * Build bytecode for the Set represented by this builder,
-             * or get the local variable index of a previously generated set
-             * (in the local scope).
-             *
-             * @return local variable index of the generated set.
+             * RefCounter count references to the set, and keeps sorted elements to ensure
+             * generate same bytecode for a given set.
+             * RefCounter itself needs ordering to ensure generate same bytecode for the cache.
              */
-            final int build(CodeBuilder cob) {
-                int index = localVarIndex;
-                if (localVarIndex == 0) {
-                    // if non-empty and more than one set reference this builder,
-                    // emit to a unique local
-                    index = refCount <= 1 ? defaultVarIndex
-                                          : nextLocalVar.getAsInt();
-                    if (index < MAX_LOCAL_VARS) {
-                        localVarIndex = index;
+            class RefCounter<T extends Comparable<T>> implements Comparable<RefCounter<T>> {
+                // sorted elements of the set to ensure same generated code
+                private final List<T> elements;
+                private int refCount;
+
+                RefCounter(Set<T> elements) {
+                    this.elements = sorted(elements);
+                }
+
+                int increment() {
+                    return ++refCount;
+                }
+
+                int refCount() {
+                    return refCount;
+                }
+
+                List<T> sortedList() {
+                    return elements;
+                }
+
+                @Override
+                public int compareTo(RefCounter<T> o) {
+                    if (o == this) {
+                        return 0;
+                    }
+                    if (elements.size() == o.elements.size()) {
+                        var a1 = elements;
+                        var a2 = o.elements;
+                        for (int i = 0; i < elements.size(); i++) {
+                            var r = a1.get(i).compareTo(a2.get(i));
+                            if (r != 0) {
+                                return r;
+                            }
+                        }
+                        return 0;
                     } else {
-                        // overflow: disable optimization by using localVarIndex = 0
-                        index = defaultVarIndex;
+                        return elements.size() - o.elements.size();
                     }
-
-                    generateSetOf(cob, index);
                 }
-                return index;
-            }
-
-            private void generateSetOf(CodeBuilder cob, int index) {
-                if (elements.size() <= 10) {
-                    // call Set.of(e1, e2, ...)
-                    for (T t : sorted(elements)) {
-                        visitElement(t, cob);
-                    }
-                    var mtdArgs = new ClassDesc[elements.size()];
-                    Arrays.fill(mtdArgs, CD_Object);
-                    cob.invokestatic(CD_Set,
-                                     "of",
-                                     MethodTypeDesc.of(CD_Set, mtdArgs),
-                                     true);
-                } else {
-                    // call Set.of(E... elements)
-                    cob.loadConstant(elements.size())
-                       .anewarray(CD_String);
-                    int arrayIndex = 0;
-                    for (T t : sorted(elements)) {
-                        cob.dup()    // arrayref
-                           .loadConstant(arrayIndex);
-                        visitElement(t, cob);  // value
-                        cob.aastore();
-                        arrayIndex++;
-                    }
-                    cob.invokestatic(CD_Set,
-                                     "of",
-                                     MTD_Set_ObjectArray,
-                                     true);
-                }
-                cob.astore(index);
-            }
-        }
-
-        /*
-         * Generates bytecode to create one single instance of EnumSet
-         * for a given set of modifiers and assign to a local variable slot.
-         */
-        static class EnumSetBuilder<T extends Comparable<T>> extends SetBuilder<T> {
-            private final ClassDesc classDesc;
-
-            EnumSetBuilder(Set<T> modifiers, ClassDesc classDesc,
-                           int defaultVarIndex,
-                           IntSupplier nextLocalVar) {
-                super(modifiers, defaultVarIndex, nextLocalVar);
-                this.classDesc = classDesc;
             }
 
             /**
-             * Loads an Enum field.
+             * Build an array to host sets referenced more than once so a given set will only be constructed once.
+             * Transform the bytecode for loading the set onto the operand stack as needed.
              */
-            @Override
-            void visitElement(T t, CodeBuilder cob) {
-                cob.getstatic(classDesc, t.toString(), classDesc);
+            class CacheBuilder {
+                private static final String VALUES_ARRAY = "dedupSetValues";
+                final ArrayList<Snippet> cachedValues = new ArrayList<>();
+
+                // Load the set from the cache to the operand stack
+                //   dedupSetValues[index]
+                private Snippet loadFromCache(int index) {
+                    assert index >= 0;
+                    return cob ->
+                        cob.getstatic(owner, VALUES_ARRAY, CD_Set.arrayType())
+                           .loadConstant(index)
+                           .aaload();
+                }
+
+                /**
+                 * Transform the bytecode for loading the set onto the operand stack.
+                 * @param loadSnippet The origin snippet to load the set onto the operand stack.
+                 */
+                Snippet transform(RefCounter<?> setRef, Snippet loadSnippet) {
+                    if (setRef.refCount() > 1) {
+                        cachedValues.add(loadSnippet);
+                        return loadFromCache(cachedValues.size() - 1);
+                    } else {
+                        return loadSnippet;
+                    }
+                }
+
+                /*
+                 * Returns a snippet that populates the cached values in <clinit>.
+                 *
+                 * The generated cache is essentially as the following:
+                 *
+                 * static final Set[] dedupSetValues;
+                 *
+                 * static {
+                 *     dedupSetValues = new Set[countOfStoredValues];
+                 *     dedupSetValues[0] = Set.of(elements); // for inline set
+                 *     dedupSetValues[1] = dedupSet<setIndex>_0(); // for paginated set
+                 *     ...
+                 *     dedupSetValues[countOfStoredValues - 1] = ...
+                 * }
+                 */
+                Optional<Snippet> build(ClassBuilder clb) {
+                    if (cachedValues.isEmpty()) {
+                        return Optional.empty();
+                    }
+
+                    var cacheValuesArray = new ArraySnippetBuilder(CD_Set)
+                            .classBuilder(clb)
+                            .ownerClassDesc(owner)
+                            .enablePagination(VALUES_ARRAY)
+                            .build(cachedValues.toArray(Snippet[]::new));
+
+                    clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);
+
+                    return Optional.of(cob -> {
+                            cacheValuesArray.emit(cob);
+                            cob.putstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
+                    });
+                }
             }
         }
     }
