@@ -78,7 +78,7 @@
  *   ProcessHandleImpl_unix.h which is included into every
  *   ProcessHandleImpl_<os>.c file.
  *
- * Example :
+ * Example:
  * ----------
  * The implementation of Java_java_lang_ProcessHandleImpl_initNative()
  * is the same on all platforms except on Linux where it initializes one
