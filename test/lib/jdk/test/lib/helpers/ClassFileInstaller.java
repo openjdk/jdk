@@ -93,7 +93,7 @@ public class ClassFileInstaller {
             if (DEBUG) {
                 System.out.println("ClassFileInstaller: Writing to " + System.getProperty("user.dir"));
             }
-            String[] classes = Arrays.copyOfRange(args,0, args.length);
+            String[] classes = Arrays.copyOfRange(args, 0, args.length);
             for (String cls : classes) {
                 writeClassToDisk(cls);
             }
