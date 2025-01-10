@@ -252,6 +252,7 @@ public abstract class Signature extends SignatureSpi {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code Signature} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
