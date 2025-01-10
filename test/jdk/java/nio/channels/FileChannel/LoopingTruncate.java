@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8137121 8137230
- * @modules java.base/jdk.internal.util
  * @summary (fc) Infinite loop FileChannel.truncate
  * @library /test/lib
  * @build jdk.test.lib.Utils
@@ -37,7 +36,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
-import jdk.internal.util.StaticProperty;
 import static java.nio.file.StandardOpenOption.*;
 import static jdk.test.lib.Utils.adjustTimeout;
 
@@ -50,8 +48,11 @@ public class LoopingTruncate {
     static long TIMEOUT = adjustTimeout(20_000);
 
     public static void main(String[] args) throws Throwable {
-        Path dir = Path.of(StaticProperty.userDir());
-        Path path = Files.createTempFile(dir, "LoopingTruncate.tmp", null);
+        Path path = Files.createTempFile(
+                // Intentionally opting out from the default `java.io.tmpdir`.
+                // It occasionally lacks the sufficient disk space this test needs.
+                Path.of(System.getProperty("user.dir")),
+                "LoopingTruncate.tmp", null);
         try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
             fc.position(FATEFUL_SIZE + 1L);
             System.out.println("  Writing large file...");
