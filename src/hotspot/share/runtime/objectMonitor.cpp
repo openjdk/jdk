@@ -597,10 +597,11 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
     enter_event.commit();
   }
 
-  ContinuationEntry* ce = current->last_continuation();
-  if (ce != nullptr && ce->is_virtual_thread()) {
-    assert(result != freeze_ok, "sanity check");
-    current->post_vthread_pinned_event(&vthread_pinned_event, "Contended monitor enter", result);
+  if (current->current_waiting_monitor() == nullptr) {
+    ContinuationEntry* ce = current->last_continuation();
+    if (ce != nullptr && ce->is_virtual_thread()) {
+      current->post_vthread_pinned_event(&vthread_pinned_event, "Contended monitor enter", result);
+    }
   }
 
   OM_PERFDATA_OP(ContendedLockAttempts, inc());
@@ -1819,11 +1820,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       post_monitor_wait_event(&wait_event, this, node._notifier_tid, millis, ret == OS_TIMEOUT);
     }
 
-    if (ce != nullptr && ce->is_virtual_thread()) {
-      assert(result != freeze_ok, "sanity check");
-      current->post_vthread_pinned_event(&vthread_pinned_event, "Object.wait", result);
-    }
-
     OrderAccess::fence();
 
     assert(!has_owner(current), "invariant");
@@ -1862,6 +1858,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   assert(has_owner(current), "invariant");
   assert(!has_successor(current), "invariant");
   assert_mark_word_consistency();
+
+  if (ce != nullptr && ce->is_virtual_thread()) {
+    current->post_vthread_pinned_event(&vthread_pinned_event, "Object.wait", result);
+  }
 
   // check if the notification happened
   if (!WasNotified) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1976,24 +1976,24 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
   if (tkls->offset() == in_bytes(Klass::modifier_flags_offset())) {
     // The field is Klass::_modifier_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in aClassConstant.getModifiers().)
-    assert(this->Opcode() == Op_LoadI, "must load an int from _modifier_flags");
+    assert(Opcode() == Op_LoadUS, "must load an unsigned short from _modifier_flags");
     return TypeInt::make(klass->modifier_flags());
   }
   if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
     // The field is Klass::_access_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
-    assert(this->Opcode() == Op_LoadI, "must load an int from _access_flags");
+    assert(Opcode() == Op_LoadUS, "must load an unsigned short from _access_flags");
     return TypeInt::make(klass->access_flags());
   }
   if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
     // The field is Klass::_misc_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
-    assert(this->Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
+    assert(Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
     return TypeInt::make(klass->misc_flags());
   }
   if (tkls->offset() == in_bytes(Klass::layout_helper_offset())) {
     // The field is Klass::_layout_helper.  Return its constant value if known.
-    assert(this->Opcode() == Op_LoadI, "must load an int from _layout_helper");
+    assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
     return TypeInt::make(klass->layout_helper());
   }
 
