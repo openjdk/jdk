@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,11 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
 
@@ -35,17 +39,22 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code NestHost} attribute (JVMS {@jvms 4.7.28}), which can
- * appear on classes to indicate that this class is a member of a nest.
- * Delivered as a {@link java.lang.classfile.ClassElement} when
- * traversing the elements of a {@link java.lang.classfile.ClassModel}.
+ * Models the {@link Attributes#nestHost() NestHost} attribute (JVMS {@jvms
+ * 4.7.28}), which indicates this class is a member of a nest and the host
+ * class of the nest.
  * <p>
- * The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
+ * This attribute only appears on classes, and does not permit {@linkplain
+ * AttributeMapper#allowMultiple multiple instances} in a class.  It has a
+ * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
  * <p>
- * The attribute was introduced in the Java SE Platform version 11.
+ * The attribute was introduced in the Java SE Platform version 11, major
+ * version {@value ClassFile#JAVA_11_VERSION}.
  *
+ * @see Attributes#nestHost()
+ * @see NestMembersAttribute
+ * @see Class#getNestHost()
+ * @see Class#isNestmateOf(Class)
+ * @jvms 4.7.28 The {@code NestHost} Attribute
  * @since 24
  */
 public sealed interface NestHostAttribute extends Attribute<NestHostAttribute>, ClassElement
@@ -54,11 +63,14 @@ public sealed interface NestHostAttribute extends Attribute<NestHostAttribute>, 
 
     /**
      * {@return the host class of the nest to which this class belongs}
+     *
+     * @see Class#getNestHost()
      */
     ClassEntry nestHost();
 
     /**
      * {@return a {@code NestHost} attribute}
+     *
      * @param nestHost the host class of the nest
      */
     static NestHostAttribute of(ClassEntry nestHost) {
@@ -67,6 +79,7 @@ public sealed interface NestHostAttribute extends Attribute<NestHostAttribute>, 
 
     /**
      * {@return a {@code NestHost} attribute}
+     *
      * @param nestHost the host class of the nest
      * @throws IllegalArgumentException if {@code nestHost} represents a primitive type
      */

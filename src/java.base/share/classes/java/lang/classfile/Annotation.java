@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,9 @@ import jdk.internal.classfile.impl.Util;
  * type_annotation} structure (JVMS {@jvms 4.7.20}). This model indicates the
  * interface of the annotation and a set of element-value pairs.
  * <p>
- * This model can reconstruct an annotation, given the location of the modeled structure
- * in the class file and the definition of the annotation interface.
+ * This model can reconstruct an annotation, given the location of the modeled
+ * structure in the {@code class} file and the definition of the annotation
+ * interface.
  * <p>
  * Two {@code Annotation} objects should be compared using the {@link
  * Object#equals(Object) equals} method.
@@ -54,8 +55,8 @@ import jdk.internal.classfile.impl.Util;
  * elements with default values (JLS {@jls 9.6.2}), and whether the reconstructed annotation
  * is a container annotation for multiple annotations (JLS {@jls 9.7.5}).
  *
- * @see AnnotationElement
- * @see AnnotationValue
+ * @see java.lang.annotation.Annotation
+ * @see java.lang.reflect.AnnotatedElement Annotations in core reflection
  * @see TypeAnnotation
  * @see RuntimeVisibleAnnotationsAttribute
  * @see RuntimeInvisibleAnnotationsAttribute
@@ -70,11 +71,15 @@ public sealed interface Annotation
     /**
      * {@return the constant pool entry holding the {@linkplain Class#descriptorString
      * descriptor string} of the annotation interface}
+     *
+     * @see java.lang.annotation.Annotation#annotationType()
      */
     Utf8Entry className();
 
     /**
      * {@return the annotation interface, as a symbolic descriptor}
+     *
+     * @see java.lang.annotation.Annotation#annotationType()
      */
     default ClassDesc classSymbol() {
         return Util.fieldTypeSymbol(className());

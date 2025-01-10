@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,64 +30,20 @@ import java.lang.classfile.attribute.*;
 import jdk.internal.classfile.impl.AbstractAttributeMapper.*;
 
 /**
- * Attribute mappers for standard classfile attributes.
+ * Attribute mappers for predefined (JVMS {@jvms 4.7}) and JDK-specific
+ * nonstandard attributes.
  * <p>
- * Unless otherwise specified, mappers returned by each method
- * do not permit multiple attribute instances in a given location.
- * <p>
- * The most stable {@link AttributeStability#STATELESS STATELESS} mappers are:
+ * Unless otherwise specified, each mapper returned by methods in this class:
  * <ul>
- * <li>{@link #deprecated()}
- * <li>{@link #moduleResolution()}
- * <li>{@link #sourceDebugExtension()}
- * <li>{@link #synthetic()}
- * </ul>
- *
- * The mappers with {@link AttributeStability#CP_REFS CP_REFS} stability are:
- * <ul>
- * <li>{@link #annotationDefault()}
- * <li>{@link #bootstrapMethods()}
- * <li>{@link #code()}
- * <li>{@link #compilationId()}
- * <li>{@link #constantValue()}
- * <li>{@link #enclosingMethod()}
- * <li>{@link #exceptions()}
- * <li>{@link #innerClasses()}
- * <li>{@link #methodParameters()}
- * <li>{@link #module()}
- * <li>{@link #moduleHashes()}
- * <li>{@link #moduleMainClass()}
- * <li>{@link #modulePackages()}
- * <li>{@link #moduleTarget()}
- * <li>{@link #nestHost()}
- * <li>{@link #nestMembers()}
- * <li>{@link #permittedSubclasses()}
- * <li>{@link #record()}
- * <li>{@link #runtimeInvisibleAnnotations()}
- * <li>{@link #runtimeInvisibleParameterAnnotations()}
- * <li>{@link #runtimeVisibleAnnotations()}
- * <li>{@link #runtimeVisibleParameterAnnotations()}
- * <li>{@link #signature()}
- * <li>{@link #sourceFile()}
- * <li>{@link #sourceId()}
- * </ul>
- *
- * The mappers with {@link AttributeStability#LABELS LABELS} stability are:
- * <ul>
- * <li>{@link #characterRangeTable()}
- * <li>{@link #lineNumberTable()}
- * <li>{@link #localVariableTable()}
- * <li>{@link #localVariableTypeTable()}
- * </ul>
- *
- * The {@link AttributeStability#UNSTABLE UNSTABLE} mappers are:
- * <ul>
- * <li>{@link #runtimeInvisibleTypeAnnotations()}
- * <li>{@link #runtimeVisibleTypeAnnotations()}
+ * <li>is predefined in the JVMS instead of JDK-specific;
+ * <li>does not permit {@linkplain AttributeMapper#allowMultiple() multiple
+ * attribute instances} in the same structure;
+ * <li>the attribute has a {@linkplain AttributeMapper#stability() data
+ * dependency} on the {@linkplain AttributeStability#CP_REFS constant pool}.
  * </ul>
  *
  * @see AttributeMapper
- *
+ * @see java.lang.classfile.attribute
  * @since 24
  */
 public final class Attributes {
@@ -204,258 +160,278 @@ public final class Attributes {
     }
 
     /**
-     * {@return Attribute mapper for the {@code AnnotationDefault} attribute}
+     * {@return the mapper for the {@code AnnotationDefault} attribute}
      */
     public static AttributeMapper<AnnotationDefaultAttribute> annotationDefault() {
         return AnnotationDefaultMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code BootstrapMethods} attribute}
+     * {@return the mapper for the {@code BootstrapMethods} attribute}
      */
     public static AttributeMapper<BootstrapMethodsAttribute> bootstrapMethods() {
         return BootstrapMethodsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code CharacterRangeTable} attribute}
-     * The mapper permits multiple instances in a given location.
+     * {@return the mapper for the {@code CharacterRangeTable} attribute}
+     * This is a JDK-specific attribute.
+     * The mapper permits multiple instances in a {@code Code} attribute, but this
+     * attribute should be only emitted once.
+     * This has a data dependency on {@linkplain AttributeStability#LABELS labels}.
      */
     public static AttributeMapper<CharacterRangeTableAttribute> characterRangeTable() {
         return CharacterRangeTableMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code Code} attribute}
+     * {@return the mapper for the {@code Code} attribute}
      */
     public static AttributeMapper<CodeAttribute> code() {
         return CodeMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code CompilationID} attribute}
+     * {@return the mapper for the {@code CompilationID} attribute}
+     * This is a JDK-specific attribute.
      */
     public static AttributeMapper<CompilationIDAttribute> compilationId() {
         return CompilationIDMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code ConstantValue} attribute}
+     * {@return the mapper for the {@code ConstantValue} attribute}
      */
     public static AttributeMapper<ConstantValueAttribute> constantValue() {
         return ConstantValueMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code Deprecated} attribute}
+     * {@return the mapper for the {@code Deprecated} attribute}
      * The mapper permits multiple instances in a given location.
+     * This has {@linkplain AttributeStability#STATELESS no data dependency}.
      */
     public static AttributeMapper<DeprecatedAttribute> deprecated() {
         return DeprecatedMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code EnclosingMethod} attribute}
+     * {@return the mapper for the {@code EnclosingMethod} attribute}
      */
     public static AttributeMapper<EnclosingMethodAttribute> enclosingMethod() {
         return EnclosingMethodMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code Exceptions} attribute}
+     * {@return the mapper for the {@code Exceptions} attribute}
      */
     public static AttributeMapper<ExceptionsAttribute> exceptions() {
         return ExceptionsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code InnerClasses} attribute}
+     * {@return the mapper for the {@code InnerClasses} attribute}
      */
     public static AttributeMapper<InnerClassesAttribute> innerClasses() {
         return InnerClassesMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code LineNumberTable} attribute}
-     * The mapper permits multiple instances in a given location.
+     * {@return the mapper for the {@code LineNumberTable} attribute}
+     * The mapper permits multiple instances in a {@code Code} attribute.
+     * This has a data dependency on {@linkplain AttributeStability#LABELS labels}.
      */
     public static AttributeMapper<LineNumberTableAttribute> lineNumberTable() {
         return LineNumberTableMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code LocalVariableTable} attribute}
-     * The mapper permits multiple instances in a given location.
+     * {@return the mapper for the {@code LocalVariableTable} attribute}
+     * The mapper permits multiple instances in a {@code Code} attribute.
+     * This has a data dependency on {@linkplain AttributeStability#LABELS labels}.
      */
     public static AttributeMapper<LocalVariableTableAttribute> localVariableTable() {
         return LocalVariableTableMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code LocalVariableTypeTable} attribute}
+     * {@return the mapper for the {@code LocalVariableTypeTable} attribute}
      * The mapper permits multiple instances in a given location.
+     * This has a data dependency on {@linkplain AttributeStability#LABELS labels}.
      */
     public static AttributeMapper<LocalVariableTypeTableAttribute> localVariableTypeTable() {
         return LocalVariableTypeTableMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code MethodParameters} attribute}
+     * {@return the mapper for the {@code MethodParameters} attribute}
      */
     public static AttributeMapper<MethodParametersAttribute> methodParameters() {
         return MethodParametersMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code Module} attribute}
+     * {@return the mapper for the {@code Module} attribute}
      */
     public static AttributeMapper<ModuleAttribute> module() {
         return ModuleMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code ModuleHashes} attribute}
+     * {@return the mapper for the {@code ModuleHashes} attribute}
+     * This is a JDK-specific attribute.
      */
     public static AttributeMapper<ModuleHashesAttribute> moduleHashes() {
         return ModuleHashesMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code ModuleMainClass} attribute}
+     * {@return the mapper for the {@code ModuleMainClass} attribute}
      */
     public static AttributeMapper<ModuleMainClassAttribute> moduleMainClass() {
         return ModuleMainClassMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code ModulePackages} attribute}
+     * {@return the mapper for the {@code ModulePackages} attribute}
      */
     public static AttributeMapper<ModulePackagesAttribute> modulePackages() {
         return ModulePackagesMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code ModuleResolution} attribute}
+     * {@return the mapper for the {@code ModuleResolution} attribute}
+     * This is a JDK-specific attribute.
+     * This has {@linkplain AttributeStability#STATELESS no data dependency}.
      */
     public static AttributeMapper<ModuleResolutionAttribute> moduleResolution() {
         return ModuleResolutionMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code ModuleTarget} attribute}
+     * {@return the mapper for the {@code ModuleTarget} attribute}
+     * This is a JDK-specific attribute.
      */
     public static AttributeMapper<ModuleTargetAttribute> moduleTarget() {
         return ModuleTargetMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code NestHost} attribute}
+     * {@return the mapper for the {@code NestHost} attribute}
      */
     public static AttributeMapper<NestHostAttribute> nestHost() {
         return NestHostMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code NestMembers} attribute}
+     * {@return the mapper for the {@code NestMembers} attribute}
      */
     public static AttributeMapper<NestMembersAttribute> nestMembers() {
         return NestMembersMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code PermittedSubclasses} attribute}
+     * {@return the mapper for the {@code PermittedSubclasses} attribute}
      */
     public static AttributeMapper<PermittedSubclassesAttribute> permittedSubclasses() {
         return PermittedSubclassesMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code Record} attribute}
+     * {@return the mapper for the {@code Record} attribute}
      */
     public static AttributeMapper<RecordAttribute> record() {
         return RecordMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code RuntimeInvisibleAnnotations} attribute}
+     * {@return the mapper for the {@code RuntimeInvisibleAnnotations} attribute}
      */
     public static AttributeMapper<RuntimeInvisibleAnnotationsAttribute> runtimeInvisibleAnnotations() {
         return RuntimeInvisibleAnnotationsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code RuntimeInvisibleParameterAnnotations} attribute}
+     * {@return the mapper for the {@code RuntimeInvisibleParameterAnnotations} attribute}
      */
     public static AttributeMapper<RuntimeInvisibleParameterAnnotationsAttribute> runtimeInvisibleParameterAnnotations() {
         return RuntimeInvisibleParameterAnnotationsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code RuntimeInvisibleTypeAnnotations} attribute}
+     * {@return the mapper for the {@code RuntimeInvisibleTypeAnnotations} attribute}
+     * This has a data dependency on {@linkplain AttributeStability#UNSTABLE
+     * arbitrary indices} in the {@code class} file format.
      */
     public static AttributeMapper<RuntimeInvisibleTypeAnnotationsAttribute> runtimeInvisibleTypeAnnotations() {
         return RuntimeInvisibleTypeAnnotationsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code RuntimeVisibleAnnotations} attribute}
+     * {@return the mapper for the {@code RuntimeVisibleAnnotations} attribute}
      */
     public static AttributeMapper<RuntimeVisibleAnnotationsAttribute> runtimeVisibleAnnotations() {
         return RuntimeVisibleAnnotationsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code RuntimeVisibleParameterAnnotations} attribute}
+     * {@return the mapper for the {@code RuntimeVisibleParameterAnnotations} attribute}
      */
     public static AttributeMapper<RuntimeVisibleParameterAnnotationsAttribute> runtimeVisibleParameterAnnotations() {
         return RuntimeVisibleParameterAnnotationsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code RuntimeVisibleTypeAnnotations} attribute}
+     * {@return the mapper for the {@code RuntimeVisibleTypeAnnotations} attribute}
+     * This has a data dependency on {@linkplain AttributeStability#UNSTABLE
+     * arbitrary indices} in the {@code class} file format.
      */
     public static AttributeMapper<RuntimeVisibleTypeAnnotationsAttribute> runtimeVisibleTypeAnnotations() {
         return RuntimeVisibleTypeAnnotationsMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code Signature} attribute}
+     * {@return the mapper for the {@code Signature} attribute}
      */
     public static AttributeMapper<SignatureAttribute> signature() {
         return SignatureMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code SourceDebugExtension} attribute}
+     * {@return the mapper for the {@code SourceDebugExtension} attribute}
+     * This has {@linkplain AttributeStability#STATELESS no data dependency}.
      */
     public static AttributeMapper<SourceDebugExtensionAttribute> sourceDebugExtension() {
         return SourceDebugExtensionMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code SourceFile} attribute}
+     * {@return the mapper for the {@code SourceFile} attribute}
      */
     public static AttributeMapper<SourceFileAttribute> sourceFile() {
         return SourceFileMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code SourceID} attribute}
+     * {@return the mapper for the {@code SourceID} attribute}
+     * This is a JDK-specific attribute.
      */
     public static AttributeMapper<SourceIDAttribute> sourceId() {
         return SourceIDMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code StackMapTable} attribute}
+     * {@return the mapper for the {@code StackMapTable} attribute}
+     * This has a data dependency on {@linkplain AttributeStability#LABELS labels}.
      */
     public static AttributeMapper<StackMapTableAttribute> stackMapTable() {
         return StackMapTableMapper.INSTANCE;
     }
 
     /**
-     * {@return Attribute mapper for the {@code Synthetic} attribute}
+     * {@return the mapper for the {@code Synthetic} attribute}
      * The mapper permits multiple instances in a given location.
+     * This has {@linkplain AttributeStability#STATELESS no data dependency}.
      */
     public static AttributeMapper<SyntheticAttribute> synthetic() {
         return SyntheticMapper.INSTANCE;
