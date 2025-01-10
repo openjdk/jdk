@@ -158,6 +158,7 @@ class ThreadPerTaskExecutorTest {
                 assertTrue(executor.isShutdown());
                 assertFalse(executor.isTerminated());
                 assertFalse(executor.awaitTermination(500, TimeUnit.MILLISECONDS));
+                assertFalse(future.isDone());
             } finally {
                 future.cancel(true);  // interrupt task
             }
@@ -299,7 +300,7 @@ class ThreadPerTaskExecutorTest {
     void testAwaitTermination2(ExecutorService executor) throws Exception {
         var started = new CountDownLatch(1);
         var stop = new CountDownLatch(1);
-        executor.submit(() -> {
+        Future<?> future = executor.submit(() -> {
             started.countDown();
             stop.await();
             return null;
@@ -308,10 +309,12 @@ class ThreadPerTaskExecutorTest {
         try {
             executor.shutdown();
             assertFalse(executor.awaitTermination(1, TimeUnit.SECONDS));
+            assertFalse(future.isDone());
         } finally {
             stop.countDown();
         }
         assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
+        assertTrue(future.isDone());
     }
 
     /**
