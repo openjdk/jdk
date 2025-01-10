@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1508,6 +1508,7 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, b
   _crc = crc;
   _mapped_from_file = false;
   _mapped_base = nullptr;
+  _in_reserved_space = false;
 }
 
 void FileMapRegion::init_oopmap(size_t offset, size_t size_in_bits) {
@@ -1889,10 +1890,11 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
   char *requested_addr = mapped_base_address + r->mapping_offset();
-  assert(r->mapped_base() == nullptr, "must be not mapped yet");
+  assert(!is_mapped(), "must be not mapped yet");
   assert(requested_addr != nullptr, "must be specified");
 
   r->set_mapped_from_file(false);
+  r->set_in_reserved_space(false);
 
   if (MetaspaceShared::use_windows_memory_mapping()) {
     // Windows cannot remap read-only shared memory to read-write when required for
@@ -1917,7 +1919,6 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
       assert(r->mapped_base() != nullptr, "must be initialized");
-      return MAP_ARCHIVE_SUCCESS;
     }
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
@@ -1939,9 +1940,16 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
 
     r->set_mapped_from_file(true);
     r->set_mapped_base(requested_addr);
-
-    return MAP_ARCHIVE_SUCCESS;
   }
+
+  if (rs.is_reserved()) {
+    char* mapped_base = r->mapped_base();
+    assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
+           PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
+           p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
+    r->set_in_reserved_space(rs.is_reserved());
+  }
+  return MAP_ARCHIVE_SUCCESS;
 }
 
 // The return value is the location of the archive relocation bitmap.
@@ -2359,7 +2367,6 @@ bool FileMapInfo::map_heap_region_impl() {
     if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
-      unmap_region(MetaspaceShared::hp);
       _heap_pointers_need_patching = false;
       return false;
     }
@@ -2428,8 +2435,14 @@ void FileMapInfo::unmap_region(int i) {
     if (size > 0 && r->mapped_from_file()) {
       log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
                     shared_region_name[i]);
-      if (!os::unmap_memory(mapped_base, size)) {
-        fatal("os::unmap_memory failed");
+      if (r->in_reserved_space()) {
+        // This region was mapped inside a ReservedSpace. Its memory will be freed when the ReservedSpace
+        // is released. Zero it so that we don't accidentally read its content.
+        log_info(cds)("Region #%d (%s) is in a reserved space, it will be freed when the space is released", i, shared_region_name[i]);
+      } else {
+        if (!os::unmap_memory(mapped_base, size)) {
+          fatal("os::unmap_memory failed");
+        }
       }
     }
     r->set_mapped_base(nullptr);

@@ -987,8 +987,10 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
                     ik->external_name());
       CLEAR_PENDING_EXCEPTION;
       SystemDictionaryShared::set_class_has_failed_verification(ik);
+    } else {
+      assert(!SystemDictionaryShared::has_class_failed_verification(ik), "sanity");
+      ik->compute_has_loops_flag_for_methods();
     }
-    ik->compute_has_loops_flag_for_methods();
     BytecodeVerificationLocal = saved;
     return true;
   } else {

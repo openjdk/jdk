@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,20 @@
  * questions.
  */
 
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+
 /**
- * Day of week enum.
- *
- * @since 1.6
+ * Use by tests in SetDefaultProvider to test startup with a custom default file system
+ * provider and a custom system class loader.
  */
 
-enum DayOfWeek {
-    SUNDAY("Sun"),
-    MONDAY("Mon"),
-    TUESDAY("Tue"),
-    WEDNESDAY("Wed"),
-    THURSDAY("Thu"),
-    FRIDAY("Fri"),
-    SATURDAY("Sat");
+public class CustomSystemClassLoader extends ClassLoader {
+    public CustomSystemClassLoader(ClassLoader parent) {
+        super(parent);
 
-    private final String abbr;
-
-    private DayOfWeek(String abbr) {
-        this.abbr = abbr;
-    }
-
-    String getAbbr() {
-        return abbr;
-    }
-
-    int value() {
-        return ordinal() + 1;
+        // use default file system
+        FileSystem fs = FileSystems.getDefault();
+        var path = fs.getPath("foo");
     }
 }

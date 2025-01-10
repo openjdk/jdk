@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+package com.sun.hotspot.igv.view.actions;
 
-import java.net.URLClassLoader;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-/*
- * This class is loaded by the custom URLClassLoader, and then calls
- * Class.forName() with the protection domain for the checkPackageAccess
- * call created from the code source jar file.
- */
-public class ClassForName {
-    static {
-        if (!(ClassForName.class.getClassLoader() instanceof URLClassLoader)) {
-            throw new RuntimeException("Supposed to be loaded by URLClassLoader");
-        }
+public class EnableFreeLayoutAction extends EnableLayoutAction {
+
+    public EnableFreeLayoutAction(EditorTopComponent etc) {
+        super(etc);
     }
 
-    public ClassForName() {
-        try {
-            // class_loader = App$ClassLoader, protection_domain = ClassForName.getProtectionDomain()
-            Class.forName(java.util.List.class.getName(), false,
-                          ClassLoader.getSystemClassLoader());
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/dynamic.png";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Show dynamic free layout";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowFreeInteractive(this.isSelected());
     }
 }

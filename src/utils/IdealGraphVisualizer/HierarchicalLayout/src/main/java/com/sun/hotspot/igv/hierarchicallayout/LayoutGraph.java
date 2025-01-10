@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ public class LayoutGraph {
      * Retrieves a combined list of all nodes in the graph,
      * including both layout nodes and dummy nodes.
      *
-     * @return An unmodifiable list containing all nodes in the graph.
+     * @return An unmodifiable list containing all nodes in the graph
      */
     public List<LayoutNode> getAllNodes() {
         List<LayoutNode> allNodes = new ArrayList<>();
@@ -445,6 +445,63 @@ public class LayoutGraph {
             outputLinks.addAll(portLinks.getOrDefault(outputPort, Collections.emptySet()));
         }
         return outputLinks;
+    }
+
+    /**
+     * Checks if the given predecessorVertex is a direct predecessor of the specified vertex.
+     *
+     * @param vertex The vertex to check for predecessors.
+     * @param predecessorVertex The vertex to verify as a predecessor of the given vertex.
+     * @return true if predecessorVertex is a direct predecessor of vertex, false otherwise.
+     */
+    public boolean isPredecessorVertex(Vertex vertex, Vertex predecessorVertex) {
+        for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            for (Link inputLink : portLinks.getOrDefault(inputPort, Collections.emptySet())) {
+                Vertex fromVertex = inputLink.getFrom().getVertex();
+                if (fromVertex.equals(predecessorVertex)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the given successorVertex is a direct successor of the specified vertex.
+     *
+     * @param vertex The vertex to check for successors.
+     * @param successorVertex The vertex to verify as a successor of the given vertex.
+     * @return true if successorVertex is a direct successor of vertex, false otherwise.
+     */
+    public boolean isSuccessorVertex(Vertex vertex, Vertex successorVertex) {
+        for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            for (Link outputLink : portLinks.getOrDefault(outputPort, Collections.emptySet())) {
+                Vertex toVertex = outputLink.getTo().getVertex();
+                if (toVertex.equals(successorVertex)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public List<Vertex> getNeighborVertices(Vertex vertex) {
+        List<Vertex> neighborVertices = new ArrayList<>();
+        for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            for (Link inputLink : portLinks.getOrDefault(inputPort, Collections.emptySet())) {
+                Vertex fromVertex = inputLink.getFrom().getVertex();
+                assert fromVertex != null;
+                neighborVertices.add(fromVertex);
+            }
+        }
+        for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            for (Link outputLink : portLinks.getOrDefault(outputPort, Collections.emptySet())) {
+                Vertex toVertex = outputLink.getTo().getVertex();
+                assert toVertex != null;
+                neighborVertices.add(toVertex);
+            }
+        }
+        return neighborVertices;
     }
 
     public List<Link> getAllLinks(Vertex vertex) {
