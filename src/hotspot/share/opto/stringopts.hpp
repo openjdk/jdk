@@ -53,12 +53,19 @@ class PhaseStringOpts : public Phase {
   // a single string construction.
   StringConcat* build_candidate(CallStaticJavaNode* call);
 
-  enum class CheckAppendResult { GoodAppend,
-                                 NotAppend,
-                                 GiveUp };
+  enum class ProcessAppendResult {
+    // Indicates that the candidate was indeed an append and process_append_candidate processed it
+    // accordingly (added it to the StringCocat etc.)
+    AppendWasAdded,
+    // The candidate turned out not to be an append call. process_append_candidate did not do anything.
+    CandidateIsNotAppend,
+    // The candidate is an append call, but circumstances completely preventing string concat
+    // optimization were detected and the optimization must abort.
+    AbortOptimization
+  };
 
-  // Called from build_candidate. Looks at a call that might be an append. If so, adds it to the StringConcat.
-  CheckAppendResult check_append_candidate(CallStaticJavaNode* cnode, StringConcat* sc, ciMethod* m, ciSymbol* string_sig, ciSymbol* int_sig, ciSymbol* char_sig);
+  // Called from build_candidate. Looks at an "append candidate", a call that might be a call to StringBuilder::append. If so, adds it to the StringConcat.
+  ProcessAppendResult process_append_candidate(CallStaticJavaNode* cnode, StringConcat* sc, ciMethod* m, ciSymbol* string_sig, ciSymbol* int_sig, ciSymbol* char_sig);
 
   // Replace all the SB calls in concat with an optimization String allocation
   void replace_string_concat(StringConcat* concat);

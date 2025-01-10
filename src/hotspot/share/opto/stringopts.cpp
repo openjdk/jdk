@@ -411,12 +411,12 @@ Node_List PhaseStringOpts::collect_toString_calls() {
   return string_calls;
 }
 
-PhaseStringOpts::CheckAppendResult PhaseStringOpts::check_append_candidate(CallStaticJavaNode* cnode,
-                                                                           StringConcat* sc,
-                                                                           ciMethod* m,
-                                                                           ciSymbol* string_sig,
-                                                                           ciSymbol* int_sig,
-                                                                           ciSymbol* char_sig) {
+PhaseStringOpts::ProcessAppendResult PhaseStringOpts::process_append_candidate(CallStaticJavaNode* cnode,
+                                                                               StringConcat* sc,
+                                                                               ciMethod* m,
+                                                                               ciSymbol* string_sig,
+                                                                               ciSymbol* int_sig,
+                                                                               ciSymbol* char_sig) {
   if (cnode->method() != nullptr && !cnode->method()->is_static() &&
       cnode->method()->holder() == m->holder() &&
       cnode->method()->name() == ciSymbols::append_name() &&
@@ -424,7 +424,7 @@ PhaseStringOpts::CheckAppendResult PhaseStringOpts::check_append_candidate(CallS
        cnode->method()->signature()->as_symbol() == char_sig ||
        cnode->method()->signature()->as_symbol() == int_sig)) {
     if (sc->has_control(cnode)) {
-      return CheckAppendResult::GoodAppend;
+      return ProcessAppendResult::AppendWasAdded;
     }
     sc->add_control(cnode);
     Node* arg = cnode->in(TypeFunc::Parms + 1);
@@ -436,7 +436,7 @@ PhaseStringOpts::CheckAppendResult PhaseStringOpts::check_append_candidate(CallS
         tty->cr();
       }
 #endif
-      return CheckAppendResult::GiveUp;
+      return ProcessAppendResult::AbortOptimization;
     }
 
     if (cnode->method()->signature()->as_symbol() == int_sig) {
@@ -465,9 +465,9 @@ PhaseStringOpts::CheckAppendResult PhaseStringOpts::check_append_candidate(CallS
     } else {
       sc->push_string(arg);
     }
-    return CheckAppendResult::GoodAppend;
+    return ProcessAppendResult::AppendWasAdded;
   }
-  return CheckAppendResult::NotAppend;
+  return ProcessAppendResult::CandidateIsNotAppend;
 }
 
 // Recognize fluent-chain and non-fluent uses of StringBuilder/Buffer. They are either explicit usages
@@ -528,7 +528,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
     if (cnode == nullptr) {
       alloc = recv->isa_Allocate();
       if (alloc == nullptr) {
-        break;
+        return nullptr;
       }
       // Find the constructor call
       Node* result = alloc->result_cast();
@@ -540,7 +540,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
           alloc->jvms()->dump_spec(tty); tty->cr();
         }
 #endif
-        break;
+        return nullptr;
       }
       Node* constructor = nullptr;
       for (SimpleDUIterator i(result); i.has_next(); i.next()) {
@@ -608,9 +608,15 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             }
 #endif
           }
-        } else if (use != nullptr &&
-                   check_append_candidate(use, sc, m, string_sig, int_sig, char_sig) == CheckAppendResult::GiveUp) {
-          return nullptr;
+        } else if (use != nullptr) {
+          if (process_append_candidate(use, sc, m, string_sig, int_sig, char_sig) == ProcessAppendResult::AbortOptimization) {
+            // We must abort if process_append_candidate tells us to...
+            return nullptr;
+          }
+          // ...but we do not care if we really found an append or not:
+          // - If we found an append, that's perfect. Nothing further to do.
+          // - If this is a call to an unrelated method, validate_mem_flow() (and validate_control_flow())
+          //   will later check if this call prevents the optimization. So nothing to do here.
         }
       }
       if (constructor == nullptr) {
@@ -621,7 +627,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
           alloc->jvms()->dump_spec(tty); tty->cr();
         }
 #endif
-        break;
+        return nullptr;
       }
 
       // Walked all the way back and found the constructor call so see
@@ -637,11 +643,11 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         return nullptr;
       }
     } else {
-      CheckAppendResult result = check_append_candidate(cnode, sc, m, string_sig, int_sig, char_sig);
+      ProcessAppendResult result = process_append_candidate(cnode, sc, m, string_sig, int_sig, char_sig);
 
-      if (result == CheckAppendResult::GiveUp) {
-        break;
-      } else if (result == CheckAppendResult::NotAppend) {
+      if (result == ProcessAppendResult::AbortOptimization) {
+        return nullptr;
+      } else if (result == ProcessAppendResult::CandidateIsNotAppend) {
         // some unhandled signature
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
@@ -651,7 +657,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
           cnode->in(TypeFunc::Parms + 1)->dump();
         }
 #endif
-        break;
+        return nullptr;
       }
     }
   }

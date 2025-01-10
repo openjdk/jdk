@@ -24,7 +24,6 @@
  /*
  * @test
  * @bug 8341696
- * @requires vm.compiler2.enabled
  * @summary Allow C2 to also optimize non-fluid string builder calls.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.stringopts.TestFluidAndNonFluid
