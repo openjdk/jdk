@@ -2870,6 +2870,24 @@ void MacroAssembler::revb(Register Rd, Register Rs, Register tmp1, Register tmp2
 }
 
 // rotate right with shift bits
+void MacroAssembler::ror(Register dst, Register src, Register shift, Register tmp)
+{
+  if (UseZbb) {
+    ror(dst, src, shift);
+    return;
+  }
+
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
+
+  mv(tmp, 64);
+  sub(tmp, tmp, shift);
+  sll(tmp, src, tmp);
+  srl(dst, src, shift);
+  orr(dst, dst, tmp);
+}
+
+// rotate right with shift bits
 void MacroAssembler::ror(Register dst, Register src, uint32_t shift, Register tmp)
 {
   if (UseZbb) {
@@ -4543,7 +4561,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   beqz(result, L_success ? *L_success : L_fallthrough); // Found a match
 
   // Is there another entry to check? Consult the bitmap.
-  ror_reg(r_bitmap, r_bitmap, slot);
+  ror(r_bitmap, r_bitmap, slot);
   test_bit(t0, r_bitmap, 1);
   beqz(t0, L_fallthrough);
 
