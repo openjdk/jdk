@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -472,14 +472,14 @@ public final class HelloApp {
                 }
             }
 
-            final List<String> launcherArgs = List.of(args);
-            return new Executor()
+            final var executor = new Executor()
                     .setDirectory(outputFile.getParent())
                     .saveOutput(saveOutput)
                     .dumpOutput()
-                    .setRemovePathEnvVar(removePathEnvVar)
                     .setExecutable(executablePath)
-                    .addArguments(launcherArgs);
+                    .addArguments(List.of(args));
+
+            return configureEnvironment(executor);
         }
 
         private boolean launcherNoExit;
@@ -496,6 +496,14 @@ public final class HelloApp {
         return new AppOutputVerifier(helloAppLauncher);
     }
 
+    public static Executor configureEnvironment(Executor executor) {
+        if (CLEAR_JAVA_ENV_VARS) {
+            executor.removeEnvVar("JAVA_TOOL_OPTIONS");
+            executor.removeEnvVar("_JAVA_OPTIONS");
+        }
+        return executor;
+    }
+
     static final String OUTPUT_FILENAME = "appOutput.txt";
 
     private final JavaAppDesc appDesc;
@@ -505,4 +513,7 @@ public final class HelloApp {
 
     private static final String CLASS_NAME = HELLO_JAVA.getFileName().toString().split(
             "\\.", 2)[0];
+
+    private static final boolean CLEAR_JAVA_ENV_VARS = Optional.ofNullable(
+            TKit.getConfigProperty("clear-app-launcher-java-env-vars")).map(Boolean::parseBoolean).orElse(false);
 }
