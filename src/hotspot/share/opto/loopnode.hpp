@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -951,8 +951,8 @@ private:
                                                        const Node_List& old_new);
   void initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
                                                      CountedLoopNode* main_loop_head,
-                                                     uint first_node_index_in_cloned_loop_body,
-                                                     const Node_List& old_new);
+                                                     uint first_node_index_in_pre_loop_body,
+                                                     uint last_node_index_in_pre_loop_body, const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,

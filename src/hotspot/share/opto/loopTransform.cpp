@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1442,10 +1442,12 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
     }
   }
 
+  const uint last_node_index_in_pre_loop_body = Compile::current()->unique() - 1;
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
   DEBUG_ONLY(ensure_zero_trip_guard_proj(outer_main_head->in(LoopNode::EntryControl), true);)
   if (UseLoopPredicate) {
-    initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body, old_new);
+    initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
+                                                  last_node_index_in_pre_loop_body, old_new);
   }
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
@@ -1719,9 +1721,12 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(CountedLoop
 // Target Loop: Original - main_loop_head
 void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
                                                                    CountedLoopNode* main_loop_head,
-                                                                   const uint first_node_index_in_cloned_loop_body,
+                                                                   const uint first_node_index_in_pre_loop_body,
+                                                                   const uint last_node_index_in_pre_loop_body,
                                                                    const Node_List& old_new) {
-  const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
+  assert(first_node_index_in_pre_loop_body < last_node_index_in_pre_loop_body, "cloned some nodes");
+  const NodeInMainLoopBody node_in_original_loop_body(first_node_index_in_pre_loop_body,
+                                                      last_node_index_in_pre_loop_body, old_new);
   create_assertion_predicates_at_main_or_post_loop(pre_loop_head, main_loop_head, node_in_original_loop_body, true);
 }
 
@@ -1766,7 +1771,6 @@ void PhaseIdealLoop::create_assertion_predicates_at_main_or_post_loop(CountedLoo
 void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
     LoopNode* target_loop_head, const Node* old_target_loop_entry,
     const uint node_index_before_new_assertion_predicate_nodes) {
-    if (UseNewCode) return;
   Node* new_main_loop_entry = target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   if (new_main_loop_entry == old_target_loop_entry) {
     // No Assertion Predicates added.
