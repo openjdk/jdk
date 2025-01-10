@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package jdk.internal.foreign;
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
@@ -169,27 +170,21 @@ public final class CaptureStateUtil {
     }
 
     // Used reflectively via INT_RETURN_FILTER_MH
-    private static int returnFilter(MethodHandle errorHandle, int result) {
+    @ForceInline
+    private static int returnFilter(MethodHandle errorHandle, int result) throws Throwable {
         if (result >= 0) {
             return result;
         }
-        try {
-            return -(int) errorHandle.invoke();
-        } catch (Throwable t) {
-            throw new InternalError(t);
-        }
+        return -(int) errorHandle.invoke();
     }
 
     // Used reflectively via LONG_RETURN_FILTER_MH
-    private static long returnFilter(MethodHandle errorHandle, long result) {
+    @ForceInline
+    private static long returnFilter(MethodHandle errorHandle, long result) throws Throwable {
         if (result >= 0) {
             return result;
         }
-        try {
-            return -(int) errorHandle.invoke();
-        } catch (Throwable t) {
-            throw new InternalError(t);
-        }
+        return -(int) errorHandle.invoke();
     }
 
     @SuppressWarnings("restricted")
