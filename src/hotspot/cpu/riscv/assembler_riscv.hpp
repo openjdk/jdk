@@ -3091,7 +3091,7 @@ public:
   }
 
   // This instruction have some security implication.
-  // At this time it's not likley to be enable for user mode.
+  // At this time it's not likely to be enabled for user mode.
   void cbo_inval(Register Rs1) { cbo_base<CBO_INVAL>(Rs1); }
  public:
   // Zicbom
