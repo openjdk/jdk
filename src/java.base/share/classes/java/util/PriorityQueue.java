@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,12 +103,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     transient Object[] queue; // non-private to simplify nested class access
 
     /**
-     * The number of elements in the priority queue.
+     * @serial The number of elements in the priority queue.
      */
     int size;
 
     /**
-     * The comparator, or null if priority queue uses elements'
+     * @serial The comparator, or null if priority queue uses elements'
      * natural ordering.
      */
     @SuppressWarnings("serial") // Conditionally serializable

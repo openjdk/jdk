@@ -52,8 +52,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER;
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL;
@@ -715,6 +715,21 @@ public abstract class AbstractMemberWriter {
      */
     protected Content getMemberListItem(Content memberContent) {
         return writer.getMemberListItem(memberContent);
+    }
+
+    /**
+     * {@return a link to the member summary section of class or interface {@code element} indicated
+     * by {@code summaryKind} with the simple type name as link label, or the fully qualified type name
+     * if the class or interface is not linkable}
+     */
+    protected Content getMemberSummaryLinkOrFQN(TypeElement element, VisibleMemberTable.Kind summaryKind) {
+        if (utils.isLinkable(element)) {
+            return writer.getLink((new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, element)
+                    .label(utils.getSimpleName(element))
+                    .fragment(HtmlIds.forMemberSummary(summaryKind).name())));
+        } else {
+            return Text.of(utils.getFullyQualifiedName(element));
+        }
     }
 
 }

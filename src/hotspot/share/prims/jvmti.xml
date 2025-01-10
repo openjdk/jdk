@@ -1218,7 +1218,7 @@ jvmtiEnv *jvmti;
                             <li><i>Timed wait?</i>
                               <ul>
                                 <li>Indefinite (<datalink
-                                    id="JVMTI_THREAD_STATE_WAITING_INDEFINITELY"><code>JVMTI_THREAD_STATE_WAITING_INDEFINITELY</code></datalink></li>
+                                    id="JVMTI_THREAD_STATE_WAITING_INDEFINITELY"><code>JVMTI_THREAD_STATE_WAITING_INDEFINITELY</code></datalink>)</li>
                                 <li>Timed (<datalink
                                     id="JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT"><code>JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT</code></datalink>)</li>
                               </ul>
@@ -3083,6 +3083,9 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
+        </error>
+        <error id="JVMTI_ERROR_DUPLICATE">
+          There is already a frame pop event request at the specified depth.
         </error>
       </errors>
     </function>

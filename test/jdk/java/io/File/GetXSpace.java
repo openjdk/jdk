@@ -54,6 +54,8 @@ public class GetXSpace {
         System.loadLibrary("GetXSpace");
     }
 
+    private static final Pattern DF_PATTERN = Pattern.compile("([^\\s]+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+\\d+%\\s+([^\\s].*)\n");
+
     private static int fail = 0;
     private static int pass = 0;
     private static Throwable first;
@@ -104,8 +106,17 @@ public class GetXSpace {
         Space(String name) {
             this.name = name;
             long[] sizes = new long[4];
-            if (getSpace0(name, sizes))
-                System.err.println("WARNING: total space is estimated");
+            if (Platform.isWindows() & isCDDrive(name)) {
+                try {
+                    getCDDriveSpace(name, sizes);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException("can't get CDDrive sizes");
+                }
+            } else {
+                if (getSpace0(name, sizes))
+                    System.err.println("WARNING: total space is estimated");
+            }
             this.size = sizes[0];
             this.total = sizes[1];
             this.free = sizes[2];
@@ -167,7 +178,8 @@ public class GetXSpace {
 
         out.format("%s (%d):%n", s.name(), s.size());
         String fmt = "  %-4s total = %12d free = %12d usable = %12d%n";
-        out.format(fmt, "getSpace0", s.total(), s.free(), s.available());
+        String method = Platform.isWindows() & isCDDrive(s.name()) ? "getCDDriveSpace" : "getSpace0";
+        out.format(fmt, method, s.total(), s.free(), s.available());
         out.format(fmt, "getXSpace", ts, fs, us);
 
         // If the file system can dynamically change size, this check will fail.
@@ -324,7 +336,7 @@ public class GetXSpace {
     private static int testVolumes() {
         out.println("--- Testing volumes");
         // Find all of the partitions on the machine and verify that the sizes
-        // returned by File::getXSpace are equivalent to those from getSpace0
+        // returned by File::getXSpace are equivalent to those from getSpace0 or getCDDriveSpace
         ArrayList<String> l;
         try {
             l = paths();
@@ -397,4 +409,40 @@ public class GetXSpace {
     // size[3]  usable space: number of bytes available to the caller
     //
     private static native boolean getSpace0(String root, long[] space);
+
+    private static native boolean isCDDrive(String root);
+
+    private static void getCDDriveSpace(String root, long[] sizes)
+        throws IOException {
+        String[] cmd = new String[] {"df", "-k", "-P", root};
+        Process p = Runtime.getRuntime().exec(cmd);
+        StringBuilder sb = new StringBuilder();
+
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String s;
+            int i = 0;
+            while ((s = in.readLine()) != null) {
+                // skip header
+                if (i++ == 0) continue;
+                sb.append(s).append("\n");
+            }
+        }
+        out.println(sb);
+
+        Matcher m = DF_PATTERN.matcher(sb);
+        int j = 0;
+        while (j < sb.length()) {
+            if (m.find(j)) {
+                sizes[0] = Long.parseLong(m.group(2)) * 1024;
+                sizes[1] = Long.parseLong(m.group(3)) * 1024;
+                sizes[2] = sizes[0] - sizes[1];
+                sizes[3] = Long.parseLong(m.group(4)) * 1024;
+                j = m.end();
+            } else {
+                throw new RuntimeException("unrecognized df output format: "
+                                           + "charAt(" + j + ") = '"
+                                           + sb.charAt(j) + "'");
+            }
+        }
+    }
 }

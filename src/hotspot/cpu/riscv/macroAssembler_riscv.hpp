@@ -60,14 +60,14 @@ class MacroAssembler: public Assembler {
   // Note that SP must be updated to the right place before saving/restoring RA and FP
   // because signal based thread suspend/resume could happen asynchronously.
   void enter() {
-    addi(sp, sp, - 2 * wordSize);
+    subi(sp, sp, 2 * wordSize);
     sd(ra, Address(sp, wordSize));
     sd(fp, Address(sp));
     addi(fp, sp, 2 * wordSize);
   }
 
   void leave() {
-    addi(sp, fp, - 2 * wordSize);
+    subi(sp, fp, 2 * wordSize);
     ld(fp, Address(sp));
     ld(ra, Address(sp, wordSize));
     addi(sp, sp, 2 * wordSize);
@@ -626,6 +626,17 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_leu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ge(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_geu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_lt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
+
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -875,10 +886,20 @@ public:
  public:
 
   // arith
-  void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
-  void addw(Register Rd, Register Rn, int32_t increment, Register temp = t0);
-  void sub (Register Rd, Register Rn, int64_t decrement, Register temp = t0);
-  void subw(Register Rd, Register Rn, int32_t decrement, Register temp = t0);
+  void add(Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void sub(Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
+  void addw(Register Rd, Register Rn, int32_t increment, Register tmp = t0);
+  void subw(Register Rd, Register Rn, int32_t decrement, Register tmp = t0);
+
+  void subi(Register Rd, Register Rn, int32_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addi(Rd, Rn, -decrement);
+  }
+
+  void subiw(Register Rd, Register Rn, int32_t decrement) {
+    assert(is_simm12(-decrement), "Must be");
+    addiw(Rd, Rn, -decrement);
+  }
 
 #define INSN(NAME)                                               \
   inline void NAME(Register Rd, Register Rs1, Register Rs2) {    \
@@ -901,18 +922,12 @@ public:
   void andn(Register Rd, Register Rs1, Register Rs2);
   void orn(Register Rd, Register Rs1, Register Rs2);
 
-  // revb
-  void revb_h_h(Register Rd, Register Rs, Register tmp = t0);                           // reverse bytes in halfword in lower 16 bits, sign-extend
-  void revb_w_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);      // reverse bytes in lower word, sign-extend
-  void revb_h_h_u(Register Rd, Register Rs, Register tmp = t0);                         // reverse bytes in halfword in lower 16 bits, zero-extend
-  void revb_h_w_u(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);    // reverse bytes in halfwords in lower 32 bits, zero-extend
-  void revb_h_helper(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in upper 16 bits (48:63) and move to lower
-  void revb_h(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in each halfword
-  void revb_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in each word
-  void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
+  // reverse bytes
+  void revbw(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in lower word, sign-extend
+  void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);  // reverse bytes in doubleword
 
-  void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
-  void rolw_imm(Register dst, Register src, uint32_t, Register tmp = t0);
+  void ror(Register dst, Register src, uint32_t shift, Register tmp = t0);
+  void rolw(Register dst, Register src, uint32_t shift, Register tmp = t0);
   void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 
@@ -1141,15 +1156,14 @@ public:
                enum operand_size size,
                Assembler::Aqrl acquire, Assembler::Aqrl release,
                Register result, bool result_as_bool = false);
-  void cmpxchg_weak(Register addr, Register expected,
+  void weak_cmpxchg(Register addr, Register expected,
                     Register new_val,
                     enum operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
-  void cmpxchg_narrow_value_helper(Register addr, Register expected,
-                                   Register new_val,
+  void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    enum operand_size size,
-                                   Register tmp1, Register tmp2, Register tmp3);
+                                   Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             enum operand_size size,
@@ -1174,16 +1188,6 @@ public:
   void atomic_xchgalw(Register prev, Register newv, Register addr);
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
-
-  void atomic_cas(Register prev, Register newv, Register addr);
-  void atomic_casw(Register prev, Register newv, Register addr);
-  void atomic_casl(Register prev, Register newv, Register addr);
-  void atomic_caslw(Register prev, Register newv, Register addr);
-  void atomic_casal(Register prev, Register newv, Register addr);
-  void atomic_casalw(Register prev, Register newv, Register addr);
-  void atomic_caswu(Register prev, Register newv, Register addr);
-  void atomic_caslwu(Register prev, Register newv, Register addr);
-  void atomic_casalwu(Register prev, Register newv, Register addr);
 
   void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
               Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);
@@ -1315,6 +1319,24 @@ public:
   void vector_update_crc32(Register crc, Register buf, Register len,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                            Register table0, Register table3);
+  void kernel_crc32_vclmul_fold(Register crc, Register buf, Register len,
+              Register table0, Register table1, Register table2, Register table3,
+              Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
+  void crc32_vclmul_fold_to_16_bytes_vectorsize_32(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                            VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4);
+  void kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Register buf, Register len,
+                                              Register vclmul_table, Register tmp1, Register tmp2);
+  void crc32_vclmul_fold_16_bytes_vectorsize_16(VectorRegister vx, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register buf, Register tmp, const int STEP);
+  void crc32_vclmul_fold_16_bytes_vectorsize_16_2(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register tmp);
+  void crc32_vclmul_fold_16_bytes_vectorsize_16_3(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register tmp);
+  void kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Register buf, Register len,
+                                              Register vclmul_table, Register tmp1, Register tmp2);
 
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
@@ -1350,7 +1372,8 @@ public:
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
 
-  void ctzc_bit(Register Rd, Register Rs, bool isLL = false, Register tmp1 = t0, Register tmp2 = t1);
+  void ctzc_bits(Register Rd, Register Rs, bool isLL = false,
+                 Register tmp1 = t0, Register tmp2 = t1);
 
   void zero_words(Register base, uint64_t cnt);
   address zero_words(Register ptr, Register cnt);
@@ -1506,16 +1529,16 @@ public:
         sltu(Rt, zr, Rt);
         break;
       case T_CHAR   :
-        zero_extend(Rt, Rt, 16);
+        zext(Rt, Rt, 16);
         break;
       case T_BYTE   :
-        sign_extend(Rt, Rt, 8);
+        sext(Rt, Rt, 8);
         break;
       case T_SHORT  :
-        sign_extend(Rt, Rt, 16);
+        sext(Rt, Rt, 16);
         break;
       case T_INT    :
-        sign_extend(Rt, Rt, 32);
+        sext(Rt, Rt, 32);
         break;
       case T_LONG   : /* nothing to do */        break;
       case T_VOID   : /* nothing to do */        break;
@@ -1530,8 +1553,8 @@ public:
   void double_compare(Register result, FloatRegister Rs1, FloatRegister Rs2, int unordered_result);
 
   // Zero/Sign-extend
-  void zero_extend(Register dst, Register src, int bits);
-  void sign_extend(Register dst, Register src, int bits);
+  void zext(Register dst, Register src, int bits);
+  void sext(Register dst, Register src, int bits);
 
 private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,18 @@
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
+#include "oops/access.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -223,7 +226,9 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
   _max_heap_size = MaxHeapSize;
   _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
+  _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
+  _has_archived_invokedynamic = CDSConfig::is_dumping_invokedynamic();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -313,6 +318,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
+  st->print_cr("- has_aot_linked_classes          %d", _has_aot_linked_classes);
+  st->print_cr("- has_archived_invokedynamic      %d", _has_archived_invokedynamic);
 }
 
 void SharedClassPathEntry::init_as_non_existent(const char* path, TRAPS) {
@@ -340,6 +347,7 @@ void SharedClassPathEntry::init(bool is_modules_image,
         _type = jar_entry;
         _timestamp = st.st_mtime;
         _from_class_path_attr = cpe->from_class_path_attr();
+        _is_multi_release = cpe->is_multi_release_jar();
       }
       _filesize = st.st_size;
       _is_module_path = is_module_path;
@@ -1060,7 +1068,9 @@ bool FileMapInfo::validate_shared_path_table() {
     }
   }
 
-  validate_non_existent_class_paths();
+  if (!validate_non_existent_class_paths()) {
+    return false;
+  }
 
   _validating_shared_path_table = false;
 
@@ -1076,7 +1086,7 @@ bool FileMapInfo::validate_shared_path_table() {
   return true;
 }
 
-void FileMapInfo::validate_non_existent_class_paths() {
+bool FileMapInfo::validate_non_existent_class_paths() {
   // All of the recorded non-existent paths came from the Class-Path: attribute from the JAR
   // files on the app classpath. If any of these are found to exist during runtime,
   // it will change how classes are loading for the app loader. For safety, disable
@@ -1089,11 +1099,19 @@ void FileMapInfo::validate_non_existent_class_paths() {
        i++) {
     SharedClassPathEntry* ent = shared_path(i);
     if (!ent->check_non_existent()) {
-      log_warning(cds)("Archived non-system classes are disabled because the "
-              "file %s exists", ent->name());
-      header()->set_has_platform_or_app_classes(false);
+      if (header()->has_aot_linked_classes()) {
+        log_error(cds)("CDS archive has aot-linked classes. It cannot be used because the "
+                       "file %s exists", ent->name());
+        return false;
+      } else {
+        log_warning(cds)("Archived non-system classes are disabled because the "
+                         "file %s exists", ent->name());
+        header()->set_has_platform_or_app_classes(false);
+      }
     }
   }
+
+  return true;
 }
 
 // A utility class for reading/validating the GenericCDSFileMapHeader portion of
@@ -1490,6 +1508,7 @@ void FileMapRegion::init(int region_index, size_t mapping_offset, size_t size, b
   _crc = crc;
   _mapped_from_file = false;
   _mapped_base = nullptr;
+  _in_reserved_space = false;
 }
 
 void FileMapRegion::init_oopmap(size_t offset, size_t size_in_bits) {
@@ -1871,10 +1890,11 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
   FileMapRegion* r = region_at(i);
   size_t size = r->used_aligned();
   char *requested_addr = mapped_base_address + r->mapping_offset();
-  assert(r->mapped_base() == nullptr, "must be not mapped yet");
+  assert(!is_mapped(), "must be not mapped yet");
   assert(requested_addr != nullptr, "must be specified");
 
   r->set_mapped_from_file(false);
+  r->set_in_reserved_space(false);
 
   if (MetaspaceShared::use_windows_memory_mapping()) {
     // Windows cannot remap read-only shared memory to read-write when required for
@@ -1899,7 +1919,6 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
       assert(r->mapped_base() != nullptr, "must be initialized");
-      return MAP_ARCHIVE_SUCCESS;
     }
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
@@ -1921,9 +1940,16 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
 
     r->set_mapped_from_file(true);
     r->set_mapped_base(requested_addr);
-
-    return MAP_ARCHIVE_SUCCESS;
   }
+
+  if (rs.is_reserved()) {
+    char* mapped_base = r->mapped_base();
+    assert(rs.base() <= mapped_base && mapped_base + size <= rs.end(),
+           PTR_FORMAT " <= " PTR_FORMAT " < " PTR_FORMAT " <= " PTR_FORMAT,
+           p2i(rs.base()), p2i(mapped_base), p2i(mapped_base + size), p2i(rs.end()));
+    r->set_in_reserved_space(rs.is_reserved());
+  }
+  return MAP_ARCHIVE_SUCCESS;
 }
 
 // The return value is the location of the archive relocation bitmap.
@@ -1957,6 +1983,32 @@ char* FileMapInfo::map_bitmap_region() {
                 shared_region_name[MetaspaceShared::bm]);
   return bitmap_base;
 }
+
+class SharedDataRelocationTask : public ArchiveWorkerTask {
+private:
+  BitMapView* const _rw_bm;
+  BitMapView* const _ro_bm;
+  SharedDataRelocator* const _rw_reloc;
+  SharedDataRelocator* const _ro_reloc;
+
+public:
+  SharedDataRelocationTask(BitMapView* rw_bm, BitMapView* ro_bm, SharedDataRelocator* rw_reloc, SharedDataRelocator* ro_reloc) :
+                           ArchiveWorkerTask("Shared Data Relocation"),
+                           _rw_bm(rw_bm), _ro_bm(ro_bm), _rw_reloc(rw_reloc), _ro_reloc(ro_reloc) {}
+
+  void work(int chunk, int max_chunks) override {
+    work_on(chunk, max_chunks, _rw_bm, _rw_reloc);
+    work_on(chunk, max_chunks, _ro_bm, _ro_reloc);
+  }
+
+  void work_on(int chunk, int max_chunks, BitMapView* bm, SharedDataRelocator* reloc) {
+    BitMap::idx_t size  = bm->size();
+    BitMap::idx_t start = MIN2(size, size * chunk / max_chunks);
+    BitMap::idx_t end   = MIN2(size, size * (chunk + 1) / max_chunks);
+    assert(end > start, "Sanity: no empty slices");
+    bm->iterate(reloc, start, end);
+  }
+};
 
 // This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
 // We relocate all pointers in the 2 core regions (ro, rw).
@@ -1996,8 +2048,15 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
                                 valid_new_base, valid_new_end, addr_delta);
     SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    rw_ptrmap.iterate(&rw_patcher);
-    ro_ptrmap.iterate(&ro_patcher);
+
+    if (AOTCacheParallelRelocation) {
+      ArchiveWorkers workers;
+      SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
+      workers.run_task(&task);
+    } else {
+      rw_ptrmap.iterate(&rw_patcher);
+      ro_ptrmap.iterate(&ro_patcher);
+    }
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
 
@@ -2074,7 +2133,16 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    CDSConfig::stop_using_full_module_graph();
+    if (CDSConfig::is_using_aot_linked_classes()) {
+      // It's too late to recover -- we have already committed to use the archived metaspace objects, but
+      // the archived heap objects cannot be loaded, so we don't have the archived FMG to guarantee that
+      // all AOT-linked classes are visible.
+      //
+      // We get here because the heap is too small. The app will fail anyway. So let's quit.
+      MetaspaceShared::unrecoverable_loading_error("CDS archive has aot-linked classes but the archived "
+                                                   "heap objects cannot be loaded. Try increasing your heap size.");
+    }
+    CDSConfig::stop_using_full_module_graph("archive heap loading failed");
   }
 }
 
@@ -2160,7 +2228,7 @@ address FileMapInfo::heap_region_dumptime_address() {
   assert(CDSConfig::is_using_archive(), "runtime only");
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   if (UseCompressedOops) {
-    return /*dumptime*/ narrow_oop_base() + r->mapping_offset();
+    return /*dumptime*/ (address)((uintptr_t)narrow_oop_base() + r->mapping_offset());
   } else {
     return heap_region_requested_address();
   }
@@ -2186,7 +2254,7 @@ address FileMapInfo::heap_region_requested_address() {
     // Runtime base = 0x4000 and shift is also 0. If we map this region at 0x5000, then
     // the value P can remain 0x1200. The decoded address = (0x4000 + (0x1200 << 0)) = 0x5200,
     // which is the runtime location of the referenced object.
-    return /*runtime*/ CompressedOops::base() + r->mapping_offset();
+    return /*runtime*/ (address)((uintptr_t)CompressedOops::base() + r->mapping_offset());
   } else {
     // This was the hard-coded requested base address used at dump time. With uncompressed oops,
     // the heap range is assigned by the OS so we will most likely have to relocate anyway, no matter
@@ -2299,7 +2367,6 @@ bool FileMapInfo::map_heap_region_impl() {
     if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
-      unmap_region(MetaspaceShared::hp);
       _heap_pointers_need_patching = false;
       return false;
     }
@@ -2368,8 +2435,14 @@ void FileMapInfo::unmap_region(int i) {
     if (size > 0 && r->mapped_from_file()) {
       log_info(cds)("Unmapping region #%d at base " INTPTR_FORMAT " (%s)", i, p2i(mapped_base),
                     shared_region_name[i]);
-      if (!os::unmap_memory(mapped_base, size)) {
-        fatal("os::unmap_memory failed");
+      if (r->in_reserved_space()) {
+        // This region was mapped inside a ReservedSpace. Its memory will be freed when the ReservedSpace
+        // is released. Zero it so that we don't accidentally read its content.
+        log_info(cds)("Region #%d (%s) is in a reserved space, it will be freed when the space is released", i, shared_region_name[i]);
+      } else {
+        if (!os::unmap_memory(mapped_base, size)) {
+          fatal("os::unmap_memory failed");
+        }
       }
     }
     r->set_mapped_base(nullptr);
@@ -2429,6 +2502,34 @@ bool FileMapInfo::initialize() {
   return true;
 }
 
+bool FileMapInfo::validate_aot_class_linking() {
+  // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
+  // is available.
+  if (header()->has_aot_linked_classes()) {
+    CDSConfig::set_has_aot_linked_classes(true);
+    if (JvmtiExport::should_post_class_file_load_hook()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
+      return false;
+    }
+    if (JvmtiExport::has_early_vmstart_env()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI early vm start is in use.");
+      return false;
+    }
+    if (!CDSConfig::is_using_full_module_graph()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
+      return false;
+    }
+
+    const char* prop = Arguments::get_property("java.security.manager");
+    if (prop != nullptr && strcmp(prop, "disallow") != 0) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used with -Djava.security.manager=%s.", prop);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // The 2 core spaces are RW->RO
 FileMapRegion* FileMapInfo::first_core_region() const {
   return region_at(MetaspaceShared::rw);
@@ -2478,6 +2579,11 @@ bool FileMapHeader::validate() {
   // header data
   const char* prop = Arguments::get_property("java.system.class.loader");
   if (prop != nullptr) {
+    if (has_aot_linked_classes()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when the "
+                     "java.system.class.loader property is specified.");
+      return false;
+    }
     log_warning(cds)("Archived non-system classes are disabled because the "
             "java.system.class.loader property is specified (value = \"%s\"). "
             "To use archived non-system classes, this property must not be set", prop);
@@ -2542,9 +2648,15 @@ bool FileMapHeader::validate() {
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
-  if (is_static() && !_has_full_module_graph) {
+  if (is_static()) {
     // Only the static archive can contain the full module graph.
-    CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
+    if (!_has_full_module_graph) {
+      CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
+    }
+
+    if (_has_archived_invokedynamic) {
+      CDSConfig::set_has_archived_invokedynamic();
+    }
   }
 
   return true;
@@ -2582,7 +2694,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
       jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
       THROW_MSG_(vmSymbols::java_io_IOException(), msg, nullptr);
     } else {
-      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
+      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false, scpe->is_multi_release());
       if (ent == nullptr) {
         char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
         jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
@@ -2616,11 +2728,44 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  ClassFileStream* cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  ClassFileStream* cfs;
+  if (class_loader() != nullptr && !cpe->is_modules_image() && cpe->is_multi_release_jar()) {
+    cfs = get_stream_from_class_loader(class_loader, cpe, file_name, CHECK_NULL);
+  } else {
+    cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  }
   assert(cfs != nullptr, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;
 }
 
+ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
+                                                           ClassPathEntry* cpe,
+                                                           const char* file_name,
+                                                           TRAPS) {
+  JavaValue result(T_OBJECT);
+  oop class_name = java_lang_String::create_oop_from_str(file_name, THREAD);
+  Handle h_class_name = Handle(THREAD, class_name);
+
+  // byte[] ClassLoader.getResourceAsByteArray(String name)
+  JavaCalls::call_virtual(&result,
+                          class_loader,
+                          vmClasses::ClassLoader_klass(),
+                          vmSymbols::getResourceAsByteArray_name(),
+                          vmSymbols::getResourceAsByteArray_signature(),
+                          h_class_name,
+                          CHECK_NULL);
+  assert(result.get_type() == T_OBJECT, "just checking");
+  oop obj = result.get_oop();
+  assert(obj != nullptr, "ClassLoader.getResourceAsByteArray should not return null");
+
+  // copy from byte[] to a buffer
+  typeArrayOop ba = typeArrayOop(obj);
+  jint len = ba->length();
+  u1* buffer = NEW_RESOURCE_ARRAY(u1, len);
+  ArrayAccess<>::arraycopy_to_native<>(ba, typeArrayOopDesc::element_offset<jbyte>(0), buffer, len);
+
+  return new ClassFileStream(buffer, len, cpe->name());
+}
 #endif

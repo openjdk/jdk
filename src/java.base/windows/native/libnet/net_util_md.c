@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,29 +101,21 @@ static struct {
     { WSA_OPERATION_ABORTED,    0,      "Overlapped operation aborted" },
 };
 
-/*
- * Initialize Windows Sockets API support
- */
-BOOL WINAPI
-DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved)
+static void at_exit_callback(void)
+{
+    WSACleanup();
+}
+
+/* Perform platform specific initialization.
+ * Returns 0 on success, non-0 on failure */
+int
+NET_PlatformInit()
 {
     WSADATA wsadata;
 
-    switch (reason) {
-        case DLL_PROCESS_ATTACH:
-            if (WSAStartup(MAKEWORD(2,2), &wsadata) != 0) {
-                return FALSE;
-            }
-            break;
+    atexit(at_exit_callback);
 
-        case DLL_PROCESS_DETACH:
-            WSACleanup();
-            break;
-
-        default:
-            break;
-    }
-    return TRUE;
+    return WSAStartup(MAKEWORD(2,2), &wsadata);
 }
 
 /*
@@ -143,7 +135,7 @@ NET_ThrowNew(JNIEnv *env, int errorNum, char *msg)
     /*
      * If exception already throw then don't overwrite it.
      */
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 

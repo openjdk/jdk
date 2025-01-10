@@ -29,6 +29,8 @@
 #include "cds/dumpAllocStats.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "memory/reservedSpace.hpp"
+#include "memory/virtualspace.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
 #include "runtime/os.hpp"
@@ -292,7 +294,7 @@ public:
   intx buffer_to_requested_delta()           const { return _buffer_to_requested_delta;            }
 
   bool is_in_buffer_space(address p) const {
-    return (buffer_bottom() <= p && p < buffer_top());
+    return (buffer_bottom() != nullptr && buffer_bottom() <= p && p < buffer_top());
   }
 
   template <typename T> bool is_in_requested_static_archive(T p) const {
@@ -343,8 +345,18 @@ public:
 
   template <typename T>
   u4 any_to_offset_u4(T p) const {
+    assert(p != nullptr, "must not be null");
     uintx offset = any_to_offset((address)p);
     return to_offset_u4(offset);
+  }
+
+  template <typename T>
+  u4 any_or_null_to_offset_u4(T p) const {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return any_to_offset_u4<T>(p);
+    }
   }
 
   template <typename T>
@@ -418,6 +430,11 @@ public:
   void mark_and_relocate_to_buffered_addr(address* ptr_location);
   template <typename T> void mark_and_relocate_to_buffered_addr(T ptr_location) {
     mark_and_relocate_to_buffered_addr((address*)ptr_location);
+  }
+
+  bool has_been_buffered(address src_addr) const;
+  template <typename T> bool has_been_buffered(T src_addr) const {
+    return has_been_buffered((address)src_addr);
   }
 
   address get_buffered_addr(address src_addr) const;

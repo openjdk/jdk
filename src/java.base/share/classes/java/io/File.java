@@ -751,11 +751,6 @@ public class File
      *          application; {@code false} otherwise
      */
     public boolean canRead() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -775,11 +770,6 @@ public class File
      *          {@code false} otherwise.
      */
     public boolean canWrite() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -794,11 +784,6 @@ public class File
      *          by this abstract pathname exists; {@code false} otherwise
      */
     public boolean exists() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -820,11 +805,6 @@ public class File
      *          {@code false} otherwise
      */
     public boolean isDirectory() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -848,11 +828,6 @@ public class File
      *          {@code false} otherwise
      */
     public boolean isFile() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -881,11 +856,6 @@ public class File
      * @since 1.2
      */
     public boolean isHidden() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -920,11 +890,6 @@ public class File
      *          epoch
      */
     public long lastModified() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -947,11 +912,6 @@ public class File
      *          denoting system-dependent entities such as devices or pipes.
      */
     public long length() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -983,9 +943,6 @@ public class File
      * @since 1.2
      */
     public boolean createNewFile() throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) security.checkWrite(path);
         if (isInvalid()) {
             throw new IOException("Invalid file path");
         }
@@ -1007,11 +964,6 @@ public class File
      *          successfully deleted; {@code false} otherwise
      */
     public boolean delete() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkDelete(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1043,11 +995,6 @@ public class File
      * @since 1.2
      */
     public void deleteOnExit() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkDelete(path);
-        }
         if (isInvalid()) {
             return;
         }
@@ -1097,11 +1044,6 @@ public class File
      *          I/O error occurs.
      */
     private final String[] normalizedList() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(path);
-        }
         if (isInvalid()) {
             return null;
         }
@@ -1275,11 +1217,6 @@ public class File
      *          created; {@code false} otherwise
      */
     public boolean mkdir() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1345,12 +1282,6 @@ public class File
         if (dest == null) {
             throw new NullPointerException();
         }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-            security.checkWrite(dest.path);
-        }
         if (this.isInvalid() || dest.isInvalid()) {
             return false;
         }
@@ -1380,11 +1311,6 @@ public class File
      */
     public boolean setLastModified(long time) {
         if (time < 0) throw new IllegalArgumentException("Negative time");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1406,11 +1332,6 @@ public class File
      * @since 1.2
      */
     public boolean setReadOnly() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1445,11 +1366,6 @@ public class File
      * @since 1.6
      */
     public boolean setWritable(boolean writable, boolean ownerOnly) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1517,11 +1433,6 @@ public class File
      * @since 1.6
      */
     public boolean setReadable(boolean readable, boolean ownerOnly) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1595,11 +1506,6 @@ public class File
      * @since 1.6
      */
     public boolean setExecutable(boolean executable, boolean ownerOnly) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1652,11 +1558,6 @@ public class File
      * @since 1.6
      */
     public boolean canExecute() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkExec(path);
-        }
         if (isInvalid()) {
             return false;
         }
@@ -1726,12 +1627,6 @@ public class File
      * @see FileStore#getTotalSpace
      */
     public long getTotalSpace() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
-            sm.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -1764,12 +1659,6 @@ public class File
      * @see FileStore#getUnallocatedSpace
      */
     public long getFreeSpace() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
-            sm.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -1805,12 +1694,6 @@ public class File
      * @see FileStore#getUsableSpace
      */
     public long getUsableSpace() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileSystemAttributes"));
-            sm.checkRead(path);
-        }
         if (isInvalid()) {
             return 0L;
         }
@@ -1840,7 +1723,6 @@ public class File
             }
             return subNameLength;
         }
-        @SuppressWarnings("removal")
         static File generateFile(String prefix, String suffix, File dir)
             throws IOException
         {
@@ -1897,11 +1779,8 @@ public class File
 
             File f = new File(dir, name);
             if (!name.equals(f.getName()) || f.isInvalid()) {
-                if (System.getSecurityManager() != null)
-                    throw new IOException("Unable to create temporary file");
-                else
-                    throw new IOException("Unable to create temporary file, "
-                        + name);
+                throw new IOException("Unable to create temporary file, "
+                    + name);
             }
             return f;
         }
@@ -1998,22 +1877,9 @@ public class File
         File tmpdir = (directory != null) ? directory
                                           : TempDirectory.location();
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
         File f;
         do {
             f = TempDirectory.generateFile(prefix, suffix, tmpdir);
-
-            if (sm != null) {
-                try {
-                    sm.checkWrite(f.getPath());
-                } catch (SecurityException se) {
-                    // don't reveal temporary directory location
-                    if (directory == null)
-                        throw new SecurityException("Unable to create temporary file");
-                    throw se;
-                }
-            }
         } while (FS.hasBooleanAttributes(f, FileSystem.BA_EXISTS));
 
         if (!FS.createFileExclusively(f.getPath()))

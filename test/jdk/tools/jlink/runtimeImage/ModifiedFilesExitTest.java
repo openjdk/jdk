@@ -78,7 +78,7 @@ public class ModifiedFilesExitTest extends ModifiedFilesTest {
         }
         analyzer.stdoutShouldContain(modifiedFile.toString() + " has been modified");
         // Verify the error message is reasonable
-        analyzer.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        analyzer.stdoutShouldNotContain("IOException");
         analyzer.stdoutShouldNotContain("java.lang.IllegalArgumentException");
     }
 

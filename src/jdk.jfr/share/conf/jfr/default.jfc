@@ -516,6 +516,10 @@
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
+    <event name="jdk.ShenandoahEvacuationInformation">
+      <setting name="enabled" control="gc-enabled-high">false</setting>
+    </event>
+
     <event name="jdk.OldObjectSample">
       <setting name="enabled" control="old-objects-enabled">true</setting>
       <setting name="stackTrace" control="old-objects-stack-trace">false</setting>

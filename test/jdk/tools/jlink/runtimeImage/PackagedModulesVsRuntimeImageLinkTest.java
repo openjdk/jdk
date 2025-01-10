@@ -49,7 +49,7 @@ import tests.JImageGenerator;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g PackagedModulesVsRuntimeImageLinkTest
+ * @run main/othervm/timeout=1200 -Xmx1g PackagedModulesVsRuntimeImageLinkTest
  */
 public class PackagedModulesVsRuntimeImageLinkTest extends AbstractLinkableRuntimeTest {
 

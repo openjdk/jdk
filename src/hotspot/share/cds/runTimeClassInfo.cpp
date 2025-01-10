@@ -62,7 +62,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     }
   }
 
-  if (k->is_hidden()) {
+  if (k->is_hidden() && info.nest_host() != nullptr) {
     _nest_host_offset = builder->any_to_offset_u4(info.nest_host());
   }
   if (k->has_archived_enum_objs()) {
@@ -76,10 +76,13 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
 }
 
 InstanceKlass* RunTimeClassInfo::klass() const {
-  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space((address)this)) {
-    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
+  if (MetaspaceShared::is_in_shared_metaspace(this)) {
+    // <this> is inside a mmaped CDS archive.
+    return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
   } else {
-    return ArchiveUtils::from_offset<InstanceKlass*>(_klass_offset);
+    // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
+    // by the ArchiveBuilder.
+    return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
   }
 }
 
