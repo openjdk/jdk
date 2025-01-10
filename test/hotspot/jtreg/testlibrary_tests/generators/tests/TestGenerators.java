@@ -417,7 +417,7 @@ public class TestGenerators {
     static void testSafeRestrict() {
         // normal restrictions
         mockSource.checkEmpty().enqueueInteger(4, 6, 4);
-        var g1 = mockGS.safeRestrictInt(mockGS.uniformInts(4, 5),2, 5);
+        var g1 = mockGS.safeRestrictInt(mockGS.uniformInts(4, 5), 2, 5);
         Asserts.assertEQ(g1.next(), 4);
 
         mockSource.checkEmpty().enqueueLong(4, 6, 4);
