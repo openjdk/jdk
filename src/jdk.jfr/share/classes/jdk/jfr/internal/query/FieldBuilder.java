@@ -370,7 +370,6 @@ final class FieldBuilder {
             FieldBuilder fb = new FieldBuilder(eventTypes, type, we.name());
             Field field = fb.build().getFirst();
             field.label = we.label;
-            field.index = result.size();
             field.visible = true;
             field.sourceFields.add(field);
             result.add(field);

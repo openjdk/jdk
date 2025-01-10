@@ -830,6 +830,22 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 
   FLAGS_SETUP_BRANCH_PROTECTION
 
+  if test "x$FLAGS_CPU" = xriscv64; then
+    AC_MSG_CHECKING([if RVV/vector sigcontext supported])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <linux/ptrace.h>],
+        [
+          return (int)sizeof(struct __riscv_v_ext_state);
+        ])],
+        [
+          AC_MSG_RESULT([yes])
+        ],
+        [
+          $1_DEFINES_CPU_JVM="${$1_DEFINES_CPU_JVM} -DNO_RVV_SIGCONTEXT"
+          AC_MSG_RESULT([no])
+        ]
+    )
+  fi
+
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
