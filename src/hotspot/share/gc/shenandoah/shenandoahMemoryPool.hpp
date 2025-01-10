@@ -55,7 +55,6 @@ public:
   explicit ShenandoahGenerationalMemoryPool(ShenandoahHeap* heap, const char* name, ShenandoahGeneration* generation);
   MemoryUsage get_memory_usage() override;
   size_t used_in_bytes() override;
-  size_t max_size() const override;
 };
 
 class ShenandoahYoungGenMemoryPool : public ShenandoahGenerationalMemoryPool {

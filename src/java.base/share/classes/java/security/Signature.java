@@ -100,12 +100,20 @@ import sun.security.util.KnownOIDs;
  * supply their own implementations of digital signature algorithms.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code Signature} algorithms:
+ * following standard {@code Signature} algorithms. For the "RSASSA-PSS"
+ * algorithm, implementations must support the parameters in parentheses. For
+ * the "SHA256withECDSA" and "SHA384withECDSA" algorithms, implementations must
+ * support the curves in parentheses.
  * <ul>
+ * <li>{@code RSASSA-PSS} (MGF1 mask generation function and SHA-256 or SHA-384
+ *      hash algorithms)</li>
  * <li>{@code SHA1withDSA}</li>
  * <li>{@code SHA256withDSA}</li>
+ * <li>{@code SHA256withECDSA} (secp256r1)</li>
+ * <li>{@code SHA384withECDSA} (secp384r1)</li>
  * <li>{@code SHA1withRSA}</li>
  * <li>{@code SHA256withRSA}</li>
+ * <li>{@code SHA384withRSA}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">

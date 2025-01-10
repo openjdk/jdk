@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public sealed class FilesEvent extends AppEvent
     private static final long serialVersionUID = 5271763715462312871L;
 
     /**
-     * The list of files.
+     * @serial The list of files.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     final List<File> files;

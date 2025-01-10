@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,9 @@ public class SnippetsTest {
     @ParameterizedTest
     @ValueSource(strings = {
         "src/java.base/share/classes/java/lang/classfile/snippet-files/PackageSnippets.java",
-        "src/java.base/share/classes/jdk/internal/classfile/components/snippet-files/PackageSnippets.java"})
+        "src/java.base/share/classes/java/lang/classfile/constantpool/snippet-files/PackageSnippets.java",
+        "src/java.base/share/classes/jdk/internal/classfile/components/snippet-files/PackageSnippets.java"
+    })
     void testSnippet(String source) throws Exception {
         var p = Paths.get(System.getProperty("test.src", ".")).toAbsolutePath();
         while ((p = p.getParent()) != null) {
@@ -53,8 +55,7 @@ public class SnippetsTest {
                     var compilationUnits = fileManager.getJavaFileObjectsFromFiles(List.of(src));
                     fileManager.setLocation(StandardLocation.CLASS_OUTPUT,
                             List.of(Paths.get(System.getProperty("test.classes", ".")).toFile()));
-                    List<String> flags = List.of(
-                            "--source", String.valueOf(Runtime.version().feature()));
+                    List<String> flags = List.of();
                     if (source.contains("jdk/internal/classfile/components")) {
                         flags = new ArrayList<>(flags);
                         flags.add("--add-exports");

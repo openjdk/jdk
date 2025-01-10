@@ -1359,7 +1359,11 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   }
   assert(jvf->frame_pointer() != nullptr, "frame pointer mustn't be null");
   int frame_number = (int)get_frame_count(jvf);
-  state->env_thread_state((JvmtiEnvBase*)this)->set_frame_pop(frame_number);
+  JvmtiEnvThreadState* ets = state->env_thread_state(this);
+  if (ets->is_frame_pop(frame_number)) {
+    return JVMTI_ERROR_DUPLICATE;
+  }
+  ets->set_frame_pop(frame_number);
   return JVMTI_ERROR_NONE;
 }
 

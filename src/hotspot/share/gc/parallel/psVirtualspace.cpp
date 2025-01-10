@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 

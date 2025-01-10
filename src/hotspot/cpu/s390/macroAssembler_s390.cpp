@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * Copyright 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1013,6 +1013,18 @@ void MacroAssembler::load_and_test_int2long(Register dst, const Address &a) {
 
 void MacroAssembler::load_and_test_long(Register dst, const Address &a) {
   z_ltg(dst, a);
+}
+
+// Test a bit in memory for 2 byte datatype.
+void MacroAssembler::testbit_ushort(const Address &a, unsigned int bit) {
+  assert(a.index() == noreg, "no index reg allowed in testbit");
+  if (bit <= 7) {
+    z_tm(a.disp() + 1, a.base(), 1 << bit);
+  } else if (bit <= 15) {
+    z_tm(a.disp() + 0, a.base(), 1 << (bit - 8));
+  } else {
+    ShouldNotReachHere();
+  }
 }
 
 // Test a bit in memory.
@@ -3426,7 +3438,7 @@ void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
   z_bru(L_done); // pass whatever result we got from a slow path
 
   bind(L_failure);
-  // TODO: use load immediate on condition and z_bru above will not be required
+
   z_lghi(r_result, 1);
 
   bind(L_done);
@@ -3825,11 +3837,11 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   Register zero = temp;
   Register monitor_tagged = displacedHeader; // Tagged with markWord::monitor_value.
 
-  // Try to CAS owner (no owner => current thread's _lock_id).
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
   // If csg succeeds then CR=EQ, otherwise, register zero is filled
   // with the current owner.
   z_lghi(zero, 0);
-  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
   z_csg(zero, Z_R0_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
 
   // Store a non-null value into the box.
@@ -3904,7 +3916,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
   z_cg(Z_R0_scratch, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   z_brne(done);
 
@@ -4108,7 +4120,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided. (dst == src) also possible.
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
-  bool     need_zero_extend = base != 0;
+  bool     need_zero_extend = base != nullptr;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");
@@ -6608,11 +6620,11 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
 
 
-    // Try to CAS owner (no owner => current thread's _lock_id).
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     // If csg succeeds then CR=EQ, otherwise, register zero is filled
     // with the current owner.
     z_lghi(zero, 0);
-    z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+    z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
     z_csg(zero, Z_R0_scratch, owner_address);
     z_bre(monitor_locked);
 

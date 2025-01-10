@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,8 @@
 #define JAVA_23_VERSION                   67
 
 #define JAVA_24_VERSION                   68
+
+#define JAVA_25_VERSION                   69
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -2979,7 +2981,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
                          "Class is both outer and inner class in class file %s", CHECK_0);
     }
     // Access flags
-    jint flags;
+    u2 flags;
     // JVM_ACC_MODULE is defined in JDK-9 and later.
     if (_major_version >= JAVA_9_VERSION) {
       flags = cfs->get_u2_fast() & (RECOGNIZED_INNER_CLASS_MODIFIERS | JVM_ACC_MODULE);
@@ -2996,7 +2998,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
     inner_classes->at_put(index++, inner_class_info_index);
     inner_classes->at_put(index++, outer_class_info_index);
     inner_classes->at_put(index++, inner_name_index);
-    inner_classes->at_put(index++, inner_access_flags.as_short());
+    inner_classes->at_put(index++, inner_access_flags.as_unsigned_short());
   }
 
   // Check for circular and duplicate entries.
@@ -3745,6 +3747,12 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
+
+  // Initialize cached modifier_flags to support Class.getModifiers().
+  // This must follow setting inner_class attributes.
+  u2 computed_modifiers = this_klass->compute_modifier_flags();
+  this_klass->set_modifier_flags(computed_modifiers);
+
   // Delay the setting of _local_interfaces and _transitive_interfaces until after
   // initialize_supers() in fill_instance_klass(). It is because the _local_interfaces could
   // be shared with _transitive_interfaces and _transitive_interfaces may be shared with
@@ -4062,9 +4070,13 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
       return;
     }
 
-    if (super_ik->is_sealed() && !super_ik->has_as_permitted_subclass(this_klass)) {
-      classfile_icce_error("class %s cannot inherit from sealed class %s", super_ik, THREAD);
-      return;
+    if (super_ik->is_sealed()) {
+      stringStream ss;
+      ResourceMark rm(THREAD);
+      if (!super_ik->has_as_permitted_subclass(this_klass, ss)) {
+        classfile_icce_error(ss.as_string(), THREAD);
+        return;
+      }
     }
 
     Reflection::VerifyClassAccessResults vca_result =
@@ -4109,12 +4121,13 @@ void ClassFileParser::check_super_interface_access(const InstanceKlass* this_kla
     InstanceKlass* const k = local_interfaces->at(i);
     assert (k != nullptr && k->is_interface(), "invalid interface");
 
-    if (k->is_sealed() && !k->has_as_permitted_subclass(this_klass)) {
-      classfile_icce_error(this_klass->is_interface() ?
-                             "class %s cannot extend sealed interface %s" :
-                             "class %s cannot implement sealed interface %s",
-                           k, THREAD);
-      return;
+    if (k->is_sealed()) {
+      stringStream ss;
+      ResourceMark rm(THREAD);
+      if (!k->has_as_permitted_subclass(this_klass, ss)) {
+        classfile_icce_error(ss.as_string(), THREAD);
+        return;
+      }
     }
 
     Reflection::VerifyClassAccessResults vca_result =
@@ -5165,7 +5178,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   Handle module_handle(THREAD, module_entry->module());
 
   // Allocate mirror and initialize static fields
-  // The create_mirror() call will also call compute_modifiers()
   java_lang_Class::create_mirror(ik,
                                  Handle(THREAD, _loader_data->class_loader()),
                                  module_handle,
@@ -5324,7 +5336,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   assert(_stream != nullptr, "invariant");
   assert(_stream->buffer() == _stream->current(), "invariant");
   assert(_class_name != nullptr, "invariant");
-  assert(0 == _access_flags.as_int(), "invariant");
+  assert(0 == _access_flags.as_unsigned_short(), "invariant");
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
   _need_verify = Verifier::should_verify_for(_loader_data->class_loader());
@@ -5476,7 +5488,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len
 
   // Access flags
-  jint flags;
+  u2 flags;
   // JVM_ACC_MODULE is defined in JDK-9 and later.
   if (_major_version >= JAVA_9_VERSION) {
     flags = stream->get_u2_fast() & (JVM_RECOGNIZED_CLASS_MODIFIERS | JVM_ACC_MODULE);
