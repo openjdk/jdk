@@ -101,7 +101,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private RemoveAllAction removeAllAction;
     private GraphNode[] selectedGraphs = new GraphNode[0];
     private Path documentPath = null;
-    
+
     private final DropTargetListener fileDropListener = new DropTargetListener() {
         @Override
         public void dragEnter(DropTargetDragEvent dtde) {
@@ -170,19 +170,19 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         initListView();
         initToolbar();
         server.startServer();
-        
+
         showEditorPlaceholder();
-                       
+
         WindowManager.getDefault().invokeWhenUIReady(() -> {
            new DropTarget(WindowManager.getDefault().getMainWindow(), fileDropListener);
         });
-    } 
+    }
 
     private void showEditorPlaceholder() {
         editorPlaceholder.open();
         editorPlaceholder.requestActive();
     }
-    
+
     public static GraphDocument getDocument() {
         return document;
     }
@@ -461,7 +461,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             handleOpen(fc.getSelectedFile());
         }
     }
-    
+
     private void handleOpen(File file) {
         clearWorkspace();
         editorPlaceholder.close();
