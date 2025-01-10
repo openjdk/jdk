@@ -202,7 +202,7 @@ public class DescriptorSupport
      * the input String
      * @exception MBeanException Wraps a distributed communication Exception.
      * @deprecated This constructor exists for historical reasons.  It enables
-     * read from XML, which is unnecessary.
+     * reading from XML, which is unnecessary.
      */
     /* At some stage we should rewrite this code to be cleverer.  Using
        a StringTokenizer as we do means, first, that we accept a lot of
