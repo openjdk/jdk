@@ -3841,6 +3841,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     // Added missing cleanup
     thread->cleanup_failed_attach_current_thread(daemon);
     thread->unregister_thread_stack_with_NMT();
+    thread->smr_delete();
     return JNI_ERR;
   }
 
