@@ -4098,7 +4098,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cbzw(c_rarg5, rounds24_loop);
 
     __ tbnz(block_size, 5, shake128);
-    // block_size == 144, bit5 == 0, SHA3-244
+    // block_size == 144, bit5 == 0, SHA3-224
     __ ldrd(v28, __ post(buf, 8));
     __ eor(v17, __ T8B, v17, v28);
     __ b(rounds24_loop);
@@ -4221,11 +4221,176 @@ class StubGenerator: public StubCodeGenerator {
     __ st1(v20, v21, v22, v23, __ T1D, __ post(state, 32));
     __ st1(v24, __ T1D, state);
 
+    // restore callee-saved registers
     __ ldpd(v14, v15, Address(sp, 48));
     __ ldpd(v12, v13, Address(sp, 32));
     __ ldpd(v10, v11, Address(sp, 16));
     __ ldpd(v8, v9, __ post(sp, 64));
 
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Inputs:
+  //   c_rarg0   - long[]  state0
+  //   c_rarg1   - long[]  state1
+  address generate_double_keccak() {
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "double_keccak");
+    address start = __ pc();
+    __ enter();
+
+    Register state0        = c_rarg0;
+    Register state1        = c_rarg1;
+
+    Label rounds24_loop;
+
+    // save callee-saved registers
+    __ stpd(v8, v9, __ pre(sp, -64));
+    __ stpd(v10, v11, Address(sp, 16));
+    __ stpd(v12, v13, Address(sp, 32));
+    __ stpd(v14, v15, Address(sp, 48));
+
+    // load states
+    __ add(rscratch1, state0, 32);
+    __ ld4(v0, v1, v2,  v3, __ D, 0,  state0);
+    __ ld4(v4, v5, v6,  v7, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v8, v9, v10, v11, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v12, v13, v14, v15, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v16, v17, v18, v19, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v20, v21, v22, v23, __ D, 0, __ post(rscratch1, 32));
+    __ ld1(v24, __ D, 0, rscratch1);
+    __ add(rscratch1, state1, 32);
+    __ ld4(v0, v1, v2,  v3,  __ D, 1, state1);
+    __ ld4(v4, v5, v6,  v7, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v8, v9, v10, v11, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v12, v13, v14, v15, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v16, v17, v18, v19, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v20, v21, v22, v23, __ D, 1, __ post(rscratch1, 32));
+    __ ld1(v24, __ D, 1, rscratch1);
+
+    // 24 keccak rounds
+    __ movw(rscratch2, 24);
+
+    // load round_constants base
+    __ lea(rscratch1, ExternalAddress((address) round_consts));
+
+    __ BIND(rounds24_loop);
+    __ subw(rscratch2, rscratch2, 1);
+
+    __ eor3(v29, __ T16B, v4, v9, v14);
+    __ eor3(v26, __ T16B, v1, v6, v11);
+    __ eor3(v28, __ T16B, v3, v8, v13);
+    __ eor3(v25, __ T16B, v0, v5, v10);
+    __ eor3(v27, __ T16B, v2, v7, v12);
+    __ eor3(v29, __ T16B, v29, v19, v24);
+    __ eor3(v26, __ T16B, v26, v16, v21);
+    __ eor3(v28, __ T16B, v28, v18, v23);
+    __ eor3(v25, __ T16B, v25, v15, v20);
+    __ eor3(v27, __ T16B, v27, v17, v22);
+
+    __ rax1(v30, __ T2D, v29, v26);
+    __ rax1(v26, __ T2D, v26, v28);
+    __ rax1(v28, __ T2D, v28, v25);
+    __ rax1(v25, __ T2D, v25, v27);
+    __ rax1(v27, __ T2D, v27, v29);
+
+    __ eor(v0, __ T16B, v0, v30);
+    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
+    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
+    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
+    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
+    __ xar(v22, __ T2D, v14, v28, (64 - 39));
+    __ xar(v14, __ T2D, v20, v30, (64 - 18));
+    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
+    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
+    __ xar(v12, __ T2D, v13, v27, (64 - 25));
+    __ xar(v13, __ T2D, v19, v28, (64 - 8));
+    __ xar(v19, __ T2D, v23, v27, (64 - 56));
+    __ xar(v23, __ T2D, v15, v30, (64 - 41));
+    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
+    __ xar(v28, __ T2D, v24, v28, (64 - 14));
+    __ xar(v24, __ T2D, v21, v25, (64 - 2));
+    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
+    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
+    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
+    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
+    __ xar(v27, __ T2D, v18, v27, (64 - 21));
+    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
+    __ xar(v25, __ T2D, v11, v25, (64 - 10));
+    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
+    __ xar(v30, __ T2D, v10, v30, (64 - 3));
+
+    __ bcax(v20, __ T16B, v31, v22, v8);
+    __ bcax(v21, __ T16B, v8,  v23, v22);
+    __ bcax(v22, __ T16B, v22, v24, v23);
+    __ bcax(v23, __ T16B, v23, v31, v24);
+    __ bcax(v24, __ T16B, v24, v8,  v31);
+
+    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
+
+    __ bcax(v17, __ T16B, v25, v19, v3);
+    __ bcax(v18, __ T16B, v3,  v15, v19);
+    __ bcax(v19, __ T16B, v19, v16, v15);
+    __ bcax(v15, __ T16B, v15, v25, v16);
+    __ bcax(v16, __ T16B, v16, v3,  v25);
+
+    __ bcax(v10, __ T16B, v29, v12, v26);
+    __ bcax(v11, __ T16B, v26, v13, v12);
+    __ bcax(v12, __ T16B, v12, v14, v13);
+    __ bcax(v13, __ T16B, v13, v29, v14);
+    __ bcax(v14, __ T16B, v14, v26, v29);
+
+    __ bcax(v7, __ T16B, v30, v9,  v4);
+    __ bcax(v8, __ T16B, v4,  v5,  v9);
+    __ bcax(v9, __ T16B, v9,  v6,  v5);
+    __ bcax(v5, __ T16B, v5,  v30, v6);
+    __ bcax(v6, __ T16B, v6,  v4,  v30);
+
+    __ bcax(v3, __ T16B, v27, v0,  v28);
+    __ bcax(v4, __ T16B, v28, v1,  v0);
+    __ bcax(v0, __ T16B, v0,  v2,  v1);
+    __ bcax(v1, __ T16B, v1,  v27, v2);
+    __ bcax(v2, __ T16B, v2,  v28, v27);
+
+    __ eor(v0, __ T16B, v0, v31);
+
+    __ cbnzw(rscratch2, rounds24_loop);
+
+    __ st4(v0, v1, v2,  v3,  __ D, 0, __ post(state0, 32));
+    __ st4(v4, v5, v6,  v7,  __ D, 0, __ post(state0, 32));
+    __ st4(v8, v9, v10, v11, __ D, 0, __ post(state0, 32));
+    __ st4(v12, v13, v14, v15, __ D, 0, __ post(state0, 32));
+    __ st4(v16, v17, v18, v19, __ D, 0, __ post(state0, 32));
+    __ st4(v20, v21, v22, v23, __ D, 0, __ post(state0, 32));
+    __ st1(v24, __ D, 0, state0);
+    __ st4(v0, v1, v2,  v3,  __ D, 1, __ post(state1, 32));
+    __ st4(v4, v5, v6,  v7, __ D, 1, __ post(state1, 32));
+    __ st4(v8, v9, v10, v11, __ D, 1, __ post(state1, 32));
+    __ st4(v12, v13, v14, v15, __ D, 1, __ post(state1, 32));
+    __ st4(v16, v17, v18, v19, __ D, 1, __ post(state1, 32));
+    __ st4(v20, v21, v22, v23, __ D, 1, __ post(state1, 32));
+    __ st1(v24, __ D, 1, state1);
+
+    __ ldpd(v14, v15, Address(sp, 48));
+    __ ldpd(v12, v13, Address(sp, 32));
+    __ ldpd(v10, v11, Address(sp, 16));
+    __ ldpd(v8, v9, __ post(sp, 64));
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     return start;
@@ -4392,6 +4557,1001 @@ class StubGenerator: public StubCodeGenerator {
 
     __ mov(r0, 256);             // Return length of output keystream
     __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+  
+  void dilithium_montmul32() {
+    __ sqdmulh(v24, __ T4S, v0, v16);
+    __ mulv(v16, __ T4S, v0, v16);
+    __ sqdmulh(v25, __ T4S, v1, v17);
+    __ mulv(v17, __ T4S, v1, v17);
+    __ sqdmulh(v26, __ T4S, v2, v18);
+    __ mulv(v18, __ T4S, v2, v18);
+    __ sqdmulh(v27, __ T4S, v3, v19);
+    __ mulv(v19, __ T4S, v3, v19);
+
+    __ mulv(v16, __ T4S, v16, v30);
+    __ mulv(v17, __ T4S, v17, v30);
+    __ mulv(v18, __ T4S, v18, v30);
+    __ mulv(v19, __ T4S, v19, v30);
+
+    __ sqdmulh(v16, __ T4S, v16, v31);
+    __ sqdmulh(v17, __ T4S, v17, v31);
+    __ sqdmulh(v18, __ T4S, v18, v31);
+    __ sqdmulh(v19, __ T4S, v19, v31);
+
+    __ shsubv(v16, __ T4S, v24, v16);
+    __ shsubv(v17, __ T4S, v25, v17);
+    __ shsubv(v18, __ T4S, v26, v18);
+    __ shsubv(v19, __ T4S, v27, v19);
+
+    __ sqdmulh(v24, __ T4S, v4, v20);
+    __ mulv(v20, __ T4S, v4, v20);
+    __ sqdmulh(v25, __ T4S, v5, v21);
+    __ mulv(v21, __ T4S, v5, v21);
+    __ sqdmulh(v26, __ T4S, v6, v22);
+    __ mulv(v22, __ T4S, v6, v22);
+    __ sqdmulh(v27, __ T4S, v7, v23);
+    __ mulv(v23, __ T4S, v7, v23);
+
+    __ mulv(v20, __ T4S, v20, v30);
+    __ mulv(v21, __ T4S, v21, v30);
+    __ mulv(v22, __ T4S, v22, v30);
+    __ mulv(v23, __ T4S, v23, v30);
+
+    __ sqdmulh(v20, __ T4S, v20, v31);
+    __ sqdmulh(v21, __ T4S, v21, v31);
+    __ sqdmulh(v22, __ T4S, v22, v31);
+    __ sqdmulh(v23, __ T4S, v23, v31);
+
+    __ shsubv(v20, __ T4S, v24, v20);
+    __ shsubv(v21, __ T4S, v25, v21);
+    __ shsubv(v22, __ T4S, v26, v22);
+    __ shsubv(v23, __ T4S, v27, v23);
+  }
+    
+  void dilithium_add_sub32() {
+    __ addv(v24, __ T4S, v0, v16);
+    __ addv(v25, __ T4S, v1, v17);
+    __ addv(v26, __ T4S, v2, v18);
+    __ addv(v27, __ T4S, v3, v19);
+    __ addv(v28, __ T4S, v4, v20);
+    __ addv(v29, __ T4S, v5, v21);
+    __ addv(v30, __ T4S, v6, v22);
+    __ addv(v31, __ T4S, v7, v23);
+
+    __ subv(v0, __ T4S, v0, v16);
+    __ subv(v1, __ T4S, v1, v17);
+    __ subv(v2, __ T4S, v2, v18);
+    __ subv(v3, __ T4S, v3, v19);
+    __ subv(v4, __ T4S, v4, v20);
+    __ subv(v5, __ T4S, v5, v21);
+    __ subv(v6, __ T4S, v6, v22);
+    __ subv(v7, __ T4S, v7, v23);
+  }
+
+  void dilithium_montmul_sub_add16() {
+    __ sqdmulh(v24, __ T4S, v1, v16);
+    __ mulv(v16, __ T4S, v1, v16);
+    __ sqdmulh(v25, __ T4S, v3, v17);
+    __ mulv(v17, __ T4S, v3, v17);
+    __ sqdmulh(v26, __ T4S, v5, v18);
+    __ mulv(v18, __ T4S, v5, v18);
+    __ sqdmulh(v27, __ T4S, v7, v19);
+    __ mulv(v19, __ T4S, v7, v19);
+
+    __ mulv(v16, __ T4S, v16, v30);
+    __ mulv(v17, __ T4S, v17, v30);
+    __ mulv(v18, __ T4S, v18, v30);
+    __ mulv(v19, __ T4S, v19, v30);
+
+    __ sqdmulh(v16, __ T4S, v16, v31);
+    __ sqdmulh(v17, __ T4S, v17, v31);
+    __ sqdmulh(v18, __ T4S, v18, v31);
+    __ sqdmulh(v19, __ T4S, v19, v31);
+
+    __ shsubv(v16, __ T4S, v24, v16);
+    __ shsubv(v17, __ T4S, v25, v17);
+    __ shsubv(v18, __ T4S, v26, v18);
+    __ shsubv(v19, __ T4S, v27, v19);
+
+    __ subv(v1, __ T4S, v0, v16);
+    __ subv(v3, __ T4S, v2, v17);
+    __ subv(v5, __ T4S, v4, v18);
+    __ subv(v7, __ T4S, v6, v19);
+
+    __ addv(v0, __ T4S, v0, v16);
+    __ addv(v2, __ T4S, v2, v17);
+    __ addv(v4, __ T4S, v4, v18);
+    __ addv(v6, __ T4S, v6, v19);
+  }
+
+  // At these levels, the indices that correspond to the 'j's (and 'j+l's)
+  // in the Java implementation come in sequences of at least 8, so we
+  // can use ldpq to collect the corresponding data into pairs of v registers
+  // we collect the coefficients that need to be multiplied by the corresponding
+  // zeta values into registers v0-v7, the zetas into registers v16-v23 then
+  // do the (Montgomery) multiplications by zeta in parallel into v16-v23
+  // load the coeffs corresponding to the'j+l's into v0-v7, then
+  // do the additions into v24-v31 and the subtractions into v0-v7 and
+  // finally save the results back to the coeffs array
+  void dilithiumNttLevel0_4(const Register dilithiumConsts,
+    const Register coeffs, const Register zetas) {
+    int c1 = 0;
+    int c2 = 512;
+    int startIncr;
+    int incr1 = 32;
+    int incr2 = 64;
+    int incr3 = 96;
+
+    for (int level = 0; level < 5; level++) {
+      int c1Start = c1;
+      int c2Start = c2;
+      if (level == 3) {
+        incr1 = 32;
+        incr2 = 128;
+        incr3 = 160;
+      } else if (level == 4) {
+        incr1 = 64;
+        incr2 = 128;
+        incr3 = 192;
+      }
+
+      for (int i = 0; i < 4; i++) {
+        __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+        __ ldpq(v0, v1, Address(coeffs, c2Start));
+        __ ldpq(v2, v3, Address(coeffs, c2Start + incr1));
+        __ ldpq(v4, v5, Address(coeffs, c2Start + incr2));
+        __ ldpq(v6, v7, Address(coeffs, c2Start + incr3));
+        __ ldpq(v16, v17, __ post (zetas, 32));
+        __ ldpq(v18, v19, __ post (zetas, 32));
+        __ ldpq(v20, v21, __ post (zetas, 32));
+        __ ldpq(v22, v23, __ post (zetas, 32));
+        dilithium_montmul32();
+        __ ldpq(v0, v1, Address(coeffs, c1Start));
+        __ ldpq(v2, v3, Address(coeffs, c1Start + incr1));
+        __ ldpq(v4, v5, Address(coeffs, c1Start + incr2));
+        __ ldpq(v6, v7, Address(coeffs, c1Start + incr3));
+        dilithium_add_sub32();
+        __ stpq(v24, v25, Address(coeffs, c1Start));
+        __ stpq(v26, v27, Address(coeffs, c1Start + incr1));
+        __ stpq(v28, v29, Address(coeffs, c1Start + incr2));
+        __ stpq(v30, v31, Address(coeffs, c1Start + incr3));
+        __ stpq(v0, v1, Address(coeffs, c2Start));
+        __ stpq(v2, v3, Address(coeffs, c2Start + incr1));
+        __ stpq(v4, v5, Address(coeffs, c2Start + incr2));
+        __ stpq(v6, v7, Address(coeffs, c2Start + incr3));
+
+        int k = 4 * level + i;
+
+        if (k > 7) {
+          startIncr = 256;
+        } else if (k == 5) {
+          startIncr = 384;
+        } else {
+          startIncr = 128;
+        }
+
+        c1Start += startIncr;
+        c2Start += startIncr;
+      }
+
+      c2 /= 2;
+    }
+  }
+
+  // Dilithium NTT function except for the final "normalization" to |coeff| < Q.
+  // Implements
+  // static int implDilithiumAlmostNtt(int[] coeffs, int zetas[]) {}
+  //
+  // coeffs (int[256]) = c_rarg0
+  // zetas (int[256]) = c_rarg1
+  address generate_dilithiumAlmostNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "dilithiumAlmostNtt");
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register tmpAddr = r9;
+    const Register dilithiumConsts = r10;
+    const Register result = r11;
+
+    __ add(result, coeffs, 0);
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // Each level represents one iteration of the outer for loop of the Java version
+    // level 0-4
+    dilithiumNttLevel0_4(dilithiumConsts, coeffs, zetas);
+
+    // level 5
+    for (int i = 0; i < 1024; i += 256) {
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ ldr(v0, __ Q, Address(coeffs, i + 16));
+      __ ldr(v1, __ Q, Address(coeffs, i + 48));
+      __ ldr(v2, __ Q, Address(coeffs, i + 80));
+      __ ldr(v3, __ Q, Address(coeffs, i + 112));
+      __ ldr(v4, __ Q, Address(coeffs, i + 144));
+      __ ldr(v5, __ Q, Address(coeffs, i + 176));
+      __ ldr(v6, __ Q, Address(coeffs, i + 208));
+      __ ldr(v7, __ Q, Address(coeffs, i + 240));
+      __ ldpq(v16, v17, __ post (zetas, 32));
+      __ ldpq(v18, v19, __ post (zetas, 32));
+      __ ldpq(v20, v21, __ post (zetas, 32));
+      __ ldpq(v22, v23, __ post (zetas, 32));
+      dilithium_montmul32();
+      __ ldr(v0, __ Q, Address(coeffs, i));
+      __ ldr(v1, __ Q, Address(coeffs, i + 32));
+      __ ldr(v2, __ Q, Address(coeffs, i + 64));
+      __ ldr(v3, __ Q, Address(coeffs, i + 96));
+      __ ldr(v4, __ Q, Address(coeffs, i + 128));
+      __ ldr(v5, __ Q, Address(coeffs, i + 160));
+      __ ldr(v6, __ Q, Address(coeffs, i + 192));
+      __ ldr(v7, __ Q, Address(coeffs, i + 224));
+      dilithium_add_sub32();
+      __ str(v24, __ Q, Address(coeffs, i));
+      __ str(v25, __ Q, Address(coeffs, i + 32));
+      __ str(v26, __ Q, Address(coeffs, i + 64));
+      __ str(v27, __ Q, Address(coeffs, i + 96));
+      __ str(v28, __ Q, Address(coeffs, i + 128));
+      __ str(v29, __ Q, Address(coeffs, i + 160));
+      __ str(v30, __ Q, Address(coeffs, i + 192));
+      __ str(v31, __ Q, Address(coeffs, i + 224));
+      __ str(v0, __ Q, Address(coeffs, i + 16));
+      __ str(v1, __ Q, Address(coeffs, i + 48));
+      __ str(v2, __ Q, Address(coeffs, i + 80));
+      __ str(v3, __ Q, Address(coeffs, i + 112));
+      __ str(v4, __ Q, Address(coeffs, i + 144));
+      __ str(v5, __ Q, Address(coeffs, i + 176));
+      __ str(v6, __ Q, Address(coeffs, i + 208));
+      __ str(v7, __ Q, Address(coeffs, i + 240));
+    }
+
+    // level 6
+    for (int i = 0; i < 1024; i += 128) {
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ add(tmpAddr, coeffs, i);
+      __ ld2(v0, v1, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ ld2(v2, v3, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ ld2(v4, v5, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ ld2(v6, v7, __ T2D, tmpAddr);
+      __ ldpq(v16, v17, __ post (zetas, 32));
+      __ ldpq(v18, v19, __ post (zetas, 32));
+      dilithium_montmul_sub_add16();
+      __ add(tmpAddr, coeffs, i);
+      __ st2(v0, v1, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ st2(v2, v3, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ st2(v4, v5, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ st2(v6, v7, __ T2D, tmpAddr);
+    }
+
+    // level 7
+    for (int i = 0; i < 1024; i += 128) {
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ add(tmpAddr, coeffs, i);
+      __ ld2(v0, v1, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ ld2(v2, v3, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ ld2(v4, v5, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ ld2(v6, v7, __ T4S, tmpAddr);
+      __ ldpq(v16, v17, __ post (zetas, 32));
+      __ ldpq(v18, v19, __ post(zetas, 32));
+      dilithium_montmul_sub_add16();
+      __ add(tmpAddr, coeffs, i);
+      __ st2(v0, v1, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ st2(v2, v3, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ st2(v4, v5, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ st2(v6, v7, __ T4S, tmpAddr);
+    }
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+
+  }
+
+  void dilithium_sub_add_montmul16() {
+    __ subv(v20, __ T4S, v0, v1);
+    __ subv(v21, __ T4S, v2, v3);
+    __ subv(v22, __ T4S, v4, v5);
+    __ subv(v23, __ T4S, v6, v7);
+
+    __ addv(v0, __ T4S, v0, v1);
+    __ addv(v2, __ T4S, v2, v3);
+    __ addv(v4, __ T4S, v4, v5);
+    __ addv(v6, __ T4S, v6, v7);
+
+    __ sqdmulh(v24, __ T4S, v20, v16);
+    __ mulv(v1, __ T4S, v20, v16);
+    __ sqdmulh(v25, __ T4S, v21, v17);
+    __ mulv(v3, __ T4S, v21, v17);
+    __ sqdmulh(v26, __ T4S, v22, v18);
+    __ mulv(v5, __ T4S, v22, v18);
+    __ sqdmulh(v27, __ T4S, v23, v19);
+    __ mulv(v7, __ T4S, v23, v19);
+
+    __ mulv(v1, __ T4S, v1, v30);
+    __ mulv(v3, __ T4S, v3, v30);
+    __ mulv(v5, __ T4S, v5, v30);
+    __ mulv(v7, __ T4S, v7, v30);
+
+    __ sqdmulh(v1, __ T4S, v1, v31);
+    __ sqdmulh(v3, __ T4S, v3, v31);
+    __ sqdmulh(v5, __ T4S, v5, v31);
+    __ sqdmulh(v7, __ T4S, v7, v31);
+
+    __ shsubv(v1, __ T4S, v24, v1);
+    __ shsubv(v3, __ T4S, v25, v3);
+    __ shsubv(v5, __ T4S, v26, v5);
+    __ shsubv(v7, __ T4S, v27, v7);
+  }
+
+
+  // At these levels, the indices that correspond to the 'j's (and 'j+l's)
+  // in the Java implementation come in sequences of at least 8, so we
+  // can use ldpq to collect the corresponding data into pairs of v registers
+  // we collect the coefficients that correspond to the 'j's into v0-v7
+  // the coefficiets that correspond to the 'j+l's into v16-v23 then
+  // do the additions into v24-v31 and the subtractions into v0-v7 then
+  // save the result of the additions, load the zetas into v16-v23
+  // do the (Montgomery) multiplications by zeta in parallel into v16-v23
+  // finally save the results back to the coeffs array
+  void dilithiumInverseNttLevel3_7(const Register dilithiumConsts,
+    const Register coeffs, const Register zetas) {
+    int c1 = 0;
+    int c2 = 32;
+    int startIncr;
+    int incr1;
+    int incr2;
+    int incr3;
+
+    for (int level = 3; level < 8; level++) {
+      int c1Start = c1;
+      int c2Start = c2;
+      if (level == 3) {
+        incr1 = 64;
+        incr2 = 128;
+        incr3 = 192;
+      } else if (level == 4) {
+        incr1 = 32;
+        incr2 = 128;
+        incr3 = 160;
+      } else {
+        incr1 = 32;
+        incr2 = 64;
+        incr3 = 96;
+      }
+
+      for (int i = 0; i < 4; i++) {
+        __ ldpq(v0, v1, Address(coeffs, c1Start));
+        __ ldpq(v2, v3, Address(coeffs, c1Start + incr1));
+        __ ldpq(v4, v5, Address(coeffs, c1Start + incr2));
+        __ ldpq(v6, v7, Address(coeffs, c1Start + incr3));
+        __ ldpq(v16, v17, Address(coeffs, c2Start));
+        __ ldpq(v18, v19, Address(coeffs, c2Start + incr1));
+        __ ldpq(v20, v21, Address(coeffs, c2Start + incr2));
+        __ ldpq(v22, v23, Address(coeffs, c2Start + incr3));
+        dilithium_add_sub32();
+        __ stpq(v24, v25, Address(coeffs, c1Start));
+        __ stpq(v26, v27, Address(coeffs, c1Start + incr1));
+        __ stpq(v28, v29, Address(coeffs, c1Start + incr2));
+        __ stpq(v30, v31, Address(coeffs, c1Start + incr3));
+        __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+        __ ldpq(v16, v17, __ post (zetas, 32));
+        __ ldpq(v18, v19, __ post (zetas, 32));
+        __ ldpq(v20, v21, __ post (zetas, 32));
+        __ ldpq(v22, v23, __ post (zetas, 32));
+        dilithium_montmul32();
+        __ stpq(v16, v17, Address(coeffs, c2Start));
+        __ stpq(v18, v19, Address(coeffs, c2Start + incr1));
+        __ stpq(v20, v21, Address(coeffs, c2Start + incr2));
+        __ stpq(v22, v23, Address(coeffs, c2Start + incr3));
+
+        int k = 4 * level + i;
+
+        if (k < 24) {
+          startIncr = 256;
+        } else if (k == 25) {
+          startIncr = 384;
+        } else {
+          startIncr = 128;
+        }
+
+        c1Start += startIncr;
+        c2Start += startIncr;
+      }
+
+      c2 *= 2;
+    }
+  }
+
+  // Dilithium Inverse NTT function except the final mod Q division by 2^256.
+  // Implements
+  // static int implDilithiumAlmostInverseNtt(int[] coeffs, int[] zetas) {}
+  //
+  // coeffs (int[256]) = c_rarg0
+  // zetas (int[256]) = c_rarg1
+  address generate_dilithiumAlmostInverseNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "dilithiumAlmostInverseNtt");
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register tmpAddr = r9;
+    const Register dilithiumConsts = r10;
+    const Register result = r11;
+
+    __ add(result, coeffs, 0);
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // Each level represents one iteration of the outer for loop of the Java version
+    // level0
+    for (int i = 0; i < 1024; i += 128) {
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      __ add(tmpAddr, coeffs, i);
+      __ ld2(v0, v1, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ ld2(v2, v3, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ ld2(v4, v5, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ ld2(v6, v7, __ T4S, tmpAddr);
+      __ ldpq(v16, v17, __ post (zetas, 32));
+      __ ldpq(v18, v19, __ post (zetas, 32));
+      dilithium_sub_add_montmul16();
+      __ add(tmpAddr, coeffs, i);
+      __ st2(v0, v1, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ st2(v2, v3, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ st2(v4, v5, __ T4S, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ st2(v6, v7, __ T4S, tmpAddr);
+    }
+
+    // level 1
+    for (int i = 0; i < 1024; i += 128) {
+      __ add(tmpAddr, coeffs, i);
+      __ ld2(v0, v1, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ ld2(v2, v3, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ ld2(v4, v5, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ ld2(v6, v7, __ T2D, tmpAddr);
+      __ ldpq(v16, v17, __ post (zetas, 32));
+      __ ldpq(v18, v19, __ post (zetas, 32));
+      dilithium_sub_add_montmul16();
+      __ add(tmpAddr, coeffs, i);
+      __ st2(v0, v1, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 32);
+      __ st2(v2, v3, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 64);
+      __ st2(v4, v5, __ T2D, tmpAddr);
+      __ add(tmpAddr, coeffs, i + 96);
+      __ st2(v6, v7, __ T2D, tmpAddr);
+    }
+
+    //level 2
+    for (int i = 0; i < 1024; i += 256) {
+      __ ldr(v0, __ Q, Address(coeffs, i));
+      __ ldr(v1, __ Q, Address(coeffs, i + 32));
+      __ ldr(v2, __ Q, Address(coeffs, i + 64));
+      __ ldr(v3, __ Q, Address(coeffs, i + 96));
+      __ ldr(v4, __ Q, Address(coeffs, i + 128));
+      __ ldr(v5, __ Q, Address(coeffs, i + 160));
+      __ ldr(v6, __ Q, Address(coeffs, i + 192));
+      __ ldr(v7, __ Q, Address(coeffs, i + 224));
+      __ ldr(v16, __ Q, Address(coeffs, i + 16));
+      __ ldr(v17, __ Q, Address(coeffs, i + 48));
+      __ ldr(v18, __ Q, Address(coeffs, i + 80));
+      __ ldr(v19, __ Q, Address(coeffs, i + 112));
+      __ ldr(v20, __ Q, Address(coeffs, i + 144));
+      __ ldr(v21, __ Q, Address(coeffs, i + 176));
+      __ ldr(v22, __ Q, Address(coeffs, i + 208));
+      __ ldr(v23, __ Q, Address(coeffs, i + 240));
+      dilithium_add_sub32();
+      __ str(v24, __ Q, Address(coeffs, i));
+      __ str(v25, __ Q, Address(coeffs, i + 32));
+      __ str(v26, __ Q, Address(coeffs, i + 64));
+      __ str(v27, __ Q, Address(coeffs, i + 96));
+      __ str(v28, __ Q, Address(coeffs, i + 128));
+      __ str(v29, __ Q, Address(coeffs, i + 160));
+      __ str(v30, __ Q, Address(coeffs, i + 192));
+      __ str(v31, __ Q, Address(coeffs, i + 224));
+      __ ldpq(v16, v17, __ post (zetas, 32));
+      __ ldpq(v18, v19, __ post (zetas, 32));
+      __ ldpq(v20, v21, __ post (zetas, 32));
+      __ ldpq(v22, v23, __ post (zetas, 32));
+      __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+      dilithium_montmul32();
+      __ str(v16, __ Q, Address(coeffs, i + 16));
+      __ str(v17, __ Q, Address(coeffs, i + 48));
+      __ str(v18, __ Q, Address(coeffs, i + 80));
+      __ str(v19, __ Q, Address(coeffs, i + 112));
+      __ str(v20, __ Q, Address(coeffs, i + 144));
+      __ str(v21, __ Q, Address(coeffs, i + 176));
+      __ str(v22, __ Q, Address(coeffs, i + 208));
+      __ str(v23, __ Q, Address(coeffs, i + 240));
+    }
+
+    // level 3-7
+    dilithiumInverseNttLevel3_7(dilithiumConsts, coeffs, zetas);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+
+  }
+
+  // Dilithium multiply polynomials in the NTT domain.
+  // Implements
+  // static int implDilithiumNttMult(
+  //              int[] result, int[] ntta, int[] nttb {}
+  //
+  // result (int[256]) = c_rarg0
+  // poly1 (int[256]) = c_rarg1
+  // poly2 (int[256]) = c_rarg2
+  address generate_dilithiumNttMult() {
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "dilithiumNttMult");
+    address start = __ pc();
+    __ enter();
+
+    Label L_loop;
+
+    const Register result = c_rarg0;
+    const Register poly1 = c_rarg1;
+    const Register poly2 = c_rarg2;
+
+    const Register dilithiumConsts = r10;
+    const Register len = r11;
+
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+    __ ldr(v29, __ Q, Address(dilithiumConsts, 48));
+
+    __ mov(len, zr);
+    __ add(len, len, 1024);
+
+    __ BIND(L_loop);
+
+    __ ldpq(v0, v1, __ post(poly1, 32));
+    __ ldpq(v2, v3, __ post(poly1, 32));
+    __ ldpq(v4, v5, __ post(poly1, 32));
+    __ ldpq(v6, v7, __ post(poly1, 32));
+    __ ldpq(v16, v17, __ post(poly2, 32));
+    __ ldpq(v18, v19, __ post(poly2, 32));
+    __ ldpq(v20, v21, __ post(poly2, 32));
+    __ ldpq(v22, v23, __ post(poly2, 32));
+    dilithium_montmul32();
+    __ sqdmulh(v24, __ T4S, v29, v16);
+    __ mulv(v16, __ T4S, v29, v16);
+    __ sqdmulh(v25, __ T4S, v29, v17);
+    __ mulv(v17, __ T4S, v29, v17);
+    __ sqdmulh(v26, __ T4S, v29, v18);
+    __ mulv(v18, __ T4S, v29, v18);
+    __ sqdmulh(v27, __ T4S, v29, v19);
+    __ mulv(v19, __ T4S, v29, v19);
+    __ mulv(v16, __ T4S, v16, v30);
+    __ mulv(v17, __ T4S, v17, v30);
+    __ mulv(v18, __ T4S, v18, v30);
+    __ mulv(v19, __ T4S, v19, v30);
+    __ sqdmulh(v16, __ T4S, v16, v31);
+    __ sqdmulh(v17, __ T4S, v17, v31);
+    __ sqdmulh(v18, __ T4S, v18, v31);
+    __ sqdmulh(v19, __ T4S, v19, v31);
+    __ shsubv(v16, __ T4S, v24, v16);
+    __ shsubv(v17, __ T4S, v25, v17);
+    __ shsubv(v18, __ T4S, v26, v18);
+    __ shsubv(v19, __ T4S, v27, v19);
+    __ sqdmulh(v24, __ T4S, v29, v20);
+    __ mulv(v20, __ T4S, v29, v20);
+    __ sqdmulh(v25, __ T4S, v29, v21);
+    __ mulv(v21, __ T4S, v29, v21);
+    __ sqdmulh(v26, __ T4S, v29, v22);
+    __ mulv(v22, __ T4S, v29, v22);
+    __ sqdmulh(v27, __ T4S, v29, v23);
+    __ mulv(v23, __ T4S, v29, v23);
+    __ mulv(v20, __ T4S, v20, v30);
+    __ mulv(v21, __ T4S, v21, v30);
+    __ mulv(v22, __ T4S, v22, v30);
+    __ mulv(v23, __ T4S, v23, v30);
+    __ sqdmulh(v20, __ T4S, v20, v31);
+    __ sqdmulh(v21, __ T4S, v21, v31);
+    __ sqdmulh(v22, __ T4S, v22, v31);
+    __ sqdmulh(v23, __ T4S, v23, v31);
+    __ shsubv(v20, __ T4S, v24, v20);
+    __ shsubv(v21, __ T4S, v25, v21);
+    __ shsubv(v22, __ T4S, v26, v22);
+    __ shsubv(v23, __ T4S, v27, v23);
+    __ stpq(v16, v17, __ post(result, 32));
+    __ stpq(v18, v19, __ post(result, 32));
+    __ stpq(v20, v21, __ post(result, 32));
+    __ stpq(v22, v23, __ post(result, 32));
+
+    __ sub(len, len, 128);
+    __ cmp(len, (u1)128);
+    __ br(Assembler::GE, L_loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+
+  }
+
+  // Dilithium Motgomery multiply an array by a constant.
+  // Implements
+  // static int implDilithiumMontMulByConstant(int[] coeffs, int constant) {}
+  //
+  // coeffs (int[256]) = c_rarg0
+  // constant (int) = c_rarg1
+  address generate_dilithiumMontMulByConstant() {
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "dilithiumMontMulByConstant");
+    address start = __ pc();
+    __ enter();
+
+    Label L_loop;
+
+    const Register coeffs = c_rarg0;
+    const Register constant = c_rarg1;
+
+    const Register dilithiumConsts = r10;
+    const Register result = r11;
+    const Register len = r12;
+
+    __ add(result, coeffs, 0);
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+
+    __ dup(v29, __ T4S, constant);
+    __ mov(len, zr);
+    __ add(len, len, 1024);
+
+    __ BIND(L_loop);
+
+    __ ldpq(v30, v31, Address(dilithiumConsts, 0));
+    __ ldpq(v0, v1, __ post(coeffs, 32));
+    __ ldpq(v2, v3, __ post(coeffs, 32));
+    __ ldpq(v4, v5, __ post(coeffs, 32));
+    __ ldpq(v6, v7, __ post(coeffs, 32));
+    __ sqdmulh(v16, __ T4S, v0, v29);
+    __ mulv(v0, __ T4S, v0, v29);
+    __ sqdmulh(v17, __ T4S, v1, v29);
+    __ mulv(v1, __ T4S, v1, v29);
+    __ sqdmulh(v18, __ T4S, v2, v29);
+    __ mulv(v2, __ T4S, v2, v29);
+    __ sqdmulh(v19, __ T4S, v3, v29);
+    __ mulv(v3, __ T4S, v3, v29);
+    __ sqdmulh(v20, __ T4S, v4, v29);
+    __ mulv(v4, __ T4S, v4, v29);
+    __ sqdmulh(v21, __ T4S, v5, v29);
+    __ mulv(v5, __ T4S, v5, v29);
+    __ sqdmulh(v22, __ T4S, v6, v29);
+    __ mulv(v6, __ T4S, v6, v29);
+    __ sqdmulh(v23, __ T4S, v7, v29);
+    __ mulv(v7, __ T4S, v7, v29);
+    __ mulv(v0, __ T4S, v0, v30);
+    __ mulv(v1, __ T4S, v1, v30);
+    __ mulv(v2, __ T4S, v2, v30);
+    __ mulv(v3, __ T4S, v3, v30);
+    __ mulv(v4, __ T4S, v4, v30);
+    __ mulv(v5, __ T4S, v5, v30);
+    __ mulv(v6, __ T4S, v6, v30);
+    __ mulv(v7, __ T4S, v7, v30);
+    __ sqdmulh(v0, __ T4S, v0, v31);
+    __ sqdmulh(v1, __ T4S, v1, v31);
+    __ sqdmulh(v2, __ T4S, v2, v31);
+    __ sqdmulh(v3, __ T4S, v3, v31);
+    __ sqdmulh(v4, __ T4S, v4, v31);
+    __ sqdmulh(v5, __ T4S, v5, v31);
+    __ sqdmulh(v6, __ T4S, v6, v31);
+    __ sqdmulh(v7, __ T4S, v7, v31);
+    __ shsubv(v0, __ T4S, v16, v0);
+    __ shsubv(v1, __ T4S, v17, v1);
+    __ shsubv(v2, __ T4S, v18, v2);
+    __ shsubv(v3, __ T4S, v19, v3);
+    __ shsubv(v4, __ T4S, v20, v4);
+    __ shsubv(v5, __ T4S, v21, v5);
+    __ shsubv(v6, __ T4S, v22, v6);
+    __ shsubv(v7, __ T4S, v23, v7);
+    __ stpq(v0, v1, __ post(result, 32));
+    __ stpq(v2, v3, __ post(result, 32));
+    __ stpq(v4, v5, __ post(result, 32));
+    __ stpq(v6, v7, __ post(result, 32));
+
+    __ sub(len, len, 128);
+    __ cmp(len, (u1)128);
+    __ br(Assembler::GE, L_loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Dilithium decompose poly.
+  // Implements
+  // static int implDilithiumDecomposePoly(int[] coeffs, int constant) {}
+  //
+  // input (int[256]) = c_rarg0
+  // lowPart (int[256]) = c_rarg1
+  // highPart (int[256]) = c_rarg2
+  // twoGamma2  (int) = c_rarg3
+  // multiplier (int) = c_rarg4
+  address generate_dilithiumDecomposePoly() {
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "dilithiumDecomposePoly");
+    address start = __ pc();
+    __ enter();
+
+    Label L_loop;
+
+    const Register input = c_rarg0;
+    const Register lowPart = c_rarg1;
+    const Register highPart = c_rarg2;
+    const Register twoGamma2 = c_rarg3;
+    const Register multiplier = c_rarg4;
+
+    const Register len = r9;
+    const Register dilithiumConsts = r10;
+    const Register tmp = r11;
+
+    __ lea(dilithiumConsts, ExternalAddress((address) StubRoutines::aarch64::_dilithiumConsts));
+
+    // save callee-saved registers
+    __ stpd(v8, v9, __ pre(sp, -64));
+    __ stpd(v10, v11, Address(sp, 16));
+    __ stpd(v12, v13, Address(sp, 32));
+    __ stpd(v14, v15, Address(sp, 48));
+
+
+    __ mov(tmp, zr);
+    __ add(tmp, tmp, 1);
+    __ dup(v25, __ T4S, tmp); // 1
+    __ ldr(v30, __ Q, Address(dilithiumConsts, 16)); // q
+    __ ldr(v31, __ Q, Address(dilithiumConsts, 64)); // addend for mod q reduce
+    __ dup(v28, __ T4S, twoGamma2); // 2 * gamma2
+    __ dup(v29, __ T4S, multiplier); // multiplier for mod 2 * gamma reduce
+    __ subv(v26, __ T4S, v30, v25); // q - 1
+    __ sshr(v27, __ T4S, v28, 1); // gamma2
+
+    __ mov(len, zr);
+    __ add(len, len, 1024);
+
+    __ BIND(L_loop);
+
+    __ ld4(v0, v1, v2, v3, __ T4S, __ post(input, 64));
+
+    // rplus in v0
+    //  rplus = rplus - ((rplus + 5373807) >> 23) * dilithium_q;
+    __ addv(v4, __ T4S, v0, v31);
+    __ addv(v5, __ T4S, v1, v31);
+    __ addv(v6, __ T4S, v2, v31);
+    __ addv(v7, __ T4S, v3, v31);
+
+    __ sshr(v4, __ T4S, v4, 23);
+    __ sshr(v5, __ T4S, v5, 23);
+    __ sshr(v6, __ T4S, v6, 23);
+    __ sshr(v7, __ T4S, v7, 23);
+
+    __ mulv(v4, __ T4S, v4, v30);
+    __ mulv(v5, __ T4S, v5, v30);
+    __ mulv(v6, __ T4S, v6, v30);
+    __ mulv(v7, __ T4S, v7, v30);
+
+    __ subv(v0, __ T4S, v0, v4);
+    __ subv(v1, __ T4S, v1, v5);
+    __ subv(v2, __ T4S, v2, v6);
+    __ subv(v3, __ T4S, v3, v7);
+
+    // rplus in v0
+    // rplus = rplus + ((rplus >> 31) & dilithium_q);
+    __ sshr(v4, __ T4S, v0, 31);
+    __ sshr(v5, __ T4S, v1, 31);
+    __ sshr(v6, __ T4S, v2, 31);
+    __ sshr(v7, __ T4S, v3, 31);
+
+    __ andr(v4, __ T16B, v4, v30);
+    __ andr(v5, __ T16B, v5, v30);
+    __ andr(v6, __ T16B, v6, v30);
+    __ andr(v7, __ T16B, v7, v30);
+
+    __ addv(v0, __ T4S, v0, v4);
+    __ addv(v1, __ T4S, v1, v5);
+    __ addv(v2, __ T4S, v2, v6);
+    __ addv(v3, __ T4S, v3, v7);
+
+    // rplus in v0
+    // int quotient = (rplus * multiplier) >> 22;
+    __ mulv(v4, __ T4S, v0, v29);
+    __ mulv(v5, __ T4S, v1, v29);
+    __ mulv(v6, __ T4S, v2, v29);
+    __ mulv(v7, __ T4S, v3, v29);
+
+    __ sshr(v4, __ T4S, v4, 22);
+    __ sshr(v5, __ T4S, v5, 22);
+    __ sshr(v6, __ T4S, v6, 22);
+    __ sshr(v7, __ T4S, v7, 22);
+
+    // quotient in v4
+    // int r0 = rplus - quotient * twoGamma2;
+    __ mulv(v8, __ T4S, v4, v28);
+    __ mulv(v9, __ T4S, v5, v28);
+    __ mulv(v10, __ T4S, v6, v28);
+    __ mulv(v11, __ T4S, v7, v28);
+
+    __ subv(v8, __ T4S, v0, v8);
+    __ subv(v9, __ T4S, v1, v9);
+    __ subv(v10, __ T4S, v2, v10);
+    __ subv(v11, __ T4S, v3, v11);
+
+    // r0 in v8
+    // int mask = (twoGamma2 - r0) >> 22;
+    __ subv(v12, __ T4S, v28, v8);
+    __ subv(v13, __ T4S, v28, v9);
+    __ subv(v14, __ T4S, v28, v10);
+    __ subv(v15, __ T4S, v28, v11);
+
+    __ sshr(v12, __ T4S, v12, 22);
+    __ sshr(v13, __ T4S, v13, 22);
+    __ sshr(v14, __ T4S, v14, 22);
+    __ sshr(v15, __ T4S, v15, 22);
+
+    // mask in v12
+    // r0 -= (mask & twoGamma2);
+    __ andr(v16, __ T16B, v12, v28);
+    __ andr(v17, __ T16B, v13, v28);
+    __ andr(v18, __ T16B, v14, v28);
+    __ andr(v19, __ T16B, v15, v28);
+
+    __ subv(v8, __ T4S, v8, v16);
+    __ subv(v9, __ T4S, v9, v17);
+    __ subv(v10, __ T4S, v10, v18);
+    __ subv(v11, __ T4S, v11, v19);
+
+    // r0 in v8
+    //  quotient += (mask & 1);
+    __ andr(v16, __ T16B, v12, v25);
+    __ andr(v17, __ T16B, v13, v25);
+    __ andr(v18, __ T16B, v14, v25);
+    __ andr(v19, __ T16B, v15, v25);
+
+    __ addv(v4, __ T4S, v4, v16);
+    __ addv(v5, __ T4S, v5, v17);
+    __ addv(v6, __ T4S, v6, v18);
+    __ addv(v7, __ T4S, v7, v19);
+
+    // mask = (twoGamma2 / 2 - r0) >> 31;
+    __ subv(v12, __ T4S, v27, v8);
+    __ subv(v13, __ T4S, v27, v9);
+    __ subv(v14, __ T4S, v27, v10);
+    __ subv(v15, __ T4S, v27, v11);
+
+    __ sshr(v12, __ T4S, v12, 31);
+    __ sshr(v13, __ T4S, v13, 31);
+    __ sshr(v14, __ T4S, v14, 31);
+    __ sshr(v15, __ T4S, v15, 31);
+
+    // r0 -= (mask & twoGamma2);
+    __ andr(v16, __ T16B, v12, v28);
+    __ andr(v17, __ T16B, v13, v28);
+    __ andr(v18, __ T16B, v14, v28);
+    __ andr(v19, __ T16B, v15, v28);
+
+    __ subv(v8, __ T4S, v8, v16);
+    __ subv(v9, __ T4S, v9, v17);
+    __ subv(v10, __ T4S, v10, v18);
+    __ subv(v11, __ T4S, v11, v19);
+
+    // quotient += (mask & 1);
+    __ andr(v16, __ T16B, v12, v25);
+    __ andr(v17, __ T16B, v13, v25);
+    __ andr(v18, __ T16B, v14, v25);
+    __ andr(v19, __ T16B, v15, v25);
+
+    __ addv(v4, __ T4S, v4, v16);
+    __ addv(v5, __ T4S, v5, v17);
+    __ addv(v6, __ T4S, v6, v18);
+    __ addv(v7, __ T4S, v7, v19);
+
+    // int r1 = rplus - r0 - (dilithium_q - 1);
+    __ subv(v16, __ T4S, v0, v8);
+    __ subv(v17, __ T4S, v1, v9);
+    __ subv(v18, __ T4S, v2, v10);
+    __ subv(v19, __ T4S, v3, v11);
+
+    __ subv(v16, __ T4S, v16, v26);
+    __ subv(v17, __ T4S, v17, v26);
+    __ subv(v18, __ T4S, v18, v26);
+    __ subv(v19, __ T4S, v19, v26);
+
+    // r1 in v16
+    // r1 = (r1 | (-r1)) >> 31; // 0 if rplus - r0 == (dilithium_q - 1), -1 otherwise
+    __ negr(v20, __ T4S, v16);
+    __ negr(v21, __ T4S, v17);
+    __ negr(v22, __ T4S, v18);
+    __ negr(v23, __ T4S, v19);
+
+    __ orr(v16, __ T16B, v16, v20);
+    __ orr(v17, __ T16B, v17, v21);
+    __ orr(v18, __ T16B, v18, v22);
+    __ orr(v19, __ T16B, v19, v23);
+
+    __ sshr(v0, __ T4S, v16, 31);
+    __ sshr(v1, __ T4S, v17, 31);
+    __ sshr(v2, __ T4S, v18, 31);
+    __ sshr(v3, __ T4S, v19, 31);
+
+    // r1 in v0
+    // r0 += ~r1;
+    __ notr(v20, __ T16B, v0);
+    __ notr(v21, __ T16B, v1);
+    __ notr(v22, __ T16B, v2);
+    __ notr(v23, __ T16B, v3);
+
+    __ addv(v8, __ T4S, v8, v20);
+    __ addv(v9, __ T4S, v9, v21);
+    __ addv(v10, __ T4S, v10, v22);
+    __ addv(v11, __ T4S, v11, v23);
+
+    // r0 in v8
+    // r1 = r1 & quotient;
+    __ andr(v0, __ T16B, v4, v0);
+    __ andr(v1, __ T16B, v5, v1);
+    __ andr(v2, __ T16B, v6, v2);
+    __ andr(v3, __ T16B, v7, v3);
+
+    // r1 in v0
+    // lowPart[m] = r0;
+    // highPart[m] = r1;
+    __ st4(v8, v9, v10, v11, __ T4S, __ post(lowPart, 64));
+    __ st4(v0, v1, v2, v3, __ T4S, __ post(highPart, 64));
+
+
+    __ sub(len, len, 64);
+    __ cmp(len, (u1)64);
+    __ br(Assembler::GE, L_loop);
+
+    // restore callee-saved vector registers
+    __ ldpd(v14, v15, Address(sp, 48));
+    __ ldpd(v12, v13, Address(sp, 32));
+    __ ldpd(v10, v11, Address(sp, 16));
+    __ ldpd(v8, v9, __ post(sp, 64));
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     return start;
@@ -8766,6 +9926,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
     }
 
+    if (UseDilithiumIntrinsics) {
+      StubRoutines::_dilithiumAlmostNtt = generate_dilithiumAlmostNtt();
+      StubRoutines::_dilithiumAlmostInverseNtt = generate_dilithiumAlmostInverseNtt();
+      StubRoutines::_dilithiumNttMult = generate_dilithiumNttMult();
+      StubRoutines::_dilithiumMontMulByConstant = generate_dilithiumMontMulByConstant();
+      StubRoutines::_dilithiumDecomposePoly = generate_dilithiumDecomposePoly();
+    }
+
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
@@ -8808,6 +9976,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (UseSHA3Intrinsics) {
       StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(false,   "sha3_implCompress");
+      StubRoutines::_double_keccak         = generate_double_keccak();
       StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(true,    "sha3_implCompressMB");
     }
 

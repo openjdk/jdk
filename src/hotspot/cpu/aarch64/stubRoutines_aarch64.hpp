@@ -38,7 +38,7 @@ enum platform_dependent_constants {
   // simply increase sizes if too small (assembler will crash if too small)
   _initial_stubs_code_size      = 10000,
   _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 30000 ZGC_ONLY(+10000),
+  _compiler_stubs_code_size     = 80000 ZGC_ONLY(+10000),
   _final_stubs_code_size        = 20000 ZGC_ONLY(+100000)
 };
 
@@ -214,6 +214,7 @@ class aarch64 {
   }
 
 private:
+  static uint32_t _dilithiumConsts[];
   static juint    _crc_table[];
   static jubyte   _adler_table[];
   // begin trigonometric tables block. See comments in .cpp file
