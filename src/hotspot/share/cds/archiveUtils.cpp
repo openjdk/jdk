@@ -39,11 +39,13 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinYield.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
@@ -241,9 +243,10 @@ void DumpRegion::commit_to(char* newtop) {
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
-
-char* DumpRegion::allocate(size_t num_bytes) {
-  char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
+char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
+  // Always align to at least minimum alignment
+  alignment = MAX2(SharedSpaceObjectAlignment, alignment);
+  char* p = (char*)align_up(_top, alignment);
   char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
   expand_top_to(newtop);
   memset(p, 0, newtop - p);
@@ -320,9 +323,8 @@ void WriteClosure::do_ptr(void** p) {
 void ReadClosure::do_ptr(void** p) {
   assert(*p == nullptr, "initializing previous initialized pointer.");
   intptr_t obj = nextPtr();
-  assert((intptr_t)obj >= 0 || (intptr_t)obj < -100,
-         "hit tag while initializing ptrs.");
-  *p = (void*)obj != nullptr ? (void*)(SharedBaseAddress + obj) : (void*)obj;
+  assert(obj >= 0, "sanity.");
+  *p = (obj != 0) ? (void*)(_base_address + obj) : (void*)obj;
 }
 
 void ReadClosure::do_u4(u4* p) {
@@ -344,7 +346,7 @@ void ReadClosure::do_tag(int tag) {
   int old_tag;
   old_tag = (int)(intptr_t)nextPtr();
   // do_int(&old_tag);
-  assert(tag == old_tag, "old tag doesn't match");
+  assert(tag == old_tag, "tag doesn't match (%d, expected %d)", old_tag, tag);
   FileMapInfo::assert_mark(tag == old_tag);
 }
 
@@ -370,6 +372,14 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   }
 }
 
+bool ArchiveUtils::has_aot_initialized_mirror(InstanceKlass* src_ik) {
+  if (SystemDictionaryShared::is_excluded_class(src_ik)) {
+    assert(!ArchiveBuilder::current()->has_been_buffered(src_ik), "sanity");
+    return false;
+  }
+  return ArchiveBuilder::current()->get_buffered_addr(src_ik)->has_aot_initialized_mirror();
+}
+
 size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
   assert(seg_idx < _count, "In range");
   return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
@@ -390,3 +400,162 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
   return _base_offset + seg_idx * _max_size_in_bytes;
 }
 
+ArchiveWorkers::ArchiveWorkers() :
+        _end_semaphore(0),
+        _num_workers(max_workers()),
+        _started_workers(0),
+        _finish_tokens(0),
+        _state(UNUSED),
+        _task(nullptr) {}
+
+ArchiveWorkers::~ArchiveWorkers() {
+  assert(Atomic::load(&_state) != WORKING, "Should not be working");
+}
+
+int ArchiveWorkers::max_workers() {
+  // The pool is used for short-lived bursty tasks. We do not want to spend
+  // too much time creating and waking up threads unnecessarily. Plus, we do
+  // not want to overwhelm large machines. This is why we want to be very
+  // conservative about the number of workers actually needed.
+  return MAX2(0, log2i_graceful(os::active_processor_count()));
+}
+
+bool ArchiveWorkers::is_parallel() {
+  return _num_workers > 0;
+}
+
+void ArchiveWorkers::start_worker_if_needed() {
+  while (true) {
+    int cur = Atomic::load(&_started_workers);
+    if (cur >= _num_workers) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
+      new ArchiveWorkerThread(this);
+      return;
+    }
+  }
+}
+
+void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
+  assert(Atomic::load(&_state) == UNUSED, "Should be unused yet");
+  assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
+  Atomic::store(&_state, WORKING);
+
+  if (is_parallel()) {
+    run_task_multi(task);
+  } else {
+    run_task_single(task);
+  }
+
+  assert(Atomic::load(&_state) == WORKING, "Should be working");
+  Atomic::store(&_state, SHUTDOWN);
+}
+
+void ArchiveWorkers::run_task_single(ArchiveWorkerTask* task) {
+  // Single thread needs no chunking.
+  task->configure_max_chunks(1);
+
+  // Execute the task ourselves, as there are no workers.
+  task->work(0, 1);
+}
+
+void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
+  // Multiple threads can work with multiple chunks.
+  task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
+
+  // Set up the run and publish the task. Issue one additional finish token
+  // to cover the semaphore shutdown path, see below.
+  Atomic::store(&_finish_tokens, _num_workers + 1);
+  Atomic::release_store(&_task, task);
+
+  // Kick off pool startup by starting a single worker, and proceed
+  // immediately to executing the task locally.
+  start_worker_if_needed();
+
+  // Execute the task ourselves, while workers are catching up.
+  // This allows us to hide parts of task handoff latency.
+  task->run();
+
+  // Done executing task locally, wait for any remaining workers to complete.
+  // Once all workers report, we can proceed to termination. To do this safely,
+  // we need to make sure every worker has left. A spin-wait alone would suffice,
+  // but we do not want to burn cycles on it. A semaphore alone would not be safe,
+  // since workers can still be inside it as we proceed from wait here. So we block
+  // on semaphore first, and then spin-wait for all workers to terminate.
+  _end_semaphore.wait();
+  SpinYield spin;
+  while (Atomic::load(&_finish_tokens) != 0) {
+    spin.wait();
+  }
+
+  OrderAccess::fence();
+
+  assert(Atomic::load(&_finish_tokens) == 0, "All tokens are consumed");
+}
+
+void ArchiveWorkers::run_as_worker() {
+  assert(is_parallel(), "Should be in parallel mode");
+
+  ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
+  task->run();
+
+  // All work done in threads should be visible to caller.
+  OrderAccess::fence();
+
+  // Signal the pool the work is complete, and we are exiting.
+  // Worker cannot do anything else with the pool after this.
+  if (Atomic::sub(&_finish_tokens, 1, memory_order_relaxed) == 1) {
+    // Last worker leaving. Notify the pool it can unblock to spin-wait.
+    // Then consume the last token and leave.
+    _end_semaphore.signal();
+    int last = Atomic::sub(&_finish_tokens, 1, memory_order_relaxed);
+    assert(last == 0, "Should be");
+  }
+}
+
+void ArchiveWorkerTask::run() {
+  while (true) {
+    int chunk = Atomic::load(&_chunk);
+    if (chunk >= _max_chunks) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_chunk, chunk, chunk + 1, memory_order_relaxed) == chunk) {
+      assert(0 <= chunk && chunk < _max_chunks, "Sanity");
+      work(chunk, _max_chunks);
+    }
+  }
+}
+
+void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
+  if (_max_chunks == 0) {
+    _max_chunks = max_chunks;
+  }
+}
+
+ArchiveWorkerThread::ArchiveWorkerThread(ArchiveWorkers* pool) : NamedThread(), _pool(pool) {
+  set_name("ArchiveWorkerThread");
+  if (os::create_thread(this, os::os_thread)) {
+    os::start_thread(this);
+  } else {
+    vm_exit_during_initialization("Unable to create archive worker",
+                                  os::native_thread_creation_failed_msg());
+  }
+}
+
+void ArchiveWorkerThread::run() {
+  // Avalanche startup: each worker starts two others.
+  _pool->start_worker_if_needed();
+  _pool->start_worker_if_needed();
+
+  // Set ourselves up.
+  os::set_priority(this, NearMaxPriority);
+
+  // Work.
+  _pool->run_as_worker();
+}
+
+void ArchiveWorkerThread::post_run() {
+  this->NamedThread::post_run();
+  delete this;
+}

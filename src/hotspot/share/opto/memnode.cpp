@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1971,27 +1971,29 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type*
 LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
+  assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
+         "must not happen");
   if (tkls->offset() == in_bytes(Klass::modifier_flags_offset())) {
     // The field is Klass::_modifier_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in aClassConstant.getModifiers().)
-    assert(this->Opcode() == Op_LoadI, "must load an int from _modifier_flags");
+    assert(Opcode() == Op_LoadUS, "must load an unsigned short from _modifier_flags");
     return TypeInt::make(klass->modifier_flags());
   }
   if (tkls->offset() == in_bytes(Klass::access_flags_offset())) {
     // The field is Klass::_access_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
-    assert(this->Opcode() == Op_LoadI, "must load an int from _access_flags");
+    assert(Opcode() == Op_LoadUS, "must load an unsigned short from _access_flags");
     return TypeInt::make(klass->access_flags());
   }
   if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
     // The field is Klass::_misc_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
-    assert(this->Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
+    assert(Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
     return TypeInt::make(klass->misc_flags());
   }
   if (tkls->offset() == in_bytes(Klass::layout_helper_offset())) {
     // The field is Klass::_layout_helper.  Return its constant value if known.
-    assert(this->Opcode() == Op_LoadI, "must load an int from _layout_helper");
+    assert(Opcode() == Op_LoadI, "must load an int from _layout_helper");
     return TypeInt::make(klass->layout_helper());
   }
 
@@ -2149,6 +2151,13 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         assert(Opcode() == Op_LoadI, "must load an int from _super_check_offset");
         return TypeInt::make(klass->super_check_offset());
       }
+      if (UseCompactObjectHeaders) {
+        if (tkls->offset() == in_bytes(Klass::prototype_header_offset())) {
+          // The field is Klass::_prototype_header. Return its (constant) value.
+          assert(this->Opcode() == Op_LoadX, "must load a proper type from _prototype_header");
+          return TypeX::make(klass->prototype_header());
+        }
+      }
       // Compute index into primary_supers array
       juint depth = (tkls->offset() - in_bytes(Klass::primary_supers_offset())) / sizeof(Klass*);
       // Check for overflowing; use unsigned compare to handle the negative case.
@@ -2238,9 +2247,11 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  Node* alloc = is_new_object_mark_load();
-  if (alloc != nullptr) {
-    return TypeX::make(markWord::prototype().value());
+  if (!UseCompactObjectHeaders) {
+    Node* alloc = is_new_object_mark_load();
+    if (alloc != nullptr) {
+      return TypeX::make(markWord::prototype().value());
+    }
   }
 
   return _type;

@@ -229,8 +229,6 @@ size_t os::rss() {
 // Cpu architecture string
 #if   defined(ZERO)
 static char cpu_arch[] = ZERO_LIBARCH;
-#elif defined(IA64)
-static char cpu_arch[] = "ia64";
 #elif defined(IA32)
 static char cpu_arch[] = "i386";
 #elif defined(AMD64)
@@ -765,9 +763,9 @@ void os::pd_start_thread(Thread* thread) {
 void os::free_thread(OSThread* osthread) {
   assert(osthread != nullptr, "osthread not set");
 
-  // We are told to free resources of the argument thread,
-  // but we can only really operate on the current thread.
-  assert(Thread::current()->osthread() == osthread,
+  // We are told to free resources of the argument thread, but we can only really operate
+  // on the current thread. The current thread may be already detached at this point.
+  assert(Thread::current_or_null() == nullptr || Thread::current()->osthread() == osthread,
          "os::free_thread but not current thread");
 
   // Restore caller's signal mask
@@ -1192,8 +1190,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_386;
   #elif   (defined AMD64)
   static  Elf32_Half running_arch_code=EM_X86_64;
-  #elif  (defined IA64)
-  static  Elf32_Half running_arch_code=EM_IA_64;
   #elif  (defined __powerpc64__)
   static  Elf32_Half running_arch_code=EM_PPC64;
   #elif  (defined __powerpc__)
@@ -1214,7 +1210,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_68K;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
+         IA32, AMD64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -2148,13 +2144,12 @@ jint os::init_2(void) {
 
       // On macOS according to setrlimit(2), OPEN_MAX must be used instead
       // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
-      // we can, in fact, use even RLIM_INFINITY, so try the max value
-      // that the system claims can be used first, same as other BSD OSes.
-      // However, some terminals (ksh) will internally use "int" type
-      // to store this value and since RLIM_INFINITY overflows an "int"
-      // we might end up with a negative value, so cap the system limit max
-      // at INT_MAX instead, just in case, for everyone.
-      nbr_files.rlim_cur = MIN(INT_MAX, nbr_files.rlim_max);
+      // we can, in fact, use even RLIM_INFINITY.
+      // However, we need to limit the value to 0x100000 (which is the max value
+      // allowed on Linux) so that any existing code that iterates over all allowed
+      // file descriptors, finishes in a reasonable time, without appearing
+      // to hang.
+      nbr_files.rlim_cur = MIN(0x100000, nbr_files.rlim_max);
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {

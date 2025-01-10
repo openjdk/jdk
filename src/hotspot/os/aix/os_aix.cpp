@@ -468,7 +468,7 @@ static void query_multipage_support() {
 
     // Can we use mmap with 64K pages? (Should be available with AIX7.3 TL1)
     {
-      void* p = mmap(NULL, 64*K, PROT_READ | PROT_WRITE, MAP_ANON_64K | MAP_ANONYMOUS | MAP_SHARED, -1, 0);
+      void* p = mmap(nullptr, 64*K, PROT_READ | PROT_WRITE, MAP_ANON_64K | MAP_ANONYMOUS | MAP_SHARED, -1, 0);
       assert(p != (void*) -1, "mmap failed");
       if (p != (void*) -1) {
         g_multipage_support.can_use_64K_mmap_pages = (64*K == os::Aix::query_pagesize(p));
@@ -856,9 +856,9 @@ void os::pd_start_thread(Thread* thread) {
 void os::free_thread(OSThread* osthread) {
   assert(osthread != nullptr, "osthread not set");
 
-  // We are told to free resources of the argument thread,
-  // but we can only really operate on the current thread.
-  assert(Thread::current()->osthread() == osthread,
+  // We are told to free resources of the argument thread, but we can only really operate
+  // on the current thread. The current thread may be already detached at this point.
+  assert(Thread::current_or_null() == nullptr || Thread::current()->osthread() == osthread,
          "os::free_thread but not current thread");
 
   // Restore caller's signal mask

@@ -186,4 +186,27 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
         Runnable r = () -> this.x = 7;  // this should FAIL
         super();
     }
+
+    public static class Inner4 {
+        Inner4() {
+            Runnable r = () -> {
+                class A {
+                    A() {
+                        return;         // this should FAIL
+                        super();
+                    }
+                    A(int x) {
+                        {
+                            this();     // this should FAIL
+                        }
+                    }
+                    A(char x) {
+                        super();
+                        this();         // this should FAIL
+                    }
+                }
+            };
+            super();
+        };
+    }
 }

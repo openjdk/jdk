@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,6 +223,7 @@ public class Enter extends JCTree.Visitor {
         tree.toplevelScope = WriteableScope.create(tree.packge);
         tree.namedImportScope = new NamedImportScope(tree.packge);
         tree.starImportScope = new StarImportScope(tree.packge);
+        tree.moduleImportScope = new StarImportScope(tree.packge);
         localEnv.info.scope = tree.toplevelScope;
         localEnv.info.lint = lint;
         return localEnv;

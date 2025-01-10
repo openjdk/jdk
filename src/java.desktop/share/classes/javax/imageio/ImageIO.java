@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,11 @@ package javax.imageio;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,7 +48,6 @@ import javax.imageio.spi.ServiceRegistry;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import sun.awt.AppContext;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A class containing static convenience methods for locating
@@ -165,59 +162,20 @@ public final class ImageIO {
      * Returns the default temporary (cache) directory as defined by the
      * java.io.tmpdir system property.
      */
-    @SuppressWarnings("removal")
     private static String getTempDir() {
-        GetPropertyAction a = new GetPropertyAction("java.io.tmpdir");
-        return AccessController.doPrivileged(a);
+        return System.getProperty("java.io.tmpdir");
     }
 
     /**
      * Determines whether the caller has write access to the cache
      * directory, stores the result in the {@code CacheInfo} object,
-     * and returns the decision.  This method helps to prevent mysterious
-     * SecurityExceptions to be thrown when this convenience class is used
-     * in an applet, for example.
+     * and returns the decision.
      */
     private static boolean hasCachePermission() {
         Boolean hasPermission = getCacheInfo().getHasPermission();
-
         if (hasPermission != null) {
             return hasPermission.booleanValue();
         } else {
-            try {
-                @SuppressWarnings("removal")
-                SecurityManager security = System.getSecurityManager();
-                if (security != null) {
-                    File cachedir = getCacheDirectory();
-                    String cachepath;
-
-                    if (cachedir != null) {
-                        cachepath = cachedir.getPath();
-                    } else {
-                        cachepath = getTempDir();
-
-                        if (cachepath == null || cachepath.isEmpty()) {
-                            getCacheInfo().setHasPermission(Boolean.FALSE);
-                            return false;
-                        }
-                    }
-
-                    // we have to check whether we can read, write,
-                    // and delete cache files.
-                    // So, compose cache file path and check it.
-                    String filepath = cachepath;
-                    if (!filepath.endsWith(File.separator)) {
-                        filepath += File.separator;
-                    }
-                    filepath += "*";
-
-                    security.checkPermission(new FilePermission(filepath, "read, write, delete"));
-                }
-            } catch (SecurityException e) {
-                getCacheInfo().setHasPermission(Boolean.FALSE);
-                return false;
-            }
-
             getCacheInfo().setHasPermission(Boolean.TRUE);
             return true;
         }
@@ -277,8 +235,6 @@ public final class ImageIO {
      *
      * @see File#createTempFile(String, String, File)
      *
-     * @throws SecurityException if the security manager denies
-     * access to the directory.
      * @throws IllegalArgumentException if {@code cacheDir} is
      * non-{@code null} but is not a directory.
      *

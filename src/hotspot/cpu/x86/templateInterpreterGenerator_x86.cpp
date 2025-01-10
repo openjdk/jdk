@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -387,6 +387,26 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Get return address before adjusting rsp
+  __ movptr(rax, Address(rsp, 0));
+
+  // Restore stack bottom
+  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
+  // and null it as marker that esp is now tos until next java call
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+
+  __ jmp(rax);
+
+  return start;
+}
 
 
 // Helpers for commoning out cases in the various type of method entries.
@@ -576,7 +596,7 @@ void TemplateInterpreterGenerator::lock_method() {
 #ifdef ASSERT
   {
     Label L;
-    __ movl(rax, access_flags);
+    __ load_unsigned_short(rax, access_flags);
     __ testl(rax, JVM_ACC_SYNCHRONIZED);
     __ jcc(Assembler::notZero, L);
     __ stop("method doesn't need synchronization");
@@ -587,7 +607,7 @@ void TemplateInterpreterGenerator::lock_method() {
   // get synchronization object
   {
     Label done;
-    __ movl(rax, access_flags);
+    __ load_unsigned_short(rax, access_flags);
     __ testl(rax, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ movptr(rax, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
@@ -835,7 +855,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ movl(rax, access_flags);
+  __ load_unsigned_short(rax, access_flags);
   {
     Label L;
     __ testl(rax, JVM_ACC_NATIVE);
@@ -889,7 +909,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
     {
       Label L;
-      __ movl(rax, access_flags);
+      __ load_unsigned_short(rax, access_flags);
       __ testl(rax, JVM_ACC_SYNCHRONIZED);
       __ jcc(Assembler::zero, L);
       __ stop("method needs synchronization");
@@ -979,7 +999,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass mirror handle if static call
   {
     Label L;
-    __ movl(t, Address(method, Method::access_flags_offset()));
+    __ load_unsigned_short(t, Address(method, Method::access_flags_offset()));
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);
     // get mirror
@@ -1029,7 +1049,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
    // It is enough that the pc() points into the right code
    // segment. It does not have to be the correct return pc.
-   __ set_last_Java_frame(rsp, rbp, (address) __ pc(), rscratch1);
+   // For convenience we use the pc we want to resume to in
+   // case of preemption on Object.wait.
+   Label native_return;
+   __ set_last_Java_frame(rsp, rbp, native_return, rscratch1);
 #endif // _LP64
 
   // change thread state
@@ -1049,10 +1072,14 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ movl(Address(thread, JavaThread::thread_state_offset()),
           _thread_in_native);
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ call(rax);
   // 32: result potentially in rdx:rax or ST0
   // 64: result potentially in rax or xmm0
+
+  __ pop_cont_fastpath();
 
   // Verify or restore cpu control state after JNI call
   __ restore_cpu_control_state_after_jni(rscratch1);
@@ -1077,10 +1104,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label push_double;
     ExternalAddress float_handler(AbstractInterpreter::result_handler(T_FLOAT));
     ExternalAddress double_handler(AbstractInterpreter::result_handler(T_DOUBLE));
-    __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
+    __ cmpptr(Address(rbp, (frame::interpreter_frame_result_handler_offset)*wordSize),
               float_handler.addr(), noreg);
     __ jcc(Assembler::equal, push_double);
-    __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
+    __ cmpptr(Address(rbp, (frame::interpreter_frame_result_handler_offset)*wordSize),
               double_handler.addr(), noreg);
     __ jcc(Assembler::notEqual, L);
     __ bind(push_double);
@@ -1149,6 +1176,24 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
+
+#ifdef _LP64
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    __ cmpptr(rscratch1, NULL_WORD);
+    __ jccb(Assembler::equal, not_preempted);
+    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    __ jmp(rscratch1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
+#endif // _LP64
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(thread, true);
@@ -1235,7 +1280,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // do unlocking if necessary
   {
     Label L;
-    __ movl(t, Address(method, Method::access_flags_offset()));
+    __ load_unsigned_short(t, Address(method, Method::access_flags_offset()));
     __ testl(t, JVM_ACC_SYNCHRONIZED);
     __ jcc(Assembler::zero, L);
     // the code below should be shared with interpreter macro
@@ -1387,7 +1432,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ movl(rax, access_flags);
+  __ load_unsigned_short(rax, access_flags);
   {
     Label L;
     __ testl(rax, JVM_ACC_NATIVE);
@@ -1444,7 +1489,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
     {
       Label L;
-      __ movl(rax, access_flags);
+      __ load_unsigned_short(rax, access_flags);
       __ testl(rax, JVM_ACC_SYNCHRONIZED);
       __ jcc(Assembler::zero, L);
       __ stop("method needs synchronization");
