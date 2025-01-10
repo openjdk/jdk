@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6825240 6829785 8345134
+ * @bug 6825240 6829785
  * @summary Password.readPassword() echos the input when System.Console is null
  * @run main/manual Password
  */
@@ -50,7 +50,8 @@ public class Password {
    public static void main(String args[]) throws Exception {
 
         if (System.getProperty("java.class.path").contains("jtreg")){
-            throw new RuntimeException("This is a manual testing, it shouldn't be run with jtreg.");
+            throw new RuntimeException("This test is designated as manual and will fail if run with jtreg. " +
+                    "Please read the instruction/steps in the file comments before proceeding with manual execution.");
         }
 
         TextCallbackHandler h = new TextCallbackHandler();
