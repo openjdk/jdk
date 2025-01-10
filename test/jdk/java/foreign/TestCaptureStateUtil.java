@@ -38,6 +38,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -65,10 +67,12 @@ final class TestCaptureStateUtil {
         }
     }
 
+    private static final MethodHandle ADAPTED_INT = CaptureStateUtil.adaptSystemCall(INT_DUMMY_HANDLE, ERRNO_NAME);
+    private static final MethodHandle ADAPTED_LONG = CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, ERRNO_NAME);
+
     @Test
     void successfulInt() throws Throwable {
-        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(INT_DUMMY_HANDLE, ERRNO_NAME);
-        int r = (int) adapted.invoke(1, 0);
+        int r = (int) ADAPTED_INT.invoke(1, 0);
         assertEquals(1, r);
     }
 
@@ -76,24 +80,19 @@ final class TestCaptureStateUtil {
 
     @Test
     void errorInt() throws Throwable {
-        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(INT_DUMMY_HANDLE, ERRNO_NAME);
-
-        int r = (int) adapted.invoke(-1, EACCES);
+        int r = (int) ADAPTED_INT.invoke(-1, EACCES);
         assertEquals(-EACCES, r);
     }
 
     @Test
     void successfulLong() throws Throwable {
-        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, ERRNO_NAME);
-        long r = (long) adapted.invoke(1, 0);
+        long r = (long) ADAPTED_LONG.invoke(1, 0);
         assertEquals(1, r);
     }
 
     @Test
     void errorLong() throws Throwable {
-        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, ERRNO_NAME);
-
-        long r = (long) adapted.invoke(-1, EACCES);
+        long r = (long) ADAPTED_LONG.invoke(-1, EACCES);
         assertEquals(-EACCES, r);
     }
 
@@ -118,6 +117,36 @@ final class TestCaptureStateUtil {
 
         assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(null, ERRNO_NAME));
         assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, null));
+    }
+
+    @Test
+    void threadBarrage() {
+        var virtualThreads = IntStream.range(0, 1 << 14)
+                .mapToObj(_ -> Thread.ofVirtual().unstarted(TestCaptureStateUtil::work))
+                .toList();
+
+        virtualThreads.forEach(Thread::start);
+
+        virtualThreads.forEach(t -> {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private static void work() {
+        final int threadId = (int) Thread.currentThread().threadId() & Integer.MAX_VALUE;
+        for (int i = 0; i < (1 << 14); i++) {
+            long r = 0;
+            try {
+                r = (long) ADAPTED_LONG.invoke(-1L, threadId);
+            } catch (Throwable t) {
+                fail(t);
+            }
+            assertEquals(-threadId, r);
+        }
     }
 
     // Dummy method that is just returning the provided parameters
