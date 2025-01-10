@@ -24,27 +24,28 @@
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.jar.JarFile;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
-import jdk.jpackage.test.JavaAppDesc;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.HelloApp;
-import jdk.jpackage.test.JavaTool;
+import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.HelloApp;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.TKit;
 
 
 
@@ -124,7 +125,7 @@ public final class MainClassTest {
             }
 
             private final String label;
-        };
+        }
 
         private JavaAppDesc appDesc;
         private boolean withJLink;
@@ -166,6 +167,7 @@ public final class MainClassTest {
                 } else {
                     cmd.setArgumentValue("--main-class", nonExistingMainClass);
                 }
+                break;
 
             case SetRight:
                 // NOP
