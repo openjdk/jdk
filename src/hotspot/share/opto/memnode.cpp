@@ -2014,6 +2014,17 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
 
+  // If we are loading from a freshly-allocated object, produce a zero,
+  // if the load is provably beyond the header of the object.
+  // (Also allow a variable load from a fresh array to produce zero.)
+  const TypeOopPtr* tinst = tp->isa_oopptr();
+  bool is_instance = (tinst != nullptr) && tinst->is_known_instance_field();
+  Node* value = can_see_stored_value(mem, phase);
+  if (value != nullptr && value->is_Con()) {
+    assert(value->bottom_type()->higher_equal(_type), "sanity");
+    return value->bottom_type();
+  }
+
   // Try to guess loaded type from pointer type
   if (tp->isa_aryptr()) {
     const TypeAryPtr* ary = tp->is_aryptr();
@@ -2217,20 +2228,6 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
       // for array-ness, since it proves that the layout_helper is positive.
       // Thus, a generic value like the basic object layout helper works fine.
       return TypeInt::make(min_size, max_jint, Type::WidenMin);
-    }
-  }
-
-  // If we are loading from a freshly-allocated object, produce a zero,
-  // if the load is provably beyond the header of the object.
-  // (Also allow a variable load from a fresh array to produce zero.)
-  const TypeOopPtr *tinst = tp->isa_oopptr();
-  bool is_instance = (tinst != nullptr) && tinst->is_known_instance_field();
-  bool is_boxed_value = (tinst != nullptr) && tinst->is_ptr_to_boxed_value();
-  if (ReduceFieldZeroing || is_instance || is_boxed_value) {
-    Node* value = can_see_stored_value(mem,phase);
-    if (value != nullptr && value->is_Con()) {
-      assert(value->bottom_type()->higher_equal(_type),"sanity");
-      return value->bottom_type();
     }
   }
 
