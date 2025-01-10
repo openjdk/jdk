@@ -3366,7 +3366,7 @@ public class ForkJoinPool extends AbstractExecutorService
         final ForkJoinPool pool;
         DelayedTask<?>[] heap;
         int heapSize;
-        volatile boolean stopped;
+        volatile boolean stopped, sleeping;
 
         DelayScheduler(ForkJoinPool p) {
             pool = p;
@@ -3387,8 +3387,11 @@ public class ForkJoinPool extends AbstractExecutorService
                         locked = true;
                     } catch (InterruptedException ok) {
                     }
-                    if (locked && (waitTime = processHeap(null, true)) >= 0L)
+                    if (locked && (waitTime = processHeap(null, true)) >= 0L &&
+                        sleeping) {
                         U.park(false, waitTime);
+                        sleeping = false;
+                    }
                 }
                 shutdown();
             }
@@ -3396,7 +3399,7 @@ public class ForkJoinPool extends AbstractExecutorService
 
         final long processHeap(DelayedTask<?> task, boolean wait) {
             long now = System.nanoTime(), waitTime = 0L;
-            boolean signal = false;
+            boolean wakeScheduler = false;
             DelayedTask<?> ready = null;
             try {
                 DelayedTask<?>[] h; int cap;
@@ -3431,7 +3434,7 @@ public class ForkJoinPool extends AbstractExecutorService
                             }
                             else if (s == 0) {
                                 h[0] = task;
-                                signal = !wait;
+                                wakeScheduler = !wait;
                                 heapSize = 1;
                             }
                             else {
@@ -3451,7 +3454,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 else {
                                     heapSize = add(now, h, s, task);
                                     if (!wait && h[0] == task)
-                                        signal = true;
+                                        wakeScheduler = true;
                                 }
                             }
                         }
@@ -3463,13 +3466,21 @@ public class ForkJoinPool extends AbstractExecutorService
                         task = null;
                     }
                 }
+                if (wakeScheduler) {
+                    if (!sleeping)
+                        wakeScheduler = false;
+                    else
+                        sleeping = false;
+                }
+                else if (wait && ready == null)
+                    sleeping = true;
             } finally {
                 ReentrantLock lock;
                 if ((lock = this.heapLock)!= null)
                     lock.unlock();
             }
             ForkJoinPool p; Thread st;
-            if (signal && (st = scheduler) != null)
+            if (wakeScheduler && (st = scheduler) != null)
                 U.unpark(st);
             if (ready == null || (p = pool) == null)
                 return waitTime;
@@ -3623,15 +3634,17 @@ public class ForkJoinPool extends AbstractExecutorService
             }
         }
         if (ds != null && (lock = ds.heapLock) != null &&
-            (ts = ds.pending) != null) {
-            if (!lock.tryLock()) {
-                if (task != null)
-                    ts.offer(task);
-                if (lock.isLocked() || !lock.tryLock())
-                    return;
+            (ts = ds.pending) != null && task != null) {
+            boolean process = false;
+            if (!lock.isLocked() && !lock.hasQueuedThreads() && lock.tryLock())
+                process = true;
+            else {
+                ts.offer(task);
                 task = null;
+                process = lock.tryLock();
             }
-            ds.processHeap(task, false);
+            if (process)
+                ds.processHeap(task, false);
         }
     }
 
@@ -3665,15 +3678,16 @@ public class ForkJoinPool extends AbstractExecutorService
         if ((runState & STOP) == 0L &&
             (ds = delayer) != null && (lock = ds.heapLock) != null &&
             (rs = ds.pendingRemoval) != null && task != null) {
-            if (!lock.tryLock()) {
-                if (task.heapIndex < 0)
-                    return;
+            boolean process = false;
+            if (!lock.isLocked() && !lock.hasQueuedThreads() && lock.tryLock())
+                process = true;
+            else {
                 rs.offer(task);
-                if (lock.isLocked() || !lock.tryLock())
-                    return;
                 task = null;
+                process = lock.tryLock();
             }
-            ds.processHeap(task, false);
+            if (process)
+                ds.processHeap(task, false);
         }
     }
 
