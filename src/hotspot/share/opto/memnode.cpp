@@ -2861,23 +2861,23 @@ private:
   }
 
   bool is_trace_basic() const {
-    return is_trace(TraceMergeStores::Tag::BASIC) || UseNewCode2;
+    return is_trace(TraceMergeStores::Tag::BASIC);
   }
 
   bool is_trace_pointer() const {
-    return is_trace(TraceMergeStores::Tag::POINTER) || UseNewCode2;
+    return is_trace(TraceMergeStores::Tag::POINTER);
   }
 
   bool is_trace_aliasing() const {
-    return is_trace(TraceMergeStores::Tag::ALIASING) || UseNewCode2;
+    return is_trace(TraceMergeStores::Tag::ALIASING);
   }
 
   bool is_trace_adjacency() const {
-    return is_trace(TraceMergeStores::Tag::ADJACENCY) || UseNewCode2;
+    return is_trace(TraceMergeStores::Tag::ADJACENCY);
   }
 
   bool is_trace_success() const {
-    return is_trace(TraceMergeStores::Tag::SUCCESS) || UseNewCode2;
+    return is_trace(TraceMergeStores::Tag::SUCCESS);
   }
 #endif
 
