@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.jfr.internal.consumer;
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
@@ -45,7 +46,6 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.management.HiddenWait;;
 
 public final class RepositoryFiles {
@@ -57,7 +57,6 @@ public final class RepositoryFiles {
         }
     }
 
-    private final FileAccess fileAccess;
     private final NavigableMap<Long, Path> pathSet = new TreeMap<>();
     private final Map<Path, Long> pathLookup = new HashMap<>();
     private final HiddenWait waitObject;
@@ -65,9 +64,8 @@ public final class RepositoryFiles {
     private volatile boolean closed;
     private Path repository;
 
-    public RepositoryFiles(FileAccess fileAccess, Path repository, boolean allowSubDirectory) {
+    public RepositoryFiles(Path repository, boolean allowSubDirectory) {
         this.repository = repository;
-        this.fileAccess = fileAccess;
         this.waitObject = repository == null ? WAIT_OBJECT : new HiddenWait();
         this.allowSubDirectory = allowSubDirectory;
     }
@@ -172,14 +170,14 @@ public final class RepositoryFiles {
         if (repoPath == null) {
             // Always get the latest repository if 'jcmd JFR.configure
             // repositorypath=...' has been executed
-            SafePath sf = Repository.getRepository().getRepositoryPath();
-            if (sf == null) {
+            Path path = Repository.getRepository().getRepositoryPath();
+            if (path == null) {
                 return false; // not initialized
             }
-            repoPath = sf.toPath();
+            repoPath = path;
         }
 
-        try (DirectoryStream<Path> dirStream = fileAccess.newDirectoryStream(repoPath)) {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(repoPath)) {
             List<Path> added = new ArrayList<>();
             Set<Path> current = new HashSet<>();
             for (Path p : dirStream) {
@@ -208,7 +206,7 @@ public final class RepositoryFiles {
             for (Path p : added) {
                 // Only add files that have a complete header
                 // as the JVM may be in progress writing the file
-                long size = fileAccess.fileSize(p);
+                long size = Files.size(p);
                 if (size >= ChunkHeader.headerSize()) {
                     long startNanos = readStartTime(p);
                     if (startNanos != -1) {
@@ -232,10 +230,10 @@ public final class RepositoryFiles {
     private Path findSubDirectory(Path repoPath) {
         FileTime latestTimestamp = null;
         Path latestPath = null;
-        try (DirectoryStream<Path> dirStream = fileAccess.newDirectoryStream(repoPath)) {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(repoPath)) {
             for (Path p : dirStream) {
                 String filename = p.getFileName().toString();
-                if (isRepository(filename) && fileAccess.isDirectory(p)) {
+                if (isRepository(filename) && Files.isDirectory(p)) {
                     FileTime timestamp = getLastModified(p);
                     if (timestamp != null) {
                         if (latestPath == null || latestTimestamp.compareTo(timestamp) <= 0) {
@@ -253,7 +251,7 @@ public final class RepositoryFiles {
 
     private FileTime getLastModified(Path p) {
         try {
-            return fileAccess.getLastModified(p);
+            return Files.getLastModifiedTime(p);
         } catch (IOException e) {
             return null;
         }
@@ -277,7 +275,7 @@ public final class RepositoryFiles {
     }
 
     private long readStartTime(Path p) {
-        try (RecordingInput in = new RecordingInput(p.toFile(), fileAccess, 100)) {
+        try (RecordingInput in = new RecordingInput(p.toFile(), 100)) {
             Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Parsing header for chunk start time");
             ChunkHeader c = new ChunkHeader(in);
             return c.getStartNanos();
