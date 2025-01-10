@@ -233,6 +233,28 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   }
   assert(merged_memory(), "");
 
+  if(intrinsic_id() == vmIntrinsics::_digestBase_implCompressMB) {
+      fprintf(stderr, "try_to_inline call for _digestBase_implCompressMB\n");
+  } else if(intrinsic_id() == vmIntrinsics::_sha3_implCompress) {
+      fprintf(stderr, "try_to_inline call for _sha3_implCompress\n");
+  } else if(intrinsic_id() == vmIntrinsics::_double_keccak) {
+      fprintf(stderr, "try_to_inline call for _double_keccak\n");
+  } else if(intrinsic_id() == vmIntrinsics::_kyberNtt) {
+      fprintf(stderr, "try_to_inline call for _kyberNtt\n");
+  } else if(intrinsic_id() == vmIntrinsics::_kyberInverseNtt) {
+      fprintf(stderr, "try_to_inline call for _kyberInverseNtt\n");
+  } else if(intrinsic_id() == vmIntrinsics::_kyberNttMult) {
+      fprintf(stderr, "try_to_inline call for _kyberNttMult\n");
+  } else if(intrinsic_id() == vmIntrinsics::_kyberAddPoly_2) {
+      fprintf(stderr, "try_to_inline call for _kyberAddPoly_2\n");
+  } else if(intrinsic_id() == vmIntrinsics::_kyberAddPoly_3) {
+      fprintf(stderr, "try_to_inline call for _kyberAddPoly_3\n");
+  } else if(intrinsic_id() == vmIntrinsics::_kyber12To16) {
+      fprintf(stderr, "try_to_inline call for _kyber12To16\n");
+  } else if(intrinsic_id() == vmIntrinsics::_kyberBarrettReduce) {
+      fprintf(stderr, "try_to_inline call for _kyberBarrettReduce\n");
+  }
+
   switch (intrinsic_id()) {
   case vmIntrinsics::_hashCode:                 return inline_native_hashcode(intrinsic()->is_virtual(), !is_static);
   case vmIntrinsics::_identityHashCode:         return inline_native_hashcode(/*!virtual*/ false,         is_static);
@@ -636,6 +658,20 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_dilithiumMontMulByConstant();
   case vmIntrinsics::_dilithiumDecomposePoly:
     return inline_dilithiumDecomposePoly();
+  case vmIntrinsics::_kyberNtt:
+    return inline_kyberNtt();
+  case vmIntrinsics::_kyberInverseNtt:
+    return inline_kyberInverseNtt();
+  case vmIntrinsics::_kyberNttMult:
+    return inline_kyberNttMult();
+  case vmIntrinsics::_kyberAddPoly_2:
+    return inline_kyberAddPoly_2();
+  case vmIntrinsics::_kyberAddPoly_3:
+    return inline_kyberAddPoly_3();
+  case vmIntrinsics::_kyber12To16:
+    return inline_kyber12To16();
+  case vmIntrinsics::_kyberBarrettReduce:
+    return inline_kyberBarrettReduce();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
@@ -7803,6 +7839,245 @@ bool LibraryCallKit::inline_dilithiumDecomposePoly() {
 
   // return an int
   Node* retvalue = _gvn.transform(new ProjNode(dilithiumDecomposePoly, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+//------------------------------inline_kyberNtt
+bool LibraryCallKit::inline_kyberNtt() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseKyberIntrinsics, "need Kyber intrinsics support");
+  assert(callee()->signature()->size() == 2, "kyberNtt has 2 parameters");
+
+  stubAddr = StubRoutines::kyberNtt();
+  stubName = "kyberNtt";
+  if (!stubAddr) return false;
+
+  Node* coeffs          = argument(0);
+  Node* ntt_zetas        = argument(1);
+
+  coeffs = must_be_not_null(coeffs, true);
+  ntt_zetas = must_be_not_null(ntt_zetas, true);
+
+  Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_SHORT);
+  assert(coeffs_start, "coeffs is null");
+  Node* ntt_zetas_start  = array_element_address(ntt_zetas, intcon(0), T_SHORT);
+  assert(ntt_zetas_start, "ntt_zetas is null");
+  Node* kyberNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::kyberNtt_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  coeffs_start, ntt_zetas_start);
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(kyberNtt, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+//------------------------------inline_kyberInverseNtt
+bool LibraryCallKit::inline_kyberInverseNtt() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseKyberIntrinsics, "need Kyber intrinsics support");
+  assert(callee()->signature()->size() == 2, "kyberInverseNtt has 2 parameters");
+
+  stubAddr = StubRoutines::kyberInverseNtt();
+  stubName = "kyberInverseNtt";
+  if (!stubAddr) return false;
+
+  Node* coeffs          = argument(0);
+  Node* zetas           = argument(1);
+
+  coeffs = must_be_not_null(coeffs, true);
+  zetas = must_be_not_null(zetas, true);
+
+  Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_SHORT);
+  assert(coeffs_start, "coeffs is null");
+  Node* zetas_start  = array_element_address(zetas, intcon(0), T_SHORT);
+  assert(zetas_start, "inverseNtt_zetas is null");
+  Node* kyberInverseNtt = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::kyberInverseNtt_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  coeffs_start, zetas_start);
+
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(kyberInverseNtt, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+//------------------------------inline_kyberNttMult
+bool LibraryCallKit::inline_kyberNttMult() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseKyberIntrinsics, "need Kyber intrinsics support");
+  assert(callee()->signature()->size() == 4, "kyberNttMult has 4 parameters");
+
+  stubAddr = StubRoutines::kyberNttMult();
+  stubName = "kyberNttMult";
+  if (!stubAddr) return false;
+
+  Node* result          = argument(0);
+  Node* ntta            = argument(1);
+  Node* nttb            = argument(2);
+  Node* zetas           = argument(3);
+
+  result = must_be_not_null(result, true);
+  ntta = must_be_not_null(ntta, true);
+  nttb = must_be_not_null(nttb, true);
+  zetas = must_be_not_null(zetas, true);
+  Node* result_start  = array_element_address(result, intcon(0), T_SHORT);
+  assert(result_start, "result is null");
+  Node* ntta_start  = array_element_address(ntta, intcon(0), T_SHORT);
+  assert(ntta_start, "ntta is null");
+  Node* nttb_start  = array_element_address(nttb, intcon(0), T_SHORT);
+  assert(nttb_start, "nttb is null");
+  Node* zetas_start  = array_element_address(zetas, intcon(0), T_SHORT);
+  assert(zetas_start, "nttMult_zetas is null");
+  Node* kyberNttMult = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::kyberNttMult_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  result_start, ntta_start, nttb_start,
+                                  zetas_start);
+
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(kyberNttMult, TypeFunc::Parms));
+  set_result(retvalue);
+
+  return true;
+}
+
+//------------------------------inline_kyberAddPoly_2
+bool LibraryCallKit::inline_kyberAddPoly_2() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseKyberIntrinsics, "need Kyber intrinsics support");
+  assert(callee()->signature()->size() == 3, "kyberAddPoly_2 has 3 parameters");
+
+  stubAddr = StubRoutines::kyberAddPoly_2();
+  stubName = "kyberAddPoly_2";
+  if (!stubAddr) return false;
+
+  Node* result          = argument(0);
+  Node* a               = argument(1);
+  Node* b               = argument(2);
+
+  result = must_be_not_null(result, true);
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+
+  Node* result_start  = array_element_address(result, intcon(0), T_SHORT);
+  assert(result_start, "result is null");
+  Node* a_start  = array_element_address(a, intcon(0), T_SHORT);
+  assert(a_start, "a is null");
+  Node* b_start  = array_element_address(b, intcon(0), T_SHORT);
+  assert(b_start, "b is null");
+  Node* kyberAddPoly_2 = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::kyberAddPoly_2_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  result_start, a_start, b_start);
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(kyberAddPoly_2, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+//------------------------------inline_kyberAddPoly_3
+bool LibraryCallKit::inline_kyberAddPoly_3() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseKyberIntrinsics, "need Kyber intrinsics support");
+  assert(callee()->signature()->size() == 4, "kyberAddPoly_3 has 4 parameters");
+
+  stubAddr = StubRoutines::kyberAddPoly_3();
+  stubName = "kyberAddPoly_3";
+  if (!stubAddr) return false;
+
+  Node* result          = argument(0);
+  Node* a               = argument(1);
+  Node* b               = argument(2);
+  Node* c               = argument(3);
+
+  result = must_be_not_null(result, true);
+  a = must_be_not_null(a, true);
+  b = must_be_not_null(b, true);
+  c = must_be_not_null(c, true);
+
+  Node* result_start  = array_element_address(result, intcon(0), T_SHORT);
+  assert(result_start, "result is null");
+  Node* a_start  = array_element_address(a, intcon(0), T_SHORT);
+  assert(a_start, "a is null");
+  Node* b_start  = array_element_address(b, intcon(0), T_SHORT);
+  assert(b_start, "b is null");
+  Node* c_start  = array_element_address(c, intcon(0), T_SHORT);
+  assert(c_start, "c is null");
+  Node* kyberAddPoly_3 = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::kyberAddPoly_3_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  result_start, a_start, b_start, c_start);
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(kyberAddPoly_3, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
+//------------------------------inline_kyber12To16
+bool LibraryCallKit::inline_kyber12To16() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseKyberIntrinsics, "need Kyber intrinsics support");
+  assert(callee()->signature()->size() == 3, "kyber12To16 has 3 parameters");
+
+  stubAddr = StubRoutines::kyber12To16();
+  stubName = "kyber12To16";
+  if (!stubAddr) return false;
+
+  Node* condensed       = argument(0);
+  Node* condensedOffs   = argument(1);
+  Node* parsed          = argument(2);
+  Node* parsedLength    = argument(3);
+
+  condensed = must_be_not_null(condensed, true);
+  parsed = must_be_not_null(parsed, true);
+
+  Node* condensed_start  = array_element_address(condensed, intcon(0), T_BYTE);
+  assert(condensed_start, "condensed is null");
+  Node* parsed_start  = array_element_address(parsed, intcon(0), T_SHORT);
+  assert(parsed_start, "parsed is null");
+  Node* kyber12To16 = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::kyber12To16_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  condensed_start, condensedOffs, parsed_start, parsedLength);
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(kyber12To16, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+
+}
+
+//------------------------------inline_kyberBarrettReduce
+bool LibraryCallKit::inline_kyberBarrettReduce() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseKyberIntrinsics, "need Kyber intrinsics support");
+  assert(callee()->signature()->size() == 1, "kyberBarrettReduce has 1 parameters");
+
+  stubAddr = StubRoutines::kyberBarrettReduce();
+  stubName = "kyberBarrettReduce";
+  if (!stubAddr) return false;
+
+  Node* coeffs          = argument(0);
+
+  coeffs = must_be_not_null(coeffs, true);
+
+  Node* coeffs_start  = array_element_address(coeffs, intcon(0), T_SHORT);
+  assert(coeffs_start, "coeffs is null");
+  Node* kyberBarrettReduce = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::kyberBarrettReduce_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  coeffs_start);
+  // return an int
+  Node* retvalue = _gvn.transform(new ProjNode(kyberBarrettReduce, TypeFunc::Parms));
   set_result(retvalue);
   return true;
 }

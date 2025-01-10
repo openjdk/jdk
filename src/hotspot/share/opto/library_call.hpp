@@ -319,6 +319,13 @@ class LibraryCallKit : public GraphKit {
   bool inline_dilithiumNttMult();
   bool inline_dilithiumMontMulByConstant();
   bool inline_dilithiumDecomposePoly();
+  bool inline_kyberNtt();
+  bool inline_kyberInverseNtt();
+  bool inline_kyberNttMult();
+  bool inline_kyberAddPoly_2();
+  bool inline_kyberAddPoly_3();
+  bool inline_kyber12To16();
+  bool inline_kyberBarrettReduce();
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
