@@ -1435,6 +1435,18 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_AddI:
       return false;
+
+    // LoadNode::Ideal uses tries to find an earlier memory state, and
+    // checks can_see_stored_value for it.
+    //
+    // Investigate why this was not already done during IGVN.
+    // A similar issue happens with Identity.
+    //
+    // Found with:
+    //   test/hotspot/jtreg/compiler/arraycopy/TestCloneAccess.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_LoadI:
+      return false;
   }
 
   Node* i = n->Ideal(this, can_reshape);
@@ -1511,6 +1523,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     // So the LoadN can be replaced with a zerocon.
     //
     // Investigate why this was not already done during IGVN.
+    // A similar issue happens with Ideal.
     //
     // Found with:
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version

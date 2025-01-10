@@ -1958,6 +1958,9 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // just return a prior value, which is done by Identity calls.
     if (can_see_stored_value(prev_mem, phase)) {
       // Make ready for step (d):
+      if (phase->is_IterGVN()) {
+        phase->is_IterGVN()->rehash_node_delayed(this);
+      }
       set_req_X(MemNode::Memory, prev_mem, phase);
       return this;
     }
