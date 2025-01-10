@@ -716,6 +716,8 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 
 # core_tools
 
+tools/jlink/runtimeImage/JavaSEReproducibleTest.java 8347376 generic-all
+tools/jlink/runtimeImage/PackagedModulesVsRuntimeImageLinkTest.java 8347376 generic-all
 
 ############################################################################
 
