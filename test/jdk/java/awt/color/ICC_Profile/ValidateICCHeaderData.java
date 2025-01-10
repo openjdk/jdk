@@ -37,13 +37,14 @@ import java.nio.ByteBuffer;
 
 public class ValidateICCHeaderData {
     private static ICC_Profile profile;
-    private static final int HEADER_TAG = ICC_Profile.icSigHead;
+
+    private static final boolean DEBUG = false;
     private static final int VALID_HEADER_SIZE = 128;
+    private static final int HEADER_TAG = ICC_Profile.icSigHead;
     private static final int PROFILE_CLASS_START_INDEX = ICC_Profile.icHdrDeviceClass;
     private static final int COLOR_SPACE_START_INDEX = ICC_Profile.icHdrColorSpace;
     private static final int RENDER_INTENT_START_INDEX = ICC_Profile.icHdrRenderingIntent;
     private static final int PCS_START_INDEX = ICC_Profile.icHdrPcs;
-    private static final boolean DEBUG = false;
 
     private static final int[] VALID_PROFILE_CLASS = new int[] {
             ICC_Profile.icSigInputClass, ICC_Profile.icSigDisplayClass,
@@ -88,29 +89,34 @@ public class ValidateICCHeaderData {
         System.out.println("CASE 1: Passed \n");
 
         // PCS field validation for Profile class != DEVICE_LINK
-        System.out.println("CASE 2: Testing VALID PCS Type for Profile class != DEVICE_LINK ...");
+        System.out.println("CASE 2: Testing VALID PCS Type"
+                           + " for Profile class != DEVICE_LINK ...");
         testValidHeaderData(new int[] {ICC_Profile.icSigXYZData, ICC_Profile.icSigLabData},
                 PCS_START_INDEX, 4);
         System.out.println("CASE 2: Passed \n");
 
-        System.out.println("CASE 3: Testing INVALID PCS Type for Profile class != DEVICE_LINK ...");
+        System.out.println("CASE 3: Testing INVALID PCS Type"
+                           + " for Profile class != DEVICE_LINK ...");
         testInvalidHeaderData(ICC_Profile.icSigCmykData, PCS_START_INDEX, 4);
         System.out.println("CASE 3: Passed \n");
 
         System.out.println("CASE 4: Testing DEVICE LINK PROFILE CLASS ...");
         testValidHeaderData(new int[] {ICC_Profile.icSigLinkClass},
                 PROFILE_CLASS_START_INDEX, 4);
-        //to check if instantiating BufferedImage with ICC_Profile device class = CLASS_DEVICELINK
-        //does not throw IAE.
-        BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_3BYTE_BGR);
+        //to check if instantiating BufferedImage with
+        //ICC_Profile device class = CLASS_DEVICELINK does not throw IAE.
+        BufferedImage img = new BufferedImage(100, 100,
+                                              BufferedImage.TYPE_3BYTE_BGR);
         System.out.println("CASE 4: Passed \n");
 
         // PCS field validation for Profile class == DEVICE_LINK
-        System.out.println("CASE 5: Testing VALID PCS Type for Profile class == DEVICE_LINK ...");
+        System.out.println("CASE 5: Testing VALID PCS Type"
+                           + " for Profile class == DEVICE_LINK ...");
         testValidHeaderData(VALID_COLOR_SPACE, PCS_START_INDEX, 4);
         System.out.println("CASE 5: Passed \n");
 
-        System.out.println("CASE 6: Testing INVALID PCS Type for Profile class == DEVICE_LINK ...");
+        System.out.println("CASE 6: Testing INVALID PCS Type"
+                           + " for Profile class == DEVICE_LINK ...");
         //original icSigLabData = 0x4C616220
         int invalidSigLabData = 0x4C616221;
         testInvalidHeaderData(invalidSigLabData, PCS_START_INDEX, 4);
@@ -149,17 +155,19 @@ public class ValidateICCHeaderData {
         System.out.println("Successfully completed testing all 12 cases. Test Passed !!");
     }
 
-    private static void testValidHeaderData(int[] validData, int startIndex, int fieldLength) {
+    private static void testValidHeaderData(int[] validData, int startIndex,
+                                            int fieldLength) {
         for (int value : validData) {
             setTag(value, startIndex, fieldLength);
         }
     }
 
-    private static void testInvalidHeaderData(int invalidData, int startIndex, int fieldLength) {
+    private static void testInvalidHeaderData(int invalidData, int startIndex,
+                                              int fieldLength) {
         try {
             setTag(invalidData, startIndex, fieldLength);
             throw new RuntimeException("Test Failed ! Expected IllegalArgumentException:"
-                    + " NOT thrown");
+                                       + " NOT thrown");
         } catch (IllegalArgumentException iae) {
             System.out.println("Expected IllegalArgumentException thrown: " + iae.getMessage());
         }
@@ -195,9 +203,10 @@ public class ValidateICCHeaderData {
         try {
             profile.setData(HEADER_TAG, invalidHeaderSize);
             throw new RuntimeException("Test Failed ! Expected IllegalArgumentException:"
-                    + " NOT thrown");
+                                       + " NOT thrown");
         } catch (IllegalArgumentException iae) {
-            System.out.println("Expected IllegalArgumentException thrown: " + iae.getMessage());
+            System.out.println("Expected IllegalArgumentException thrown: "
+                               + iae.getMessage());
         }
     }
 }
