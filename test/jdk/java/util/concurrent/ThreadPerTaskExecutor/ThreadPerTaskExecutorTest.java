@@ -339,7 +339,7 @@ class ThreadPerTaskExecutorTest {
     }
 
     /**
-     * Test awaitTermination with cancelled task that may have not started execution.
+     * Test awaitTermination with cancelled task that may not have started execution.
      */
     @ParameterizedTest
     @MethodSource("executors")
