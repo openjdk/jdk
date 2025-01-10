@@ -317,6 +317,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         saveAction.setEnabled(enableButton);
         saveAsAction.setEnabled(enableButton);
         removeAllAction.setEnabled(enableButton);
+        if (document.getElements().isEmpty()) {
+            showEditorPlaceholder();
+        } else {
+            editorPlaceholder.close();
+        }
     }
 
     @Override
@@ -443,7 +448,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         root = new FolderNode(document);
         manager.setRootContext(root);
         EditorTopComponent.closeAllInstances();
-        showEditorPlaceholder();
     }
 
     /**
