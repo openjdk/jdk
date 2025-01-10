@@ -111,7 +111,7 @@ public final class JFC {
                 throw new IOException("Configuration with more than "
                         + MAXIMUM_FILE_SIZE + " characters can't be read.");
             }
-            try (InputStream r = Files.newInputStream(knownPath);) {
+            try (InputStream r = Files.newInputStream(knownPath)) {
                 return JFC.readContent(r);
             }
         }
@@ -195,7 +195,7 @@ public final class JFC {
             for (String extension : Arrays.asList("", JFCParser.FILE_EXTENSION)) {
                 Path file = path.resolveSibling(name + extension);
                 if (Files.exists(file) && !Files.isDirectory(file)) {
-                    try (Reader r = Files.newBufferedReader(file);) {
+                    try (Reader r = Files.newBufferedReader(file)) {
                         String jfcName = nameFromPath(file);
                         return JFCParser.createConfiguration(jfcName, r);
                     }
