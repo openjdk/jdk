@@ -2501,7 +2501,7 @@ void JvmtiExport::post_compiled_method_load(nmethod *nm) {
   }
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->should_hide_jvmti_events(), "compiled method load events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "compiled method load events are not allowed in critical sections");
 
   EVT_TRIG_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
                  ("[%s] method compile load event triggered",
@@ -2524,7 +2524,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   }
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->should_hide_jvmti_events(), "compiled method load events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "compiled method load events are not allowed in critical sections");
 
   EVT_TRACE(JVMTI_EVENT_COMPILED_METHOD_LOAD,
            ("[%s] method compile load event sent %s.%s  ",
@@ -2549,7 +2549,7 @@ void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const v
 
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->should_hide_jvmti_events(), "dynamic code generated events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "dynamic code generated events are not allowed in critical sections");
 
   // In theory everyone coming thru here is in_vm but we need to be certain
   // because a callee will do a vm->native transition
@@ -2597,7 +2597,7 @@ void JvmtiExport::post_dynamic_code_generated(JvmtiEnv* env, const char *name,
 {
   JavaThread* thread = JavaThread::current();
 
-  assert(!thread->should_hide_jvmti_events(), "dynamic code generated events are not allowed in VTMS transition");
+  assert(!thread->should_hide_jvmti_events(), "dynamic code generated events are not allowed in critical sections");
 
   EVT_TRIG_TRACE(JVMTI_EVENT_DYNAMIC_CODE_GENERATED,
                  ("[%s] dynamic code generated event triggered (by GenerateEvents)",
