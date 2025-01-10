@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JavaAppDesc;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Parameter;
@@ -78,6 +79,8 @@ public final class ModulePathTest {
         JavaAppDesc appDesc = JavaAppDesc.parse(javaAppDesc);
 
         Path goodModulePath = TKit.createTempDirectory("modules");
+
+        HelloApp.createBundle(appDesc, goodModulePath);
 
         JPackageCommand cmd = new JPackageCommand()
                 .setArgumentValue("--dest", TKit.workDir().resolve("output"))
