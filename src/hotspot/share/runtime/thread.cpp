@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -246,6 +246,9 @@ void Thread::call_run() {
   // delete themselves when they terminate. But no thread should ever be deleted
   // asynchronously with respect to its termination - that is what _run_state can
   // be used to check.
+
+  // Logically we should do this->unregister_thread_stack_with_NMT() here, but we
+  // had to move that into post_run() because of the `this` deletion issue.
 
   assert(Thread::current_or_null() == nullptr, "current thread still present");
 }
