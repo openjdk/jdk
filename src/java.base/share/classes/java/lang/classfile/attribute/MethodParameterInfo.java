@@ -63,7 +63,7 @@ public sealed interface MethodParameterInfo
     /**
      * {@return the access flags, as a set of flag enums}
      *
-     * @throws IllegalArgumentException if the flags mask has any unused bit set
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
      * @see Parameter#accessFlags()
      * @see AccessFlag.Location#METHOD_PARAMETER
      */

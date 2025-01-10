@@ -35,28 +35,19 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * Attributes exist on certain {@code class} file structures modeled by {@link
  * AttributedElement}, which provides basic read access to the attributes.
  * <p>
- * Two special subtypes of {@code Attribute} are {@link CustomAttribute}, which
- * all user-defined attributes should extend from, and {@link UnknownAttribute},
- * representing attributes read from {@code class} file but are not recognized
- * by the {@link ClassFile.AttributeMapperOption}.
+ * This sealed interface hierarchy includes attributes predefined in the JVMS
+ * and JDK-specific nonstandard attributes.  Their {@linkplain #attributeMapper()
+ * mappers} are available in {@link Attributes}.  Two special subtypes of {@code
+ * Attribute} are {@link CustomAttribute}, which all user-defined attributes
+ * should extend from, and {@link UnknownAttribute}, representing attributes
+ * read from {@code class} file but are not recognized by the {@link
+ * ClassFile.AttributeMapperOption}.
  * <p>
- * Many attributes implement {@link ClassElement}, {@link FieldElement}, {@link
- * MethodElement}, or {@link CodeElement} interfaces.  They can be written to
- * the {@code class} file as part of those enclosing structures via {@link
- * ClassBuilder#with}, {@link FieldBuilder#with}, {@link MethodBuilder#with}, or
- * {@link CodeBuilder#with}.  If an attribute does not {@linkplain
- * AttributeMapper#allowMultiple allow multiple instances} in one structure,
- * the last supplied instance appears on the built structure.  These interfaces
- * also allow such attributes to be delivered in the traversal of corresponding
- * {@link CompoundElement}; the exact rules are specified in the modeling
- * subinterfaces.
- * <p>
- * Some attributes, like {@link BootstrapMethodsAttribute BootstrapMethods} and
- * {@link LocalVariableTableAttribute LocalVariableTable}, are present in
- * structures like {@link ClassModel} or {@link CodeModel}, but they do not
- * implement {@link ClassElement} or {@link CodeElement}.  Such attributes are
- * usually modeled as an integral part to the declaring structure, specified
- * in the modeling subinterfaces.
+ * Attributes are read through {@link AttributedElement} or element traversal of
+ * a {@link CompoundElement}; they are written through {@link ClassFileBuilder}.
+ * See {@linkplain java.lang.classfile.attribute##reading Reading Attributes}
+ * and {@linkplain java.lang.classfile.attribute##writing Writing Attributes}
+ * for more details.
  *
  * @param <A> the attribute type
  * @see java.lang.classfile.attribute

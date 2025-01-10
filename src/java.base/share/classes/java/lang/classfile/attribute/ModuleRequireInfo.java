@@ -65,7 +65,7 @@ public sealed interface ModuleRequireInfo
      * {@return the flags associated with this require declaration, as a set of
      * flag enums}
      *
-     * @throws IllegalArgumentException if the flags mask has any unused bit set
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
      * @see ModuleDescriptor.Requires#accessFlags()
      * @see AccessFlag.Location#MODULE_REQUIRES
      */

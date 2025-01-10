@@ -74,7 +74,7 @@ public sealed interface ModuleOpenInfo
      * {@return the flags associated with this open declaration, as a set of
      * flag enums}
      *
-     * @throws IllegalArgumentException if the flags mask has any unused bit set
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
      * @see ModuleDescriptor.Opens#accessFlags()
      * @see AccessFlag.Location#MODULE_OPENS
      */

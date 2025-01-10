@@ -91,7 +91,7 @@ public sealed interface ModuleAttribute
     /**
      * {@return the module flags of the module, as a set of enum constants}
      *
-     * @throws IllegalArgumentException if the flags mask has any unused bit set
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
      * @see ModuleDescriptor#accessFlags()
      * @see AccessFlag.Location#MODULE
      */

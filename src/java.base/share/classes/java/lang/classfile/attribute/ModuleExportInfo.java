@@ -68,7 +68,7 @@ public sealed interface ModuleExportInfo
      * {@return the flags associated with this export declaration, as a set of
      * flag enums}
      *
-     * @throws IllegalArgumentException if the flags mask has any unused bit set
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
      * @see ModuleDescriptor.Exports#accessFlags()
      * @see AccessFlag.Location#MODULE_EXPORTS
      */

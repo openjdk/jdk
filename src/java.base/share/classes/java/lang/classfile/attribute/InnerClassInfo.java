@@ -79,7 +79,7 @@ public sealed interface InnerClassInfo
      * {@return a set of flag enums denoting access permissions and properties
      * of the nested class}
      *
-     * @throws IllegalArgumentException if the flags mask has any unused bit set
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
      * @see Class#accessFlags()
      * @see AccessFlag.Location#INNER_CLASS
      */
