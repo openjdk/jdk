@@ -32,7 +32,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.util.Objects;
 
 @BenchmarkMode(Mode.AverageTime)
