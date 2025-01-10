@@ -121,8 +121,8 @@ final class TestCaptureStateUtil {
         assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, null));
     }
 
-    private static final int THREAD_COUNT = 1 << 14; // 14
-    private static final int LOOP_COUNT = 1 << 16; // 16
+    private static final int THREAD_COUNT = 1 << 14;
+    private static final int LOOP_COUNT = 1 << 16;
 
     // As TerminatingThreadLocal is carrier-local, this test tries to make sure that
     // a VT can not see another VT's thread local memory segment despite extensive
