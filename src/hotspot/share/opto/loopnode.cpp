@@ -2558,7 +2558,7 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     // - During CCP, there might be a temporary overflow from PhiNodes, see JDK-8309266.
     // - During PhaseIdealLoop::split_thru_phi, the LoopLimitNode floats possibly far above
     //   the loop and its predicates, and we might get constants on one side of the phi that
-    //   would lead to overflows. Such a code path would never lead us to enterthe loop
+    //   would lead to overflows. Such a code path would never lead us to enter the loop
     //   because of the loop limit overflow check that happens after the LoopLimitNode
     //   computation with overflow, but before we enter the loop, see JDK-8335747.
     if (final_con == (jlong)final_int) {
