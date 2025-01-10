@@ -595,37 +595,37 @@ private:
     return _chacha20Block_Type;
   }
 
-  static const TypeFunc* kyberNtt_Type() {
+  static inline const TypeFunc* kyberNtt_Type() {
     assert(_kyberNtt_Type != nullptr, "should be initialized");
     return _kyberNtt_Type;
   }
 
-  static const TypeFunc* kyberInverseNtt_Type() {
+  static inline const TypeFunc* kyberInverseNtt_Type() {
     assert(_kyberInverseNtt_Type != nullptr, "should be initialized");
     return _kyberInverseNtt_Type;
   }
 
-  static const TypeFunc* kyberNttMult_Type() {
+  static inline const TypeFunc* kyberNttMult_Type() {
     assert(_kyberNttMult_Type != nullptr, "should be initialized");
     return _kyberNttMult_Type;
   }
 
-  static const TypeFunc* kyberAddPoly_2_Type() {
+  static inline const TypeFunc* kyberAddPoly_2_Type() {
     assert(_kyberAddPoly_2_Type != nullptr, "should be initialized");
     return _kyberAddPoly_2_Type;
   }
 
-  static const TypeFunc* kyberAddPoly_3_Type() {
+  static inline const TypeFunc* kyberAddPoly_3_Type() {
     assert(_kyberAddPoly_3_Type != nullptr, "should be initialized");
     return _kyberAddPoly_3_Type;
   }
 
-  static const TypeFunc* kyber12To16_Type() {
+  static inline const TypeFunc* kyber12To16_Type() {
     assert(_kyber12To16_Type != nullptr, "should be initialized");
     return _kyber12To16_Type;
   }
 
-  static const TypeFunc* kyberBarrettReduce_Type() {
+  static inline const TypeFunc* kyberBarrettReduce_Type() {
     assert(_kyberBarrettReduce_Type != nullptr, "should be initialized");
     return _kyberBarrettReduce_Type;
   }

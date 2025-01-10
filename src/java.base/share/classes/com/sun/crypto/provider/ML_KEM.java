@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,7 +649,7 @@ public final class ML_KEM {
         }
 
         mlKemG.update(seed);
-        mlKemG.update((byte)mlKem_k);
+//        mlKemG.update((byte)mlKem_k);
 
         var rhoSigma = mlKemG.digest();
         var rho = Arrays.copyOfRange(rhoSigma, 0, 32);
@@ -1009,7 +1009,10 @@ public final class ML_KEM {
     // The elements of poly at return will be in the range of [0, mlKem_q]
     private void mlKemNTT(short[] poly) {
         assert poly.length == ML_KEM_N;
-        implKyberNtt(poly, montZetasForVectorNttArr);
+        if (implKyberNtt(poly, montZetasForVectorNttArr) == 0) {
+//            System.out.println(Arrays.toString(poly));
+//            System.exit(12);
+        }
         mlKemBarrettReduce(poly);
     }
 

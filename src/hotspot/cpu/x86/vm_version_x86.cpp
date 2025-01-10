@@ -1225,6 +1225,20 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
+  // Kyber Intrinsics
+  // Currently we only have them for AVX512
+#ifdef _LP64
+  if (supports_evex() && supports_avx512bw()) {
+      if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
+          UseKyberIntrinsics = true;
+      }
+  } else
+#endif
+  if (UseKyberIntrinsics) {
+     warning("Intrinsics for ML-KEM are not available on this CPU.");
+     FLAG_SET_DEFAULT(UseKyberIntrinsics, false);
+  }
+
   // Dilithium Intrinsics
   // Currently we only have them for AVX512
   if (supports_evex() && supports_avx512bw()) {
