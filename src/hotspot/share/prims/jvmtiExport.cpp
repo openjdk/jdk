@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1969,7 +1969,10 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
         // remove the frame's entry
         {
           MutexLocker mu(JvmtiThreadState_lock);
-          ets->clear_frame_pop(cur_frame_number);
+          // Need to recheck the condition as the JVMTI ClearAllFramePops can do its work at a safepoint.
+          if (ets->is_frame_pop(cur_frame_number)) {
+            ets->clear_frame_pop(cur_frame_number);
+          }
         }
       }
     }
