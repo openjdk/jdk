@@ -132,7 +132,7 @@ public class Util {
      * @param classFile
      */
     public static void printClassFile(byte[] classFile) {
-        int flags =  org.objectweb.asm.ClassReader.SKIP_DEBUG;
+        int flags = org.objectweb.asm.ClassReader.SKIP_DEBUG;
 
         classFile = classFile.clone();
 
