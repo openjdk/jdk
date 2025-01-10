@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,11 +163,13 @@ public:
   size_t oopmap_size_in_bits()      const { assert_is_heap_region();     return _oopmap_size_in_bits; }
   size_t ptrmap_offset()            const { return _ptrmap_offset; }
   size_t ptrmap_size_in_bits()      const { return _ptrmap_size_in_bits; }
+  bool   in_reserved_space()        const { return _in_reserved_space; }
 
   void set_file_offset(size_t s)     { _file_offset = s; }
   void set_read_only(bool v)         { _read_only = v; }
   void set_mapped_base(char* p)      { _mapped_base = p; }
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
+  void set_in_reserved_space(bool is_reserved) { _in_reserved_space = is_reserved; }
   void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
             bool allow_exec, int crc);
   void init_oopmap(size_t offset, size_t size_in_bits);

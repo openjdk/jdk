@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,15 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
+package com.sun.hotspot.igv.view.actions;
 
-package jdk.jfr.internal.settings;
+import com.sun.hotspot.igv.view.EditorTopComponent;
+import java.beans.PropertyChangeEvent;
 
-import jdk.jfr.SettingControl;
+public class EnableFreeLayoutAction extends EnableLayoutAction {
 
-/**
- * SettingControls that derive from this class avoids executing settings
- * modifications in a AccessController.doPrivilege(...) block.
- */
-public abstract class JDKSettingControl extends SettingControl {
+    public EnableFreeLayoutAction(EditorTopComponent etc) {
+        super(etc);
+    }
+
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/dynamic.png";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Show dynamic free layout";
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        editor.getModel().setShowFreeInteractive(this.isSelected());
+    }
 }

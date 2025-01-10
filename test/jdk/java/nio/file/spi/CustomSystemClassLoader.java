@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.jvm;
 
-// Purpose of this class is to have something to
-// statically link against for TestGetEventWriter.
-//
-// When the class is loaded "jdk.jfr.jvm.PlaceholderEventWriterFactory"
-// will be replaced with "jdk.jfr.internal.event.EventWriterFactory"
-public class PlaceholderEventWriterFactory {
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 
-    public static PlaceholderEventWriter getEventWriter(long value) {
-        throw new RuntimeException("Test error, PlaceholderEventWriterFactory class should have been replaced with EventWriterFactory");
+/**
+ * Use by tests in SetDefaultProvider to test startup with a custom default file system
+ * provider and a custom system class loader.
+ */
+
+public class CustomSystemClassLoader extends ClassLoader {
+    public CustomSystemClassLoader(ClassLoader parent) {
+        super(parent);
+
+        // use default file system
+        FileSystem fs = FileSystems.getDefault();
+        var path = fs.getPath("foo");
     }
 }

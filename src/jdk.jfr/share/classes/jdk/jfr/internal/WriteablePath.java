@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jfr.internal;
 
-import jdk.jfr.internal.event.EventWriter;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-// This class is not directly used but renamed to
-// jdk.jfr.internal.event.EventWriterFactory and loaded dynamically
-// when the first event class is bytecode instrumented.
-// See JVMUpcalls and EventWriterKey::ensureEventWriterFactory()
-public final class EventWriterFactoryRecipe {
-    private static final long KEY = EventWriterKey.getKey();
+public final class WriteablePath {
+    private final Path path;
+    private final Path real;
 
-    public static EventWriter getEventWriter(long key) {
-        if (key == KEY) {
-            EventWriter ew = JVM.getEventWriter();
-            return ew != null ? ew : JVM.newEventWriter();
+    public WriteablePath(Path path) throws IOException {
+        // verify that the path is writeable
+        if (Files.exists(path) && !Files.isWritable(path)) {
+            // throw same type of exception as FileOutputStream
+            // constructor, if file can't be opened.
+            throw new FileNotFoundException("Could not write to file: " + path.toAbsolutePath());
         }
-        EventWriterKey.block();
-        return null; // Can't reach here.
+        // will throw if non-writeable
+        BufferedWriter fw = Files.newBufferedWriter(path);
+        fw.close();
+        this.path = path;
+        this.real = path.toRealPath();
+    }
+
+    public Path getPath() {
+        return path;
+    }
+
+    public Path getReal() {
+        return real;
+    }
+
+    public String getRealPathText() {
+        return real.toString();
     }
 }

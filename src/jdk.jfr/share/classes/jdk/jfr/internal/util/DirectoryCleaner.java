@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.periodic;
+package jdk.jfr.internal.util;
 
-import jdk.internal.event.Event;
-import jdk.jfr.internal.util.Utils;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
-/**
- * Periodic task that runs trusted code that doesn't require an access control
- * context.
- * <p>
- * This class can be removed once the Security Manager is no longer supported.
- */
-final class JDKEventTask extends JavaEventTask {
+public final class DirectoryCleaner extends SimpleFileVisitor<Path> {
 
-    public JDKEventTask(Class<? extends Event> eventClass, Runnable runnable) {
-        super(eventClass, runnable);
-        if (!getEventType().isJDK()) {
-            throw new InternalError("Must be a JDK event");
-        }
-        if (!Utils.isJDKClass(eventClass)) {
-            throw new SecurityException("Periodic task can only be registered for event classes that belongs to the JDK");
-        }
-        if (!Utils.isJDKClass(runnable.getClass())) {
-            throw new SecurityException("Runnable class must belong to the JDK");
-        }
+    public static void clear(Path path) throws IOException {
+        Files.walkFileTree(path, new DirectoryCleaner());
     }
 
     @Override
-    public void execute(long timestamp, PeriodicType periodicType) {
-        getRunnable().run();
+    public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+        Files.delete(path);
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+        if (exc != null) {
+            throw exc;
+        }
+        Files.delete(dir);
+        return FileVisitResult.CONTINUE;
     }
 }

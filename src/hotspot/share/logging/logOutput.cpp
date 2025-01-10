@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,7 +354,9 @@ bool LogOutput::parse_options(const char* options, outputStream* errstream) {
       }
       break;
     }
-    pos = comma_pos + 1;
+    if (comma_pos != nullptr) {
+      pos = comma_pos + 1;
+    }
   } while (comma_pos != nullptr);
 
   os::free(opts);
