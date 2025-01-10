@@ -26,6 +26,8 @@ package jdk.internal.foreign;
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.Continuation;
+import jdk.internal.vm.ContinuationSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.Linker;
@@ -209,6 +211,23 @@ public final class CaptureStateUtil {
 
     // Used reflectively by `getAsIntHandle(MemoryLayout layout)`
     private static int getStateAsInt(VarHandle handle) {
+        if (Thread.currentThread().isVirtual() && ContinuationSupport.isSupported()) {
+            // Make sure we are not unmounted/remounted from/on another platform thread
+            // during the critical read region. This prevents access across platform threads.
+            Continuation.pin();
+            try {
+                return getStateAsIntCriticalRegion(handle);
+            } finally {
+                Continuation.unpin();
+            }
+        } else {
+            // On platform threads, we always remain on the PT itself
+            return getStateAsIntCriticalRegion(handle);
+        }
+    }
+
+    // Critical read region for VTs.
+    private static int getStateAsIntCriticalRegion(VarHandle handle) {
         return (int) handle.get(acquireCaptureStateSegment(), 0);
     }
 
