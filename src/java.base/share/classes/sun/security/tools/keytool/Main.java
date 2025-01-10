@@ -39,8 +39,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.TrustAnchor;
 import java.security.cert.URICertStoreParameters;
-
-
+import java.security.spec.ECParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.text.Collator;
 import java.text.MessageFormat;
@@ -2081,8 +2080,9 @@ public final class Main {
             var params = ak.getParams();
             if (params instanceof NamedParameterSpec nps) {
                 return nps.getName(); // directly return
-            } else {
-                if (params instanceof NamedCurve nc) {
+            } else if (params instanceof ECParameterSpec eps) {
+                var nc = CurveDB.lookup(eps);
+                if (nc != null) {
                     alg += " (" + nc.getNameAndAliases()[0] + ")"; // append name
                 }
             }

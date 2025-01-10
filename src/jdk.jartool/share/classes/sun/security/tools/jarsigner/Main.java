@@ -30,6 +30,7 @@ import java.net.UnknownHostException;
 import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
+import java.security.spec.ECParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1484,8 +1485,9 @@ public class Main {
             var params = ak.getParams();
             if (params instanceof NamedParameterSpec nps) {
                 return nps.getName(); // directly return
-            } else {
-                if (params instanceof NamedCurve nc) {
+            } else if (params instanceof ECParameterSpec eps) {
+                var nc = CurveDB.lookup(eps);
+                if (nc != null) {
                     alg += " (" + nc.getNameAndAliases()[0] + ")"; // append name
                 }
             }
