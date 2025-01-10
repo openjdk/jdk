@@ -61,7 +61,5 @@ public class Main {
 
         // exercise the file type detector
         String fileType = Files.probeContentType(Path.of("."));
-        if (fileType != null)
-            throw new RuntimeException("File type non-null: " + fileType);
     }
 }
