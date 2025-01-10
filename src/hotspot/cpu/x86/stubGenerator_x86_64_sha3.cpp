@@ -82,6 +82,7 @@ static address permsAndRotsAddr() {
 void StubGenerator::generate_sha3_stubs() {
   if (UseSHA3Intrinsics) {
     StubRoutines::_sha3_implCompress   = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
+    StubRoutines::_double_keccak         = generate_double_keccak();
     StubRoutines::_sha3_implCompressMB = generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id);
   }
 }
@@ -329,6 +330,200 @@ address StubGenerator::generate_sha3_implCompress(StubGenStubId stub_id) {
   __ pop(r14);
   __ pop(r13);
   __ pop(r12);
+
+  __ leave(); // required for proper stackwalking of RuntimeStub frame
+  __ ret(0);
+
+  return start;
+}
+
+// Inputs:
+//   c_rarg0   - long[]  state0
+//   c_rarg1   - long[]  state1
+address StubGenerator::generate_double_keccak() {
+  __ align(CodeEntryAlignment);
+  StubGenStubId stub_id = double_keccak_id;
+  StubCodeMark mark(this, stub_id);
+  address start = __ pc();
+
+  const Register state0 = c_rarg0;
+  const Register state1 = c_rarg1;
+
+  const Register permsAndRots = c_rarg2;
+  const Register round_consts = c_rarg3;
+  const Register constant2use = r10;
+  const Register roundsLeft = r11;
+
+  Label rounds24_loop;
+
+  __ enter();
+
+  __ lea(permsAndRots, ExternalAddress(permsAndRotsAddr()));
+  __ lea(round_consts, ExternalAddress(round_constsAddr()));
+
+  // set up the masks
+  __ mov64(rax,1);
+  __ kmovbl(k1, rax);
+  __ addl(rax,2);
+  __ kmovbl(k2, rax);
+  __ addl(rax, 4);
+  __ kmovbl(k3, rax);
+  __ addl(rax, 8);
+  __ kmovbl(k4, rax);
+  __ addl(rax, 16);
+  __ kmovbl(k5, rax);
+
+  // load the states
+  __ evmovdquq(xmm0, k5, Address(state0, 0), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm1, k5, Address(state0, 40), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm2, k5, Address(state0, 80), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm3, k5, Address(state0, 120), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm4, k5, Address(state0, 160), false, Assembler::AVX_512bit);
+
+  __ evmovdquq(xmm10, k5, Address(state1, 0), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm11, k5, Address(state1, 40), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm12, k5, Address(state1, 80), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm13, k5, Address(state1, 120), false, Assembler::AVX_512bit);
+  __ evmovdquq(xmm14, k5, Address(state1, 160), false, Assembler::AVX_512bit);
+
+  // load the permutation and rotation constants
+  __ evmovdquq(xmm17, Address(permsAndRots, 0), Assembler::AVX_512bit);
+  __ evmovdquq(xmm18, Address(permsAndRots, 64), Assembler::AVX_512bit);
+  __ evmovdquq(xmm19, Address(permsAndRots, 128), Assembler::AVX_512bit);
+  __ evmovdquq(xmm20, Address(permsAndRots, 192), Assembler::AVX_512bit);
+  __ evmovdquq(xmm21, Address(permsAndRots, 256), Assembler::AVX_512bit);
+  __ evmovdquq(xmm22, Address(permsAndRots, 320), Assembler::AVX_512bit);
+  __ evmovdquq(xmm23, Address(permsAndRots, 384), Assembler::AVX_512bit);
+  __ evmovdquq(xmm24, Address(permsAndRots, 448), Assembler::AVX_512bit);
+  __ evmovdquq(xmm25, Address(permsAndRots, 512), Assembler::AVX_512bit);
+  __ evmovdquq(xmm26, Address(permsAndRots, 576), Assembler::AVX_512bit);
+  __ evmovdquq(xmm27, Address(permsAndRots, 640), Assembler::AVX_512bit);
+  __ evmovdquq(xmm28, Address(permsAndRots, 704), Assembler::AVX_512bit);
+  __ evmovdquq(xmm29, Address(permsAndRots, 768), Assembler::AVX_512bit);
+  __ evmovdquq(xmm30, Address(permsAndRots, 832), Assembler::AVX_512bit);
+  __ evmovdquq(xmm31, Address(permsAndRots, 896), Assembler::AVX_512bit);
+
+  // there will be 24 keccak rounds
+  __ movl(roundsLeft, 24);
+  // load round_constants base
+  __ movptr(constant2use, round_consts);
+
+  __ BIND(rounds24_loop);
+  __ subl( roundsLeft, 1);
+
+  __ evmovdquw(xmm5, xmm0, Assembler::AVX_512bit);
+  __ evmovdquw(xmm15, xmm10, Assembler::AVX_512bit);
+  __ vpternlogq(xmm5, 150, xmm1, xmm2, Assembler::AVX_512bit);
+  __ vpternlogq(xmm15, 150, xmm11, xmm12, Assembler::AVX_512bit);
+  __ vpternlogq(xmm5, 150, xmm3, xmm4, Assembler::AVX_512bit);
+  __ vpternlogq(xmm15, 150, xmm13, xmm14, Assembler::AVX_512bit);
+  __ evprolq(xmm6, xmm5, 1, Assembler::AVX_512bit);
+  __ evprolq(xmm16, xmm15, 1, Assembler::AVX_512bit);
+  __ evpermt2q(xmm5, xmm30, xmm5, Assembler::AVX_512bit);
+  __ evpermt2q(xmm15, xmm30, xmm15, Assembler::AVX_512bit);
+  __ evpermt2q(xmm6, xmm31, xmm6, Assembler::AVX_512bit);
+  __ evpermt2q(xmm16, xmm31, xmm16, Assembler::AVX_512bit);
+  __ vpternlogq(xmm0, 150, xmm5, xmm6, Assembler::AVX_512bit);
+  __ vpternlogq(xmm10, 150, xmm15, xmm16, Assembler::AVX_512bit);
+  __ vpternlogq(xmm1, 150, xmm5, xmm6, Assembler::AVX_512bit);
+  __ vpternlogq(xmm11, 150, xmm15, xmm16, Assembler::AVX_512bit);
+  __ vpternlogq(xmm2, 150, xmm5, xmm6, Assembler::AVX_512bit);
+  __ vpternlogq(xmm12, 150, xmm15, xmm16, Assembler::AVX_512bit);
+  __ vpternlogq(xmm3, 150, xmm5, xmm6, Assembler::AVX_512bit);
+  __ vpternlogq(xmm13, 150, xmm15, xmm16, Assembler::AVX_512bit);
+  __ vpternlogq(xmm4, 150, xmm5, xmm6, Assembler::AVX_512bit);
+  __ vpternlogq(xmm14, 150, xmm15, xmm16, Assembler::AVX_512bit);
+  __ evpermt2q(xmm4, xmm17, xmm3, Assembler::AVX_512bit);
+  __ evpermt2q(xmm14, xmm17, xmm13, Assembler::AVX_512bit);
+  __ evpermt2q(xmm3, xmm18, xmm2, Assembler::AVX_512bit);
+  __ evpermt2q(xmm13, xmm18, xmm12, Assembler::AVX_512bit);
+  __ evpermt2q(xmm2, xmm17, xmm1, Assembler::AVX_512bit);
+  __ evpermt2q(xmm12, xmm17, xmm11, Assembler::AVX_512bit);
+  __ evpermt2q(xmm1, xmm19, xmm0, Assembler::AVX_512bit);
+  __ evpermt2q(xmm11, xmm19, xmm10, Assembler::AVX_512bit);
+  __ evpermt2q(xmm4, xmm20, xmm2, Assembler::AVX_512bit);
+  __ evpermt2q(xmm14, xmm20, xmm12, Assembler::AVX_512bit);
+  __ evprolvq(xmm1, xmm1, xmm27, Assembler::AVX_512bit);
+  __ evprolvq(xmm11, xmm11, xmm27, Assembler::AVX_512bit);
+  __ evprolvq(xmm3, xmm3, xmm28, Assembler::AVX_512bit);
+  __ evprolvq(xmm13, xmm13, xmm28, Assembler::AVX_512bit);
+  __ evprolvq(xmm4, xmm4, xmm29, Assembler::AVX_512bit);
+  __ evprolvq(xmm14, xmm14, xmm29, Assembler::AVX_512bit);
+  __ evmovdquw(xmm2, xmm1, Assembler::AVX_512bit);
+  __ evmovdquw(xmm12, xmm11, Assembler::AVX_512bit);
+  __ evmovdquw(xmm5, xmm3, Assembler::AVX_512bit);
+  __ evmovdquw(xmm15, xmm13, Assembler::AVX_512bit);
+  __ evpermt2q(xmm0, xmm21, xmm4, Assembler::AVX_512bit);
+  __ evpermt2q(xmm10, xmm21, xmm14, Assembler::AVX_512bit);
+  __ evpermt2q(xmm1, xmm22, xmm3, Assembler::AVX_512bit);
+  __ evpermt2q(xmm11, xmm22, xmm13, Assembler::AVX_512bit);
+  __ evpermt2q(xmm5, xmm22, xmm2, Assembler::AVX_512bit);
+  __ evpermt2q(xmm15, xmm22, xmm12, Assembler::AVX_512bit);
+  __ evmovdquw(xmm3, xmm1, Assembler::AVX_512bit);
+  __ evmovdquw(xmm13, xmm11, Assembler::AVX_512bit);
+  __ evmovdquw(xmm2, xmm5, Assembler::AVX_512bit);
+  __ evmovdquw(xmm12, xmm15, Assembler::AVX_512bit);
+  __ evpermt2q(xmm1, xmm23, xmm4, Assembler::AVX_512bit);
+  __ evpermt2q(xmm11, xmm23, xmm14, Assembler::AVX_512bit);
+  __ evpermt2q(xmm2, xmm24, xmm4, Assembler::AVX_512bit);
+  __ evpermt2q(xmm12, xmm24, xmm14, Assembler::AVX_512bit);
+  __ evpermt2q(xmm3, xmm25, xmm4, Assembler::AVX_512bit);
+  __ evpermt2q(xmm13, xmm25, xmm14, Assembler::AVX_512bit);
+  __ evpermt2q(xmm4, xmm26, xmm5, Assembler::AVX_512bit);
+  __ evpermt2q(xmm14, xmm26, xmm15, Assembler::AVX_512bit);
+
+  __ evpermt2q(xmm5, xmm31, xmm0, Assembler::AVX_512bit);
+  __ evpermt2q(xmm15, xmm31, xmm10, Assembler::AVX_512bit);
+  __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
+  __ evpermt2q(xmm16, xmm31, xmm15, Assembler::AVX_512bit);
+  __ vpternlogq(xmm0, 180, xmm6, xmm5, Assembler::AVX_512bit);
+  __ vpternlogq(xmm10, 180, xmm16, xmm15, Assembler::AVX_512bit);
+
+  __ evpermt2q(xmm5, xmm31, xmm1, Assembler::AVX_512bit);
+  __ evpermt2q(xmm15, xmm31, xmm11, Assembler::AVX_512bit);
+  __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
+  __ evpermt2q(xmm16, xmm31, xmm15, Assembler::AVX_512bit);
+  __ vpternlogq(xmm1, 180, xmm6, xmm5, Assembler::AVX_512bit);
+  __ vpternlogq(xmm11, 180, xmm16, xmm15, Assembler::AVX_512bit);
+
+  __ evpxorq(xmm0, k1, xmm0, Address(constant2use, 0), true, Assembler::AVX_512bit);
+  __ evpxorq(xmm10, k1, xmm10, Address(constant2use, 0), true, Assembler::AVX_512bit);
+  __ addptr(constant2use, 8);
+
+  __ evpermt2q(xmm5, xmm31, xmm2, Assembler::AVX_512bit);
+  __ evpermt2q(xmm15, xmm31, xmm12, Assembler::AVX_512bit);
+  __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
+  __ evpermt2q(xmm16, xmm31, xmm15, Assembler::AVX_512bit);
+  __ vpternlogq(xmm2, 180, xmm6, xmm5, Assembler::AVX_512bit);
+  __ vpternlogq(xmm12, 180, xmm16, xmm15, Assembler::AVX_512bit);
+
+  __ evpermt2q(xmm5, xmm31, xmm3, Assembler::AVX_512bit);
+  __ evpermt2q(xmm15, xmm31, xmm13, Assembler::AVX_512bit);
+  __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
+  __ evpermt2q(xmm16, xmm31, xmm15, Assembler::AVX_512bit);
+  __ vpternlogq(xmm3, 180, xmm6, xmm5, Assembler::AVX_512bit);
+  __ vpternlogq(xmm13, 180, xmm16, xmm15, Assembler::AVX_512bit);
+  __ evpermt2q(xmm5, xmm31, xmm4, Assembler::AVX_512bit);
+  __ evpermt2q(xmm15, xmm31, xmm14, Assembler::AVX_512bit);
+  __ evpermt2q(xmm6, xmm31, xmm5, Assembler::AVX_512bit);
+  __ evpermt2q(xmm16, xmm31, xmm15, Assembler::AVX_512bit);
+  __ vpternlogq(xmm4, 180, xmm6, xmm5, Assembler::AVX_512bit);
+  __ vpternlogq(xmm14, 180, xmm16, xmm15, Assembler::AVX_512bit);
+  __ cmpl(roundsLeft, 0);
+  __ jcc(Assembler::notEqual, rounds24_loop);
+
+  // store the states
+  __ evmovdquq(Address(state0, 0), k5, xmm0, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state0, 40), k5, xmm1, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state0, 80), k5, xmm2, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state0, 120), k5, xmm3, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state0, 160), k5, xmm4, true, Assembler::AVX_512bit);
+
+  __ evmovdquq(Address(state1, 0), k5, xmm10, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state1, 40), k5, xmm11, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state1, 80), k5, xmm12, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state1, 120), k5, xmm13, true, Assembler::AVX_512bit);
+  __ evmovdquq(Address(state1, 160), k5, xmm14, true, Assembler::AVX_512bit);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);

@@ -678,6 +678,21 @@
            ghash_processBlocks)                                         \
   do_stub(compiler, chacha20Block)                                      \
   do_entry(compiler, chacha20Block, chacha20Block, chacha20Block)       \
+  do_stub(compiler, dilithiumAlmostNtt)                                 \
+  do_entry(compiler, dilithiumAlmostNtt,                                \
+           dilithiumAlmostNtt, dilithiumAlmostNtt)                      \
+  do_stub(compiler, dilithiumAlmostInverseNtt)                          \
+  do_entry(compiler, dilithiumAlmostInverseNtt,                         \
+           dilithiumAlmostInverseNtt, dilithiumAlmostInverseNtt)        \
+  do_stub(compiler, dilithiumNttMult)                                   \
+  do_entry(compiler, dilithiumNttMult,                                  \
+           dilithiumNttMult, dilithiumNttMult)                          \
+  do_stub(compiler, dilithiumMontMulByConstant)                         \
+  do_entry(compiler, dilithiumMontMulByConstant,                        \
+           dilithiumMontMulByConstant, dilithiumMontMulByConstant)      \
+  do_stub(compiler, dilithiumDecomposePoly)                             \
+  do_entry(compiler, dilithiumDecomposePoly,                            \
+           dilithiumDecomposePoly, dilithiumDecomposePoly)              \
   do_stub(compiler, data_cache_writeback)                               \
   do_entry(compiler, data_cache_writeback, data_cache_writeback,        \
            data_cache_writeback)                                        \
@@ -725,6 +740,8 @@
   do_stub(compiler, sha3_implCompress)                                  \
   do_entry(compiler, sha3_implCompress, sha3_implCompress,              \
            sha3_implCompress)                                           \
+  do_stub(compiler, double_keccak)                                      \
+  do_entry(compiler, double_keccak, double_keccak, double_keccak)       \
   do_stub(compiler, sha3_implCompressMB)                                \
   do_entry(compiler, sha3_implCompressMB, sha3_implCompressMB,          \
            sha3_implCompressMB)                                         \
