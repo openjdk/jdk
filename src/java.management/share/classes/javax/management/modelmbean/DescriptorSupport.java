@@ -210,6 +210,7 @@ public class DescriptorSupport
        split the string being parsed at characters like > even if they
        occur in the middle of a field value. */
     @Deprecated(since="25", forRemoval=true)
+    @SuppressWarnings("removal")
     public DescriptorSupport(String inStr)
             throws MBeanException, RuntimeOperationsException,
                    XMLParseException {
@@ -1063,6 +1064,7 @@ public class DescriptorSupport
         return buf.toString();
     }
 
+    @SuppressWarnings("removal")
     private static String unquote(String s) throws XMLParseException {
         if (!s.startsWith("\"") || !s.endsWith("\""))
             throw new XMLParseException("Value must be quoted: <" + s + ">");
@@ -1126,6 +1128,7 @@ public class DescriptorSupport
      * - some other string, in which case the result is that string,
      * without the parentheses.
      */
+    @SuppressWarnings("removal")
     private static Object parseQuotedFieldValue(String s)
             throws XMLParseException {
         s = unquote(s);
