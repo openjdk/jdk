@@ -1166,7 +1166,7 @@ public sealed class ICC_Profile implements Serializable
          * bytes here. Please refer ICC Spec Document for more details.
          */
         int renderingIntent = ((header[index+2] & 0xff) <<  8) |
-                (header[index+3] & 0xff);
+                              (header[index+3] & 0xff);
 
         switch (renderingIntent) {
             case icPerceptual, icMediaRelativeColorimetric,
