@@ -2790,14 +2790,20 @@ class MergePrimitiveStores : public StackObj {
 private:
   PhaseGVN* const _phase;
   StoreNode* const _store;
-  enum DataOrder { Unknown, Forward, Reverse};
-  DataOrder  _value_order;
+  // State machine with initial state Unknown
+  // Allowed transitions:
+  //   Unknown  -> Forward
+  //   Unknown  -> Backward
+  //   Forward  -> Forward
+  //   Backward -> Backward
+  enum ValueOrder { Unknown, Forward, Backward };
+  ValueOrder  _value_order;
 
   NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
 
 public:
   MergePrimitiveStores(PhaseGVN* phase, StoreNode* store) :
-    _phase(phase), _store(store), _value_order(DataOrder::Unknown)
+    _phase(phase), _store(store), _value_order(ValueOrder::Unknown)
     NOT_PRODUCT( COMMA _trace_tags(Compile::current()->directive()->trace_merge_stores_tags()) )
     {}
 
@@ -2990,24 +2996,24 @@ bool MergePrimitiveStores::is_adjacent_input_pair(const Node* n1, const Node* n2
     return false;
   }
 
-  // initialize value_order once
-  if (_value_order == DataOrder::Unknown) {
+  // Initial state "Unknown": check for transition to Forward or Backward.
+  if (_value_order == ValueOrder::Unknown) {
     if (shift_n1 < shift_n2) {
-      _value_order = DataOrder::Forward;
+      _value_order = ValueOrder::Forward; // First pair has Forward order
 #ifdef VM_LITTLE_ENDIAN
     } else if (memory_size == 1 &&
                Matcher::match_rule_supported(Op_ReverseBytesI) &&
                Matcher::match_rule_supported(Op_ReverseBytesL)) {
-      _value_order = DataOrder::Reverse;  // only support reverse bytes
+      _value_order = ValueOrder::Backward;  // only support reverse bytes
 #endif
     } else {
       return false;
     }
   }
 
-  if ((_value_order == DataOrder::Forward && shift_n1 > shift_n2) ||
-      (_value_order == DataOrder::Reverse && shift_n1 < shift_n2)) {
-    // wrong order
+  if ((_value_order == ValueOrder::Forward  && shift_n1 > shift_n2) ||
+      (_value_order == ValueOrder::Backward && shift_n1 < shift_n2)) {
+    // Wrong order: mixed Forward and Backward not allowed.
     return false;
   }
 
@@ -3228,14 +3234,14 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
     //             |                                  |
     //           _store                             first
     //
-    assert(_value_order != DataOrder::Unknown, "sanity");
+    assert(_value_order != ValueOrder::Unknown, "sanity");
     Node* hi = _store->in(MemNode::ValueIn);
     Node* lo = first->in(MemNode::ValueIn);
 #ifndef VM_LITTLE_ENDIAN
     // `_store` and `first` are swapped in the diagram above
     swap(hi, lo);
 #endif // !VM_LITTLE_ENDIAN
-    if (_value_order == DataOrder::Reverse) {
+    if (_value_order == ValueOrder::Backward) {
       swap(hi, lo);
     }
     Node const* hi_base;
@@ -3267,7 +3273,8 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
          (_phase->type(merged_input_value)->isa_long() != nullptr && new_memory_size == 8),
          "merged_input_value is either int or long, and new_memory_size is small enough");
 
-  if (_value_order == DataOrder::Reverse) {
+  if (_value_order == ValueOrder::Backward) {
+    assert(_store->memory_size() == 1, "only implemented for bytes");
     if (new_memory_size == 8) {
       merged_input_value = _phase->transform(new ReverseBytesLNode(nullptr, merged_input_value));
     } else if (new_memory_size == 4) {
