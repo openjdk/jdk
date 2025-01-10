@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,9 +309,9 @@ public class Resources extends java.util.ListResourceBundle {
                 "Key pair not generated, alias <{0}> already exists"},
         {"size.bit.alg",
                 "%1$d-bit %2$s"},
-        {"Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
+        {"Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.days.for",
                 "Generating {0} key pair and self-signed certificate ({1}) with a validity of {2} days\n\tfor: {3}"},
-        {"Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
+        {"Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.days.for",
                 "Generating {0} key pair and a certificate ({1}) issued by <{2}> with a validity of {3} days\n\tfor: {4}"},
         {"Enter.key.password.for.alias.", "Enter key password for <{0}>"},
         {".RETURN.if.same.as.keystore.password.",

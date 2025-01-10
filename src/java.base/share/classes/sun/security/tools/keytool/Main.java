@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2026,7 +2026,7 @@ public final class Main {
         Object[] source;
         if (signerAlias != null) {
             form = new MessageFormat(rb.getString
-                    ("Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for"));
+                    ("Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.days.for"));
             source = new Object[]{
                     fullDisplayKeyName(privKey),
                     newCert.getSigAlgName(),
@@ -2035,7 +2035,7 @@ public final class Main {
                     x500Name};
         } else {
             form = new MessageFormat(rb.getString
-                    ("Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
+                    ("Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.days.for"));
             source = new Object[]{
                     fullDisplayKeyName(privKey),
                     newCert.getSigAlgName(),
