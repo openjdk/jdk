@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import static jdk.internal.util.OperatingSystem.LINUX;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.PackageTest;
@@ -67,6 +69,7 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile LicenseTest.java
+ * @requires (jpackage.test.SQETest != null)
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCommon
  */
@@ -78,18 +81,14 @@ import jdk.jpackage.test.TKit;
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile LicenseTest.java
- * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
- *  --jpt-run=LicenseTest.testCustomDebianCopyright
- *  --jpt-run=LicenseTest.testCustomDebianCopyrightSubst
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree2
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree3
- *  --jpt-run=LicenseTest.testLinuxLicenseInUsrTree4
+ *  --jpt-run=LicenseTest
  */
 
 public class LicenseTest {
+
+    @Test
     public static void testCommon() {
         PackageTest test = new PackageTest().configureHelloApp()
         .addInitializer(cmd -> {
@@ -102,26 +101,32 @@ public class LicenseTest {
         test.run();
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree() {
         testLinuxLicenseInUsrTree("/usr");
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree2() {
         testLinuxLicenseInUsrTree("/usr/local");
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree3() {
         testLinuxLicenseInUsrTree("/usr/foo");
     }
 
+    @Test(ifOS = LINUX)
     public static void testLinuxLicenseInUsrTree4() {
         testLinuxLicenseInUsrTree("/usrbuz");
     }
 
+    @Test(ifOS = LINUX)
     public static void testCustomDebianCopyright() {
         new CustomDebianCopyrightTest().run();
     }
 
+    @Test(ifOS = LINUX)
     public static void testCustomDebianCopyrightSubst() {
         new CustomDebianCopyrightTest().withSubstitution(true).run();
     }

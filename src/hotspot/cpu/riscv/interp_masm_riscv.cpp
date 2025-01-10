@@ -270,18 +270,18 @@ void InterpreterMacroAssembler::pop_l(Register r) {
 }
 
 void InterpreterMacroAssembler::push_ptr(Register r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   sd(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_i(Register r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   sext(r, r, 32);
   sd(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_l(Register r) {
-  addi(esp, esp, -2 * wordSize);
+  subi(esp, esp, 2 * wordSize);
   sd(zr, Address(esp, wordSize));
   sd(r, Address(esp));
 }
@@ -297,12 +297,12 @@ void InterpreterMacroAssembler::pop_d(FloatRegister r) {
 }
 
 void InterpreterMacroAssembler::push_f(FloatRegister r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   fsw(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_d(FloatRegister r) {
-  addi(esp, esp, -2 * wordSize);
+  subi(esp, esp, 2 * wordSize);
   fsd(r, Address(esp, 0));
 }
 
@@ -895,7 +895,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   assert(ProfileInterpreter, "must be profiling interpreter");
 #ifdef ASSERT
   Label verify_continue;
-  add(sp, sp, -4 * wordSize);
+  subi(sp, sp, 4 * wordSize);
   sd(x10, Address(sp, 0));
   sd(x11, Address(sp, wordSize));
   sd(x12, Address(sp, 2 * wordSize));
@@ -920,7 +920,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   ld(x11, Address(sp, wordSize));
   ld(x12, Address(sp, 2 * wordSize));
   ld(x13, Address(sp, 3 * wordSize));
-  add(sp, sp, 4 * wordSize);
+  addi(sp, sp, 4 * wordSize);
 #endif // ASSERT
 }
 
@@ -961,7 +961,7 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
 
   if (decrement) {
     ld(t0, addr);
-    addi(t0, t0, -DataLayout::counter_increment);
+    subi(t0, t0, DataLayout::counter_increment);
     Label L;
     bltz(t0, L);      // skip store if counter underflow
     sd(t0, addr);
@@ -1028,7 +1028,7 @@ void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
 void InterpreterMacroAssembler::update_mdp_by_constant(Register mdp_in,
                                                        int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  addi(mdp_in, mdp_in, (unsigned)constant);
+  add(mdp_in, mdp_in, (unsigned)constant);
   sd(mdp_in, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
 }
 
@@ -1037,7 +1037,7 @@ void InterpreterMacroAssembler::update_mdp_for_ret(Register return_bci) {
   assert(ProfileInterpreter, "must be profiling interpreter");
 
   // save/restore across call_VM
-  addi(sp, sp, -2 * wordSize);
+  subi(sp, sp, 2 * wordSize);
   sd(zr, Address(sp, 0));
   sd(return_bci, Address(sp, wordSize));
   call_VM(noreg,
@@ -1739,7 +1739,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       add(t0, mdp, t0);
       ld(t0, Address(t0));
       sub(tmp, tmp, t0);
-      addi(tmp, tmp, -1);
+      subi(tmp, tmp, 1);
       Address arg_addr = argument_address(tmp);
       ld(tmp, arg_addr);
 
@@ -1762,7 +1762,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
       if (MethodData::profile_return()) {
         ld(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())));
-        addi(tmp, tmp, -TypeProfileArgsLimit*TypeStackSlotEntries::per_arg_count());
+        sub(tmp, tmp, TypeProfileArgsLimit * TypeStackSlotEntries::per_arg_count());
       }
 
       add(t0, mdp, off_to_args);
@@ -1849,7 +1849,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     // mdo start + parameters offset + array length - 1
     add(mdp, mdp, tmp1);
     ld(tmp1, Address(mdp, ArrayData::array_len_offset()));
-    add(tmp1, tmp1, - TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
 
     Label loop;
     bind(loop);
@@ -1875,7 +1875,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     profile_obj_type(tmp2, arg_type, tmp3);
 
     // go to next parameter
-    add(tmp1, tmp1, - TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
     bgez(tmp1, loop);
 
     bind(profile_continue);
@@ -1890,7 +1890,7 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   slli(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
-  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 
@@ -1906,7 +1906,7 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   }
   // Get address of field entries array
   ld(cache, Address(xcpool, ConstantPoolCache::field_entries_offset()));
-  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
   // Prevents stale data from being read after the bytecode is patched to the fast bytecode
   membar(MacroAssembler::LoadLoad);
@@ -1932,7 +1932,7 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
 
   // Get address of field entries array
   ld(cache, Address(xcpool, ConstantPoolCache::method_entries_offset()));
-  add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 
