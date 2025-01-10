@@ -395,7 +395,15 @@
   static_field(StubRoutines,                _sha512_implCompress,                             address)                               \
   static_field(StubRoutines,                _sha512_implCompressMB,                           address)                               \
   static_field(StubRoutines,                _sha3_implCompress,                               address)                               \
+  static_field(StubRoutines,                _double_keccak,                                   address)                               \
   static_field(StubRoutines,                _sha3_implCompressMB,                             address)                               \
+  static_field(StubRoutines,                _kyberNtt,                                        address)                               \
+  static_field(StubRoutines,                _kyberInverseNtt,                                 address)                               \
+  static_field(StubRoutines,                _kyberNttMult,                                    address)                               \
+  static_field(StubRoutines,                _kyberAddPoly_2,                                  address)                               \
+  static_field(StubRoutines,                _kyberAddPoly_3,                                  address)                               \
+  static_field(StubRoutines,                _kyber12To16,                                     address)                               \
+  static_field(StubRoutines,                _kyberBarrettReduce,                              address)                               \
   static_field(StubRoutines,                _updateBytesCRC32,                                address)                               \
   static_field(StubRoutines,                _crc_table_adr,                                   address)                               \
   static_field(StubRoutines,                _crc32c_table_addr,                               address)                               \

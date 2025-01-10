@@ -4063,6 +4063,93 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Execute one round of keccak of two computations in parallel.
+  // One of the states should be loaded into the lower halves of
+  // the vector registers v0-v24, the other should be loaded into
+  // the upper halves of those registers. The ld1r instruction loads
+  // the round constant into both halves.
+  // All vector instructions that are used operate on both register
+  // halves in parallel.
+  // If only a single computation is needed, one can only load the lower halves.
+  void keccak_round(Register rscratch1) {
+    __ eor3(v29, __ T16B, v4, v9, v14);
+    __ eor3(v26, __ T16B, v1, v6, v11);
+    __ eor3(v28, __ T16B, v3, v8, v13);
+    __ eor3(v25, __ T16B, v0, v5, v10);
+    __ eor3(v27, __ T16B, v2, v7, v12);
+    __ eor3(v29, __ T16B, v29, v19, v24);
+    __ eor3(v26, __ T16B, v26, v16, v21);
+    __ eor3(v28, __ T16B, v28, v18, v23);
+    __ eor3(v25, __ T16B, v25, v15, v20);
+    __ eor3(v27, __ T16B, v27, v17, v22);
+
+    __ rax1(v30, __ T2D, v29, v26);
+    __ rax1(v26, __ T2D, v26, v28);
+    __ rax1(v28, __ T2D, v28, v25);
+    __ rax1(v25, __ T2D, v25, v27);
+    __ rax1(v27, __ T2D, v27, v29);
+
+    __ eor(v0, __ T16B, v0, v30);
+    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
+    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
+    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
+    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
+    __ xar(v22, __ T2D, v14, v28, (64 - 39));
+    __ xar(v14, __ T2D, v20, v30, (64 - 18));
+    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
+    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
+    __ xar(v12, __ T2D, v13, v27, (64 - 25));
+    __ xar(v13, __ T2D, v19, v28, (64 - 8));
+    __ xar(v19, __ T2D, v23, v27, (64 - 56));
+    __ xar(v23, __ T2D, v15, v30, (64 - 41));
+    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
+    __ xar(v28, __ T2D, v24, v28, (64 - 14));
+    __ xar(v24, __ T2D, v21, v25, (64 - 2));
+    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
+    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
+    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
+    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
+    __ xar(v27, __ T2D, v18, v27, (64 - 21));
+    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
+    __ xar(v25, __ T2D, v11, v25, (64 - 10));
+    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
+    __ xar(v30, __ T2D, v10, v30, (64 - 3));
+
+    __ bcax(v20, __ T16B, v31, v22, v8);
+    __ bcax(v21, __ T16B, v8,  v23, v22);
+    __ bcax(v22, __ T16B, v22, v24, v23);
+    __ bcax(v23, __ T16B, v23, v31, v24);
+    __ bcax(v24, __ T16B, v24, v8,  v31);
+
+    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
+
+    __ bcax(v17, __ T16B, v25, v19, v3);
+    __ bcax(v18, __ T16B, v3,  v15, v19);
+    __ bcax(v19, __ T16B, v19, v16, v15);
+    __ bcax(v15, __ T16B, v15, v25, v16);
+    __ bcax(v16, __ T16B, v16, v3,  v25);
+
+    __ bcax(v10, __ T16B, v29, v12, v26);
+    __ bcax(v11, __ T16B, v26, v13, v12);
+    __ bcax(v12, __ T16B, v12, v14, v13);
+    __ bcax(v13, __ T16B, v13, v29, v14);
+    __ bcax(v14, __ T16B, v14, v26, v29);
+
+    __ bcax(v7, __ T16B, v30, v9,  v4);
+    __ bcax(v8, __ T16B, v4,  v5,  v9);
+    __ bcax(v9, __ T16B, v9,  v6,  v5);
+    __ bcax(v5, __ T16B, v5,  v30, v6);
+    __ bcax(v6, __ T16B, v6,  v4,  v30);
+
+    __ bcax(v3, __ T16B, v27, v0,  v28);
+    __ bcax(v4, __ T16B, v28, v1,  v0);
+    __ bcax(v0, __ T16B, v0,  v2,  v1);
+    __ bcax(v1, __ T16B, v1,  v27, v2);
+    __ bcax(v2, __ T16B, v2,  v28, v27);
+
+    __ eor(v0, __ T16B, v0, v31);
+  }
+
   // Arguments:
   //
   // Inputs:
@@ -4167,7 +4254,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cbzw(c_rarg5, rounds24_loop);
 
     __ tbnz(block_size, 5, shake128);
-    // block_size == 144, bit5 == 0, SHA3-244
+    // block_size == 144, bit5 == 0, SHA3-224
     __ ldrd(v28, __ post(buf, 8));
     __ eor(v17, __ T8B, v17, v28);
     __ b(rounds24_loop);
@@ -4196,82 +4283,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(rounds24_loop);
     __ subw(rscratch2, rscratch2, 1);
 
-    __ eor3(v29, __ T16B, v4, v9, v14);
-    __ eor3(v26, __ T16B, v1, v6, v11);
-    __ eor3(v28, __ T16B, v3, v8, v13);
-    __ eor3(v25, __ T16B, v0, v5, v10);
-    __ eor3(v27, __ T16B, v2, v7, v12);
-    __ eor3(v29, __ T16B, v29, v19, v24);
-    __ eor3(v26, __ T16B, v26, v16, v21);
-    __ eor3(v28, __ T16B, v28, v18, v23);
-    __ eor3(v25, __ T16B, v25, v15, v20);
-    __ eor3(v27, __ T16B, v27, v17, v22);
-
-    __ rax1(v30, __ T2D, v29, v26);
-    __ rax1(v26, __ T2D, v26, v28);
-    __ rax1(v28, __ T2D, v28, v25);
-    __ rax1(v25, __ T2D, v25, v27);
-    __ rax1(v27, __ T2D, v27, v29);
-
-    __ eor(v0, __ T16B, v0, v30);
-    __ xar(v29, __ T2D, v1,  v25, (64 - 1));
-    __ xar(v1,  __ T2D, v6,  v25, (64 - 44));
-    __ xar(v6,  __ T2D, v9,  v28, (64 - 20));
-    __ xar(v9,  __ T2D, v22, v26, (64 - 61));
-    __ xar(v22, __ T2D, v14, v28, (64 - 39));
-    __ xar(v14, __ T2D, v20, v30, (64 - 18));
-    __ xar(v31, __ T2D, v2,  v26, (64 - 62));
-    __ xar(v2,  __ T2D, v12, v26, (64 - 43));
-    __ xar(v12, __ T2D, v13, v27, (64 - 25));
-    __ xar(v13, __ T2D, v19, v28, (64 - 8));
-    __ xar(v19, __ T2D, v23, v27, (64 - 56));
-    __ xar(v23, __ T2D, v15, v30, (64 - 41));
-    __ xar(v15, __ T2D, v4,  v28, (64 - 27));
-    __ xar(v28, __ T2D, v24, v28, (64 - 14));
-    __ xar(v24, __ T2D, v21, v25, (64 - 2));
-    __ xar(v8,  __ T2D, v8,  v27, (64 - 55));
-    __ xar(v4,  __ T2D, v16, v25, (64 - 45));
-    __ xar(v16, __ T2D, v5,  v30, (64 - 36));
-    __ xar(v5,  __ T2D, v3,  v27, (64 - 28));
-    __ xar(v27, __ T2D, v18, v27, (64 - 21));
-    __ xar(v3,  __ T2D, v17, v26, (64 - 15));
-    __ xar(v25, __ T2D, v11, v25, (64 - 10));
-    __ xar(v26, __ T2D, v7,  v26, (64 - 6));
-    __ xar(v30, __ T2D, v10, v30, (64 - 3));
-
-    __ bcax(v20, __ T16B, v31, v22, v8);
-    __ bcax(v21, __ T16B, v8,  v23, v22);
-    __ bcax(v22, __ T16B, v22, v24, v23);
-    __ bcax(v23, __ T16B, v23, v31, v24);
-    __ bcax(v24, __ T16B, v24, v8,  v31);
-
-    __ ld1r(v31, __ T2D, __ post(rscratch1, 8));
-
-    __ bcax(v17, __ T16B, v25, v19, v3);
-    __ bcax(v18, __ T16B, v3,  v15, v19);
-    __ bcax(v19, __ T16B, v19, v16, v15);
-    __ bcax(v15, __ T16B, v15, v25, v16);
-    __ bcax(v16, __ T16B, v16, v3,  v25);
-
-    __ bcax(v10, __ T16B, v29, v12, v26);
-    __ bcax(v11, __ T16B, v26, v13, v12);
-    __ bcax(v12, __ T16B, v12, v14, v13);
-    __ bcax(v13, __ T16B, v13, v29, v14);
-    __ bcax(v14, __ T16B, v14, v26, v29);
-
-    __ bcax(v7, __ T16B, v30, v9,  v4);
-    __ bcax(v8, __ T16B, v4,  v5,  v9);
-    __ bcax(v9, __ T16B, v9,  v6,  v5);
-    __ bcax(v5, __ T16B, v5,  v30, v6);
-    __ bcax(v6, __ T16B, v6,  v4,  v30);
-
-    __ bcax(v3, __ T16B, v27, v0,  v28);
-    __ bcax(v4, __ T16B, v28, v1,  v0);
-    __ bcax(v0, __ T16B, v0,  v2,  v1);
-    __ bcax(v1, __ T16B, v1,  v27, v2);
-    __ bcax(v2, __ T16B, v2,  v28, v27);
-
-    __ eor(v0, __ T16B, v0, v31);
+    keccak_round(rscratch1);
 
     __ cbnzw(rscratch2, rounds24_loop);
 
@@ -4290,11 +4302,102 @@ class StubGenerator: public StubCodeGenerator {
     __ st1(v20, v21, v22, v23, __ T1D, __ post(state, 32));
     __ st1(v24, __ T1D, state);
 
+    // restore callee-saved registers
     __ ldpd(v14, v15, Address(sp, 48));
     __ ldpd(v12, v13, Address(sp, 32));
     __ ldpd(v10, v11, Address(sp, 16));
     __ ldpd(v8, v9, __ post(sp, 64));
 
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Inputs:
+  //   c_rarg0   - long[]  state0
+  //   c_rarg1   - long[]  state1
+  address generate_double_keccak() {
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    // Implements the double_keccak() method of the
+    // sun.secyrity.provider.SHA3Parallel class
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "double_keccak");
+    address start = __ pc();
+    __ enter();
+
+    Register state0        = c_rarg0;
+    Register state1        = c_rarg1;
+
+    Label rounds24_loop;
+
+    // save callee-saved registers
+    __ stpd(v8, v9, __ pre(sp, -64));
+    __ stpd(v10, v11, Address(sp, 16));
+    __ stpd(v12, v13, Address(sp, 32));
+    __ stpd(v14, v15, Address(sp, 48));
+
+    // load states
+    __ add(rscratch1, state0, 32);
+    __ ld4(v0, v1, v2,  v3, __ D, 0,  state0);
+    __ ld4(v4, v5, v6,  v7, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v8, v9, v10, v11, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v12, v13, v14, v15, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v16, v17, v18, v19, __ D, 0, __ post(rscratch1, 32));
+    __ ld4(v20, v21, v22, v23, __ D, 0, __ post(rscratch1, 32));
+    __ ld1(v24, __ D, 0, rscratch1);
+    __ add(rscratch1, state1, 32);
+    __ ld4(v0, v1, v2,  v3,  __ D, 1, state1);
+    __ ld4(v4, v5, v6,  v7, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v8, v9, v10, v11, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v12, v13, v14, v15, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v16, v17, v18, v19, __ D, 1, __ post(rscratch1, 32));
+    __ ld4(v20, v21, v22, v23, __ D, 1, __ post(rscratch1, 32));
+    __ ld1(v24, __ D, 1, rscratch1);
+
+    // 24 keccak rounds
+    __ movw(rscratch2, 24);
+
+    // load round_constants base
+    __ lea(rscratch1, ExternalAddress((address) round_consts));
+
+    __ BIND(rounds24_loop);
+    __ subw(rscratch2, rscratch2, 1);
+    keccak_round(rscratch1);
+    __ cbnzw(rscratch2, rounds24_loop);
+
+    __ st4(v0, v1, v2,  v3,  __ D, 0, __ post(state0, 32));
+    __ st4(v4, v5, v6,  v7,  __ D, 0, __ post(state0, 32));
+    __ st4(v8, v9, v10, v11, __ D, 0, __ post(state0, 32));
+    __ st4(v12, v13, v14, v15, __ D, 0, __ post(state0, 32));
+    __ st4(v16, v17, v18, v19, __ D, 0, __ post(state0, 32));
+    __ st4(v20, v21, v22, v23, __ D, 0, __ post(state0, 32));
+    __ st1(v24, __ D, 0, state0);
+    __ st4(v0, v1, v2,  v3,  __ D, 1, __ post(state1, 32));
+    __ st4(v4, v5, v6,  v7, __ D, 1, __ post(state1, 32));
+    __ st4(v8, v9, v10, v11, __ D, 1, __ post(state1, 32));
+    __ st4(v12, v13, v14, v15, __ D, 1, __ post(state1, 32));
+    __ st4(v16, v17, v18, v19, __ D, 1, __ post(state1, 32));
+    __ st4(v20, v21, v22, v23, __ D, 1, __ post(state1, 32));
+    __ st1(v24, __ D, 1, state1);
+
+    // restore callee-saved vector registers
+    __ ldpd(v14, v15, Address(sp, 48));
+    __ ldpd(v12, v13, Address(sp, 32));
+    __ ldpd(v10, v11, Address(sp, 16));
+    __ ldpd(v8, v9, __ post(sp, 64));
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     return start;
@@ -4463,6 +4566,1535 @@ class StubGenerator: public StubCodeGenerator {
 
     __ mov(r0, 256);             // Return length of output keystream
     __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
+  void kyber_load64coeffs(int d0, Register tmpAddr) {
+    __ ldpq(as_FloatRegister(d0), as_FloatRegister(d0 + 1), __ post(tmpAddr, 32));
+    __ ldpq(as_FloatRegister(d0 + 2), as_FloatRegister(d0 + 3), __ post(tmpAddr, 32));
+    __ ldpq(as_FloatRegister(d0 + 4), as_FloatRegister(d0 + 5), __ post(tmpAddr, 32));
+    __ ldpq(as_FloatRegister(d0 + 6), as_FloatRegister(d0 + 7), tmpAddr);
+  }
+
+  void kyber_load64zetas(Register zetas) {
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    __ ldpq(v20, v21, __ post(zetas, 32));
+    __ ldpq(v22, v23, __ post(zetas, 32));
+  }
+
+  void kyber_montmul64(bool by_constant) {
+    int vr16 = 16, vr17 = 17, vr18 = 18, vr19 = 19;
+    int vr20 = 20, vr21 = 21, vr22 = 22, vr23 = 23;
+    if (by_constant) {
+      vr16 = vr17 = vr18 = vr19 = vr20 = vr21 = vr22 = vr23 = 29;
+    }
+    __ sqdmulh(v24, __ T8H, v0, as_FloatRegister(vr16));
+    __ mulv(v16, __ T8H, v0, as_FloatRegister(vr16));
+    __ sqdmulh(v25, __ T8H, v1, as_FloatRegister(vr17));
+    __ mulv(v17, __ T8H, v1, as_FloatRegister(vr17));
+    __ sqdmulh(v26, __ T8H, v2, as_FloatRegister(vr18));
+    __ mulv(v18, __ T8H, v2, as_FloatRegister(vr18));
+    __ sqdmulh(v27, __ T8H, v3, as_FloatRegister(vr19));
+    __ mulv(v19, __ T8H, v3, as_FloatRegister(vr19));
+    __ mulv(v16, __ T8H, v16, v30);
+    __ mulv(v17, __ T8H, v17, v30);
+    __ mulv(v18, __ T8H, v18, v30);
+    __ mulv(v19, __ T8H, v19, v30);
+    __ sqdmulh(v16, __ T8H, v16, v31);
+    __ sqdmulh(v17, __ T8H, v17, v31);
+    __ sqdmulh(v18, __ T8H, v18, v31);
+    __ sqdmulh(v19, __ T8H, v19, v31);
+    __ shsubv(v16, __ T8H, v24, v16);
+    __ shsubv(v17, __ T8H, v25, v17);
+    __ shsubv(v18, __ T8H, v26, v18);
+    __ shsubv(v19, __ T8H, v27, v19);
+    __ sqdmulh(v24, __ T8H, v4, as_FloatRegister(vr20));
+    __ mulv(v20, __ T8H, v4, as_FloatRegister(vr20));
+    __ sqdmulh(v25, __ T8H, v5, as_FloatRegister(vr21));
+    __ mulv(v21, __ T8H, v5, as_FloatRegister(vr21));
+    __ sqdmulh(v26, __ T8H, v6, as_FloatRegister(vr22));
+    __ mulv(v22, __ T8H, v6, as_FloatRegister(vr22));
+    __ sqdmulh(v27, __ T8H, v7, as_FloatRegister(vr23));
+    __ mulv(v23, __ T8H, v7, as_FloatRegister(vr23));
+    __ mulv(v20, __ T8H, v20, v30);
+    __ mulv(v21, __ T8H, v21, v30);
+    __ mulv(v22, __ T8H, v22, v30);
+    __ mulv(v23, __ T8H, v23, v30);
+    __ sqdmulh(v20, __ T8H, v20, v31);
+    __ sqdmulh(v21, __ T8H, v21, v31);
+    __ sqdmulh(v22, __ T8H, v22, v31);
+    __ sqdmulh(v23, __ T8H, v23, v31);
+    __ shsubv(v20, __ T8H, v24, v20);
+    __ shsubv(v21, __ T8H, v25, v21);
+    __ shsubv(v22, __ T8H, v26, v22);
+    __ shsubv(v23, __ T8H, v27, v23);
+  }
+ 
+  void kyber_subv_addv64() {
+    __ subv(v24, __ T8H, v0, v16);
+    __ subv(v25, __ T8H, v1, v17);
+    __ subv(v26, __ T8H, v2, v18);
+    __ subv(v27, __ T8H, v3, v19);
+    __ subv(v28, __ T8H, v4, v20);
+    __ subv(v29, __ T8H, v5, v21);
+    __ subv(v30, __ T8H, v6, v22);
+    __ subv(v31, __ T8H, v7, v23);
+    
+    __ addv(v0, __ T8H, v0, v16);
+    __ addv(v1, __ T8H, v1, v17);
+    __ addv(v2, __ T8H, v2, v18);
+    __ addv(v3, __ T8H, v3, v19);
+    __ addv(v4, __ T8H, v4, v20);
+    __ addv(v5, __ T8H, v5, v21);
+    __ addv(v6, __ T8H, v6, v22);
+    __ addv(v7, __ T8H, v7, v23);
+  }
+
+  void kyber_store64coeffs(int i0, Register tmpAddr) {
+    __ stpq(as_FloatRegister(i0), as_FloatRegister(i0 + 1), __ post(tmpAddr, 32));
+    __ stpq(as_FloatRegister(i0 + 2), as_FloatRegister(i0 + 3), __ post(tmpAddr, 32));
+    __ stpq(as_FloatRegister(i0 + 4), as_FloatRegister(i0 + 5), __ post(tmpAddr, 32));
+    __ stpq(as_FloatRegister(i0 + 6), as_FloatRegister(i0 + 7), __ post(tmpAddr, 32));
+  }
+  
+  void kyber_montmul_subv_addv32() {
+    __ sqdmulh(v24, __ T8H, v1, v16);
+    __ mulv(v16, __ T8H, v1, v16);
+    __ sqdmulh(v25, __ T8H, v3, v17);
+    __ mulv(v17, __ T8H, v3, v17);
+    __ sqdmulh(v26, __ T8H, v5, v18);
+    __ mulv(v18, __ T8H, v5, v18);
+    __ sqdmulh(v27, __ T8H, v7, v19);
+    __ mulv(v19, __ T8H, v7, v19);
+    __ mulv(v16, __ T8H, v16, v30);
+    __ mulv(v17, __ T8H, v17, v30);
+    __ mulv(v18, __ T8H, v18, v30);
+    __ mulv(v19, __ T8H, v19, v30);
+    __ sqdmulh(v16, __ T8H, v16, v31);
+    __ sqdmulh(v17, __ T8H, v17, v31);
+    __ sqdmulh(v18, __ T8H, v18, v31);
+    __ sqdmulh(v19, __ T8H, v19, v31);
+    __ shsubv(v16, __ T8H, v24, v16);
+    __ shsubv(v17, __ T8H, v25, v17);
+    __ shsubv(v18, __ T8H, v26, v18);
+    __ shsubv(v19, __ T8H, v27, v19);
+    __ subv(v1, __ T8H, v0, v16);
+    __ subv(v3, __ T8H, v2, v17);
+    __ subv(v5, __ T8H, v4, v18);
+    __ subv(v7, __ T8H, v6, v19);
+    
+    __ addv(v0, __ T8H, v0, v16);
+    __ addv(v2, __ T8H, v2, v17);
+    __ addv(v4, __ T8H, v4, v18);
+    __ addv(v6, __ T8H, v6, v19);
+  }  
+
+  void kyber_subv_addv_montmul32() {
+    __ subv(v20, __ T8H, v0, v1);
+    __ subv(v21, __ T8H, v2, v3);
+    __ subv(v22, __ T8H, v4, v5);
+    __ subv(v23, __ T8H, v6, v7);
+    __ addv(v0, __ T8H, v0, v1);
+    __ addv(v2, __ T8H, v2, v3);
+    __ addv(v4, __ T8H, v4, v5);
+    __ addv(v6, __ T8H, v6, v7);
+    __ sqdmulh(v24, __ T8H, v20, v16);
+    __ mulv(v1, __ T8H, v20, v16);
+    __ sqdmulh(v25, __ T8H, v21, v17);
+    __ mulv(v3, __ T8H, v21, v17);
+    __ sqdmulh(v26, __ T8H, v22, v18);
+    __ mulv(v5, __ T8H, v22, v18);
+    __ sqdmulh(v27, __ T8H, v23, v19);
+    __ mulv(v7, __ T8H, v23, v19);
+    __ mulv(v1, __ T8H, v1, v30);
+    __ mulv(v3, __ T8H, v3, v30);
+    __ mulv(v5, __ T8H, v5, v30);
+    __ mulv(v7, __ T8H, v7, v30);
+    __ sqdmulh(v1, __ T8H, v1, v31);
+    __ sqdmulh(v3, __ T8H, v3, v31);
+    __ sqdmulh(v5, __ T8H, v5, v31);
+    __ sqdmulh(v7, __ T8H, v7, v31);
+    __ shsubv(v1, __ T8H, v24, v1);
+    __ shsubv(v3, __ T8H, v25, v3);
+    __ shsubv(v5, __ T8H, v26, v5);
+    __ shsubv(v7, __ T8H, v27, v7);
+  }
+
+  void kyber_addv_subv64() {
+    __ addv(v24, __ T8H, v0, v16);
+    __ addv(v25, __ T8H, v1, v17);
+    __ addv(v26, __ T8H, v2, v18);
+    __ addv(v27, __ T8H, v3, v19);
+    __ addv(v28, __ T8H, v4, v20);
+    __ addv(v29, __ T8H, v5, v21);
+    __ addv(v30, __ T8H, v6, v22);
+    __ addv(v31, __ T8H, v7, v23);
+    __ subv(v0, __ T8H, v0, v16);
+    __ subv(v1, __ T8H, v1, v17);
+    __ subv(v2, __ T8H, v2, v18);
+    __ subv(v3, __ T8H, v3, v19);
+    __ subv(v4, __ T8H, v4, v20);
+    __ subv(v5, __ T8H, v5, v21);
+    __ subv(v6, __ T8H, v6, v22);
+    __ subv(v7, __ T8H, v7, v23);
+  }
+
+  // Kyber NTT function.
+  // Implements
+  // static int implKyberNtt(short[] poly, short[] ntt_zetas) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  // ntt_zetas (short[256]) = c_rarg1
+  address generate_kyberNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register kyberConsts = r10;
+    const Register tmpAddr = r11;
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+    __ ldpq(v30, v31, kyberConsts);
+
+    // Each level corresponds to an iteration of the outermost loop of the
+    // Java method seilerNTT(int[] coeffs). There are some differences
+    // from what is done in the seilerNTT() method, though:
+    // 1. The computation is using 16-bit signed values, we do not convert them
+    // to ints here.
+    // 2. The zetas are delivered in a bigger array, 128 zetas are stored in
+    // this array for each level, it is easier that way to fill up the vector
+    // registers.
+    // 3. In the seilerNTT() method we use R = 2^20 for the Montgomery
+    // multiplications (this is because that way there should not be any
+    // overflow during the inverse NTT computation), here we usr R = 2^16 so
+    // that we can use the 16-bit arithmetic in the vector unit.
+    //
+    // On each level, we fill up the vector registers in such a way that the
+    // array elements that need to be multiplied by the zetas be in one
+    // set of vector registers while the corresponding ones that don't need to
+    // be multiplied, in another set. We can do 32 Montgomery multiplications
+    // in parallel, using 12 vector registers interleaving the steps of 4
+    // identical computations, each done on 8 16-bit values per register.
+    // level 0
+    __ add(tmpAddr, coeffs, 256);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(0, tmpAddr);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(24, tmpAddr);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(0, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(24, tmpAddr);
+    // level 1
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(0, tmpAddr);
+    kyber_store64coeffs(24, tmpAddr);
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(0, tmpAddr);
+    kyber_store64coeffs(24, tmpAddr);
+    // level 2
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 64);
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 96));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 0);
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 96));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 0);
+    __ stpq(v0, v1, __ post(tmpAddr, 32));
+    __ stpq(v2, v3, __ post(tmpAddr, 32));
+    __ stpq(v24, v25, __ post(tmpAddr, 32));
+    __ stpq(v26, v27, __ post(tmpAddr, 32));
+    __ stpq(v4, v5, __ post(tmpAddr, 32));
+    __ stpq(v6, v7, __ post(tmpAddr, 32));
+    __ stpq(v28, v29, __ post(tmpAddr, 32));
+    __ stpq(v30, v31, __ post(tmpAddr, 96));
+    __ ldpq(v30, v31, kyberConsts);
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 96));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 256);
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 96));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 256);
+    __ stpq(v0, v1, __ post(tmpAddr, 32));
+    __ stpq(v2, v3, __ post(tmpAddr, 32));
+    __ stpq(v24, v25, __ post(tmpAddr, 32));
+    __ stpq(v26, v27, __ post(tmpAddr, 32));
+    __ stpq(v4, v5, __ post(tmpAddr, 32));
+    __ stpq(v6, v7, __ post(tmpAddr, 32));
+    __ stpq(v28, v29, __ post(tmpAddr, 32));
+    __ stpq(v30, v31, tmpAddr);
+    // level 3
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 32);
+    __ ldpq(v0, v1, __ post(tmpAddr, 64));
+    __ ldpq(v2, v3, __ post(tmpAddr, 64));
+    __ ldpq(v4, v5, __ post(tmpAddr, 64));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 0);
+    __ ldpq(v0, v1, __ post(tmpAddr, 64));
+    __ ldpq(v2, v3, __ post(tmpAddr, 64));
+    __ ldpq(v4, v5, __ post(tmpAddr, 64));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 0);
+    __ stpq(v0, v1, __ post(tmpAddr, 32));
+    __ stpq(v24, v25, __ post(tmpAddr, 32));
+    __ stpq(v2, v3, __ post(tmpAddr, 32));
+    __ stpq(v26, v27, __ post(tmpAddr, 32));
+    __ stpq(v4, v5, __ post(tmpAddr, 32));
+    __ stpq(v28, v29, __ post(tmpAddr, 32));
+    __ stpq(v6, v7, __ post(tmpAddr, 32));
+    __ stpq(v30, v31, __ post(tmpAddr, 64));
+
+    __ ldpq(v30, v31, kyberConsts);
+    __ ldpq(v0, v1, __ post(tmpAddr, 64));
+    __ ldpq(v2, v3, __ post(tmpAddr, 64));
+    __ ldpq(v4, v5, __ post(tmpAddr, 64));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 256);
+    __ ldpq(v0, v1, __ post(tmpAddr, 64));
+    __ ldpq(v2, v3, __ post(tmpAddr, 64));
+    __ ldpq(v4, v5, __ post(tmpAddr, 64));
+    __ ldpq(v6, v7, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 256);
+    __ stpq(v0, v1, __ post(tmpAddr, 32));
+    __ stpq(v24, v25, __ post(tmpAddr, 32));
+    __ stpq(v2, v3, __ post(tmpAddr, 32));
+    __ stpq(v26, v27, __ post(tmpAddr, 32));
+    __ stpq(v4, v5, __ post(tmpAddr, 32));
+    __ stpq(v28, v29, __ post(tmpAddr, 32));
+    __ stpq(v6, v7, __ post(tmpAddr, 32));
+    __ stpq(v30, v31, tmpAddr);
+    // level 4
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 16);
+    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v7, __ Q, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 0);
+    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v7, __ Q, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 0);
+    __ str(v0, __ Q, __ post(tmpAddr, 16));
+    __ str(v24, __ Q, __ post(tmpAddr, 16));
+    __ str(v1, __ Q, __ post(tmpAddr, 16));
+    __ str(v25, __ Q, __ post(tmpAddr, 16));
+    __ str(v2, __ Q, __ post(tmpAddr, 16));
+    __ str(v26, __ Q, __ post(tmpAddr, 16));
+    __ str(v3, __ Q, __ post(tmpAddr, 16));
+    __ str(v27, __ Q, __ post(tmpAddr, 16));
+    __ str(v4, __ Q, __ post(tmpAddr, 16));
+    __ str(v28, __ Q, __ post(tmpAddr, 16));
+    __ str(v5, __ Q, __ post(tmpAddr, 16));
+    __ str(v29, __ Q, __ post(tmpAddr, 16));
+    __ str(v6, __ Q, __ post(tmpAddr, 16));
+    __ str(v30, __ Q, __ post(tmpAddr, 16));
+    __ str(v7, __ Q, __ post(tmpAddr, 16));
+    __ str(v31, __ Q, __ post(tmpAddr, 32));
+
+    __ ldpq(v30, v31, kyberConsts);
+    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v7, __ Q, tmpAddr);
+    kyber_load64zetas(zetas);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 256);
+    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v7, __ Q, tmpAddr);
+    kyber_subv_addv64();
+    __ add(tmpAddr, coeffs, 256);
+    __ str(v0, __ Q, __ post(tmpAddr, 16));
+    __ str(v24, __ Q, __ post(tmpAddr, 16));
+    __ str(v1, __ Q, __ post(tmpAddr, 16));
+    __ str(v25, __ Q, __ post(tmpAddr, 16));
+    __ str(v2, __ Q, __ post(tmpAddr, 16));
+    __ str(v26, __ Q, __ post(tmpAddr, 16));
+    __ str(v3, __ Q, __ post(tmpAddr, 16));
+    __ str(v27, __ Q, __ post(tmpAddr, 16));
+    __ str(v4, __ Q, __ post(tmpAddr, 16));
+    __ str(v28, __ Q, __ post(tmpAddr, 16));
+    __ str(v5, __ Q, __ post(tmpAddr, 16));
+    __ str(v29, __ Q, __ post(tmpAddr, 16));
+    __ str(v6, __ Q, __ post(tmpAddr, 16));
+    __ str(v30, __ Q, __ post(tmpAddr, 16));
+    __ str(v7, __ Q, __ post(tmpAddr, 16));
+    __ str(v31, __ Q, tmpAddr);
+    // level 5
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 0);
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 0);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 128);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 256);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 384);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, tmpAddr);
+    // level 6
+    __ add(tmpAddr, coeffs, 0);
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 0);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 128);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 256);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, zetas);
+    kyber_montmul_subv_addv32();
+    __ add(tmpAddr, coeffs, 384);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, tmpAddr);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  void kyber_sqdmulh32(int i0) {
+    __ sqdmulh(as_FloatRegister(i0 + 18), __ T8H, as_FloatRegister(i0), v31);
+    __ sqdmulh(as_FloatRegister(i0 + 19), __ T8H, as_FloatRegister(i0 + 1), v31);
+    __ sqdmulh(as_FloatRegister(i0 + 20), __ T8H, as_FloatRegister(i0 + 2), v31);
+    __ sqdmulh(as_FloatRegister(i0 + 21), __ T8H, as_FloatRegister(i0 + 3), v31);
+  }
+
+  void kyber_sshr32(int i0) {
+    __ sshr(as_FloatRegister(i0), __ T8H, as_FloatRegister(i0), 11);
+    __ sshr(as_FloatRegister(i0 + 1), __ T8H, as_FloatRegister(i0 + 1), 11);
+    __ sshr(as_FloatRegister(i0 + 2), __ T8H, as_FloatRegister(i0 + 2), 11);
+    __ sshr(as_FloatRegister(i0 + 3), __ T8H, as_FloatRegister(i0 + 3), 11);
+  }
+
+  void kyber_mlsv32(int o0) {
+    __ mlsv(as_FloatRegister(o0), __ T8H, as_FloatRegister(o0 + 18), v30);
+    __ mlsv(as_FloatRegister(o0 + 1), __ T8H, as_FloatRegister(o0 + 19), v30);
+    __ mlsv(as_FloatRegister(o0 + 2), __ T8H, as_FloatRegister(o0 + 20), v30);
+    __ mlsv(as_FloatRegister(o0 + 3), __ T8H, as_FloatRegister(o0 + 21), v30);
+  }
+
+  // Kyber Inverse NTT function
+  // Implements
+  // static int implKyberInverseNtt(short[] poly, short[] zetas) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  // ntt_zetas (short[256]) = c_rarg1
+  address generate_kyberInverseNtt() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberInverseNtt_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+    const Register zetas = c_rarg1;
+
+    const Register kyberConsts = r10;
+    const Register tmpAddr = r11;
+    const Register tmpAddr2 = c_rarg2;
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    // level 0
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 0);
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 0);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 128);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 256);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T4S, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 384);
+    __ st2(v0, v1, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T4S, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T4S, tmpAddr);
+    // level 1
+    __ add(tmpAddr, coeffs, 0);
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 0);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 128);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
+
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 256);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ ld2(v6, v7, __ T2D, tmpAddr);
+    __ ldpq(v16, v17, __ post(zetas, 32));
+    __ ldpq(v18, v19, __ post(zetas, 32));
+    kyber_subv_addv_montmul32();
+    __ add(tmpAddr, coeffs, 384);
+    __ st2(v0, v1, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v2, v3, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v4, v5, __ T2D, __ post(tmpAddr, 32));
+    __ st2(v6, v7, __ T2D, tmpAddr);
+    // level 2
+    __ add(tmpAddr, coeffs, 0);
+    __ ldr(v0, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v16, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v17, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v18, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v19, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v20, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v21, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v22, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v7, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v23, __ Q, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 0);
+    __ str(v24, __ Q, __ post(tmpAddr, 32));
+    __ str(v25, __ Q, __ post(tmpAddr, 32));
+    __ str(v26, __ Q, __ post(tmpAddr, 32));
+    __ str(v27, __ Q, __ post(tmpAddr, 32));
+    __ str(v28, __ Q, __ post(tmpAddr, 32));
+    __ str(v29, __ Q, __ post(tmpAddr, 32));
+    __ str(v30, __ Q, __ post(tmpAddr, 32));
+    __ str(v31, __ Q, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 16);
+    __ str(v16, __ Q, __ post(tmpAddr, 32));
+    __ str(v17, __ Q, __ post(tmpAddr, 32));
+    __ str(v18, __ Q, __ post(tmpAddr, 32));
+    __ str(v19, __ Q, __ post(tmpAddr, 32));
+    __ str(v20, __ Q, __ post(tmpAddr, 32));
+    __ str(v21, __ Q, __ post(tmpAddr, 32));
+    __ str(v22, __ Q, __ post(tmpAddr, 32));
+    __ str(v23, __ Q, __ post(tmpAddr, 16));
+
+    __ ldr(v0, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v16, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v17, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v18, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v19, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v20, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v21, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v22, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v7, __ Q, __ post(tmpAddr, 16));
+    __ ldr(v23, __ Q, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 256);
+    __ str(v24, __ Q, __ post(tmpAddr, 32));
+    __ str(v25, __ Q, __ post(tmpAddr, 32));
+    __ str(v26, __ Q, __ post(tmpAddr, 32));
+    __ str(v27, __ Q, __ post(tmpAddr, 32));
+    __ str(v28, __ Q, __ post(tmpAddr, 32));
+    __ str(v29, __ Q, __ post(tmpAddr, 32));
+    __ str(v30, __ Q, __ post(tmpAddr, 32));
+    __ str(v31, __ Q, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 272);
+    __ str(v16, __ Q, __ post(tmpAddr, 32));
+    __ str(v17, __ Q, __ post(tmpAddr, 32));
+    __ str(v18, __ Q, __ post(tmpAddr, 32));
+    __ str(v19, __ Q, __ post(tmpAddr, 32));
+    __ str(v20, __ Q, __ post(tmpAddr, 32));
+    __ str(v21, __ Q, __ post(tmpAddr, 32));
+    __ str(v22, __ Q, __ post(tmpAddr, 32));
+    __ str(v23, __ Q, tmpAddr);
+    // Barrett reduction at indexes where overflow may happen
+    __ add(tmpAddr, kyberConsts, 16);
+    __ ldpq(v30, v31, tmpAddr);
+    __ add(tmpAddr, coeffs, 0);
+    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v7, __ Q, tmpAddr);
+    kyber_sqdmulh32(0);
+    kyber_sqdmulh32(4);
+    kyber_sshr32(18);
+    kyber_sshr32(22);
+    kyber_mlsv32(0);
+    kyber_mlsv32(4);
+    __ add(tmpAddr, coeffs, 0);
+    __ str(v0, __ Q, __ post(tmpAddr, 32));
+    __ str(v1, __ Q, __ post(tmpAddr, 32));
+    __ str(v2, __ Q, __ post(tmpAddr, 32));
+    __ str(v3, __ Q, __ post(tmpAddr, 32));
+    __ str(v4, __ Q, __ post(tmpAddr, 32));
+    __ str(v5, __ Q, __ post(tmpAddr, 32));
+    __ str(v6, __ Q, __ post(tmpAddr, 32));
+    __ str(v7, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v0, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v1, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v2, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v3, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v4, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v5, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v6, __ Q, __ post(tmpAddr, 32));
+    __ ldr(v7, __ Q, tmpAddr);
+    kyber_sqdmulh32(0);
+    kyber_sqdmulh32(4);
+    kyber_sshr32(18);
+    kyber_sshr32(22);
+    kyber_mlsv32(0);
+    kyber_mlsv32(4);
+    __ add(tmpAddr, coeffs, 256);
+    __ str(v0, __ Q, __ post(tmpAddr, 32));
+    __ str(v1, __ Q, __ post(tmpAddr, 32));
+    __ str(v2, __ Q, __ post(tmpAddr, 32));
+    __ str(v3, __ Q, __ post(tmpAddr, 32));
+    __ str(v4, __ Q, __ post(tmpAddr, 32));
+    __ str(v5, __ Q, __ post(tmpAddr, 32));
+    __ str(v6, __ Q, __ post(tmpAddr, 32));
+    __ str(v7, __ Q, tmpAddr);
+    // level 3
+    __ add(tmpAddr, coeffs, 0);
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v16, v17, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 32));
+    __ ldpq(v18, v19, __ post(tmpAddr, 32));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v20, v21, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, __ post(tmpAddr, 32));
+    __ ldpq(v22, v23, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 0);
+    __ stpq(v24, v25, __ post(tmpAddr, 64));
+    __ stpq(v26, v27, __ post(tmpAddr, 64));
+    __ stpq(v28, v29, __ post(tmpAddr, 64));
+    __ stpq(v30, v31, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 32);
+    __ stpq(v16, v17, __ post(tmpAddr, 64));
+    __ stpq(v18, v19, __ post(tmpAddr, 64));
+    __ stpq(v20, v21, __ post(tmpAddr, 64));
+    __ stpq(v22, v23, __ post(tmpAddr, 32));
+
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v16, v17, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 32));
+    __ ldpq(v18, v19, __ post(tmpAddr, 32));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v20, v21, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, __ post(tmpAddr, 32));
+    __ ldpq(v22, v23, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 256);
+    __ stpq(v24, v25, __ post(tmpAddr, 64));
+    __ stpq(v26, v27, __ post(tmpAddr, 64));
+    __ stpq(v28, v29, __ post(tmpAddr, 64));
+    __ stpq(v30, v31, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 288);
+    __ stpq(v16, v17, __ post(tmpAddr, 64));
+    __ stpq(v18, v19, __ post(tmpAddr, 64));
+    __ stpq(v20, v21, __ post(tmpAddr, 64));
+    __ stpq(v22, v23, tmpAddr);
+    // level 4
+    __ add(tmpAddr, coeffs, 0);
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 32));
+    __ ldpq(v16, v17, __ post(tmpAddr, 32));
+    __ ldpq(v18, v19, __ post(tmpAddr, 32));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, __ post(tmpAddr, 32));
+    __ ldpq(v20, v21, __ post(tmpAddr, 32));
+    __ ldpq(v22, v23, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 0);
+    __ stpq(v24, v25, __ post(tmpAddr, 32));
+    __ stpq(v26, v27, __ post(tmpAddr, 96));
+    __ stpq(v28, v29, __ post(tmpAddr, 32));
+    __ stpq(v30, v31, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 64);
+    __ stpq(v16, v17, __ post(tmpAddr, 32));
+    __ stpq(v18, v19, __ post(tmpAddr, 96));
+    __ stpq(v20, v21, __ post(tmpAddr, 32));
+    __ stpq(v22, v23, __ post(tmpAddr, 32));
+
+    __ ldpq(v0, v1, __ post(tmpAddr, 32));
+    __ ldpq(v2, v3, __ post(tmpAddr, 32));
+    __ ldpq(v16, v17, __ post(tmpAddr, 32));
+    __ ldpq(v18, v19, __ post(tmpAddr, 32));
+    __ ldpq(v4, v5, __ post(tmpAddr, 32));
+    __ ldpq(v6, v7, __ post(tmpAddr, 32));
+    __ ldpq(v20, v21, __ post(tmpAddr, 32));
+    __ ldpq(v22, v23, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 256);
+    __ stpq(v24, v25, __ post(tmpAddr, 32));
+    __ stpq(v26, v27, __ post(tmpAddr, 96));
+    __ stpq(v28, v29, __ post(tmpAddr, 32));
+    __ stpq(v30, v31, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 320);
+    __ stpq(v16, v17, __ post(tmpAddr, 32));
+    __ stpq(v18, v19, __ post(tmpAddr, 96));
+    __ stpq(v20, v21, __ post(tmpAddr, 32));
+    __ stpq(v22, v23, tmpAddr);
+    // level 5
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(0, tmpAddr);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(16, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(24, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(16, tmpAddr);
+
+    kyber_load64coeffs(0, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_load64coeffs(16, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(24, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(16, tmpAddr);
+    // Barrett reduction at indexes where overflow may happen
+    __ add(tmpAddr, kyberConsts, 16);
+    __ ldpq(v30, v31, tmpAddr);
+    __ add(tmpAddr, coeffs, 0);
+    __ ldpq(v0, v1, __ post(tmpAddr, 256));
+    __ ldpq(v2, v3, tmpAddr);
+    kyber_sqdmulh32(0);
+    kyber_sshr32(18);
+    kyber_mlsv32(0);
+    __ add(tmpAddr, coeffs, 0);
+    __ stpq(v0, v1, __ post(tmpAddr, 256));
+    __ stpq(v2, v3, tmpAddr);
+    // level 6
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(0, tmpAddr);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_load64coeffs(16, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(24, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(16, tmpAddr);
+
+    __ add(tmpAddr, coeffs, 128);
+    kyber_load64coeffs(0, tmpAddr);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_load64coeffs(16, tmpAddr);
+    kyber_addv_subv64();
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(24, tmpAddr);
+    kyber_load64zetas(zetas);
+    __ ldpq(v30, v31, kyberConsts);
+    kyber_montmul64(false);
+    __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(16, tmpAddr);
+    // multiply by 2^-n
+    __ add(tmpAddr, kyberConsts, 48);
+    __ ldr(v29, __ Q, tmpAddr);
+    __ ldpq(v30, v31, kyberConsts);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_montmul64(true);
+    __ add(tmpAddr, coeffs, 0);
+    kyber_store64coeffs(16, tmpAddr);
+
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_montmul64(true);
+    __ add(tmpAddr, coeffs, 128);
+    kyber_store64coeffs(16, tmpAddr);
+
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_montmul64(true);
+    __ add(tmpAddr, coeffs, 256);
+    kyber_store64coeffs(16, tmpAddr);
+
+    kyber_load64coeffs(0, tmpAddr);
+    kyber_montmul64(true);
+   __ add(tmpAddr, coeffs, 384);
+    kyber_store64coeffs(16, tmpAddr);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber multiply polynomials in the NTT domain.
+  // Implements
+  // static int implKyberNttMult(
+  //              short[] result, short[] ntta, short[] nttb, short[] zetas) {}
+  //
+  // result (short[256]) = c_rarg0
+  // ntta (short[256]) = c_rarg1
+  // nttb (short[256]) = c_rarg2
+  // zetas (short[128]) = c_rarg3
+  address generate_kyberNttMult() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberNttMult_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register ntta = c_rarg1;
+    const Register nttb = c_rarg2;
+    const Register zetas = c_rarg3;
+
+    const Register kyberConsts = r10;
+    const Register limit = r11;
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    Label kyberNttMult_loop;
+
+    __ add(limit, result, 512);
+
+    __ ldpq(v30, v31, __ post(kyberConsts, 64));
+    __ ldr(v27, __ Q, kyberConsts);
+
+    __ BIND(kyberNttMult_loop);
+    __ ldpq(v28, v29, __ post(zetas, 32));
+    __ ld2(v0, v1, __ T8H, __ post(ntta, 32));
+    __ ld2(v2, v3, __ T8H, __ post(nttb, 32));
+    __ ld2(v20, v21, __ T8H, __ post(ntta, 32));
+    __ ld2(v22, v23, __ T8H, __ post(nttb, 32));
+    // montmul
+    __ sqdmulh(v5, __ T8H, v1, v3);
+    __ mulv(v17, __ T8H, v1, v3);
+    __ sqdmulh(v4, __ T8H, v0, v2);
+    __ mulv(v16, __ T8H, v0, v2);
+    __ sqdmulh(v6, __ T8H, v0, v3);
+    __ mulv(v18, __ T8H, v0, v3);
+    __ sqdmulh(v7, __ T8H, v1, v2);
+    __ mulv(v19, __ T8H, v1, v2);
+    __ mulv(v17, __ T8H, v17, v30);
+    __ mulv(v16, __ T8H, v16, v30);
+    __ mulv(v18, __ T8H, v18, v30);
+    __ mulv(v19, __ T8H, v19, v30);
+    __ sqdmulh(v17, __ T8H, v17, v31);
+    __ sqdmulh(v16, __ T8H, v16, v31);
+    __ sqdmulh(v18, __ T8H, v18, v31);
+    __ sqdmulh(v19, __ T8H, v19, v31);
+    __ shsubv(v17, __ T8H, v5, v17);
+    __ shsubv(v16, __ T8H, v4, v16);
+    __ shsubv(v18, __ T8H, v6, v18);
+    __ shsubv(v19, __ T8H, v7, v19);
+    __ sqdmulh(v5, __ T8H, v21, v23);
+    __ mulv(v1, __ T8H, v21, v23);
+    __ sqdmulh(v4, __ T8H, v20, v22);
+    __ mulv(v0, __ T8H, v20, v22);
+    __ sqdmulh(v6, __ T8H, v20, v23);
+    __ mulv(v2, __ T8H, v20, v23);
+    __ sqdmulh(v7, __ T8H, v21, v22);
+    __ mulv(v3, __ T8H, v21, v22);
+    __ mulv(v1, __ T8H, v1, v30);
+    __ mulv(v0, __ T8H, v0, v30);
+    __ mulv(v2, __ T8H, v2, v30);
+    __ mulv(v3, __ T8H, v3, v30);
+    __ sqdmulh(v1, __ T8H, v1, v31);
+    __ sqdmulh(v0, __ T8H, v0, v31);
+    __ sqdmulh(v2, __ T8H, v2, v31);
+    __ sqdmulh(v3, __ T8H, v3, v31);
+    __ shsubv(v1, __ T8H, v5, v1);
+    __ shsubv(v0, __ T8H, v4, v0);
+    __ shsubv(v2, __ T8H, v6, v2);
+    __ shsubv(v3, __ T8H, v7, v3);
+    __ sqdmulh(v5, __ T8H, v17, v28);
+    __ mulv(v17, __ T8H, v17, v28);
+    __ sqdmulh(v4, __ T8H, v1, v29);
+    __ mulv(v1, __ T8H, v1, v29);
+    __ mulv(v17, __ T8H, v17, v30);
+    __ mulv(v1, __ T8H, v1, v30);
+    __ sqdmulh(v17, __ T8H, v17, v31);
+    __ sqdmulh(v1, __ T8H, v1, v31);
+    __ shsubv(v17, __ T8H, v5, v17);
+    __ shsubv(v1, __ T8H, v4, v1);
+    __ addv(v16, __ T8H, v16, v17);
+    __ addv(v17, __ T8H, v18, v19);
+    __ addv(v18, __ T8H, v0, v1);
+    __ addv(v19, __ T8H, v2, v3);
+    __ sqdmulh(v5, __ T8H, v16, v27);
+    __ mulv(v0, __ T8H, v16, v27);
+    __ sqdmulh(v4, __ T8H, v17, v27);
+    __ mulv(v1, __ T8H, v17, v27);
+    __ sqdmulh(v6, __ T8H, v18, v27);
+    __ mulv(v2, __ T8H, v18, v27);
+    __ sqdmulh(v7, __ T8H, v19, v27);
+    __ mulv(v3, __ T8H, v19, v27);
+    __ mulv(v0, __ T8H, v0, v30);
+    __ mulv(v1, __ T8H, v1, v30);
+    __ mulv(v2, __ T8H, v2, v30);
+    __ mulv(v3, __ T8H, v3, v30);
+    __ sqdmulh(v0, __ T8H, v0, v31);
+    __ sqdmulh(v1, __ T8H, v1, v31);
+    __ sqdmulh(v2, __ T8H, v2, v31);
+    __ sqdmulh(v3, __ T8H, v3, v31);
+    __ shsubv(v0, __ T8H, v5, v0);
+    __ shsubv(v1, __ T8H, v4, v1);
+    __ shsubv(v2, __ T8H, v6, v2);
+    __ shsubv(v3, __ T8H, v7, v3);
+    __ st2(v0, v1, __ T8H, __ post(result, 32));
+    __ st2(v2, v3, __ T8H, __ post(result, 32));
+
+    __ cmp(result, limit);
+    __ br(Assembler::NE, kyberNttMult_loop);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  void kyber_load80v0_v17(const Register a) {
+    __ ldpq(v0, v1, __ post(a, 32));
+    __ ldpq(v2, v3, __ post(a, 32));
+    __ ldpq(v4, v5, __ post(a, 32));
+    __ ldpq(v6, v7, __ post(a, 32));
+    __ ldpq(v16, v17, __ post(a, 32));
+  }
+
+  void kyber_load80v18_v27(const Register b) {
+    __ ldpq(v18, v19, __ post(b, 32));
+    __ ldpq(v20, v21, __ post(b, 32));
+    __ ldpq(v22, v23, __ post(b, 32));
+    __ ldpq(v24, v25, __ post(b, 32));
+    __ ldpq(v26, v27, __ post(b, 32));
+  }
+
+  void kyber_addv80() {
+    __ addv(v0, __ T8H, v18, v0);
+    __ addv(v1, __ T8H, v19, v1);
+    __ addv(v2, __ T8H, v20, v2);
+    __ addv(v3, __ T8H, v21, v3);
+    __ addv(v4, __ T8H, v22, v4);
+    __ addv(v5, __ T8H, v23, v5);
+    __ addv(v6, __ T8H, v24, v6);
+    __ addv(v7, __ T8H, v25, v7);
+    __ addv(v16, __ T8H, v26, v16);
+    __ addv(v17, __ T8H, v27, v17);
+  }
+
+  void kyber_addv_v31_80() {
+    __ addv(v0, __ T8H, v31, v0);
+    __ addv(v1, __ T8H, v31, v1);
+    __ addv(v2, __ T8H, v31, v2);
+    __ addv(v3, __ T8H, v31, v3);
+    __ addv(v4, __ T8H, v31, v4);
+    __ addv(v5, __ T8H, v31, v5);
+    __ addv(v6, __ T8H, v31, v6);
+    __ addv(v7, __ T8H, v31, v7);
+    __ addv(v16, __ T8H, v31, v16);
+    __ addv(v17, __ T8H, v31, v17);
+  }
+
+  void kyber_store80(const Register result) {
+    __ stpq(v0, v1, __ post(result, 32));
+    __ stpq(v2, v3, __ post(result, 32));
+    __ stpq(v4, v5, __ post(result, 32));
+    __ stpq(v6, v7, __ post(result, 32));
+    __ stpq(v16, v17, __ post(result, 32));
+  }
+
+  // Kyber add 2 polynomials.
+  // Implements
+  // static int implKyberAddPoly(short[] result, short[] a, short[] b) {}
+  //
+  // result (short[256]) = c_rarg0
+  // a (short[256]) = c_rarg1
+  // b (short[256]) = c_rarg2
+  address generate_kyberAddPoly_2() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_2_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register a = c_rarg1;
+    const Register b = c_rarg2;
+
+    const Register kyberConsts = r11;
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ add(kyberConsts, kyberConsts, 16);
+    __ ldr(v31, __ Q, kyberConsts);
+    kyber_load80v0_v17(a);
+    __ ldr(v28, __ Q, __ post(a, 16));
+    kyber_load80v18_v27(b);
+    __ ldr(v29, __ Q, __ post(b, 16));
+    kyber_addv80();
+    __ addv(v28, __ T8H, v28, v29);
+    kyber_addv_v31_80();
+    __ addv(v28, __ T8H, v28, v31);
+    kyber_store80(result);
+    __ str(v28, __ Q, __ post(result, 16));
+    kyber_load80v0_v17(a);
+    __ ldr(v28, __ Q, __ post(a, 16));
+    kyber_load80v18_v27(b);
+    __ ldr(v29, __ Q, __ post(b, 16));
+    kyber_addv80();
+    __ addv(v28, __ T8H, v28, v29);
+    kyber_addv_v31_80();
+    __ addv(v28, __ T8H, v28, v31);
+    kyber_store80(result);
+    __ str(v28, __ Q, __ post(result, 16));
+    kyber_load80v0_v17(a);
+    kyber_load80v18_v27(b);
+    kyber_addv80();
+    kyber_addv_v31_80();
+    kyber_store80(result);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  // Kyber add 3 polynomials.
+  // Implements
+  // static int implKyberAddPoly(short[] result, short[] a, short[] b, short[] c) {}
+  //
+  // result (short[256]) = c_rarg0
+  // a (short[256]) = c_rarg1
+  // b (short[256]) = c_rarg2
+  // c (short[256]) = c_rarg3
+  address generate_kyberAddPoly_3() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberAddPoly_3_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register result = c_rarg0;
+    const Register a = c_rarg1;
+    const Register b = c_rarg2;
+    const Register c = c_rarg3;
+
+    const Register kyberConsts = r11;
+
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ add(kyberConsts, kyberConsts, 16);
+    __ ldr(v31, __ Q, kyberConsts);
+    __ addv(v31, __ T8H, v31, v31);
+    kyber_load80v0_v17(a);
+    __ ldr(v28, __ Q, __ post(a, 16));
+    kyber_load80v18_v27(b);
+    __ ldr(v29, __ Q, __ post(b, 16));
+    kyber_addv80();
+    __ addv(v28, __ T8H, v28, v29);
+    kyber_load80v18_v27(c);
+    __ ldr(v29, __ Q, __ post(c, 16));
+    kyber_addv80();
+    __ addv(v28, __ T8H, v28, v29);
+    kyber_addv_v31_80();
+    __ addv(v28, __ T8H, v28, v31);
+    kyber_store80(result);
+    __ str(v28, __ Q, __ post(result, 16));
+    kyber_load80v0_v17(a);
+    __ ldr(v28, __ Q, __ post(a, 16));
+    kyber_load80v18_v27(b);
+    __ ldr(v29, __ Q, __ post(b, 16));
+    kyber_addv80();
+    __ addv(v28, __ T8H, v28, v29);
+    kyber_load80v18_v27(c);
+    __ ldr(v29, __ Q, __ post(c, 16));
+    kyber_addv80();
+    __ addv(v28, __ T8H, v28, v29);
+    kyber_addv_v31_80();
+    __ addv(v28, __ T8H, v28, v31);
+    kyber_store80(result);
+    __ str(v28, __ Q, __ post(result, 16));
+    kyber_load80v0_v17(a);
+    kyber_load80v18_v27(b);
+    kyber_addv80();
+    kyber_load80v18_v27(c);
+    kyber_addv80();
+    kyber_addv_v31_80();
+    kyber_store80(result);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+// Kyber parse XOF output to polynomial coefficient candidates
+// or decodePoly(12, ...).
+// Implements
+// static int implKyber12To16(
+//         byte[] condensed, int index, short[] parsed, int parsedLength) {}
+//
+// (parsedLength or (parsedLength - 48) must be divisible by 64.)
+//
+// condensed (byte[]) = c_rarg0
+// condensedIndex = c_rarg1
+// parsed (short[112 or 256]) = c_rarg2
+// parsedLength (112 or 256) = c_rarg3
+  address generate_kyber12To16() {
+   Label L_F00, L_loop, L_end;
+
+   __ BIND(L_F00);
+   __ emit_int64(0x0f000f000f000f00);
+   __ emit_int64(0x0f000f000f000f00);
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyber12To16_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register condensed = c_rarg0;
+    const Register condensedOffs = c_rarg1;
+    const Register parsed = c_rarg2;
+    const Register parsedLength = c_rarg3;
+
+    const Register tmpAddr = r11;
+
+    __ adr(tmpAddr, L_F00);
+    __ ldr(v31, __ Q, tmpAddr);
+    __ add(condensed, condensed, condensedOffs);
+
+    __ BIND(L_loop);
+    __ ld3(v24, v25, v26, __ T16B, __ post(condensed, 48));
+    __ ld3(v27, v28, v29, __ T16B, __ post(condensed, 48));
+
+    __ ushll(v0, __ T8H, v24, __ T8B, 0);
+    __ ushll2(v1, __ T8H, v24, __ T16B, 0);
+    __ ushll(v2, __ T8H, v25, __ T8B, 0);
+    __ ushll2(v3, __ T8H, v25, __ T16B, 0);
+    __ ushll(v4, __ T8H, v25, __ T8B, 0);
+    __ ushll2(v5, __ T8H, v25, __ T16B, 0);
+    __ ushll(v16, __ T8H, v27, __ T8B, 0);
+    __ ushll2(v17, __ T8H, v27, __ T16B, 0);
+    __ ushll(v18, __ T8H, v28, __ T8B, 0);
+    __ ushll2(v19, __ T8H, v28, __ T16B, 0);
+    __ ushll(v20, __ T8H, v28, __ T8B, 0);
+    __ ushll2(v21, __ T8H, v28, __ T16B, 0);
+    __ shl(v2, __ T8H, v2, 8);
+    __ shl(v3, __ T8H, v3, 8);
+    __ shl(v18, __ T8H, v18, 8);
+    __ shl(v19, __ T8H, v19, 8);
+    __ ushll(v6, __ T8H, v26, __ T8B, 4);
+    __ ushll2(v7, __ T8H, v26, __ T16B, 4);
+    __ ushll(v22, __ T8H, v29, __ T8B, 4);
+    __ ushll2(v23, __ T8H, v29, __ T16B, 4);
+    __ andr(v2, __ T16B, v2, v31);
+    __ andr(v3, __ T16B, v3, v31);
+    __ ushr(v4, __ T8H, v4, 4);
+    __ ushr(v5, __ T8H, v5, 4);
+    __ andr(v18, __ T16B, v18, v31);
+    __ andr(v19, __ T16B, v19, v31);
+    __ ushr(v20, __ T8H, v20, 4);
+    __ ushr(v21, __ T8H, v21, 4);
+    __ addv(v0, __ T8H, v0, v2);
+    __ addv(v2, __ T8H, v1, v3);
+    __ addv(v1, __ T8H, v4, v6);
+    __ addv(v3, __ T8H, v5, v7);
+    __ addv(v16, __ T8H, v16, v18);
+    __ addv(v18, __ T8H, v17, v19);
+    __ addv(v17, __ T8H, v20, v22);
+    __ addv(v19, __ T8H, v21, v23);
+
+    __ st2(v0, v1, __ T8H, __ post(parsed, 32));
+    __ st2(v2, v3, __ T8H, __ post(parsed, 32));
+    __ st2(v16, v17, __ T8H, __ post(parsed, 32));
+    __ st2(v18, v19, __ T8H, __ post(parsed, 32));
+
+    __ sub(parsedLength, parsedLength, 64);
+    __ cmp(parsedLength, (u1)64);
+    __ br(Assembler::GE, L_loop);
+    __ cbz(parsedLength, L_end);
+
+    __ ld3(v24, v25, v26, __ T16B, __ post(condensed, 48));
+    __ ld3(v27, v28, v29, __ T8B, condensed);
+
+    __ ushll(v0, __ T8H, v24, __ T8B, 0);
+    __ ushll2(v1, __ T8H, v24, __ T16B, 0);
+    __ ushll(v2, __ T8H, v25, __ T8B, 0);
+    __ ushll2(v3, __ T8H, v25, __ T16B, 0);
+    __ ushll(v4, __ T8H, v25, __ T8B, 0);
+    __ ushll2(v5, __ T8H, v25, __ T16B, 0);
+    __ ushll(v16, __ T8H, v27, __ T8B, 0);
+    __ ushll(v18, __ T8H, v28, __ T8B, 0);
+    __ ushll(v20, __ T8H, v28, __ T8B, 0);
+    __ shl(v2, __ T8H, v2, 8);
+    __ shl(v3, __ T8H, v3, 8);
+    __ shl(v18, __ T8H, v18, 8);
+    __ ushll(v6, __ T8H, v26, __ T8B, 4);
+    __ ushll2(v7, __ T8H, v26, __ T16B, 4);
+    __ ushll(v22, __ T8H, v29, __ T8B, 4);
+    __ andr(v2, __ T16B, v2, v31);
+    __ andr(v3, __ T16B, v3, v31);
+    __ ushr(v4, __ T8H, v4, 4);
+    __ ushr(v5, __ T8H, v5, 4);
+    __ andr(v18, __ T16B, v18, v31);
+    __ ushr(v20, __ T8H, v20, 4);
+    __ addv(v0, __ T8H, v0, v2);
+    __ addv(v2, __ T8H, v1, v3);
+    __ addv(v1, __ T8H, v4, v6);
+    __ addv(v3, __ T8H, v5, v7);
+    __ addv(v16, __ T8H, v16, v18);
+    __ addv(v17, __ T8H, v20, v22);
+
+    __ st2(v0, v1, __ T8H, __ post(parsed, 32));
+    __ st2(v2, v3, __ T8H, __ post(parsed, 32));
+    __ st2(v16, v17, __ T8H, __ post(parsed, 32));
+
+    __ BIND(L_end);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
+    __ ret(lr);
+
+    return start;
+  }
+
+  void kyber_sqdmulh80() {
+    kyber_sqdmulh32(0);
+    kyber_sqdmulh32(4);
+    __ sqdmulh(v26, __ T8H, v16, v31);
+    __ sqdmulh(v27, __ T8H, v17, v31);
+  }
+
+  void kyber_sshr80() {
+    kyber_sshr32(18);
+    kyber_sshr32(22);
+    __ sshr(v26, __ T8H, v26, 11);
+    __ sshr(v27, __ T8H, v27, 11);
+  }
+
+  void kyber_mlsv80() {
+    kyber_mlsv32(0);
+    kyber_mlsv32(4);
+    __ mlsv(v16, __ T8H, v26, v30);
+    __ mlsv(v17, __ T8H, v27, v30);
+  }
+
+  // Kyber barrett reduce function.
+  // Implements
+  // static int implKyberBarrettReduce(short[] coeffs) {}
+  //
+  // coeffs (short[256]) = c_rarg0
+  address generate_kyberBarrettReduce() {
+
+    __ align(CodeEntryAlignment);
+    StubGenStubId stub_id = StubGenStubId::kyberBarrettReduce_id;
+    StubCodeMark mark(this, stub_id);
+    address start = __ pc();
+    __ enter();
+
+    const Register coeffs = c_rarg0;
+
+    const Register kyberConsts = r10;
+    const Register result = r11;
+
+    __ add(result, coeffs, 0);
+    __ lea(kyberConsts, ExternalAddress((address) StubRoutines::aarch64::_kyberConsts));
+
+    __ add(kyberConsts, kyberConsts, 16);
+    __ ldpq(v30, v31, kyberConsts);
+
+    kyber_load80v0_v17(coeffs);
+    __ ldr(v28, __ Q, __ post(coeffs, 16));
+    kyber_sqdmulh80();
+    __ sqdmulh(v29, __ T8H, v28, v31);
+    kyber_sshr80();
+    __ sshr(v29, __ T8H, v29, 11);
+    kyber_mlsv80();
+    __ mlsv(v28, __ T8H, v29, v30);
+    kyber_store80(result);
+    __ str(v28, __ Q, __ post(result, 16));
+
+    kyber_load80v0_v17(coeffs);
+    __ ldr(v28, __ Q, __ post(coeffs, 16));
+    kyber_sqdmulh80();
+    __ sqdmulh(v29, __ T8H, v28, v31);
+    kyber_sshr80();
+    __ sshr(v29, __ T8H, v29, 11);
+    kyber_mlsv80();
+    __ mlsv(v28, __ T8H, v29, v30);
+    kyber_store80(result);
+    __ str(v28, __ Q, __ post(result, 16));
+
+    kyber_load80v0_v17(coeffs);
+    kyber_sqdmulh80();
+    kyber_sshr80();
+    kyber_mlsv80();
+    kyber_store80(result);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ mov(r0, zr); // return 0
     __ ret(lr);
 
     return start;
@@ -8869,6 +10501,16 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
     }
 
+    if (UseKyberIntrinsics) {
+      StubRoutines::_kyberNtt = generate_kyberNtt();
+      StubRoutines::_kyberInverseNtt = generate_kyberInverseNtt();
+      StubRoutines::_kyberNttMult = generate_kyberNttMult();
+      StubRoutines::_kyberAddPoly_2 = generate_kyberAddPoly_2();
+      StubRoutines::_kyberAddPoly_3 = generate_kyberAddPoly_3();
+      StubRoutines::_kyber12To16 = generate_kyber12To16();
+      StubRoutines::_kyberBarrettReduce = generate_kyberBarrettReduce();
+    }
+
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
         StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
@@ -8911,6 +10553,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     if (UseSHA3Intrinsics) {
       StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(StubGenStubId::sha3_implCompress_id);
+      StubRoutines::_double_keccak         = generate_double_keccak();
       StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(StubGenStubId::sha3_implCompressMB_id);
     }
 

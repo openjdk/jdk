@@ -229,6 +229,7 @@ const TypeFunc* OptoRuntime::_digestBase_implCompress_with_sha3_Type      = null
 const TypeFunc* OptoRuntime::_digestBase_implCompress_without_sha3_Type   = nullptr;
 const TypeFunc* OptoRuntime::_digestBase_implCompressMB_with_sha3_Type    = nullptr;
 const TypeFunc* OptoRuntime::_digestBase_implCompressMB_without_sha3_Type = nullptr;
+const TypeFunc* OptoRuntime::_double_keccak_Type                  = nullptr;
 const TypeFunc* OptoRuntime::_multiplyToLen_Type                  = nullptr;
 const TypeFunc* OptoRuntime::_montgomeryMultiply_Type             = nullptr;
 const TypeFunc* OptoRuntime::_montgomerySquare_Type               = nullptr;
@@ -238,6 +239,15 @@ const TypeFunc* OptoRuntime::_bigIntegerShift_Type                = nullptr;
 const TypeFunc* OptoRuntime::_vectorizedMismatch_Type             = nullptr;
 const TypeFunc* OptoRuntime::_ghash_processBlocks_Type            = nullptr;
 const TypeFunc* OptoRuntime::_chacha20Block_Type                  = nullptr;
+
+const TypeFunc* OptoRuntime::_kyberNtt_Type                             = nullptr;
+const TypeFunc* OptoRuntime::_kyberInverseNtt_Type                      = nullptr;
+const TypeFunc* OptoRuntime::_kyberNttMult_Type                         = nullptr;
+const TypeFunc* OptoRuntime::_kyberAddPoly_2_Type                       = nullptr;
+const TypeFunc* OptoRuntime::_kyberAddPoly_3_Type                       = nullptr;
+const TypeFunc* OptoRuntime::_kyber12To16_Type                          = nullptr;
+const TypeFunc* OptoRuntime::_kyberBarrettReduce_Type                   = nullptr;
+
 const TypeFunc* OptoRuntime::_base64_encodeBlock_Type             = nullptr;
 const TypeFunc* OptoRuntime::_base64_decodeBlock_Type             = nullptr;
 const TypeFunc* OptoRuntime::_string_IndexOf_Type                 = nullptr;
@@ -1169,6 +1179,9 @@ static const TypeFunc* make_digestBase_implCompress_Type(bool is_sha3) {
   return TypeFunc::make(domain, range);
 }
 
+/*
+ * int implCompressMultiBlock(byte[] b, int ofs, int limit)
+ */
 static const TypeFunc* make_digestBase_implCompressMB_Type(bool is_sha3) {
   // create input type (domain)
   int num_args = is_sha3 ? 5 : 4;
@@ -1188,6 +1201,25 @@ static const TypeFunc* make_digestBase_implCompressMB_Type(bool is_sha3) {
   fields[TypeFunc::Parms+0] = TypeInt::INT; // ofs
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
   return TypeFunc::make(domain, range);
+}
+
+// SHAKE128Parallel doubleKeccak function
+static const TypeFunc* make_double_keccak_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // status0
+    fields[argp++] = TypePtr::NOTNULL;      // status1
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
 }
 
 static const TypeFunc* make_multiplyToLen_Type() {
@@ -1373,6 +1405,148 @@ static const TypeFunc* make_chacha20Block_Type() {
   fields[TypeFunc::Parms + 0] = TypeInt::INT;     // key stream outlen as int
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   return TypeFunc::make(domain, range);
+}
+
+// Kyber NTT function
+static const TypeFunc* make_kyberNtt_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // NTT zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber inverse NTT function
+static const TypeFunc* make_kyberInverseNtt_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+    fields[argp++] = TypePtr::NOTNULL;      // inverse NTT zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber NTT multiply function
+static const TypeFunc* make_kyberNttMult_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // ntta
+    fields[argp++] = TypePtr::NOTNULL;      // nttb
+    fields[argp++] = TypePtr::NOTNULL;      // NTT multiply zetas
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber add 2 polynomials function
+static const TypeFunc* make_kyberAddPoly_2_Type() {
+    int argcnt = 3;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // a
+    fields[argp++] = TypePtr::NOTNULL;      // b
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+
+// Kyber add 3 polynomials function
+static const TypeFunc* make_kyberAddPoly_3_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // result
+    fields[argp++] = TypePtr::NOTNULL;      // a
+    fields[argp++] = TypePtr::NOTNULL;      // b
+    fields[argp++] = TypePtr::NOTNULL;      // c
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+
+// Kyber XOF output parsing into polynomial coefficients candidates
+// or decompress(12,...) function
+static const TypeFunc* make_kyber12To16_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // condensed
+    fields[argp++] = TypeInt::INT;          // condensedOffs
+    fields[argp++] = TypePtr::NOTNULL;      // parsed
+    fields[argp++] = TypeInt::INT;          // parsedLength
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
+// Kyber Barrett reduce function
+static const TypeFunc* make_kyberBarrettReduce_Type() {
+    int argcnt = 1;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // coeffs
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
 }
 
 static const TypeFunc* make_base64_encodeBlock_Type() {
@@ -1978,6 +2152,7 @@ void OptoRuntime::initialize_types() {
   _digestBase_implCompress_without_sha3_Type   = make_digestBase_implCompress_Type(  /* is_sha3= */ false);;
   _digestBase_implCompressMB_with_sha3_Type    = make_digestBase_implCompressMB_Type(/* is_sha3= */ true);
   _digestBase_implCompressMB_without_sha3_Type = make_digestBase_implCompressMB_Type(/* is_sha3= */ false);
+  _double_keccak_Type                 = make_double_keccak_Type();
   _multiplyToLen_Type                 = make_multiplyToLen_Type();
   _montgomeryMultiply_Type            = make_montgomeryMultiply_Type();
   _montgomerySquare_Type              = make_montgomerySquare_Type();
@@ -1986,6 +2161,15 @@ void OptoRuntime::initialize_types() {
   _bigIntegerShift_Type               = make_bigIntegerShift_Type();
   _vectorizedMismatch_Type            = make_vectorizedMismatch_Type();
   _ghash_processBlocks_Type           = make_ghash_processBlocks_Type();
+
+  _kyberNtt_Type                      = make_kyberNtt_Type();
+  _kyberInverseNtt_Type               = make_kyberInverseNtt_Type();
+  _kyberNttMult_Type                  = make_kyberNttMult_Type();
+  _kyberAddPoly_2_Type                = make_kyberAddPoly_2_Type();
+  _kyberAddPoly_3_Type                = make_kyberAddPoly_3_Type();
+  _kyber12To16_Type                   = make_kyber12To16_Type();
+  _kyberBarrettReduce_Type            = make_kyberBarrettReduce_Type();
+
   _chacha20Block_Type                 = make_chacha20Block_Type();
   _base64_encodeBlock_Type            = make_base64_encodeBlock_Type();
   _base64_decodeBlock_Type            = make_base64_decodeBlock_Type();
