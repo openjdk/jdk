@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,9 @@ package java.lang.reflect;
  * <p>
  * For example, an annotated use {@code @TA ? extends @TB Number} has an
  * annotation {@code @TA} and represents the wildcard type argument {@code ?
- * extends Number}.  Its lower bound is the annotated use {@code @TB Number}
+ * extends Number}.  Its upper bound is the annotated use {@code @TB Number}
  * with an annotation {@code @TB}, representing the {@code Number} class.  It
- * has no upper bound.
+ * has no lower bound.
  * <p>
  * Two {@code AnnotatedWildcardType} objects should be compared using the {@link
  * Object#equals equals} method.
@@ -51,12 +51,14 @@ public interface AnnotatedWildcardType extends AnnotatedType {
 
     /**
      * {@return the potentially annotated use of lower bounds of the wildcard
-     * type argument}  If no lower bound is explicitly declared, the lower bound
-     * is the null type (JLS {@jls 4.1}) and the use is unannotated. In this
-     * case, a zero length array is returned.
+     * type argument}  A lower bound has the syntax {@code ? super B} in Java
+     * source code, where {@code B} is the bound.  If no lower bound is
+     * explicitly declared, the lower bound is the null type (JLS {@jls 4.1})
+     * and the use is unannotated.  In this case, a zero length array is
+     * returned.
      *
      * @apiNote
-     * While to date a wildcard type argument may have at most one upper bound,
+     * While to date a wildcard type argument may have at most one lower bound,
      * callers of this method should be written to accommodate multiple bounds.
      *
      * @see WildcardType#getLowerBounds()
@@ -65,8 +67,10 @@ public interface AnnotatedWildcardType extends AnnotatedType {
 
     /**
      * {@return the potentially annotated use of upper bounds of the wildcard
-     * type argument}  If no upper bound is explicitly declared, the upper bound
-     * is the {@code Object} class and the use is unannotated.
+     * type argument}  An upper bound has the syntax {@code ? extends B} in Java
+     * source code, where {@code B} is the bound.  If no upper bound is
+     * explicitly declared, the upper bound is the {@code Object} class and the
+     * use is unannotated.
      *
      * @apiNote
      * While to date a wildcard type argument may have at most one upper bound,

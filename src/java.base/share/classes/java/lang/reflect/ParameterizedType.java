@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public interface ParameterizedType extends Type {
      * @throws TypeNotPresentException if any of the actual type arguments
      *     refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if any of the
-     *     actual type parameters refer to a parameterized type that cannot
+     *     actual type arguments refer to a parameterized type that cannot
      *     be instantiated for any reason
      */
     Type[] getActualTypeArguments();
@@ -120,7 +120,7 @@ public interface ParameterizedType extends Type {
      * ParameterizedType}}  Two instances of {@code ParameterizedType} are equal
      * if and only if they share the same {@linkplain #getRawType() generic
      * class or interface declaration} and have equal {@linkplain
-     * #getActualTypeArguments() type parameters}, including those from the
+     * #getActualTypeArguments() type arguments}, including those from the
      * {@linkplain #getOwnerType() enclosing classes}.
      *
      * @param o {@inheritDoc}

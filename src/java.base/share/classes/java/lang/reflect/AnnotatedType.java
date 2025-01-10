@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,10 +87,11 @@ import java.lang.annotation.Annotation;
  * class or interface, or a raw type, and the {@link #getType() getType()}
  * method returns a {@link Class}.
  * <p>
- * For example, an annotated use {@code @TB Outer.@TA Inner} has an annotation
- * {@code @TA} and represents the non-generic {@code Outer.Inner} class. The use
- * of its immediately enclosing class is {@code @TB Outer}, with an annotation
- * {@code @TB}, representing the non-generic {@code Outer} class.
+ * For example, an annotated use {@code @TB Outer.@TA Inner} is such an object;
+ * it has an annotation {@code @TA} and represents the non-generic {@code
+ * Outer.Inner} class. The use of its immediately enclosing class is {@code @TB
+ * Outer}, with an annotation {@code @TB}, representing the non-generic {@code
+ * Outer} class.
  *
  * @see Type
  * @jls 4.11 Where Types Are Used

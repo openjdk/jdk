@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,10 @@ package java.lang.reflect;
  */
 public interface WildcardType extends Type {
     /**
-     * {@return the upper bounds of this wildcard type argument}  If no upper
-     * bound is explicitly declared, the upper bound is the {@link Object}
-     * class.
+     * {@return the upper bounds of this wildcard type argument}  An upper bound
+     * has the syntax {@code ? extends B} in Java source code, where {@code B}
+     * is the bound.  If no upper bound is explicitly declared, the upper bound
+     * is the {@link Object} class.
      *
      * <p>For each upper bound B:
      * <ul>
@@ -64,9 +65,11 @@ public interface WildcardType extends Type {
     Type[] getUpperBounds();
 
     /**
-     * {@return the lower bounds of this wildcard type argument}  If no lower
-     * bound is explicitly declared, the lower bound is the null type (JLS
-     * {@jls 4.1}).  In this case, a zero length array is returned.
+     * {@return the lower bounds of this wildcard type argument}  A lower bound
+     * has the syntax {@code ? super B} in Java source code, where {@code B} is
+     * the bound.  If no lower bound is explicitly declared, the lower bound is
+     * the null type (JLS {@jls 4.1}).  In this case, a zero length array is
+     * returned.
      *
      * <p>For each lower bound B:
      * <ul>
@@ -77,7 +80,7 @@ public interface WildcardType extends Type {
      * </ul>
      *
      * @apiNote
-     * While to date a wildcard type argument may have at most one upper bound,
+     * While to date a wildcard type argument may have at most one lower bound,
      * callers of this method should be written to accommodate multiple bounds.
      *
      * @throws TypeNotPresentException if any of the bounds refers to a
