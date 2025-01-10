@@ -39,7 +39,7 @@
 // allocation failing.
 // Key needs to be of a type that is trivially destructible.
 // The tree will call a value's destructor when its node is removed.
-// Nodes are address stable and will not change during its lifetime unless modified by the user.
+// Nodes are address stable and will not change during its lifetime.
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class RBTree {
