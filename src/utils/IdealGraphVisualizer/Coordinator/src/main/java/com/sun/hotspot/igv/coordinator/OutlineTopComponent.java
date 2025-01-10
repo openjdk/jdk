@@ -102,64 +102,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private GraphNode[] selectedGraphs = new GraphNode[0];
     private Path documentPath = null;
 
-    private final DropTargetListener fileDropListener = new DropTargetListener() {
-        @Override
-        public void dragEnter(DropTargetDragEvent dtde) {
-            if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                dtde.acceptDrag(DnDConstants.ACTION_COPY);
-            } else {
-                dtde.rejectDrag();
-            }
-        }
-
-        @Override
-        public void dragOver(DropTargetDragEvent dtde) {
-            dragEnter(dtde);
-        }
-
-        @Override
-        public void dropActionChanged(DropTargetDragEvent dtde) {}
-
-        @Override
-        public void dragExit(DropTargetEvent dte) {}
-
-        @Override
-        public void drop(DropTargetDropEvent dtde) {
-            try {
-                if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                    dtde.acceptDrop(DnDConstants.ACTION_COPY);
-
-                    List<File> droppedFiles = (List<File>) dtde.getTransferable()
-                            .getTransferData(DataFlavor.javaFileListFlavor);
-
-                    if (droppedFiles.isEmpty()) return;
-                    if (droppedFiles.size() > 1) {
-                        JOptionPane.showMessageDialog(null,
-                            "Please only drag and drop one file as only one file can be open at a time.",
-                            "Multiple Files Dropped", JOptionPane.WARNING_MESSAGE);
-                        return;
-                    }
-
-                    File file = droppedFiles.get(0);
-
-                    if (file.getName().endsWith(".xml") || file.getName().endsWith(".igv")) {
-                        handleOpen(file);
-                    } else {
-                        JOptionPane.showMessageDialog(null,
-                            "Unsupported file type: " + file.getName(),
-                            "Unsupported File", JOptionPane.WARNING_MESSAGE);
-                    }
-
-                    dtde.dropComplete(true);
-                } else {
-                    dtde.rejectDrop();
-                }
-            } catch (HeadlessException | UnsupportedFlavorException | IOException ex) {
-                ex.printStackTrace();
-                dtde.dropComplete(false);
-            }
-        }
-    };
+    private final DropTargetListener fileDropListener = new FileDropListener();
     private final PlaceholderTopComponent editorPlaceholder = new PlaceholderTopComponent(fileDropListener);
 
     private OutlineTopComponent() {
@@ -679,6 +622,65 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             Exceptions.printStackTrace(ex);
         }
         handle.finish();
+    }
+
+    private class FileDropListener implements DropTargetListener {
+        @Override
+        public void dragEnter(DropTargetDragEvent dtde) {
+            if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                dtde.acceptDrag(DnDConstants.ACTION_COPY);
+            } else {
+                dtde.rejectDrag();
+            }
+        }
+
+        @Override
+        public void dragOver(DropTargetDragEvent dtde) {
+            dragEnter(dtde);
+        }
+
+        @Override
+        public void dropActionChanged(DropTargetDragEvent dtde) {}
+
+        @Override
+        public void dragExit(DropTargetEvent dte) {}
+
+        @Override
+        public void drop(DropTargetDropEvent dtde) {
+            try {
+                if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                    dtde.acceptDrop(DnDConstants.ACTION_COPY);
+
+                    List<File> droppedFiles = (List<File>) dtde.getTransferable()
+                            .getTransferData(DataFlavor.javaFileListFlavor);
+
+                    if (droppedFiles.isEmpty()) return;
+                    if (droppedFiles.size() > 1) {
+                        JOptionPane.showMessageDialog(null,
+                                "Please only drag and drop one file as only one file can be open at a time.",
+                                "Multiple Files Dropped", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+
+                    File file = droppedFiles.get(0);
+
+                    if (file.getName().endsWith(".xml") || file.getName().endsWith(".igv")) {
+                        handleOpen(file);
+                    } else {
+                        JOptionPane.showMessageDialog(null,
+                                "Unsupported file type: " + file.getName(),
+                                "Unsupported File", JOptionPane.WARNING_MESSAGE);
+                    }
+
+                    dtde.dropComplete(true);
+                } else {
+                    dtde.rejectDrop();
+                }
+            } catch (HeadlessException | UnsupportedFlavorException | IOException ex) {
+                ex.printStackTrace();
+                dtde.dropComplete(false);
+            }
+        }
     }
 
     /** This method is called from within the constructor to
