@@ -285,7 +285,7 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   is_cgroupsV2 = true;
   all_required_controllers_enabled = true;
   for (int i = 0; i < CG_INFO_LENGTH; i++) {
-    // pids controller is optional. All other controllers are required
+    // pids and cpuset controllers are optional. All other controllers are required
     if (i != PIDS_IDX && i != CPUSET_IDX) {
       is_cgroupsV2 = is_cgroupsV2 && cg_infos[i]._hierarchy_id == 0;
       all_required_controllers_enabled = all_required_controllers_enabled && cg_infos[i]._enabled;
