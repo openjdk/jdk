@@ -37,7 +37,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 // controller names have to match the *_IDX indices
-static const char* cg_controller_name[] = { "cpu", "cpuset", "cpuacct", "memory", "pids" };
+static const char* cg_controller_name[] = { "cpuset", "cpu", "cpuacct", "memory", "pids" };
 
 CgroupSubsystem* CgroupSubsystemFactory::create() {
   CgroupV1MemoryController* memory = nullptr;
