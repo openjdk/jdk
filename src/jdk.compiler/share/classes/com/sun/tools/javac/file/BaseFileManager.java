@@ -53,6 +53,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
@@ -87,18 +88,11 @@ public abstract class BaseFileManager implements JavaFileManager {
      */
     public void setContext(Context context) {
         log = Log.instance(context);
+        lint = Lint.instance(context);
         options = Options.instance(context);
-        classLoaderClass = options.get("procloader");
 
-        // Detect Lint options, but use Options.isLintSet() to avoid initializing the Lint class
-        boolean warn = options.isLintSet(LintCategory.PATH.option);
-        boolean fileClashOption = options.isLintSet(LintCategory.OUTPUT_FILE_CLASH.option);
-        locations.update(log, warn, FSInfo.instance(context));
-
-        // Only track file clashes if enabled
-        synchronized (this) {
-            outputFilesWritten = fileClashOption ? new HashSet<>() : null;
-        }
+        // Initialize locations
+        locations.update(log, lint, FSInfo.instance(context));
 
         // Setting this option is an indication that close() should defer actually closing
         // the file manager until after a specified period of inactivity.
@@ -112,14 +106,16 @@ public abstract class BaseFileManager implements JavaFileManager {
         // in seconds, of the period of inactivity to wait for, before the file manager
         // is actually closed.
         // See also deferredClose().
-        String s = options.get("fileManager.deferClose");
-        if (s != null) {
-            try {
-                deferredCloseTimeout = (int) (Float.parseFloat(s) * 1000);
-            } catch (NumberFormatException e) {
-                deferredCloseTimeout = 60 * 1000;  // default: one minute, in millis
+        options.whenReady(options -> {
+            String s = options.get("fileManager.deferClose");
+            if (s != null) {
+                try {
+                    deferredCloseTimeout = (int) (Float.parseFloat(s) * 1000);
+                } catch (NumberFormatException e) {
+                    deferredCloseTimeout = 60 * 1000;  // default: one minute, in millis
+                }
             }
-        }
+        });
     }
 
     protected Locations createLocations() {
@@ -138,12 +134,11 @@ public abstract class BaseFileManager implements JavaFileManager {
 
     protected Options options;
 
-    protected String classLoaderClass;
+    protected Lint lint;
 
     protected final Locations locations;
 
-    // This is non-null when output file clash detection is enabled
-    private HashSet<Path> outputFilesWritten;
+    private final HashSet<Path> outputFilesWritten = new HashSet<>();
 
     /**
      * A flag for clients to use to indicate that this file manager should
@@ -198,6 +193,7 @@ public abstract class BaseFileManager implements JavaFileManager {
         // other than URLClassLoader.
 
         // 1: Allow client to specify the class to use via hidden option
+        String classLoaderClass = options.get("procloader");
         if (classLoaderClass != null) {
             try {
                 Class<? extends ClassLoader> loader =
@@ -242,6 +238,11 @@ public abstract class BaseFileManager implements JavaFileManager {
             @Override
             public boolean handleFileManagerOption(Option option, String value) {
                 return handleOption(option, value);
+            }
+
+            @Override
+            public void initialize() {
+                options.initialize();
             }
         };
 
@@ -457,8 +458,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     }
 
     public synchronized void resetOutputFilesWritten() {
-        if (outputFilesWritten != null)
-            outputFilesWritten.clear();
+        outputFilesWritten.clear();
     }
 
     protected final Map<JavaFileObject, ContentCacheEntry> contentCache = new HashMap<>();
@@ -515,7 +515,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     synchronized void newOutputToPath(Path path) throws IOException {
 
         // Is output file clash detection enabled?
-        if (outputFilesWritten == null)
+        if (!lint.isEnabled(LintCategory.OUTPUT_FILE_CLASH))
             return;
 
         // Get the "canonical" version of the file's path; we are assuming

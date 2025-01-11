@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final boolean printProcessorInfo;
     private final boolean printRounds;
     private final boolean verbose;
-    private final boolean lint;
     private final boolean fatalErrors;
     private final boolean werror;
     private final boolean showResolveErrors;
@@ -123,6 +122,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     private final Modules modules;
     private final Types types;
     private final Annotate annotate;
+    private final Lint lint;
 
     /**
      * Holds relevant state history of which processors have been
@@ -205,7 +205,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         printProcessorInfo = options.isSet(Option.XPRINTPROCESSORINFO);
         printRounds = options.isSet(Option.XPRINTROUNDS);
         verbose = options.isSet(Option.VERBOSE);
-        lint = Lint.instance(context).isEnabled(PROCESSING);
+        lint = Lint.instance(context);
         compiler = JavaCompiler.instance(context);
         if (options.isSet(Option.PROC, "only") || options.isSet(Option.XPRINT)) {
             compiler.shouldStopPolicyIfNoError = CompileState.PROCESS;
@@ -625,7 +625,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         private Set<String> supportedOptionNames;
 
         ProcessorState(Processor p, Log log, Source source, DeferredCompletionFailureHandler dcfh,
-                       boolean allowModules, ProcessingEnvironment env, boolean lint) {
+                       boolean allowModules, ProcessingEnvironment env, Lint lint) {
             processor = p;
             contributed = false;
 
@@ -648,8 +648,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                     supportedAnnotationPatterns.
                         add(importStringToPattern(allowModules, annotationPattern,
                                                   processor, log, lint));
-                    if (lint && !patternAdded) {
-                        log.warning(LintWarnings.ProcDuplicateSupportedAnnotation(annotationPattern,
+                    if (!patternAdded) {
+                        lint.logIfEnabled(log, LintWarnings.ProcDuplicateSupportedAnnotation(annotationPattern,
                                                                               p.getClass().getName()));
                     }
                 }
@@ -660,18 +660,17 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 // annotation types were otherwise non-overlapping
                 // with each other in other cases, for example "foo.*"
                 // and "foo.bar.*".
-                if (lint &&
-                    supportedAnnotationPatterns.contains(MatchingUtils.validImportStringToPattern("*")) &&
+                if (supportedAnnotationPatterns.contains(MatchingUtils.validImportStringToPattern("*")) &&
                     supportedAnnotationPatterns.size() > 1) {
-                    log.warning(LintWarnings.ProcRedundantTypesWithWildcard(p.getClass().getName()));
+                    lint.logIfEnabled(log, LintWarnings.ProcRedundantTypesWithWildcard(p.getClass().getName()));
                 }
 
                 supportedOptionNames = new LinkedHashSet<>();
                 for (String optionName : processor.getSupportedOptions() ) {
                     if (checkOptionName(optionName, log)) {
                         boolean optionAdded = supportedOptionNames.add(optionName);
-                        if (lint && !optionAdded) {
-                            log.warning(LintWarnings.ProcDuplicateOptionName(optionName,
+                        if (!optionAdded) {
+                            lint.logIfEnabled(log, LintWarnings.ProcDuplicateOptionName(optionName,
                                                                          p.getClass().getName()));
                         }
                     }
@@ -888,7 +887,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
         unmatchedAnnotations.remove("");
 
-        if (lint && unmatchedAnnotations.size() > 0) {
+        if (lint.isEnabled(PROCESSING) && unmatchedAnnotations.size() > 0) {
             // Remove annotations processed by javac
             unmatchedAnnotations.keySet().removeAll(platformAnnotations);
             if (unmatchedAnnotations.size() > 0) {
@@ -1661,7 +1660,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * regex matching that string.  If the string is not a valid
      * import-style string, return a regex that won't match anything.
      */
-    private static Pattern importStringToPattern(boolean allowModules, String s, Processor p, Log log, boolean lint) {
+    private static Pattern importStringToPattern(boolean allowModules, String s, Processor p, Log log, Lint lint) {
         String module;
         String pkg;
         int slash = s.indexOf('/');
@@ -1687,10 +1686,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
     }
 
-    private static Pattern warnAndNoMatches(String s, Processor p, Log log, boolean lint) {
-        if (lint) {
-            log.warning(LintWarnings.ProcMalformedSupportedString(s, p.getClass().getName()));
-        }
+    private static Pattern warnAndNoMatches(String s, Processor p, Log log, Lint lint) {
+        lint.logIfEnabled(log, LintWarnings.ProcMalformedSupportedString(s, p.getClass().getName()));
         return noMatches; // won't match any valid identifier
     }
 
