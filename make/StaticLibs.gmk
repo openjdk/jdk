@@ -107,7 +107,8 @@ else
 endif
 
 $(eval $(call SetupBuildLauncher, java, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
+    ENABLE_ARG_FILES := true, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
     EXTRA_RCFLAGS := $(JAVA_RCFLAGS), \
     VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
     OPTIMIZATION := HIGH, \

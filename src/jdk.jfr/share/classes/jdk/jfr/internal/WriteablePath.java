@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jfr.internal.periodic;
 
-import jdk.internal.event.Event;
-import jdk.jfr.internal.util.Utils;
+package jdk.jfr.internal;
 
-/**
- * Periodic task that runs trusted code that doesn't require an access control
- * context.
- * <p>
- * This class can be removed once the Security Manager is no longer supported.
- */
-final class JDKEventTask extends JavaEventTask {
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-    public JDKEventTask(Class<? extends Event> eventClass, Runnable runnable) {
-        super(eventClass, runnable);
-        if (!getEventType().isJDK()) {
-            throw new InternalError("Must be a JDK event");
+public final class WriteablePath {
+    private final Path path;
+    private final Path real;
+
+    public WriteablePath(Path path) throws IOException {
+        // verify that the path is writeable
+        if (Files.exists(path) && !Files.isWritable(path)) {
+            // throw same type of exception as FileOutputStream
+            // constructor, if file can't be opened.
+            throw new FileNotFoundException("Could not write to file: " + path.toAbsolutePath());
         }
-        if (!Utils.isJDKClass(eventClass)) {
-            throw new SecurityException("Periodic task can only be registered for event classes that belongs to the JDK");
-        }
-        if (!Utils.isJDKClass(runnable.getClass())) {
-            throw new SecurityException("Runnable class must belong to the JDK");
-        }
+        // will throw if non-writeable
+        BufferedWriter fw = Files.newBufferedWriter(path);
+        fw.close();
+        this.path = path;
+        this.real = path.toRealPath();
     }
 
-    @Override
-    public void execute(long timestamp, PeriodicType periodicType) {
-        getRunnable().run();
+    public Path getPath() {
+        return path;
+    }
+
+    public Path getReal() {
+        return real;
+    }
+
+    public String getRealPathText() {
+        return real.toString();
     }
 }
