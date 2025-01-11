@@ -500,15 +500,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * this string as a hexadecimal number to form and return a long value.
      */
     private static long hex8(long i) {
-        // i = Long.reverseBytes(Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL));
-        long t = i << 16;
-        i = (i & ~0xFFFF00000000L) | (t & 0xFFFF00000000L);
-        t = i << 8;
-        i = (i & ~0xFF000000FF0000L) | (t & 0xFF000000FF0000L);
-        t = i << 4;
-        i = (i & ~0xF000F000F000F00L) | (t & 0xF000F000F000F00L);
-        i = Long.reverseBytes(i & 0x0F0F_0F0F_0F0F_0F0FL);
-
+        i = expand(i);
         /*
             Use long to simulate vector operations and generate 8 hexadecimal characters at a time.
             ------------
@@ -530,9 +522,22 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
             15 = 0b0000_1111 => m = ((i + 6) & 0x10); (m << 1) + (m >> 1) - (m >> 4) => 39 + 0x30 + (i & 0xF) => 'f'
          */
         long m = (i + 0x0606_0606_0606_0606L) & 0x1010_1010_1010_1010L;
-        return ((m << 1) + (m >> 1) - (m >> 4))
+        return Long.reverseBytes(((m << 1) + (m >> 1) - (m >> 4))
                 + 0x3030_3030_3030_3030L
-                + i;
+                + i);
+    }
+
+    /**
+     * A faster alternative that is functionally equivalent to Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL)
+     */
+    private static long expand(long i) {
+        long t = i << 16;
+        i = (i & ~0xFFFF00000000L) | (t & 0xFFFF00000000L);
+        t = i << 8;
+        i = (i & ~0xFF000000FF0000L) | (t & 0xFF000000FF0000L);
+        t = i << 4;
+        i = (i & ~0xF000F000F000F00L) | (t & 0xF000F000F000F00L);
+        return i & 0x0F0F_0F0F_0F0F_0F0FL;
     }
 
     /**
