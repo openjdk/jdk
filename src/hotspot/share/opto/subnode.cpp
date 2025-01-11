@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1416,9 +1416,7 @@ Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
 //--------------------------------as_int_value---------------------------------
 Node* BoolNode::as_int_value(PhaseGVN* phase) {
   // Inverse to make_predicate.  The CMove probably boils down to a Conv2B.
-  Node* cmov = CMoveNode::make(nullptr, this,
-                               phase->intcon(0), phase->intcon(1),
-                               TypeInt::BOOL);
+  Node* cmov = CMoveNode::make(this, phase->intcon(0), phase->intcon(1), TypeInt::BOOL);
   return phase->transform(cmov);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -857,9 +857,9 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         }
       }
     }
-    Node *cmov = CMoveNode::make(cmov_ctrl, iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi));
-    register_new_node( cmov, cmov_ctrl );
-    _igvn.replace_node( phi, cmov );
+    Node* cmov = CMoveNode::make(iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi));
+    register_new_node(cmov, cmov_ctrl);
+    _igvn.replace_node(phi, cmov);
 #ifndef PRODUCT
     if (TraceLoopOpts) {
       tty->print("CMOV  ");
