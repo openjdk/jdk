@@ -57,11 +57,14 @@ import sun.security.jca.GetInstance.Instance;
  * specific or as specified by the standard key agreement algorithm.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code KeyAgreement} algorithm:
+ * following standard {@code KeyAgreement} algorithms. For the "ECDH"
+ * algorithm, implementations must support the curves in parentheses.
  * <ul>
  * <li>{@code DiffieHellman}</li>
+ * <li>{@code ECDH} (secp256r1, secp384r1)</li>
+ * <li>{@code X25519}</li>
  * </ul>
- * This algorithm is described in the <a href=
+ * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#keyagreement-algorithms">
  * KeyAgreement section</a> of the
  * Java Security Standard Algorithm Names Specification.

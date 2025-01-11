@@ -565,6 +565,11 @@ public class IRNode {
         beforeMatchingNameRegex(DIV, "Div(I|L|F|D)");
     }
 
+    public static final String UDIV = PREFIX + "UDIV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(UDIV, "UDiv(I|L|F|D)");
+    }
+
     public static final String DIV_BY_ZERO_TRAP = PREFIX + "DIV_BY_ZERO_TRAP" + POSTFIX;
     static {
         trapNodes(DIV_BY_ZERO_TRAP, "div0_check");
@@ -1167,6 +1172,26 @@ public class IRNode {
     public static final String MOD_L = PREFIX + "MOD_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(MOD_L, "ModL");
+    }
+
+    public static final String MOV_F2I = PREFIX + "MOV_F2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_F2I, "MoveF2I");
+    }
+
+    public static final String MOV_I2F = PREFIX + "MOV_I2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_I2F, "MoveI2F");
+    }
+
+    public static final String MOV_D2L = PREFIX + "MOV_D2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_D2L, "MoveD2L");
+    }
+
+    public static final String MOV_L2D = PREFIX + "MOD_L2D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_L2D, "MoveL2D");
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;

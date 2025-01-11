@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
@@ -49,8 +50,9 @@ import jdk.jpackage.test.Executor;
 
 public class RuntimeImageSymbolicLinksTest {
 
-    @Test
+    @Test(ifNotOS = WINDOWS)
     public static void test() throws Exception {
+        final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
         final Path jlinkOutputDir = workDir.resolve("temp.runtime");
         Files.createDirectories(jlinkOutputDir.getParent());
@@ -61,6 +63,7 @@ public class RuntimeImageSymbolicLinksTest {
         .addArguments(
                 "--output", jlinkOutputDir.toString(),
                 "--add-modules", "ALL-MODULE-PATH",
+                "--module-path", jmods.toString(),
                 "--strip-debug",
                 "--no-header-files",
                 "--no-man-pages",
