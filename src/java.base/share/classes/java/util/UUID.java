@@ -500,7 +500,15 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * this string as a hexadecimal number to form and return a long value.
      */
     private static long hex8(long i) {
-        i = Long.reverseBytes(Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL));
+        // i = Long.reverseBytes(Long.expand(i, 0x0F0F_0F0F_0F0F_0F0FL));
+        long t = i << 16;
+        i = (i & ~0xFFFF00000000L) | (t & 0xFFFF00000000L);
+        t = i << 8;
+        i = (i & ~0xFF000000FF0000L) | (t & 0xFF000000FF0000L);
+        t = i << 4;
+        i = (i & ~0xF000F000F000F00L) | (t & 0xF000F000F000F00L);
+        i = Long.reverseBytes(i & 0x0F0F_0F0F_0F0F_0F0FL);
+
         /*
             Use long to simulate vector operations and generate 8 hexadecimal characters at a time.
             ------------
