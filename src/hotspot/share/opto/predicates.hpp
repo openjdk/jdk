@@ -972,7 +972,7 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   Node* const _init;
   Node* const _stride;
   Node* const _old_target_loop_entry;
-  Node* _new_control;
+  Node* _current_predicate_chain_head;
   PhaseIdealLoop* const _phase;
   bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
@@ -980,21 +980,14 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   const bool _is_copy_atomic_post;
 
   IfTrueNode* clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate);
-  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
+  IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
+                                       Node* new_control) const;
+  void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
-  CreateAssertionPredicatesVisitor(Node* init, Node* stride, Node* new_control, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body, const bool clone_template,
-                                   const bool is_copy_atomic_post)
-      : _init(init),
-        _stride(stride),
-        _old_target_loop_entry(new_control),
-        _new_control(new_control),
-        _phase(phase),
-        _has_hoisted_check_parse_predicates(false),
-        _node_in_loop_body(node_in_loop_body),
-        _clone_template(clone_template),
-        _is_copy_atomic_post(is_copy_atomic_post) {}
+
+  CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head, PhaseIdealLoop* phase,
+                                   const NodeInLoopBody& node_in_loop_body, bool clone_template);
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
