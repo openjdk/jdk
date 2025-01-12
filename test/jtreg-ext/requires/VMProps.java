@@ -56,7 +56,6 @@ import jdk.test.whitebox.gc.GC;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Container;
-import jdk.test.lib.JDKToolFinder;
 
 /**
  * The Class to be invoked by jtreg prior Test Suite execution to
@@ -701,11 +700,14 @@ public class VMProps implements Callable<Map<String, String>> {
     private void dumpFlags() {
         log("dumpFlags() entering:");
         try {
-            String javapath = JDKToolFinder.getJDKTool("java");
+            String testJdk = System.getProperty("test.jdk");
+            String toolName = "java" + (Platform.isWindows() ? ".exe" : "");
+            Path javaPath = Paths.get(testJdk, "bin", toolName);
+
             String options =  System.getProperty("test.vm.opts", "")
                     + System.getProperty("test.java.opts", "");
             ArrayList<String> args = new ArrayList<>();
-            args.add(javapath);
+            args.add(javaPath.toAbsolutePath().toString());
             Collections.addAll(args, options.trim().split("\\s+"));
             args.add("-XX:+PrintFlagsFinal");
             args.add("-version");

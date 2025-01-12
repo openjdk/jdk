@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ groups=TEST.groups TEST.quick-groups
 requires.extraPropDefns = ../../jtreg-ext/requires/VMProps.java
 requires.extraPropDefns.bootlibs = ../../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
-    ../../lib/jdk/test/lib/JDKToolFinder.java \
     ../../lib/jdk/test/lib/Platform.java \
     ../../lib/jdk/test/lib/Container.java
 requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
