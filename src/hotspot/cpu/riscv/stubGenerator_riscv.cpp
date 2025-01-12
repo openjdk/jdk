@@ -2461,11 +2461,16 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
-  void compare_string_8_x_LU(Register tmpL, Register tmpU, Register strL, Register strU, Label& DIFF) {
+  void compare_string_8_x_LU(Register tmpL, Register tmpU,
+                             Register strL, Register strU, Label& DIFF) {
     const Register tmp = x30, tmpLval = x12;
+
+    int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    // strL is 8-byte aligned
     __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
-    __ ld(tmpU, Address(strU));
+    __ load_long_misaligned(tmpU, Address(strU), tmp, (base_offset % 8) != 0 ? 4 : 8);
     __ addi(strU, strU, wordSize);
     __ inflate_lo32(tmpL, tmpLval);
     __ xorr(tmp, tmpU, tmpL);
@@ -2488,11 +2493,16 @@ class StubGenerator: public StubCodeGenerator {
   // x30  = tmp3
   address generate_compare_long_string_different_encoding(bool isLU) {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", isLU ? "compare_long_string_different_encoding LU" : "compare_long_string_different_encoding UL");
+    StubCodeMark mark(this, "StubRoutines", isLU
+        ? "compare_long_string_different_encoding LU"
+        : "compare_long_string_different_encoding UL");
     address entry = __ pc();
     Label SMALL_LOOP, TAIL, LOAD_LAST, DONE, CALCULATE_DIFFERENCE;
     const Register result = x10, str1 = x11, str2 = x13, cnt2 = x14,
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
+
+    int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+    int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
 
     // cnt2 == amount of characters left to compare
     // Check already loaded first 4 symbols
@@ -2510,17 +2520,19 @@ class StubGenerator: public StubCodeGenerator {
              tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
              tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
-    // make sure main loop is 8 byte-aligned, we should load another 4 bytes from strL
-    // cnt2 is >= 68 here, no need to check it for >= 0
-    __ lwu(tmpL, Address(strL));
-    __ addi(strL, strL, wordSize / 2);
-    __ ld(tmpU, Address(strU));
-    __ addi(strU, strU, wordSize);
-    __ inflate_lo32(tmp3, tmpL);
-    __ mv(tmpL, tmp3);
-    __ xorr(tmp3, tmpU, tmpL);
-    __ bnez(tmp3, CALCULATE_DIFFERENCE);
-    __ addi(cnt2, cnt2, -wordSize / 2);
+    if ((base_offset1 % 8) == 0) {
+      // Load another 4 bytes from strL to make sure main loop is 8-byte aligned
+      // cnt2 is >= 68 here, no need to check it for >= 0
+      __ lwu(tmpL, Address(strL));
+      __ addi(strL, strL, wordSize / 2);
+      __ load_long_misaligned(tmpU, Address(strU), tmp4, (base_offset2 % 8) != 0 ? 4 : 8);
+      __ addi(strU, strU, wordSize);
+      __ inflate_lo32(tmp3, tmpL);
+      __ mv(tmpL, tmp3);
+      __ xorr(tmp3, tmpU, tmpL);
+      __ bnez(tmp3, CALCULATE_DIFFERENCE);
+      __ addi(cnt2, cnt2, -wordSize / 2);
+    }
 
     // we are now 8-bytes aligned on strL
     __ subi(cnt2, cnt2, wordSize * 2);
