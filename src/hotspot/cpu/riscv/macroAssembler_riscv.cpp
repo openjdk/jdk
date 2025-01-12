@@ -2873,7 +2873,7 @@ void MacroAssembler::revb(Register Rd, Register Rs, Register tmp1, Register tmp2
 void MacroAssembler::ror(Register dst, Register src, Register shift, Register tmp)
 {
   if (UseZbb) {
-    ror(dst, src, shift);
+    rorr(dst, src, shift);
     return;
   }
 
