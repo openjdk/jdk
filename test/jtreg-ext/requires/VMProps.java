@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import jdk.test.whitebox.gc.GC;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Container;
+import jdk.test.lib.JDKToolFinder;
 
 /**
  * The Class to be invoked by jtreg prior Test Suite execution to
@@ -145,6 +146,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlags(map);
 
         dump(map.map);
+        dumpFlags();
         log("Leaving call()");
         return map.map;
     }
@@ -695,6 +697,34 @@ public class VMProps implements Callable<Map<String, String>> {
 
         return (exitValue == 0);
     }
+
+    private void dumpFlags() {
+        log("dumpFlags() entering:");
+        try {
+            String javapath = JDKToolFinder.getJDKTool("java");
+            String options =  System.getProperty("test.vm.opts", "")
+                    + System.getProperty("test.java.opts", "");
+            ArrayList<String> args = new ArrayList<>();
+            args.add(javapath);
+            Collections.addAll(args, options.trim().split("\\s+"));
+            args.add("-XX:+PrintFlagsFinal");
+            args.add("-version");
+            ProcessBuilder pb = new ProcessBuilder(args);
+            File output = new File("jvm.flags.final.log");
+            pb.redirectOutput(output);
+            pb.redirectErrorStream();
+            Process p = pb.start();
+            p.waitFor(120, TimeUnit.SECONDS);
+
+            log("The test jvm options: " + options);
+            log("The final jvm flags are saved to: " + output.getAbsolutePath());
+        } catch (Throwable t) {
+            log("Erro while printing JVM flags " + t.getMessage());
+        }
+
+        log("dumpFlags() leaving:");
+    }
+
 
     /**
      * Checks musl libc.
