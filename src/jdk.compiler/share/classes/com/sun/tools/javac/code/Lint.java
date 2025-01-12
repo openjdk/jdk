@@ -116,8 +116,8 @@ public class Lint {
     private Names names;
 
     // For the root instance only, these are initialized lazily
-    private EnumSet<LintCategory> values;           // categories enabled by default or "-Xlint:key", and with no "-Xlint:-key"
-    private EnumSet<LintCategory> suppressedValues; // categories suppressed by "-Xlint:-key" flag
+    private EnumSet<LintCategory> values;           // categories enabled by default or "-Xlint:key" and not (yet) suppressed
+    private EnumSet<LintCategory> suppressedValues; // categories suppressed by @SuppressWarnings, @Deprecated, or suppress()
 
     private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
 
