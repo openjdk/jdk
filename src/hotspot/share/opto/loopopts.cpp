@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2342,17 +2342,111 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
   }
 }
 
-void PhaseIdealLoop::handle_data_uses_for_atomic_post_loop(Node* old, Node_List &old_new,
+// This function is going to fix all data uses of the new loop body.
+
+// Take the loop increment "i" as an example.
+// Now the data uses about "i" are like:
+
+//   |----> pre loop head ...
+//   |      |          \  /
+//  IfTrue  |      PhiNode <-------------|
+//   |      |           |                |
+//  loop end           addI(pre_incr) ---
+//        |           /
+//    IfFalse       /
+//        |       /
+//        |     /
+//   min-trip guard (main loop)
+//     /  \
+//    /   IfTrue
+//   /       |  \___________________________
+//  /        |                              \
+//  |   |--> main loop head           |---> vectorized drain loop head
+//  |   |    |         \  'pre_incr'  |     |       \   'pre_incr'
+//  |   |    |          \   /         |     |        \   /
+//  | IfTrue |       PhiNode <---|  IfTrue  |     PhiNode <--------|
+//  |   |    |            |      |    |     |         |            |
+//  |   loop end         addI ----   loop end        addI('nnn')----
+//  |        |              |              |
+//   \       |              |              |
+//  IfFalse IfFalse         |             IfFalse
+//      \    /              | 'pre_incr'   |
+//      RegionNode('prev')  /   /          |
+//             \       \   /   /          /
+//              \   PhiNode('merge_phi') /
+//               \                      /
+//                RegionNode('new_prev')
+//                  |
+//                  |    'merge_phi'
+//                  |      /
+//            min-trip guard (post loop)
+//              /        \
+//             /        IfTrue
+//        IfFalse         |              'merge_phi'
+//           |     |---> post loop head    /
+//          ...    |      |            \  /
+//                IfTrue  |        PhiNode <--|
+//                 |      |             |     |
+//                  loop end           addI -->
+//                     /
+//                  ...
+
+// The equivalent loop increment 'i' in the new loop body is 'nnn', which is dangling.
+// We create a new 'phi' node which will merge 'nnn' and 'merge_phi' and take the
+// RegionNode, 'new_prev', as the control input which was created in
+// fix_ctrl_uses_for_vectorized_drain(). This new node 'phi' will replace all other
+// uses of 'merge_phi'. The data uses will become:
+// (new edges are marked with "*/*" or "*\*".)
+
+//  pre loop exit   pre_incr
+//        |         /
+//   min-trip guard (main loop)
+//     /  \
+//    /   IfTrue
+//   /       |   \____________________________
+//  /        |                                \
+//  |   |--> main loop head             |---> vectorized drain loop head
+//  |   |    |         \  'pre_incr'    |     |              \   'pre_incr'
+//  |   |    |          \   /           |     |               \   /
+//  | IfTrue |       PhiNode <---|    IfTrue  |            PhiNode <--------|
+//  |   |    |            |      |      |     |                |            |
+//  |   loop end         addI -->       loop end              addI('nnn')----
+//  |        |              |                 |               */*
+//   \       |              |          IfFalse('drain_exit') */*
+//  IfFalse IfFalse         |                               */*
+//      \    /              |   'pre_incr'                 */*
+//      RegionNode('prev')  |     /                       */*
+//           \         \    |    /                      */*
+//            \      PhiNode('merge_phi')             */*
+//             \                  *\*               */*
+//              \   'drain_exit'    *\*           */*
+//               \      /            *|*        */*
+//           RegionNode('new_prev')  *|*      */*
+//               |              *\*  *|*    */*
+//               |                PhiNode('phi')
+//               |                 */*    *\*
+//            min-trip guard (post loop)   *|*
+//              /        \                 */*
+//             /        IfTrue             */*
+//        IfFalse         |                */*
+//           |     |---> post loop head   */*
+//          ...    |      |            \ */*
+//                IfTrue  |        PhiNode <--|
+//                 |      |             |     |
+//                  loop end           addI -->
+//                     /
+//                  ...
+void PhaseIdealLoop::handle_data_uses_for_vectorized_drain(Node* old, Node_List &old_new,
                                                            IdealLoopTree* loop, IdealLoopTree* outer_loop,
                                                            Node_List& worklist, uint new_counter) {
   for (DUIterator_Fast jmax, j = old->fast_outs(jmax); j < jmax; j++)
     worklist.push(old->fast_out(j));
 
-  while(worklist.size()) {
+  while (worklist.size()) {
     Node* use = worklist.pop();
     if (!has_node(use)) continue; // Ignore dead nodes
     if (use->in(0) == C->top()) continue;
-    IdealLoopTree* use_loop = get_loop( has_ctrl(use) ? get_ctrl(use) : use );
+    IdealLoopTree* use_loop = get_loop(has_ctrl(use) ? get_ctrl(use) : use);
     if (!loop->is_member(use_loop) && !outer_loop->is_member(use_loop) && (!old->is_CFG() || !use->is_CFG())) {
 
       // Find the phi node merging the data from pre-loop and vector main-loop.
@@ -2389,8 +2483,8 @@ void PhaseIdealLoop::handle_data_uses_for_atomic_post_loop(Node* old, Node_List 
         if (curr->in(0)) {
           Node* merged_ctrl = old_new[curr->in(0)->_idx];
           assert(merged_ctrl->is_Region() && merged_ctrl->in(2)->is_Region(),
-                 "Must be a merge point of pre, main, and atomic post loops");
-          // The cloned node "newcurr" should be in the exit path of atomic post loop.
+                 "Must be a merge point of pre, main, and vectorized drain loops");
+          // The cloned node "newcurr" should be in the exit path of vectorized drain loop.
           newcurr->set_req(0, merged_ctrl->in(1));
         }
         for (uint j = 1; j < newcurr->req(); j++) {
@@ -2417,23 +2511,23 @@ void PhaseIdealLoop::handle_data_uses_for_atomic_post_loop(Node* old, Node_List 
         continue;
       }
 
-      while(!outer_loop->is_member(get_loop(cfg))) {
+      while (!outer_loop->is_member(get_loop(cfg))) {
         prev = cfg;
         cfg = (cfg->_idx >= new_counter && cfg->is_Region()) ? cfg->in(2) : idom(cfg);
       }
 
-      // "merge_phi" merges exits from the pre-loop and the vector main loop.
+      // "merge_phi" merges exits from the pre-loop and the main loop.
       // NOW we do need a new Phi here which merges "merge_phi" and data from
-      // atomic post loop.
-      prev = old_new[prev->_idx];
-      assert(prev, "just made this in step 3");
+      // vectorized drain loop.
+      Node* new_prev = old_new[prev->_idx];
+      assert(new_prev, "just made this in step 3");
       // Make a new Phi merging data values properly
       Node* nnn = old_new[last_in->_idx];
-      Node* phi = PhiNode::make(prev, nnn);
+      Node* phi = PhiNode::make(new_prev, nnn);
       phi->set_req(2, merge_phi);
       // If inserting a new Phi, check for prior hits
       Node* hit = _igvn.hash_find_insert(phi);
-      if(hit == nullptr) {
+      if (hit == nullptr) {
         // Register new phi
         _igvn.register_new_node_with_optimizer(phi);
       } else {
@@ -2441,7 +2535,7 @@ void PhaseIdealLoop::handle_data_uses_for_atomic_post_loop(Node* old, Node_List 
         _igvn.remove_dead_node(phi);
         phi = hit;
       }
-      set_ctrl(phi, prev);
+      set_ctrl(phi, new_prev);
       _igvn.add_users_to_worklist(merge_phi);
 
       // We make all uses of "merge_phi", excluding the new "phi",
@@ -2451,7 +2545,7 @@ void PhaseIdealLoop::handle_data_uses_for_atomic_post_loop(Node* old, Node_List 
         if (merge_phi->raw_out(i) != phi)
           visit_list.push(merge_phi->raw_out(i));
       }
-      while(visit_list.size()) {
+      while (visit_list.size()) {
         Node* useuse = visit_list.pop();
         _igvn.rehash_node_delayed(useuse);
         for (uint k = 1; k < useuse->req(); k++) {
@@ -2650,19 +2744,19 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
 // nodes are exactly equal to their old-loop counterparts, all edges are the
 // same.
 //
-// For most modes (except InsertAtomicPost):
+// For most modes (except InsertVectorizedDrain):
 // All exits from the old-loop now have a RegionNode that merges the
 // equivalent new-loop path.  This is true even for the normal "loop-exit"
 // condition.  All uses of loop-variant old-loop values now come from
 // (one or more) Phis that merge their new-loop equivalents.
 //
-// For InsertAtomicPost mode:
+// For InsertVectorizedDrain mode:
 // all control uses of exits from old-loop now should use new RegionNodes
 // that merges RegionNode which merges exits from pre-loop and main-loop
-// and exits from the new-loop (atomic post loop).All data uses of values
+// and exits from the new-loop (vectorized drain loop).All data uses of values
 // from old-loop now should use new Phis that merges Phis which merges
 // values from pre-loop and main-loop and values from the new-loop
-// (atomic post loop) equivalents.
+// (vectorized drain loop) equivalents.
 //
 // This operation leaves the graph in an illegal state: there are two valid
 // control edges coming from the loop pre-header to both loop bodies.  I'll
@@ -2732,18 +2826,29 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   Node_List *split_cex_set = nullptr;
   fix_data_uses(loop->_body, loop, mode, outer_loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
 
-  if (mode != InsertAtomicPost) {
-    for (uint i = 0; i < extra_data_nodes.size(); i++) {
-      Node* old = extra_data_nodes.at(i);
-      clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
-                                  split_bool_set, split_cex_set, worklist, new_counter,
-                                  mode);
-    }
-  } else {
-    for (uint i = 0; i < extra_data_nodes.size(); i++) {
-      Node* old = extra_data_nodes.at(i);
-      handle_data_uses_for_atomic_post_loop(old, old_new, loop, outer_loop, worklist, new_counter);
-    }
+  switch (mode) {
+    case InsertVectorizedDrain:
+      for (uint i = 0; i < extra_data_nodes.size(); i++) {
+        Node* old = extra_data_nodes.at(i);
+        handle_data_uses_for_vectorized_drain(old, old_new, loop, outer_loop,
+                                              worklist, new_counter);
+      }
+      break;
+
+    case IgnoreStripMined:
+    case CloneIncludesStripMined:
+    case ControlAroundStripMined:
+      for (uint i = 0; i < extra_data_nodes.size(); i++) {
+        Node* old = extra_data_nodes.at(i);
+        clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
+                                    split_bool_set, split_cex_set, worklist, new_counter,
+                                    mode);
+      }
+      break;
+
+    default:
+      assert(false, "should not reach here");
+      break;
   }
 
   // Check for IFs that need splitting/cloning.  Happens if an IF outside of
@@ -2789,17 +2894,27 @@ void PhaseIdealLoop::finish_clone_loop(Node_List* split_if_set, Node_List* split
 void PhaseIdealLoop::fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
                                    uint new_counter, Node_List &old_new, Node_List &worklist, Node_List*& split_if_set,
                                    Node_List*& split_bool_set, Node_List*& split_cex_set) {
-  if (mode != InsertAtomicPost) {
-    for (uint i = 0; i < body.size(); i++ ) {
-      Node* old = body.at(i);
-      clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set, split_bool_set,
-                                  split_cex_set, worklist, new_counter, mode);
-    }
-  } else {
-    for (uint i = 0; i < body.size(); i++ ) {
-      Node* old = body.at(i);
-      handle_data_uses_for_atomic_post_loop(old, old_new, loop, outer_loop, worklist, new_counter);
-    }
+  switch (mode) {
+    case InsertVectorizedDrain:
+      for (uint i = 0; i < body.size(); i++) {
+        Node* old = body.at(i);
+        handle_data_uses_for_vectorized_drain(old, old_new, loop, outer_loop, worklist, new_counter);
+      }
+      break;
+
+    case IgnoreStripMined:
+    case CloneIncludesStripMined:
+    case ControlAroundStripMined:
+      for (uint i = 0; i < body.size(); i++) {
+        Node* old = body.at(i);
+        clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set, split_bool_set,
+                                    split_cex_set, worklist, new_counter, mode);
+      }
+      break;
+
+    default:
+      assert(false, "Should not reach here.");
+      break;
   }
 }
 
@@ -2854,14 +2969,23 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         set_loop(newuse, use_loop);
         set_idom(newuse, nnn, dom_depth(nnn) + 1 );
 
-        // We need to fix control uses for cloning atomic post loop and other loops
+        // We need to fix control uses for cloning vectorized drain loop and other loops
         // in different ways.
-        if (mode != InsertAtomicPost) {
-          fix_ctrl_uses_for_common_loop(use, newuse, old_new, use_loop, side_by_side_idom);
-        } else {
-          fix_ctrl_uses_for_atomic_post(use, newuse, old_new, use_loop);
-        }
+        switch (mode) {
+          case InsertVectorizedDrain:
+            fix_ctrl_uses_for_vectorized_drain(use, newuse, old_new, use_loop);
+            break;
 
+          case IgnoreStripMined:
+          case CloneIncludesStripMined:
+          case ControlAroundStripMined:
+            fix_ctrl_uses_for_common_loop(use, newuse, old_new, use_loop, side_by_side_idom);
+            break;
+
+          default:
+            assert(false, "should not reach here");
+            break;
+        }
       } // End of if a loop-exit test
     }
   }
@@ -2892,7 +3016,7 @@ void PhaseIdealLoop::fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node
       }
     }
     for (uint k = 1; k < useuse->req(); k++) {
-      if( useuse->in(k) == use ) {
+      if (useuse->in(k) == use) {
         useuse->set_req(k, r);
         uses_found++;
         if (useuse->is_Loop() && k == LoopNode::EntryControl) {
@@ -2928,9 +3052,69 @@ void PhaseIdealLoop::fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node
   old_new.map(use_clone->_idx, r);
 }
 
-void PhaseIdealLoop::fix_ctrl_uses_for_atomic_post(Node* use, Node* newuse, Node_List& old_new,
-                                                   IdealLoopTree* use_loop) {
-  // We need a Region to merge the exit from the cloned body(atomic post loop)
+// After clone_loop_body() and fix_body_edges(), now the control uses of the new loop body
+// is like:
+// (To simplify it, we ignore the outer strip-mined loop here.)
+
+//        pre loop head <---|
+//            |             |
+//        pre loop end -> IfTrue
+//              |
+//            IfFalse (pre loop exit)
+//              |
+//      min-trip guard (main loop)
+//            /     \
+//           /      IfTrue
+//          /        |   \________________
+//         |         |                    \
+//         |  main loop head <---|      vectorized drain loop head <---|
+//         |       |             |             |                       |
+//         |       | loop body   |             |    new loop body      |
+//         |       |             |             |                       |
+//         |  main loop end -> IfTrue   vectorized drain loop end -> IfTrue
+//      IfFalse    |
+//          \    IfFalse
+//           \     |
+//          RegionNode ('merge_point')
+//              |
+//      min-trip guard (post loop)
+//           |     \
+//           |    IfTrue
+//       IfFalse      \
+//           |      post loop
+//           |      /
+//         after loop
+
+// 'newuse' is cloned from 'use', i.e. IfFalse (main loop exit) and used as
+// the exit of vectorized drain loop. 'merge_point' is the RegionNode merging
+// the exit of main loop and the false path of minimum trip guard for main loop.
+// We create a new RegionNode, r, to merge all exit path from previous loop.
+// Then part of the graph above becomes:
+
+//      min-trip guard (main loop)
+//            /     \
+//           /      IfTrue
+//          /        |   \________________
+//         |         |                    \
+//         |  main loop head <---|      vectorized drain loop head <---|
+//         |       |             |             |                       |
+//         |       | loop body   |             |    new loop body      |
+//         |       |             |             |                       |
+//         |  main loop end -> IfTrue   vectorized drain loop end -> IfTrue
+//      IfFalse    |                          *|*
+//          \    IfFalse ('use')             IfFalse ('newuse')
+//           \     |                          */*
+//          RegionNode ('merge_point')       */*
+//                          *\*             */*
+//                          new RegionNode ('r')
+//                                 |
+//                         min-trip guard (post loop)
+
+// After this step, the loop structure here is still not correct but all
+// control uses of the vectorized drain loop have been fixed.
+void PhaseIdealLoop::fix_ctrl_uses_for_vectorized_drain(Node* use, Node* newuse, Node_List& old_new,
+                                                        IdealLoopTree* use_loop) {
+  // We need a Region to merge the exit from the cloned body(vectorized drain loop)
   // and the merge point of exits from the vector main-loop and pre-loop.
 
   // We need to find the Region node merging exits from the vector main-loop
@@ -2947,7 +3131,7 @@ void PhaseIdealLoop::fix_ctrl_uses_for_atomic_post(Node* use, Node* newuse, Node
   // Now we need a new Region node.
   RegionNode* r = new RegionNode(3);
   uint dd_r = MIN2(dom_depth(newuse), dom_depth(merge_point));
-  assert(dd_r >= dom_depth(dom_lca(newuse, merge_point)), "" );
+  assert(dd_r >= dom_depth(dom_lca(newuse, merge_point)), "");
   set_loop(r, use_loop);
   set_idom(r, newuse->in(0), dd_r);
 
@@ -2971,7 +3155,7 @@ void PhaseIdealLoop::fix_ctrl_uses_for_atomic_post(Node* use, Node* newuse, Node
       }
     }
     for (uint k = 1; k < useuse->req(); k++) {
-      if( useuse->in(k) == merge_point ) {
+      if (useuse->in(k) == merge_point) {
         useuse->set_req(k, r);
         if (useuse->is_Loop() && k == LoopNode::EntryControl) {
           // This is not a dom_depth > dd_r because when new

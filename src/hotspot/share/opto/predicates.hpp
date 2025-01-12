@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -977,7 +977,7 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   bool _has_hoisted_check_parse_predicates;
   const NodeInLoopBody& _node_in_loop_body;
   const bool _clone_template;
-  const bool _is_copy_atomic_post;
+  const bool _insert_vectorized_drain;
 
   IfTrueNode* clone_template_and_replace_init_input(const TemplateAssertionPredicate& template_assertion_predicate);
   IfTrueNode* initialize_from_template(const TemplateAssertionPredicate& template_assertion_predicate,
@@ -985,9 +985,9 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   void rewire_to_old_predicate_chain_head(Node* initialized_assertion_predicate_success_proj) const;
 
  public:
-
   CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head, PhaseIdealLoop* phase,
-                                   const NodeInLoopBody& node_in_loop_body, bool clone_template);
+                                   const NodeInLoopBody& node_in_loop_body, bool clone_template,
+                                   bool insert_vectorized_drain);
   NONCOPYABLE(CreateAssertionPredicatesVisitor);
 
   using PredicateVisitor::visit;
@@ -995,19 +995,6 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   void visit(const ParsePredicate& parse_predicate) override;
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
   void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override;
-  // Did we create any new Initialized Assertion Predicates?
-  bool has_created_predicates() const {
-    return _new_control != _old_target_loop_entry;
-  }
-
-  // Return the last created node by this visitor or the originally provided 'new_control' to the visitor if there was
-  // no new node created (i.e. no Template Assertion Predicates found).
-  IfTrueNode* last_created_success_proj() const {
-    assert(has_created_predicates(), "should only be queried if new nodes have been created");
-    assert(_new_control->unique_ctrl_out_or_null() == nullptr, "no control outputs, yet");
-    assert(_new_control->is_IfTrue(), "Assertion Predicates only have IfTrue on success proj");
-    return _new_control->as_IfTrue();
-  }
 };
 
 // This visitor collects all Template Assertion Predicates If nodes or the corresponding Opaque nodes, depending on the

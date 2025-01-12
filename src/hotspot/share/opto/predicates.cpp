@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,8 +276,7 @@ bool InitializedAssertionPredicate::is_predicate(Node* node) {
 }
 
 void InitializedAssertionPredicate::kill(PhaseIdealLoop* phase) const {
-  Node* true_con = phase->igvn().intcon(1);
-  phase->set_ctrl(true_con, phase->C->root());
+  Node* true_con = phase->intcon(1);
   phase->igvn().replace_input_of(head(), 1, true_con);
 }
 
@@ -884,7 +883,8 @@ void Predicates::dump_for_loop(LoopNode* loop_node) {
 CreateAssertionPredicatesVisitor::CreateAssertionPredicatesVisitor(CountedLoopNode* target_loop_head,
                                                                    PhaseIdealLoop* phase,
                                                                    const NodeInLoopBody& node_in_loop_body,
-                                                                   const bool clone_template)
+                                                                   const bool clone_template,
+                                                                   const bool insert_vectorized_drain)
     : _init(target_loop_head->init_trip()),
       _stride(target_loop_head->stride()),
       _old_target_loop_entry(target_loop_head->skip_strip_mined()->in(LoopNode::EntryControl)),
@@ -892,7 +892,8 @@ CreateAssertionPredicatesVisitor::CreateAssertionPredicatesVisitor(CountedLoopNo
       _phase(phase),
       _has_hoisted_check_parse_predicates(false),
       _node_in_loop_body(node_in_loop_body),
-      _clone_template(clone_template) {}
+      _clone_template(clone_template),
+      _insert_vectorized_drain(insert_vectorized_drain) {}
 
 // Keep track of whether we are in the correct Predicate Block where Template Assertion Predicates can be found.
 // The PredicateIterator will always start at the loop entry and first visits the Loop Limit Check Predicate Block.
@@ -905,7 +906,7 @@ void CreateAssertionPredicatesVisitor::visit(const ParsePredicate& parse_predica
 }
 
 void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
-  if (!_has_hoisted_check_parse_predicates && !_is_copy_atomic_post) {
+  if (!_has_hoisted_check_parse_predicates && !_insert_vectorized_drain) {
     // Only process if we are in the correct Predicate Block.
     return;
   }
@@ -920,11 +921,11 @@ void CreateAssertionPredicatesVisitor::visit(const TemplateAssertionPredicate& t
 }
 
 void CreateAssertionPredicatesVisitor::visit(const InitializedAssertionPredicate& initialized_assertion_predicate) {
-  if (!_is_copy_atomic_post) {
+  if (!_insert_vectorized_drain) {
     // Only process if we are in the correct Predicate Block.
     return;
   }
-  initialized_assertion_predicate.rewire_loop_data_dependencies(_new_control->as_IfTrue(), _node_in_loop_body, _phase);
+  initialized_assertion_predicate.rewire_loop_data_dependencies(_old_target_loop_entry->as_IfTrue(), _node_in_loop_body, _phase);
 }
 
 // Create an Initialized Assertion Predicate from the provided Template Assertion Predicate.

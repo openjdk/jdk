@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,8 @@
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(BEFORE_ATOMIC_POST,             "Before Atomic Post Loops") \
-  flags(AFTER_ATOMIC_POST,              "After Atomic Post Loops") \
+  flags(BEFORE_VECTORIZED_DRAIN,        "Before Vectorized Drain Loop") \
+  flags(AFTER_VECTORIZED_DRAIN,         "After Vectorized Drain Loop") \
   flags(AUTO_VECTORIZATION1_BEFORE_APPLY,       "AutoVectorization 1, Before Apply") \
   flags(AUTO_VECTORIZATION2_AFTER_REORDER,      "AutoVectorization 2, After Apply Memop Reordering") \
   flags(AUTO_VECTORIZATION3_AFTER_ADJUST_LIMIT, "AutoVectorization 3, After Adjusting Pre-Loop Limit") \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import org.openjdk.jmh.annotations.Warmup;
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @CompilerControl(CompilerControl.Mode.DONT_INLINE)
 
-public class AtomicPostLoopPerf {
+public class VectorizedDrainLoopPerf {
     @Param({ "1",  "2",  "3",  "4",  "5",  "6",  "7",  "8",  "9",
              "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
              "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",

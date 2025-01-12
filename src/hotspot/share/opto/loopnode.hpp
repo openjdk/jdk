@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ protected:
          PassedSlpAnalysis     = 1<<8,
          DoUnrollOnly          = 1<<9,
          VectorizedLoop        = 1<<10,
-         HasAtomicPostLoop     = 1<<11,
+         HasVectorizedDrain    = 1<<11,
          StripMined            = 1<<12,
          SubwordLoop           = 1<<13,
          ProfileTripFailed     = 1<<14,
@@ -108,7 +108,7 @@ public:
   void mark_passed_slp() { _loop_flags |= PassedSlpAnalysis; }
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
   void mark_loop_vectorized() { _loop_flags |= VectorizedLoop; }
-  void mark_has_atomic_post_loop() { _loop_flags |= HasAtomicPostLoop; }
+  void mark_has_vectorized_drain_loop() { _loop_flags |= HasVectorizedDrain; }
   void mark_strip_mined() { _loop_flags |= StripMined; }
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
@@ -271,6 +271,10 @@ public:
   // so the following main loop 'knows' that it is striding down cache
   // lines.
 
+  // If the 'main' loop is auto-vectorized and super-unrolled, it also
+  // has a 'vectorized drain' loop, which is copied from vectorized but
+  // not super-unrolled 'main' loop and inserted post the 'main' loop.
+
   // A 'main' loop that is ONLY unrolled or peeled, never RCE'd or
   // Aligned, may be missing it's pre-loop.
   bool is_normal_loop   () const { return (_loop_flags&PreMainPostFlagsMask) == Normal; }
@@ -281,7 +285,7 @@ public:
   bool has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
   bool is_unroll_only   () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
   bool is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
-  bool has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
+  bool has_vectorized_drain_loop () const { return (_loop_flags & HasVectorizedDrain) == HasVectorizedDrain; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
   int main_idx() const { return _main_idx; }
@@ -953,12 +957,10 @@ private:
                                                      uint first_node_index_in_cloned_loop_body,
                                                      const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
-                                                     uint first_node_index_in_cloned_loop_body);
-  void initialize_assertion_predicates_for_atomic_post(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
-                                                       uint first_node_index_in_cloned_loop_body);
+                                                     uint first_node_index_in_cloned_loop_body, bool insert_vectorized_drain);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
                                            const NodeInLoopBody& _node_in_loop_body, bool clone_template,
-                                           const bool is_copy_atomic_post);
+                                           const bool insert_vectorized_drain);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();
@@ -1266,19 +1268,19 @@ public:
   // new-loop nodes are exactly equal to their old-loop counterparts, all
   // edges are the same.
   //
-  // For most modes (except InsertAtomicPost):
+  // For most modes (except InsertVectorizedDrain):
   // All exits from the old-loop now have a RegionNode that merges the
   // equivalent new-loop path.  This is true even for the normal "loop-exit"
   // condition.  All uses of loop-variant old-loop values now come from
   // (one or more) Phis that merge their new-loop equivalents.
   //
-  // For InsertAtomicPost mode:
+  // For InsertVectorizedDrain mode:
   // all control uses of exits from old-loop now should use new RegionNodes
   // that merges RegionNode which merges exits from pre-loop and main-loop
-  // and exits from the new-loop (atomic post loop).All data uses of values
+  // and exits from the new-loop (vectorized drain loop).All data uses of values
   // from old-loop now should use new Phis that merges Phis which merges
   // values from pre-loop and main-loop and values from the new-loop
-  // (atomic post loop) equivalents.
+  // (vectorized drain loop) equivalents.
   //
   // Parameter side_by_side_idom:
   //   When side_by_size_idom is null, the dominator tree is constructed for
@@ -1294,10 +1296,10 @@ public:
                                  // result control flow branches
                                  // either to inner clone or outer
                                  // strip mined loop.
-    InsertAtomicPost = 3         // Only clone inner strip mined vector loop,
+    InsertVectorizedDrain = 3    // Only clone inner strip mined vector loop,
                                  // result control flow branches to old post loop
-                                 // with merged exits from vector main loop and
-                                 // pre loop
+                                 // with merged exits from the main loop and
+                                 // the pre loop
   };
   void clone_loop( IdealLoopTree *loop, Node_List &old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
@@ -1306,7 +1308,7 @@ public:
                                    Node_List*& split_if_set, Node_List*& split_bool_set,
                                    Node_List*& split_cex_set, Node_List& worklist,
                                    uint new_counter, CloneLoopMode mode);
-  void handle_data_uses_for_atomic_post_loop(Node* old, Node_List& old_new,
+  void handle_data_uses_for_vectorized_drain(Node* old, Node_List& old_new,
                                              IdealLoopTree* loop, IdealLoopTree* companion_loop,
                                              Node_List& worklist, uint new_counter);
   void clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
@@ -1327,26 +1329,23 @@ public:
   void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
 
   // Add post loop after the given loop.
-  Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
+  Node* insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                         Node*& incr, Node* limit, CountedLoopNode*& post_head);
+                         Node*& incr, Node* limit, CountedLoopNode*& post_head,
+                         CloneLoopMode mode);
 
-  // Add an atomic vector post loop between a vector main loop and the current post loop
-  void insert_atomic_post_loop(IdealLoopTree *loop, Node_List &old_new);
-  // The main implementation of inserting atomic post loop after vector main loop.
-  void insert_atomic_post_loop_impl(IdealLoopTree* loop, Node_List& old_new,
-                                    CountedLoopNode* main_head, CountedLoopEndNode* main_end,
-                                    Node*& incr, Node* limit, CountedLoopNode*& post_head);
+  // Add a vectorized drain loop between the main loop and the current post loop.
+  void insert_vectorized_drain_loop(IdealLoopTree* loop, Node_List& old_new);
   // If Node n lives in the back_ctrl block, we clone a private version of n
   // in preheader_ctrl block and return that, otherwise return n.
   Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
   // If Node n lives in the back_ctrl block, we clone a private version of n
   // in preheader_ctrl block and return that, otherwise return a phi node
-  // merging the vector main loop and the pre loop.
+  // merging the main loop and the pre loop.
   // When n is dead, return nullptr.
-  Node* clone_up_atomic_post_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n,
-                                          VectorSet& visited, Node_Stack& clones,
-                                          Node* merge_point, Node* main_phi);
+  Node* clone_up_vectorized_drain_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n,
+                                               VectorSet& visited, Node_Stack& clones,
+                                               Node* merge_point, Node* main_phi);
 
   // Take steps to maximally unroll the loop.  Peel any odd iterations, then
   // unroll to do double iterations.  The next round of major loop transforms
@@ -1802,12 +1801,12 @@ public:
   void fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
                       IdealLoopTree* parent, bool partial);
 
-  void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List& old_new, CloneLoopMode mode,
-                     Node* side_by_side_idom, CloneMap* cm, Node_List& worklist);
+  void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
+                Node* side_by_side_idom, CloneMap* cm, Node_List &worklist);
   void fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node_List& old_new,
                                      IdealLoopTree* use_loop, Node* side_by_side_idom);
-  void fix_ctrl_uses_for_atomic_post(Node* use, Node* newuse, Node_List& old_new,
-                                     IdealLoopTree* use_loop);
+  void fix_ctrl_uses_for_vectorized_drain(Node* use, Node* newuse, Node_List& old_new,
+                                          IdealLoopTree* use_loop);
 
   void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
                      uint new_counter, Node_List& old_new, Node_List& worklist, Node_List*& split_if_set,
