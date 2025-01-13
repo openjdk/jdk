@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.rmi.MarshalledObject;
 import java.rmi.UnmarshalException;
 import java.rmi.server.Unreferenced;
-import java.security.PrivilegedActionException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -190,12 +189,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                              className+", name=" + name);
 
             return (ObjectInstance)
-                doPrivilegedOperation(
+                doOperation(
                   CREATE_MBEAN,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof ReflectionException)
                 throw (ReflectionException) e;
             if (e instanceof InstanceAlreadyExistsException)
@@ -208,7 +206,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (NotCompliantMBeanException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -237,12 +239,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                       +", loaderName=" + loaderName);
 
             return (ObjectInstance)
-                doPrivilegedOperation(
+                doOperation(
                   CREATE_MBEAN_LOADER,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof ReflectionException)
                 throw (ReflectionException) e;
             if (e instanceof InstanceAlreadyExistsException)
@@ -257,7 +258,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -300,12 +305,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                              +", signature=" + strings(signature));
 
             return (ObjectInstance)
-                doPrivilegedOperation(
+                doOperation(
                   CREATE_MBEAN_PARAMS,
                   params2,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof ReflectionException)
                 throw (ReflectionException) e;
             if (e instanceof InstanceAlreadyExistsException)
@@ -318,7 +322,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (NotCompliantMBeanException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -366,12 +374,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +", signature=" + strings(signature));
 
             return (ObjectInstance)
-                doPrivilegedOperation(
+                doOperation(
                   CREATE_MBEAN_LOADER_PARAMS,
                   params2,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof ReflectionException)
                 throw (ReflectionException) e;
             if (e instanceof InstanceAlreadyExistsException)
@@ -386,7 +393,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -403,19 +414,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId
                  +", name="+name);
 
-            doPrivilegedOperation(
+            doOperation(
               UNREGISTER_MBEAN,
               params,
               delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof MBeanRegistrationException)
                 throw (MBeanRegistrationException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -436,17 +450,20 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +", name="+name);
 
             return (ObjectInstance)
-                doPrivilegedOperation(
+                doOperation(
                   GET_OBJECT_INSTANCE,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -474,15 +491,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +", name="+name +", query="+query);
 
             return cast(
-                doPrivilegedOperation(
+                doOperation(
                   QUERY_MBEANS,
                   params,
                   delegationSubject));
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -510,15 +530,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  +", name="+name +", query="+query);
 
             return cast(
-                doPrivilegedOperation(
+                doOperation(
                   QUERY_NAMES,
                   params,
                   delegationSubject));
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -528,15 +551,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             final Object params[] = new Object[] { name };
             return ((Boolean)
-                doPrivilegedOperation(
+                doOperation(
                   IS_REGISTERED,
                   params,
                   delegationSubject)).booleanValue();
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -550,15 +576,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                  "connectionId=" + connectionId);
 
             return (Integer)
-                doPrivilegedOperation(
+                doOperation(
                   GET_MBEAN_COUNT,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -580,12 +609,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                    +", attribute="+ attribute);
 
             return
-                doPrivilegedOperation(
+                doOperation(
                   GET_ATTRIBUTE,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof MBeanException)
                 throw (MBeanException) e;
             if (e instanceof AttributeNotFoundException)
@@ -596,7 +624,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -617,19 +649,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                    +", attributes="+ strings(attributes));
 
             return (AttributeList)
-                doPrivilegedOperation(
+                doOperation(
                   GET_ATTRIBUTES,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof ReflectionException)
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -665,12 +700,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                              +", name="+name
                              +", attribute name="+attr.getName());
 
-            doPrivilegedOperation(
+            doOperation(
               SET_ATTRIBUTE,
               params,
               delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof AttributeNotFoundException)
@@ -683,7 +717,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -718,19 +756,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                              +", attribute names="+RMIConnector.getAttributesNames(attrlist));
 
             return (AttributeList)
-                doPrivilegedOperation(
+                doOperation(
                   SET_ATTRIBUTES,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof ReflectionException)
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -774,12 +815,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                              +", signature="+strings(signature));
 
             return
-                doPrivilegedOperation(
+                doOperation(
                   INVOKE,
                   params2,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof MBeanException)
@@ -788,7 +828,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -802,15 +846,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                     "connectionId=" + connectionId);
 
             return (String)
-                doPrivilegedOperation(
+                doOperation(
                   GET_DEFAULT_DOMAIN,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -823,15 +870,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                     "connectionId=" + connectionId);
 
             return (String[])
-                doPrivilegedOperation(
+                doOperation(
                   GET_DOMAINS,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -853,12 +903,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                     +", name="+name);
 
             return (MBeanInfo)
-                doPrivilegedOperation(
+                doOperation(
                   GET_MBEAN_INFO,
                   params,
                   delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof IntrospectionException)
@@ -867,7 +916,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -888,17 +941,20 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                     +", className="+className);
 
             return ((Boolean)
-                doPrivilegedOperation(
+                doOperation(
                   IS_INSTANCE_OF,
                   params,
                   delegationSubject)).booleanValue();
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -960,7 +1016,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                         +", filter=" + filterValues[i]);
 
                 ids[i] = (Integer)
-                    doPrivilegedOperation(ADD_NOTIFICATION_LISTENERS,
+                    doOperation(ADD_NOTIFICATION_LISTENERS,
                                           new Object[] { names[i],
                                                          filterValues[i] },
                                           null);
@@ -978,10 +1034,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 }
             }
 
-            if (e instanceof PrivilegedActionException) {
-                e = extractException(e);
-            }
-
             if (e instanceof ClassCastException) {
                 throw (ClassCastException) e;
             } else if (e instanceof IOException) {
@@ -990,8 +1042,12 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             } else if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
+            } else if (e instanceof SecurityException) {
+                throw (SecurityException) e;
+            } else if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
             } else {
-                throw newIOException("Got unexpected server exception: "+e,e);
+                throw new IOException("Got unexpected server exception: " + e, e);
             }
         }
     }
@@ -1042,17 +1098,20 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                              +", filter=" + filterValue
                              +", handback=" + handbackValue);
 
-            doPrivilegedOperation(
+            doOperation(
               ADD_NOTIFICATION_LISTENER_OBJECTNAME,
               params,
               delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -1082,19 +1141,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                    +", name=" + name
                                    +", listenerIDs=" + objects(listenerIDs));
 
-            doPrivilegedOperation(
+            doOperation(
               REMOVE_NOTIFICATION_LISTENER,
               params,
               delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof ListenerNotFoundException)
                 throw (ListenerNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -1119,19 +1181,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                    +", name=" + name
                                    +", listenerName=" + listener);
 
-            doPrivilegedOperation(
+            doOperation(
               REMOVE_NOTIFICATION_LISTENER_OBJECTNAME,
               params,
               delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof ListenerNotFoundException)
                 throw (ListenerNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -1184,19 +1249,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                              +", filter=" + filterValue
                              +", handback=" + handbackValue);
 
-            doPrivilegedOperation(
+            doOperation(
               REMOVE_NOTIFICATION_LISTENER_OBJECTNAME_FILTER_HANDBACK,
               params,
               delegationSubject);
-        } catch (PrivilegedActionException pe) {
-            Exception e = extractException(pe);
+        } catch (Exception e) {
             if (e instanceof InstanceNotFoundException)
                 throw (InstanceNotFoundException) e;
             if (e instanceof ListenerNotFoundException)
                 throw (ListenerNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            throw newIOException("Got unexpected server exception: " + e, e);
+            if (e instanceof SecurityException)
+                throw (SecurityException) e;
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new IOException("Got unexpected server exception: " + e, e);
         }
     }
 
@@ -1293,10 +1361,10 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     }
 
     /** @throws UnsupportedOperationException {@inheritDoc} */
-    private Object doPrivilegedOperation(final int operation,
-                                         final Object[] params,
-                                         final Subject delegationSubject)
-        throws PrivilegedActionException, IOException {
+    private Object doOperation(final int operation,
+                               final Object[] params,
+                               final Subject delegationSubject)
+        throws Exception {
 
         // Subject Delegation is removed: locally this is caught earlier, in getMBeanServerConnection,
         // but remote connections call into RMIConnectionImpl over RMI, so deny them here:
@@ -1307,25 +1375,25 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             if (subject == null) {
                 try {
-                    return doOperation(operation, params);
+                    return doOperationInner(operation, params);
                 } catch (Exception e) {
                     if (e instanceof RuntimeException) {
                         throw (RuntimeException) e;
                     } else {
-                        throw new PrivilegedActionException(e);
+                        throw e;
                     }
-                }
+                } 
             } else {
                 try {
-                    return Subject.callAs(subject, () -> doOperation(operation, params));
+                    return Subject.callAs(subject, () -> doOperationInner(operation, params));
                 } catch (CompletionException ce) {
                     Throwable thr = ce.getCause();
                     if (thr instanceof SecurityException se) {
                         throw se;
                     } else if (thr instanceof IOException ioe) {
                         throw ioe;
-                    } else if (thr instanceof Exception e1) {
-                        throw new PrivilegedActionException(e1);
+                    } else if (thr instanceof Exception e) {
+                        throw e;
                     } else {
                         throw new RuntimeException(thr);
                     }
@@ -1338,8 +1406,11 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
-    private Object doOperation(int operation, Object[] params)
+    private Object doOperationInner(int operation, Object[] params)
         throws Exception {
+
+        // Renamed this method to ensure nothing accidentally calls it.
+        // All calls are to the 3-argument doOperation(), except those from that method.
 
         switch (operation) {
 
@@ -1537,26 +1608,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             logger.debug("unwrap", e);
         }
         return null;
-    }
-
-    /**
-     * Construct a new IOException with a nested exception.
-     * The nested exception is set only if JDK {@literal >= 1.4}
-     */
-    private static IOException newIOException(String message,
-                                              Throwable cause) {
-        return new IOException(message, cause);
-    }
-
-    /**
-     * Iterate until we extract the real exception
-     * from a stack of PrivilegedActionExceptions.
-     */
-    private static Exception extractException(Exception e) {
-        while (e instanceof PrivilegedActionException) {
-            e = ((PrivilegedActionException)e).getException();
-        }
-        return e;
     }
 
     private static final Object[] NO_OBJECTS = new Object[0];
