@@ -48,11 +48,10 @@ public class LoopingTruncate {
     static long TIMEOUT = adjustTimeout(20_000);
 
     public static void main(String[] args) throws Throwable {
-        Path path = Files.createTempFile(
-                // Intentionally opting out from the default `java.io.tmpdir`.
-                // It occasionally lacks the sufficient disk space this test needs.
-                Path.of(System.getProperty("user.dir")),
-                "LoopingTruncate.tmp", null);
+        // Intentionally opting out from the default `java.io.tmpdir`.
+        // It occasionally lacks the sufficient disk space this test needs.
+        Path pathDir = Path.of(System.getProperty("user.dir"));
+        Path path = Files.createTempFile(pathDir, "LoopingTruncate.tmp", null);
         try (FileChannel fc = FileChannel.open(path, CREATE, WRITE)) {
             fc.position(FATEFUL_SIZE + 1L);
             System.out.println("  Writing large file...");
