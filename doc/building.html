@@ -1499,6 +1499,9 @@ like this:</p>
 <ul>
 <li><p>Install cross-compiler on the <em>build</em> system:</p>
 <pre><code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></pre></li>
+<li><p>Install the tools to run "foreign" binaries (Error: <em>chroot:
+failed to run command /bin/true</em> occurs on the next step otherwise):</p>
+<pre><code>apt install qemu-user-static binfmt-support</code></pre></li>
 <li><p>Create chroot on the <em>build</em> system, configuring it for
 <em>target</em> system:</p>
 <pre><code>sudo debootstrap \

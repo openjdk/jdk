@@ -1305,6 +1305,13 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
   apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu
   ```
 
+* Install the tools to run "foreign" binaries (Error: *chroot: failed to run
+command /bin/true* occurs on the next step otherwise):
+
+  ```
+  apt install qemu-user-static binfmt-support
+  ```
+
 * Create chroot on the *build* system, configuring it for *target* system:
 
   ```
