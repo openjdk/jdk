@@ -68,6 +68,9 @@ public class Preview {
     /** flag: are preview features enabled */
     private final boolean enabled;
 
+    /** flag: is the "preview" lint category enabled? */
+    private final boolean verbose;
+
     /** the diag handler to manage preview feature usage diagnostics */
     private final MandatoryWarningHandler previewHandler;
 
@@ -80,7 +83,6 @@ public class Preview {
     private final Set<JavaFileObject> sourcesWithPreviewFeatures = new HashSet<>();
 
     private final Names names;
-    private final Lint lint;
     private final Log log;
     private final Source source;
 
@@ -101,10 +103,9 @@ public class Preview {
         names = Names.instance(context);
         enabled = options.isSet(PREVIEW);
         log = Log.instance(context);
-        lint = Lint.instance(context);
         source = Source.instance(context);
-        this.previewHandler =
-                new MandatoryWarningHandler(log, source, lint.isEnabled(LintCategory.PREVIEW), true, "preview", LintCategory.PREVIEW);
+        verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
+        previewHandler = new MandatoryWarningHandler(log, source, verbose, true, "preview", LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
     }
@@ -176,12 +177,10 @@ public class Preview {
     public void warnPreview(DiagnosticPosition pos, Feature feature) {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
-        if (!lint.isSuppressed(LintCategory.PREVIEW)) {
-            sourcesWithPreviewFeatures.add(log.currentSourceFile());
-            previewHandler.report(pos, feature.isPlural() ?
-                    LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-                    LintWarnings.PreviewFeatureUse(feature.nameFragment()));
-        }
+        sourcesWithPreviewFeatures.add(log.currentSourceFile());
+        previewHandler.report(pos, feature.isPlural() ?
+                LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
+                LintWarnings.PreviewFeatureUse(feature.nameFragment()));
     }
 
     /**
@@ -191,7 +190,7 @@ public class Preview {
      */
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
-        if (lint.isEnabled(LintCategory.PREVIEW)) {
+        if (verbose) {
             log.mandatoryWarning(null,
                     LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
