@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -283,7 +283,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   }
   st->print_cr("PUSH   R_FP|R_LR_LR"); st->print("\t");
   if (framesize != 0) {
-    st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
+    st->print   ("SUB    R_SP, R_SP, %zu", framesize);
   }
 
   if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
@@ -362,7 +362,7 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   framesize -= 2*wordSize;
 
   if (framesize != 0) {
-    st->print("ADD    R_SP, R_SP, " SIZE_FORMAT "\n\t",framesize);
+    st->print("ADD    R_SP, R_SP, %zu\n\t",framesize);
   }
   st->print("POP    R_FP|R_LR_LR");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,10 +157,10 @@ public:
     size_t npages_res = npages;
     const bool res = AllocateUserPhysicalPages(ZAWESection, &npages_res, &_page_array[index]);
     if (!res) {
-      fatal("Failed to allocate physical memory " SIZE_FORMAT "M @ " PTR_FORMAT " (%d)",
+      fatal("Failed to allocate physical memory %zuM @ " PTR_FORMAT " (%d)",
             size / M, untype(offset), GetLastError());
     } else {
-      log_debug(gc)("Allocated physical memory: " SIZE_FORMAT "M @ " PTR_FORMAT, size / M, untype(offset));
+      log_debug(gc)("Allocated physical memory: %zuM @ " PTR_FORMAT, size / M, untype(offset));
     }
 
     // AllocateUserPhysicalPages might not be able to allocate the requested amount of memory.
@@ -175,7 +175,7 @@ public:
     size_t npages_res = npages;
     const bool res = FreeUserPhysicalPages(ZAWESection, &npages_res, &_page_array[index]);
     if (!res) {
-      fatal("Failed to uncommit physical memory " SIZE_FORMAT "M @ " PTR_FORMAT " (%d)",
+      fatal("Failed to uncommit physical memory %zuM @ " PTR_FORMAT " (%d)",
             size, untype(offset), GetLastError());
     }
 
@@ -188,7 +188,7 @@ public:
 
     const bool res = MapUserPhysicalPages((char*)untype(addr), npages, &_page_array[index]);
     if (!res) {
-      fatal("Failed to map view " PTR_FORMAT " " SIZE_FORMAT "M @ " PTR_FORMAT " (%d)",
+      fatal("Failed to map view " PTR_FORMAT " %zuM @ " PTR_FORMAT " (%d)",
             untype(addr), size / M, untype(offset), GetLastError());
     }
   }
@@ -198,7 +198,7 @@ public:
 
     const bool res = MapUserPhysicalPages((char*)untype(addr), npages, nullptr);
     if (!res) {
-      fatal("Failed to unmap view " PTR_FORMAT " " SIZE_FORMAT "M (%d)",
+      fatal("Failed to unmap view " PTR_FORMAT " %zuM (%d)",
             addr, size / M, GetLastError());
     }
   }
@@ -224,14 +224,14 @@ void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
 }
 
 size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) {
-  log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Committing memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   return _impl->commit(offset, length);
 }
 
 size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) {
-  log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Uncommitting memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   return _impl->uncommit(offset, length);

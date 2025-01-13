@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,13 +185,13 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
 
   // Make sure the filesystem block size is compatible
   if (ZGranuleSize % _block_size != 0) {
-    ZInitialize::error("Filesystem backing the heap has incompatible block size (" SIZE_FORMAT ")",
+    ZInitialize::error("Filesystem backing the heap has incompatible block size (%zu)",
                        _block_size);
     return;
   }
 
   if (is_hugetlbfs() && _block_size != ZGranuleSize) {
-    ZInitialize::error("%s filesystem has unexpected block size " SIZE_FORMAT " (expected " SIZE_FORMAT ")",
+    ZInitialize::error("%s filesystem has unexpected block size %zu (expected %zu)",
                        ZFILESYSTEM_HUGETLBFS, _block_size, ZGranuleSize);
     return;
   }
@@ -316,7 +316,7 @@ void ZPhysicalMemoryBacking::warn_available_space(size_t max_capacity) const {
     return;
   }
 
-  log_info_p(gc, init)("Available space on backing filesystem: " SIZE_FORMAT "M", _available / M);
+  log_info_p(gc, init)("Available space on backing filesystem: %zuM", _available / M);
 
   // Warn if the filesystem doesn't currently have enough space available to hold
   // the max heap size. The max heap size will be capped if we later hit this limit
@@ -324,9 +324,9 @@ void ZPhysicalMemoryBacking::warn_available_space(size_t max_capacity) const {
   if (_available < max_capacity) {
     log_warning_p(gc)("***** WARNING! INCORRECT SYSTEM CONFIGURATION DETECTED! *****");
     log_warning_p(gc)("Not enough space available on the backing filesystem to hold the current max Java heap");
-    log_warning_p(gc)("size (" SIZE_FORMAT "M). Please adjust the size of the backing filesystem accordingly "
+    log_warning_p(gc)("size (%zuM). Please adjust the size of the backing filesystem accordingly "
                       "(available", max_capacity / M);
-    log_warning_p(gc)("space is currently " SIZE_FORMAT "M). Continuing execution with the current filesystem "
+    log_warning_p(gc)("space is currently %zuM). Continuing execution with the current filesystem "
                       "size could", _available / M);
     log_warning_p(gc)("lead to a premature OutOfMemoryError being thrown, due to failure to commit memory.");
   }
@@ -342,7 +342,7 @@ void ZPhysicalMemoryBacking::warn_max_map_count(size_t max_capacity) const {
   }
 
   size_t actual_max_map_count = 0;
-  const int result = fscanf(file, SIZE_FORMAT, &actual_max_map_count);
+  const int result = fscanf(file, "%zu", &actual_max_map_count);
   fclose(file);
   if (result != 1) {
     // Failed to read file, skip check
@@ -359,9 +359,9 @@ void ZPhysicalMemoryBacking::warn_max_map_count(size_t max_capacity) const {
   if (actual_max_map_count < required_max_map_count) {
     log_warning_p(gc)("***** WARNING! INCORRECT SYSTEM CONFIGURATION DETECTED! *****");
     log_warning_p(gc)("The system limit on number of memory mappings per process might be too low for the given");
-    log_warning_p(gc)("max Java heap size (" SIZE_FORMAT "M). Please adjust %s to allow for at",
+    log_warning_p(gc)("max Java heap size (%zuM). Please adjust %s to allow for at",
                       max_capacity / M, filename);
-    log_warning_p(gc)("least " SIZE_FORMAT " mappings (current limit is " SIZE_FORMAT "). Continuing execution "
+    log_warning_p(gc)("least %zu mappings (current limit is %zu). Continuing execution "
                       "with the current", required_max_map_count, actual_max_map_count);
     log_warning_p(gc)("limit could lead to a premature OutOfMemoryError being thrown, due to failure to map memory.");
   }
@@ -598,7 +598,7 @@ ZErrno ZPhysicalMemoryBacking::fallocate(bool punch_hole, zoffset offset, size_t
 }
 
 bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
-  log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Committing memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
 retry:
@@ -698,7 +698,7 @@ size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) const {
 }
 
 size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
-  log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Uncommitting memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const ZErrno err = fallocate(true /* punch_hole */, offset, length);
