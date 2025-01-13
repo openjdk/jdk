@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1099,7 +1099,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
     { // Bypass the barrier for non-static methods
       Register flags = rscratch1;
-      __ movl(flags, Address(method, Method::access_flags_offset()));
+      __ load_unsigned_short(flags, Address(method, Method::access_flags_offset()));
       __ testl(flags, JVM_ACC_STATIC);
       __ jcc(Assembler::zero, L_skip_barrier); // non-static
     }

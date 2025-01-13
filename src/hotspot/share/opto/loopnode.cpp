@@ -4458,7 +4458,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
     if (profiled_loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
     }
   }
 
@@ -4466,7 +4466,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
     if (loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
     }
   }
 }

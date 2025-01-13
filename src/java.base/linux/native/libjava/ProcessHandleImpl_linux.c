@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
 #include "ProcessHandleImpl_unix.h"
 
-
+#include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -60,9 +60,131 @@ void os_initNative(JNIEnv *env, jclass clazz) {
     pageSize = sysconf(_SC_PAGESIZE);
 }
 
+/*
+ * Return pids of active processes, and optionally parent pids and
+ * start times for each process.
+ * For a specific non-zero pid, only the direct children are returned.
+ * If the pid is zero, all active processes are returned.
+ * Reads /proc and accumulates any process following the rules above.
+ * The resulting pids are stored into an array of longs named jarray.
+ * The number of pids is returned if they all fit.
+ * If the parentArray is non-null, store also the parent pid.
+ * In this case the parentArray must have the same length as the result pid array.
+ * Of course in the case of a given non-zero pid all entries in the parentArray
+ * will contain this pid, so this array does only make sense in the case of a given
+ * zero pid.
+ * If the jstimesArray is non-null, store also the start time of the pid.
+ * In this case the jstimesArray must have the same length as the result pid array.
+ * If the array(s) (is|are) too short, excess pids are not stored and
+ * the desired length is returned.
+ */
 jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
                     jlongArray jparentArray, jlongArray jstimesArray) {
-    return unix_getChildren(env, jpid, jarray, jparentArray, jstimesArray);
+    DIR* dir;
+    struct dirent* ptr;
+    pid_t pid = (pid_t) jpid;
+    jlong* pids = NULL;
+    jlong* ppids = NULL;
+    jlong* stimes = NULL;
+    jsize parentArraySize = 0;
+    jsize arraySize = 0;
+    jsize stimesSize = 0;
+    jsize count = 0;
+
+    arraySize = (*env)->GetArrayLength(env, jarray);
+    JNU_CHECK_EXCEPTION_RETURN(env, -1);
+    if (jparentArray != NULL) {
+        parentArraySize = (*env)->GetArrayLength(env, jparentArray);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
+
+        if (arraySize != parentArraySize) {
+            JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
+            return 0;
+        }
+    }
+    if (jstimesArray != NULL) {
+        stimesSize = (*env)->GetArrayLength(env, jstimesArray);
+        JNU_CHECK_EXCEPTION_RETURN(env, -1);
+
+        if (arraySize != stimesSize) {
+            JNU_ThrowIllegalArgumentException(env, "array sizes not equal");
+            return 0;
+        }
+    }
+
+    /*
+     * To locate the children we scan /proc looking for files that have a
+     * position integer as a filename.
+     */
+    if ((dir = opendir("/proc")) == NULL) {
+        JNU_ThrowByNameWithMessageAndLastError(env,
+            "java/lang/RuntimeException", "Unable to open /proc");
+        return -1;
+    }
+
+    do { // Block to break out of on Exception
+        pids = (*env)->GetLongArrayElements(env, jarray, NULL);
+        if (pids == NULL) {
+            break;
+        }
+        if (jparentArray != NULL) {
+            ppids  = (*env)->GetLongArrayElements(env, jparentArray, NULL);
+            if (ppids == NULL) {
+                break;
+            }
+        }
+        if (jstimesArray != NULL) {
+            stimes  = (*env)->GetLongArrayElements(env, jstimesArray, NULL);
+            if (stimes == NULL) {
+                break;
+            }
+        }
+
+        while ((ptr = readdir(dir)) != NULL) {
+            pid_t ppid = 0;
+            jlong totalTime = 0L;
+            jlong startTime = 0L;
+
+            /* skip files that aren't numbers */
+            pid_t childpid = (pid_t) atoi(ptr->d_name);
+            if ((int) childpid <= 0) {
+                continue;
+            }
+
+            // Get the parent pid, and start time
+            ppid = os_getParentPidAndTimings(env, childpid, &totalTime, &startTime);
+            if (ppid >= 0 && (pid == 0 || ppid == pid)) {
+                if (count < arraySize) {
+                    // Only store if it fits
+                    pids[count] = (jlong) childpid;
+
+                    if (ppids != NULL) {
+                        // Store the parentPid
+                        ppids[count] = (jlong) ppid;
+                    }
+                    if (stimes != NULL) {
+                        // Store the process start time
+                        stimes[count] = startTime;
+                    }
+                }
+                count++; // Count to tabulate size needed
+            }
+        }
+    } while (0);
+
+    if (pids != NULL) {
+        (*env)->ReleaseLongArrayElements(env, jarray, pids, 0);
+    }
+    if (ppids != NULL) {
+        (*env)->ReleaseLongArrayElements(env, jparentArray, ppids, 0);
+    }
+    if (stimes != NULL) {
+        (*env)->ReleaseLongArrayElements(env, jstimesArray, stimes, 0);
+    }
+
+    closedir(dir);
+    // If more pids than array had size for; count will be greater than array size
+    return count;
 }
 
 /**

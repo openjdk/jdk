@@ -73,7 +73,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // Push self-frame.  We get here with a return address in RA
   // and sp should be 16 byte aligned
   // push fp and retaddr by hand
-  __ addi(sp, sp, -2 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(ra, Address(sp, wordSize));
   __ sd(fp, Address(sp, 0));
   // we don't expect an arg reg save area
@@ -140,7 +140,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   __ lwu(x12, Address(x14,
                       Deoptimization::UnrollBlock::
                       size_of_deoptimized_frame_offset()));
-  __ sub(x12, x12, 2 * wordSize);
+  __ subi(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
   __ ld(fp, Address(sp, 0));
   __ ld(ra, Address(sp, wordSize));
@@ -188,7 +188,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   Label loop;
   __ bind(loop);
   __ ld(x11, Address(x15, 0));       // Load frame size
-  __ sub(x11, x11, 2 * wordSize);    // We'll push pc and fp by hand
+  __ subi(x11, x11, 2 * wordSize);   // We'll push pc and fp by hand
   __ ld(ra, Address(x12, 0));        // Save return address
   __ enter();                        // and old fp & set new fp
   __ sub(sp, sp, x11);               // Prolog
@@ -196,9 +196,9 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // This value is corrected by layout_activation_impl
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ mv(sender_sp, sp);              // Pass sender_sp to next frame
-  __ add(x15, x15, wordSize);        // Bump array pointer (sizes)
-  __ add(x12, x12, wordSize);        // Bump array pointer (pcs)
-  __ subw(x13, x13, 1);              // Decrement counter
+  __ addi(x15, x15, wordSize);       // Bump array pointer (sizes)
+  __ addi(x12, x12, wordSize);       // Bump array pointer (pcs)
+  __ subiw(x13, x13, 1);             // Decrement counter
   __ bgtz(x13, loop);
   __ ld(ra, Address(x12, 0));        // save final return address
   // Re-push self-frame
@@ -292,7 +292,7 @@ void OptoRuntime::generate_exception_blob() {
 
   // push fp and retaddr by hand
   // Exception pc is 'return address' for stack walker
-  __ addi(sp, sp, -2 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(ra, Address(sp, wordSize));
   __ sd(fp, Address(sp));
   // there are no callee save registers and we don't expect an
@@ -346,7 +346,7 @@ void OptoRuntime::generate_exception_blob() {
   // and we dont' expect an arg reg save area
   __ ld(fp, Address(sp));
   __ ld(x13, Address(sp, wordSize));
-  __ addi(sp, sp , 2 * wordSize);
+  __ addi(sp, sp, 2 * wordSize);
 
   // x10: exception handler
 

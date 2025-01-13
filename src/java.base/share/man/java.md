@@ -1311,7 +1311,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 `-XX:+PreserveFramePointer`
 :   Selects between using the RBP register as a general purpose register
     (`-XX:-PreserveFramePointer`) and using the RBP register to hold the frame
-    pointer of the currently executing method (`-XX:+PreserveFramePointer` . If
+    pointer of the currently executing method (`-XX:+PreserveFramePointer`). If
     the frame pointer is available, then external profiling tools (for example,
     Linux perf) can construct more accurate stack traces.
 

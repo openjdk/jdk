@@ -53,6 +53,11 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
         maxLayerLength = enable ? 10 : -1;
     }
 
+   @Override
+    public boolean isFreeForm() {
+        return false;
+    }
+
     @Override
     public void doLayout(LayoutGraph layoutGraph) {
         layoutGraph.initializeLayout();

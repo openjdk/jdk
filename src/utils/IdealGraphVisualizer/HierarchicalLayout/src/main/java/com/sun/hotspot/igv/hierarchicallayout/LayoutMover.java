@@ -49,5 +49,7 @@ public interface LayoutMover {
      * @param movedVertex The vertex to be moved.
      */
     void moveVertex(Vertex movedVertex);
+
+    boolean isFreeForm();
 }
 

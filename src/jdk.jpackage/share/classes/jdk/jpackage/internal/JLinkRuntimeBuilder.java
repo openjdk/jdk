@@ -52,6 +52,7 @@ import java.util.jar.JarFile;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import jdk.internal.module.ModulePath;
 import jdk.jpackage.internal.model.AppImageLayout;
 
@@ -159,8 +160,10 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
 
         ModuleFinder finder = createModuleFinder(paths);
 
+        // Don't perform service bindings by default as outlined by JEP 343
+        // and JEP 392
         return Configuration.empty()
-                .resolveAndBind(finder, ModuleFinder.of(), roots)
+                .resolve(finder, ModuleFinder.of(), roots)
                 .modules()
                 .stream()
                 .map(ResolvedModule::name)
