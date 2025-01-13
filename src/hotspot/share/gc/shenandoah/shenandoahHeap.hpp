@@ -366,6 +366,12 @@ private:
   // This updates the singular, global gc state. This call must happen on a safepoint.
   void set_gc_state_at_safepoint(uint mask, bool value);
 
+  // This also updates the global gc state, but does not need to be called on a safepoint.
+  // Critically, this method will _not_ flag that the global gc state has changed and threads
+  // will continue to use their thread local copy. This is expected to be used in conjunction
+  // with a handshake operation to propagate the new gc state.
+  void set_gc_state_concurrent(uint mask, bool value);
+
 public:
   // This returns the raw value of the singular, global gc state.
   char gc_state() const;

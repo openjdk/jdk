@@ -1257,9 +1257,9 @@ void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
 void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   // It's possible that evacuation succeeded, but we could still be cancelled when we get here.
   // A cancellation at this point means the degenerated cycle must resume from update-refs.
-  _gc_state.set_cond(EVACUATION, false);
-  _gc_state.set_cond(WEAK_ROOTS, false);
-  _gc_state.set_cond(UPDATEREFS, true);
+  set_gc_state_concurrent(EVACUATION, false);
+  set_gc_state_concurrent(WEAK_ROOTS, false);
+  set_gc_state_concurrent(UPDATEREFS, true);
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
@@ -2001,6 +2001,10 @@ void ShenandoahHeap::set_gc_state_at_safepoint(uint mask, bool value) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   _gc_state.set_cond(mask, value);
   _gc_state_changed = true;
+}
+
+void ShenandoahHeap::set_gc_state_concurrent(uint mask, bool value) {
+  _gc_state.set_cond(mask, value);
 }
 
 void ShenandoahHeap::set_concurrent_young_mark_in_progress(bool in_progress) {
