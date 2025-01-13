@@ -204,7 +204,7 @@ public class TaskHelperTest {
         for (var args: invalidFormat) {
             try {
                 optionsHelper.handleOptions(this, args);
-                fail("Should get missing argument value or ");
+                fail("Should get an ambiguous error");
             } catch (BadArgs ex) {
                 // expected
             }

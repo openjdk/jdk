@@ -549,7 +549,7 @@ public final class TaskHelper {
                         }
                         if (potentiallyGnuOption && param.length() >= 2 &&
                                 param.charAt(0) == '-' && param.charAt(1) == '-') {
-                            throw new BadArgs("err.missing.arg", name).showUsage(true);
+                            throw new BadArgs("err.ambiguous.arg", name).showUsage(false);
                         }
                     }
                     if (pluginOption != null) {
