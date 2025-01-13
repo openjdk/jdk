@@ -277,7 +277,7 @@ class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo
                     .classBuilder(clb)
                     .ownerClassDesc(ownerClassDesc)
                     .enablePagination("module" + index + "Provides")
-                    .build(builder.buildAll(md.provides()));
+                    .build(builder.buildAll(sorted(md.provides())));
         }
 
         private Snippet buildPackagesSet(ClassBuilder clb, Collection<String> packages) {
