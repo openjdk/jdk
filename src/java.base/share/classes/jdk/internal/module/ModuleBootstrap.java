@@ -840,8 +840,8 @@ public final class ModuleBootstrap {
      * modules might be not compiled, yet.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
-        String launchMode = getAndRemoveProperty("jdk.internal.java.launchmode");
-        boolean shouldWarn = !"source".equals(launchMode);
+        String launcherMode = getAndRemoveProperty("sun.java.launcher.mode");
+        boolean shouldWarn = !"source".equals(launcherMode);
         addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, shouldWarn);
         addEnableNativeAccess(layer, JDK_NATIVE_ACCESS_MODULES, false);
     }
