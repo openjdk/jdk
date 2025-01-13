@@ -660,8 +660,6 @@ void ShenandoahHeap::post_initialize() {
   ShenandoahInitWorkerGCLABClosure init_gclabs;
   _workers->threads_do(&init_gclabs);
 
-  init_gclabs.do_thread(control_thread());
-
   // gclab can not be initialized early during VM startup, as it can not determinate its max_size.
   // Now, we will let WorkerThreads to initialize gclab when new worker is created.
   _workers->set_initialize_gclab();
@@ -1441,6 +1439,10 @@ void ShenandoahHeap::labs_make_parsable() {
   }
 
   workers()->threads_do(&cl);
+
+  if (safepoint_workers() != nullptr) {
+    safepoint_workers()->threads_do(&cl);
+  }
 }
 
 void ShenandoahHeap::tlabs_retire(bool resize) {
@@ -1476,9 +1478,8 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     cl.do_thread(t);
   }
-  workers()->threads_do(&cl);
 
-  cl.do_thread(control_thread());
+  workers()->threads_do(&cl);
 
   if (safepoint_workers() != nullptr) {
     safepoint_workers()->threads_do(&cl);
