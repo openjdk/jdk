@@ -147,11 +147,11 @@ public:
   // Number of non-daemon threads on the active threads list
   static int number_of_non_daemon_threads()      { return _number_of_non_daemon_threads; }
 
-  // VM initialization is single-threaded until the first NJT (WatcherThread) is created
+  // VM initialization is single-threaded until the first NJT is created
   // by the main thread, but that thread disappears during VM exit so we can't just
   // check for it. To reduce the overhead we check for > 1 JavaThreads first.
   static bool is_single_threaded() {
-    if (number_of_threads() > 1) {
+    if (number_of_threads() > 0) {
         return false;
     }
     NonJavaThread::Iterator njti;

@@ -214,8 +214,6 @@ void Thread::call_run() {
 
   MACOS_AARCH64_ONLY(this->init_wx());
 
-  register_thread_stack_with_NMT();
-
   JFR_ONLY(Jfr::on_thread_start(this);)
 
   log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
@@ -226,6 +224,9 @@ void Thread::call_run() {
   // Perform <ChildClass> initialization actions
   DEBUG_ONLY(_run_state = PRE_RUN;)
   this->pre_run();
+
+  // Must be after NonJavaThread::add_to_the_list() so that this thread is detectable by Threads::is_single_threaded().
+  register_thread_stack_with_NMT();
 
   // Invoke <ChildClass>::run()
   DEBUG_ONLY(_run_state = RUN;)
