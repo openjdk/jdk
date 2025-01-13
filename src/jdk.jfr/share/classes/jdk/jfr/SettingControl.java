@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,7 @@
 
 package jdk.jfr;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.util.Set;
-
-import jdk.jfr.internal.settings.JDKSettingControl;
 
 /**
  * Base class to extend to create setting controls.
@@ -77,30 +73,10 @@ import jdk.jfr.internal.settings.JDKSettingControl;
 @MetadataDefinition
 public abstract class SettingControl {
 
-    @SuppressWarnings("removal")
-    private final AccessControlContext context;
-    private final boolean initialized;
-
     /**
      * Constructor for invocation by subclass constructors.
      */
-    @SuppressWarnings("removal")
     protected SettingControl() {
-        context = this instanceof JDKSettingControl ? null : AccessController.getContext();
-        initialized = true;
-    }
-
-    @SuppressWarnings("removal")
-    final AccessControlContext getContext() {
-        // Ensure object state is safe
-        if (!initialized) {
-            throw new InternalError("Object must be initialized before security context can be retrieved");
-        }
-        AccessControlContext c = this.context;
-        if (c == null && !(this instanceof JDKSettingControl)) {
-            throw new InternalError("Security context can only be null for trusted setting controls");
-        }
-        return c;
     }
 
     /**

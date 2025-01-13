@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,11 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import java.security.AccessController;
-
 import javax.management.ObjectName;
 import javax.management.MBeanServer;
 import javax.management.InstanceNotFoundException;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXConnectorServerFactory;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.remote.security.NotificationAccessController;
 
 public class EnvHelp {
@@ -272,13 +269,11 @@ public class EnvHelp {
 
         // the default value re-specified in the system
         try {
-            GetPropertyAction act = new GetPropertyAction(BUFFER_SIZE_PROPERTY);
-            String s = AccessController.doPrivileged(act);
+            String s = System.getProperty(BUFFER_SIZE_PROPERTY);
             if (s != null) {
                 defaultQueueSize = Integer.parseInt(s);
             } else { // try the old one
-                act = new GetPropertyAction(oldP);
-                s = AccessController.doPrivileged(act);
+                s = System.getProperty(oldP);
                 if (s != null) {
                     defaultQueueSize = Integer.parseInt(s);
                 }

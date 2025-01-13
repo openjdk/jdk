@@ -248,10 +248,6 @@ void ZHeap::free_page(ZPage* page, bool allow_defragment) {
   // Remove page table entry
   _page_table.remove(page);
 
-  if (page->is_old()) {
-    page->remset_delete();
-  }
-
   // Free page
   _page_allocator.free_page(page, allow_defragment);
 }
@@ -262,9 +258,6 @@ size_t ZHeap::free_empty_pages(const ZArray<ZPage*>* pages) {
   ZArrayIterator<ZPage*> iter(pages);
   for (ZPage* page; iter.next(&page);) {
     _page_table.remove(page);
-    if (page->is_old()) {
-      page->remset_delete();
-    }
     freed += page->size();
   }
 

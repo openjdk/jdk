@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,6 +47,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import jdk.internal.misc.InnocuousThread;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
 /**
@@ -77,7 +74,7 @@ class PollingWatchService
             .newSingleThreadScheduledExecutor(new ThreadFactory() {
                  @Override
                  public Thread newThread(Runnable r) {
-                     Thread t = new Thread(null, r, "FileSystemWatcher", 0, false);
+                     Thread t = InnocuousThread.newThread("FileSystemWatcher", r);
                      t.setDaemon(true);
                      return t;
                  }});
@@ -86,7 +83,6 @@ class PollingWatchService
     /**
      * Register the given file with this watch service
      */
-    @SuppressWarnings("removal")
     @Override
     WatchKey register(final Path path,
                       WatchEvent.Kind<?>[] events,
@@ -133,30 +129,9 @@ class PollingWatchService
         if (!isOpen())
             throw new ClosedWatchServiceException();
 
-        // registration is done in privileged block as it requires the
-        // attributes of the entries in the directory.
-        try {
-            return AccessController.doPrivileged(
-                new PrivilegedExceptionAction<PollingWatchKey>() {
-                    @Override
-                    public PollingWatchKey run() throws IOException {
-                        return doPrivilegedRegister(path, eventSet);
-                    }
-                });
-        } catch (PrivilegedActionException pae) {
-            Throwable cause = pae.getCause();
-            if (cause instanceof IOException ioe)
-                throw ioe;
-            throw new AssertionError(pae);
-        }
-    }
+        // registers directory returning a new key if not already registered or
+        // existing key if already registered
 
-    // registers directory returning a new key if not already registered or
-    // existing key if already registered
-    private PollingWatchKey doPrivilegedRegister(Path path,
-                                                 Set<? extends WatchEvent.Kind<?>> events)
-        throws IOException
-    {
         // check file is a directory and get its file key if possible
         BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
         if (!attrs.isDirectory()) {
@@ -183,13 +158,12 @@ class PollingWatchService
                     watchKey.disable();
                 }
             }
-            watchKey.enable(events);
+            watchKey.enable(eventSet);
             return watchKey;
         }
 
     }
 
-    @SuppressWarnings("removal")
     @Override
     void implClose() throws IOException {
         synchronized (map) {
@@ -200,13 +174,7 @@ class PollingWatchService
             }
             map.clear();
         }
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                scheduledExecutor.shutdown();
-                return null;
-            }
-         });
+        scheduledExecutor.shutdown();
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,11 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   return fr;
 }
 
+JavaThread** frame::saved_thread_address(const frame& f) {
+  // The current thread (JavaThread*) is never stored on the stack
+  return nullptr;
+}
+
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // This is the sp before any possible extension (adapter/locals).
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
@@ -282,7 +287,7 @@ void frame::patch_pc(Thread* thread, address pc) {
                   p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
   assert(!Continuation::is_return_barrier_entry(*pc_addr), "return barrier");
-  assert(_pc == *pc_addr || pc == *pc_addr || 0 == *pc_addr,
+  assert(_pc == *pc_addr || pc == *pc_addr || nullptr == *pc_addr,
          "must be (pc: " INTPTR_FORMAT " _pc: " INTPTR_FORMAT " pc_addr: " INTPTR_FORMAT
          " *pc_addr: " INTPTR_FORMAT  " sp: " INTPTR_FORMAT ")",
          p2i(pc), p2i(_pc), p2i(pc_addr), p2i(*pc_addr), p2i(sp()));
@@ -313,10 +318,10 @@ void frame::patch_pc(Thread* thread, address pc) {
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   int min_frame_slots = (parent_ijava_frame_abi_size + ijava_state_size) / sizeof(intptr_t);

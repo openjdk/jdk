@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.MatcherSelector;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.RangeSliderModel;
+import com.sun.hotspot.igv.view.actions.CutEdgesAction;
 import com.sun.hotspot.igv.view.actions.GlobalSelectionAction;
 import java.awt.Color;
 import java.util.*;
@@ -62,14 +63,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private final ChangedEvent<DiagramViewModel> selectedNodesChangedEvent = new ChangedEvent<>(this);
     private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent = new ChangedEvent<>(this);
     private ChangedListener<InputGraph> titleChangedListener = g -> {};
+    private boolean showFreeInteractive;
     private boolean showStableSea;
     private boolean showSea;
     private boolean showBlocks;
     private boolean showCFG;
     private boolean showNodeHull;
     private boolean showEmptyBlocks;
-    private boolean hideDuplicates;
     private static boolean globalSelection = false;
+    private static boolean cutEdges = false;
 
     private final ChangedListener<FilterChain> filterChainChangedListener = changedFilterChain -> {
         assert filterChain == changedFilterChain;
@@ -80,6 +82,18 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return group;
     }
 
+    public boolean getCutEdges() {
+        return cutEdges;
+    }
+
+    public void setCutEdges(boolean enable, boolean fire) {
+        boolean prevEnable = cutEdges;
+        cutEdges = enable;
+        if (fire && prevEnable != enable) {
+            diagramChangedEvent.fire();
+        }
+    }
+
     public boolean getGlobalSelection() {
         return globalSelection;
     }
@@ -87,6 +101,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setGlobalSelection(boolean enable, boolean fire) {
         globalSelection = enable;
         if (fire && enable) {
+            diagramChangedEvent.fire();
+        }
+    }
+
+    public boolean getShowFreeInteractive() {
+        return showFreeInteractive;
+    }
+
+    public void setShowFreeInteractive(boolean enable) {
+        showFreeInteractive = enable;
+        if (enable) {
             diagramChangedEvent.fire();
         }
     }
@@ -154,25 +179,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         diagramChangedEvent.fire();
     }
 
-    public void setHideDuplicates(boolean hideDuplicates) {
-        this.hideDuplicates = hideDuplicates;
-        InputGraph currentGraph = getFirstGraph();
-        if (hideDuplicates) {
-            // Back up to the unhidden equivalent graph
-            int index = graphs.indexOf(currentGraph);
-            while (graphs.get(index).getProperties().get("_isDuplicate") != null) {
-                index--;
-            }
-            currentGraph = graphs.get(index);
-        }
-        filterGraphs();
-        selectGraph(currentGraph);
-    }
-
-    public boolean getHideDuplicates() {
-        return hideDuplicates;
-    }
-
     private void initGroup() {
         group.getChangedEvent().addListener(g -> {
             assert g == group;
@@ -191,6 +197,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public DiagramViewModel(DiagramViewModel model) {
         super(model);
         globalSelection = false;
+        cutEdges = false;
         group = model.getGroup();
         initGroup();
         graphs = new ArrayList<>(model.graphs);
@@ -205,12 +212,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filtersOrder = provider.getAllFiltersOrdered();
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
+        cutEdges = CutEdgesAction.get(CutEdgesAction.class).isSelected();
         showCFG = model.getShowCFG();
         showSea = model.getShowSea();
         showBlocks = model.getShowBlocks();
         showNodeHull = model.getShowNodeHull();
         showEmptyBlocks = model.getShowEmptyBlocks();
-        hideDuplicates = model.getHideDuplicates();
 
         hiddenNodes = new HashSet<>(model.getHiddenNodes());
         selectedNodes = new HashSet<>();
@@ -228,13 +235,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         filtersOrder = provider.getAllFiltersOrdered();
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
+        cutEdges = CutEdgesAction.get(CutEdgesAction.class).isSelected();
+        showFreeInteractive = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.INTERACTIVE_FREE_NODES;
         showStableSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.STABLE_SEA_OF_NODES;
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
         showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
         showCFG = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH;
         showNodeHull = true;
         showEmptyBlocks = true;
-        hideDuplicates = false;
 
         hiddenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
@@ -271,7 +279,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         for (String ignored : getPositions()) {
             colors.add(Color.black);
         }
-        if (nodes.size() >= 1) {
+        if (!nodes.isEmpty()) {
             for (Integer id : nodes) {
                 if (id < 0) {
                     id = -id;
@@ -422,11 +430,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         ArrayList<InputGraph> result = new ArrayList<>();
         List<String> positions = new ArrayList<>();
         for (InputGraph graph : group.getGraphs()) {
-            String duplicate = graph.getProperties().get("_isDuplicate");
-            if (duplicate == null || !hideDuplicates) {
-                result.add(graph);
-                positions.add(graph.getName());
-            }
+            result.add(graph);
+            positions.add(graph.getName());
         }
         this.graphs = result;
         setPositions(positions);
@@ -460,22 +465,12 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void selectGraph(InputGraph graph) {
         int index = graphs.indexOf(graph);
-        if (index == -1 && hideDuplicates) {
-            // A graph was selected that's currently hidden, so unhide and select it.
-            setHideDuplicates(false);
-            index = graphs.indexOf(graph);
-        }
         assert index != -1;
         setPositions(index, index);
     }
 
     public void selectDiffGraph(InputGraph graph) {
         int index = graphs.indexOf(graph);
-        if (index == -1 && hideDuplicates) {
-            // A graph was selected that's currently hidden, so unhide and select it.
-            setHideDuplicates(false);
-            index = graphs.indexOf(graph);
-        }
         assert index != -1;
         int firstIndex = getFirstPosition();
         int secondIndex = getSecondPosition();

@@ -292,6 +292,7 @@ class StubRoutines: AllStatic {
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
+  static address _cont_preempt_stub;
 
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
@@ -501,6 +502,7 @@ class StubRoutines: AllStatic {
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
+  static address cont_preempt_stub()   { return _cont_preempt_stub; }
 
   static address upcall_stub_exception_handler() {
     assert(_upcall_stub_exception_handler != nullptr, "not implemented");
