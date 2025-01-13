@@ -40,7 +40,7 @@ AC_DEFUN([LIB_SETUP_HSDIS_CAPSTONE],
     HSDIS_CFLAGS="-I${CAPSTONE}/include/capstone"
     if test "x$OPENJDK_TARGET_OS" != xwindows; then
       HSDIS_LDFLAGS="-L${CAPSTONE}/lib"
-      if test $OPENJDK_TARGET_CPU_BITS -eq 64; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" ; then
         HSDIS_LDFLAGS="-L${CAPSTONE}/lib64 $HSDIS_LDFLAGS"
       fi
       HSDIS_LIBS="-lcapstone"
