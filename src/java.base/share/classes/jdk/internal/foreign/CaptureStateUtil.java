@@ -211,7 +211,7 @@ public final class CaptureStateUtil {
 
     // Used reflectively by `getAsIntHandle(MemoryLayout layout)`
     private static int getStateAsInt(VarHandle handle) {
-        if (Thread.currentThread().isVirtual() && ContinuationSupport.isSupported()) {
+        if (ContinuationSupport.isSupported() && Thread.currentThread().isVirtual()) {
             // Make sure we are not unmounted/remounted from/on another platform thread
             // during the critical read region. This prevents access across platform threads.
             Continuation.pin();

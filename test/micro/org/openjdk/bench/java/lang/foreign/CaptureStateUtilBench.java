@@ -31,7 +31,6 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
@@ -104,7 +103,10 @@ public class CaptureStateUtilBench {
 
     // Dummy method that is just returning the provided parameters
     private static int dummy(MemorySegment segment, int result, int errno) {
-        ERRNO_HANDLE.set(segment, 0, errno);
+        if (errno != 0) {
+            // Assuming the capture state is only modified upon detecting an error.
+            ERRNO_HANDLE.set(segment, 0, errno);
+        }
         return result;
     }
 
