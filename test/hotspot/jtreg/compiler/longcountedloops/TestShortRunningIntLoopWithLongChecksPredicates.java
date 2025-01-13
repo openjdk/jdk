@@ -56,7 +56,7 @@ public class TestShortRunningIntLoopWithLongChecksPredicates {
     private static void helper1(int stop, int[] array, long range) {
         for (int i = 0; i < stop; i++) {
             if (i % 2 == 0) {
-                array[i] = i;
+                array[i] += i;
             } else {
                 volatileField = 42;
             }

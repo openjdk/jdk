@@ -1113,13 +1113,65 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
   return true;
 }
 
+class NodeInShortLoopBody : public NodeInLoopBody {
+  PhaseIdealLoop* _phase;
+  IdealLoopTree* _ilt;
+
+public:
+  NodeInShortLoopBody(PhaseIdealLoop* phase, IdealLoopTree* ilt) : _phase(phase), _ilt(ilt) {
+  }
+  NONCOPYABLE(NodeInShortLoopBody);
+
+  bool check(Node* node) const override {
+    return _phase->is_member(_ilt, _phase->get_ctrl(node));
+  }
+};
+
+class CloneShortLoopPredicatesVisitor : public PredicateVisitor {
+  ClonePredicateToTargetLoop _clone_predicate_to_loop;
+
+  PhaseIdealLoop* const _phase;
+  bool _has_hoisted_check_parse_predicates;
+
+public:
+  CloneShortLoopPredicatesVisitor(LoopNode* loop_head,
+                                  const NodeInShortLoopBody& node_in_loop_body,
+                                  PhaseIdealLoop* phase)
+    : _clone_predicate_to_loop(loop_head, node_in_loop_body, phase),
+      _phase(phase),
+      _has_hoisted_check_parse_predicates(false) {
+  }
+  NONCOPYABLE(CloneShortLoopPredicatesVisitor);
+
+  using PredicateVisitor::visit;
+
+  void visit(const ParsePredicate& parse_predicate) override {
+    Deoptimization::DeoptReason deopt_reason = parse_predicate.head()->deopt_reason();
+    if (deopt_reason == Deoptimization::Reason_predicate ||
+        deopt_reason == Deoptimization::Reason_profile_predicate) {
+      _has_hoisted_check_parse_predicates = true;
+    }
+
+    _clone_predicate_to_loop.clone_parse_predicate(parse_predicate, true);
+    parse_predicate.kill(_phase->igvn());
+  }
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
+    if (!_has_hoisted_check_parse_predicates) {
+      // Only process if we are in the correct Predicate Block.
+      return;
+    }
+
+    _clone_predicate_to_loop.clone_template_assertion_predicate(template_assertion_predicate);
+    template_assertion_predicate.kill(_phase);
+  }
+};
+
 // If bounds are known is the loop doesn't need an outer loop or profile data indicates it runs for less than
 // ShortLoopIter, don't create the outer loop
 bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks, uint iters_limit) {
-  if (ShortLoopIter == 0) {
+  if (!ShortRunningLongLoop) {
     return false;
   }
-
   Node* x = loop->_head;
   BaseCountedLoopNode* head = x->as_BaseCountedLoop();
   BasicType bt = head->bt();
@@ -1131,7 +1183,11 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   bool profile_short_running_loop = false;
   if (!known_short_running_loop) {
     loop->compute_profile_trip_cnt(this);
-    profile_short_running_loop = !head->is_profile_trip_failed() && head->profile_trip_cnt() < ShortLoopIter && ShortLoopIter <= iters_limit / ABS(stride_con);
+    if (StressShortRunningLongLoop) {
+     profile_short_running_loop = true;
+    } else {
+      profile_short_running_loop = !head->is_profile_trip_failed() && head->profile_trip_cnt() < iters_limit / ABS(stride_con);
+    }
   }
 
   if (!known_short_running_loop && !profile_short_running_loop) {
@@ -1157,45 +1213,26 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
     // new limit (so have to be between the loop and short_limit predicate). The current limit could, itself, be
     // dependent on an existing predicate. Clone parse predicates below existing predicates to get proper ordering of
     // predicates when coming from the loop: future predicates, short_limit predicate, existing predicates.
-    const Predicates predicates(entry_control);
-    const PredicateBlock* short_running_loop_predicate_block = predicates.short_running_loop_predicate_block();
+    const Predicates predicates_before_cloning(entry_control);
+    const PredicateBlock* short_running_loop_predicate_block = predicates_before_cloning.short_running_loop_predicate_block();
     if (!short_running_loop_predicate_block->has_parse_predicate()) { // already trapped
       return false;
     }
-    const PredicateBlock* predicate_block = predicates.loop_predicate_block();
-    ParsePredicateSuccessProj* parse_predicate_proj = short_running_loop_predicate_block-> parse_predicate_success_proj();
-    Node* ctrl = entry_control;
-    ctrl = clone_parse_predicate(parse_predicate_proj, ctrl,
-                                                    Deoptimization::Reason_short_running_loop, true);
-    Node* short_running_loop_ctrl = ctrl;
-    if (predicate_block->has_parse_predicate()) {
-      parse_predicate_proj = predicate_block->parse_predicate_success_proj();
-      ctrl = clone_parse_predicate(parse_predicate_proj, ctrl, Deoptimization::Reason_predicate,
-                                                      true);
-      Unique_Node_List list;
-      get_template_assertion_predicates(parse_predicate_proj, list);
-      clone_assertion_predicates(loop, list, ctrl->in(0)->as_ParsePredicate());
-    }
-    const PredicateBlock* profiled_predicate_block = predicates.profiled_loop_predicate_block();
-    if (profiled_predicate_block->has_parse_predicate()) {
-      parse_predicate_proj = profiled_predicate_block->parse_predicate_success_proj();
-      ctrl = clone_parse_predicate(parse_predicate_proj, ctrl,
-                                                      Deoptimization::Reason_profile_predicate, true);
-      Unique_Node_List list;
-      get_template_assertion_predicates(parse_predicate_proj, list);
-      clone_assertion_predicates(loop, list, ctrl->in(0)->as_ParsePredicate());
-    }
-    assert(ctrl != entry_control, "some parse predicates must have been inserted");
-    _igvn.replace_input_of(head->skip_strip_mined(), LoopNode::EntryControl, ctrl);
-    set_idom(head->skip_strip_mined(), ctrl, dom_depth(head->skip_strip_mined()));
+    PredicateIterator predicate_iterator(entry_control);
+    NodeInShortLoopBody node_in_short_loop_body(this, loop);
+    CloneShortLoopPredicatesVisitor clone_short_loop_predicates_visitor(head->skip_strip_mined(), node_in_short_loop_body, this);
+    predicate_iterator.for_each(clone_short_loop_predicates_visitor);
 
-    PredicateBlock inner_short_running_loop_predicate_block(short_running_loop_ctrl,
-                                                            Deoptimization::Reason_short_running_loop);
-    ParsePredicateSuccessProj* short_running_loop_predicate_proj = inner_short_running_loop_predicate_block.
+    entry_control = head->skip_strip_mined()->in(LoopNode::EntryControl);
+
+    const Predicates predicates_after_cloning(entry_control);
+
+    ParsePredicateSuccessProj* short_running_loop_predicate_proj = predicates_after_cloning.
+        short_running_loop_predicate_block()->
         parse_predicate_success_proj();
     assert(short_running_loop_predicate_proj->in(0)->is_ParsePredicate(), "must be parse predicate");
 
-    jlong limit_long = ShortLoopIter * ABS(stride_con);
+    jlong limit_long = iters_limit;
     Node* cmp_limit = CmpNode::make(new_limit, _igvn.integercon(limit_long, bt), bt);
     Node* bol = new BoolNode(cmp_limit, BoolTest::le);
     Node* new_predicate_proj = create_new_if_for_predicate(short_running_loop_predicate_proj,

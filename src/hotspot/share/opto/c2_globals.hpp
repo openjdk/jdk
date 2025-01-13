@@ -810,10 +810,13 @@
           "Use StoreStore barrier instead of Release barrier at the end "   \
           "of constructors")                                                \
                                                                             \
-  product(uintx, ShortLoopIter, 1000,                                       \
+  product(bool, ShortRunningLongLoop, true, DIAGNOSTIC,                     \
           "long counted loop/long range checks: don't create loop nest if"  \
-          "loop runs for fewer iterations than ShortLoopIter")              \
-          range(0, max_juint)                                               \
+          "loop runs for small enough number of iterations")                \
+                                                                            \
+  develop(bool, StressShortRunningLongLoop, false,                          \
+          "Speculate all long counted loops are short running when bounds"  \
+          "are unknown even if profile data doesn't say so")                \
 
 // end of C2_FLAGS
 
