@@ -76,7 +76,7 @@ class CheckDataVersion {
                 System.out.println("test: (file: "+fileVersion+" data: "+dataVersion+"), JRE: (file: "+fileVerNumber+" data: "+dataVerNumber+")");
             } catch (IOException ioe) {
                 throw new RuntimeException(
-                        "CheckDataVersion was not set up properly: " + ioe);
+                        "currency.data was not retrieved properly", ioe);
             }
             checked = true;
         }
