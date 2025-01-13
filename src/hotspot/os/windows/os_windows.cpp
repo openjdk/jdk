@@ -4434,6 +4434,7 @@ HMODULE GetHotspotModuleHandle() {
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
   if (is_vm_statically_linked()) {
+    // Mimick what is done in DllMain for non-static builds
     windows_preinit(GetHotspotModuleHandle());
     atexit(windows_atexit);
   }
