@@ -155,6 +155,12 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char *jdkroot, jint so_jdkroot,
                            char *jvmpath, jint so_jvmpath,
                            char *jvmcfg,  jint so_jvmcfg) {
+    if (JLI_IsStaticallyLinked()) {
+        // With static builds, all JDK and VM natives are statically linked
+        // with the launcher executable. The 'jrepath', 'jvmpath' and
+        // 'jvmcfg' are not used by the caller for static builds. Simply return.
+        return;
+    }
 
     char *jvmtype;
     int i = 0;
@@ -222,6 +228,12 @@ LoadMSVCRT()
     char crtpath[MAXPATHLEN];
 
     if (!loaded) {
+        if (JLI_IsStaticallyLinked()) {
+          // For statically linked builds, we rely on the system msvcrt dlls
+          loaded = 1;
+          return JNI_TRUE;
+        }
+
         /*
          * The Microsoft C Runtime Library needs to be loaded first. A copy is
          * assumed to be present in the "bin" directory of the JDK installation root.
@@ -365,10 +377,14 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
      */
     LoadMSVCRT();
 
-    /* Load the Java VM DLL */
-    if ((handle = LoadLibrary(jvmpath)) == 0) {
-        JLI_ReportErrorMessage(DLL_ERROR4, (char *)jvmpath);
-        return JNI_FALSE;
+    if (JLI_IsStaticallyLinked()) {
+      handle = GetModuleHandle(NULL);
+    } else {
+        /* Load the Java VM DLL */
+        if ((handle = LoadLibrary(jvmpath)) == 0) {
+            JLI_ReportErrorMessage(DLL_ERROR4, (char *)jvmpath);
+            return JNI_FALSE;
+        }
     }
 
     /* Now get the function addresses */
@@ -781,7 +797,11 @@ jclass FindBootStrapClass(JNIEnv *env, const char *classname)
    HMODULE hJvm;
 
    if (findBootClass == NULL) {
-       hJvm = GetModuleHandle(JVM_DLL);
+       if (JLI_IsStaticallyLinked()) {
+           hJvm = GetModuleHandle(NULL);
+       } else {
+           hJvm = GetModuleHandle(JVM_DLL);
+       }
        if (hJvm == NULL) return NULL;
        /* need to use the demangled entry point */
        findBootClass = (FindClassFromBootLoader_t *)GetProcAddress(hJvm,

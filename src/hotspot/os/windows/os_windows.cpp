@@ -285,6 +285,8 @@ void os::run_periodic_checks(outputStream* st) {
 
 static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
 
+#define JVM_LIB_NAME "jvm.dll"
+
 void os::init_system_properties_values() {
   // sysclasspath, java_home, dll_dir
   {
@@ -300,15 +302,27 @@ void os::init_system_properties_values() {
       home_dir[MAX_PATH] = '\0';
     } else {
       os::jvm_path(home_dir, sizeof(home_dir));
-      // Found the full path to jvm.dll.
-      // Now cut the path to <java_home>/jre if we can.
-      *(strrchr(home_dir, '\\')) = '\0';  // get rid of \jvm.dll
+      // Found the full path to the binary. It is normally of this structure:
+      //   <jdk_path>/bin/<hotspot_variant>/jvm.dll
+      // but can also be like this for a statically linked binary:
+      //   <jdk_path>/bin/<executable>.exe
       pslash = strrchr(home_dir, '\\');
       if (pslash != nullptr) {
-        *pslash = '\0';                   // get rid of \{client|server}
+        if (strncmp(pslash + 1, JVM_LIB_NAME, strlen(JVM_LIB_NAME)) == 0) {
+          // Binary name is jvm.dll. Get rid of \jvm.dll.
+          *pslash = '\0';
+        }
+
+        // Get rid of \hotspot_variant>, if binary is jvm.dll,
+        // or cut off \<executable>, if it is a statically linked binary.
         pslash = strrchr(home_dir, '\\');
         if (pslash != nullptr) {
-          *pslash = '\0';                 // get rid of \bin
+          *pslash = '\0';
+          // Get rid of \bin
+          pslash = strrchr(home_dir, '\\');
+          if (pslash != nullptr) {
+            *pslash = '\0';
+          }
         }
       }
     }
@@ -1402,9 +1416,7 @@ void* os::dll_lookup(void *lib, const char *name) {
 }
 
 void* os::lookup_function(const char* name) {
-  // This is needed only for static builds which are not supported on Windows
-  ShouldNotReachHere();
-  return nullptr; // Satisfy compiler
+  return ::GetProcAddress(nullptr, name);
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
