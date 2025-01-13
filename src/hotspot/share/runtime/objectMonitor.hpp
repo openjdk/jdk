@@ -84,6 +84,9 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
+// - For performance reasons we ensure the _metadata field is located at offset 0,
+//   which in turn means that ObjectMonitor can't inherit from any other class nor use
+//   any virtual member functions.
 // - The _metadata and _owner fields should be separated by enough space
 //   to avoid false sharing due to parallel access by different threads.
 //   This is an advisory recommendation.
