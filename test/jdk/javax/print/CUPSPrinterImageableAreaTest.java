@@ -100,7 +100,7 @@ public class CUPSPrinterImageableAreaTest {
             throw new RuntimeException("Media printable area not defined");
         }
 
-        PageFormat pageFormat = new PageFormat();
+        final PageFormat pageFormat = new PageFormat();
         pageFormat.setOrientation(PageFormat.PORTRAIT);
         Paper paper = new Paper();
 
@@ -111,9 +111,19 @@ public class CUPSPrinterImageableAreaTest {
                 mpa.getHeight(MediaPrintableArea.INCH) * 72);
         pageFormat.setPaper(paper);
 
+        // margins: left, bottom, right, top
+        final float[] margins = new float[] {
+                mpa.getX(MediaPrintableArea.MM),
+                ms.getY(MediaSize.MM) - mpa.getY(MediaPrintableArea.MM) - mpa.getHeight(MediaPrintableArea.MM),
+                ms.getX(MediaSize.MM) - mpa.getX(MediaPrintableArea.MM) - mpa.getWidth(MediaPrintableArea.MM),
+                mpa.getY(MediaPrintableArea.MM),
+        };
+
+        final String testMediaSizeName = testMedia.toString();
+
         SwingUtilities.invokeLater(() -> {
             try {
-                testPrint(pageFormat);
+                testPrint(pageFormat, testMediaSizeName, margins);
             } catch (PrinterException e) {
                 fail();
             }
@@ -140,14 +150,17 @@ public class CUPSPrinterImageableAreaTest {
         }
     }
 
-    private static void testPrint(PageFormat pageFormat) throws PrinterException {
+    private static void testPrint(PageFormat pageFormat, String mediaName, float[] margins) throws PrinterException {
         String[] instructions = {
                 "This test checks that the media margins ",
                 "fetched from the printer's PPD file are correct.",
+                "The '" + mediaName + "' will be used for the test.",
                 "Press the 'Start Test' button to print a test page.",
-                "A passing test will print the page with ", +
-                "a black rectangle along the printable margins.",
-                "Ensure that all borders are printed (top, left, bottom, right)."
+                "A passing test will print the page with ",
+                "a black rectangle along the printable area.",
+                "Ensure that all sides of the rectangle are printed.",
+                String.format("Margin sizes: left %.1f mm., bottom %.1f mm., right %.1f mm., top %.1f mm.",
+                        margins[0], margins[1], margins[2], margins[3])
         };
 
         String title = "Media margins test";
