@@ -119,7 +119,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     @Override
     public Future<?> submit(Runnable task) {
-        if (task == null) throw new NullPointerException();
+        if (task == null) throw new NullPointerException("task can't be null");
         RunnableFuture<Void> ftask = newTaskFor(task, null);
         execute(ftask);
         return ftask;
@@ -131,7 +131,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     @Override
     public <T> Future<T> submit(Runnable task, T result) {
-        if (task == null) throw new NullPointerException();
+        if (task == null) throw new NullPointerException("task can't be null");
         RunnableFuture<T> ftask = newTaskFor(task, result);
         execute(ftask);
         return ftask;
@@ -143,7 +143,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     @Override
     public <T> Future<T> submit(Callable<T> task) {
-        if (task == null) throw new NullPointerException();
+        if (task == null) throw new NullPointerException("task can't be null");
         RunnableFuture<T> ftask = newTaskFor(task);
         execute(ftask);
         return ftask;
@@ -156,7 +156,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
                               boolean timed, long nanos)
         throws InterruptedException, ExecutionException, TimeoutException {
         if (tasks == null)
-            throw new NullPointerException();
+            throw new NullPointerException("tasks can't be null");
         int ntasks = tasks.size();
         if (ntasks == 0)
             throw new IllegalArgumentException();
@@ -263,7 +263,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
         throws InterruptedException {
         if (tasks == null)
-            throw new NullPointerException();
+            throw new NullPointerException("tasks can't be null");
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
         try {
             for (Callable<T> t : tasks) {
@@ -295,7 +295,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
                                          long timeout, TimeUnit unit)
         throws InterruptedException {
         if (tasks == null)
-            throw new NullPointerException();
+            throw new NullPointerException("tasks can't be null");
         final long nanos = unit.toNanos(timeout);
         final long deadline = System.nanoTime() + nanos;
         ArrayList<Future<T>> futures = new ArrayList<>(tasks.size());
