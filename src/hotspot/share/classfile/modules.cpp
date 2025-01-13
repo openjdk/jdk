@@ -297,6 +297,13 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
               "Module name cannot be null");
   }
 
+#if INCLUDE_JVMCI
+  if (!EnableJVMCI && !strcmp(module_name, "jdk.internal.vm.ci")) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              err_msg("Module %s requires EnableJVMCI", module_name));
+  }
+#endif
+
   // Resolve packages
   objArrayHandle packages_h(THREAD, objArrayOop(JNIHandles::resolve(packages)));
   int num_packages = (packages_h.is_null() ? 0 : packages_h->length());

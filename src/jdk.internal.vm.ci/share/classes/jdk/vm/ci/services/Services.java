@@ -64,15 +64,17 @@ public final class Services {
      */
     private static volatile Map<String, String> savedProperties;
 
-    static final boolean JVMCI_ENABLED = Boolean.parseBoolean(VM.getSavedProperties().get("jdk.internal.vm.ci.enabled"));
+    static {
+        if (!Boolean.parseBoolean(VM.getSavedProperties().get("jdk.internal.vm.ci.enabled"))) {
+            throw new Error("The EnableJVMCI VM option must be true (i.e., -XX:+EnableJVMCI) to use jdk.internal.vm.ci");
+        }
+    }
 
     /**
      * Checks that JVMCI is enabled in the VM and throws an error if it isn't.
      */
-    static void checkJVMCIEnabled() {
-        if (!JVMCI_ENABLED) {
-            throw new Error("The EnableJVMCI VM option must be true (i.e., -XX:+EnableJVMCI) to use JVMCI");
-        }
+    public static void checkJVMCIEnabled() {
+        // First call to this will trigger <clinit> which does the check.
     }
 
     /**

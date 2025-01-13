@@ -1798,9 +1798,9 @@ bool Arguments::check_vm_args_consistency() {
   status = CompilerConfig::check_args_consistency(status);
 #if INCLUDE_JVMCI
   if (status && EnableJVMCI) {
-    PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
-        AddProperty, UnwriteableProperty, InternalProperty);
     if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
+      PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
+          AddProperty, UnwriteableProperty, InternalProperty);
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", _addmods_count++)) {
         return false;
       }

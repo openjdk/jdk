@@ -47,9 +47,6 @@ JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
 }
 
 JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
-  if (!EnableJVMCI) {
-    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
-  }
   if (_instance == nullptr && require_non_null) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
   }
@@ -61,7 +58,7 @@ void compiler_stubs_init(bool in_compiler_thread);
 // Initialization
 void JVMCICompiler::initialize() {
   assert(!CompilerConfig::is_c1_or_interpreter_only_no_jvmci(), "JVMCI is launched, it's not c1/interpreter only mode");
-  if (!UseCompiler || !EnableJVMCI || !UseJVMCICompiler || !should_perform_init()) {
+  if (!UseCompiler || !UseJVMCICompiler || !should_perform_init()) {
     return;
   }
   compiler_stubs_init(true /* in_compiler_thread */); // generate compiler's intrinsics stubs

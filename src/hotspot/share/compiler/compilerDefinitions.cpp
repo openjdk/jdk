@@ -191,7 +191,6 @@ void CompilerConfig::set_client_emulation_mode_flags() {
 
   FLAG_SET_ERGO(ProfileInterpreter, false);
 #if INCLUDE_JVMCI
-  FLAG_SET_ERGO(EnableJVMCI, false);
   FLAG_SET_ERGO(UseJVMCICompiler, false);
 #endif
   if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
@@ -229,8 +228,7 @@ bool CompilerConfig::is_compilation_mode_selected() {
   return !FLAG_IS_DEFAULT(TieredCompilation) ||
          !FLAG_IS_DEFAULT(TieredStopAtLevel) ||
          !FLAG_IS_DEFAULT(CompilationMode)
-         JVMCI_ONLY(|| !FLAG_IS_DEFAULT(EnableJVMCI)
-                    || !FLAG_IS_DEFAULT(UseJVMCICompiler));
+         JVMCI_ONLY(|| !FLAG_IS_DEFAULT(UseJVMCICompiler));
 }
 
 static bool check_legacy_flags() {
@@ -536,11 +534,10 @@ bool CompilerConfig::check_args_consistency(bool status) {
       FLAG_SET_DEFAULT(SegmentedCodeCache, false);
     }
 #if INCLUDE_JVMCI
-    if (EnableJVMCI || UseJVMCICompiler) {
-      if (!FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler)) {
+    if (UseJVMCICompiler) {
+      if (!FLAG_IS_DEFAULT(UseJVMCICompiler)) {
         warning("JVMCI Compiler disabled due to -Xint.");
       }
-      FLAG_SET_CMDLINE(EnableJVMCI, false);
       FLAG_SET_CMDLINE(UseJVMCICompiler, false);
     }
 #endif
@@ -572,10 +569,6 @@ void CompilerConfig::ergo_initialize() {
   set_compilation_policy_flags();
 
 #if INCLUDE_JVMCI
-  // Check that JVMCI supports selected GC.
-  // Should be done after GCConfig::initialize() was called.
-  JVMCIGlobals::check_jvmci_supported_gc();
-
   // Do JVMCI specific settings
   set_jvmci_specific_flags();
 #endif
