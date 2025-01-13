@@ -457,7 +457,7 @@ void Type::Initialize_shared(Compile* current) {
   ABIO    = make(Abio);         // State-of-machine only
   RETURN_ADDRESS=make(Return_Address);
   FLOAT   = make(FloatBot);     // All floats
-  HALF_FLOAT   = make(HalfFloatBot); // All half floats
+  HALF_FLOAT = make(HalfFloatBot); // All half floats
   DOUBLE  = make(DoubleBot);    // All doubles
   BOTTOM  = make(Bottom);       // Everything
   HALF    = make(Half);         // Placeholder half of doublewide type
@@ -1083,11 +1083,11 @@ const Type *Type::xmeet( const Type *t ) const {
     return t;
 
   case HalfFloatTop:
-    if (_base == HalfFloatTop) return this;
+    if (_base == HalfFloatTop) { return this; }
   case HalfFloatBot:            // Half Float
-    if (_base == HalfFloatBot || _base == HalfFloatTop) return HALF_FLOAT;
-    if (_base == FloatBot || _base == FloatTop) return Type::BOTTOM;
-    if (_base == DoubleTop || _base == DoubleBot) return Type::BOTTOM;
+    if (_base == HalfFloatBot || _base == HalfFloatTop) { return HALF_FLOAT; }
+    if (_base == FloatBot || _base == FloatTop) { return Type::BOTTOM; }
+    if (_base == DoubleTop || _base == DoubleBot) { return Type::BOTTOM; }
     typerr(t);
     return Type::BOTTOM;
 

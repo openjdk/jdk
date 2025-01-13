@@ -32,7 +32,6 @@ import static java.lang.Float.*;
 /**
  * The class {@code Float16Math} constains intrinsic entry points corresponding
  * to scalar numeric operations defined in Float16 class.
- * @author
  * @since   24
  */
 public final class Float16Math {

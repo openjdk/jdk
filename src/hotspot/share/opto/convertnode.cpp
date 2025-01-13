@@ -987,8 +987,7 @@ int Float16NodeFactory::get_float16_binary_oper(int opc) {
       return Op_MaxHF;
     case Op_MinF:
       return Op_MinHF;
-    default:
-      return false;
+    default: ShouldNotReachHere();
   }
 }
 

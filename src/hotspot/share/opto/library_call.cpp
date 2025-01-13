@@ -8654,14 +8654,17 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
 
   Node* result = nullptr;
   switch (id) {
-  // Unary operations
-  case vmIntrinsics::_sqrt_float16:      result = _gvn.transform(new SqrtHFNode(C, control(), fld1)); break;
-
-  // Ternary operations
-  case vmIntrinsics::_fma_float16:       result = _gvn.transform(new FmaHFNode(control(), fld1, fld2, fld3)); break;
-  default:
-    fatal_unexpected_iid(id);
-    break;
+    // Unary operations
+    case vmIntrinsics::_sqrt_float16:
+      result = _gvn.transform(new SqrtHFNode(C, control(), fld1));
+      break;
+    // Ternary operations
+    case vmIntrinsics::_fma_float16:
+      result = _gvn.transform(new FmaHFNode(control(), fld1, fld2, fld3));
+      break;
+    default:
+      fatal_unexpected_iid(id);
+      break;
   }
   set_result(_gvn.transform(new ReinterpretHF2SNode(result)));
   return true;

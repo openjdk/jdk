@@ -557,7 +557,9 @@ Node* MulHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
 // Compute the product type of two half float ranges into this node.
 const Type* MulHFNode::mul_ring(const Type* t0, const Type* t1) const {
-  if(t0 == Type::HALF_FLOAT || t1 == Type::HALF_FLOAT) return Type::HALF_FLOAT;
+  if (t0 == Type::HALF_FLOAT || t1 == Type::HALF_FLOAT) {
+    return Type::HALF_FLOAT;
+  }
   return TypeH::make(t0->getf() * t1->getf());
 }
 
