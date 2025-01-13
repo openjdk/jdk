@@ -1372,8 +1372,8 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     if (mode == LM_SOURCE) {
-        // signal module bootstrap to defer warnings about unknown modules
-        AddOption("-Djdk.internal.java.launchmode=source", NULL);
+        // communicate the launcher mode to runtime
+        AddOption("-Dsun.java.launcher.mode=source", NULL);
         AddOption("--add-modules=ALL-DEFAULT", NULL);
         *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
         // adjust (argc, argv) so that the name of the source file
