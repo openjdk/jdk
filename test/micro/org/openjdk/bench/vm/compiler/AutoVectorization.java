@@ -74,6 +74,8 @@ public class AutoVectorization {
 
     private static int zeroI = 0;
 
+    private int[] haystackI;
+
     @Param("42")
     private int seed;
     private Random r = new Random(seed);
@@ -83,6 +85,8 @@ public class AutoVectorization {
         aI = new int[SIZE];
         bI = new int[SIZE];
         rI = new int[SIZE];
+
+        haystackI = new int[SIZE];
 
         aL = new long[SIZE];
         bL = new long[SIZE];
@@ -124,6 +128,7 @@ public class AutoVectorization {
 
             aI[i] = r.nextInt();
             bI[i] = r.nextInt();
+            haystackI[i] = (i == SIZE/2) ? 42 : 0;
 
             aL[i] = r.nextLong();
             bL[i] = r.nextLong();
@@ -138,11 +143,18 @@ public class AutoVectorization {
 
     // ------------------------------------- ELEMENT-WISE
 
-    // TODO rm or expand
+    // // TODO rm or expand
+    // @Benchmark
+    // public void elementwiseByteAdd() {
+    //     for (int i = 0; i < aB.length; i++) {
+    //         rB[i] = (byte)(aB[i] + bB[i]);
+    //     }
+    // }
+
     @Benchmark
-    public void elementwiseByteAdd() {
-        for (int i = 0; i < aB.length; i++) {
-            rB[i] = (byte)(aB[i] + bB[i]);
+    public void elementwiseIntAdd() {
+        for (int i = 0; i < aI.length; i++) {
+            rI[i] = aI[i] + bI[i];
         }
     }
 
@@ -164,6 +176,40 @@ public class AutoVectorization {
             sum += aI[i] * bI[i];
         }
         return sum;
+    }
+
+    @Benchmark
+    public int reductionIntAddStrided() {
+        int sum = 0;
+        for (int i = 0; i < aI.length / 2; i++) {
+            sum += aI[i * 2];
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int reductionIntAddStridedDotProduct() {
+        int sum = 0;
+        for (int i = 0; i < aI.length / 2; i++) {
+            sum += aI[i * 2] * bI[i * 2];
+        }
+        return sum;
+    }
+
+    // ------------------------------------- INDEX
+
+    @Benchmark
+    public void indexPopulateInt() {
+        for (int i = 0; i < aI.length; i++) {
+            rI[i] = i;
+        }
+    }
+
+    @Benchmark
+    public void indexSquareInt() {
+        for (int i = 0; i < aI.length; i++) {
+            rI[i] = i * i;
+        }
     }
 
     // ------------------------------------- OFFSET
@@ -275,32 +321,97 @@ public class AutoVectorization {
         }
     }
 
-    // ------------------------------------- MEMORY SEGMENT
-
     @Benchmark
-    public void memorySegmentNativeElementwiseIntIncr() {
-        for (long i = 0; i < aN.byteSize() / 4; i++) {
-            int v = rN.get(ValueLayout.JAVA_INT, i * 4L);
-            rN.set(ValueLayout.JAVA_INT, i * 4L, v + 1);
+    public void aliasingCopyStridedInt() {
+        for (int i = 0; i < aI.length / 2; i++) {
+            rI[i] = aI[i * 2];
         }
     }
 
     @Benchmark
-    public void memorySegmentNativeElementwiseIntAdd() {
-        for (long i = 0; i < aN.byteSize() / 4; i++) {
-            int v1 = aN.get(ValueLayout.JAVA_INT, i * 4L);
-            int v2 = bN.get(ValueLayout.JAVA_INT, i * 4L);
-            rN.set(ValueLayout.JAVA_INT, i * 4L, v1 + v2);
+    public void aliasingCopyReverseInt() {
+        for (int i = 0; i < aI.length; i++) {
+            rI[i] = aI[aI.length - i - 1];
+        }
+    }
+
+    @Benchmark
+    public void aliasingCopyReverseIntFloat() {
+        for (int i = 0; i < aI.length; i++) {
+            rI[i] = (int)aF[aI.length - i - 1];
+        }
+    }
+
+    // ------------------------------------- MEMORY SEGMENT
+
+    @Benchmark
+    public void memorySegmentNativeElementwiseByteIncr() {
+        for (long i = 0; i < aN.byteSize(); i++) {
+            byte v = rN.get(ValueLayout.JAVA_BYTE, i);
+            rN.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
+        }
+    }
+
+    @Benchmark
+    public void memorySegmentNativeElementwiseByteAdd() {
+        for (long i = 0; i < aN.byteSize(); i++) {
+            byte v1 = aN.get(ValueLayout.JAVA_BYTE, i);
+            byte v2 = bN.get(ValueLayout.JAVA_BYTE, i);
+            rN.set(ValueLayout.JAVA_BYTE, i, (byte)(v1 + v2));
+        }
+    }
+
+    // ------------------------------------- HAND UNROLLED
+
+    @Benchmark
+    public void handunrolledIntAdd() {
+        for (int i = 0; i < aI.length; i+=2) {
+            rI[i + 0] = aI[i + 0] + bI[i + 0];
+            rI[i + 1] = aI[i + 1] + bI[i + 1];
         }
     }
 
     // ------------------------------------- CFG / IF-Conversion / Masking
 
     @Benchmark
+    public void ifMaskedCopyInt() {
+        for (int i = 0; i < aI.length; i++) {
+            if (aI[i] > 0) { rI[i] = bI[i]; }
+        }
+    }
+
+    @Benchmark
     public void ifDiamondInt() {
+        for (int i = 0; i < aI.length; i++) {
+            // similar to ifMaskedLoadInt, but all loads and stores are unconditional.
+            int aa = aI[i];
+            int bb = bI[i];
+            rI[i] = (aa > 0) ? (aa + 1) : (bb * 2);
+        }
+    }
+
+    @Benchmark
+    public void ifMaskedLoadInt() {
+        for (int i = 0; i < aI.length; i++) {
+            // aI and rI are unconditional, but load from bI is conditional.
+            int aa = aI[i];
+            rI[i] = (aa > 0) ? (aa + 1) : (bI[i] * 2);
+        }
+    }
+
+    @Benchmark
+    public void ifDiamondIntV2() {
         for (int i = 0; i < aI.length; i++) {
             int aa = aI[i];
             rI[i] = (aa > 0) ? (aa + 1) : (aa * 2);
         }
+    }
+
+    @Benchmark
+    public int ifSearchInt() {
+        for (int i = 0; i < aI.length; i++) {
+            if (haystackI[i] == 42) { return i; }
+        }
+        return -1;
     }
 }
