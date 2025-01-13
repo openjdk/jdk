@@ -157,7 +157,7 @@ void ShenandoahRegionPartitions::dump_bitmap_row(idx_t region_idx) const {
   uintx old_collector_bits = _membership[int(ShenandoahFreeSetPartitionId::OldCollector)].bits_at(aligned_idx);
   uintx free_bits = mutator_bits | collector_bits | old_collector_bits;
   uintx notfree_bits =  ~free_bits;
-  log_debug(gc)("%6zu : " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
+  log_debug(gc)("%6zd : " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
                aligned_idx, mutator_bits, collector_bits, old_collector_bits, notfree_bits);
 }
 #endif
