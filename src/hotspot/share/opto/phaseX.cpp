@@ -1551,6 +1551,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     // Found with:
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     case Op_SubI:
+    case Op_SubL:
       return false;
   }
 
