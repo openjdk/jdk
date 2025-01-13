@@ -1070,9 +1070,9 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   const char old_extension[] = ".so";
   const char new_extension[] = ".a";
   // First try to load the existing file.
-  int eno=0;
+  int eno = 0;
   result = dll_load_library(filename, &eno, ebuf, ebuflen);
-  // If the load fails,we try to reload by changing the extension to .a for .so files only.
+  // If the load fails, we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
   if (result == nullptr && eno == ENOENT) {
     const char* pointer_to_dot = strrchr(filename, '.');
