@@ -43,7 +43,6 @@ class LIR_Op;
 class ciType;
 class ValueType;
 class LIR_OpVisitState;
-class FpuStackSim;
 
 //---------------------------------------------------------------------
 //                 LIR Operands
@@ -884,7 +883,6 @@ class      LIR_OpBranch;
 class      LIR_OpConvert;
 class      LIR_OpAllocObj;
 class      LIR_OpReturn;
-class      LIR_OpRoundFP;
 class    LIR_Op2;
 class    LIR_OpDelay;
 class    LIR_Op3;
@@ -913,7 +911,6 @@ enum LIR_Code {
       , lir_nop
       , lir_std_entry
       , lir_osr_entry
-      , lir_fpop_raw
       , lir_breakpoint
       , lir_rtcall
       , lir_membar
@@ -927,8 +924,6 @@ enum LIR_Code {
       , lir_on_spin_wait
   , end_op0
   , begin_op1
-      , lir_fxch
-      , lir_fld
       , lir_push
       , lir_pop
       , lir_null_check
@@ -938,7 +933,6 @@ enum LIR_Code {
       , lir_convert
       , lir_alloc_object
       , lir_monaddr
-      , lir_roundfp
       , lir_safepoint
       , lir_unwind
       , lir_load_klass
@@ -1149,7 +1143,6 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpLock* as_OpLock() { return nullptr; }
   virtual LIR_OpAllocArray* as_OpAllocArray() { return nullptr; }
   virtual LIR_OpAllocObj* as_OpAllocObj() { return nullptr; }
-  virtual LIR_OpRoundFP* as_OpRoundFP() { return nullptr; }
   virtual LIR_OpBranch* as_OpBranch() { return nullptr; }
   virtual LIR_OpReturn* as_OpReturn() { return nullptr; }
   virtual LIR_OpRTCall* as_OpRTCall() { return nullptr; }
@@ -1446,23 +1439,18 @@ class LIR_OpReturn: public LIR_Op1 {
   virtual LIR_OpReturn* as_OpReturn() { return this; }
 };
 
-class ConversionStub;
-
 class LIR_OpConvert: public LIR_Op1 {
  friend class LIR_OpVisitState;
 
  private:
    Bytecodes::Code _bytecode;
-   ConversionStub* _stub;
 
  public:
-   LIR_OpConvert(Bytecodes::Code code, LIR_Opr opr, LIR_Opr result, ConversionStub* stub)
+   LIR_OpConvert(Bytecodes::Code code, LIR_Opr opr, LIR_Opr result)
      : LIR_Op1(lir_convert, opr, result)
-     , _bytecode(code)
-     , _stub(stub)                               {}
+     , _bytecode(code) {}
 
   Bytecodes::Code bytecode() const               { return _bytecode; }
-  ConversionStub* stub() const                   { return _stub; }
 
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_OpConvert* as_OpConvert() { return this; }
@@ -1516,23 +1504,6 @@ class LIR_OpAllocObj : public LIR_Op1 {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
-
-// LIR_OpRoundFP
-class LIR_OpRoundFP : public LIR_Op1 {
- friend class LIR_OpVisitState;
-
- private:
-  LIR_Opr _tmp;
-
- public:
-  LIR_OpRoundFP(LIR_Opr reg, LIR_Opr stack_loc_temp, LIR_Opr result)
-    : LIR_Op1(lir_roundfp, reg, result)
-    , _tmp(stack_loc_temp) {}
-
-  LIR_Opr tmp() const                            { return _tmp; }
-  virtual LIR_OpRoundFP* as_OpRoundFP()          { return this; }
-  void print_instr(outputStream* out) const PRODUCT_RETURN;
-};
 
 // LIR_OpTypeCheck
 class LIR_OpTypeCheck: public LIR_Op {
@@ -2202,9 +2173,6 @@ class LIR_List: public CompilationResourceObj {
 
   void leal(LIR_Opr from, LIR_Opr result_reg, LIR_PatchCode patch_code = lir_patch_none, CodeEmitInfo* info = nullptr) { append(new LIR_Op1(lir_leal, from, result_reg, T_ILLEGAL, patch_code, info)); }
 
-  // result is a stack location for old backend and vreg for UseLinearScan
-  // stack_loc_temp is an illegal register for old backend
-  void roundfp(LIR_Opr reg, LIR_Opr stack_loc_temp, LIR_Opr result) { append(new LIR_OpRoundFP(reg, stack_loc_temp, result)); }
   void move(LIR_Opr src, LIR_Opr dst, CodeEmitInfo* info = nullptr) { append(new LIR_Op1(lir_move, src, dst, dst->type(), lir_patch_none, info)); }
   void move(LIR_Address* src, LIR_Opr dst, CodeEmitInfo* info = nullptr) { append(new LIR_Op1(lir_move, LIR_OprFact::address(src), dst, src->type(), lir_patch_none, info)); }
   void move(LIR_Opr src, LIR_Address* dst, CodeEmitInfo* info = nullptr) { append(new LIR_Op1(lir_move, src, LIR_OprFact::address(dst), dst->type(), lir_patch_none, info)); }
@@ -2233,7 +2201,7 @@ class LIR_List: public CompilationResourceObj {
   void safepoint(LIR_Opr tmp, CodeEmitInfo* info)  { append(new LIR_Op1(lir_safepoint, tmp, info)); }
   void return_op(LIR_Opr result)                   { append(new LIR_OpReturn(result)); }
 
-  void convert(Bytecodes::Code code, LIR_Opr left, LIR_Opr dst, ConversionStub* stub = nullptr/*, bool is_32bit = false*/) { append(new LIR_OpConvert(code, left, dst, stub)); }
+  void convert(Bytecodes::Code code, LIR_Opr left, LIR_Opr dst) { append(new LIR_OpConvert(code, left, dst)); }
 
   void logical_and (LIR_Opr left, LIR_Opr right, LIR_Opr dst) { append(new LIR_Op2(lir_logic_and,  left, right, dst)); }
   void logical_or  (LIR_Opr left, LIR_Opr right, LIR_Opr dst) { append(new LIR_Op2(lir_logic_or,   left, right, dst)); }

@@ -1432,8 +1432,6 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
   }
 }
 
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) { ; }
-
 void InterpreterMacroAssembler::notify_method_entry() {
   // Whenever JVMTI is interp_only_mode, method entry/exit events are sent to
   // track stack depth.  If it is possible to enter interp_only_mode we add

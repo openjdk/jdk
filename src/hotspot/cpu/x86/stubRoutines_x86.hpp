@@ -34,18 +34,17 @@ static bool returns_to_call_stub(address return_pc) { return return_pc == _call_
 enum platform_dependent_constants {
   // simply increase sizes if too small (assembler will crash if too small)
   _initial_stubs_code_size      = 20000 WINDOWS_ONLY(+1000),
-  _continuation_stubs_code_size =  1000 LP64_ONLY(+2000),
+  _continuation_stubs_code_size = 3000,
   // AVX512 intrinsics add more code in 64-bit VM,
   // Windows have more code to save/restore registers
-  _compiler_stubs_code_size     = 20000 LP64_ONLY(+47000) WINDOWS_ONLY(+2000),
-  _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+22000) ZGC_ONLY(+20000)
+  _compiler_stubs_code_size     = 67000 WINDOWS_ONLY(+2000),
+  _final_stubs_code_size        = 30000 WINDOWS_ONLY(+22000) ZGC_ONLY(+20000)
 };
 
 class x86 {
  friend class StubGenerator;
  friend class VMStructs;
 
-#ifdef _LP64
  private:
   static address _get_previous_sp_entry;
 
@@ -101,50 +100,19 @@ class x86 {
     return _double_sign_flip;
   }
 
-#else // !LP64
-
- private:
-  static address _verify_fpu_cntrl_wrd_entry;
-  static address _d2i_wrapper;
-  static address _d2l_wrapper;
-
-  static jint    _fpu_cntrl_wrd_std;
-  static jint    _fpu_cntrl_wrd_24;
-  static jint    _fpu_cntrl_wrd_trunc;
-
-  static jint    _fpu_subnormal_bias1[3];
-  static jint    _fpu_subnormal_bias2[3];
-
- public:
-  static address verify_fpu_cntrl_wrd_entry() { return _verify_fpu_cntrl_wrd_entry; }
-  static address d2i_wrapper()                { return _d2i_wrapper; }
-  static address d2l_wrapper()                { return _d2l_wrapper; }
-  static address addr_fpu_cntrl_wrd_std()     { return (address)&_fpu_cntrl_wrd_std;   }
-  static address addr_fpu_cntrl_wrd_24()      { return (address)&_fpu_cntrl_wrd_24;    }
-  static address addr_fpu_cntrl_wrd_trunc()   { return (address)&_fpu_cntrl_wrd_trunc; }
-  static address addr_fpu_subnormal_bias1()   { return (address)&_fpu_subnormal_bias1; }
-  static address addr_fpu_subnormal_bias2()   { return (address)&_fpu_subnormal_bias2; }
-
-  static jint    fpu_cntrl_wrd_std()          { return _fpu_cntrl_wrd_std; }
-#endif // !LP64
-
  private:
   static jint    _mxcsr_std;
-#ifdef _LP64
   static jint    _mxcsr_rz;
-#endif // _LP64
 
   static address _verify_mxcsr_entry;
 
   // masks and table for CRC32
   static const uint64_t _crc_by128_masks[];
   static const juint    _crc_table[];
-#ifdef _LP64
   static const juint    _crc_by128_masks_avx512[];
   static const juint    _crc_table_avx512[];
   static const juint    _crc32c_table_avx512[];
   static const juint    _shuf_table_crc32_avx512[];
-#endif // _LP64
   // table for CRC32C
   static juint* _crc32c_table;
   // table for arrays_hashcode
@@ -182,7 +150,6 @@ class x86 {
   static address _vector_reverse_byte_perm_mask_long;
   static address _vector_reverse_byte_perm_mask_int;
   static address _vector_reverse_byte_perm_mask_short;
-#ifdef _LP64
   static juint _k256_W[];
   static address _k256_W_adr;
   static const julong _k512_W[];
@@ -206,23 +173,18 @@ class x86 {
   static address _join_1_2_base64;
   static address _join_2_3_base64;
   static address _decoding_table_base64;
-#endif
   // byte flip mask for sha256
   static address _pshuffle_byte_flip_mask_addr;
 
  public:
   static address addr_mxcsr_std()        { return (address)&_mxcsr_std; }
-#ifdef _LP64
   static address addr_mxcsr_rz()        { return (address)&_mxcsr_rz; }
-#endif // _LP64
   static address verify_mxcsr_entry()    { return _verify_mxcsr_entry; }
   static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
-#ifdef _LP64
   static address crc_by128_masks_avx512_addr()  { return (address)_crc_by128_masks_avx512; }
   static address shuf_table_crc32_avx512_addr()  { return (address)_shuf_table_crc32_avx512; }
   static address crc_table_avx512_addr()  { return (address)_crc_table_avx512; }
   static address crc32c_table_avx512_addr()  { return (address)_crc32c_table_avx512; }
-#endif // _LP64
   static address upper_word_mask_addr() { return _upper_word_mask_addr; }
   static address shuffle_byte_flip_mask_addr() { return _shuffle_byte_flip_mask_addr; }
   static address k256_addr()      { return _k256_adr; }
@@ -322,7 +284,6 @@ class x86 {
   static address vector_popcount_lut() {
     return _vector_popcount_lut;
   }
-#ifdef _LP64
   static address k256_W_addr()    { return _k256_W_adr; }
   static address k512_W_addr()    { return _k512_W_addr; }
   static address pshuffle_byte_flip_mask_addr_sha512() { return _pshuffle_byte_flip_mask_addr_sha512; }
@@ -346,7 +307,6 @@ class x86 {
   static address compress_perm_table64() { return _compress_perm_table64; }
   static address expand_perm_table32() { return _expand_perm_table32; }
   static address expand_perm_table64() { return _expand_perm_table64; }
-#endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
   static void generate_CRC32C_table(bool is_pclmulqdq_supported);

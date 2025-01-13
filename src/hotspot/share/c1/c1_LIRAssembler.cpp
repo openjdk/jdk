@@ -486,19 +486,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   if (op->is_method_handle_invoke()) {
     compilation()->set_has_method_handle_invokes(true);
   }
-
-#if defined(IA32) && defined(COMPILER2)
-  // C2 leave fpu stack dirty clean it
-  if (UseSSE < 2 && !CompilerConfig::is_c1_only_no_jvmci()) {
-    int i;
-    for ( i = 1; i <= 7 ; i++ ) {
-      ffree(i);
-    }
-    if (!op->result_opr()->is_float_kind()) {
-      ffree(0);
-    }
-  }
-#endif // IA32 && COMPILER2
 }
 
 
@@ -520,12 +507,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       break;
 
-    case lir_roundfp: {
-      LIR_OpRoundFP* round_op = op->as_OpRoundFP();
-      roundfp_op(round_op->in_opr(), round_op->tmp(), round_op->result_opr(), round_op->pop_fpu_stack());
-      break;
-    }
-
     case lir_return: {
       assert(op->as_OpReturn() != nullptr, "sanity");
       LIR_OpReturn *ret_op = (LIR_OpReturn*)op;
@@ -542,16 +523,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       safepoint_poll(op->in_opr(), op->info());
       break;
-
-#ifdef IA32
-    case lir_fxch:
-      fxch(op->in_opr()->as_jint());
-      break;
-
-    case lir_fld:
-      fld(op->in_opr()->as_jint());
-      break;
-#endif // IA32
 
     case lir_branch:
       break;
@@ -627,12 +598,6 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
       osr_entry();
       break;
-
-#ifdef IA32
-    case lir_fpop_raw:
-      fpop();
-      break;
-#endif // IA32
 
     case lir_breakpoint:
       breakpoint();
@@ -776,17 +741,6 @@ void LIR_Assembler::emit_op4(LIR_Op4* op) {
 void LIR_Assembler::build_frame() {
   _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 }
-
-
-void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack) {
-  assert(strict_fp_requires_explicit_rounding, "not required");
-  assert((src->is_single_fpu() && dest->is_single_stack()) ||
-         (src->is_double_fpu() && dest->is_double_stack()),
-         "round_fp: rounds register -> stack location");
-
-  reg2stack (src, dest, src->type(), pop_fpu_stack);
-}
-
 
 void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
   if (src->is_register()) {

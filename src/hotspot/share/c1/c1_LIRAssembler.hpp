@@ -215,7 +215,6 @@ class LIR_Assembler: public CompilationResourceObj {
 
   void logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest);
 
-  void roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack);
   void move_op(LIR_Opr src, LIR_Opr result, BasicType type,
                LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide);
   void volatile_move_op(LIR_Opr src, LIR_Opr result, BasicType type, CodeEmitInfo* info);

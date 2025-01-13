@@ -33,7 +33,6 @@
 class SignatureHandlerGenerator: public NativeSignatureIterator {
  private:
   MacroAssembler* _masm;
-#ifdef AMD64
 #ifdef _WIN64
   unsigned int _num_args;
 #else
@@ -41,17 +40,11 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   unsigned int _num_int_args;
 #endif // _WIN64
   int _stack_offset;
-#else
-  void move(int from_offset, int to_offset);
-  void box(int from_offset, int to_offset);
-#endif // AMD64
 
   void pass_int();
   void pass_long();
   void pass_float();
-#ifdef AMD64
   void pass_double();
-#endif // AMD64
   void pass_object();
 
  public:

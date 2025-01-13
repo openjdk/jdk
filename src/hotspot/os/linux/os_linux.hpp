@@ -101,8 +101,6 @@ class os::Linux {
   static const char *dll_path(void* lib);
 
   static void init_thread_fpu_state();
-  static int  get_fpu_control_word();
-  static void set_fpu_control_word(int fpu_control);
   static pthread_t main_thread(void)                                { return _main_thread; }
   // returns kernel thread id (similar to LWP id on Solaris), which can be
   // used to access /proc

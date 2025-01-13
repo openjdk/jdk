@@ -25,7 +25,6 @@
 #ifndef SHARE_C1_C1_LINEARSCAN_HPP
 #define SHARE_C1_C1_LINEARSCAN_HPP
 
-#include "c1/c1_FpuStackSim.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
@@ -35,7 +34,6 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-class FpuStackAllocator;
 class IRScopeDebugInfo;
 class Interval;
 class IntervalWalker;
@@ -107,7 +105,6 @@ class LinearScan : public CompilationResourceObj {
   friend class Interval;
   friend class IntervalWalker;
   friend class LinearScanWalker;
-  friend class FpuStackAllocator;
   friend class MoveResolver;
   friend class LinearScanStatistic;
   friend class LinearScanTimers;
@@ -176,15 +173,6 @@ class LinearScan : public CompilationResourceObj {
   bool          has_fpu_registers() const        { return _has_fpu_registers; }
   int           num_loops() const                { return ir()->num_loops(); }
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }
-
-  // handling of fpu stack allocation (platform dependent, needed for debug information generation)
-#ifdef IA32
-  FpuStackAllocator* _fpu_stack_allocator;
-  bool use_fpu_stack_allocation() const          { return UseSSE < 2 && has_fpu_registers(); }
-#else
-  bool use_fpu_stack_allocation() const          { return false; }
-#endif
-
 
   // access to interval list
   int           interval_count() const           { return _intervals.length(); }
@@ -356,11 +344,6 @@ class LinearScan : public CompilationResourceObj {
 
   void assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw);
   void assign_reg_num();
-
-
-  // Phase 8: fpu stack allocation
-  // (Used only on x86 when fpu operands are present)
-  void allocate_fpu_stack();
 
 
   // helper functions for printing state
@@ -900,7 +883,6 @@ class LinearScanStatistic : public StackObj {
     counter_throw,
     counter_unwind,
     counter_typecheck,
-    counter_fpu_stack,
     counter_misc_inst,
     counter_other_inst,
     blank_line_2,
@@ -953,7 +935,6 @@ class LinearScanTimers : public StackObj {
     timer_sort_intervals_after,
     timer_eliminate_spill_moves,
     timer_assign_reg_num,
-    timer_allocate_fpu_stack,
     timer_optimize_lir,
 
     number_of_timers

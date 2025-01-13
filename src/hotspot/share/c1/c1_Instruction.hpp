@@ -91,7 +91,6 @@ class         LookupSwitch;
 class       Return;
 class       Throw;
 class       Base;
-class   RoundFP;
 class   UnsafeOp;
 class     UnsafeGet;
 class     UnsafePut;
@@ -187,7 +186,6 @@ class InstructionVisitor: public StackObj {
   virtual void do_Base           (Base*            x) = 0;
   virtual void do_OsrEntry       (OsrEntry*        x) = 0;
   virtual void do_ExceptionObject(ExceptionObject* x) = 0;
-  virtual void do_RoundFP        (RoundFP*         x) = 0;
   virtual void do_UnsafeGet      (UnsafeGet*       x) = 0;
   virtual void do_UnsafePut      (UnsafePut*       x) = 0;
   virtual void do_UnsafeGetAndSet(UnsafeGetAndSet* x) = 0;
@@ -556,7 +554,6 @@ class Instruction: public CompilationResourceObj {
   virtual Return*           as_Return()          { return nullptr; }
   virtual Throw*            as_Throw()           { return nullptr; }
   virtual Base*             as_Base()            { return nullptr; }
-  virtual RoundFP*          as_RoundFP()         { return nullptr; }
   virtual ExceptionObject*  as_ExceptionObject() { return nullptr; }
   virtual UnsafeOp*         as_UnsafeOp()        { return nullptr; }
   virtual ProfileInvoke*    as_ProfileInvoke()   { return nullptr; }
@@ -2139,30 +2136,6 @@ LEAF(ExceptionObject, Instruction)
 
   // generic
   virtual void input_values_do(ValueVisitor* f)   { }
-};
-
-
-// Models needed rounding for floating-point values on Intel.
-// Currently only used to represent rounding of double-precision
-// values stored into local variables, but could be used to model
-// intermediate rounding of single-precision values as well.
-LEAF(RoundFP, Instruction)
- private:
-  Value _input;             // floating-point value to be rounded
-
- public:
-  RoundFP(Value input)
-  : Instruction(input->type()) // Note: should not be used for constants
-  , _input(input)
-  {
-    ASSERT_VALUES
-  }
-
-  // accessors
-  Value input() const                            { return _input; }
-
-  // generic
-  virtual void input_values_do(ValueVisitor* f)   { f->visit(&_input); }
 };
 
 

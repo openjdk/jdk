@@ -32,11 +32,6 @@ enum {
   pd_hi_word_offset_in_bytes = 0
 };
 
-// Explicit rounding operations are not required to implement the strictFP mode.
-enum {
-  pd_strict_fp_requires_explicit_rounding = false
-};
-
 // registers
 enum {
   pd_nof_cpu_regs_frame_map = 16,  // Number of registers used during code emission.

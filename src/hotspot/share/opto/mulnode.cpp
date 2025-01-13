@@ -201,14 +201,6 @@ const Type* MulNode::Value(PhaseGVN* phase) const {
   if( t1 == Type::BOTTOM || t2 == Type::BOTTOM )
     return bottom_type();
 
-#if defined(IA32)
-  // Can't trust native compilers to properly fold strict double
-  // multiplication with round-to-zero on this platform.
-  if (op == Op_MulD) {
-    return TypeD::DOUBLE;
-  }
-#endif
-
   return mul_ring(t1,t2);            // Local flavor of type multiplication
 }
 

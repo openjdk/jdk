@@ -375,15 +375,6 @@ void os::Linux::init_thread_fpu_state(void) {
   // Nothing to do on z/Architecture.
 }
 
-int os::Linux::get_fpu_control_word(void) {
-  // Nothing to do on z/Architecture.
-  return 0;
-}
-
-void os::Linux::set_fpu_control_word(int fpu_control) {
-  // Nothing to do on z/Architecture.
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

@@ -955,7 +955,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // ------------------- reg_pressure --------------------
           // Each entry is reg_pressure_per_value,number_of_regs
           //         RegL  RegI  RegFlags   RegF RegD    INTPRESSURE  FLOATPRESSURE
-          // IA32     2     1     1          1    1          6           6
           // SPARC    2     2     2          2    2         48 (24)     52 (26)
           // SPARCV9  2     2     2          2    2         48 (24)     52 (26)
           // AMD64    1     1     1          1    1         14          15
@@ -971,12 +970,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // Define platform specific register pressure
 #if defined(ARM32)
           lrg.set_reg_pressure(2);
-#elif defined(IA32)
-          if( ireg == Op_RegL ) {
-            lrg.set_reg_pressure(2);
-          } else {
-            lrg.set_reg_pressure(1);
-          }
 #else
           lrg.set_reg_pressure(1);  // normally one value per register
 #endif

@@ -419,16 +419,6 @@ void os::Linux::init_thread_fpu_state(void) {
   __asm__ __volatile__ ("mtfsfi 6,0");
 }
 
-int os::Linux::get_fpu_control_word(void) {
-  // x86 has problems with FPU precision after pthread_cond_timedwait().
-  // nothing to do on ppc64.
-  return 0;
-}
-
-void os::Linux::set_fpu_control_word(int fpu_control) {
-  // x86 has problems with FPU precision after pthread_cond_timedwait().
-  // nothing to do on ppc64.
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack

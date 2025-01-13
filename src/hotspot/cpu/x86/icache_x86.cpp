@@ -32,7 +32,6 @@ void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flu
   StubCodeMark mark(this, "ICache", "flush_icache_stub");
 
   address start = __ pc();
-#ifdef AMD64
 
   const Register addr  = c_rarg0;
   const Register lines = c_rarg1;
@@ -57,10 +56,6 @@ void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flu
 
   __ bind(done);
 
-#else
-  const Address magic(rsp, 3*wordSize);
-  __ lock(); __ addl(Address(rsp, 0), 0);
-#endif // AMD64
   __ movptr(rax, magic); // Handshake with caller to make sure it happened!
   __ ret(0);
 

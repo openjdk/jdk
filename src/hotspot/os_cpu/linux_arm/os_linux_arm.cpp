@@ -425,14 +425,6 @@ void os::Linux::init_thread_fpu_state(void) {
   os::setup_fpu();
 }
 
-int os::Linux::get_fpu_control_word(void) {
-  return 0;
-}
-
-void os::Linux::set_fpu_control_word(int fpu_control) {
-  // Nothing to do
-}
-
 void os::setup_fpu() {
 #if !defined(__SOFTFP__) && defined(__VFP_FP__)
   // Turn on IEEE-754 compliant VFP mode

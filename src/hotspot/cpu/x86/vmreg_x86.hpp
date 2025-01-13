@@ -55,11 +55,7 @@ inline Register as_Register() {
 
   assert( is_Register(), "must be");
   // Yuk
-#ifdef AMD64
   return ::as_Register(value() >> 1);
-#else
-  return ::as_Register(value());
-#endif // AMD64
 }
 
 inline FloatRegister as_FloatRegister() {
@@ -82,9 +78,6 @@ inline KRegister as_KRegister() {
 
 inline   bool is_concrete() {
   assert(is_reg(), "must be");
-#ifndef AMD64
-  if (is_Register()) return true;
-#endif // AMD64
   // Do not use is_XMMRegister() here as it depends on the UseAVX setting.
   if (value() >= ConcreteRegisterImpl::max_fpr && value() < ConcreteRegisterImpl::max_xmm) {
     int base = value() - ConcreteRegisterImpl::max_fpr;

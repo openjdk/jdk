@@ -51,11 +51,7 @@ inline void OrderAccess::release()    { compiler_barrier(); }
 
 inline void OrderAccess::fence() {
   // always use locked addl since mfence is sometimes expensive
-#ifdef AMD64
   __asm__ volatile ("lock; addl $0,0(%%rsp)" : : : "cc", "memory");
-#else
-  __asm__ volatile ("lock; addl $0,0(%%esp)" : : : "cc", "memory");
-#endif
   compiler_barrier();
 }
 
