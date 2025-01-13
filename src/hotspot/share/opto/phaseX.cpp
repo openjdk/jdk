@@ -1442,10 +1442,15 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // Investigate why this was not already done during IGVN.
     // A similar issue happens with Identity.
     //
+    // There seem to be other cases where loads go up some steps, like
+    // LoadNode::Ideal going up 10x steps to find dominating load.
+    //
     // Found with:
     //   test/hotspot/jtreg/compiler/arraycopy/TestCloneAccess.java
     //   -XX:VerifyIterativeGVN=1110
     case Op_LoadI:
+    case Op_LoadN:
+    case Op_LoadB:
       return false;
   }
 

@@ -1924,6 +1924,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         for (int i = 0; i < 10 && ctl != nullptr; i++) {
           ctl = IfNode::up_one_dom(ctl);
           if (ctl == use->in(0)) {
+            phase->is_IterGVN()->rehash_node_delayed(this);
             set_req(0, use->in(0));
             return this;
           }
