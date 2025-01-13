@@ -1534,6 +1534,7 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     case Op_LoadN:
     case Op_LoadB:
+    case Op_LoadUB:
       return false;
 
     // In SubNode::Identity, we do:
