@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
@@ -285,6 +286,8 @@ void os::run_periodic_checks(outputStream* st) {
 
 static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
 
+#define JVM_LIB_NAME "jvm.dll"
+
 void os::init_system_properties_values() {
   // sysclasspath, java_home, dll_dir
   {
@@ -300,15 +303,27 @@ void os::init_system_properties_values() {
       home_dir[MAX_PATH] = '\0';
     } else {
       os::jvm_path(home_dir, sizeof(home_dir));
-      // Found the full path to jvm.dll.
-      // Now cut the path to <java_home>/jre if we can.
-      *(strrchr(home_dir, '\\')) = '\0';  // get rid of \jvm.dll
+      // Found the full path to the binary. It is normally of this structure:
+      //   <jdk_path>/bin/<hotspot_variant>/jvm.dll
+      // but can also be like this for a statically linked binary:
+      //   <jdk_path>/bin/<executable>.exe
       pslash = strrchr(home_dir, '\\');
       if (pslash != nullptr) {
-        *pslash = '\0';                   // get rid of \{client|server}
+        if (strncmp(pslash + 1, JVM_LIB_NAME, strlen(JVM_LIB_NAME)) == 0) {
+          // Binary name is jvm.dll. Get rid of \jvm.dll.
+          *pslash = '\0';
+        }
+
+        // Get rid of \hotspot_variant>, if binary is jvm.dll,
+        // or cut off \<executable>, if it is a statically linked binary.
         pslash = strrchr(home_dir, '\\');
         if (pslash != nullptr) {
-          *pslash = '\0';                 // get rid of \bin
+          *pslash = '\0';
+          // Get rid of \bin
+          pslash = strrchr(home_dir, '\\');
+          if (pslash != nullptr) {
+            *pslash = '\0';
+          }
         }
       }
     }
@@ -1402,9 +1417,7 @@ void* os::dll_lookup(void *lib, const char *name) {
 }
 
 void* os::lookup_function(const char* name) {
-  // This is needed only for static builds which are not supported on Windows
-  ShouldNotReachHere();
-  return nullptr; // Satisfy compiler
+  return ::GetProcAddress(nullptr, name);
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -4382,9 +4395,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
+    permit_forbidden_function::exit(exit_code);
   } else { // EPT_PROCESS_DIE
-    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
+    permit_forbidden_function::_exit(exit_code);
   }
 
   // Should not reach here
@@ -5147,7 +5160,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  char* p = permit_forbidden_function::_fullpath(nullptr, filename, 0);
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -5155,7 +5168,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+    permit_forbidden_function::free(p); // *not* os::free
   }
   return result;
 }
