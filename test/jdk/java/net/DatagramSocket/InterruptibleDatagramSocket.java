@@ -99,7 +99,8 @@ public class InterruptibleDatagramSocket {
 
     public static void main(String[] args) throws Exception {
         if (Thread.currentThread().isVirtual()) {
-            throw new jtreg.SkippedException("skipping test execution through a virtual thread");
+            throw new jtreg.SkippedException(
+                    "skipping test execution - main thread is a virtual thread");
         }
         try (DatagramSocket s = new DatagramSocket()) {
             System.out.println("Testing interrupt of DatagramSocket receive " +
