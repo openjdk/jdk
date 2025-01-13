@@ -126,7 +126,7 @@ class PSStripeShadowCardTable {
 
   // Avoid UB pointer operations by using integers internally.
 
-  static_assert(sizeof(intptr_t) == sizeof(CardValue*), "simplifying assumption");
+  static_assert(sizeof(uintptr_t) == sizeof(CardValue*), "simplifying assumption");
   static_assert(sizeof(CardValue) == 1, "simplifying assumption");
 
   static uintptr_t iaddr(const void* p) {
