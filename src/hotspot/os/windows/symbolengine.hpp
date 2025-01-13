@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,6 +58,7 @@ namespace SymbolEngine {
   // missing - if any, and the dbhelp API version)
   void print_state_on(outputStream* st);
 
+  // Called as early as possible
   void pre_initialize();
 
 };
