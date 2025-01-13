@@ -1257,13 +1257,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                               ThreadFactory threadFactory,
                               RejectedExecutionHandler handler) {
         if (corePoolSize < 0) {
-            throw new IllegalArgumentException("corePoolSize < 0");
+            throw new IllegalArgumentException("corePoolSize can't be negative, but got " + corePoolSize);
         } else if (maximumPoolSize <= 0) {
-            throw new IllegalArgumentException("maximumPoolSize <= 0");
+            throw new IllegalArgumentException("maximumPoolSize must be positive, but got " + maximumPoolSize);
         } else if (maximumPoolSize < corePoolSize) {
-            throw new IllegalArgumentException("maximumPoolSize < corePoolSize");
+            throw new IllegalArgumentException("maximumPoolSize must >= corePoolSize , " +
+                "but got maximumPoolSize:" + maximumPoolSize + " corePoolSize :" + corePoolSize);
         } else if (keepAliveTime < 0) {
-            throw new IllegalArgumentException("keepAliveTime < 0");
+            throw new IllegalArgumentException("keepAliveTime can't be negative, but got " + keepAliveTime);
         }
         if (workQueue == null || threadFactory == null || handler == null)
             throw new NullPointerException();
@@ -1508,9 +1509,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     public void setCorePoolSize(int corePoolSize) {
         if (corePoolSize < 0) {
-            throw new IllegalArgumentException("corePoolSize < 0");
+            throw new IllegalArgumentException("corePoolSize can't be negative, but got " + corePoolSize);
         } else if (corePoolSize > maximumPoolSize) {
-            throw new IllegalArgumentException("corePoolSize > maximumPoolSize");
+            throw new IllegalArgumentException("maximumPoolSize must >= corePoolSize , " +
+                "but got maximumPoolSize:" + maximumPoolSize + " corePoolSize :" + corePoolSize);
         }
         int delta = corePoolSize - this.corePoolSize;
         this.corePoolSize = corePoolSize;
@@ -1636,9 +1638,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     public void setMaximumPoolSize(int maximumPoolSize) {
         if (maximumPoolSize <= 0) {
-            throw new IllegalArgumentException("maximumPoolSize <= 0");
+            throw new IllegalArgumentException("maximumPoolSize must be positive, but got " + maximumPoolSize);
         } else if (maximumPoolSize < corePoolSize) {
-            throw new IllegalArgumentException("maximumPoolSize < corePoolSize");
+            throw new IllegalArgumentException("maximumPoolSize must >= corePoolSize , " +
+                "but got maximumPoolSize:" + maximumPoolSize + " corePoolSize :" + corePoolSize);
         }
         this.maximumPoolSize = maximumPoolSize;
         if (workerCountOf(ctl.get()) > maximumPoolSize)
@@ -1673,7 +1676,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     public void setKeepAliveTime(long time, TimeUnit unit) {
         if (time < 0)
-            throw new IllegalArgumentException("time < 0");
+            throw new IllegalArgumentException("time can't be negative, but got " + time);
         if (time == 0 && allowsCoreThreadTimeOut())
             throw new IllegalArgumentException("Core threads must have nonzero keep alive times");
         long keepAliveTime = unit.toNanos(time);
