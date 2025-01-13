@@ -59,6 +59,8 @@ public class CaptureStateUtilBench {
     private static final VarHandle ERRNO_HANDLE = Linker.Option.captureStateLayout()
             .varHandle(MemoryLayout.PathElement.groupElement(ERRNO_NAME));
 
+    private static final long SIZE = Linker.Option.captureStateLayout().byteSize();
+
     private static final MethodHandle DUMMY_EXPLICIT_ALLOC = dummyExplicitAlloc();
     private static final MethodHandle DUMMY_TL_ALLOC = dummyTlAlloc();
 
@@ -71,14 +73,14 @@ public class CaptureStateUtilBench {
     @Benchmark
     public int explicitSuccess() throws Throwable {
         try (var arena = Arena.ofConfined()) {
-            return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(4), 0, 0);
+            return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(SIZE), 0, 0);
         }
     }
 
     @Benchmark
     public int explicitFail() throws Throwable {
         try (var arena = Arena.ofConfined()) {
-            return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(4), -1, 1);
+            return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(SIZE), -1, 1);
         }
     }
 
@@ -111,6 +113,5 @@ public class CaptureStateUtilBench {
         ERRNO_HANDLE.set(segment, 0, errno);
         return result;
     }
-
 
 }
