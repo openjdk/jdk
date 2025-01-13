@@ -2796,7 +2796,7 @@ private:
   //   Unknown  -> Backward
   //   Forward  -> Forward
   //   Backward -> Backward
-  enum ValueOrder { Unknown, Forward, Backward };
+  enum ValueOrder : uint8_t { Unknown, Forward, Backward };
   ValueOrder  _value_order;
 
   NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
