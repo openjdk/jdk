@@ -25,7 +25,7 @@
  * SealedCompilationTests
  *
  * @test
- * @bug 8246353 8273257 8294550
+ * @bug 8246353 8273257 8294550 8347562
  * @summary Negative compilation tests, and positive compilation (smoke) tests for sealed classes
  * @library /lib/combo /tools/lib
  * @modules
@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -61,6 +62,7 @@ import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.OutputKind;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class SealedCompilationTests extends CompilationTestCase {
@@ -560,6 +562,13 @@ class SealedCompilationTests extends CompilationTestCase {
             """)) {
             assertFail("compiler.err.invalid.permits.clause", s);
         }
+        assertFail("compiler.err.illegal.forward.ref", _ -> {
+                assertEquals(Collections.nCopies(2, "compiler.err.illegal.forward.ref"), diags.keys());
+            },
+            """
+            sealed class Permits<X, Y> permits X, Y {}
+            """
+        );
     }
 
     @Test
