@@ -138,14 +138,14 @@ class PSStripeShadowCardTable {
     return iaddr(_table) - offset;
   }
 
-  void check_card_inclusive(const CardValue* card) const {
+  void verify_card_inclusive(const CardValue* card) const {
     assert(iaddr(card) >= iaddr(_table), "out of bounds");
     assert(iaddr(card) <= (iaddr(_table) + sizeof(_table)), "out of bounds");
   }
 
-  void check_card_exclusive(const CardValue* card) const {
+  void verify_card_exclusive(const CardValue* card) const {
     assert(iaddr(card) >= iaddr(_table), "out of bounds");
-    assert(iaddr(card) <= (iaddr(_table) + sizeof(_table)), "out of bounds");
+    assert(iaddr(card) < (iaddr(_table) + sizeof(_table)), "out of bounds");
   }
 
 public:
@@ -168,7 +168,7 @@ public:
   }
 
   HeapWord* addr_for(const CardValue* const card) {
-    check_card_inclusive(card);
+    verify_card_inclusive(card);
     uintptr_t addr = (iaddr(card) - _table_base) << _card_shift;
     return reinterpret_cast<HeapWord*>(addr);
   }
@@ -176,7 +176,7 @@ public:
   const CardValue* card_for(HeapWord* addr) {
     uintptr_t icard = _table_base + (iaddr(addr) >> _card_shift);
     const CardValue* card = reinterpret_cast<const CardValue*>(icard);
-    check_card_inclusive(card);
+    verify_card_inclusive(card);
     return card;
   }
 
@@ -185,7 +185,7 @@ public:
   }
 
   bool is_clean(const CardValue* const card) {
-    check_card_exclusive(card);
+    verify_card_exclusive(card);
     return *card == PSCardTable::clean_card_val();
   }
 
