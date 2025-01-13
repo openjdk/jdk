@@ -321,21 +321,7 @@ public enum AccessFlag {
         this.mask = mask;
         this.sourceModifier = sourceModifier;
         this.locations = locations;
-        this.historicalLocations = ensureHistoryOrdered(historicalLocations);
-    }
-
-    // Ensures the historical versions are from newest to oldest and do not include the latest
-    private static <T> List<Map.Entry<ClassFileFormatVersion, T>> ensureHistoryOrdered(
-            List<Map.Entry<ClassFileFormatVersion, T>> history) {
-        var lastVersion = ClassFileFormatVersion.latest();
-        for (var e : history) {
-            var historyVersion = e.getKey();
-            if (lastVersion.compareTo(historyVersion) <= 0) {
-                throw new IllegalArgumentException("Versions out of order");
-            }
-            lastVersion = historyVersion;
-        }
-        return history;
+        this.historicalLocations = Location.ensureHistoryOrdered(historicalLocations);
     }
 
     /**
@@ -368,16 +354,7 @@ public enum AccessFlag {
      * @throws NullPointerException if the parameter is {@code null}
      */
     public Set<Location> locations(ClassFileFormatVersion cffv) {
-        Objects.requireNonNull(cffv);
-        Set<Location> candidate = locations;
-        for (var e : historicalLocations) {
-            if (e.getKey().compareTo(cffv) < 0) {
-                // last version found was valid
-                return candidate;
-            }
-            candidate = e.getValue();
-        }
-        return candidate;
+        return Location.findInHistory(locations, historicalLocations, cffv);
     }
 
     /**
@@ -600,6 +577,34 @@ public enum AccessFlag {
             this.historicalFlagsMasks = ensureHistoryOrdered(historicalFlagsMasks);
         }
 
+        // Ensures the historical versions are from newest to oldest and do not include the latest
+        // These 2 utilities reside in Location because Location must be initialized before AccessFlag
+        private static <T> List<Map.Entry<ClassFileFormatVersion, T>> ensureHistoryOrdered(
+                List<Map.Entry<ClassFileFormatVersion, T>> history) {
+            var lastVersion = ClassFileFormatVersion.latest();
+            for (var e : history) {
+                var historyVersion = e.getKey();
+                if (lastVersion.compareTo(historyVersion) <= 0) {
+                    throw new IllegalArgumentException("Versions out of order");
+                }
+                lastVersion = historyVersion;
+            }
+            return history;
+        }
+
+        private static <T> T findInHistory(T candidate, List<Map.Entry<ClassFileFormatVersion, T>> history,
+                                           ClassFileFormatVersion cffv) {
+            Objects.requireNonNull(cffv);
+            for (var e : history) {
+                if (e.getKey().compareTo(cffv) < 0) {
+                    // last version found was valid
+                    return candidate;
+                }
+                candidate = e.getValue();
+            }
+            return candidate;
+        }
+
         /**
          * {@return the union of integer masks of all access flags defined for
          * this location in the latest class file format version}  If {@code
@@ -629,16 +634,7 @@ public enum AccessFlag {
          * @since 25
          */
         public int flagsMask(ClassFileFormatVersion cffv) {
-            Objects.requireNonNull(cffv);
-            int candidate = flagsMask;
-            for (var e : historicalFlagsMasks) {
-                if (e.getKey().compareTo(cffv) < 0) {
-                    // last version found was valid
-                    return candidate;
-                }
-                candidate = e.getValue();
-            }
-            return candidate;
+            return findInHistory(flagsMask, historicalFlagsMasks, cffv);
         }
 
         /**
