@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public abstract class PermissionCollection implements java.io.Serializable {
     private static final long serialVersionUID = -6727011328946861783L;
 
     /**
-     * Whether this permission collection is read-only.
+     * @serial Whether this permission collection is read-only.
      * <p>
      * If set, the {@code add} method will throw an exception.
      */

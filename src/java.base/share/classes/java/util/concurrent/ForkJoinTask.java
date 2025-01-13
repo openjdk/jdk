@@ -278,6 +278,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     static final int UNCOMPENSATE   = 1 << 16; // helpJoin sentinel
 
     // Fields
+    /** @serial */
     volatile int status;                // accessed directly by pool and workers
     private transient volatile Aux aux; // either waiters or thrown Exception
 

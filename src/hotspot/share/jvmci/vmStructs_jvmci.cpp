@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@
   nonstatic_field(Klass,                       _name,                                         Symbol*)                               \
   volatile_nonstatic_field(Klass,              _next_sibling,                                 Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
-  nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
+  nonstatic_field(Klass,                       _modifier_flags,                               u2)                                    \
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(Klass,                       _secondary_supers_bitmap,                      uintx)                                 \
@@ -488,7 +488,6 @@
   declare_constant(InvocationEntryBci)                                    \
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
-  declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
   declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.util;
 
-package jdk.jfr.internal.settings;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
-import jdk.jfr.SettingControl;
+public final class DirectoryCleaner extends SimpleFileVisitor<Path> {
 
-/**
- * SettingControls that derive from this class avoids executing settings
- * modifications in a AccessController.doPrivilege(...) block.
- */
-public abstract class JDKSettingControl extends SettingControl {
+    public static void clear(Path path) throws IOException {
+        Files.walkFileTree(path, new DirectoryCleaner());
+    }
+
+    @Override
+    public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
+        Files.delete(path);
+        return FileVisitResult.CONTINUE;
+    }
+
+    @Override
+    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+        if (exc != null) {
+            throw exc;
+        }
+        Files.delete(dir);
+        return FileVisitResult.CONTINUE;
+    }
 }
