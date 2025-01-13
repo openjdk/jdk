@@ -1374,25 +1374,13 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         serverCommunicatorAdmin.reqIncoming();
         try {
             if (subject == null) {
-                try {
-                    return doOperationInner(operation, params);
-                } catch (Exception e) {
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException) e;
-                    } else {
-                        throw e;
-                    }
-                } 
+                return doOperationInner(operation, params);
             } else {
                 try {
                     return Subject.callAs(subject, () -> doOperationInner(operation, params));
                 } catch (CompletionException ce) {
                     Throwable thr = ce.getCause();
-                    if (thr instanceof SecurityException se) {
-                        throw se;
-                    } else if (thr instanceof IOException ioe) {
-                        throw ioe;
-                    } else if (thr instanceof Exception e) {
+                    if (thr instanceof Exception e) {
                         throw e;
                     } else {
                         throw new RuntimeException(thr);
