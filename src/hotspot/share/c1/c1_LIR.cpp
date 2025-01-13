@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1617,7 +1617,7 @@ void LIR_Address::print_value_on(outputStream* out) const {
     case times_8: out->print(" * 8"); break;
     }
   }
-  out->print(" Disp: " INTX_FORMAT, _disp);
+  out->print(" Disp: %zd", _disp);
 }
 
 // debug output of block header without InstructionPrinter

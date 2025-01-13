@@ -545,7 +545,7 @@ static unsigned thread_native_entry(void* t) {
     res = 20115;    // java thread
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / K);
+  log_info(os, thread)("Thread is alive (tid: %zu, stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / K);
 
 #ifdef USE_VECTORED_EXCEPTION_HANDLING
   // Any exception is caught by the Vectored Exception Handler, so VM can
@@ -567,7 +567,7 @@ static unsigned thread_native_entry(void* t) {
   // Note: at this point the thread object may already have deleted itself.
   // Do not dereference it from here on out.
 
-  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ").", os::current_thread_id());
+  log_info(os, thread)("Thread finished (tid: %zu).", os::current_thread_id());
 
   // Thread must not return from exit_process_or_thread(), but if it does,
   // let it proceed to exit normally
@@ -630,7 +630,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   thread->set_osthread(osthread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
+  log_info(os, thread)("Thread attached (tid: %zu, stack: "
                        PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), p2i(thread->stack_base()),
                        p2i(thread->stack_end()), thread->stack_size() / K);
@@ -3350,7 +3350,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
     }
     if (Verbose && PrintMiscellaneous) {
       reserveTimer.stop();
-      tty->print_cr("reserve_memory of %Ix bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
+      tty->print_cr("reserve_memory of %zx bytes took " JLONG_FORMAT " ms (" JLONG_FORMAT " ticks)", bytes,
                     reserveTimer.milliseconds(), reserveTimer.ticks());
     }
   }

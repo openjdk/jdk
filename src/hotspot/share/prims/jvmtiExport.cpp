@@ -1248,7 +1248,7 @@ void JvmtiExport::post_raw_breakpoint(JavaThread *thread, Method* method, addres
     if (!ets->breakpoint_posted() && ets->is_enabled(JVMTI_EVENT_BREAKPOINT)) {
       ThreadState old_os_state = thread->osthread()->get_state();
       thread->osthread()->set_state(BREAKPOINTED);
-      EVT_TRACE(JVMTI_EVENT_BREAKPOINT, ("[%s] Evt Breakpoint sent %s.%s @ " INTX_FORMAT,
+      EVT_TRACE(JVMTI_EVENT_BREAKPOINT, ("[%s] Evt Breakpoint sent %s.%s @ %zd",
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -1997,7 +1997,7 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     ets->compare_and_set_current_location(mh(), location, JVMTI_EVENT_SINGLE_STEP);
     if (!ets->single_stepping_posted() && ets->is_enabled(JVMTI_EVENT_SINGLE_STEP)) {
-      EVT_TRACE(JVMTI_EVENT_SINGLE_STEP, ("[%s] Evt Single Step sent %s.%s @ " INTX_FORMAT,
+      EVT_TRACE(JVMTI_EVENT_SINGLE_STEP, ("[%s] Evt Single Step sent %s.%s @ %zd",
                     JvmtiTrace::safe_get_thread_name(thread),
                     (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                     (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2044,7 +2044,7 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
       if (ets->is_enabled(JVMTI_EVENT_EXCEPTION) && (exception != nullptr)) {
 
         EVT_TRACE(JVMTI_EVENT_EXCEPTION,
-                     ("[%s] Evt Exception thrown sent %s.%s @ " INTX_FORMAT,
+                     ("[%s] Evt Exception thrown sent %s.%s @ %zd",
                       JvmtiTrace::safe_get_thread_name(thread),
                       (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                       (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2120,7 +2120,7 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
     return;
   }
   EVT_TRIG_TRACE(JVMTI_EVENT_EXCEPTION_CATCH,
-                    ("[%s] Trg unwind_due_to_exception triggered %s.%s @ %s" INTX_FORMAT " - %s",
+                    ("[%s] Trg unwind_due_to_exception triggered %s.%s @ %s%zd - %s",
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2160,7 +2160,7 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
       for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
         if (ets->is_enabled(JVMTI_EVENT_EXCEPTION_CATCH) && (exception_handle() != nullptr)) {
           EVT_TRACE(JVMTI_EVENT_EXCEPTION_CATCH,
-                     ("[%s] Evt ExceptionCatch sent %s.%s @ " INTX_FORMAT,
+                     ("[%s] Evt ExceptionCatch sent %s.%s @ %zd",
                       JvmtiTrace::safe_get_thread_name(thread),
                       (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                       (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2244,7 +2244,7 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     if (ets->is_enabled(JVMTI_EVENT_FIELD_ACCESS)) {
-      EVT_TRACE(JVMTI_EVENT_FIELD_ACCESS, ("[%s] Evt Field Access event sent %s.%s @ " INTX_FORMAT,
+      EVT_TRACE(JVMTI_EVENT_FIELD_ACCESS, ("[%s] Evt Field Access event sent %s.%s @ %zd",
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
@@ -2402,7 +2402,7 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     if (ets->is_enabled(JVMTI_EVENT_FIELD_MODIFICATION)) {
       EVT_TRACE(JVMTI_EVENT_FIELD_MODIFICATION,
-                   ("[%s] Evt Field Modification event sent %s.%s @ " INTX_FORMAT,
+                   ("[%s] Evt Field Modification event sent %s.%s @ %zd",
                     JvmtiTrace::safe_get_thread_name(thread),
                     (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                     (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),

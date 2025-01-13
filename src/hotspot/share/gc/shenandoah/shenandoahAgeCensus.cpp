@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +248,7 @@ void ShenandoahAgeCensus::update_tenuring_threshold() {
     _tenuring_threshold[_epoch] = tt;
   }
   print();
-  log_trace(gc, age)("New tenuring threshold " UINTX_FORMAT " (min " UINTX_FORMAT ", max " UINTX_FORMAT")",
+  log_trace(gc, age)("New tenuring threshold %zu (min %zu, max %zu)",
     (uintx) _tenuring_threshold[_epoch], ShenandoahGenerationalMinTenuringAge, ShenandoahGenerationalMaxTenuringAge);
 }
 
