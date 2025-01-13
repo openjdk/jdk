@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1194,7 +1194,11 @@ void MacroAssembler::andpd(XMMRegister dst, AddressLiteral src, Register rscratc
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
   assert(rscratch != noreg || always_reachable(src), "missing");
 
-  if (reachable(src)) {
+  if (UseAVX > 2 &&
+      (!VM_Version::supports_avx512dq() || !VM_Version::supports_avx512vl()) &&
+      (dst->encoding() >= 16)) {
+    vpand(dst, dst, src, AVX_512bit, rscratch);
+  } else if (reachable(src)) {
     Assembler::andpd(dst, as_Address(src));
   } else {
     lea(rscratch, src);
@@ -3332,7 +3336,12 @@ void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src, Register rscratc
 
   // Used in sign-bit flipping with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
-  if (reachable(src)) {
+
+  if (UseAVX > 2 &&
+      (!VM_Version::supports_avx512dq() || !VM_Version::supports_avx512vl()) &&
+      (dst->encoding() >= 16)) {
+    vpxor(dst, dst, src, Assembler::AVX_512bit, rscratch);
+  } else if (reachable(src)) {
     Assembler::xorpd(dst, as_Address(src));
   } else {
     lea(rscratch, src);
@@ -3341,16 +3350,19 @@ void MacroAssembler::xorpd(XMMRegister dst, AddressLiteral src, Register rscratc
 }
 
 void MacroAssembler::xorpd(XMMRegister dst, XMMRegister src) {
-  if (UseAVX > 2 && !VM_Version::supports_avx512dq() && (dst->encoding() == src->encoding())) {
+  if (UseAVX > 2 &&
+      (!VM_Version::supports_avx512dq() || !VM_Version::supports_avx512vl()) &&
+      ((dst->encoding() >= 16) || (src->encoding() >= 16))) {
     Assembler::vpxor(dst, dst, src, Assembler::AVX_512bit);
-  }
-  else {
+  } else {
     Assembler::xorpd(dst, src);
   }
 }
 
 void MacroAssembler::xorps(XMMRegister dst, XMMRegister src) {
-  if (UseAVX > 2 && !VM_Version::supports_avx512dq() && (dst->encoding() == src->encoding())) {
+  if (UseAVX > 2 &&
+      (!VM_Version::supports_avx512dq() || !VM_Version::supports_avx512vl()) &&
+      ((dst->encoding() >= 16) || (src->encoding() >= 16))) {
     Assembler::vpxor(dst, dst, src, Assembler::AVX_512bit);
   } else {
     Assembler::xorps(dst, src);
@@ -3362,7 +3374,12 @@ void MacroAssembler::xorps(XMMRegister dst, AddressLiteral src, Register rscratc
 
   // Used in sign-bit flipping with aligned address.
   assert((UseAVX > 0) || (((intptr_t)src.target() & 15) == 0), "SSE mode requires address alignment 16 bytes");
-  if (reachable(src)) {
+
+  if (UseAVX > 2 &&
+      (!VM_Version::supports_avx512dq() || !VM_Version::supports_avx512vl()) &&
+      (dst->encoding() >= 16)) {
+    vpxor(dst, dst, src, Assembler::AVX_512bit, rscratch);
+  } else if (reachable(src)) {
     Assembler::xorps(dst, as_Address(src));
   } else {
     lea(rscratch, src);
