@@ -36,8 +36,6 @@ package template_framework.examples;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
-import compiler.lib.verify.*;
-import compiler.lib.ir_framework.*; // TODO maybe
 
 import java.util.HashSet;
 
@@ -82,7 +80,7 @@ public class TestWithGeneratorsIRAndVerify {
         Template mainTemplate = new Template("my_example_main",
             """
             TestFramework framework = new TestFramework(InnerTest.class);
-            framework.addFlags("-classpath", "#classpath");
+            framework.addFlags("-classpath", "#{classpath}");
             framework.start();
             """
         );
@@ -94,7 +92,7 @@ public class TestWithGeneratorsIRAndVerify {
             // $statics with length #{size:int_con(lo=10000,hi=20000)}
             private static int[] $INPUT_A = new int[#{size}];
             static {
-                Generators.ints().fill($INPUT_A, Integer.MIN_VALUE, Integer.MAX_VALUE);
+                Generators.G.fill(Generators.G.ints(), $INPUT_A);
             }
 
             private static int $INPUT_B = #{:int_con};

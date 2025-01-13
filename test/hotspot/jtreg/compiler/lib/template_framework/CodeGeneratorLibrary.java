@@ -39,10 +39,10 @@ import compiler.lib.generators.*;
  */
 public final class CodeGeneratorLibrary {
     private static final Random RANDOM = Utils.getRandomInstance();
-    private static final IntGenerator intGenerator = Generators.ints();
-    private static final LongGenerator longGenerator = Generators.longs();
-    private static final FloatGenerator floatGenerator = Generators.floats();
-    private static final DoubleGenerator doubleGenerator = Generators.doubles();
+    private static final RestrictableGenerator<Integer> intGenerator = Generators.G.ints();
+    private static final RestrictableGenerator<Long> longGenerator = Generators.G.longs();
+    private static final Generator<Float> floatGenerator = Generators.G.floats();
+    private static final Generator<Double> doubleGenerator = Generators.G.doubles();
 
     private CodeGeneratorLibrary parent;
     private HashMap<String,CodeGenerator> library;
@@ -261,7 +261,7 @@ public final class CodeGeneratorLibrary {
                 int lo = parameters.getIntOrDefault("lo", Integer.MIN_VALUE, scope);
                 int hi = parameters.getIntOrDefault("hi", Integer.MAX_VALUE, scope);
 
-                int v = intGenerator.nextInt(lo, hi);
+                int v = Generators.G.safeRestrictInt(intGenerator, lo, hi).next();
                 scope.stream.addCodeToLine(String.valueOf(v));
         }, 0));
 
@@ -278,7 +278,7 @@ public final class CodeGeneratorLibrary {
                 long lo = parameters.getLongOrDefault("lo", Long.MIN_VALUE, scope);
                 long hi = parameters.getLongOrDefault("hi", Long.MAX_VALUE, scope);
 
-                long v = longGenerator.nextLong(lo, hi);
+                long v = Generators.G.safeRestrictLong(longGenerator, lo, hi).next();
                 scope.stream.addCodeToLine(String.valueOf(v) + "L");
         }, 0));
 
@@ -290,7 +290,7 @@ public final class CodeGeneratorLibrary {
         codeGenerators.add(new ProgrammaticCodeGenerator("boolean_con",
             (Scope scope, Parameters parameters) -> {
                 parameters.checkOnlyHas(scope);
-                int v = intGenerator.nextInt(0, 1);
+                int v = Generators.G.safeRestrictInt(intGenerator, 0, 1).next();
                 String bool = (v == 0) ? "false" : "true";
                 scope.stream.addCodeToLine(bool);
         }, 0));
