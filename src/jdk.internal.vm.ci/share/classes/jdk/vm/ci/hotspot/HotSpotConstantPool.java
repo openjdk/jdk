@@ -798,11 +798,10 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             HotSpotResolvedObjectTypeImpl resolvedHolder;
             try {
                 resolvedHolder = compilerToVM().resolveFieldInPool(this, rawIndex, (HotSpotResolvedJavaMethodImpl) method, (byte) opcode, info);
-            } catch (Throwable t) {
-                resolvedHolder = null;
+            } catch (Throwable cause) {
+                return new UnresolvedJavaField(fieldHolder, lookupUtf8(getNameRefIndexAt(nameAndTypeIndex)), type, cause);
             }
             if (resolvedHolder == null) {
-                // There was an exception resolving the field or it returned null so return an unresolved field.
                 return new UnresolvedJavaField(fieldHolder, lookupUtf8(getNameRefIndexAt(nameAndTypeIndex)), type);
             }
             final int flags = info[0];

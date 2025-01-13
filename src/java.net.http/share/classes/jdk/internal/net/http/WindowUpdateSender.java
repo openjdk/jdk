@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,18 +117,24 @@ abstract class WindowUpdateSender {
      *             the caller wants to buffer.
      */
     boolean canBufferUnprocessedBytes(int len) {
-        return !checkWindowSizeExceeded(unprocessed.addAndGet(len));
+        long buffered, processed;
+        // get received before unprocessed in order to avoid counting
+        // unprocessed bytes that might get unbuffered asynchronously
+        // twice.
+        processed = received.get();
+        buffered = unprocessed.addAndGet(len);
+        return !checkWindowSizeExceeded(processed, buffered);
     }
 
     // adds the provided amount to the amount of already
-    // received and processed bytes and checks whether the
+    // processed and processed bytes and checks whether the
     // flow control window is exceeded. If so, take
     // corrective actions and return true.
-    private boolean checkWindowSizeExceeded(long len) {
+    private boolean checkWindowSizeExceeded(long processed, long len) {
         // because windowSize is bound by Integer.MAX_VALUE
         // we will never reach the point where received.get() + len
         // could overflow
-        long rcv = received.get() + len;
+        long rcv = processed + len;
         return rcv > windowSize && windowSizeExceeded(rcv);
     }
 
@@ -143,6 +149,7 @@ abstract class WindowUpdateSender {
      * @param delta the amount of processed bytes to release
      */
     void processed(int delta) {
+        assert delta >= 0 : delta;
         long rest = unprocessed.addAndGet(-delta);
         assert rest >= 0;
         update(delta);
@@ -166,6 +173,7 @@ abstract class WindowUpdateSender {
      * @return the amount of remaining unprocessed bytes
      */
     long released(int delta) {
+        assert delta >= 0 : delta;
         long rest = unprocessed.addAndGet(-delta);
         assert rest >= 0;
         return rest;
@@ -195,7 +203,7 @@ abstract class WindowUpdateSender {
             try {
                 int tosend = (int)Math.min(received.get(), Integer.MAX_VALUE);
                 if (tosend > limit) {
-                    received.getAndAdd(-tosend);
+                    received.addAndGet(-tosend);
                     sendWindowUpdate(tosend);
                 }
             } finally {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,12 +173,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"with.algparams.weak", "%1$s using %2$s (weak)"},
         {"with.disabled", "%s (disabled)"},
         {"with.algparams.disabled", "%1$s using %2$s (disabled)"},
-        {"key.bit", "%d-bit key"},
-        {"key.bit.weak", "%d-bit key (weak)"},
-        {"key.bit.eccurve.weak", "%1$d-bit %2$s key (weak)"},
-        {"key.bit.disabled", "%d-bit key (disabled)"},
-        {"key.bit.eccurve.disabled", "%1$d-bit %2$s key (disabled)"},
-        {"unknown.size", "unknown size"},
+        {"key.bit", "%s key"},
+        {"key.bit.weak", "%s key (weak)"},
+        {"key.bit.disabled", "%s key (disabled)"},
         {"nonexistent.entries.found", "This jar contains signed entries for files that do not exist. See the -verbose output for more details."},
         {"external.file.attributes.detected", "POSIX file permission and/or symlink attributes detected. These attributes are ignored when signing and are not protected by the signature."},
 
@@ -297,10 +294,12 @@ public class Resources extends java.util.ListResourceBundle {
                 "The %1$s digest algorithm is considered a security risk. This algorithm will be disabled in a future update."},
         {"The.signature.algorithm.1.is.considered.a.security.risk..This.algorithm.will.be.disabled.in.a.future.update.",
                 "The %1$s signature algorithm is considered a security risk. This algorithm will be disabled in a future update."},
-        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update.",
-                "The %1$s signing key has a keysize of %2$d which is considered a security risk. This key size will be disabled in a future update."},
-        {"The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled.",
-                "The %1$s signing key has a keysize of %2$d which is considered a security risk and is disabled."},
+        {"size.bit.alg",
+                "%1$d-bit %2$s"},
+        {"The.full.keyAlgName.signing.key.is.considered.a.security.risk..It.will.be.disabled.in.a.future.update.",
+                "The %s signing key is considered a security risk. It will be disabled in a future update."},
+        {"The.full.keyAlgName.signing.key.is.considered.a.security.risk.and.is.disabled.",
+                "The %s signing key is considered a security risk and is disabled."},
         {"This.jar.contains.entries.whose.certificate.chain.is.invalid.reason.1",
                  "This jar contains entries whose certificate chain is invalid. Reason: %s"},
         {"This.jar.contains.entries.whose.tsa.certificate.chain.is.invalid.reason.1",
