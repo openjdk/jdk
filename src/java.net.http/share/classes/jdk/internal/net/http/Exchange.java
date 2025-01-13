@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 
+import jdk.internal.net.http.HttpClientImpl.DelegatingExecutor;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
@@ -63,9 +65,9 @@ final class Exchange<T> {
 
     // used to record possible cancellation raised before the exchImpl
     // has been established.
-    private volatile IOException failed;
+    private final AtomicReference<IOException> failed = new AtomicReference<>();
     final MultiExchange<T> multi;
-    final Executor parentExecutor;
+    final DelegatingExecutor parentExecutor;
     volatile boolean upgrading; // to HTTP/2
     volatile boolean upgraded;  // to HTTP/2
     final PushGroup<T> pushGroup;
@@ -91,7 +93,7 @@ final class Exchange<T> {
         return pushGroup;
     }
 
-    Executor executor() {
+    DelegatingExecutor executor() {
         return parentExecutor;
     }
 
@@ -236,26 +238,26 @@ final class Exchange<T> {
         // If the impl is non null, propagate the exception right away.
         // Otherwise record it so that it can be propagated once the
         // exchange impl has been established.
-        ExchangeImpl<?> impl = exchImpl;
+        ExchangeImpl<?> impl;
+        IOException closeReason = null;
+        synchronized (this) {
+            impl =  exchImpl;
+            if (impl == null) {
+                // no impl yet. record the exception
+                failed.compareAndSet(null, cause);
+            }
+        }
         if (impl != null) {
             // propagate the exception to the impl
             if (debug.on()) debug.log("Cancelling exchImpl: %s", exchImpl);
             impl.cancel(cause);
         } else {
-            // no impl yet. record the exception
-            IOException failed = this.failed;
-            if (failed == null) {
-                synchronized (this) {
-                    failed = this.failed;
-                    if (failed == null) {
-                        failed = this.failed = cause;
-                    }
-                }
-            }
-
-            // abort/close the connection if setting up the exchange. This can
+             // abort/close the connection if setting up the exchange. This can
             // be important when setting up HTTP/2
-            connectionAborter.closeConnection(failed);
+            closeReason = failed.get();
+            if (closeReason != null) {
+                connectionAborter.closeConnection(closeReason);
+            }
 
             // now call checkCancelled to recheck the impl.
             // if the failed state is set and the impl is not null, reset
@@ -274,9 +276,9 @@ final class Exchange<T> {
         ExchangeImpl<?> impl = null;
         IOException cause = null;
         CompletableFuture<? extends ExchangeImpl<T>> cf = null;
-        if (failed != null) {
+        if (failed.get() != null) {
             synchronized (this) {
-                cause = failed;
+                cause = failed.get();
                 impl = exchImpl;
                 cf = exchangeCF;
             }
@@ -286,7 +288,11 @@ final class Exchange<T> {
             // The exception is raised by propagating it to the impl.
             if (debug.on()) debug.log("Cancelling exchImpl: %s", impl);
             impl.cancel(cause);
-            failed = null;
+            synchronized (this) {
+                if (impl == exchImpl) {
+                    failed.compareAndSet(cause, null);
+                }
+            }
         } else {
             Log.logTrace("Exchange: request [{0}/timeout={1}ms] no impl is set."
                          + "\n\tCan''t cancel yet with {2}",
@@ -313,7 +319,7 @@ final class Exchange<T> {
                         if (t == null) t = new IOException("Request cancelled");
                         if (debug.on()) debug.log("exchange cancelled during connect: " + t);
                         try {
-                            connection.close();
+                            connection.close(t);
                         } catch (Throwable x) {
                             if (debug.on()) debug.log("Failed to close connection", x);
                         }
@@ -330,8 +336,13 @@ final class Exchange<T> {
         request.setH2Upgrade(this);
     }
 
+    synchronized IOException failed(IOException io) {
+        IOException cause = failed.compareAndExchange(null, io);
+        return cause == null ? io : cause;
+    }
+
     synchronized IOException getCancelCause() {
-        return failed;
+        return failed.get();
     }
 
     // get/set the exchange impl, solving race condition issues with
@@ -409,6 +420,11 @@ final class Exchange<T> {
         }
     }
 
+    private CompletableFuture<Response> startSendingBody(DelegatingExecutor executor) {
+        return exchImpl.sendBodyAsync()
+                        .thenCompose(exIm -> exIm.getResponseAsync(executor));
+    }
+
     // After sending the request headers, if no ProxyAuthorizationRequired
     // was raised and the expectContinue flag is on, we need to wait
     // for the 100-Continue response
@@ -430,9 +446,7 @@ final class Exchange<T> {
                         if (debug.on())
                             debug.log("Setting ExpectTimeoutRaised and sending request body");
                         exchImpl.setExpectTimeoutRaised();
-                        CompletableFuture<Response> cf =
-                                exchImpl.sendBodyAsync()
-                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        CompletableFuture<Response> cf = startSendingBody(parentExecutor);
                         cf = wrapForUpgrade(cf);
                         cf = wrapForLog(cf);
                         return cf;
@@ -444,9 +458,7 @@ final class Exchange<T> {
                         nonFinalResponses.incrementAndGet();
                         Log.logTrace("Received 100-Continue: sending body");
                         if (debug.on()) debug.log("Received 100-Continue for %s", r1);
-                        CompletableFuture<Response> cf =
-                                exchImpl.sendBodyAsync()
-                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        CompletableFuture<Response> cf = startSendingBody(parentExecutor);
                         cf = wrapForUpgrade(cf);
                         cf = wrapForLog(cf);
                         return cf;
@@ -471,8 +483,7 @@ final class Exchange<T> {
     private CompletableFuture<Response> sendRequestBody(ExchangeImpl<T> ex) {
         assert !request.expectContinue();
         if (debug.on()) debug.log("sendRequestBody");
-        CompletableFuture<Response> cf = ex.sendBodyAsync()
-                .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+        CompletableFuture<Response> cf = startSendingBody(parentExecutor);
         cf = wrapForUpgrade(cf);
         // after 101 is handled we check for other 1xx responses
         cf = cf.thenCompose(this::ignore1xxResponse);
@@ -669,7 +680,7 @@ final class Exchange<T> {
                             // Either way, we need to relay it to s.
                             synchronized (this) {
                                 exchImpl = s;
-                                t = failed;
+                                t = failed.get();
                             }
                             // Check whether the HTTP/1.1 was cancelled.
                             if (t == null) t = e.getCancelCause();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
@@ -58,6 +59,7 @@ class PlainHttpConnection extends HttpConnection {
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
     private final ReentrantLock stateLock = new ReentrantLock();
+    private final AtomicReference<Throwable> errorRef = new AtomicReference<>();
 
     // Indicates whether a connection attempt has succeeded or should be retried.
     // If the attempt failed, and shouldn't be retried, there will be an exception
@@ -107,6 +109,11 @@ class PlainHttpConnection extends HttpConnection {
         }
     }
 
+    Throwable getError(Throwable cause) {
+        if (errorRef.compareAndSet(null, cause)) return cause;
+        return errorRef.get();
+    }
+
     final class ConnectEvent extends AsyncEvent {
         private final CompletableFuture<ConnectState> cf;
         private final Exchange<?> exchange;
@@ -149,18 +156,19 @@ class PlainHttpConnection extends HttpConnection {
                     cf.completeAsync(() -> ConnectState.RETRY, client().theExecutor());
                     return;
                 }
-                Throwable t = Utils.toConnectException(e);
+                Throwable t = getError(Utils.toConnectException(e));
                 // complete async since the event runs on the SelectorManager thread
                 client().theExecutor().execute( () -> cf.completeExceptionally(t));
-                close();
+                close(t);
             }
         }
 
         @Override
         public void abort(IOException ioe) {
+            Throwable cause = getError(ioe);
             // complete async since the event runs on the SelectorManager thread
-            client().theExecutor().execute( () -> cf.completeExceptionally(ioe));
-            close();
+            client().theExecutor().execute( () -> cf.completeExceptionally(cause));
+            close(cause);
         }
     }
 
@@ -205,25 +213,26 @@ class PlainHttpConnection extends HttpConnection {
                 if (debug.on()) debug.log("connect finished without blocking");
                 if (connectionOpened()) {
                     cf.complete(ConnectState.SUCCESS);
-                } else throw new ConnectException("connection closed");
+                } else throw getError(new ConnectException("connection closed"));
             } else {
                 if (debug.on()) debug.log("registering connect event");
                 client().registerEvent(new ConnectEvent(cf, exchange));
             }
             cf = exchange.checkCancelled(cf, this);
         } catch (Throwable throwable) {
-            cf.completeExceptionally(Utils.toConnectException(throwable));
+            var cause = getError(Utils.toConnectException(throwable));
+            cf.completeExceptionally(cause);
             try {
                 if (Log.channel()) {
                     Log.logChannel("Closing connection: connect failed due to: " + throwable);
                 }
-                close();
+                close(cause);
             } catch (Exception x) {
                 if (debug.on())
                     debug.log("Failed to close channel after unsuccessful connect");
             }
         }
-        return cf.handle((r,t) -> checkRetryConnect(r, t,exchange))
+        return cf.handle((r,t) -> checkRetryConnect(r, t, exchange))
                 .thenCompose(Function.identity());
     }
 
@@ -402,9 +411,16 @@ class PlainHttpConnection extends HttpConnection {
         try {
             if (closed = this.closed) return;
             closed = this.closed = true;
+            Throwable reason = getError(cause);
             Log.logTrace("Closing: " + toString());
-            if (debug.on())
-                debug.log("Closing channel: " + client().debugInterestOps(chan));
+            if (debug.on()) {
+                String interestOps = client().debugInterestOps(chan);
+                if (reason == null) {
+                    debug.log("Closing channel: " + interestOps);
+                } else {
+                    debug.log("Closing channel: %s due to %s", interestOps, reason);
+                }
+            }
             var connectTimerEvent = this.connectTimerEvent;
             if (connectTimerEvent != null)
                 client().cancelTimer(connectTimerEvent);
@@ -412,8 +428,8 @@ class PlainHttpConnection extends HttpConnection {
                 Log.logChannel("Closing channel: " + chan);
             }
             try {
+                tube.signalClosed(errorRef.get());
                 chan.close();
-                tube.signalClosed(cause);
             } finally {
                 client().connectionClosed(this);
             }

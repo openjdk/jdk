@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -691,7 +691,7 @@ class Http2Connection  {
                     if (t != null && t instanceof SSLException) {
                         // something went wrong during the initial handshake
                         // close the connection
-                        aconn.close();
+                        aconn.close(t);
                     }
                 })
                 .thenCompose(checkAlpnCF);
@@ -910,7 +910,7 @@ class Http2Connection  {
                 Log.logError("Failed to close stream {0}: {1}", s.streamid, e);
             }
         }
-        connection.close();
+        connection.close(cause.get());
     }
 
     /**
@@ -971,7 +971,8 @@ class Http2Connection  {
                 protocolError(ResetFrame.PROTOCOL_ERROR, protocolError);
                 return;
             }
-            if (stream == null && pushContinuationState == null) {
+            PushContinuationState pcs = pushContinuationState;
+            if (stream == null && pcs == null) {
                 // Should never receive a frame with unknown stream id
 
                 if (frame instanceof HeaderFrame hf) {
@@ -1016,7 +1017,6 @@ class Http2Connection  {
 
             // While push frame is not null, the only acceptable frame on this
             // stream is a Continuation frame
-            PushContinuationState pcs = pushContinuationState;
             if (pcs != null) {
                 if (frame instanceof ContinuationFrame cf) {
                     if (stream == null) {
@@ -1960,7 +1960,8 @@ class Http2Connection  {
             if (connection.isOpen()) {
                 try {
                     connection.protocolError(ErrorFrame.FLOW_CONTROL_ERROR,
-                            "connection window exceeded");
+                            "connection window exceeded (%s > %s)"
+                                    .formatted(received, windowSize));
                 } catch (IOException io) {
                     connection.shutdown(io);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public class ExpectContinueResetTest {
     URI warmup, partialResponseResetNoError, partialResponseResetError, fullResponseResetNoError, fullResponseResetError;
 
     static PrintStream err = new PrintStream(System.err);
+    static PrintStream out = System.out;
 
     @DataProvider(name = "testData")
     public Object[][] testData() {
@@ -88,15 +89,19 @@ public class ExpectContinueResetTest {
 
     @Test(dataProvider = "testData")
     public void test(URI uri) {
+        out.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri.toASCIIString());
         err.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri.toASCIIString());
         Iterable<byte[]> iterable = EndlessDataChunks::new;
         HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofByteArrays(iterable);
+        Exception exception = null;
         Throwable testThrowable = null;
         try {
             performRequest(testPub, uri);
         } catch (Exception e) {
+            exception = e;
             testThrowable = e.getCause();
         }
+        assertNotNull(exception, "Request should have completed exceptionally but exception is null");
         assertNotNull(testThrowable, "Request should have completed exceptionally but testThrowable is null");
         assertEquals(testThrowable.getClass(), IOException.class, "Test should have closed with an IOException");
         testThrowable.printStackTrace();
@@ -177,7 +182,7 @@ public class ExpectContinueResetTest {
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100, 0);
+            exchange.sendResponseHeaders(100, -1);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
                 err.println("Sending Reset");
                 err.println(exchange.getRequestURI().getPath());
@@ -197,8 +202,9 @@ public class ExpectContinueResetTest {
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100, 0);
+            exchange.sendResponseHeaders(100, -1);
             err.println("Sending 200");
+
             exchange.sendResponseHeaders(200, 0);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
                 err.println("Sending Reset");
