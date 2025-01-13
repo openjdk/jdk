@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -98,7 +98,6 @@
 
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
-  static const int neg_cond_bits = 2;
   static const int unsigned_branch_mask = 1 << bool_test_bits;
   static const int double_branch_mask = 1 << bool_test_bits;
 

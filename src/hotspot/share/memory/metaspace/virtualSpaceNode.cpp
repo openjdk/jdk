@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspace/chunkHeaderPool.hpp"
 #include "memory/metaspace/chunklevel.hpp"
@@ -253,9 +254,10 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
                                                 SizeCounter* commit_words_counter)
 {
   DEBUG_ONLY(assert_is_aligned(word_size, chunklevel::MAX_CHUNK_WORD_SIZE);)
-  ReservedSpace rs(word_size * BytesPerWord,
-                   Settings::virtual_space_node_reserve_alignment_words() * BytesPerWord,
-                   os::vm_page_size());
+
+  ReservedSpace rs = MemoryReserver::reserve(word_size * BytesPerWord,
+                                             Settings::virtual_space_node_reserve_alignment_words() * BytesPerWord,
+                                             os::vm_page_size());
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
@@ -286,7 +288,9 @@ VirtualSpaceNode::~VirtualSpaceNode() {
   UL(debug, ": dies.");
 
   if (_owns_rs) {
-    _rs.release();
+    if (_rs.is_reserved()) {
+      MemoryReserver::release(_rs);
+    }
   }
 
   // Update counters in vslist

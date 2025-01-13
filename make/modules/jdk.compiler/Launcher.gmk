@@ -32,7 +32,7 @@ include LauncherCommon.gmk
 $(eval $(call SetupBuildLauncher, javac, \
     MAIN_CLASS := com.sun.tools.javac.Main, \
     JAVA_ARGS := --add-modules ALL-DEFAULT, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))
 
 ################################################################################
@@ -41,5 +41,5 @@ $(eval $(call SetupBuildLauncher, javac, \
 
 $(eval $(call SetupBuildLauncher, serialver, \
     MAIN_CLASS := sun.tools.serialver.SerialVer, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))

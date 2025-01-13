@@ -364,23 +364,23 @@ public class TestErasure extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("preview-list.html", true, """
                 <div class="col-summary-item-name even-row-color method method-tab1">\
-                <a href="java.base/p/Foo.html#m(T)">p.Foo.m<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#m(T)">p.Foo.m<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-m(T)">PREVIEW</a></sup></div>
                 <div class="col-second even-row-color method method-tab1">Test Feature</div>
                 <div class="col-last even-row-color method method-tab1"></div>
                 <div class="col-summary-item-name odd-row-color method method-tab1">\
-                <a href="java.base/p/Foo.html#m(p.Y)">p.Foo.m<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#m(p.Y)">p.Foo.m<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-m(p.Y)">PREVIEW</a></sup></div>
                 <div class="col-second odd-row-color method method-tab1">Test Feature</div>
                 <div class="col-last odd-row-color method method-tab1"></div>""");
         checkOutput("preview-list.html", true, """
                 <div class="col-summary-item-name even-row-color constructor constructor-tab1">\
-                <a href="java.base/p/Foo.html#%3Cinit%3E(T)">p.Foo<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#%3Cinit%3E(T)">p.Foo<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(T)">PREVIEW</a></sup></div>
                 <div class="col-second even-row-color constructor constructor-tab1">Test Feature</div>
                 <div class="col-last even-row-color constructor constructor-tab1"></div>
                 <div class="col-summary-item-name odd-row-color constructor constructor-tab1">\
-                <a href="java.base/p/Foo.html#%3Cinit%3E(p.Y)">p.Foo<wbr>(T)</a><sup>\
+                <a href="java.base/p/Foo.html#%3Cinit%3E(p.Y)">p.Foo<wbr>(T)</a><sup class="preview-mark">\
                 <a href="java.base/p/Foo.html#preview-%3Cinit%3E(p.Y)">PREVIEW</a></sup></div>
                 <div class="col-second odd-row-color constructor constructor-tab1">Test Feature</div>
                 <div class="col-last odd-row-color constructor constructor-tab1"></div>""");

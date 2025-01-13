@@ -166,14 +166,14 @@ class JavaThread: public Thread {
   // ID used as owner for inflated monitors. Same as the j.l.Thread.tid of the
   // current _vthread object, except during creation of the primordial and JNI
   // attached thread cases where this field can have a temporary value.
-  int64_t _lock_id;
+  int64_t _monitor_owner_id;
 
  public:
-  void set_lock_id(int64_t tid) {
-    assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "invalid tid");
-    _lock_id = tid;
+  void set_monitor_owner_id(int64_t id) {
+    assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "");
+    _monitor_owner_id = id;
   }
-  int64_t lock_id() const { return _lock_id; }
+  int64_t monitor_owner_id() const { return _monitor_owner_id; }
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
@@ -721,6 +721,11 @@ private:
   bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
   void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
 
+  // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
+  // - is in a VTMS transition (_is_in_VTMS_transition)
+  // - is in an interruptLock or similar critical section (_is_disable_suspend)
+  bool should_hide_jvmti_events() const          { return _is_in_VTMS_transition || _is_disable_suspend; }
+
   bool on_monitor_waited_event()             { return _on_monitor_waited_event; }
   void set_on_monitor_waited_event(bool val) { _on_monitor_waited_event = val; }
 
@@ -884,7 +889,7 @@ private:
   static ByteSize doing_unsafe_access_offset() { return byte_offset_of(JavaThread, _doing_unsafe_access); }
   NOT_PRODUCT(static ByteSize requires_cross_modify_fence_offset()  { return byte_offset_of(JavaThread, _requires_cross_modify_fence); })
 
-  static ByteSize lock_id_offset()            { return byte_offset_of(JavaThread, _lock_id); }
+  static ByteSize monitor_owner_id_offset()   { return byte_offset_of(JavaThread, _monitor_owner_id); }
 
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }

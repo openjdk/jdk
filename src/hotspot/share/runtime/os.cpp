@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiAgent.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -76,7 +77,9 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/fastrand.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifdef LINUX
@@ -117,7 +120,7 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
+  int result = permit_forbidden_function::vsnprintf(buf, len, fmt, args);
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -513,6 +516,11 @@ static void* _native_java_library = nullptr;
 
 void* os::native_java_library() {
   if (_native_java_library == nullptr) {
+    if (is_vm_statically_linked()) {
+      _native_java_library = get_default_process_handle();
+      return _native_java_library;
+    }
+
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
 
@@ -546,49 +554,35 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
-                              const char *syms[], size_t syms_len) {
+void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib, const char *sym) {
   assert(agent_lib != nullptr, "sanity check");
-  const char *lib_name;
   void *handle = agent_lib->os_lib();
   void *entryName = nullptr;
-  char *agent_function_name;
-  size_t i;
 
   // If checking then use the agent name otherwise test is_static_lib() to
   // see how to process this lookup
-  lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
-  for (i = 0; i < syms_len; i++) {
-    agent_function_name = build_agent_function_name(syms[i], lib_name, agent_lib->is_absolute_path());
-    if (agent_function_name == nullptr) {
-      break;
-    }
+  const char *lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
+
+  char* agent_function_name = build_agent_function_name(sym, lib_name, agent_lib->is_absolute_path());
+  if (agent_function_name != nullptr) {
     entryName = dll_lookup(handle, agent_function_name);
     FREE_C_HEAP_ARRAY(char, agent_function_name);
-    if (entryName != nullptr) {
-      break;
-    }
   }
   return entryName;
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
-                            size_t syms_len) {
-  void *ret;
-  void *proc_handle;
-  void *save_handle;
-
+bool os::find_builtin_agent(JvmtiAgent* agent, const char* sym) {
   assert(agent != nullptr, "sanity check");
   if (agent->name() == nullptr) {
     return false;
   }
-  proc_handle = get_default_process_handle();
+  void* proc_handle = get_default_process_handle();
   // Check for Agent_OnLoad/Attach_lib_name function
-  save_handle = agent->os_lib();
+  void* save_handle = agent->os_lib();
   // We want to look in this process' symbol table.
   agent->set_os_lib(proc_handle);
-  ret = find_agent_function(agent, true, syms, syms_len);
+  void* ret = find_agent_function(agent, true, sym);
   if (ret != nullptr) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
     agent->set_static_lib();
@@ -663,7 +657,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
+  void* const outer_ptr = permit_forbidden_function::malloc(outer_size);
   if (outer_ptr == nullptr) {
     return nullptr;
   }
@@ -730,7 +724,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     header->mark_block_as_dead();
 
     // the real realloc
-    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
+    void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
 
     if (new_outer_ptr == nullptr) {
       // realloc(3) failed and the block still exists.
@@ -758,7 +752,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   } else {
 
     // NMT disabled.
-    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
+    rc = permit_forbidden_function::realloc(memblock, size);
     if (rc == nullptr) {
       return nullptr;
     }
@@ -786,7 +780,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
+  permit_forbidden_function::free(old_outer_ptr);
 }
 
 void os::init_random(unsigned int initval) {
@@ -979,7 +973,7 @@ static void print_hex_location(outputStream* st, const_address p, int unitsize, 
       const uint64_t value =
         LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
         BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
-      st->print("%016" FORMAT64_MODIFIER "x", value);
+      st->print(UINT64_FORMAT_0, value);
       print_ascii_form(ascii_form, value, unitsize);
     } else {
       st->print_raw("????????????????");
@@ -1003,7 +997,7 @@ static void print_hex_location(outputStream* st, const_address p, int unitsize, 
       case 1: st->print("%02x", (u1)value); break;
       case 2: st->print("%04x", (u2)value); break;
       case 4: st->print("%08x", (u4)value); break;
-      case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
+      case 8: st->print(UINT64_FORMAT_0, (u8)value); break;
     }
     print_ascii_form(ascii_form, value, unitsize);
   } else {
@@ -1128,6 +1122,31 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
       }
     }
   }
+}
+
+void os::print_jvmti_agent_info(outputStream* st) {
+#if INCLUDE_JVMTI
+  const JvmtiAgentList::Iterator it = JvmtiAgentList::all();
+  if (it.has_next()) {
+    st->print_cr("JVMTI agents:");
+  } else {
+    st->print_cr("JVMTI agents: none");
+  }
+  while (it.has_next()) {
+    const JvmtiAgent* agent = it.next();
+    if (agent != nullptr) {
+      const char* dyninfo = agent->is_dynamic() ? "dynamic " : "";
+      const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib " : "";
+      const char* loadinfo = agent->is_loaded() ? "loaded" : "not loaded";
+      const char* initinfo = agent->is_initialized() ? "initialized" : "not initialized";
+      const char* optionsinfo = agent->options();
+      const char* pathinfo = agent->os_lib_path();
+      if (optionsinfo == nullptr) optionsinfo = "none";
+      if (pathinfo == nullptr) pathinfo = "none";
+      st->print_cr("%s path:%s, %s, %s, %s%soptions:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
+    }
+  }
+#endif
 }
 
 void os::print_register_info(outputStream* st, const void* context) {
@@ -2489,4 +2508,62 @@ jint os::set_minimum_stack_sizes() {
     return JNI_ERR;
   }
   return JNI_OK;
+}
+
+// Builds a platform dependent Agent_OnLoad_<lib_name> function name
+// which is used to find statically linked in agents.
+// Parameters:
+//            sym_name: Symbol in library we are looking for
+//            lib_name: Name of library to look in, null for shared libs.
+//            is_absolute_path == true if lib_name is absolute path to agent
+//                                     such as "C:/a/b/L.dll" or "/a/b/libL.so"
+//            == false if only the base name of the library is passed in
+//               such as "L"
+char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
+                                    bool is_absolute_path) {
+  char *agent_entry_name;
+  size_t len = 0;
+  size_t name_len = 0;
+  size_t prefix_len = strlen(JNI_LIB_PREFIX);
+  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
+  size_t underscore_len = 0; // optional underscore if lib_name is set
+  const char *start;
+
+  if (lib_name != nullptr) {
+    if (is_absolute_path) {
+      // Need to strip path, prefix and suffix
+      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
+        lib_name = ++start;
+      }
+#ifdef WINDOWS
+      else { // Need to check for drive prefix e.g. C:L.dll
+        if ((start = strchr(lib_name, ':')) != nullptr) {
+          lib_name = ++start;
+        }
+      }
+#endif
+      name_len = strlen(lib_name);
+      if (name_len <= (prefix_len + suffix_len)) {
+        return nullptr;
+      }
+      lib_name += prefix_len;
+      name_len = strlen(lib_name) - suffix_len;
+    } else {
+      name_len = strlen(lib_name);
+    }
+    underscore_len = 1;
+  }
+  // Total buffer length to allocate - includes null terminator.
+  len = strlen(sym_name) + underscore_len + name_len + 1;
+  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
+  if (agent_entry_name == nullptr) {
+    return nullptr;
+  }
+
+  strcpy(agent_entry_name, sym_name);
+  if (lib_name != nullptr) {
+    strcat(agent_entry_name, "_");
+    strncat(agent_entry_name, lib_name, name_len);
+  }
+  return agent_entry_name;
 }

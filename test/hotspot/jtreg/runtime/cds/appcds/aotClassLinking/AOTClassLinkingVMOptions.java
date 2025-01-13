@@ -125,7 +125,7 @@ public class AOTClassLinkingVMOptions {
                        "--module-path", goodModulePath + "/bad",
                        "--add-modules", CDSModulePathUtils.TEST_MODULE,
                        CDSModulePathUtils.MAIN_CLASS)
-            .assertAbnormalExit("Mismatched --add-modules module name(s)",
+            .assertAbnormalExit("Mismatched values for property jdk.module.addmods",
                                 "CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used.");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,11 @@ extern "C"
          * Here we just need to get handle to initialize the pointers to
          * required mlib routines.
          */
-        hDLL = ::GetModuleHandle(TEXT("mlib_image.dll"));
+        if (JVM_IsStaticallyLinked()) {
+            hDLL = ::GetModuleHandle(NULL);
+        } else {
+            hDLL = ::GetModuleHandle(TEXT("mlib_image.dll"));
+        }
 
         if (hDLL == NULL) {
             return MLIB_FAILURE;
