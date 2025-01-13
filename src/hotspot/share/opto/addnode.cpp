@@ -983,6 +983,11 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   // inputs have bits set. lo can always become 0.
   const TypeInt* t1i = t1->is_int();
   const TypeInt* t2i = t2->is_int();
+
+  if( t1i->is_con() && t2i->is_con() ) {
+    return TypeInt::make( t1i->get_con() ^ t2i->get_con() );
+  }
+
   if ((t1i->_lo >= 0) &&
       (t1i->_hi > 0)  &&
       (t2i->_lo >= 0) &&
@@ -1068,6 +1073,11 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   // inputs have bits set. lo can always become 0.
   const TypeLong* t1l = t1->is_long();
   const TypeLong* t2l = t2->is_long();
+
+  if( t1l->is_con() && t2l->is_con() ){
+    return TypeLong::make( t1l->get_con() ^ t2l->get_con() );
+  }
+
   if ((t1l->_lo >= 0) &&
       (t1l->_hi > 0)  &&
       (t2l->_lo >= 0) &&
