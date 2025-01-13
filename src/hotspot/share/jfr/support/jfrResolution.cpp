@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ static inline const Method* ljf_sender_method(JavaThread* jt) {
   return ljf.method();
 }
 
-static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long)'";
+static const char* const link_error_msg = "illegal access linking method 'jdk.jfr.internal.event.EventWriter.getEventWriter()'";
 
 void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   assert(info.selected_method() != nullptr, "invariant");
@@ -199,12 +199,12 @@ void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
   if (method->name() != event_writer_method_name) {
     return;
   }
-  static const Symbol* const event_writer_factory_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriterFactory();
-  assert(event_writer_factory_klass_name != nullptr, "invariant");
-  if (info.resolved_klass()->name() != event_writer_factory_klass_name) {
+  static const Symbol* const event_writer_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriter();
+  assert(event_writer_klass_name != nullptr, "invariant");
+  if (info.resolved_klass()->name() != event_writer_klass_name) {
     return;
   }
-  // Attempting to link against jdk.jfr.internal.event.EventWriterFactory.getEventWriter().
+  // Attempting to link against jdk.jfr.internal.event.EventWriter.getEventWriter().
   // The sender, i.e. the method attempting to link, is in the ljf (if one exists).
   const Method* const sender = ljf_sender_method(THREAD);
   if (sender == nullptr) {
@@ -228,9 +228,9 @@ void JfrResolution::on_runtime_resolution(const CallInfo & info, TRAPS) {
 }
 
 static inline bool is_compiler_linking_event_writer(const Symbol* holder, const Symbol* name) {
-  static const Symbol* const event_writer_factory_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriterFactory();
-  assert(event_writer_factory_klass_name != nullptr, "invariant");
-  if (holder != event_writer_factory_klass_name) {
+  static const Symbol* const event_writer_klass_name = vmSymbols::jdk_jfr_internal_event_EventWriter();
+  assert(event_writer_klass_name != nullptr, "invariant");
+  if (holder != event_writer_klass_name) {
     return false;
   }
   static const Symbol* const event_writer_method_name = vmSymbols::getEventWriter_name();

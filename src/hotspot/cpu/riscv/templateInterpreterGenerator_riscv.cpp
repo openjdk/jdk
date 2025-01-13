@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -85,8 +85,8 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // c_rarg3: first stack arg - wordSize
   // adjust sp
 
-  __ addi(sp, c_rarg3, -18 * wordSize);
-  __ addi(sp, sp, -2 * wordSize);
+  __ subi(sp, c_rarg3, 18 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(ra, Address(sp, 0));
 
   __ call_VM(noreg,
@@ -189,7 +189,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_cos :
@@ -202,7 +202,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_tan :
@@ -215,7 +215,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log :
@@ -228,7 +228,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_log10 :
@@ -241,7 +241,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_exp :
@@ -254,7 +254,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_pow :
@@ -268,7 +268,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       } else {
         fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
       }
-      __ call(fn);
+      __ rt_call(fn);
       __ mv(ra, x9);
       break;
     case Interpreter::java_lang_math_fmaD :
@@ -714,14 +714,14 @@ void TemplateInterpreterGenerator::lock_method() {
   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
 
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method doesn't need synchronization", false);
 #endif // ASSERT
 
   // get synchronization object
   {
     Label done;
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ andi(t0, x10, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
     __ ld(x10, Address(xlocals, Interpreter::local_offset_in_bytes(0)));
@@ -742,8 +742,8 @@ void TemplateInterpreterGenerator::lock_method() {
 
   // add space for monitor & lock
   __ check_extended_sp();
-  __ add(sp, sp, - entry_size); // add space for a monitor entry
-  __ add(esp, esp, - entry_size);
+  __ sub(sp, sp, entry_size); // add space for a monitor entry
+  __ sub(esp, esp, entry_size);
   __ sub(t0, sp, fp);
   __ srai(t0, t0, Interpreter::logStackElementSize);
   __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
@@ -768,17 +768,17 @@ void TemplateInterpreterGenerator::lock_method() {
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // initialize fixed part of activation frame
   if (native_call) {
-    __ add(esp, sp, - 14 * wordSize);
+    __ subi(esp, sp, 14 * wordSize);
     __ mv(xbcp, zr);
-    __ add(sp, sp, - 14 * wordSize);
+    __ subi(sp, sp, 14 * wordSize);
     // add 2 zero-initialized slots for native calls
     __ sd(zr, Address(sp, 13 * wordSize));
     __ sd(zr, Address(sp, 12 * wordSize));
   } else {
-    __ add(esp, sp, - 12 * wordSize);
+    __ subi(esp, sp, 12 * wordSize);
     __ ld(t0, Address(xmethod, Method::const_offset()));     // get ConstMethod
     __ add(xbcp, t0, in_bytes(ConstMethod::codes_offset())); // get codebase
-    __ add(sp, sp, - 12 * wordSize);
+    __ subi(sp, sp, 12 * wordSize);
   }
   __ sd(xbcp, Address(sp, wordSize));
   __ mv(t0, frame::interpreter_frame_initial_sp_offset);
@@ -833,7 +833,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
-    __ sub(t0, sp, 2 * wordSize);
+    __ subi(t0, sp, 2 * wordSize);
     __ sub(t1, t0, fp);
     __ srai(t1, t1, Interpreter::logStackElementSize);
     __ sd(t1, Address(sp, 5 * wordSize));
@@ -1018,7 +1018,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // compute beginning of parameters (xlocals)
   __ shadd(xlocals, x12, esp, xlocals, 3);
-  __ addi(xlocals, xlocals, -wordSize);
+  __ subi(xlocals, xlocals, wordSize);
 
   // Pull SP back to minimum size: this avoids holes in the stack
   __ andi(sp, esp, -16);
@@ -1028,7 +1028,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // make sure method is native & not abstract
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_NATIVE, "tried to execute non-native method as native", false);
   __ verify_access_flags(x10, JVM_ACC_ABSTRACT, "tried to execute abstract method in interpreter");
 #endif
@@ -1066,7 +1066,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method needs synchronization");
 #endif
   }
@@ -1130,7 +1130,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass mirror handle if static call
   {
     Label L;
-    __ lwu(t, Address(xmethod, Method::access_flags_offset()));
+    __ load_unsigned_short(t, Address(xmethod, Method::access_flags_offset()));
     __ test_bit(t0, t, exact_log2(JVM_ACC_STATIC));
     __ beqz(t0, L);
     // get mirror
@@ -1175,7 +1175,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ lwu(t, Address(xthread, JavaThread::thread_state_offset()));
-    __ addi(t0, zr, (u1)_thread_in_Java);
+    __ mv(t0, (u1)_thread_in_Java);
     __ beq(t, t0, L);
     __ stop("Wrong thread state in native stub");
     __ bind(L);
@@ -1202,7 +1202,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ restore_cpu_control_state_after_jni(t0);
 
   // make room for the pushes we're about to do
-  __ sub(t0, esp, 4 * wordSize);
+  __ subi(t0, esp, 4 * wordSize);
   __ andi(sp, t0, -16);
 
   // NOTE: The order of these pushes is known to frame::interpreter_frame_result
@@ -1308,7 +1308,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_reguard;
     __ lwu(t0, Address(xthread, in_bytes(JavaThread::stack_guard_state_offset())));
-    __ addi(t1, zr, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
+    __ mv(t1, (u1)StackOverflow::stack_guard_yellow_reserved_disabled);
     __ bne(t0, t1, no_reguard);
 
     __ push_call_clobbered_registers();
@@ -1346,7 +1346,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // do unlocking if necessary
   {
     Label L;
-    __ lwu(t, Address(xmethod, Method::access_flags_offset()));
+    __ load_unsigned_short(t, Address(xmethod, Method::access_flags_offset()));
     __ test_bit(t0, t, exact_log2(JVM_ACC_SYNCHRONIZED));
     __ beqz(t0, L);
     // the code below should be shared with interpreter macro
@@ -1440,7 +1440,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // compute beginning of parameters (xlocals)
   __ shadd(xlocals, x12, esp, t1, 3);
-  __ add(xlocals, xlocals, -wordSize);
+  __ subi(xlocals, xlocals, wordSize);
 
   // Make room for additional locals
   __ slli(t1, x13, 3);
@@ -1458,8 +1458,8 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ blez(x13, exit); // do nothing if x13 <= 0
     __ bind(loop);
     __ sd(zr, Address(t0));
-    __ add(t0, t0, wordSize);
-    __ add(x13, x13, -1); // until everything initialized
+    __ addi(t0, t0, wordSize);
+    __ subi(x13, x13, 1); // until everything initialized
     __ bnez(x13, loop);
     __ bind(exit);
   }
@@ -1472,7 +1472,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   // make sure method is not native & not abstract
 #ifdef ASSERT
-  __ lwu(x10, access_flags);
+  __ load_unsigned_short(x10, access_flags);
   __ verify_access_flags(x10, JVM_ACC_NATIVE, "tried to execute native method as non-native");
   __ verify_access_flags(x10, JVM_ACC_ABSTRACT, "tried to execute abstract method in interpreter");
 #endif
@@ -1519,7 +1519,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-    __ lwu(x10, access_flags);
+    __ load_unsigned_short(x10, access_flags);
     __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method needs synchronization");
 #endif
   }
@@ -1650,7 +1650,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ slli(x10, x10, Interpreter::logStackElementSize);
     __ restore_locals();
     __ sub(xlocals, xlocals, x10);
-    __ add(xlocals, xlocals, wordSize);
+    __ addi(xlocals, xlocals, wordSize);
     // Save these arguments
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
                                            Deoptimization::
@@ -1745,7 +1745,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // sp: expression stack of caller
   // fp: fp of caller
   // FIXME: There's no point saving ra here because VM calls don't trash it
-  __ sub(sp, sp, 2 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(x10, Address(sp, 0));                   // save exception
   __ sd(ra, Address(sp, wordSize));             // save return address
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
@@ -1754,7 +1754,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ mv(x11, x10);                              // save exception handler
   __ ld(x10, Address(sp, 0));                   // restore exception
   __ ld(ra, Address(sp, wordSize));             // restore return address
-  __ add(sp, sp, 2 * wordSize);
+  __ addi(sp, sp, 2 * wordSize);
   // We might be returning to a deopt handler that expects x13 to
   // contain the exception pc
   __ mv(x13, ra);
