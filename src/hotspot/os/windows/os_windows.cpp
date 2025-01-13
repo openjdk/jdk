@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,41 @@ LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = nullptr;
 // save DLL module handle, used by GetModuleFileName
 
 HINSTANCE vm_lib_handle;
+
+static void windows_preinit(HINSTANCE hinst) {
+  vm_lib_handle = hinst;
+  if (ForceTimeHighResolution) {
+    timeBeginPeriod(1L);
+  }
+  WindowsDbgHelp::pre_initialize();
+  SymbolEngine::pre_initialize();
+}
+
+static void windows_atexit() {
+  if (ForceTimeHighResolution) {
+    timeEndPeriod(1L);
+  }
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
+  if (topLevelVectoredExceptionHandler != nullptr) {
+    RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
+    topLevelVectoredExceptionHandler = nullptr;
+  }
+#endif
+}
+
+BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
+  switch (reason) {
+  case DLL_PROCESS_ATTACH:
+    windows_preinit(hinst);
+    break;
+  case DLL_PROCESS_DETACH:
+    windows_atexit();
+    break;
+  default:
+    break;
+  }
+  return true;
+}
 
 static inline double fileTimeAsDouble(FILETIME* time) {
   const double high  = (double) ((unsigned int) ~0);
@@ -4396,27 +4431,12 @@ HMODULE GetHotspotModuleHandle() {
     return hModule;
 }
 
-static void windows_at_exit_callback() {
-    if (ForceTimeHighResolution) {
-      timeEndPeriod(1L);
-    }
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-    if (topLevelVectoredExceptionHandler != nullptr) {
-      RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
-      topLevelVectoredExceptionHandler = nullptr;
-    }
-#endif
-}
-
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
-    vm_lib_handle = GetHotspotModuleHandle();
-    if (ForceTimeHighResolution) {
-      timeBeginPeriod(1L);
-    }
-    WindowsDbgHelp::pre_initialize();
-    SymbolEngine::pre_initialize();
-    atexit(windows_at_exit_callback);
+  if (is_vm_statically_linked()) {
+    windows_preinit(GetHotspotModuleHandle());
+    atexit(windows_atexit);
+  }
 
   _initial_pid = _getpid();
 
