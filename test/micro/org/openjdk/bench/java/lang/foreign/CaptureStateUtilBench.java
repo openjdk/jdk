@@ -64,12 +64,6 @@ public class CaptureStateUtilBench {
     private static final MethodHandle DUMMY_EXPLICIT_ALLOC = dummyExplicitAlloc();
     private static final MethodHandle DUMMY_TL_ALLOC = dummyTlAlloc();
 
-
-    @Setup
-    public void setup() {
-    }
-
-
     @Benchmark
     public int explicitSuccess() throws Throwable {
         try (var arena = Arena.ofConfined()) {
