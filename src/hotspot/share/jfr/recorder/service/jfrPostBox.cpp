@@ -166,7 +166,7 @@ void JfrPostBox::notify_waiters() {
   assert(JfrMsg_lock->owned_by_self(), "incrementing _msg_handled_serial is protected by JfrMsg_lock.");
   // Update made visible on release of JfrMsg_lock via fence instruction in Monitor::IUnlock.
   ++_msg_handled_serial;
-  JfrMsg_lock->notify();
+  JfrMsg_lock->notify_all();
 }
 
 // safeguard to ensure no threads are left waiting
