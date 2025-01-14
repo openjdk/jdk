@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ JfrStorageControl& JfrStorage::control() {
 }
 
 static void log_allocation_failure(const char* msg, size_t size) {
-  log_warning(jfr)("Unable to allocate " SIZE_FORMAT " bytes of %s.", size, msg);
+  log_warning(jfr)("Unable to allocate %zu bytes of %s.", size, msg);
 }
 
 BufferPtr JfrStorage::acquire_thread_local(Thread* thread, size_t size /* 0 */) {
@@ -327,8 +327,8 @@ static void log_discard(size_t pre_full_count, size_t post_full_count, size_t am
   if (log_is_enabled(Debug, jfr, system)) {
     const size_t number_of_discards = pre_full_count - post_full_count;
     if (number_of_discards > 0) {
-      log_debug(jfr, system)("Cleared " SIZE_FORMAT " full buffer(s) of " SIZE_FORMAT" bytes.", number_of_discards, amount);
-      log_debug(jfr, system)("Current number of full buffers " SIZE_FORMAT "", number_of_discards);
+      log_debug(jfr, system)("Cleared %zu full buffer(s) of %zu bytes.", number_of_discards, amount);
+      log_debug(jfr, system)("Current number of full buffers %zu", number_of_discards);
     }
   }
 }
@@ -566,7 +566,7 @@ static size_t process_full(Processor& processor, JfrFullList* list, JfrStorageCo
 static void log(size_t count, size_t amount, bool clear = false) {
   if (log_is_enabled(Debug, jfr, system)) {
     if (count > 0) {
-      log_debug(jfr, system)("%s " SIZE_FORMAT " full buffer(s) of " SIZE_FORMAT" B of data%s",
+      log_debug(jfr, system)("%s %zu full buffer(s) of %zu B of data%s",
         clear ? "Discarded" : "Wrote", count, amount, clear ? "." : " to chunk.");
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1322,7 +1322,7 @@ static u1* schema_extend_event_subklass_bytes(const InstanceKlass* ik,
   const jint new_buffer_size = extra_stream_bytes + orig_stream_size;
   u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, new_buffer_size);
   if (new_buffer == nullptr) {
-    log_error(jfr, system) ("Thread local allocation (native) for " SIZE_FORMAT
+    log_error(jfr, system) ("Thread local allocation (native) for %zu"
       " bytes failed in JfrEventClassTransformer::on_klass_creation", static_cast<size_t>(new_buffer_size));
     return nullptr;
   }
@@ -1563,7 +1563,7 @@ static void cache_class_file_data(InstanceKlass* new_ik, const ClassFileStream* 
   JvmtiCachedClassFileData* p =
     (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_NULL(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
   if (p == nullptr) {
-    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT " bytes failed in JfrEventClassTransformer::cache_class_file_data",
+    log_error(jfr, system)("Allocation using C_HEAP_ARRAY for %zu bytes failed in JfrEventClassTransformer::cache_class_file_data",
       static_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));
     return;
   }

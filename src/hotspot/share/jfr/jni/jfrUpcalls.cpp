@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ static const size_t ERROR_MSG_BUFFER_SIZE = 256;
 static void log_error_and_throw_oom(jint new_bytes_length, TRAPS) {
   char error_buffer[ERROR_MSG_BUFFER_SIZE];
   jio_snprintf(error_buffer, ERROR_MSG_BUFFER_SIZE,
-    "Thread local allocation (native) for " SIZE_FORMAT " bytes failed in JfrUpcalls", (size_t)new_bytes_length);
+    "Thread local allocation (native) for %zu bytes failed in JfrUpcalls", (size_t)new_bytes_length);
   log_error(jfr, system)("%s", error_buffer);
   JfrJavaSupport::throw_out_of_memory_error(error_buffer, CHECK);
 }
