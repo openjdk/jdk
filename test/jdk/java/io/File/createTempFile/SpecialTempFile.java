@@ -108,9 +108,18 @@ public class SpecialTempFile {
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
+        System.out.println("OS name:    " + StaticProperty.osName() + "\n" +
+                           "OS version: " + OSVersion.current());
+
+        String osName = StaticProperty.osName();
+        String[] nameElements = osName.split(" ");
+        int nameVers = Integer.valueOf(nameElements[nameElements.length - 1]);
+        System.out.println("OS version from name: " + nameVers);
+
         boolean exceptionExpected =
-            !(StaticProperty.osName().matches("^.*[11|2025]$") ||
-              new OSVersion(10, 0).compareTo(OSVersion.current()) > 0);
+            !(new OSVersion(10, 0).compareTo(OSVersion.current()) > 0 ||
+              osName.contains("Server") ? nameVers > 2022 : nameVers > 10);
+
         test("ReservedName", resvPre, resvSuf, exceptionExpected);
     }
 }
