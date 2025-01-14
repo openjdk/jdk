@@ -50,7 +50,7 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
     private final long capacity;
 
-    private final boolean excessDiscarded;
+    private final boolean discardExcess;
 
     private final AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
 
@@ -59,16 +59,16 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
     /**
      * @param downstreamSubscriber the downstream subscriber to pass received data to
      * @param capacity the maximum number of bytes that are allowed
-     * @param excessDiscarded if {@code true}, excessive input will be discarded; otherwise, it will throw an exception
+     * @param discardExcess if {@code true}, excessive input will be discarded; otherwise, it will throw an exception
      * @throws IllegalArgumentException if {@code capacity < 0}
      */
-    public LimitingSubscriber(BodySubscriber<T> downstreamSubscriber, long capacity, boolean excessDiscarded) {
+    public LimitingSubscriber(BodySubscriber<T> downstreamSubscriber, long capacity, boolean discardExcess) {
         if (capacity < 0) {
             throw new IllegalArgumentException("was expecting \"capacity >= 0\", found: " + capacity);
         }
         this.downstreamSubscriber = requireNonNull(downstreamSubscriber, "downstreamSubscriber");
         this.capacity = capacity;
-        this.excessDiscarded = excessDiscarded;
+        this.discardExcess = discardExcess;
     }
 
     @Override
@@ -101,7 +101,7 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
         }
 
         // See if we can consume the input partially
-        else if (excessDiscarded) {
+        else if (discardExcess) {
             List<ByteBuffer> retainedBuffers = removeExcess(buffers);
             if (!retainedBuffers.isEmpty()) {
                 downstreamSubscriber.onNext(retainedBuffers);
