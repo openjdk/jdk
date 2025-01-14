@@ -1451,8 +1451,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
   rightmost_empty_idx = (old_collector_leftmost_empty == max_regions)? -1: (idx_t) old_collector_rightmost_empty;
   _partitions.establish_old_collector_intervals(old_collector_leftmost, rightmost_idx, old_collector_leftmost_empty,
                                                 rightmost_empty_idx, old_collector_regions, old_collector_used);
-
-  log_debug(gc, free)("  After find_regions_with_alloc_capacity(), Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "],"
+  log_debug(gc, free)("  After find_regions_with_alloc_capacity(), Mutator range [%zd, %zd],"
                       "  Old Collector range [%zd, %zd]",
                       _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
                       _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
@@ -1713,7 +1712,6 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
         // OLD regions that have available memory are already in the old_collector free set.
         _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                      ShenandoahFreeSetPartitionId::OldCollector, ac);
-
         log_trace(gc, free)("  Shifting region " SIZE_FORMAT " from mutator_free to old_collector_free", idx);
         log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
                             "  Old Collector range [%zd, %zd]",
@@ -1737,7 +1735,6 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
       // collection set, and they are easily evacuated because they have low density of live objects.
       _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                    ShenandoahFreeSetPartitionId::Collector, ac);
-
       log_trace(gc, free)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
       log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
                           "  Collector range [%zd, %zd]",
