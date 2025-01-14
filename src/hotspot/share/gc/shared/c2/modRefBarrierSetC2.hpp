@@ -32,13 +32,9 @@ class TypeOopPtr;
 class ModRefBarrierSetC2: public BarrierSetC2 {
 protected:
   virtual void post_barrier(GraphKit* kit,
-                            Node* ctl,
-                            Node* store,
                             Node* obj,
                             Node* adr,
-                            uint adr_idx,
                             Node* val,
-                            BasicType bt,
                             bool use_precise) const {}
 
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;

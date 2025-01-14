@@ -30,13 +30,9 @@
 class CardTableBarrierSetC2: public ModRefBarrierSetC2 {
 protected:
   virtual void post_barrier(GraphKit* kit,
-                            Node* ctl,
-                            Node* store,
                             Node* obj,
                             Node* adr,
-                            uint adr_idx,
                             Node* val,
-                            BasicType bt,
                             bool use_precise) const;
 
   Node* byte_map_base_node(GraphKit* kit) const;
