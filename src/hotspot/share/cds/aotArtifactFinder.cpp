@@ -261,4 +261,3 @@ void AOTArtifactFinder::all_cached_classes_do(MetaspaceClosure* it) {
     it->push(_all_cached_classes->adr_at(i));
   }
 }
-

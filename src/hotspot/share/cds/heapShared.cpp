@@ -317,22 +317,22 @@ bool HeapShared::archive_object(oop obj, KlassSubGraphInfo* subgraph_info) {
     Klass* k = obj->klass();
     if (k->is_instance_klass()) {
       // Whenever we see a non-array Java object of type X, we mark X to be aot-initialized.
-      // This ensures that during the production run, whenever Java code seens a cached object
+      // This ensures that during the production run, whenever Java code sees a cached object
       // of type X, we know that X is already initialized. (see TODO comment below ...)
 
-      if (InstanceKlass::cast(k)->is_enum_subclass()) {
-        // We can't rerun <clinit> of enum classes (see cdsEnumKlass.cpp) so
-        // we must store them as AOT-initialized.
-        AOTArtifactFinder::add_aot_inited_class(InstanceKlass::cast(k));
-      } else if (subgraph_info == _dump_time_special_subgraph) {
-        // TODO: we do this only for the special subgraph for now. Extending this to
-        // other subgraphs would require more refactoring of the core library (such as
-        // move some initialization logic into runtimeSetup()).
-        //
-        // For the other subgraphs, we have a weaker mechanism to ensure that
-        // all classes in a subgraph are initialized before the subgraph is programmatically
-        // returned from jdk.internal.misc.CDS::initializeFromArchive().
-        // See HeapShared::initialize_from_archived_subgraph().
+      if (InstanceKlass::cast(k)->is_enum_subclass()
+          // We can't rerun <clinit> of enum classes (see cdsEnumKlass.cpp) so
+          // we must store them as AOT-initialized.
+          || (subgraph_info == _dump_time_special_subgraph))
+          // TODO: we do this only for the special subgraph for now. Extending this to
+          // other subgraphs would require more refactoring of the core library (such as
+          // move some initialization logic into runtimeSetup()).
+          //
+          // For the other subgraphs, we have a weaker mechanism to ensure that
+          // all classes in a subgraph are initialized before the subgraph is programmatically
+          // returned from jdk.internal.misc.CDS::initializeFromArchive().
+          // See HeapShared::initialize_from_archived_subgraph().
+      {
         AOTArtifactFinder::add_aot_inited_class(InstanceKlass::cast(k));
       }
 
@@ -781,6 +781,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   }
 
   if (orig_k->is_instance_klass()) {
+#ifdef ASSERT
     InstanceKlass* ik = InstanceKlass::cast(orig_k);
     if (CDSConfig::is_dumping_invokedynamic()) {
       assert(ik->class_loader() == nullptr ||
@@ -789,6 +790,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
     } else {
       assert(ik->class_loader() == nullptr, "must be boot class");
     }
+#endif
     // vmClasses::xxx_klass() are not updated, need to check
     // the original Klass*
     if (orig_k == vmClasses::String_klass() ||

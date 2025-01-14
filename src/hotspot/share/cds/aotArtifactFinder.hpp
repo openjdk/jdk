@@ -59,7 +59,8 @@ class TypeArrayKlass;
 //       - registered lambda proxy classes
 //    - Whenever a class is added, we scan its constant pool. This will discover references
 //      to hidden classes. All such hidden classes are added.
-//    - As classes and heap objects are discovered, we find out what classes must be AOT-initialized
+//    - As heap objects (**Note2) and classes are discovered, we find out what classes must
+//      be AOT-initialized:
 //       - If we discover at least one instance of class X, then class X is AOT-initialized (** Note1).
 //       - If AOTClassInitializer::can_archive_initialized_mirror(X) is true, then X is AOT-initialized.
 //    - For each AOT-initialized class, we scan all the static fields in its java mirror. This will in
