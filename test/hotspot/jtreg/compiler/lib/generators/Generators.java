@@ -393,7 +393,7 @@ public final class Generators {
     ));
 
     /**
-     * Returns a mixed generator that mixes the provided background generator and SPECIAL_DOUBLES with the provided
+     * Returns a mixed generator that mixes the provided background generator and {@link #SPECIAL_DOUBLES} with the provided
      * weights.
      */
     public Generator<Double> mixedWithSpecialDoubles(Generator<Double> background, int weightNormal, int weightSpecial) {
