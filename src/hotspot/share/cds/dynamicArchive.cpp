@@ -133,8 +133,6 @@ public:
     dump_ro_metadata();
     relocate_metaspaceobj_embedded_pointers();
 
-    verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
-
     sort_methods();
 
     log_info(cds)("Make classes shareable");
@@ -158,8 +156,6 @@ public:
       WriteClosure wc(ro_region());
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
-
-    verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
 
     log_info(cds)("Adjust lambda proxy class dictionary");
     SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();

@@ -153,9 +153,7 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 ArchiveBuilder::ArchiveBuilder() :
   _current_dump_region(nullptr),
   _buffer_bottom(nullptr),
-  _last_verified_top(nullptr),
   _num_dump_regions_used(0),
-  _other_region_used_bytes(0),
   _requested_static_archive_bottom(nullptr),
   _requested_static_archive_top(nullptr),
   _requested_dynamic_archive_bottom(nullptr),
@@ -172,9 +170,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-  _total_heap_region_size(0),
-  _estimated_metaspaceobj_bytes(0),
-  _estimated_hashtable_bytes(0)
+  _total_heap_region_size(0)
 {
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
@@ -236,19 +232,12 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
         assert(SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass::cast(klass)), "must be");
       }
     }
-    // See RunTimeClassInfo::get_for(): make sure we have enough space for both maximum
-    // Klass alignment as well as the RuntimeInfo* pointer we will embed in front of a Klass.
-    _estimated_metaspaceobj_bytes += align_up(BytesPerWord, CompressedKlassPointers::klass_alignment_in_bytes()) +
-        align_up(sizeof(void*), SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
     Symbol* sym = (Symbol*)ref->obj();
     sym->increment_refcount();
     _symbols->append(sym);
   }
-
-  int bytes = ref->size() * BytesPerWord;
-  _estimated_metaspaceobj_bytes += align_up(bytes, SharedSpaceObjectAlignment);
 
   return true; // recurse
 }
@@ -288,10 +277,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     log_info(cds)("Sorting symbols ... ");
     _symbols->sort(compare_symbols_by_address);
     sort_klasses();
-
-    // TODO -- we need a proper estimate for the archived modules, etc,
-    // but this should be enough for now
-    _estimated_metaspaceobj_bytes += 200 * 1024 * 1024;
   }
 
   AOTClassLinker::add_candidates();
@@ -333,10 +318,8 @@ address ArchiveBuilder::reserve_buffer() {
   _shared_rs = rs;
 
   _buffer_bottom = buffer_bottom;
-  _last_verified_top = buffer_bottom;
   _current_dump_region = &_rw_region;
   _num_dump_regions_used = 1;
-  _other_region_used_bytes = 0;
   _current_dump_region->init(&_shared_rs, &_shared_vs);
 
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
@@ -555,28 +538,9 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
 }
 
 void ArchiveBuilder::start_dump_region(DumpRegion* next) {
-  address bottom = _last_verified_top;
-  address top = (address)(current_dump_region()->top());
-  _other_region_used_bytes += size_t(top - bottom);
-
   current_dump_region()->pack(next);
   _current_dump_region = next;
   _num_dump_regions_used ++;
-
-  _last_verified_top = (address)(current_dump_region()->top());
-}
-
-void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
-  address bottom = _last_verified_top;
-  address top = (address)(current_dump_region()->top());
-  size_t used = size_t(top - bottom) + _other_region_used_bytes;
-  int diff = int(estimate) - int(used);
-
-  log_info(cds)("%s estimate = " SIZE_FORMAT " used = " SIZE_FORMAT "; diff = %d bytes", which, estimate, used, diff);
-  assert(diff >= 0, "Estimate is too small");
-
-  _last_verified_top = top;
-  _other_region_used_bytes = 0;
 }
 
 char* ArchiveBuilder::ro_strdup(const char* s) {
