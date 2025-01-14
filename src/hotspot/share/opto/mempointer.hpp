@@ -617,24 +617,24 @@ public:
   };
 
 private:
-  NOT_PRODUCT( const TraceMemPointer& _trace; )
   MemPointerSummand _summands[SUMMANDS_SIZE];
   const NoOverflowInt _con;
   const Base _base;
   const jint _size;
+  NOT_PRODUCT( const TraceMemPointer& _trace; )
 
   // Default / trivial: pointer = 0 + 1 * pointer
   MemPointer(Node* pointer,
              const jint size
              NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
-    NOT_PRODUCT(_trace(trace) COMMA)
     _con(NoOverflowInt(0)),
     _base(Base()),
     _size(size)
+    NOT_PRODUCT(COMMA _trace(trace))
   {
     assert(pointer != nullptr, "pointer must be non-null");
     _summands[0] = MemPointerSummand(pointer, NoOverflowInt(1));
-    assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "valid size");
+    assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "sanity: no vector is expected to be larger");
   }
 
   // pointer = SUM(SUMMANDS) + con
@@ -643,10 +643,10 @@ private:
              const NoOverflowInt& con,
              const jint size
              NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
-    NOT_PRODUCT(_trace(trace) COMMA)
     _con(con),
     _base(Base::make(pointer, summands)),
     _size(size)
+    NOT_PRODUCT(COMMA _trace(trace))
   {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
@@ -674,7 +674,7 @@ private:
     }
     assert(pos == summands.length(), "copied all summands");
 
-    assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "valid size");
+    assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "sanity: no vector is expected to be larger");
   }
 
   // Mutated copy.
@@ -682,10 +682,10 @@ private:
   MemPointer(const MemPointer& old,
              const NoOverflowInt new_con,
              const jint new_size) :
-    NOT_PRODUCT(_trace(old._trace) COMMA)
     _con(new_con),
     _base(old.base()),
     _size(new_size)
+    NOT_PRODUCT(COMMA _trace(old._trace))
   {
     assert(!_con.is_NaN(), "non-NaN constant");
     for (int i = 0; i < SUMMANDS_SIZE; i++) {

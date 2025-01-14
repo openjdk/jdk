@@ -102,6 +102,7 @@ public:
   }
 
   static int cmp(const NoOverflowInt& a, const NoOverflowInt& b) {
+    // Order NaN (overflow, uninitialized, etc) after non-NaN.
     if (a.is_NaN()) {
       return b.is_NaN() ? 0 : 1;
     } else if (b.is_NaN()) {
