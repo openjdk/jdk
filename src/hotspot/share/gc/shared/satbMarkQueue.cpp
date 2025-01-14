@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ static void print_satb_buffer(const char* name,
                               void** buf,
                               size_t index,
                               size_t capacity) {
-  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: " SIZE_FORMAT
-                " capacity: " SIZE_FORMAT,
+  tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " index: %zu"
+                " capacity: %zu",
                 name, p2i(buf), index, capacity);
 }
 

@@ -131,7 +131,7 @@ void AgeTable::print_on(outputStream* st) {
     size_t word_size = sizes[age];
     total += word_size;
     if (word_size > 0) {
-      st->print_cr("- age %3u: " SIZE_FORMAT_W(10) " bytes, " SIZE_FORMAT_W(10) " total",
+      st->print_cr("- age %3u: %10zu bytes, %10zu total",
                    age, word_size * oopSize, total * oopSize);
     }
     AgeTableTracer::send_tenuring_distribution_event(age, word_size * oopSize);

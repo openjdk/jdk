@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,9 @@ void WorkerDataArray<double>::WDAPrinter::summary(outputStream* out, double min,
 
 template <>
 void WorkerDataArray<size_t>::WDAPrinter::summary(outputStream* out, size_t min, double avg, size_t max, size_t diff, size_t sum, bool print_sum) {
-  out->print(" Min: " SIZE_FORMAT ", Avg: %4.1lf, Max: " SIZE_FORMAT ", Diff: " SIZE_FORMAT, min, avg, max, diff);
+  out->print(" Min: %zu, Avg: %4.1lf, Max: %zu, Diff: %zu", min, avg, max, diff);
   if (print_sum) {
-    out->print(", Sum: " SIZE_FORMAT, sum);
+    out->print(", Sum: %zu", sum);
   }
 }
 
@@ -75,7 +75,7 @@ void WorkerDataArray<size_t>::WDAPrinter::details(const WorkerDataArray<size_t>*
   for (uint i = 0; i < phase->_length; ++i) {
     size_t value = phase->get(i);
     if (value != phase->uninitialized()) {
-      out->print("  " SIZE_FORMAT, phase->get(i));
+      out->print("  %zu", phase->get(i));
     } else {
       out->print(" -");
     }
