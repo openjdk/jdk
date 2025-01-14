@@ -117,9 +117,10 @@ public class Lint {
 
     // For the root instance only, these are initialized lazily
     private EnumSet<LintCategory> values;           // categories enabled by default or "-Xlint:key" and not (yet) suppressed
-    private EnumSet<LintCategory> suppressedValues; // categories suppressed by @SuppressWarnings, @Deprecated, or suppress()
+    private EnumSet<LintCategory> suppressedValues; // categories suppressed by augment() or suppress() (but not "-Xlint:-key")
 
-    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
+    // LintCategory lookup by option string
+    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(40);
 
     // Instantiate the root instance
     @SuppressWarnings("this-escape")
@@ -176,7 +177,7 @@ public class Lint {
             values.add(LintCategory.INCUBATING);
         }
 
-        // Look for specific overrides
+        // Look for specific overrides via "-Xlint" flags
         for (LintCategory lc : LintCategory.values()) {
             if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
                 values.add(lc);
