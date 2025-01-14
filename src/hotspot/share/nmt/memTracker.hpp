@@ -31,7 +31,6 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -64,7 +63,7 @@ class MemTracker : AllStatic {
 
   // This may be called on a detached thread during VM init, so we should check that first.
   static inline void assert_locked() {
-    assert(Threads::is_single_threaded() || NmtVirtualMemory_lock->owned_by_self(),
+    assert(!NmtVirtualMemoryLocker::is_safe_to_use() || NmtVirtualMemory_lock->owned_by_self(),
            "should have acquired NmtVirtualMemory_lock");
   }
 
@@ -291,9 +290,21 @@ class MemTracker : AllStatic {
    * is single threaded at that point in time anyway.
    */
   class NmtVirtualMemoryLocker: StackObj {
+    // Returns true if it is safe to start using this locker.
+    static bool _safe_to_use;
     ConditionalMutexLocker _cml;
+
   public:
-    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, !Threads::is_single_threaded(), Mutex::_no_safepoint_check_flag){}
+    NmtVirtualMemoryLocker(): _cml(NmtVirtualMemory_lock, _safe_to_use, Mutex::_no_safepoint_check_flag){}
+
+    static inline bool is_safe_to_use()  {
+      return _safe_to_use;
+    }
+
+    // Set in Threads::create_vm once threads and mutexes have been initialized.
+    static inline void set_safe_to_use()  {
+      _safe_to_use = true;
+    }
   };
 
  private:

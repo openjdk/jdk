@@ -27,8 +27,6 @@
 #define SHARE_RUNTIME_THREADS_HPP
 
 #include "jni.h"
-#include "logging/logAsyncWriter.hpp"
-#include "runtime/vmThread.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -146,17 +144,6 @@ public:
   static int number_of_threads()                 { return _number_of_threads; }
   // Number of non-daemon threads on the active threads list
   static int number_of_non_daemon_threads()      { return _number_of_non_daemon_threads; }
-
-  // VM initialization is single-threaded until the first NJT is created
-  // by the main thread, but that thread disappears during VM exit so we can't just
-  // check for it. To reduce the overhead we check for > 1 JavaThreads first.
-  static bool is_single_threaded() {
-    if (number_of_threads() > 0) {
-        return false;
-    }
-    NonJavaThread::Iterator njti;
-    return njti.end();
-  }
 
   struct Test;                  // For private gtest access.
 };

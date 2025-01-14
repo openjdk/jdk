@@ -30,7 +30,6 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threads.hpp"
 #include "utilities/ostream.hpp"
 
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
@@ -628,7 +627,7 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    if (!Threads::is_single_threaded()) {
+    if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
       assert_lock_strong(NmtVirtualMemory_lock);
     }
     if (rgn->mem_tag() == mtThreadStack) {
