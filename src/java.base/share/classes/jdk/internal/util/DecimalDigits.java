@@ -151,7 +151,7 @@ public final class DecimalDigits {
         /*
             Here we are doing a 2-Byte Vector operation on the short type.
 
-            x & 0xF0 != 0xC0
+            x & 0xF0 != 0x30
             ---------------
             0 0b0011_0000 & 0b1111_0000 = 0b0011_0000
             1 0b0011_0001 & 0b1111_0000 = 0b0011_0000
