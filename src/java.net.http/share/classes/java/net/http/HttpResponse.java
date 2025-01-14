@@ -755,21 +755,17 @@ public interface HttpResponse<T> {
          *
          * @param downstreamHandler the downstream handler to pass received data to
          * @param capacity the maximum number of bytes that are allowed
-         * @param discardExcess if {@code true}, excessive input will be discarded; otherwise, it will throw an exception
          * @throws IllegalArgumentException if {@code capacity < 0}
          * @since 25
          */
-        public static <T> BodyHandler<T> limiting(
-                BodyHandler<T> downstreamHandler,
-                long capacity,
-                boolean discardExcess) {
+        public static <T> BodyHandler<T> limiting(BodyHandler<T> downstreamHandler, long capacity) {
             Objects.requireNonNull(downstreamHandler, "downstreamHandler");
             if (capacity < 0) {
                 throw new IllegalArgumentException("was expecting \"capacity >= 0\", found: " + capacity);
             }
             return responseInfo -> {
                 BodySubscriber<T> downstreamSubscriber = downstreamHandler.apply(responseInfo);
-                return BodySubscribers.limiting(downstreamSubscriber, capacity, discardExcess);
+                return BodySubscribers.limiting(downstreamSubscriber, capacity);
             };
         }
 
@@ -1381,16 +1377,12 @@ public interface HttpResponse<T> {
          *
          * @param downstreamSubscriber the downstream subscriber to pass received data to
          * @param capacity the maximum number of bytes that are allowed
-         * @param discardExcess if {@code true}, excessive input will be discarded; otherwise, it will throw an exception
          * @throws IllegalArgumentException if {@code capacity < 0}
          * @since 25
          */
-        public static <T> BodySubscriber<T> limiting(
-                BodySubscriber<T> downstreamSubscriber,
-                long capacity,
-                boolean discardExcess) {
+        public static <T> BodySubscriber<T> limiting(BodySubscriber<T> downstreamSubscriber, long capacity) {
             Objects.requireNonNull(downstreamSubscriber, "downstreamSubscriber");
-            return new LimitingSubscriber<>(downstreamSubscriber, capacity, discardExcess);
+            return new LimitingSubscriber<>(downstreamSubscriber, capacity);
         }
 
     }

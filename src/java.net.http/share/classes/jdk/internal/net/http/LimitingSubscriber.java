@@ -31,7 +31,6 @@ import jdk.internal.net.http.common.Utils;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Subscription;
@@ -50,8 +49,6 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
     private final long capacity;
 
-    private final boolean discardExcess;
-
     private final AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
 
     private long length;
@@ -59,16 +56,14 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
     /**
      * @param downstreamSubscriber the downstream subscriber to pass received data to
      * @param capacity the maximum number of bytes that are allowed
-     * @param discardExcess if {@code true}, excessive input will be discarded; otherwise, it will throw an exception
      * @throws IllegalArgumentException if {@code capacity < 0}
      */
-    public LimitingSubscriber(BodySubscriber<T> downstreamSubscriber, long capacity, boolean discardExcess) {
+    public LimitingSubscriber(BodySubscriber<T> downstreamSubscriber, long capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("was expecting \"capacity >= 0\", found: " + capacity);
         }
         this.downstreamSubscriber = requireNonNull(downstreamSubscriber, "downstreamSubscriber");
         this.capacity = capacity;
-        this.discardExcess = discardExcess;
     }
 
     @Override
@@ -98,17 +93,7 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
             downstreamSubscriber.onNext(buffers);
         }
 
-        // See if we can consume the input partially
-        else if (discardExcess) {
-            List<ByteBuffer> retainedBuffers = removeExcess(buffers);
-            if (!retainedBuffers.isEmpty()) {
-                downstreamSubscriber.onNext(retainedBuffers);
-            }
-            downstreamSubscriber.onComplete();
-            subscription.cancel();
-        }
-
-        // Partial consumption is not allowed, trigger failure
+        // Otherwise, trigger failure
         else {
             downstreamSubscriber.onError(new IllegalStateException(
                     "the maximum number of bytes that are allowed to be consumed is exceeded"));
@@ -125,29 +110,6 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
         }
         length = nextReceivedByteCount;
         return true;
-    }
-
-    private List<ByteBuffer> removeExcess(List<ByteBuffer> buffers) {
-        List<ByteBuffer> retainedBuffers = new ArrayList<>(buffers.size());
-        long remaining = capacity - length;
-        for (ByteBuffer buffer : buffers) {
-            // No capacity left; stop
-            if (remaining < 1) {
-                break;
-            }
-            // Buffer fits as is; keep it
-            else if (buffer.remaining() <= remaining) {
-                retainedBuffers.add(buffer);
-                remaining -= buffer.remaining();
-            }
-            // There is capacity, but the buffer doesn't fit; truncate and keep it
-            else {
-                buffer.limit(Math.toIntExact(Math.addExact(buffer.position(), remaining)));
-                retainedBuffers.add(buffer);
-                remaining = 0;
-            }
-        }
-        return retainedBuffers;
     }
 
     @Override

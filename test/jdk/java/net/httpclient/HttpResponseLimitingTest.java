@@ -26,7 +26,7 @@
 /*
  * @test
  * @bug 8328919
- * @summary verifies `BodyHandlers.limiting()` behaviour
+ * @summary verifies `limiting()` behaviour in `HttpResponse.Body{Handlers,Subscribers}`
  * @library /test/lib
  * @run junit HttpResponseLimitingTest
  */
@@ -68,7 +68,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HttpResponseLimitingTest {
 
@@ -96,7 +95,7 @@ class HttpResponseLimitingTest {
     @MethodSource("sufficientCapacities")
     void testSuccessOnSufficientCapacity(long sufficientCapacity) throws Exception {
         BodyHandler<byte[]> handler =
-                BodyHandlers.limiting(BodyHandlers.ofByteArray(), sufficientCapacity, false);
+                BodyHandlers.limiting(BodyHandlers.ofByteArray(), sufficientCapacity);
         HttpResponse<byte[]> response = CLIENT.send(REQUEST, handler);
         assertArrayEquals(HttpServer.RESPONSE_BODY, response.body());
     }
@@ -112,21 +111,10 @@ class HttpResponseLimitingTest {
                 IOException.class,
                 () -> {
                     BodyHandler<byte[]> handler =
-                            BodyHandlers.limiting(BodyHandlers.ofByteArray(), insufficientCapacity, false);
+                            BodyHandlers.limiting(BodyHandlers.ofByteArray(), insufficientCapacity);
                     CLIENT.send(REQUEST, handler);
                 },
                 "the maximum number of bytes that are allowed to be consumed is exceeded");
-    }
-
-    @ParameterizedTest
-    @MethodSource("insufficientCapacities")
-    void testTruncationOnInsufficientCapacity(long insufficientCapacity) throws Exception {
-        BodyHandler<byte[]> handler =
-                BodyHandlers.limiting(BodyHandlers.ofByteArray(), insufficientCapacity, true);
-        HttpResponse<byte[]> response = CLIENT.send(REQUEST, handler);
-        byte[] expectedResponseBody = new byte[(int) insufficientCapacity];
-        System.arraycopy(HttpServer.RESPONSE_BODY, 0, expectedResponseBody, 0, expectedResponseBody.length);
-        assertArrayEquals(expectedResponseBody, response.body());
     }
 
     static long[] insufficientCapacities() {
@@ -139,7 +127,7 @@ class HttpResponseLimitingTest {
         // Create the subscriber (with sufficient capacity)
         ObserverSubscriber downstreamSubscriber = new ObserverSubscriber();
         int sufficientCapacity = HttpServer.RESPONSE_BODY.length;
-        BodySubscriber<String> subscriber = BodySubscribers.limiting(downstreamSubscriber, sufficientCapacity, false);
+        BodySubscriber<String> subscriber = BodySubscribers.limiting(downstreamSubscriber, sufficientCapacity);
 
         // Emit values
         subscriber.onSubscribe(DummySubscription.INSTANCE);
@@ -156,40 +144,12 @@ class HttpResponseLimitingTest {
     }
 
     @Test
-    void testSubscriberForTruncationOnExcess() {
-
-        // Create the subscriber (with insufficient capacity)
-        ObserverSubscriber downstreamSubscriber = new ObserverSubscriber();
-        int insufficientCapacity = 4;
-        BodySubscriber<String> subscriber = BodySubscribers.limiting(downstreamSubscriber, insufficientCapacity, true);
-
-        // Emit values
-        subscriber.onSubscribe(DummySubscription.INSTANCE);
-        byte[] responseBodyPart1 = {HttpServer.RESPONSE_BODY[0]};
-        byte[] responseBodyPart2 = {HttpServer.RESPONSE_BODY[1], HttpServer.RESPONSE_BODY[2]};
-        byte[] responseBodyPart3 = copyOfRange(HttpServer.RESPONSE_BODY, 3, HttpServer.RESPONSE_BODY.length);
-        List<ByteBuffer> buffers = toByteBuffers(responseBodyPart1, responseBodyPart2, responseBodyPart3);
-        subscriber.onNext(buffers);
-
-        // Verify the downstream propagation
-        assertNotNull(downstreamSubscriber.lastBuffers);
-        List<ByteBuffer> expectedBuffers = toByteBuffers(
-                responseBodyPart1,
-                responseBodyPart2,
-                copyOfRange(HttpServer.RESPONSE_BODY, 3, 4));
-        assertEquals(expectedBuffers, downstreamSubscriber.lastBuffers);
-        assertNull(downstreamSubscriber.lastThrowable);
-        assertTrue(downstreamSubscriber.completed);
-
-    }
-
-    @Test
     void testSubscriberForFailureOnExcess() {
 
         // Create the subscriber (with insufficient capacity)
         ObserverSubscriber downstreamSubscriber = new ObserverSubscriber();
         int insufficientCapacity = 2;
-        BodySubscriber<String> subscriber = BodySubscribers.limiting(downstreamSubscriber, insufficientCapacity, false);
+        BodySubscriber<String> subscriber = BodySubscribers.limiting(downstreamSubscriber, insufficientCapacity);
 
         // Emit values
         subscriber.onSubscribe(DummySubscription.INSTANCE);
