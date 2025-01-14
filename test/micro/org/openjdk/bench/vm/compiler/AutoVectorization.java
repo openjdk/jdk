@@ -28,8 +28,6 @@ import org.openjdk.jmh.infra.*;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
-import java.lang.foreign.*;
-
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
@@ -67,10 +65,6 @@ public class AutoVectorization {
     private double[] aD;
     private double[] bD;
     private double[] rD;
-
-    private MemorySegment aN;
-    private MemorySegment bN;
-    private MemorySegment rN;
 
     private static int zeroI = 0;
 
@@ -111,10 +105,6 @@ public class AutoVectorization {
         aD = new double[SIZE];
         bD = new double[SIZE];
         rD = new double[SIZE];
-
-        aN = Arena.ofAuto().allocate(SIZE * 8);
-        bN = Arena.ofAuto().allocate(SIZE * 8);
-        rN = Arena.ofAuto().allocate(SIZE * 8);
 
         for (int i = 0; i < SIZE; i++) {
             aB[i] = (byte) r.nextInt();
@@ -339,25 +329,6 @@ public class AutoVectorization {
     public void aliasingCopyReverseIntFloat() {
         for (int i = 0; i < aI.length; i++) {
             rI[i] = (int)aF[aI.length - i - 1];
-        }
-    }
-
-    // ------------------------------------- MEMORY SEGMENT
-
-    @Benchmark
-    public void memorySegmentNativeElementwiseByteIncr() {
-        for (long i = 0; i < aN.byteSize(); i++) {
-            byte v = rN.get(ValueLayout.JAVA_BYTE, i);
-            rN.set(ValueLayout.JAVA_BYTE, i, (byte)(v + 1));
-        }
-    }
-
-    @Benchmark
-    public void memorySegmentNativeElementwiseByteAdd() {
-        for (long i = 0; i < aN.byteSize(); i++) {
-            byte v1 = aN.get(ValueLayout.JAVA_BYTE, i);
-            byte v2 = bN.get(ValueLayout.JAVA_BYTE, i);
-            rN.set(ValueLayout.JAVA_BYTE, i, (byte)(v1 + v2));
         }
     }
 
