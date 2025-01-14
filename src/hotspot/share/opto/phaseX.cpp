@@ -1263,6 +1263,25 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_MaxD:
       return false;
 
+    // In MulNode::Ideal the edges can be swapped to help value numbering:
+    //
+    //    // We are OK if right is a constant, or right is a load and
+    //    // left is a non-constant.
+    //    if( !(t2->singleton() ||
+    //          (in(2)->is_Load() && !(t1->singleton() || in(1)->is_Load())) ) ) {
+    //      if( t1->singleton() ||       // Left input is a constant?
+    //          // Otherwise, sort inputs (commutativity) to help value numbering.
+    //          (in(1)->_idx > in(2)->_idx) ) {
+    //        swap_edges(1, 2);
+    //
+    // Why was this not done earlier during IGVN?
+    //
+    // Found with:
+    //    test/hotspot/jtreg/gc/stress/gcbasher/TestGCBasherWithG1.java
+    //    -XX:VerifyIterativeGVN=1110
+    case Op_AndI:
+      return false;
+
     // SubLNode::Ideal does transform like:
     //   Convert "c1 - (y+c0)" into "(c1-c0) - y"
     //
@@ -1553,6 +1572,20 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
     case Op_SubI:
     case Op_SubL:
+      return false;
+
+    // PhiNode::Identity checks for patterns like:
+    //   r = (x != con) ? x : con;
+    // that can be constant folded to "x".
+    //
+    // Call goes through PhiNode::is_cmove_id and CMoveNode::is_cmove_id.
+    // I suspect there was some earlier change to one of the inputs, but
+    // not all relevant outputs were put on the IGVN worklist.
+    //
+    // Found with:
+    //   test/hotspot/jtreg/gc/stress/gcbasher/TestGCBasherWithG1.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_Phi:
       return false;
   }
 
