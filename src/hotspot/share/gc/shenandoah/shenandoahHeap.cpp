@@ -1264,7 +1264,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
 
-  // The handshake won't touch non-java threads, so do those separately.
+  // The handshake won't touch worker threads (or control thread, or VM thread), so do those separately.
   Threads::non_java_threads_do(&prepare_for_update_refs);
 
   // Now retire gclabs and plabs and propagate gc_state for mutator threads
