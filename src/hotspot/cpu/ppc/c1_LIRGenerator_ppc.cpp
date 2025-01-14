@@ -702,8 +702,6 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       value.load_item();
       LIR_Opr dst = rlock_result(x);
       LIR_Opr tmp = new_register(T_FLOAT);
-      // f2hf treats tmp as live_in. Workaround: initialize to some value.
-      __ move(LIR_OprFact::floatConst(-0.0), tmp); // just to satisfy LinearScan
       __ f2hf(value.result(), dst, tmp);
       break;
     }

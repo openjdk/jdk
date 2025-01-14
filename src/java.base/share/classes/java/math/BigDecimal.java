@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,13 +313,13 @@ import java.util.Objects;
  * time or space of operations can screen out {@code BigDecimal}
  * values with unscaled values or scales above a chosen magnitude.
  *
- * @see     BigInteger
- * @see     MathContext
- * @see     RoundingMode
- * @see     java.util.SortedMap
- * @see     java.util.SortedSet
- * @see <a href="https://standards.ieee.org/ieee/754/6210/">
- *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
+ * @see BigInteger
+ * @see MathContext
+ * @see RoundingMode
+ * @see java.util.SortedMap
+ * @see java.util.SortedSet
+ * @spec https://standards.ieee.org/ieee/754/6210/
+ *       IEEE Standard for Floating-Point Arithmetic
  *
  * @author  Josh Bloch
  * @author  Mike Cowlishaw

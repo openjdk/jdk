@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,6 +312,7 @@ public:
 
   static void set_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
   static void clear_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
+  static void clear_all_frame_pops(JvmtiEnvThreadState *env_thread);
   static void clear_to_frame_pop(JvmtiEnvThreadState *env_thread, JvmtiFramePop fpop);
   static void change_field_watch(jvmtiEvent event_type, bool added);
 
@@ -946,6 +947,15 @@ JvmtiEventControllerPrivate::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFram
   recompute_thread_enabled(ets->jvmti_thread_state());
 }
 
+void
+JvmtiEventControllerPrivate::clear_all_frame_pops(JvmtiEnvThreadState *ets) {
+  EC_TRACE(("[%s] # clear all frame pops",
+            JvmtiTrace::safe_get_thread_name(ets->get_thread_or_saved())
+          ));
+
+  ets->get_frame_pops()->clear_all();
+  recompute_thread_enabled(ets->jvmti_thread_state());
+}
 
 void
 JvmtiEventControllerPrivate::clear_to_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
@@ -1123,6 +1133,12 @@ void
 JvmtiEventController::clear_frame_pop(JvmtiEnvThreadState *ets, JvmtiFramePop fpop) {
   assert(JvmtiThreadState_lock->is_locked(), "Must be locked.");
   JvmtiEventControllerPrivate::clear_frame_pop(ets, fpop);
+}
+
+void
+JvmtiEventController::clear_all_frame_pops(JvmtiEnvThreadState *ets) {
+  assert(JvmtiThreadState_lock->is_locked(), "Must be locked.");
+  JvmtiEventControllerPrivate::clear_all_frame_pops(ets);
 }
 
 void

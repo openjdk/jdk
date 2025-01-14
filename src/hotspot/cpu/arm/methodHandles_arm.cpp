@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,7 @@ void trace_method_handle_stub(const char* adaptername,
   if (!has_mh) {
     mh_reg_name = "R5";
   }
-  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=(" PTR_FORMAT "+" INTX_FORMAT ") stack_size=" INTX_FORMAT " bp=" PTR_FORMAT,
+  log_info(methodhandles)("MH %s %s=" PTR_FORMAT " sp=(" PTR_FORMAT "+%zd) stack_size=%zd bp=" PTR_FORMAT,
                           adaptername, mh_reg_name, mh_reg,
                           (intptr_t)entry_sp, (intptr_t)saved_sp - (intptr_t)entry_sp, (intptr_t)(base_sp - last_sp), (intptr_t)saved_bp);
 

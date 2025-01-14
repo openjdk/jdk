@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package jdk.jfr.jvm;
 
-// Purpose of this class is to have something to
-// statically link against for TestGetEventWriter.
-//
-// When the class is loaded "jdk.jfr.jvm.PlaceholderEventWriterFactory"
-// will be replaced with "jdk.jfr.internal.event.EventWriterFactory"
-public class PlaceholderEventWriterFactory {
+#ifndef OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP
+#define OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP
 
-    public static PlaceholderEventWriter getEventWriter(long value) {
-        throw new RuntimeException("Test error, PlaceholderEventWriterFactory class should have been replaced with EventWriterFactory");
-    }
+#include "utilities/compilerWarnings.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+// Provide wrappers for some functions otherwise forbidden from use in HotSpot.
+// See forbiddenFunctions.hpp for details.
+
+namespace permit_forbidden_function {
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
+
+// Used by the POSIX implementation of os::realpath.
+inline char* realpath(const char* path, char* resolved_path) {
+  return ::realpath(path, resolved_path);
 }
+
+END_ALLOW_FORBIDDEN_FUNCTIONS
+} // namespace permit_forbidden_function
+
+#endif // OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP

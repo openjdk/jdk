@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public:
   FakeRttiSupport add_tag(TagType tag) const {
     uintx tbit = tag_bit(tag);
     assert((_tag_set & tbit) == 0,
-           "Tag " UINTX_FORMAT " is already present in tag set: " UINTX_FORMAT,
+           "Tag %zu is already present in tag set: %zu",
            (uintx)tag, _tag_set);
     return FakeRttiSupport(_concrete_tag, _tag_set | tbit);
   }
@@ -91,9 +91,9 @@ private:
   }
 
   static TagType validate_tag(TagType tag) {
-    assert(0 <= tag, "Tag " INTX_FORMAT " is negative", (intx)tag);
+    assert(0 <= tag, "Tag %zd is negative", (intx)tag);
     assert(tag < BitsPerWord,
-           "Tag " UINTX_FORMAT " is too large", (uintx)tag);
+           "Tag %zu is too large", (uintx)tag);
     return tag;
   }
 };

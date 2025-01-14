@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import java.net.URLClassLoader;
+#ifndef OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
+#define OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
 
-/*
- * This class is loaded by the custom URLClassLoader, and then calls
- * Class.forName() with the protection domain for the checkPackageAccess
- * call created from the code source jar file.
- */
-public class ClassForName {
-    static {
-        if (!(ClassForName.class.getClassLoader() instanceof URLClassLoader)) {
-            throw new RuntimeException("Supposed to be loaded by URLClassLoader");
-        }
-    }
+#include "utilities/compilerWarnings.hpp"
 
-    public ClassForName() {
-        try {
-            // class_loader = App$ClassLoader, protection_domain = ClassForName.getProtectionDomain()
-            Class.forName(java.util.List.class.getName(), false,
-                          ClassLoader.getSystemClassLoader());
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-}
+#include <stddef.h> // for size_t
+
+// _fullpath with a null first argument mallocs a string for the result.
+FORBID_IMPORTED_C_FUNCTION(char* _fullpath(char*, const char*, size_t), "use os::realpath");
+
+// _snprintf does NOT null terminate if the output would exceed the buffer size.
+FORBID_C_FUNCTION(int _snprintf(char*, size_t, const char*, ...), "use os::snprintf");
+
+#endif // OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
