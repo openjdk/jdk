@@ -2619,7 +2619,7 @@ void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register t
   add(Rd, Rn, -decrement, tmp);
 }
 
-void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register tmp) {
+void MacroAssembler::addw(Register Rd, Register Rn, int64_t increment, Register tmp) {
   if (is_simm12(increment)) {
     addiw(Rd, Rn, increment);
   } else {
@@ -2629,7 +2629,7 @@ void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register 
   }
 }
 
-void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register tmp) {
+void MacroAssembler::subw(Register Rd, Register Rn, int64_t decrement, Register tmp) {
   addw(Rd, Rn, -decrement, tmp);
 }
 
