@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,27 +172,6 @@ public final class KeyUtil {
         }
 
         return -1;
-    }
-
-    /**
-     * Returns the algorithm name of the given key object. If an EC key is
-     * specified, returns the algorithm name and its named curve.
-     *
-     * @param key the key object, cannot be null
-     * @return the algorithm name of the given key object, or return in the
-     *       form of "EC (named curve)" if the given key object is an EC key
-     */
-    public static final String fullDisplayAlgName(Key key) {
-        String result = key.getAlgorithm();
-        if (key instanceof AsymmetricKey ak) {
-            AlgorithmParameterSpec paramSpec = ak.getParams();
-            if (paramSpec instanceof NamedCurve nc) {
-                result += " (" + nc.getNameAndAliases()[0] + ")";
-            } else if (paramSpec instanceof NamedParameterSpec nps) {
-                result = nps.getName();
-            }
-        }
-        return result;
     }
 
     /**
@@ -424,7 +403,7 @@ public final class KeyUtil {
         try {
             DerValue val = new DerValue(publicKey.getEncoded());
             val.data.getDerValue();
-            byte[] rawKey = new DerValue(val.data.getBitString()).getOctetString();
+            byte[] rawKey = val.data.getBitString();
             // According to https://www.rfc-editor.org/rfc/rfc8554.html:
             // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
             // is the LMS public key for the top-level tree.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.nio.file.Path;
 
 import jdk.jpackage.test.JPackageCommand;
+import static jdk.jpackage.test.HelloApp.configureEnvironment;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
@@ -54,14 +55,15 @@ public class WinChildProcessTest {
         long childPid = 0;
         try {
             JPackageCommand cmd = JPackageCommand
-                    .helloAppImage(TEST_APP_JAVA + "*Hello");
+                    .helloAppImage(TEST_APP_JAVA + "*Hello")
+                    .ignoreFakeRuntime();
 
             // Create the image of the third party application launcher
             cmd.executeAndAssertImageCreated();
 
             // Start the third party application launcher and dump and save the
             // output of the application
-            List<String> output = new Executor().saveOutput().dumpOutput()
+            List<String> output = configureEnvironment(new Executor()).saveOutput().dumpOutput()
                     .setExecutable(cmd.appLauncherPath().toAbsolutePath())
                     .execute(0).getOutput();
             String pidStr = output.get(0);

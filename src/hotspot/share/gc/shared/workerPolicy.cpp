@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,9 +130,9 @@ uint WorkerPolicy::calc_default_active_workers(uintx total_workers,
   assert(new_active_workers <= total_workers, "Total workers not observed");
 
   log_trace(gc, task)("WorkerPolicy::calc_default_active_workers() : "
-    "active_workers(): " UINTX_FORMAT "  new_active_workers: " UINTX_FORMAT "  "
-    "prev_active_workers: " UINTX_FORMAT "\n"
-    " active_workers_by_JT: " UINTX_FORMAT "  active_workers_by_heap_size: " UINTX_FORMAT,
+    "active_workers(): %zu  new_active_workers: %zu  "
+    "prev_active_workers: %zu\n"
+    " active_workers_by_JT: %zu  active_workers_by_heap_size: %zu",
     active_workers, new_active_workers, prev_active_workers,
     active_workers_by_JT, active_workers_by_heap_size);
   assert(new_active_workers > 0, "Always need at least 1");

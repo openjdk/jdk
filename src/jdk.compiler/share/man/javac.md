@@ -1667,7 +1667,7 @@ internal and subject to change at any time.
     public static int m() {
       try {
          throw new NullPointerException();
-      }  catch (NullPointerException(); {
+      }  catch (NullPointerException e) {
          System.err.println("Caught NullPointerException.");
          return 1;
        } finally {

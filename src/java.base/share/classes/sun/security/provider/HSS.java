@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -757,12 +757,8 @@ public final class HSS extends SignatureSpi {
                                 Arrays.copyOfRange(keyArray, 4, keyArray.length),
                                 0, true);
                 algid = new AlgorithmId(ObjectIdentifier.of(KnownOIDs.HSSLMS));
-                byte[] derEncodedKeyarray =
-                        new DerOutputStream()
-                                .putOctetString(keyArray)
-                                .toByteArray();
                 this.setKey(new BitArray(
-                        8 * derEncodedKeyarray.length, derEncodedKeyarray));
+                        8 * keyArray.length, keyArray));
             }
         }
 
@@ -783,11 +779,17 @@ public final class HSS extends SignatureSpi {
         @Override
         protected void parseKeyBits() throws InvalidKeyException {
             byte[] keyArray = getKey().toByteArray();
-            if ((keyArray[0] != DerValue.tag_OctetString) || (keyArray[1] != keyArray.length -2)) {
-                throw new InvalidKeyException("Bad X509Key");
+            if (keyArray.length < 12) { // More length check in LMSPublicKey
+                throw new InvalidKeyException("LMS public key is too short");
             }
-            L = LMSUtils.fourBytesToInt(keyArray, 2);
-            lmsPublicKey = new LMSPublicKey(keyArray, 6, true);
+            if (keyArray[0] == DerValue.tag_OctetString
+                    && keyArray[1] == keyArray.length - 2) {
+                // pre-8347596 format that has an inner OCTET STRING.
+                keyArray = Arrays.copyOfRange(keyArray, 2, keyArray.length);
+                setKey(new BitArray(keyArray.length * 8, keyArray));
+            }
+            L = LMSUtils.fourBytesToInt(keyArray, 0);
+            lmsPublicKey = new LMSPublicKey(keyArray, 4, true);
         }
 
         @java.io.Serial
