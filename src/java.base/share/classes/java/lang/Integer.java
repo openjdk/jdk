@@ -578,10 +578,6 @@ public final class Integer extends Number
         return CharacterDataLatin1.instance.isDigit(ch);
     }
 
-    static boolean isDigitLatin2(int ch) {
-        return CharacterDataLatin1.instance.isDigit(ch);
-    }
-
     /**
      * Parses the {@link CharSequence} argument as a signed {@code int} in the
      * specified {@code radix}, beginning at the specified {@code beginIndex}
