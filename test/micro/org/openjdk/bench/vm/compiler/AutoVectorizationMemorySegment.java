@@ -28,7 +28,17 @@ import org.openjdk.jmh.infra.*;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
+import java.nio.ByteBuffer;
 import java.lang.foreign.*;
+
+/**
+ * We test MemorySegment vectorization:
+ * - Various backing types
+ * - Various access types / sizes
+ * - Various pointer forms
+ *
+ * Related IR test: test/hotspot/jtreg/compiler/loopopts/superword/TestMemorySegment.java
+ */
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -64,17 +74,17 @@ public class AutoVectorizationMemorySegment {
     MemorySegment allocate() {
         switch (BACKING_TYPE) {
             case "ByteArray"        -> { return MemorySegment.ofArray(new byte[SIZE]); }
-            case "CharArray"        -> { return MemorySegment.ofArray(new char[BACKING_SIZE / 2]); }
-            case "ShortArray"       -> { return MemorySegment.ofArray(new short[BACKING_SIZE / 2]); }
-            case "IntArray"         -> { return MemorySegment.ofArray(new int[BACKING_SIZE / 4]); }
-            case "LongArray"        -> { return MemorySegment.ofArray(new long[BACKING_SIZE / 8]); }
-            case "FloatArray"       -> { return MemorySegment.ofArray(new float[BACKING_SIZE / 4]); }
-            case "DoubleArray"      -> { return MemorySegment.ofArray(new double[BACKING_SIZE / 8]); }
-            case "ByteBuffer"       -> { return MemorySegment.ofBuffer(ByteBuffer.allocate(BACKING_SIZE)); }
-            case "ByteBufferDirect" -> { return MemorySegment.ofBuffer(ByteBuffer.allocateDirect(BACKING_SIZE)); }
-            case "Native"           -> { return Arena.ofAuto().allocate(BACKING_SIZE, 1); }
+            case "CharArray"        -> { return MemorySegment.ofArray(new char[SIZE / 2]); }
+            case "ShortArray"       -> { return MemorySegment.ofArray(new short[SIZE / 2]); }
+            case "IntArray"         -> { return MemorySegment.ofArray(new int[SIZE / 4]); }
+            case "LongArray"        -> { return MemorySegment.ofArray(new long[SIZE / 8]); }
+            case "FloatArray"       -> { return MemorySegment.ofArray(new float[SIZE / 4]); }
+            case "DoubleArray"      -> { return MemorySegment.ofArray(new double[SIZE / 8]); }
+            case "ByteBuffer"       -> { return MemorySegment.ofBuffer(ByteBuffer.allocate(SIZE)); }
+            case "ByteBufferDirect" -> { return MemorySegment.ofBuffer(ByteBuffer.allocateDirect(SIZE)); }
+            case "Native"           -> { return Arena.ofAuto().allocate(SIZE, 1); }
             default -> throw new RuntimeException("BACKING_TYPE not supported: " + BACKING_TYPE);
-        };
+        }
     }
 
     @Benchmark
