@@ -701,7 +701,7 @@ public class Inflater implements AutoCloseable {
      * Closes and releases the resources held by this {@code Inflater}
      * and discards any unprocessed input.
      * <p>
-     * If this method is invoked multiple times, the second and subsequent calls do nothing.
+     * If the {@code Inflater} is already closed then invoking this method has no effect.
      *
      * @see #close()
      */
