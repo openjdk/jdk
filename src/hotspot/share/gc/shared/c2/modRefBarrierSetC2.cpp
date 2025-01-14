@@ -27,7 +27,6 @@
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "gc/shared/c2/modRefBarrierSetC2.hpp"
-#include "utilities/macros.hpp"
 
 Node* ModRefBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
