@@ -126,7 +126,7 @@ public class SigTestDriver {
                             // only in the correct scenarios
                             boolean deprecatedSigFunctionUsed = mode.equals("sigset");
                             boolean jvmInvolved = !scenario.contains("nojvm");
-                            boolean warningPrinted = oa.contains("VM warning");
+                            boolean warningPrinted = oa.contains("VM warning: the use of signal() and sigset()");
                             boolean sigUsedByJVM = sigIsUsedByJVM(signame);
                             if (deprecatedSigFunctionUsed && jvmInvolved && sigUsedByJVM) {
                                 if (!warningPrinted) {
