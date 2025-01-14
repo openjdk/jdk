@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1374,6 +1374,8 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     if (mode == LM_SOURCE) {
+        // communicate the launcher mode to runtime
+        AddOption("-Dsun.java.launcher.mode=source", NULL);
         AddOption("--add-modules=ALL-DEFAULT", NULL);
         *pwhat = SOURCE_LAUNCHER_MAIN_ENTRY;
         // adjust (argc, argv) so that the name of the source file
