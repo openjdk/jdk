@@ -125,7 +125,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //   would make them immune to CAS-based invalidation from the _owner
 //   field.
 //
-// - The _recursions field should be of type int, or int32_t but not
+// - TODO: The _recursions field should be of type int, or int32_t but not
 //   intptr_t. There's no reason to use a 64-bit type for this field
 //   in a 64-bit JVM.
 
