@@ -444,7 +444,7 @@ public final class Generators {
      * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
      * exception is raised, but instead a uniform int generator for the range is returned.
      */
-    public RestrictableGenerator<Integer> safeRestrictInt(RestrictableGenerator<Integer> g, int lo, int hi) {
+    public RestrictableGenerator<Integer> safeRestrict(RestrictableGenerator<Integer> g, int lo, int hi) {
         try {
             return g.restricted(lo, hi);
         } catch (EmptyGeneratorException e) {
@@ -456,7 +456,7 @@ public final class Generators {
      * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
      * exception is raised, but instead a uniform long generator for the range is returned.
      */
-    public RestrictableGenerator<Long> safeRestrictLong(RestrictableGenerator<Long> g, long lo, long hi) {
+    public RestrictableGenerator<Long> safeRestrict(RestrictableGenerator<Long> g, long lo, long hi) {
         try {
             return g.restricted(lo, hi);
         } catch (EmptyGeneratorException e) {
@@ -468,7 +468,7 @@ public final class Generators {
      * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
      * exception is raised, but instead a uniform double generator for the range is returned.
      */
-    public RestrictableGenerator<Double> safeRestrictDouble(RestrictableGenerator<Double> g, double lo, double hi) {
+    public RestrictableGenerator<Double> safeRestrict(RestrictableGenerator<Double> g, double lo, double hi) {
         try {
             return g.restricted(lo, hi);
         } catch (EmptyGeneratorException e) {
@@ -480,7 +480,7 @@ public final class Generators {
      * Trys to restrict the provided restrictable generator to the provided range. If the restriction fails no
      * exception is raised, but instead a uniform float generator for the range is returned.
      */
-    public RestrictableGenerator<Float> safeRestrictFloat(RestrictableGenerator<Float> g, float lo, float hi) {
+    public RestrictableGenerator<Float> safeRestrict(RestrictableGenerator<Float> g, float lo, float hi) {
         try {
             return g.restricted(lo, hi);
         } catch (EmptyGeneratorException e) {
