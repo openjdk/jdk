@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"

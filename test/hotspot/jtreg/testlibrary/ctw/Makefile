@@ -53,6 +53,7 @@ WB_CLASS_FILES := $(subst $(TESTLIBRARY_DIR)/,,$(WB_SRC_FILES))
 WB_CLASS_FILES := $(patsubst %.java,%.class,$(WB_CLASS_FILES))
 EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+	--add-exports java.base/jdk.internal.module=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.access=ALL-UNNAMED
 

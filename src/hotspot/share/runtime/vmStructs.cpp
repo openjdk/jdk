@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
   nonstatic_field(Klass,                       _primary_supers[0],                            Klass*)                                \
   nonstatic_field(Klass,                       _java_mirror,                                  OopHandle)                             \
-  nonstatic_field(Klass,                       _modifier_flags,                               jint)                                  \
+  nonstatic_field(Klass,                       _modifier_flags,                               u2)                                    \
   nonstatic_field(Klass,                       _super,                                        Klass*)                                \
   volatile_nonstatic_field(Klass,              _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _layout_helper,                                jint)                                  \
@@ -1017,7 +1017,7 @@
   nonstatic_field(vframeArrayElement,          _bci,                                          int)                                   \
   nonstatic_field(vframeArrayElement,          _method,                                       Method*)                               \
                                                                                                                                      \
-  nonstatic_field(AccessFlags,                 _flags,                                        jint)                                  \
+  nonstatic_field(AccessFlags,                 _flags,                                        u2)                                    \
   nonstatic_field(elapsedTimer,                _counter,                                      jlong)                                 \
   nonstatic_field(elapsedTimer,                _active,                                       bool)                                  \
   nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
