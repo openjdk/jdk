@@ -1438,6 +1438,12 @@ void Arguments::set_conservative_max_heap_alignment() {
 jint Arguments::set_ergonomics_flags() {
   GCConfig::initialize();
 
+  if (FLAG_IS_DEFAULT(GCCardSizeInBytes) && (os::vm_page_size() > 4*K) && (MaxHeapSize < 32*M)) {
+    // Large GCCardSizeInBytes would prevent a small heap size on platforms with large page size.
+    // See CardTable::ct_max_alignment_constraint() and GCArguments::compute_heap_alignment().
+    FLAG_SET_ERGO(GCCardSizeInBytes, 128);
+  }
+
   set_conservative_max_heap_alignment();
 
 #ifdef _LP64
