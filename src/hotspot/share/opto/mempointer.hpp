@@ -823,7 +823,6 @@ private:
   // Resulting decomposed-form.
   MemPointer _mem_pointer;
 
-public:
   MemPointerParser(const MemNode* mem,
                    MemPointerParserCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
@@ -832,6 +831,7 @@ public:
     _con(NoOverflowInt(0)),
     _mem_pointer(parse(callback)) {}
 
+public:
   static MemPointer parse(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
                           const MemNode* mem,
                           MemPointerParserCallback& callback = MemPointerParserCallback::empty()) {
