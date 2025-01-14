@@ -55,8 +55,8 @@ void CALLBACK MIDI_IN_PutMessage( HMIDIIN hMidiIn, UINT wMsg, UINT_PTR dwInstanc
 
     MidiDeviceHandle* handle = (MidiDeviceHandle*) dwInstance;
 
-    TRACE3("> MIDI_IN_PutMessage, hMidiIn: %x, wMsg: %x, dwInstance: %x\n", hMidiIn, wMsg, dwInstance);
-    TRACE2("                      dwParam1: %x, dwParam2: %x\n", dwParam1, dwParam2);
+    TRACE3("> MIDI_IN_PutMessage, hMidiIn: %p, wMsg: %x, dwInstance: %p\n", (void*)hMidiIn, wMsg, (void*)dwInstance);
+    TRACE2("                      dwParam1: %p, dwParam2: %p\n", (void*)dwParam1, (void*)dwParam2);
 
     switch(wMsg) {
 
@@ -70,8 +70,8 @@ void CALLBACK MIDI_IN_PutMessage( HMIDIIN hMidiIn, UINT wMsg, UINT_PTR dwInstanc
 
     case MIM_MOREDATA:
     case MIM_DATA:
-        TRACE3("  MIDI_IN_PutMessage: MIM_MOREDATA or MIM_DATA. status=%x  data1=%x  data2=%x\n",
-               dwParam1 & 0xFF, (dwParam1 & 0xFF00)>>8, (dwParam1 & 0xFF0000)>>16);
+        TRACE3("  MIDI_IN_PutMessage: MIM_MOREDATA or MIM_DATA. status=%p  data1=%p  data2=%p\n",
+               (void*)(dwParam1 & 0xFF), (void*)((dwParam1 & 0xFF00)>>8), (void*)((dwParam1 & 0xFF0000)>>16));
         if (handle!=NULL && handle->queue!=NULL && handle->platformData) {
             MIDI_QueueAddShort(handle->queue,
                                // queue stores packedMsg in big endian
