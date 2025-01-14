@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import jdk.internal.net.http.ResponseSubscribers.TrustedSubscriber;
 import jdk.internal.net.http.common.Utils;
 
+import java.io.IOException;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -95,7 +96,7 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
         // Otherwise, trigger failure
         else {
-            downstreamSubscriber.onError(new IllegalStateException(
+            downstreamSubscriber.onError(new IOException(
                     "the maximum number of bytes that are allowed to be consumed is exceeded"));
             subscription.cancel();
         }
