@@ -2531,7 +2531,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(tmpL, tmp3);
       __ xorr(tmp3, tmpU, tmpL);
       __ bnez(tmp3, CALCULATE_DIFFERENCE);
-      __ addi(cnt2, cnt2, -wordSize / 2);
+      __ subi(cnt2, cnt2, wordSize / 2);
     }
 
     // we are now 8-bytes aligned on strL
@@ -4455,8 +4455,7 @@ class StubGenerator: public StubCodeGenerator {
       __ vadd_vv(vState1, vHash1, vState1);
 
       if (multi_block) {
-        int total_adds = vset_sew == Assembler::e32 ? 240 : 608;
-        __ addi(consts, consts, -total_adds);
+        __ subi(consts, consts, vset_sew == Assembler::e32 ? 240 : 608);
         __ addi(ofs, ofs, vset_sew == Assembler::e32 ? 64 : 128);
         __ ble(ofs, limit, multi_block_loop);
         __ mv(c_rarg0, ofs); // return ofs

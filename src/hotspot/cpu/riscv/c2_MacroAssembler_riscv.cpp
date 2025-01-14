@@ -1436,7 +1436,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   if (str1_isL == str2_isL) { // LL or UU
     beq(str1, str2, DONE);
     int base_offset = isLL ? base_offset1 : base_offset2;
-    if ((base_offset % 8) != 0) {
+    if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
       mv(t0, minCharsInWord / 2);
       ble(cnt2, t0, SHORT_STRING);
       lwu(tmp1, Address(str1));
@@ -1497,7 +1497,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       lwu(tmp2, Address(str2));
       mv(t0, STUB_THRESHOLD);
       bge(cnt2, t0, STUB);
-      addi(cnt2, cnt2, -4);
+      subi(cnt2, cnt2, 4);
       slli(t0, cnt2, 1);
       sub(cnt1, zr, t0);
       add(str1, str1, t0);
@@ -1690,8 +1690,8 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
   la(a2, Address(a2, base_offset));
 
   // Load 4 bytes once to compare for alignment before main loop.
-  if ((base_offset % 8) != 0) {
-    addi(cnt1, cnt1, -elem_per_word / 2);
+  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+    subi(cnt1, cnt1, elem_per_word / 2);
     bltz(cnt1, TAIL03);
     lwu(tmp1, Address(a1));
     lwu(tmp2, Address(a2));
@@ -1791,8 +1791,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   mv(result, false);
 
   // Load 4 bytes once to compare for alignment before main loop.
-  if ((base_offset % 8) != 0) {
-    addi(cnt1, cnt1, -4);
+  if (AvoidUnalignedAccesses && (base_offset % 8) != 0) {
+    subi(cnt1, cnt1, 4);
     bltz(cnt1, TAIL03);
     lwu(tmp1, Address(a1));
     lwu(tmp2, Address(a2));
