@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ public class Http2TestServerConnection {
                               Properties properties)
         throws IOException
     {
-        System.err.println("TestServer: New connection from " + socket);
+        System.err.println(server.name + ": New connection from " + socket);
 
         if (socket instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket)socket;
@@ -238,10 +238,10 @@ public class Http2TestServerConnection {
             String prop = properties.getProperty(propPrefix + key);
             if (prop != null) {
                 try {
-                    System.err.println("TestServer: setting " + key + " property to: " +
+                    System.err.println(server.name + ": setting " + key + " property to: " +
                         prop);
                     int num = Integer.parseInt(numS);
-                    System.err.println("TestServer: num = " + num);
+                    System.err.println(server.name + ": num = " + num);
                     s.setParameter(num, Integer.parseInt(prop));
                 } catch (NumberFormatException e) {/* ignore errors */}
             }
@@ -289,7 +289,7 @@ public class Http2TestServerConnection {
         }
         final GoAwayFrame frame = new GoAwayFrame(maxProcessedStreamId, error);
         outputQ.put(frame);
-        System.err.println("Sending GOAWAY frame " + frame + " from server connection " + this);
+        System.err.println(server.name + ": Sending GOAWAY frame " + frame + " from server connection " + this);
     }
 
     /**
@@ -305,7 +305,7 @@ public class Http2TestServerConnection {
      */
     void handlePing(PingFrame ping) throws IOException {
         if (ping.streamid() != 0) {
-            System.err.println("Invalid ping received");
+            System.err.println(server.name + ": Invalid ping received");
             close(ErrorFrame.PROTOCOL_ERROR);
             return;
         }
@@ -313,7 +313,7 @@ public class Http2TestServerConnection {
             // did we send a Ping?
             PingRequest request = getNextRequest();
             if (request == null) {
-                System.err.println("Invalid ping ACK received");
+                System.err.println(server.name + ": Invalid ping ACK received");
                 close(ErrorFrame.PROTOCOL_ERROR);
                 return;
             } else if (!Arrays.equals(request.pingData, ping.getData())) {
@@ -349,7 +349,7 @@ public class Http2TestServerConnection {
         if (stopping)
             return;
         stopping = true;
-        System.err.printf("Server connection to %s stopping (%s). %d streams\n",
+        System.err.printf(server.name + ": Server connection to %s stopping (%s). %d streams\n",
                 socket.getRemoteSocketAddress().toString(),
                 (error == -1 ? "no error" : ("error="+error)), streams.size());
         streams.forEach((i, q) -> {
@@ -372,9 +372,13 @@ public class Http2TestServerConnection {
         int n = is.readNBytes(bytes, 0, len);
         if (n >= 0) {
             if (Arrays.compare(clientPreface, bytes) != 0) {
-                System.err.printf("Invalid preface: read %d/%d bytes%n", n, len);
-                throw new IOException("Invalid preface: " +
-                        new String(bytes, 0, n, ISO_8859_1));
+                String msg = String.format("Invalid preface: read %s/%s bytes", n, len);
+                System.err.println(server.name + ": " + msg);
+                throw new IOException(msg +": \"" +
+                        new String(bytes, 0, n, ISO_8859_1)
+                                .replace("\r", "\\r")
+                                .replace("\n", "\\n")
+                        + "\"");
             }
         } else {
             throw new IOException("EOF while reading preface");
@@ -384,7 +388,7 @@ public class Http2TestServerConnection {
     Http1InitialRequest doUpgrade(Http1InitialRequest upgrade) throws IOException {
         String h2c = getHeader(upgrade.headers, "Upgrade");
         if (h2c == null || !h2c.equals("h2c")) {
-            System.err.println("Server:HEADERS: " + upgrade);
+            System.err.println(server.name + ":HEADERS: " + upgrade);
             throw new IOException("Bad upgrade 1 " + h2c);
         }
 
@@ -456,7 +460,7 @@ public class Http2TestServerConnection {
                     socket.close();
                     return;
                 } else {
-                    System.err.println("Server:HEADERS: " + upgrade);
+                    System.err.println(server.name + ":HEADERS: " + upgrade);
                     throw new IOException("Bad upgrade 1 " + h2c);
                 }
             }
@@ -555,7 +559,7 @@ public class Http2TestServerConnection {
             outputQ.put(frame);
             return;
         } else if (f instanceof GoAwayFrame) {
-            System.err.println("Closing: "+ f.toString());
+            System.err.println(server.name + ": Closing connection: "+ f.toString());
             close(ErrorFrame.NO_ERROR);
         } else if (f instanceof PingFrame) {
             handlePing((PingFrame)f);
@@ -648,7 +652,7 @@ public class Http2TestServerConnection {
         // skip processing the request if configured to do so
         final String connKey = connectionKey();
         if (!shouldProcessNewHTTPRequest(connKey)) {
-            System.err.println("Rejecting primordial stream 1 and sending GOAWAY" +
+            System.err.println(server.name + ": Rejecting primordial stream 1 and sending GOAWAY" +
                     " on server connection " + connKey + ", for request: " + path);
             sendGoAway(ErrorFrame.NO_ERROR);
             return;
@@ -725,7 +729,7 @@ public class Http2TestServerConnection {
         final String connKey = connectionKey();
         final String path = headers.firstValue(":path").orElse("");
         if (!shouldProcessNewHTTPRequest(connKey)) {
-            System.err.println("Rejecting stream " + streamid
+            System.err.println(server.name + ": Rejecting stream " + streamid
                     + " and sending GOAWAY on server connection "
                     + connKey + ", for request: " + path);
             sendGoAway(ErrorFrame.NO_ERROR);
@@ -775,17 +779,17 @@ public class Http2TestServerConnection {
         //System.out.println("scheme = " + scheme);
         String authority = headers.firstValue(":authority").orElse("");
         //System.out.println("authority = " + authority);
-        System.err.printf("TestServer: %s %s\n", method, path);
+        System.err.printf(server.name + ": %s %s\n", method, path);
         int winsize = clientSettings.getParameter(
                 SettingsFrame.INITIAL_WINDOW_SIZE);
         //System.err.println ("Stream window size = " + winsize);
 
         final InputStream bis;
         if (endStreamReceived && queue.size() == 0) {
-            System.err.println("Server: got END_STREAM for stream " + streamid);
+            System.err.println(server.name + ": got END_STREAM for stream " + streamid);
             bis = NullInputStream.INSTANCE;
         } else {
-            System.err.println("Server: creating input stream for stream " + streamid);
+            System.err.println(server.name + ": creating input stream for stream " + streamid);
             bis = new BodyInputStream(queue, streamid, this);
         }
         try (bis;
@@ -813,7 +817,7 @@ public class Http2TestServerConnection {
                 if (bos.closed) {
                     Queue q = streams.get(streamid);
                     if (q != null && (q.isClosed() || q.isClosing())) {
-                        System.err.println("TestServer: Stream " + streamid + " closed: " + closed);
+                        System.err.println(server.name + ": Stream " + streamid + " closed: " + closed);
                         return;
                     }
                 }
@@ -823,7 +827,7 @@ public class Http2TestServerConnection {
             // everything happens in the exchange from here. Hopefully will
             // return though.
         } catch (Throwable e) {
-            System.err.println("TestServer: handleRequest exception: " + e);
+            System.err.println(server.name + ": handleRequest exception: " + e);
             e.printStackTrace();
             close(-1);
         }
@@ -856,7 +860,7 @@ public class Http2TestServerConnection {
             while (!stopping) {
                 Http2Frame frame = readFrameImpl();
                 if (frame == null) {
-                    System.err.println("EOF reached on connection " + connectionKey()
+                    System.err.println(server.name + ": EOF reached on connection " + connectionKey()
                             + ", will no longer accept incoming frames");
                     closeIncoming();
                     return;
@@ -877,7 +881,7 @@ public class Http2TestServerConnection {
                     Queue q = streams.get(stream);
                     if (frame.type() == HeadersFrame.TYPE) {
                         if (q != null) {
-                            System.err.println("HEADERS frame for existing stream! Error.");
+                            System.err.println(server.name + ": HEADERS frame for existing stream! Error.");
                             // TODO: close connection
                             continue;
                         } else {
@@ -886,7 +890,8 @@ public class Http2TestServerConnection {
                             // if we already sent a goaway, then don't create new streams with
                             // higher stream ids.
                             if (finalProcessedStreamId != -1 && streamId > finalProcessedStreamId) {
-                                System.err.println(connectionKey() + " resetting stream " + streamId
+                                System.err.println(server.name + ": " + connectionKey()
+                                        + " resetting stream " + streamId
                                         + " as REFUSED_STREAM");
                                 final ResetFrame rst = new ResetFrame(streamId, REFUSED_STREAM);
                                 outputQ.put(rst);
@@ -898,7 +903,7 @@ public class Http2TestServerConnection {
                         }
                     } else {
                         if (q == null && !pushStreams.contains(stream)) {
-                            System.err.printf("Non Headers frame received with"+
+                            System.err.printf(server.name + ": Non Headers frame received with"+
                                     " non existing stream (%d) ", frame.streamid());
                             System.err.println(frame);
                             continue;
@@ -931,21 +936,21 @@ public class Http2TestServerConnection {
                             } else if (isClientStreamId(stream) && stream < next) {
                                 // We may receive a reset on a client stream that has already
                                 // been closed. Just ignore it.
-                                System.err.println("TestServer: received ResetFrame on closed stream: " + stream);
+                                System.err.println(server.name + ": received ResetFrame on closed stream: " + stream);
                                 System.err.println(frame);
                             } else if (isServerStreamId(stream) && stream < nextPush) {
                                 // We may receive a reset on a push stream that has already
                                 // been closed. Just ignore it.
-                                System.err.println("TestServer: received ResetFrame on closed push stream: " + stream);
+                                System.err.println(server.name + ": received ResetFrame on closed push stream: " + stream);
                                 System.err.println(frame);
                             } else {
-                                System.err.println("TestServer: Unexpected frame on: " + stream);
+                                System.err.println(server.name + ": Unexpected frame on: " + stream);
                                 System.err.println(frame);
                                 throw new IOException("Unexpected frame");
                             }
                         } else {
                             if (!q.putIfOpen(frame)) {
-                                System.err.printf("Stream %s is closed: dropping %s%n",
+                                System.err.printf(server.name + ": Stream %s is closed: dropping %s%n",
                                         stream, frame);
                             }
                         }
@@ -954,7 +959,7 @@ public class Http2TestServerConnection {
             }
         } catch (Throwable e) {
             if (!stopping) {
-                System.err.println("Http server reader thread shutdown");
+                System.err.println(server.name + ": Http server reader thread shutdown");
                 e.printStackTrace();
             }
             close(ErrorFrame.PROTOCOL_ERROR);
@@ -1121,7 +1126,7 @@ public class Http2TestServerConnection {
                                 : new ContinuationFrame(rh.streamid(), flags, list);
                         if (Log.headers()) {
                             // avoid too much chatter: log only if Log.headers() is enabled
-                            System.err.println("TestServer writing " + hf);
+                            System.err.println(server.name + ": writing " + hf);
                         }
                         writeFrame(hf);
                         cont++;
@@ -1131,7 +1136,7 @@ public class Http2TestServerConnection {
                 } else
                     writeFrame(frame);
             }
-            System.err.println("TestServer: Connection writer stopping");
+            System.err.println(server.name + ": Connection writer stopping " + connectionKey());
         } catch (Throwable e) {
             e.printStackTrace();
             /*close();
@@ -1183,7 +1188,7 @@ public class Http2TestServerConnection {
 
                 ii.transferTo(oo);
             } catch (Throwable ex) {
-                System.err.printf("TestServer: pushing response error: %s\n",
+                System.err.printf(server.name + ": pushing response error: %s\n",
                         ex.toString());
             } finally {
                 closeIgnore(ii);
@@ -1350,7 +1355,7 @@ public class Http2TestServerConnection {
             }
             return new Http1InitialRequest(headers, buf);
         } catch (IOException e) {
-            System.err.println("TestServer: headers read: [ " + headers + " ]");
+            System.err.println(server.name + ": headers read: [ " + headers + " ]");
             throw e;
         }
     }
@@ -1382,7 +1387,7 @@ public class Http2TestServerConnection {
     }
 
     private void unexpectedFrame(Http2Frame frame) {
-        System.err.println("OOPS. Unexpected");
+        System.err.println(server.name + ": OOPS. Unexpected");
         assert false;
     }
 
@@ -1431,7 +1436,8 @@ public class Http2TestServerConnection {
     }
 
     public void updateConnectionWindow(int amount) {
-        System.out.printf("sendWindow (available:%s, released amount=%s) is now: %s%n",
+        System.err.printf("%s: sendWindow (available:%s, released amount=%s) is now: %s%n",
+                server.name,
                 sendWindow.availablePermits(), amount, sendWindow.availablePermits() + amount);
         sendWindow.release(amount);
     }

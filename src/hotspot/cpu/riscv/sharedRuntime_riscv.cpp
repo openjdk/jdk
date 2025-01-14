@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -641,7 +641,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ lwu(t0, Address(xmethod, Method::access_flags_offset()));
+      __ load_unsigned_short(t0, Address(xmethod, Method::access_flags_offset()));
       __ test_bit(t1, t0, exact_log2(JVM_ACC_STATIC));
       __ beqz(t1, L_skip_barrier); // non-static
     }
@@ -802,7 +802,7 @@ static void save_args(MacroAssembler *masm, int arg_count, int first_arg, VMRegP
     if (args[i].first()->is_Register()) {
       x = x + args[i].first()->as_Register();
     } else if (args[i].first()->is_FloatRegister()) {
-      __ addi(sp, sp, -2 * wordSize);
+      __ subi(sp, sp, 2 * wordSize);
       __ fsd(args[i].first()->as_FloatRegister(), Address(sp, 0));
     }
   }
@@ -824,7 +824,7 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
       ;
     } else if (args[i].first()->is_FloatRegister()) {
       __ fld(args[i].first()->as_FloatRegister(), Address(sp, 0));
-      __ add(sp, sp, 2 * wordSize);
+      __ addi(sp, sp, 2 * wordSize);
     }
   }
 }
@@ -2336,7 +2336,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Pop deoptimized frame
   __ lwu(x12, Address(x15, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
-  __ sub(x12, x12, 2 * wordSize);
+  __ subi(x12, x12, 2 * wordSize);
   __ add(sp, sp, x12);
   __ ld(fp, Address(sp, 0));
   __ ld(ra, Address(sp, wordSize));
@@ -2379,7 +2379,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ bind(loop);
   __ ld(x9, Address(x14, 0));          // Load frame size
   __ addi(x14, x14, wordSize);
-  __ sub(x9, x9, 2 * wordSize);        // We'll push pc and fp by hand
+  __ subi(x9, x9, 2 * wordSize);       // We'll push pc and fp by hand
   __ ld(ra, Address(x12, 0));          // Load pc
   __ addi(x12, x12, wordSize);
   __ enter();                          // Save old & set new fp
@@ -2388,7 +2388,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ sd(sender_sp, Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize)); // Make it walkable
   __ mv(sender_sp, sp);                // Pass sender_sp to next frame
-  __ addi(x13, x13, -1);               // Decrement counter
+  __ subi(x13, x13, 1);                // Decrement counter
   __ bnez(x13, loop);
 
     // Re-push self-frame
@@ -2566,7 +2566,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 #endif
 
     // Adjust return pc forward to step over the safepoint poll instruction
-    __ add(x18, x18, NativeInstruction::instruction_size);
+    __ addi(x18, x18, NativeInstruction::instruction_size);
     __ sd(x18, Address(fp, frame::return_addr_offset * wordSize));
   }
 
@@ -2736,7 +2736,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
   assert(is_even(framesize / 2), "sp not 16-byte aligned");
 
   // ra and fp are already in place
-  __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
+  __ subi(sp, fp, (unsigned)framesize << LogBytesPerInt); // prolog
 
   int frame_complete = __ pc() - start;
 

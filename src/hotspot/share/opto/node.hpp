@@ -345,7 +345,7 @@ protected:
   // The PhaseRenumberLive phase renumbers nodes based on liveness information.
   // Therefore, it updates the value of the _idx field. The parse-time _idx is
   // preserved in _parse_idx.
-  const node_idx_t _idx;
+  node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
   // IGV node identifier. Two nodes, possibly in different compilation phases,
   // have the same IGV identifier if (and only if) they are the very same node
@@ -586,8 +586,7 @@ public:
 
   // Set this node's index, used by cisc_version to replace current node
   void set_idx(uint new_idx) {
-    const node_idx_t* ref = &_idx;
-    *(node_idx_t*)ref = new_idx;
+    _idx = new_idx;
   }
   // Swap input edge order.  (Edge indexes i1 and i2 are usually 1 and 2.)
   void swap_edges(uint i1, uint i2) {

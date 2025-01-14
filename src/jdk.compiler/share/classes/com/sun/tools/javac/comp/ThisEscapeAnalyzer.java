@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -140,8 +141,17 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  <li>We assume that native methods do not leak.
  *  <li>We don't try to follow {@code super()} invocations; that's for the superclass analysis to handle.
  *  </ul>
+ *
+ * <p><b>This is NOT part of any supported API.
+ * If you write code that depends on this, you do so at your own risk.
+ * This code and its internal interfaces are subject to change or
+ * deletion without notice.</b>
  */
-class ThisEscapeAnalyzer extends TreeScanner {
+public class ThisEscapeAnalyzer extends TreeScanner {
+
+    protected static final Context.Key<ThisEscapeAnalyzer> contextKey = new Context.Key<>();
+
+// Other singletons we utilize
 
     private final Names names;
     private final Symtab syms;
@@ -211,15 +221,24 @@ class ThisEscapeAnalyzer extends TreeScanner {
      */
     private RefSet<Ref> refs;
 
-// Constructor
+// Access
 
-    ThisEscapeAnalyzer(Names names, Symtab syms, Types types, Resolve rs, Log log, Lint lint) {
-        this.names = names;
-        this.syms = syms;
-        this.types = types;
-        this.rs = rs;
-        this.log = log;
-        this.lint = lint;
+    public static ThisEscapeAnalyzer instance(Context context) {
+        ThisEscapeAnalyzer instance = context.get(contextKey);
+        if (instance == null)
+            instance = new ThisEscapeAnalyzer(context);
+        return instance;
+    }
+
+    @SuppressWarnings("this-escape")
+    protected ThisEscapeAnalyzer(Context context) {
+        context.put(contextKey, this);
+        names = Names.instance(context);
+        log = Log.instance(context);
+        syms = Symtab.instance(context);
+        types = Types.instance(context);
+        rs = Resolve.instance(context);
+        lint = Lint.instance(context);
     }
 
 //
@@ -227,6 +246,24 @@ class ThisEscapeAnalyzer extends TreeScanner {
 //
 
     public void analyzeTree(Env<AttrContext> env) {
+        try {
+            doAnalyzeTree(env);
+        } finally {
+            attrEnv = null;
+            methodMap.clear();
+            nonPublicOuters.clear();
+            targetClass = null;
+            warningList.clear();
+            methodClass = null;
+            callStack.clear();
+            invocations.clear();
+            pendingWarning = null;
+            depth = -1;
+            refs = null;
+        }
+    }
+
+    private void doAnalyzeTree(Env<AttrContext> env) {
 
         // Sanity check
         Assert.check(checkInvariants(false, false));

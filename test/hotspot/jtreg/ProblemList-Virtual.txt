@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ vmTestbase/nsk/jdi/ExceptionEvent/catchLocation/location002/TestDescription.java
 # the debuggee, which can lead to I/O poller threads exiting. Because
 # of this no vthreads can complete their reads, and the test times out as a result.
 
-vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8285417 generic-all
+vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java 8347137 generic-all
 
 ###
 # Fails because resume of a virtual thread is not enough to allow the virtual thread

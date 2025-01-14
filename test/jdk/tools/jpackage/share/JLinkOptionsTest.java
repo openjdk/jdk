@@ -58,24 +58,26 @@ public final class JLinkOptionsTest {
                     "--jlink-options",
                     "--strip-debug --no-man-pages --no-header-files",
                     "--jlink-options",
-                    "--bind-services",
+                    "--verbose --bind-services --limit-modules java.smartcardio,jdk.crypto.cryptoki,java.desktop",
                     },
-                    // with bind-services should have some services
+                    // with limit-modules and bind-services should have them in the result
                     new String[]{"java.smartcardio", "jdk.crypto.cryptoki"},
                     null,
                     },
             // bind-services
             {"Hello", new String[]{
-                    "--jlink-options", "--bind-services",
+                    "--jlink-options",
+                    "--bind-services --limit-modules jdk.jartool,jdk.unsupported,java.desktop",
                     },
-                    // non modular should have everything
+                    // non modular should have at least the module limits
                     new String[]{"jdk.jartool", "jdk.unsupported"},
                     null,
                     },
 
             // jlink-options --bind-services
             {"com.other/com.other.Hello", new String[]{
-                    "--jlink-options", "--bind-services",
+                    "--jlink-options",
+                    "--bind-services --limit-modules java.smartcardio,jdk.crypto.cryptoki,java.desktop",
                     },
                     // with bind-services should have some services
                     new String[]{"java.smartcardio", "jdk.crypto.cryptoki"},
