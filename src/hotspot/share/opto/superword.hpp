@@ -584,6 +584,14 @@ private:
 
     static int cmp_by_group(MemOp* a, MemOp* b);
     static int cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b);
+
+    // We use two comparisons, because a subtraction could underflow.
+    template <typename T>
+    static int cmp_code(T a, T b) {
+      if (a < b) { return -1; }
+      if (a > b) { return  1; }
+      return 0;
+    }
   };
   void create_adjacent_memop_pairs();
   void collect_valid_memops(GrowableArray<MemOp>& memops);

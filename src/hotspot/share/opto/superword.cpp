@@ -496,14 +496,10 @@ bool SuperWord::SLP_extract() {
   return schedule_and_apply();
 }
 
-// We use two comparisons, because a subtraction could underflow.
-#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
-  if (a < b) { return -1; }                 \
-  if (a > b) { return  1; }
-
 int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
   // Opcode
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
+  int c_Opcode = cmp_code(a->mem()->Opcode(), b->mem()->Opcode());
+  if (c_Opcode != 0) { return c_Opcode; }
 
   // VPointer summands
   return MemPointer::cmp_summands(a->vpointer().mem_pointer(),
@@ -518,11 +514,10 @@ int SuperWord::MemOp::cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b
   // VPointer con
   jint a_con = a->vpointer().mem_pointer().con().value();
   jint b_con = b->vpointer().mem_pointer().con().value();
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a_con, b_con);
+  int c_con = cmp_code(a_con, b_con);
+  if (c_con != 0) { return c_con; }
 
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->original_index(), b->original_index());
-
-  return 0;
+  return cmp_code(a->original_index(), b->original_index());
 }
 
 // Find the "seed" memops pairs. These are pairs that we strongly suspect would lead to vectorization.

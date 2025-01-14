@@ -218,8 +218,9 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Me
 
 bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
   // BFS over the expression.
+  // Allocate sufficient space in worklist for 100 limit below.
   ResourceMark rm;
-  GrowableArray<Node*> worklist;
+  GrowableArray<Node*> worklist(102);
   worklist.append(start);
   for (int i = 0; i < worklist.length(); i++) {
     Node* n = worklist.at(i);

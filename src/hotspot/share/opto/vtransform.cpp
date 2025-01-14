@@ -144,11 +144,6 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
-// We use two comparisons, because a subtraction could underflow.
-#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
-  if (a < b) { return -1; }                 \
-  if (a > b) { return  1; }
-
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
 // It wraps a VPointer. The VPointer have an iv_offset applied, which
 // simulates a virtual unrolling. They represent the memory region:
@@ -184,9 +179,12 @@ public:
       int cmp_group = cmp_for_sort_by_group(*r1, *r2);
       if (cmp_group != 0) { return cmp_group; }
 
-      RETURN_CMP_VALUE_IF_NOT_EQUAL((*r1)->vpointer().con(),
-                                    (*r2)->vpointer().con());
-      return 0; // equal
+      // We use two comparisons, because a subtraction could underflow.
+      jint con1 = (*r1)->vpointer().con();
+      jint con2 = (*r2)->vpointer().con();
+      if (con1 < con2) { return -1; }
+      if (con1 > con2) { return  1; }
+      return 0;
     }
 
     enum Aliasing { DIFFERENT_GROUP, BEFORE, EXACT_OVERLAP, PARTIAL_OVERLAP, AFTER };
