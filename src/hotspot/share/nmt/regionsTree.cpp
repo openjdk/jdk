@@ -44,5 +44,37 @@ VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const
 VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
   return uncommit_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), mtNone));
 }
+// The nodes for the regions may look like this:
+// small letters are existing nodes, capital A and B are the region we are going to find the summary.
+// ...--------a-----A----b---c---d----e---B---f---....
+// calling visit_range_in_order for [A,B) is not enough to find regions between a---...---f
+VMATree::SummaryDiff RegionsTree::region_summary(address addr, size_t size) {
+  NodeHelper prev;
+  SummaryDiff summary;
+  VMATree::position A = (VMATree::position)addr;
+  VMATree::position B = (VMATree::position)A + size;
+  VMATree::VMATreap::Range ab = tree().find_enclosing_range(A);
+  VMATree::VMATreap::Range ef = tree().find_enclosing_range(B);
+  VMATree::position a = ab.start == nullptr ? A : ab.start->key();
+  VMATree::position f = ef.end == nullptr ? B : ef.end->key();
+
+
+  visit_range_in_order(a, f, [&](Node* node) {
+    NodeHelper curr(node);
+    if (prev.is_valid()) {
+      SingleDiff& single = summary.tag[NMTUtil::tag_to_index(prev.out_tag())];
+      size_t dist = curr.distance_from(prev);
+      if (prev.is_reserved_begin())
+        single.reserve += dist;
+      if (prev.is_committed_begin()) {
+        single.reserve += dist;
+        single.commit += dist;
+      }
+    }
+    prev = curr;
+    return true;
+  });
+  return summary;
+}
 
 

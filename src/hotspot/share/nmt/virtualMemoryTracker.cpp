@@ -68,6 +68,33 @@ bool VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size
 
 bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   const NativeCallStack& stack, MemTag mem_tag) {
+  // Check overlap
+  VMATree::SummaryDiff summary = tree()->region_summary(base_addr, size);
+  VMATree::SingleDiff total{0, 0};
+  for (int tag = 0; tag < mt_number_of_tags; tag++) {
+    total.reserve += summary.tag[tag].reserve;
+    total.commit += summary.tag[tag].commit;
+  }
+  bool overlap_accepted = total.reserve == 0;
+  if (total.reserve != 0) {
+    // Overlap with stack region
+    if (summary.tag[NMTUtil::tag_to_index(mtThreadStack)].reserve != 0) {
+      guarantee(!CheckJNICalls, "Attached JNI thread exited without being detached");
+      overlap_accepted = true;
+    }
+    if (summary.tag[NMTUtil::tag_to_index(mtClassShared)].reserve != 0 ||
+        summary.tag[NMTUtil::tag_to_index(mtJavaHeap)].reserve != 0 ||
+        summary.tag[NMTUtil::tag_to_index(mtNone)].reserve != 0
+        ) {
+      overlap_accepted = true;
+    }
+    if (!overlap_accepted) {
+      tree()->print_on(tty);
+      summary.print_on(tty);
+    }
+  }
+  assert(overlap_accepted, "overlap regions, total reserved area= " SIZE_FORMAT ", new region: base= " INTPTR_FORMAT ", end=" INTPTR_FORMAT,
+         total.reserve, p2i(base_addr), p2i(base_addr + size));
   VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag));
   apply_summary_diff(diff);
   return true;
@@ -145,6 +172,15 @@ bool VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t s
 
 bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   const NativeCallStack& stack) {
+    VMATree::SummaryDiff summary = tree()->region_summary(addr, size);
+    VMATree::SingleDiff total{0, 0};
+    for (int tag = 0; tag < mt_number_of_tags; tag++) {
+      total.reserve += summary.tag[tag].reserve;
+      total.commit += summary.tag[tag].commit;
+    }
+    //assert(!stack.is_empty() || (size_t)total.reserve >= size, "committing non-reserved region");
+    //assert(stack.is_empty() || (size_t)total.commit ==  0, "committing already committed region");
+
     VMATree::SummaryDiff diff = tree()->commit_region(addr, size, stack);
     apply_summary_diff(diff);
     return true;
