@@ -28,15 +28,15 @@
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/macros.hpp"
 
-#include <stdarg.h> // for va_list
-#include <stddef.h> // for size_t
-#include <stdlib.h> // clang workaround for exit, _exit, _Exit - see FORBID macro.
-
 #ifdef _WINDOWS
 #include "forbiddenFunctions_windows.hpp"
 #else
 #include "forbiddenFunctions_posix.hpp"
 #endif
+
+#include <stdarg.h> // for va_list
+#include <stddef.h> // for size_t
+#include <stdlib.h> // clang workaround for exit, _exit, _Exit - see FORBID macro.
 
 // Forbid the use of various C library functions.  Some of these have os::
 // replacements that should be used instead.  Others are considered obsolete
