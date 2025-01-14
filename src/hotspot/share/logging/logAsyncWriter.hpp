@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ class AsyncLogWriter : public NonJavaThread {
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();
-    log_debug(logging, thread)("starting AsyncLog Thread tid = " INTX_FORMAT, os::current_thread_id());
+    log_debug(logging, thread)("starting AsyncLog Thread tid = %zd", os::current_thread_id());
   }
   const char* type_name() const override { return "AsyncLogWriter"; }
   void print_on(outputStream* st) const override {

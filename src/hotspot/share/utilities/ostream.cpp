@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -875,7 +875,7 @@ intx defaultStream::hold(intx writer_id) {
     if (has_log) {
       _log_file->bol();
       // output a hint where this output is coming from:
-      _log_file->print_cr("<writer thread='" UINTX_FORMAT "'/>", writer_id);
+      _log_file->print_cr("<writer thread='%zu'/>", writer_id);
     }
     _last_writer = writer_id;
   }

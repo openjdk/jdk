@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Utils;
-import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.WriteablePath;
 
 /**
  * Provides means to configure, start, stop and dump recording data to disk.
@@ -368,7 +368,7 @@ public final class Recording implements Closeable {
      */
     public void dump(Path destination) throws IOException {
         Objects.requireNonNull(destination, "destination");
-        internal.dump(new WriteableUserPath(destination));
+        internal.dump(new WriteablePath(destination));
     }
 
     /**
@@ -461,7 +461,7 @@ public final class Recording implements Closeable {
      * @throws IOException if the path is not writable
      */
     public void setDestination(Path destination) throws IOException {
-        internal.setDestination(destination != null ? new WriteableUserPath(destination) : null);
+        internal.setDestination(destination != null ? new WriteablePath(destination) : null);
     }
 
     /**
@@ -471,11 +471,11 @@ public final class Recording implements Closeable {
      * @return the destination file, or {@code null} if not set.
      */
     public Path getDestination() {
-        WriteableUserPath usp = internal.getDestination();
-        if (usp == null) {
+        WriteablePath wp = internal.getDestination();
+        if (wp == null) {
             return null;
         } else {
-            return usp.getPotentiallyMaliciousOriginal();
+            return wp.getPath();
         }
     }
 

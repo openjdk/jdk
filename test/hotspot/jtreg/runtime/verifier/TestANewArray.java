@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 import java.io.File;
 import java.io.FileOutputStream;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import static org.objectweb.asm.Opcodes.*;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary Test that anewarray bytecode is valid only if it specifies 254 or fewer dimensions.
  *          255 is invalid because the anewarray would then create an array with 256 dimensions.
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @compile -XDignore.symbol.file TestANewArray.java
  * @run driver TestANewArray 49
  * @run driver TestANewArray 52

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,19 +228,19 @@ public final class LocalTime
     private static final long serialVersionUID = 6414437269572265201L;
 
     /**
-     * The hour.
+     * @serial The hour.
      */
     private final byte hour;
     /**
-     * The minute.
+     * @serial The minute.
      */
     private final byte minute;
     /**
-     * The second.
+     * @serial The second.
      */
     private final byte second;
     /**
-     * The nanosecond.
+     * @serial The nanosecond.
      */
     private final int nano;
 

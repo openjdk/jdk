@@ -2401,19 +2401,19 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         implements ConcurrentNavigableMap<K,V>, Serializable {
         private static final long serialVersionUID = -7647078645895051609L;
 
-        /** Underlying map */
+        /** @serial Underlying map */
         final ConcurrentSkipListMap<K,V> m;
-        /** lower bound key, or null if from start */
+        /** @serial lower bound key, or null if from start */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K lo;
-        /** upper bound key, or null if to end */
+        /** @serial upper bound key, or null if to end */
         @SuppressWarnings("serial") // Conditionally serializable
         private final K hi;
-        /** inclusion flag for lo */
+        /** @serial inclusion flag for lo */
         private final boolean loInclusive;
-        /** inclusion flag for hi */
+        /** @serial inclusion flag for hi */
         private final boolean hiInclusive;
-        /** direction */
+        /** @serial direction */
         final boolean isDescending;
 
         // Lazily initialized view holders

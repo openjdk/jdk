@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -847,7 +847,7 @@ static void *thread_native_entry(Thread *thread) {
     }
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread is alive (tid: %zu, pthread id: %zu).",
     os::current_thread_id(), (uintx) pthread_self());
 
   assert(osthread->pthread_id() != 0, "pthread_id was not set as expected");
@@ -863,7 +863,7 @@ static void *thread_native_entry(Thread *thread) {
   // Prevent dereferencing it from here on out.
   thread = nullptr;
 
-  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread finished (tid: %zu, pthread id: %zu).",
     os::current_thread_id(), (uintx) pthread_self());
 
   return nullptr;
@@ -1054,7 +1054,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
     char buf[64];
     if (ret == 0) {
-      log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+      log_info(os, thread)("Thread \"%s\" started (pthread id: %zu, attributes: %s). ",
                            thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
 
       // Print current timer slack if override is enabled and timer slack value is available.
@@ -1062,7 +1062,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       if (TimerSlack >= 0) {
         int slack = prctl(PR_GET_TIMERSLACK);
         if (slack >= 0) {
-          log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
+          log_info(os, thread)("Thread \"%s\" (pthread id: %zu) timer slack: %dns",
                                thread->name(), (uintx) tid, slack);
         }
       }
@@ -1170,7 +1170,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
+  log_info(os, thread)("Thread attached (tid: %zu, pthread id: %zu"
                        ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
@@ -1366,12 +1366,9 @@ void os::Linux::capture_initial_stack(size_t max_size) {
         // Skip blank chars
         do { s++; } while (s && isspace((unsigned char) *s));
 
-#define _UFM UINTX_FORMAT
-#define _DFM INTX_FORMAT
-
-        //                                     1   1   1   1   1   1   1   1   1   1   2   2    2    2    2    2    2    2    2
-        //              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1    2    3    4    5    6    7    8
-        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld " _UFM _UFM _DFM _UFM _UFM _UFM _UFM,
+        //                                     1   1   1   1   1   1   1   1   1   1   2   2  2    2   2   2   2   2   2
+        //              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1  2    3   4   5   6   7   8
+        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld %zu %zu %zd %zu %zu %zu %zu",
                    &state,          // 3  %c
                    &ppid,           // 4  %d
                    &pgrp,           // 5  %d
@@ -1391,17 +1388,14 @@ void os::Linux::capture_initial_stack(size_t max_size) {
                    &nice,           // 19 %ld
                    &junk,           // 20 %ld
                    &it_real,        // 21 %ld
-                   &start,          // 22 UINTX_FORMAT
-                   &vsize,          // 23 UINTX_FORMAT
-                   &rss,            // 24 INTX_FORMAT
-                   &rsslim,         // 25 UINTX_FORMAT
-                   &scodes,         // 26 UINTX_FORMAT
-                   &ecode,          // 27 UINTX_FORMAT
-                   &stack_start);   // 28 UINTX_FORMAT
+                   &start,          // 22 %zu
+                   &vsize,          // 23 %zu
+                   &rss,            // 24 %zd
+                   &rsslim,         // 25 %zu
+                   &scodes,         // 26 %zu
+                   &ecode,          // 27 %zu
+                   &stack_start);   // 28 %zu
       }
-
-#undef _UFM
-#undef _DFM
 
       if (i != 28 - 2) {
         assert(false, "Bad conversion from /proc/self/stat");
@@ -2312,14 +2306,14 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
       info->rssanon = info->rssfile = info->rssshmem = -1;
   if (f != nullptr) {
     while (::fgets(buf, sizeof(buf), f) != nullptr && num_found < num_values) {
-      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &info->vmsize) == 1) ||
-           (info->vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &info->vmpeak) == 1) ||
-           (info->vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &info->vmswap) == 1) ||
-           (info->vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &info->vmhwm) == 1) ||
-           (info->vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &info->vmrss) == 1) ||
-           (info->rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &info->rssanon) == 1) || // Needs Linux 4.5
-           (info->rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &info->rssfile) == 1) || // Needs Linux 4.5
-           (info->rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &info->rssshmem) == 1)  // Needs Linux 4.5
+      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: %zd kB", &info->vmsize) == 1) ||
+           (info->vmpeak == -1    && sscanf(buf, "VmPeak: %zd kB", &info->vmpeak) == 1) ||
+           (info->vmswap == -1    && sscanf(buf, "VmSwap: %zd kB", &info->vmswap) == 1) ||
+           (info->vmhwm == -1     && sscanf(buf, "VmHWM: %zd kB", &info->vmhwm) == 1) ||
+           (info->vmrss == -1     && sscanf(buf, "VmRSS: %zd kB", &info->vmrss) == 1) ||
+           (info->rssanon == -1   && sscanf(buf, "RssAnon: %zd kB", &info->rssanon) == 1) || // Needs Linux 4.5
+           (info->rssfile == -1   && sscanf(buf, "RssFile: %zd kB", &info->rssfile) == 1) || // Needs Linux 4.5
+           (info->rssshmem == -1  && sscanf(buf, "RssShmem: %zd kB", &info->rssshmem) == 1)  // Needs Linux 4.5
            )
       {
         num_found ++;
@@ -2367,15 +2361,15 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   //  rss its components if the kernel is recent enough.
   meminfo_t info;
   if (query_process_memory_info(&info)) {
-    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmsize, info.vmpeak);
-    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmrss, info.vmhwm);
+    st->print_cr("Virtual Size: %zdK (peak: %zdK)", info.vmsize, info.vmpeak);
+    st->print("Resident Set Size: %zdK (peak: %zdK)", info.vmrss, info.vmhwm);
     if (info.rssanon != -1) { // requires kernel >= 4.5
-      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+      st->print(" (anon: %zdK, file: %zdK, shmem: %zdK)",
                 info.rssanon, info.rssfile, info.rssshmem);
     }
     st->cr();
     if (info.vmswap != -1) { // requires kernel >= 2.6.34
-      st->print_cr("Swapped out: " SSIZE_FORMAT "K", info.vmswap);
+      st->print_cr("Swapped out: %zdK", info.vmswap);
     }
   } else {
     st->print_cr("Could not open /proc/self/status to get process memory related information");
@@ -3247,6 +3241,8 @@ bool os::Linux::libnuma_init() {
                                               libnuma_dlsym(handle, "numa_set_bind_policy")));
       set_numa_bitmask_isbitset(CAST_TO_FN_PTR(numa_bitmask_isbitset_func_t,
                                                libnuma_dlsym(handle, "numa_bitmask_isbitset")));
+      set_numa_bitmask_equal(CAST_TO_FN_PTR(numa_bitmask_equal_func_t,
+                                            libnuma_dlsym(handle, "numa_bitmask_equal")));
       set_numa_distance(CAST_TO_FN_PTR(numa_distance_func_t,
                                        libnuma_dlsym(handle, "numa_distance")));
       set_numa_get_membind(CAST_TO_FN_PTR(numa_get_membind_func_t,
@@ -3257,6 +3253,8 @@ bool os::Linux::libnuma_init() {
                                          libnuma_dlsym(handle, "numa_move_pages")));
       set_numa_set_preferred(CAST_TO_FN_PTR(numa_set_preferred_func_t,
                                             libnuma_dlsym(handle, "numa_set_preferred")));
+      set_numa_get_run_node_mask(CAST_TO_FN_PTR(numa_get_run_node_mask_func_t,
+                                                libnuma_v2_dlsym(handle, "numa_get_run_node_mask")));
 
       if (numa_available() != -1) {
         set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
@@ -3264,6 +3262,7 @@ bool os::Linux::libnuma_init() {
         set_numa_nodes_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_nodes_ptr"));
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
+        set_numa_cpunodebind_bitmask(_numa_get_run_node_mask());
         // Create an index -> node mapping, since nodes are not always consecutive
         _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
@@ -3440,9 +3439,11 @@ os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
 os::Linux::numa_interleave_memory_v2_func_t os::Linux::_numa_interleave_memory_v2;
 os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 os::Linux::numa_bitmask_isbitset_func_t os::Linux::_numa_bitmask_isbitset;
+os::Linux::numa_bitmask_equal_func_t os::Linux::_numa_bitmask_equal;
 os::Linux::numa_distance_func_t os::Linux::_numa_distance;
 os::Linux::numa_get_membind_func_t os::Linux::_numa_get_membind;
 os::Linux::numa_get_interleave_mask_func_t os::Linux::_numa_get_interleave_mask;
+os::Linux::numa_get_run_node_mask_func_t os::Linux::_numa_get_run_node_mask;
 os::Linux::numa_move_pages_func_t os::Linux::_numa_move_pages;
 os::Linux::numa_set_preferred_func_t os::Linux::_numa_set_preferred;
 os::Linux::NumaAllocationPolicy os::Linux::_current_numa_policy;
@@ -3451,6 +3452,7 @@ struct bitmask* os::Linux::_numa_all_nodes_ptr;
 struct bitmask* os::Linux::_numa_nodes_ptr;
 struct bitmask* os::Linux::_numa_interleave_bitmask;
 struct bitmask* os::Linux::_numa_membind_bitmask;
+struct bitmask* os::Linux::_numa_cpunodebind_bitmask;
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
@@ -4475,18 +4477,18 @@ void os::Linux::numa_init() {
   // bitmask when externally configured to run on all or fewer nodes.
 
   if (!Linux::libnuma_init()) {
-    FLAG_SET_ERGO(UseNUMA, false);
-    FLAG_SET_ERGO(UseNUMAInterleaving, false); // Also depends on libnuma.
+    disable_numa("Failed to initialize libnuma");
   } else {
-    if ((Linux::numa_max_node() < 1) || Linux::is_bound_to_single_node()) {
-      // If there's only one node (they start from 0) or if the process
-      // is bound explicitly to a single node using membind, disable NUMA
-      UseNUMA = false;
+    Linux::set_configured_numa_policy(Linux::identify_numa_policy());
+    if (Linux::numa_max_node() < 1) {
+      disable_numa("Only a single NUMA node is available");
+    } else if (Linux::is_bound_to_single_mem_node()) {
+      disable_numa("The process is bound to a single NUMA node");
+    } else if (Linux::mem_and_cpu_node_mismatch()) {
+      disable_numa("The process memory and cpu node configuration does not match");
     } else {
       LogTarget(Info,os) log;
       LogStream ls(log);
-
-      Linux::set_configured_numa_policy(Linux::identify_numa_policy());
 
       struct bitmask* bmp = Linux::_numa_membind_bitmask;
       const char* numa_mode = "membind";
@@ -4523,6 +4525,16 @@ void os::Linux::numa_init() {
       UseAdaptiveNUMAChunkSizing = false;
     }
   }
+}
+
+void os::Linux::disable_numa(const char* reason) {
+  if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
+      (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
+    // Only issue a warning if the user explicitly asked for NUMA support
+    log_warning(os)("NUMA support disabled: %s", reason);
+  }
+  FLAG_SET_ERGO(UseNUMA, false);
+  FLAG_SET_ERGO(UseNUMAInterleaving, false);
 }
 
 #if defined(IA32) && !defined(ZERO)
@@ -5261,7 +5273,7 @@ bool os::start_debugging(char *buf, int buflen) {
   jio_snprintf(p, buflen-len,
                "\n\n"
                "Do you want to debug the problem?\n\n"
-               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " UINTX_FORMAT " (" INTPTR_FORMAT ")\n"
+               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread %zu (" INTPTR_FORMAT ")\n"
                "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
                "Otherwise, press RETURN to abort...",
                os::current_process_id(), os::current_process_id(),

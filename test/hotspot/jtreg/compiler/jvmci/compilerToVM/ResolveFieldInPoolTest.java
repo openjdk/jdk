@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,10 @@
  * @requires vm.jvmci
  * @library /test/lib /
  * @library ../common/patches
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.reflect
- *          java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.org.objectweb.asm.tree
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
@@ -51,7 +50,7 @@ import compiler.jvmci.compilerToVM.ConstantPoolTestCase.TestedCPEntry;
 import compiler.jvmci.compilerToVM.ConstantPoolTestCase.Validator;
 import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Opcodes;
 import jdk.test.lib.Asserts;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;

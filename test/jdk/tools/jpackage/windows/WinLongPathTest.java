@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.RunnablePackageTest.Action;
 import jdk.jpackage.test.TKit;
@@ -39,8 +40,10 @@ import jdk.jpackage.test.TKit;
  * @bug 8289771
  * @summary jpackage with long paths on windows
  * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
+ * @build jtreg.SkippedException
  * @requires (os.family == "windows")
  * @compile WinLongPathTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
@@ -64,6 +67,8 @@ public record WinLongPathTest(Boolean appImage, String optionName) {
 
     @Test
     public void test() throws IOException {
+        verifyDosNamesSupported();
+
         if (appImage) {
             var cmd = JPackageCommand.helloAppImage();
             setOptionLongPath(cmd, optionName);
@@ -84,4 +89,23 @@ public record WinLongPathTest(Boolean appImage, String optionName) {
         Files.createDirectories(longPath);
         cmd.setArgumentValue(option, longPath);
     }
+
+    private static void verifyDosNamesSupported() throws IOException {
+        // Pick the file's name long enough to make Windows shorten it.
+        final var probeDosNameFile = TKit.createTempFile(Path.of("probeDosName"));
+
+        // The output should be a DOS variant of the `probeDosNameFile` path.
+        // The filename should differ if the volume owning `probeDosNameFile` file supports DOS names.
+        final var dosPath = new Executor()
+                .addArguments("/c", String.format("for %%P in (\"%s\") do @echo %%~sP", probeDosNameFile))
+                .setExecutable("cmd")
+                .dumpOutput()
+                .executeAndGetFirstLineOfOutput();
+
+        if (Path.of(dosPath).getFileName().equals(probeDosNameFile.getFileName())) {
+            TKit.throwSkippedException(String.format("The volume %s owning the test work directory doesn't support DOS paths",
+                    probeDosNameFile.toAbsolutePath().getRoot()));
+        }
+    }
+
 }
