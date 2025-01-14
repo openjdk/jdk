@@ -979,24 +979,6 @@ const Type* XorINode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeInt* t1i = t1->is_int();
-  const TypeInt* t2i = t2->is_int();
-
-  if (t1i->is_con() && t2i->is_con()) {
-    return TypeInt::make(t1i->get_con() ^ t2i->get_con());
-  }
-
-  if ((t1i->_lo >= 0) &&
-      (t1i->_hi > 0)  &&
-      (t2i->_lo >= 0) &&
-      (t2i->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(t1i->_hi) + (round_down_power_of_2(t1i->_hi) - 1), t1i->_widen);
-    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(t2i->_hi) + (round_down_power_of_2(t2i->_hi) - 1), t2i->_widen);
-    return t1x->meet(t2x);
-  }
   return AddNode::Value(phase);
 }
 
@@ -1010,14 +992,28 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
   const TypeInt *r1 = t1->is_int();
 
-  // Complementing a boolean?
-  if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
-                               || r1 == TypeInt::BOOL))
-    return TypeInt::BOOL;
+  if( !r0->is_con() || !r1->is_con() ) {
 
-  if( !r0->is_con() || !r1->is_con() ) // Not constants
+    // result of xor can only have bits sets where any of the
+    // inputs have bits set. lo can always become 0.
+
+    if ((r0->_lo >= 0) &&
+        (r0->_hi > 0)  &&
+        (r1->_lo >= 0) &&
+        (r1->_hi > 0)) {
+      // hi - set all bits below the highest bit. Using round_down to avoid overflow.
+      const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
+      const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
+      return t1x->meet(t2x);
+    }
+
+    // Complementing a boolean?
+    if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
+                                 || r1 == TypeInt::BOOL))
+      return TypeInt::BOOL;
+
     return TypeInt::INT;        // Any integer, but still no symbols.
-
+  }
   // Otherwise just XOR them bits.
   return TypeInt::make( r0->get_con() ^ r1->get_con() );
 }
