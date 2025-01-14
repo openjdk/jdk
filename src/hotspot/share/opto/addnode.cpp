@@ -993,6 +993,7 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r1 = t1->is_int();
 
   if( !r0->is_con() || !r1->is_con() ) {
+    //not a constant
 
     // result of xor can only have bits sets where any of the
     // inputs have bits set. lo can always become 0.
@@ -1024,11 +1025,26 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
 
-  // If either input is not a constant, just return all integers.
-  if( !r0->is_con() || !r1->is_con() )
-    return TypeLong::LONG;      // Any integer, but still no symbols.
+  if( !r0->is_con() || !r1->is_con() ) {
+    //not a constant
 
-  // Otherwise just OR them bits.
+    // result of xor can only have bits sets where any of the
+    // inputs have bits set. lo can always become 0.
+
+    if ((r0->_lo >= 0) &&
+        (r0->_hi > 0)  &&
+        (r1->_lo >= 0) &&
+        (r1->_hi > 0)) {
+      // hi - set all bits below the highest bit. Using round_down to avoid overflow.
+      const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
+      const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
+      return t1x->meet(t2x);
+    }
+
+    return TypeLong::LONG;      // Any integer, but still no symbols.
+  }
+
+  // Otherwise just XOR them bits.
   return TypeLong::make( r0->get_con() ^ r1->get_con() );
 }
 
@@ -1065,24 +1081,7 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   if (in1->eqv_uncast(in2)) {
     return add_id();
   }
-  // result of xor can only have bits sets where any of the
-  // inputs have bits set. lo can always become 0.
-  const TypeLong* t1l = t1->is_long();
-  const TypeLong* t2l = t2->is_long();
 
-  if (t1l->is_con() && t2l->is_con()) {
-    return TypeLong::make(t1l->get_con() ^ t2l->get_con());
-  }
-
-  if ((t1l->_lo >= 0) &&
-      (t1l->_hi > 0)  &&
-      (t2l->_lo >= 0) &&
-      (t2l->_hi > 0)) {
-    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(t1l->_hi) + (round_down_power_of_2(t1l->_hi) - 1), t1l->_widen);
-    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(t2l->_hi) + (round_down_power_of_2(t2l->_hi) - 1), t2l->_widen);
-    return t1x->meet(t2x);
-  }
   return AddNode::Value(phase);
 }
 

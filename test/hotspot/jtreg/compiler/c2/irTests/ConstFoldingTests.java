@@ -54,7 +54,24 @@ public class ConstFoldingTests {
     // Checks (c1 ^ c2)  => c3 (constant folded)
     public long testConstXorL() {
         long c = 42;
-        return c ^ 2025;
+        return c ^ 2025L;
     }
 
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    // Checks (x ^ x)  => c3 (constant folded)
+    @Arguments(values = Argument.RANDOM_EACH)
+    public int testConstXorISelf(int x) {
+        return x ^ x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_L, "1"})
+    // Checks (x ^ x)  => c3 (constant folded)
+    @Arguments(values = Argument.RANDOM_EACH)
+    public long testConstXorLSelf(long x) {
+        return x ^ x;
+    }
 }
