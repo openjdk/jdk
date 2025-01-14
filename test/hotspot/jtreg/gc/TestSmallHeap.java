@@ -40,7 +40,7 @@ package gc;
  * means that on most platforms, where the minimal page size is 4k, we get a
  * minimal heap size of 2m but on Solaris/Sparc we have a page size of 8k and
  * get a minimal heap size of 4m. And on platforms where the page size is 64k
- * we get a minimal heap size of 32m. We never use large pages for the card table.
+ * we get a minimal heap size of 8m. We never use large pages for the card table.
  *
  * There is also no check in the VM for verifying that the maximum heap size
  * is larger than the supported minimal heap size.
@@ -73,7 +73,7 @@ public class TestSmallHeap {
         // possible to avoid hitting an OOME.
         WhiteBox wb = WhiteBox.getWhiteBox();
         int pageSize = wb.getVMPageSize();
-        int heapBytesPerCard = 512;
+        int heapBytesPerCard = (pageSize > 4096) ? 128 : 512;
         long expectedMaxHeap = pageSize * heapBytesPerCard;
         boolean noneGCSupported = true;
 
