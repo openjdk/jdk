@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@
 
 #include <sys/procfs.h>
 #include <procinfo.h>
+#include <string.h>
 
 /*
  * Implementation of native ProcessHandleImpl functions for AIX.
@@ -182,6 +184,62 @@ pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t pid, jlong *total, jlong *sta
     return (pid_t) ProcessBuffer.pi_ppid;
 }
 
+/**
+ * Helper function to get the 'psinfo_t' data from "/proc/%d/psinfo".
+ * Returns 0 on success and -1 on error.
+ */
+static int getPsinfo(pid_t pid, psinfo_t *psinfo) {
+    FILE* fp;
+    char fn[32];
+    size_t ret;
+
+    /*
+     * Try to open /proc/%d/psinfo
+     */
+    snprintf(fn, sizeof fn, "/proc/%d/psinfo", pid);
+    fp = fopen(fn, "r");
+    if (fp == NULL) {
+        return -1;
+    }
+
+    ret = fread(psinfo, 1, sizeof(psinfo_t), fp);
+    fclose(fp);
+    if (ret < sizeof(psinfo_t)) {
+        return -1;
+    }
+    return 0;
+}
+
 void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
-    unix_getCmdlineAndUserInfo(env, jinfo, pid);
+    psinfo_t psinfo;
+    char prargs[PRARGSZ + 1];
+    jstring cmdexe = NULL;
+
+    /*
+     * Now try to open /proc/%d/psinfo
+     */
+    if (getPsinfo(pid, &psinfo) < 0) {
+        unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe, NULL);
+        return;
+    }
+
+    unix_getUserInfo(env, jinfo, psinfo.pr_uid);
+
+    /*
+     * Now read psinfo.pr_psargs which contains the first PRARGSZ characters of the
+     * argument list (i.e. arg[0] arg[1] ...). Unfortunately, PRARGSZ is usually set
+     * to 80 characters only. Nevertheless it's better than nothing :)
+     */
+    strncpy(prargs, psinfo.pr_psargs, PRARGSZ);
+    prargs[PRARGSZ] = '\0';
+    if (prargs[0] == '\0') {
+        /* If psinfo.pr_psargs didn't contain any strings, use psinfo.pr_fname
+         * (which only contains the last component of exec()ed pathname) as a
+         * last resort. This is true for AIX kernel processes for example.
+         */
+        strncpy(prargs, psinfo.pr_fname, PRARGSZ);
+        prargs[PRARGSZ] = '\0';
+    }
+    unix_fillArgArray(env, jinfo, 0, NULL, NULL, cmdexe,
+                      prargs[0] == '\0' ? NULL : prargs);
 }

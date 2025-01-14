@@ -31,7 +31,7 @@ include LauncherCommon.gmk
 
 $(eval $(call SetupBuildLauncher, jimage, \
     MAIN_CLASS := jdk.tools.jimage.Main, \
-    CFLAGS := -DENABLE_ARG_FILES, \
+    ENABLE_ARG_FILES := true, \
 ))
 
 ################################################################################
@@ -41,7 +41,8 @@ $(eval $(call SetupBuildLauncher, jimage, \
 $(eval $(call SetupBuildLauncher, jlink, \
     MAIN_CLASS := jdk.tools.jlink.internal.Main, \
     JAVA_ARGS := --add-modules ALL-DEFAULT, \
-    CFLAGS := -DENABLE_ARG_FILES -DEXPAND_CLASSPATH_WILDCARDS, \
+    ENABLE_ARG_FILES := true, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))
 
 ################################################################################
@@ -50,5 +51,6 @@ $(eval $(call SetupBuildLauncher, jlink, \
 
 $(eval $(call SetupBuildLauncher, jmod, \
     MAIN_CLASS := jdk.tools.jmod.Main, \
-    CFLAGS := -DENABLE_ARG_FILES -DEXPAND_CLASSPATH_WILDCARDS, \
+    ENABLE_ARG_FILES := true, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))

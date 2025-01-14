@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,20 +163,20 @@ class LibraryCallKit : public GraphKit {
                                   RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
-  Node* generate_array_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, false, false);
+  Node* generate_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, false, false, obj);
   }
-  Node* generate_non_array_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, false, true);
+  Node* generate_non_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, false, true, obj);
   }
-  Node* generate_objArray_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, true, false);
+  Node* generate_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, true, false, obj);
   }
-  Node* generate_non_objArray_guard(Node* kls, RegionNode* region) {
-    return generate_array_guard_common(kls, region, true, true);
+  Node* generate_non_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, true, true, obj);
   }
   Node* generate_array_guard_common(Node* kls, RegionNode* region,
-                                    bool obj_array, bool not_array);
+                                    bool obj_array, bool not_array, Node** obj = nullptr);
   Node* generate_virtual_guard(Node* obj_klass, RegionNode* slow_region);
   CallJavaNode* generate_method_call(vmIntrinsicID method_id, bool is_virtual, bool is_static, bool res_not_null);
   CallJavaNode* generate_method_call_static(vmIntrinsicID method_id, bool res_not_null) {

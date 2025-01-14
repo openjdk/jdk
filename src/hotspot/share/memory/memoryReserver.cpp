@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,7 +516,7 @@ static ReservedSpace establish_noaccess_prefix(const ReservedSpace& reserved, si
         fatal("cannot protect protection page");
       }
       log_debug(gc, heap, coops)("Protected page at the reserved heap base: "
-                                 PTR_FORMAT " / " INTX_FORMAT " bytes",
+                                 PTR_FORMAT " / %zd bytes",
                                  p2i(reserved.base()),
                                  noaccess_prefix);
       assert(CompressedOops::use_implicit_null_checks() == true, "not initialized?");

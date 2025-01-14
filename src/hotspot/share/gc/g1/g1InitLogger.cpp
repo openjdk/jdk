@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ void G1InitLogger::print_gc_specific() {
   // Print a message about periodic GC configuration.
   if (G1PeriodicGCInterval != 0) {
     log_info_p(gc, init)("Periodic GC: Enabled");
-    log_info_p(gc, init)("Periodic GC Interval: " UINTX_FORMAT "ms", G1PeriodicGCInterval);
+    log_info_p(gc, init)("Periodic GC Interval: %zums", G1PeriodicGCInterval);
   } else {
     log_info_p(gc, init)("Periodic GC: Disabled");
   }
