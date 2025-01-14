@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ JVMFlag::Error WriteableFlags::set_uint_flag(const char* name, const char* arg, 
 JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   intx value;
 
-  if (sscanf(arg, INTX_FORMAT, &value) == 1) {
+  if (sscanf(arg, "%zd", &value) == 1) {
     return set_flag_impl<JVM_FLAG_TYPE(intx)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an integer");
@@ -153,7 +153,7 @@ JVMFlag::Error WriteableFlags::set_intx_flag(const char* name, const char* arg, 
 JVMFlag::Error WriteableFlags::set_uintx_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   uintx value;
 
-  if (sscanf(arg, UINTX_FORMAT, &value) == 1) {
+  if (sscanf(arg, "%zu", &value) == 1) {
     return set_flag_impl<JVM_FLAG_TYPE(uintx)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");

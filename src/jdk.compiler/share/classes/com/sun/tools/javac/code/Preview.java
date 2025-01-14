@@ -152,7 +152,9 @@ public class Preview {
         // s participates in the preview API
         return syms.java_base.exports.stream()
                 .filter(ed -> ed.packge.fullname == names.jdk_internal_javac)
-                .anyMatch(ed -> ed.modules.contains(m));
+                .anyMatch(ed -> ed.modules.contains(m)) ||
+               //the specification lists the java.se module as participating in preview:
+               m.name == names.java_se;
     }
 
     /**

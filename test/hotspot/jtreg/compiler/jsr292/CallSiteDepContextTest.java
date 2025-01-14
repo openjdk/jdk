@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8057967
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @library patches /
  *
  * @build java.base/java.lang.invoke.MethodHandleHelper
@@ -38,9 +38,9 @@
 
 package compiler.jsr292;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Handle;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
@@ -54,11 +54,11 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Field;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_STATIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
-import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
+import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
+import static org.objectweb.asm.Opcodes.IRETURN;
 
 public class CallSiteDepContextTest {
     static final MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;

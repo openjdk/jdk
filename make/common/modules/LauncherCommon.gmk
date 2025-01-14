@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,11 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 # used as the name of the executable.
 #
 # Remaining parameters are named arguments. These include:
-# MAIN_MODULE  The module of the main class to launch if different from the
-#     current module
 # MAIN_CLASS   The Java main class to launch
-# JAVA_ARGS   Processed into a -DJAVA_ARGS and added to CFLAGS
-# EXTRA_JAVA_ARGS Processed into a -DEXTRA_JAVA_ARGS and is prepended
-#     before JAVA_ARGS to CFLAGS, primarily to allow long string literal
-#     compile time defines exceeding Visual Studio 2013 limitations.
-# CFLAGS   Additional CFLAGS
-# CFLAGS_windows   Additional CFLAGS_windows
+# JAVA_ARGS   Additional arguments to pass to Java when launching the main class
+# EXPAND_CLASSPATH_WILDCARDS   Set to true to pass EXPAND_CLASSPATH_WILDCARDS
+# ENABLE_ARG_FILES   Set to true to pass ENABLE_ARG_FILES
+# WINDOWS_JAVAW   Set to true to pass JAVAW on Windows
 # EXTRA_RCFLAGS   Additional EXTRA_RCFLAGS
 # MACOSX_PRIVILEGED   On macosx, allow to access other processes
 # OPTIMIZATION   Override default optimization level (LOW)
@@ -70,19 +66,25 @@ define SetupBuildLauncherBody
     $1_OPTIMIZATION := LOW
   endif
 
-  ifeq ($$($1_MAIN_MODULE), )
-    $1_MAIN_MODULE := $(MODULE)
-  endif
+  $1_MAIN_MODULE := $(MODULE)
 
   ifneq ($$($1_MAIN_CLASS), )
     $1_JAVA_ARGS += -Xms8m
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
-  ifneq ($$($1_EXTRA_JAVA_ARGS), )
-    $1_EXTRA_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-      $$(addprefix -J, $$($1_EXTRA_JAVA_ARGS)), "$$a"$(COMMA) )) }'
-    $1_CFLAGS += -DEXTRA_JAVA_ARGS=$$($1_EXTRA_JAVA_ARGS_STR)
+  ifeq ($$($1_EXPAND_CLASSPATH_WILDCARDS), true)
+    $1_CFLAGS += -DEXPAND_CLASSPATH_WILDCARDS
+  endif
+
+  ifeq ($$($1_ENABLE_ARG_FILES), true)
+    $1_CFLAGS += -DENABLE_ARG_FILES
+  endif
+
+  ifeq ($(call isTargetOs, windows), true)
+    ifeq ($$($1_WINDOWS_JAVAW), true)
+      $1_CFLAGS += -DJAVAW
+    endif
   endif
 
   ifneq ($$($1_JAVA_ARGS), )
@@ -143,8 +145,8 @@ define SetupBuildLauncherBody
           -DLAUNCHER_NAME='"$$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
-      CFLAGS_windows := $$($1_CFLAGS_windows), \
       EXTRA_HEADER_DIRS := java.base:libjvm, \
+      JAVA_HEADERS := false, \
       DISABLED_WARNINGS_gcc := unused-function unused-variable, \
       DISABLED_WARNINGS_clang := unused-function, \
       LDFLAGS := $$($1_LDFLAGS), \
@@ -153,13 +155,6 @@ define SetupBuildLauncherBody
       LDFLAGS_FILTER_OUT := $$($1_LDFLAGS_FILTER_OUT), \
       JDK_LIBS := $$($1_JDK_LIBS), \
       JDK_LIBS_windows := $$($1_JDK_LIBS_windows), \
-      LIBS := $$($1_LIBS), \
-      LIBS_unix := $(LIBZ_LIBS), \
-      LIBS_linux := $(LIBDL) -lpthread, \
-      LIBS_macosx := \
-          -framework ApplicationServices \
-          -framework Cocoa \
-          -framework Security, \
       LINK_TYPE := $$($1_LINK_TYPE), \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       OBJECT_DIR := $$($1_OBJECT_DIR), \

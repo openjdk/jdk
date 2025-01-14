@@ -6482,9 +6482,9 @@ instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAdd src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addi
-    __ add(as_Register($dst$$reg),
-           as_Register($src1$$reg),
-           $src2$$constant);
+    __ addi(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);
@@ -6513,9 +6513,9 @@ instruct addL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addi
-    __ add(as_Register($dst$$reg),
-           as_Register($src1$$reg),
-           $src2$$constant);
+    __ addi(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);
@@ -6546,9 +6546,9 @@ instruct subI_reg_imm(iRegINoSp dst, iRegIorL2I src1, immISub src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addiw
-    __ subw(as_Register($dst$$reg),
-            as_Register($src1$$reg),
-            $src2$$constant);
+    __ subiw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);
@@ -6577,9 +6577,9 @@ instruct subL_reg_imm(iRegLNoSp dst, iRegL src1, immLSub src2) %{
 
   ins_encode %{
     // src2 is imm, so actually call the addi
-    __ sub(as_Register($dst$$reg),
-           as_Register($src1$$reg),
-           $src2$$constant);
+    __ subi(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            $src2$$constant);
   %}
 
   ins_pipe(ialu_reg_imm);

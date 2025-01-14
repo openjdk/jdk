@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ void FieldInfo::print(outputStream* os, ConstantPool* cp) {
                 name_index(), name(cp)->as_utf8(),
                 signature_index(), signature(cp)->as_utf8(),
                 offset(),
-                access_flags().as_int(),
+                access_flags().as_field_flags(),
                 field_flags().as_uint(),
                 initializer_index(),
                 generic_signature_index(),
@@ -97,7 +97,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
     assert(fi_ref->name_index() == fi.name_index(), "Must be");
     assert(fi_ref->signature_index() == fi.signature_index(), "Must be");
     assert(fi_ref->offset() == fi.offset(), "Must be");
-    assert(fi_ref->access_flags().as_int() == fi.access_flags().as_int(), "Must be");
+    assert(fi_ref->access_flags().as_field_flags() == fi.access_flags().as_field_flags(), "Must be");
     assert(fi_ref->field_flags().as_uint() == fi.field_flags().as_uint(), " Must be");
     if(fi_ref->field_flags().is_initialized()) {
       assert(fi_ref->initializer_index() == fi.initializer_index(), "Must be");
