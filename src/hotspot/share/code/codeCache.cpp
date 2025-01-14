@@ -178,10 +178,10 @@ GrowableArray<CodeHeap*>* CodeCache::_allocable_heaps = new(mtCode) GrowableArra
 
 static void check_min_size(const char* codeheap, size_t size, size_t required_size) {
   if (size < required_size) {
-    log_debug(codecache)("Code heap (%s) size " SIZE_FORMAT "K below required minimal size " SIZE_FORMAT "K",
+    log_debug(codecache)("Code heap (%s) size %zuK below required minimal size %zuK",
                          codeheap, size/K, required_size/K);
     err_msg title("Not enough space in %s to run VM", codeheap);
-    err_msg message(SIZE_FORMAT "K < " SIZE_FORMAT "K", size/K, required_size/K);
+    err_msg message(SIZE_FORMAT "K < %zuK", size/K, required_size/K);
     vm_exit_during_initialization(title, message);
   }
 }
@@ -256,15 +256,15 @@ void CodeCache::initialize_heaps() {
 
   size_t total = non_nmethod.size + profiled.size + non_profiled.size;
   if (total != cache_size && !cache_size_set) {
-    log_info(codecache)("ReservedCodeCache size " SIZE_FORMAT "K changed to total segments size NonNMethod "
-                        SIZE_FORMAT "K NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K = " SIZE_FORMAT "K",
+    log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
+                        "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
                         cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, total/K);
     // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
     cache_size = total;
   }
 
-  log_debug(codecache)("Initializing code heaps ReservedCodeCache " SIZE_FORMAT "K NonNMethod " SIZE_FORMAT "K"
-                       " NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K",
+  log_debug(codecache)("Initializing code heaps ReservedCodeCache %zuK NonNMethod %zuK"
+                       " NonProfiled %zuK Profiled %zuK",
                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
 
   // Validation
@@ -282,16 +282,16 @@ void CodeCache::initialize_heaps() {
 
   // ReservedCodeCacheSize was set explicitly, so report an error and abort if it doesn't match the segment sizes
   if (total != cache_size && cache_size_set) {
-    err_msg message("NonNMethodCodeHeapSize (" SIZE_FORMAT "K)", non_nmethod.size/K);
+    err_msg message("NonNMethodCodeHeapSize (%zuK)", non_nmethod.size/K);
     if (profiled.enabled) {
-      message.append(" + ProfiledCodeHeapSize (" SIZE_FORMAT "K)", profiled.size/K);
+      message.append(" + ProfiledCodeHeapSize (%zuK)", profiled.size/K);
     }
     if (non_profiled.enabled) {
-      message.append(" + NonProfiledCodeHeapSize (" SIZE_FORMAT "K)", non_profiled.size/K);
+      message.append(" + NonProfiledCodeHeapSize (%zuK)", non_profiled.size/K);
     }
-    message.append(" = " SIZE_FORMAT "K", total/K);
+    message.append(" = %zuK", total/K);
     message.append((total > cache_size) ? " is greater than " : " is less than ");
-    message.append("ReservedCodeCacheSize (" SIZE_FORMAT "K).", cache_size/K);
+    message.append("ReservedCodeCacheSize (%zuK).", cache_size/K);
 
     vm_exit_during_initialization("Invalid code heap sizes", message);
   }
@@ -356,7 +356,7 @@ ReservedSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
 
   ReservedSpace rs = CodeMemoryReserver::reserve(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (%zuK)",
                                           rs_size/K));
   }
 
@@ -437,7 +437,7 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_b
   size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
   size_initial = align_up(size_initial, rs.page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (%zuK)",
                                           heap->name(), size_initial/K));
   }
 
@@ -1727,8 +1727,8 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     total_used += used;
     total_max_used += max_used;
     total_free += free;
-    st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
-                 "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
+    st->print_cr(" size=%zuKb used=%zu"
+                 "Kb max_used=%zuKb free=%zuKb",
                  size, used, max_used, free);
 
     if (detailed) {
@@ -1788,7 +1788,7 @@ void CodeCache::print_layout(outputStream* st) {
 
 void CodeCache::log_state(outputStream* st) {
   st->print(" total_blobs='" UINT32_FORMAT "' nmethods='" UINT32_FORMAT "'"
-            " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
+            " adapters='" UINT32_FORMAT "' free_code_cache='%zu'",
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }
