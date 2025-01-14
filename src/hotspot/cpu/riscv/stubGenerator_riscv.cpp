@@ -4463,7 +4463,8 @@ class StubGenerator: public StubCodeGenerator {
       __ vadd_vv(vState1, vHash1, vState1);
 
       if (multi_block) {
-        __ subi(consts, consts, vset_sew == Assembler::e32 ? 240 : 608);
+        int total_adds = vset_sew == Assembler::e32 ? 240 : 608;
+        __ subi(consts, consts, total_adds);
         __ addi(ofs, ofs, vset_sew == Assembler::e32 ? 64 : 128);
         __ ble(ofs, limit, multi_block_loop);
         __ mv(c_rarg0, ofs); // return ofs
