@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,7 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
 
     log_debug(gc, ergo, heap)("Attempt heap expansion (capacity lower than min desired capacity). "
                               "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "min_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
+                              "min_desired_capacity: " SIZE_FORMAT "B (%zu %%)",
                               capacity_after_gc, used_after_gc, _g1h->used(), minimum_desired_capacity, MinHeapFreeRatio);
 
     expand = true;
@@ -271,7 +271,7 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand) {
 
     log_debug(gc, ergo, heap)("Attempt heap shrinking (capacity higher than max desired capacity). "
                               "Capacity: " SIZE_FORMAT "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT "B "
-                              "maximum_desired_capacity: " SIZE_FORMAT "B (" UINTX_FORMAT " %%)",
+                              "maximum_desired_capacity: " SIZE_FORMAT "B (%zu %%)",
                               capacity_after_gc, used_after_gc, _g1h->used(), maximum_desired_capacity, MaxHeapFreeRatio);
 
     expand = false;

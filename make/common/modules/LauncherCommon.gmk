@@ -59,6 +59,7 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 # OUTPUT_DIR   Override default output directory
 # VERSION_INFO_RESOURCE   Override default Windows resource file
 # STATIC_LAUNCHER   If true, will use settings for building a static launcher
+# LIBS   Additional libraries to pass as LIBS argument to SetupJdkExecutable
 SetupBuildLauncher = $(NamedParamsMacroTemplate)
 define SetupBuildLauncherBody
   # Setup default values (unless overridden)
@@ -155,6 +156,7 @@ define SetupBuildLauncherBody
       LDFLAGS_FILTER_OUT := $$($1_LDFLAGS_FILTER_OUT), \
       JDK_LIBS := $$($1_JDK_LIBS), \
       JDK_LIBS_windows := $$($1_JDK_LIBS_windows), \
+      LIBS := $$($1_LIBS), \
       LINK_TYPE := $$($1_LINK_TYPE), \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       OBJECT_DIR := $$($1_OBJECT_DIR), \

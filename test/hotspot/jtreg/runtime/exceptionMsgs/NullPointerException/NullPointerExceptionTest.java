@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
  *   of the variable containing the array is printed.
  * @bug 8218628 8248476
  * @modules java.base/java.lang:open
- *          java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @library /test/lib
  * @compile -g NullPointerExceptionTest.java
  * @run main/othervm -XX:MaxJavaStackTraceDepth=1 -XX:+ShowCodeDetailsInExceptionMessages NullPointerExceptionTest hasDebugInfo
@@ -43,7 +43,7 @@
  *   detailed information about the entity that is null.
  * @bug 8218628 8248476
  * @modules java.base/java.lang:open
- *          java.base/jdk.internal.org.objectweb.asm
+ * @library /testlibrary/asm
  * @library /test/lib
  * @compile NullPointerExceptionTest.java
  * @run main/othervm -XX:MaxJavaStackTraceDepth=1 -XX:+ShowCodeDetailsInExceptionMessages NullPointerExceptionTest
@@ -57,27 +57,27 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.util.ArrayList;
 import java.util.Random;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 import static java.lang.invoke.MethodHandles.lookup;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
-import static jdk.internal.org.objectweb.asm.Opcodes.ACONST_NULL;
-import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
-import static jdk.internal.org.objectweb.asm.Opcodes.ASTORE;
-import static jdk.internal.org.objectweb.asm.Opcodes.GETFIELD;
-import static jdk.internal.org.objectweb.asm.Opcodes.GETSTATIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
-import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_2;
-import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
-import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static jdk.internal.org.objectweb.asm.Opcodes.ARETURN;
-import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
-import static jdk.internal.org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.GETFIELD;
+import static org.objectweb.asm.Opcodes.GETSTATIC;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.ICONST_2;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.IRETURN;
+import static org.objectweb.asm.Opcodes.RETURN;
 
 /**
  * Tests NullPointerExceptions
@@ -1595,7 +1595,7 @@ public class NullPointerExceptionTest {
     // }
     //
     // This code was adapted from output of
-    //   java jdk.internal.org.objectweb.asm.util.ASMifier E0.class
+    //   java org.objectweb.asm.util.ASMifier E0.class
     static byte[] generateTestClass() {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;
@@ -1817,7 +1817,7 @@ class G {
     // }
     //
     // This code was adapted from output of
-    //   java jdk.internal.org.objectweb.asm.util.ASMifier Sub2G.class
+    //   java org.objectweb.asm.util.ASMifier Sub2G.class
     static byte[] generateSub2GTestClass() {
         ClassWriter cw = new ClassWriter(0);
         MethodVisitor mv;

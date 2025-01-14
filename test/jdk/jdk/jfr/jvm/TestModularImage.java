@@ -43,6 +43,7 @@ import jdk.test.lib.process.ProcessTools;
  *          as expected
  * @requires vm.hasJFR
  * @library /test/lib
+ * @modules jdk.compiler jdk.jlink
  * @comment Test is being run in othervm to support JEP 493 enabled
  *          JDKs which don't allow patched modules. Note that jtreg patches
  *          module java.base to add java.lang.JTRegModuleHelper. If then a
