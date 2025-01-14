@@ -110,7 +110,7 @@ TEST_VM(StubRoutines, array_fill_routine) {
   MACOS_AARCH64_ONLY(os::current_thread_enable_wx(WXExec));
 
 #define TEST_FILL(type)                                                                      \
-  if (StubRoutines::type##_fill != nullptr) {                                                \
+  if (StubRoutines::type##_fill() != nullptr) {                         \
     union {                                                                                  \
       double d;                                                                              \
       type body[96];                                                                         \
