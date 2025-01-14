@@ -49,7 +49,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * thrown.
  * <p>
  * This class inflates sequences of ZLIB compressed bytes. The input byte
- * sequence is provided in either byte array or {@link ByteBuffer}, via one of the
+ * sequence is provided in either a byte array or a {@link ByteBuffer}, via one of the
  * {@code setInput()} methods. The output byte sequence is written to the
  * output byte array or {@code ByteBuffer} passed to the {@code inflate()} methods.
  * <p>
