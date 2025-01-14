@@ -779,8 +779,7 @@ public final class HSS extends SignatureSpi {
         @Override
         protected void parseKeyBits() throws InvalidKeyException {
             byte[] keyArray = getKey().toByteArray();
-            // Check less than minimum length to make sure this method works as expected
-            if (keyArray.length < 12) {
+            if (keyArray.length < 12) { // More length check in LMSPublicKey
                 throw new InvalidKeyException("LMS public key is too short");
             }
             if (keyArray[0] == DerValue.tag_OctetString
