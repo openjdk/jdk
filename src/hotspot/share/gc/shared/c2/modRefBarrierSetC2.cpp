@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,6 @@ Node* ModRefBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val
   uint adr_idx = kit->C->get_alias_index(adr_type);
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
 
-  pre_barrier(kit, true /* do_load */, kit->control(), access.base(), adr, adr_idx, val.node(),
-              static_cast<const TypeOopPtr*>(val.type()), nullptr /* pre_val */, access.type());
   Node* store = BarrierSetC2::store_at_resolved(access, val);
   post_barrier(kit, kit->control(), access.raw_access(), access.base(), adr, adr_idx, val.node(),
                access.type(), use_precise);
@@ -69,10 +67,6 @@ Node* ModRefBarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& ac
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
   }
-
-  pre_barrier(kit, false /* do_load */,
-              kit->control(), nullptr, nullptr, max_juint, nullptr, nullptr,
-              expected_val /* pre_val */, T_OBJECT);
 
   Node* result = BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
 
@@ -89,10 +83,6 @@ Node* ModRefBarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& a
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
   }
-
-  pre_barrier(kit, false /* do_load */,
-              kit->control(), nullptr, nullptr, max_juint, nullptr, nullptr,
-              expected_val /* pre_val */, T_OBJECT);
 
   Node* load_store = BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
 
@@ -126,12 +116,6 @@ Node* ModRefBarrierSetC2::atomic_xchg_at_resolved(C2AtomicParseAccess& access, N
     return result;
   }
 
-  // Don't need to load pre_val. The old value is returned by load_store.
-  // The pre_barrier can execute after the xchg as long as no safepoint
-  // gets inserted between them.
-  pre_barrier(kit, false /* do_load */,
-              kit->control(), nullptr, nullptr, max_juint, nullptr, nullptr,
-              result /* pre_val */, T_OBJECT);
   post_barrier(kit, kit->control(), access.raw_access(), access.base(), access.addr().node(),
                access.alias_idx(), new_val, T_OBJECT, true);
 
