@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -80,7 +79,7 @@ public class TestAssemble {
             expectedCount += countEventInRecording(tmp);
         }
 
-        SafePath repository = Repository.getRepository().getRepositoryPath();
+        Path repository = Repository.getRepository().getRepositoryPath();
         Path destinationPath = Paths.get("reconstructed.jfr");
 
         String directory = repository.toString();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,18 +122,18 @@ public final class SignedObject implements Serializable {
     private static final long serialVersionUID = 720502720485447167L;
 
     /**
-     * The original content is "deep copied" in its serialized format
+     * @serial The original content is "deep copied" in its serialized format
      * and stored in a byte array.
      */
     private byte[] content;
 
     /**
-     * The signature field is stored as a byte array.
+     * @serial The signature field is stored as a byte array.
      */
     private byte[] signature;
 
     /**
-     * The algorithm used to sign the object.
+     * @serial The algorithm used to sign the object.
      */
     private String thealgorithm;
 

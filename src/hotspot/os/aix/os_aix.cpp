@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,6 +74,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -364,9 +365,9 @@ static void query_multipage_support() {
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   {
-    void* p = ::malloc(16*M);
+    void* p = permit_forbidden_function::malloc(16*M);
     g_multipage_support.datapsize = os::Aix::query_pagesize(p);
-    ::free(p);
+    permit_forbidden_function::free(p);
   }
 
   // Query default shm page size (LDR_CNTRL SHMPSIZE).
@@ -631,7 +632,7 @@ static void *thread_native_entry(Thread *thread) {
   if (lt.is_enabled()) {
     address low_address = thread->stack_end();
     address high_address = thread->stack_base();
-    lt.print("Thread is alive (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT
+    lt.print("Thread is alive (tid: %zu, kernel thread id: %zu"
              ", stack [" PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k using %luk pages)).",
              os::current_thread_id(), (uintx) kernel_thread_id, p2i(low_address), p2i(high_address),
              (high_address - low_address) / K, os::Aix::query_pagesize(low_address) / K);
@@ -681,7 +682,7 @@ static void *thread_native_entry(Thread *thread) {
   // Prevent dereferencing it from here on out.
   thread = nullptr;
 
-  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread finished (tid: %zu, kernel thread id: %zu).",
     os::current_thread_id(), (uintx) kernel_thread_id);
 
   return 0;
@@ -761,7 +762,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   if (ret == 0) {
     char buf[64];
-    log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+    log_info(os, thread)("Thread \"%s\" started (pthread id: %zu, attributes: %s). ",
                          thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
   } else {
     char buf[64];
@@ -839,7 +840,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread  id: " UINTX_FORMAT
+  log_info(os, thread)("Thread attached (tid: %zu, kernel thread  id: %zu"
                        ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), (uintx) kernel_thread_id,
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
@@ -1379,7 +1380,7 @@ struct vmembk_t {
   }
 
   void print_on(outputStream* os) const {
-    os->print("[" PTR_FORMAT " - " PTR_FORMAT "] (" UINTX_FORMAT
+    os->print("[" PTR_FORMAT " - " PTR_FORMAT "] (%zu"
       " bytes, %ld %s pages), %s",
       p2i(addr), p2i(addr) + size - 1, size, size / pagesize, describe_pagesize(pagesize),
       (type == VMEM_SHMATED ? "shmat" : "mmap")
@@ -1406,7 +1407,7 @@ static struct {
 } vmem;
 
 static void vmembk_add(char* addr, size_t size, size_t pagesize, int type) {
-  vmembk_t* p = (vmembk_t*) ::malloc(sizeof(vmembk_t));
+  vmembk_t* p = (vmembk_t*) permit_forbidden_function::malloc(sizeof(vmembk_t));
   assert0(p);
   if (p) {
     MiscUtils::AutoCritSect lck(&vmem.cs);
@@ -1435,7 +1436,7 @@ static void vmembk_remove(vmembk_t* p0) {
   for (vmembk_t** pp = &(vmem.first); *pp; pp = &((*pp)->next)) {
     if (*pp == p0) {
       *pp = p0->next;
-      ::free(p0);
+      permit_forbidden_function::free(p0);
       return;
     }
   }
@@ -1456,7 +1457,7 @@ static void vmembk_print_on(outputStream* os) {
 // If <requested_addr> is null, function will attach the memory anywhere.
 static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
-  trcVerbose("reserve_shmated_memory " UINTX_FORMAT " bytes, wishaddress "
+  trcVerbose("reserve_shmated_memory %zu bytes, wishaddress "
     PTR_FORMAT "...", bytes, p2i(requested_addr));
 
   // We must prevent anyone from attaching too close to the
@@ -1477,7 +1478,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
   if (shmid == -1) {
     ErrnoPreserver ep;
-    log_trace(os, map)("shmget(.., " UINTX_FORMAT ", ..) failed (errno=%s).",
+    log_trace(os, map)("shmget(.., %zu, ..) failed (errno=%s).",
                        size, os::strerror(ep.saved_errno()));
     return nullptr;
   }
@@ -1493,7 +1494,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   shmbuf.shm_pagesize = 64*K;
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
     assert(false,
-           "Failed to set page size (need " UINTX_FORMAT
+           "Failed to set page size (need %zu"
            " 64K pages) - shmctl failed. (errno=%s).",
            size / (64 * K), os::strerror(os::get_last_error()));
   }
@@ -1536,7 +1537,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   if (addr) {
     log_trace(os, map)("shm-allocated succeeded: " RANGEFMT
-                       " (" UINTX_FORMAT " %s pages)",
+                       " (%zu %s pages)",
                        RANGEFMTARGS(addr, size),
                        size / real_pagesize,
                        describe_pagesize(real_pagesize));
@@ -1545,7 +1546,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
       log_trace(os, map)("shm-allocate failed: " RANGEFMT,
                          RANGEFMTARGS(requested_addr, size));
     } else {
-      log_trace(os, map)("failed to shm-allocate " UINTX_FORMAT
+      log_trace(os, map)("failed to shm-allocate %zu"
                          " bytes at any address.",
                          size);
     }
@@ -1587,7 +1588,7 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
 
   if (rc != 0) {
     ErrnoPreserver ep;
-    log_warning(os)("disclaim64(" PTR_FORMAT ", " UINTX_FORMAT ") failed, %s\n", p2i(addr), size, os::strerror(ep.saved_errno()));
+    log_warning(os)("disclaim64(" PTR_FORMAT ", %zu) failed, %s\n", p2i(addr), size, os::strerror(ep.saved_errno()));
     return false;
   }
   return true;
@@ -1599,7 +1600,7 @@ static bool uncommit_shmated_memory(char* addr, size_t size) {
 // If <requested_addr> is given, an attempt is made to attach at the given address.
 // Failing that, memory is allocated at any address.
 static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
-  trcVerbose("reserve_mmaped_memory " UINTX_FORMAT " bytes, wishaddress " PTR_FORMAT "...",
+  trcVerbose("reserve_mmaped_memory %zu bytes, wishaddress " PTR_FORMAT "...",
     bytes, p2i(requested_addr));
 
   if (requested_addr && !is_aligned_to(requested_addr, os::vm_page_size()) != 0) {
@@ -1689,7 +1690,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   }
   addr = addr_aligned;
 
-  trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (" UINTX_FORMAT " bytes)",
+  trcVerbose("mmap-allocated " PTR_FORMAT " .. " PTR_FORMAT " (%zu bytes)",
     p2i(addr), p2i(addr + bytes), bytes);
 
   // bookkeeping
@@ -2783,7 +2784,7 @@ bool os::start_debugging(char *buf, int buflen) {
   jio_snprintf(p, buflen -len,
                  "\n\n"
                  "Do you want to debug the problem?\n\n"
-                 "To debug, run 'dbx -a %d'; then switch to thread tid " INTX_FORMAT ", k-tid " INTX_FORMAT "\n"
+                 "To debug, run 'dbx -a %d'; then switch to thread tid %zd, k-tid %zd\n"
                  "Enter 'yes' to launch dbx automatically (PATH must include dbx)\n"
                  "Otherwise, press RETURN to abort...",
                  os::current_process_id(),

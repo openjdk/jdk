@@ -344,20 +344,7 @@ void LIRGenerator::do_NegateOp(NegateOp* x) {
   value.load_item();
   LIR_Opr reg = rlock(x);
 
-  LIR_Opr tmp = LIR_OprFact::illegalOpr;
-#ifdef _LP64
-  if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
-    if (x->type()->tag() == doubleTag) {
-      tmp = new_register(T_DOUBLE);
-      __ move(LIR_OprFact::doubleConst(-0.0), tmp);
-    }
-    else if (x->type()->tag() == floatTag) {
-      tmp = new_register(T_FLOAT);
-      __ move(LIR_OprFact::floatConst(-0.0), tmp);
-    }
-  }
-#endif
-  __ negate(value.result(), reg, tmp);
+  __ negate(value.result(), reg);
 
   set_result(x, round_item(reg));
 }
@@ -830,16 +817,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   LIR_Opr calc_result = rlock_result(x);
 
   LIR_Opr tmp = LIR_OprFact::illegalOpr;
-#ifdef _LP64
-  if (UseAVX > 2 && (!VM_Version::supports_avx512vl()) &&
-      (x->id() == vmIntrinsics::_dabs)) {
-    tmp = new_register(T_DOUBLE);
-    __ move(LIR_OprFact::doubleConst(-0.0), tmp);
-  }
-#endif
   if (x->id() == vmIntrinsics::_floatToFloat16) {
     tmp = new_register(T_FLOAT);
-    __ move(LIR_OprFact::floatConst(-0.0), tmp);
   }
 
   switch(x->id()) {
