@@ -331,7 +331,7 @@ class Http1Response<T> {
                 );
                 if (cf.isCompletedExceptionally()) {
                     // if an error occurs during subscription
-                    connection.close(cf.exceptionNow());
+                    connection.close(Utils.exceptionNow(cf));
                     return;
                 }
                 // increment the reference count on the HttpClientImpl

@@ -93,17 +93,20 @@ public class ExpectContinueResetTest {
         err.printf("\nTesting with Version: %s, URI: %s\n", HTTP_2, uri.toASCIIString());
         Iterable<byte[]> iterable = EndlessDataChunks::new;
         HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofByteArrays(iterable);
-        Exception exception = null;
-        Throwable testThrowable = null;
+        Exception expectedException = null;
         try {
             performRequest(testPub, uri);
+            throw new AssertionError("Expected exception not raised for " + uri);
         } catch (Exception e) {
-            exception = e;
-            testThrowable = e.getCause();
+            expectedException = e;
         }
-        assertNotNull(exception, "Request should have completed exceptionally but exception is null");
-        assertNotNull(testThrowable, "Request should have completed exceptionally but testThrowable is null");
-        assertEquals(testThrowable.getClass(), IOException.class, "Test should have closed with an IOException");
+        Throwable testThrowable = expectedException.getCause();
+        if (testThrowable == null) {
+            throw new AssertionError("Unexpected null cause for " + expectedException,
+                    expectedException);
+        }
+        assertEquals(testThrowable.getClass(), IOException.class,
+                "Test should have closed with an IOException");
         testThrowable.printStackTrace();
     }
 
