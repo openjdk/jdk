@@ -30,7 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 void G1InitLogger::print_heap() {
-  log_info_p(gc, init)("Heap Region Size: " SIZE_FORMAT "M", G1HeapRegionSize / M);
+  log_info_p(gc, init)("Heap Region Size: %zuM", G1HeapRegionSize / M);
   GCInitLogger::print_heap();
 }
 

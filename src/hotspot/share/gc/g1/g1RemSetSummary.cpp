@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,29 +153,29 @@ public:
   size_t code_root_elems() const { return _code_root_elems; }
 
   void print_rs_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    " SIZE_FORMAT_W(8) " (%5.1f%%) by " SIZE_FORMAT " "
-                  "(" SIZE_FORMAT ") %s regions unused " SIZE_FORMAT,
+    out->print_cr("    %8zu (%5.1f%%) by %zu "
+                  "(%zu) %s regions unused %zu",
                   rs_mem_size(), rs_mem_size_percent_of(total),
                   amount_tracked(), amount(),
                   _name, rs_unused_mem_size());
   }
 
   void print_cards_occupied_info_on(outputStream * out, size_t total) {
-    out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) entries by " SIZE_FORMAT " "
-                  "(" SIZE_FORMAT ") %s regions",
+    out->print_cr("     %8zu (%5.1f%%) entries by %zu "
+                  "(%zu) %s regions",
                   cards_occupied(), cards_occupied_percent_of(total),
                   amount_tracked(), amount(), _name);
   }
 
   void print_code_root_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    " SIZE_FORMAT_W(8) "%s (%5.1f%%) by " SIZE_FORMAT " %s regions",
+    out->print_cr("    %8zu%s (%5.1f%%) by %zu %s regions",
         byte_size_in_proper_unit(code_root_mem_size()),
         proper_unit_for_byte_size(code_root_mem_size()),
         code_root_mem_size_percent_of(total), amount(), _name);
   }
 
   void print_code_root_elems_info_on(outputStream * out, size_t total) {
-    out->print_cr("     " SIZE_FORMAT_W(8) " (%5.1f%%) elements by " SIZE_FORMAT " %s regions",
+    out->print_cr("     %8zu (%5.1f%%) elements by %zu %s regions",
         code_root_elems(), code_root_elems_percent_of(total), amount(), _name);
   }
 };
@@ -267,8 +267,8 @@ public:
     RegionTypeCounter* counters[] = { &_young, &_humongous, &_free, &_old, nullptr };
 
     out->print_cr(" Current rem set statistics");
-    out->print_cr("  Total per region rem sets sizes = " SIZE_FORMAT
-                  " Max = " SIZE_FORMAT " unused = " SIZE_FORMAT,
+    out->print_cr("  Total per region rem sets sizes = %zu"
+                  " Max = %zu unused = %zu",
                   total_rs_mem_sz(),
                   max_rs_mem_sz(),
                   total_rs_unused_mem_sz());
@@ -276,7 +276,7 @@ public:
       (*current)->print_rs_mem_info_on(out, total_rs_mem_sz());
     }
 
-    out->print_cr("    " SIZE_FORMAT " occupied cards represented.",
+    out->print_cr("    %zu occupied cards represented.",
                   total_cards_occupied());
     for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_cards_occupied_info_on(out, total_cards_occupied());
@@ -285,7 +285,7 @@ public:
     // Largest sized rem set region statistics
     G1HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
     out->print_cr("    Region with largest rem set = " HR_FORMAT ", "
-                  "size = " SIZE_FORMAT " occupied = " SIZE_FORMAT,
+                  "size = %zu occupied = %zu",
                   HR_FORMAT_PARAMS(max_rs_mem_sz_region()),
                   rem_set->mem_size(),
                   rem_set->occupied());
@@ -296,8 +296,8 @@ public:
 
     // Code root statistics
     G1HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
-    out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "%s."
-                  "  Max = " SIZE_FORMAT "%s.",
+    out->print_cr("  Total heap region code root sets sizes = %zu%s."
+                  "  Max = %zu%s.",
                   byte_size_in_proper_unit(total_code_root_mem_sz()),
                   proper_unit_for_byte_size(total_code_root_mem_sz()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
@@ -306,14 +306,14 @@ public:
       (*current)->print_code_root_mem_info_on(out, total_code_root_mem_sz());
     }
 
-    out->print_cr("    " SIZE_FORMAT " code roots represented.",
+    out->print_cr("    %zu code roots represented.",
                   total_code_root_elems());
     for (RegionTypeCounter** current = &counters[0]; *current != nullptr; current++) {
       (*current)->print_code_root_elems_info_on(out, total_code_root_elems());
     }
 
     out->print_cr("    Region with largest amount of code roots = " HR_FORMAT ", "
-                  "size = " SIZE_FORMAT "%s, num_slots = " SIZE_FORMAT ".",
+                  "size = %zu%s, num_slots = %zu.",
                   HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()),

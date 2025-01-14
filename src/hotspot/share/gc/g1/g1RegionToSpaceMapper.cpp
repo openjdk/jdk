@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     guarantee(is_range_uncommitted(start_idx, num_regions),
-              "Range not uncommitted, start: %u, num_regions: " SIZE_FORMAT,
+              "Range not uncommitted, start: %u, num_regions: %zu",
               start_idx, num_regions);
 
     const size_t start_page = (size_t)start_idx * _pages_per_region;
@@ -113,7 +113,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
   virtual void uncommit_regions(uint start_idx, size_t num_regions) {
     guarantee(is_range_committed(start_idx, num_regions),
-             "Range not committed, start: %u, num_regions: " SIZE_FORMAT,
+             "Range not committed, start: %u, num_regions: %zu",
               start_idx, num_regions);
 
     _storage.uncommit((size_t)start_idx * _pages_per_region, num_regions * _pages_per_region);

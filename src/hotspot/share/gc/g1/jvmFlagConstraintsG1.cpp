@@ -83,7 +83,7 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   // Default value of G1HeapRegionSize=0 means will be set ergonomically.
   if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < G1HeapRegionBounds::min_size())) {
     JVMFlag::printError(verbose,
-                        "G1HeapRegionSize (" SIZE_FORMAT ") must be "
+                        "G1HeapRegionSize (%zu) must be "
                         "greater than or equal to ergonomic heap region minimum size\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -171,7 +171,7 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
   // So maximum of NewSize should be 'max_juint * 1M'
   if (UseG1GC && (value > (max_juint * 1 * M))) {
     JVMFlag::printError(verbose,
-                        "NewSize (" SIZE_FORMAT ") must be less than ergonomic maximum value\n",
+                        "NewSize (%zu) must be less than ergonomic maximum value\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

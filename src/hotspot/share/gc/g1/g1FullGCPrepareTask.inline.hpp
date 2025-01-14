@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(G1HeapRegion* hr) 
 
     // Too many live objects in the region; skip compacting it.
     _collector->update_from_compacting_to_skip_compacting(hr->hrm_index());
-    log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: " SIZE_FORMAT,
+    log_trace(gc, phases)("Phase 2: skip compaction region index: %u, live words: %zu",
                             hr->hrm_index(), _collector->live_words(hr->hrm_index()));
   }
 

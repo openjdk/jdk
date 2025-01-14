@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,7 +389,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   if (is_empty()) {
     bool has_code_roots = code_roots_length > 0;
     if (has_code_roots) {
-      log_error(gc, verify)("region " HR_FORMAT " is empty but has " SIZE_FORMAT " code root entries",
+      log_error(gc, verify)("region " HR_FORMAT " is empty but has %zu code root entries",
                             HR_FORMAT_PARAMS(this), code_roots_length);
     }
     return has_code_roots;
@@ -398,7 +398,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   if (is_continues_humongous()) {
     bool has_code_roots = code_roots_length > 0;
     if (has_code_roots) {
-      log_error(gc, verify)("region " HR_FORMAT " is a continuation of a humongous region but has " SIZE_FORMAT " code root entries",
+      log_error(gc, verify)("region " HR_FORMAT " is a continuation of a humongous region but has %zu code root entries",
                             HR_FORMAT_PARAMS(this), code_roots_length);
     }
     return has_code_roots;

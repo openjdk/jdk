@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ void G1FromCardCache::initialize(uint max_reserved_regions) {
 
 void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
   guarantee((size_t)start_idx + new_num_regions <= max_uintx,
-            "Trying to invalidate beyond maximum region, from %u size " SIZE_FORMAT,
+            "Trying to invalidate beyond maximum region, from %u size %zu",
             start_idx, new_num_regions);
   uint end_idx = (start_idx + (uint)new_num_regions);
   assert(end_idx <= _max_reserved_regions, "Must be within max.");
@@ -73,7 +73,7 @@ void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
 void G1FromCardCache::print(outputStream* out) {
   for (uint i = 0; i < num_par_rem_sets(); i++) {
     for (uint j = 0; j < _max_reserved_regions; j++) {
-      out->print_cr("_from_card_cache[%u][%u] = " SIZE_FORMAT ".",
+      out->print_cr("_from_card_cache[%u][%u] = %zu.",
                     i, j, at(i, j));
     }
   }

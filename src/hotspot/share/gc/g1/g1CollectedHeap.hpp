@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,8 +361,8 @@ private:
   do {                                                                        \
     size_t cur_used_bytes = g1h->used();                                      \
     size_t recal_used_bytes = g1h->recalculate_used();                        \
-    assert(cur_used_bytes == recal_used_bytes, "Used(" SIZE_FORMAT ") is not" \
-           " same as recalculated used(" SIZE_FORMAT ").",                    \
+    assert(cur_used_bytes == recal_used_bytes, "Used(%zu) is not" \
+           " same as recalculated used(%zu).",                    \
            cur_used_bytes, recal_used_bytes);                                 \
   } while (0)
 #else

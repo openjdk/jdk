@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ G1MonotonicArenaMemoryStats G1HeapRegionRemSet::card_set_memory_stats() const {
 }
 
 void G1HeapRegionRemSet::print_static_mem_size(outputStream* out) {
-  out->print_cr("  Static structures = " SIZE_FORMAT, G1HeapRegionRemSet::static_mem_size());
+  out->print_cr("  Static structures = %zu", G1HeapRegionRemSet::static_mem_size());
 }
 
 // Code roots support

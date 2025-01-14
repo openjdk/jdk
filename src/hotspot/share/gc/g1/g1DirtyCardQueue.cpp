@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ void G1DirtyCardQueueSet::verify_num_cards() const {
     actual += cur->size();
   }
   assert(actual == Atomic::load(&_num_cards),
-         "Num entries in completed buffers should be " SIZE_FORMAT " but are " SIZE_FORMAT,
+         "Num entries in completed buffers should be %zu but are %zu",
          Atomic::load(&_num_cards), actual);
 }
 #endif // ASSERT
