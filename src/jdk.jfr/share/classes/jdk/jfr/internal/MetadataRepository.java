@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,6 @@ public final class MetadataRepository {
     }
 
     public synchronized void unregister(Class<? extends Event> eventClass) {
-        SecuritySupport.checkRegisterPermission();
         EventConfiguration configuration = getConfiguration(eventClass, false);
         if (configuration != null) {
             configuration.getPlatformEventType().setRegistered(false);
@@ -135,7 +134,6 @@ public final class MetadataRepository {
     }
 
     public synchronized EventType register(Class<? extends jdk.internal.event.Event> eventClass, List<AnnotationElement> dynamicAnnotations, List<ValueDescriptor> dynamicFields) {
-        SecuritySupport.checkRegisterPermission();
         if (JVM.isExcluded(eventClass)) {
             // Event classes are marked as excluded during class load
             // if they override methods in the jdk.jfr.Event class, i.e. commit().
@@ -186,7 +184,7 @@ public final class MetadataRepository {
             if (cachedEventConfigurationConstructor == null) {
                 var argClasses = new Class<?>[] { EventType.class, EventControl.class};
                 Constructor<EventConfiguration> c = EventConfiguration.class.getDeclaredConstructor(argClasses);
-                SecuritySupport.setAccessible(c);
+                c.setAccessible(true);
                 cachedEventConfigurationConstructor = c;
             }
             return cachedEventConfigurationConstructor.newInstance(eventType, ec);

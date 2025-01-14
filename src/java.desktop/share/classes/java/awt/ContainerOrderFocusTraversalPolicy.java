@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,12 +66,12 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.ContainerOrderFocusTraversalPolicy");
 
     /**
-     * This constant is used when the forward focus traversal order is active.
+     * @serial This constant is used when the forward focus traversal order is active.
      */
     private final int FORWARD_TRAVERSAL = 0;
 
     /**
-     * This constant is used when the backward focus traversal order is active.
+     * @serial This constant is used when the backward focus traversal order is active.
      */
     private final int BACKWARD_TRAVERSAL = 1;
 
@@ -82,7 +82,7 @@ public class ContainerOrderFocusTraversalPolicy extends FocusTraversalPolicy
     private static final long serialVersionUID = 486933713763926351L;
 
     /**
-     * Whether this {@code ContainerOrderFocusTraversalPolicy} transfers focus
+     * @serial Whether this {@code ContainerOrderFocusTraversalPolicy} transfers focus
      * down-cycle implicitly.
      */
     private boolean implicitDownCycleTraversal = true;

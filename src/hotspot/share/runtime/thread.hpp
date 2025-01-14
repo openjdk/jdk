@@ -26,9 +26,9 @@
 #ifndef SHARE_RUNTIME_THREAD_HPP
 #define SHARE_RUNTIME_THREAD_HPP
 
-#include "jni.h"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"

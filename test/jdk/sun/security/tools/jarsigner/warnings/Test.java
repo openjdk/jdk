@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public abstract class Test {
             + "This algorithm will be disabled in a future update.";
 
     static final String WEAK_KEY_WARNING
-            = "This key size will be disabled in a future update.";
+            = "It will be disabled in a future update.";
 
     static final String JAR_SIGNED = "jar signed.";
 

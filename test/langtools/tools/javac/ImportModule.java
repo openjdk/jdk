@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8328481 8332236 8332890 8344647
+ * @bug 8328481 8332236 8332890 8344647 8347646
  * @summary Check behavior of module imports.
  * @library /tools/lib
  * @modules java.logging
@@ -39,6 +39,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskEvent.Kind;
 import com.sun.source.util.TaskListener;
+import java.lang.classfile.ClassFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -965,5 +966,85 @@ public class ImportModule extends TestRunner {
                 .files(tb.findJavaFiles(test))
                 .run(Task.Expect.SUCCESS)
                 .writeAll();
+    }
+
+    @Test //JDK-8347646
+    public void testRequiresTransitiveJavaBase(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        Path ma = src.resolve("ma");
+        Path maClasses = classes.resolve("ma");
+        tb.writeJavaFiles(ma,
+                          """
+                          module ma {
+                             requires transitive java.base;
+                          }
+                          """);
+        Path test = src.resolve("test");
+        tb.writeJavaFiles(test,
+                          """
+                          module test {
+                              requires ma;
+                          }
+                          """,
+                          """
+                          package test;
+                          import module ma;
+                          public class Test {
+                              public static void main(String... args) {
+                                  System.out.println(List.of("Hello"));
+                              }
+                          }
+                          """);
+
+        Files.createDirectories(maClasses);
+
+        List<String> actualErrors = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(maClasses)
+                .files(tb.findJavaFiles(ma))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expectedErrors = List.of(
+                "module-info.java:2:4: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.java.base.transitive)",
+                "1 error"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + actualErrors);
+
+        }
+
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--source", "9")
+            .outdir(maClasses)
+            .files(tb.findJavaFiles(ma))
+            .run()
+            .writeAll();
+
+        Path maModuleInfo = maClasses.resolve("module-info.class");
+
+        if (ClassFile.of().parse(maModuleInfo).minorVersion() == ClassFile.PREVIEW_MINOR_VERSION) {
+            throw new AssertionError("wrong minor version");
+        }
+
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(maClasses)
+            .files(tb.findJavaFiles(ma))
+            .run()
+            .writeAll();
+
+        Path maModuleInfo2 = maClasses.resolve("module-info.class");
+
+        if (ClassFile.of().parse(maModuleInfo2).minorVersion() != ClassFile.PREVIEW_MINOR_VERSION) {
+            throw new AssertionError("wrong minor version");
+        }
     }
 }
