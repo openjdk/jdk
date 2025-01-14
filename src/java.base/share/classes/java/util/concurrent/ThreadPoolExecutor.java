@@ -1261,7 +1261,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         if (maximumPoolSize <= 0 || maximumPoolSize < corePoolSize)
             throw new IllegalArgumentException("maximumPoolSize must be positive and greater-or-equal to corePoolSize");
         if (keepAliveTime < 0)
-            throw new IllegalArgumentException("keepAliveTime must not be negative");
+            throw new IllegalArgumentException("keepAliveTime must be non-negative");
 
         Objects.requireNonNull(workQueue, "workQueue");
         Objects.requireNonNull(threadFactory, "threadFactory");
