@@ -28,7 +28,6 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
-#include "opto/relaxedMath.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -145,6 +144,9 @@ public:
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual uint size_of() const { return sizeof(*this); }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
+    return _optimization_mode;
+  }
 };
 
 //------------------------------MulDNode---------------------------------------
@@ -166,6 +168,9 @@ public:
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual uint size_of() const { return sizeof(*this); }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
+    return _optimization_mode;
+  }
 };
 
 //-------------------------------MulHiLNode------------------------------------

@@ -28,7 +28,6 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
-#include "opto/relaxedMath.hpp"
 #include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -141,6 +140,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual uint size_of() const { return sizeof(*this); }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
+    return _optimization_mode;
+  }
 };
 
 //------------------------------AddDNode---------------------------------------
@@ -161,6 +163,9 @@ public:
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual uint size_of() const { return sizeof(*this); }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
+    return _optimization_mode;
+  }
 };
 
 //------------------------------AddPNode---------------------------------------

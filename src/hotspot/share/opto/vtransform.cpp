@@ -559,8 +559,11 @@ VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
   // TODO maybe put in a special method
   bool requires_strict_order = false;
   switch (opc) {
-  case Op_AddF: case Op_MulF: case Op_AddD: case Op_MulD:
-    requires_strict_order = true;
+  case Op_AddF:
+  case Op_MulF:
+  case Op_AddD:
+  case Op_MulD:
+    requires_strict_order = !first->relaxed_math_optimization_mode().is_allow_reduction_reordering();
     break;
   }
 

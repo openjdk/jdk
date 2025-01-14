@@ -33,7 +33,6 @@
 #include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
-#include "opto/relaxedMath.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
