@@ -104,15 +104,15 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
             if (!retainedBuffers.isEmpty()) {
                 downstreamSubscriber.onNext(retainedBuffers);
             }
-            subscription.cancel();
             downstreamSubscriber.onComplete();
+            subscription.cancel();
         }
 
         // Partial consumption is not allowed, trigger failure
         else {
-            subscription.cancel();
             downstreamSubscriber.onError(new IllegalStateException(
                     "the maximum number of bytes that are allowed to be consumed is exceeded"));
+            subscription.cancel();
         }
 
     }
