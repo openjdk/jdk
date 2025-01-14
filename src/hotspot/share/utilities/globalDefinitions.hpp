@@ -136,9 +136,6 @@ class oopDesc;
 #define UINT64_FORMAT_0          "%016"       PRIx64
 
 // Format integers which change size between 32- and 64-bit.
-#define SSIZE_FORMAT             "%"          PRIdPTR
-#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
 #ifdef _LP64

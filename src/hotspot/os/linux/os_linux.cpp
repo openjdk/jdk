@@ -2306,14 +2306,14 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
       info->rssanon = info->rssfile = info->rssshmem = -1;
   if (f != nullptr) {
     while (::fgets(buf, sizeof(buf), f) != nullptr && num_found < num_values) {
-      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &info->vmsize) == 1) ||
-           (info->vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &info->vmpeak) == 1) ||
-           (info->vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &info->vmswap) == 1) ||
-           (info->vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &info->vmhwm) == 1) ||
-           (info->vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &info->vmrss) == 1) ||
-           (info->rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &info->rssanon) == 1) || // Needs Linux 4.5
-           (info->rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &info->rssfile) == 1) || // Needs Linux 4.5
-           (info->rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &info->rssshmem) == 1)  // Needs Linux 4.5
+      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: %zd kB", &info->vmsize) == 1) ||
+           (info->vmpeak == -1    && sscanf(buf, "VmPeak: %zd kB", &info->vmpeak) == 1) ||
+           (info->vmswap == -1    && sscanf(buf, "VmSwap: %zd kB", &info->vmswap) == 1) ||
+           (info->vmhwm == -1     && sscanf(buf, "VmHWM: %zd kB", &info->vmhwm) == 1) ||
+           (info->vmrss == -1     && sscanf(buf, "VmRSS: %zd kB", &info->vmrss) == 1) ||
+           (info->rssanon == -1   && sscanf(buf, "RssAnon: %zd kB", &info->rssanon) == 1) || // Needs Linux 4.5
+           (info->rssfile == -1   && sscanf(buf, "RssFile: %zd kB", &info->rssfile) == 1) || // Needs Linux 4.5
+           (info->rssshmem == -1  && sscanf(buf, "RssShmem: %zd kB", &info->rssshmem) == 1)  // Needs Linux 4.5
            )
       {
         num_found ++;
@@ -2361,15 +2361,15 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   //  rss its components if the kernel is recent enough.
   meminfo_t info;
   if (query_process_memory_info(&info)) {
-    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmsize, info.vmpeak);
-    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmrss, info.vmhwm);
+    st->print_cr("Virtual Size: %zdK (peak: %zdK)", info.vmsize, info.vmpeak);
+    st->print("Resident Set Size: %zdK (peak: %zdK)", info.vmrss, info.vmhwm);
     if (info.rssanon != -1) { // requires kernel >= 4.5
-      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+      st->print(" (anon: %zdK, file: %zdK, shmem: %zdK)",
                 info.rssanon, info.rssfile, info.rssshmem);
     }
     st->cr();
     if (info.vmswap != -1) { // requires kernel >= 2.6.34
-      st->print_cr("Swapped out: " SSIZE_FORMAT "K", info.vmswap);
+      st->print_cr("Swapped out: %zdK", info.vmswap);
     }
   } else {
     st->print_cr("Could not open /proc/self/status to get process memory related information");
