@@ -751,7 +751,15 @@ public interface HttpResponse<T> {
          }
 
         /**
-         * {@return a handler limiting the number of bytes consumed and passed to the given downstream}
+         * {@return a {@code BodyHandler} limiting the number of bytes consumed
+         * and passed to the given downstream {@code BodyHandler}}
+         * <p>
+         * If the number of bytes received exceeds the maximum number of bytes
+         * desired as indicated by the given {@code capacity},
+         * {@link BodySubscriber#onError(Throwable) onError} is called on the
+         * downstream {@code BodySubscriber} with an {@link IOException}
+         * indicating that the capacity is exceeded, and the upstream
+         * subscription is cancelled.
          *
          * @param downstreamHandler the downstream handler to pass received data to
          * @param capacity the maximum number of bytes that are allowed
@@ -1373,7 +1381,15 @@ public interface HttpResponse<T> {
         }
 
         /**
-         * {@return a subscriber limiting the number of bytes consumed and passed to the given downstream}
+         * {@return a {@code BodySubscriber} limiting the number of bytes
+         * consumed and passed to the given downstream {@code BodySubscriber}}
+         * <p>
+         * If the number of bytes received exceeds the maximum number of bytes
+         * desired as indicated by the given {@code capacity},
+         * {@link BodySubscriber#onError(Throwable) onError} is called on the
+         * downstream {@code BodySubscriber} with an {@link IOException}
+         * indicating that the capacity is exceeded, and the upstream
+         * subscription is cancelled.
          *
          * @param downstreamSubscriber the downstream subscriber to pass received data to
          * @param capacity the maximum number of bytes that are allowed
