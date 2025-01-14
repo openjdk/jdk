@@ -249,7 +249,7 @@ G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
 }
 
 bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
-  assert(new_capacity <= _max_capacity, "Cannot expand overflow mark stack beyond the max_capacity%zu chunks.", _max_capacity);
+  assert(new_capacity <= _max_capacity, "Cannot expand overflow mark stack beyond the max_capacity of %zu chunks.", _max_capacity);
 
   size_t highest_bucket = get_bucket(new_capacity - 1);
   size_t i = get_bucket(_capacity);
