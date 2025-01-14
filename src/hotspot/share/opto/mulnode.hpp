@@ -28,6 +28,7 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
+#include "opto/relaxedMath.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -129,7 +130,9 @@ public:
 // Multiply 2 floats
 class MulFNode : public MulNode {
 public:
-  MulFNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
+  const RelaxedMathOptimizationMode _optimization_mode;
+  MulFNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
+    MulNode(in1, in2), _optimization_mode(optimization_mode) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
@@ -141,13 +144,16 @@ public:
   int min_opcode() const { return Op_MinF; }
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------MulDNode---------------------------------------
 // Multiply 2 doubles
 class MulDNode : public MulNode {
 public:
-  MulDNode( Node *in1, Node *in2 ) : MulNode(in1,in2) {}
+  const RelaxedMathOptimizationMode _optimization_mode;
+  MulDNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
+    MulNode(in1, in2), _optimization_mode(optimization_mode) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
@@ -159,6 +165,7 @@ public:
   int min_opcode() const { return Op_MinD; }
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //-------------------------------MulHiLNode------------------------------------

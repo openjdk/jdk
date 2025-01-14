@@ -552,30 +552,6 @@ public:
 #endif
 };
 
-class RelaxedMathOptimizationMode : public StackObj {
-  enum Mode {
-    AllowReductionReordering = 1,
-    AllowFMA                 = 2,
-  };
-
-  const int _mode;
-
-  RelaxedMathOptimizationMode(int mode) : _mode(mode) {}
-
-public:
-  static RelaxedMathOptimizationMode make(Node* n) {
-    return RelaxedMathOptimizationMode(0);
-  }
-
-  bool is_allow_reduction_reordering() const {
-    return _mode & AllowReductionReordering;
-  }
-
-  bool is_allow_fma() const {
-    return _mode & AllowFMA;
-  }
-};
-
 class TypeInteger : public Type {
 protected:
   TypeInteger(TYPES t, int w) : Type(t), _widen(w) {}

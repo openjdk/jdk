@@ -28,6 +28,7 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
+#include "opto/relaxedMath.hpp"
 #include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -125,7 +126,10 @@ public:
 // Add 2 floats
 class AddFNode : public AddNode {
 public:
-  AddFNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  // TODO hash
+  const RelaxedMathOptimizationMode _optimization_mode;
+  AddFNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
+    AddNode(in1, in2), _optimization_mode(optimization_mode) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
@@ -136,13 +140,16 @@ public:
   int min_opcode() const { return Op_MinF; }
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegF; }
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------AddDNode---------------------------------------
 // Add 2 doubles
 class AddDNode : public AddNode {
 public:
-  AddDNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  const RelaxedMathOptimizationMode _optimization_mode;
+  AddDNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
+    AddNode(in1, in2), _optimization_mode(optimization_mode) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
@@ -153,6 +160,7 @@ public:
   int min_opcode() const { return Op_MinD; }
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegD; }
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------AddPNode---------------------------------------

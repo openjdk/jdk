@@ -41,6 +41,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
+#include "opto/relaxedMath.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -2281,7 +2282,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fadd:
     b = pop();
     a = pop();
-    c = _gvn.transform( new AddFNode(a,b) );
+    c = _gvn.transform( new AddFNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     d = precision_rounding(c);
     push( d );
     break;
@@ -2289,7 +2290,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fmul:
     b = pop();
     a = pop();
-    c = _gvn.transform( new MulFNode(a,b) );
+    c = _gvn.transform( new MulFNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     d = precision_rounding(c);
     push( d );
     break;
@@ -2408,7 +2409,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_dadd:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new AddDNode(a,b) );
+    c = _gvn.transform( new AddDNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     d = dprecision_rounding(c);
     push_pair( d );
     break;
@@ -2416,7 +2417,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_dmul:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new MulDNode(a,b) );
+    c = _gvn.transform( new MulDNode(a, b, RelaxedMathOptimizationMode::make_default()) );
     d = dprecision_rounding(c);
     push_pair( d );
     break;

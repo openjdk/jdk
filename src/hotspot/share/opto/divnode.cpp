@@ -33,6 +33,7 @@
 #include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/relaxedMath.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -786,7 +787,8 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   assert( frexp((double)reciprocal, &exp) == 0.5, "reciprocal should be power of 2" );
 
   // return multiplication by the reciprocal
-  return (new MulFNode(in(1), phase->makecon(TypeF::make(reciprocal))));
+  RelaxedMathOptimizationMode mode = RelaxedMathOptimizationMode::make_default();
+  return (new MulFNode(in(1), phase->makecon(TypeF::make(reciprocal)), mode));
 }
 
 //=============================================================================
@@ -878,7 +880,8 @@ Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   assert( frexp(reciprocal, &exp) == 0.5, "reciprocal should be power of 2" );
 
   // return multiplication by the reciprocal
-  return (new MulDNode(in(1), phase->makecon(TypeD::make(reciprocal))));
+  RelaxedMathOptimizationMode mode = RelaxedMathOptimizationMode::make_default();
+  return (new MulDNode(in(1), phase->makecon(TypeF::make(reciprocal)), mode));
 }
 
 //=============================================================================

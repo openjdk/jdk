@@ -1820,7 +1820,8 @@ bool LibraryCallKit::inline_math_pow() {
     if (d->getd() == 2.0) {
       // Special case: pow(x, 2.0) => x * x
       Node* base = round_double_node(argument(0));
-      set_result(_gvn.transform(new MulDNode(base, base)));
+      RelaxedMathOptimizationMode mode = RelaxedMathOptimizationMode::make_default();
+      set_result(_gvn.transform(new MulDNode(base, base, mode)));
       return true;
     } else if (d->getd() == 0.5 && Matcher::match_rule_supported(Op_SqrtD)) {
       // Special case: pow(x, 0.5) => sqrt(x)
@@ -5025,21 +5026,23 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
 bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
   Node* n1 = argument(0);
   Node* n2 = argument(1);
-  Node* n3 = argument(2); // TODO
+  Node* n3 = argument(2);
   Node* result = nullptr;
+
+  RelaxedMathOptimizationMode mode = RelaxedMathOptimizationMode::make(n3);
 
   switch (id) {
   case vmIntrinsics::_RelaxedMath_float_add:
-    result = new AddFNode(n1, n2);
+    result = new AddFNode(n1, n2, mode);
     break;
   case vmIntrinsics::_RelaxedMath_float_mul:
-    result = new MulFNode(n1, n2);
+    result = new MulFNode(n1, n2, mode);
     break;
   case vmIntrinsics::_RelaxedMath_double_add:
-    result = new AddDNode(n1, n2);
+    result = new AddDNode(n1, n2, mode);
     break;
   case vmIntrinsics::_RelaxedMath_double_mul:
-    result = new MulDNode(n1, n2);
+    result = new MulDNode(n1, n2, mode);
     break;
   default:
     fatal_unexpected_iid(id);

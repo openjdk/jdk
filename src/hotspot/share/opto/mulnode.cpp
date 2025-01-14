@@ -534,7 +534,7 @@ Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // x * 2 -> x + x
   if (t2 != nullptr && t2->getf() == 2) {
     Node* base = in(1);
-    return new AddFNode(base, base);
+    return new AddFNode(base, base, _optimization_mode);
   }
 
   return MulNode::Ideal(phase, can_reshape);
@@ -557,7 +557,7 @@ Node* MulDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // x * 2 -> x + x
   if (t2 != nullptr && t2->getd() == 2) {
     Node* base = in(1);
-    return new AddDNode(base, base);
+    return new AddDNode(base, base, _optimization_mode);
   }
 
   return MulNode::Ideal(phase, can_reshape);
