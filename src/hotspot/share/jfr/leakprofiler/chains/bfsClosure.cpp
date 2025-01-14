@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ static void log_frontier_level_summary(size_t level,
                                        size_t edge_size) {
   const size_t nof_edges_in_frontier = high_idx - low_idx;
   log_trace(jfr, system)(
-      "BFS front: " SIZE_FORMAT " edges: " SIZE_FORMAT " size: " SIZE_FORMAT " [KB]",
+      "BFS front: %zu edges: %zu size: %zu [KB]",
       level,
       nof_edges_in_frontier,
       (nof_edges_in_frontier * edge_size) / K
@@ -85,14 +85,14 @@ void BFSClosure::log_dfs_fallback() const {
 
   // additional information about DFS fallover
   log_trace(jfr, system)(
-      "BFS front: " SIZE_FORMAT " filled edge queue at edge: " SIZE_FORMAT,
+      "BFS front: %zu filled edge queue at edge: %zu",
       _current_frontier_level,
       _dfs_fallback_idx
                         );
 
   const size_t nof_dfs_completed_edges = _edge_queue->bottom() - _dfs_fallback_idx;
   log_trace(jfr, system)(
-      "DFS to complete " SIZE_FORMAT " edges size: " SIZE_FORMAT " [KB]",
+      "DFS to complete %zu edges size: %zu [KB]",
       nof_dfs_completed_edges,
       (nof_dfs_completed_edges * edge_size) / K
                         );
