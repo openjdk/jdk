@@ -64,9 +64,10 @@ public final class TestHKDF extends PKCS11Test {
             byte[] expectedPRK, byte[] expectedOKM, byte[] expectedOpOut) {
         // expectedOpOut value:
         //  - If derivedKeyAlg is AES, expectedOpOut is the result of encrypting
-        //    knownBytes with AES/CBC/PKCS5Padding and an IV of 16 zero bytes.
+        //    knownBytes with derivedKey, using AES/CBC/PKCS5Padding and an IV
+        //    of 16 zero bytes.
         //  - If derivedKeyAlg is Generic, expectedOpOut is the result of
-        //    calculating the HmacSHA256 of knownBytes.
+        //    calculating the HmacSHA256 of knownBytes with derivedKey.
     }
 
     private static class HkdfTestAssertionException extends Exception {
