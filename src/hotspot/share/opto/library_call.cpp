@@ -5029,7 +5029,15 @@ bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
   Node* n3 = argument(2);
   Node* result = nullptr;
 
-  RelaxedMathOptimizationMode mode = RelaxedMathOptimizationMode::make(n3);
+  const TypeInt* mode_t = gvn().type(n3)->is_int();
+  jint mode_con = 0;
+  if (mode_t->is_con()) {
+    jint con = mode_t->get_con();
+    if (0 <= con && con <= 3) {
+      mode_con = con;
+    }
+  }
+  RelaxedMathOptimizationMode mode(3);
 
   switch (id) {
   case vmIntrinsics::_RelaxedMath_float_add:

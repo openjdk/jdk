@@ -125,7 +125,7 @@ public:
 // Add 2 floats
 class AddFNode : public AddNode {
 public:
-  // TODO hash
+  // TODO hash, dump
   const RelaxedMathOptimizationMode _optimization_mode;
   AddFNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
     AddNode(in1, in2), _optimization_mode(optimization_mode) {}
