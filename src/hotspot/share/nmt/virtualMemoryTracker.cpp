@@ -90,7 +90,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
     }
   }
   assert(overlap_accepted, "overlap regions, total reserved area= " SIZE_FORMAT ", new region: base= " INTPTR_FORMAT ", end=" INTPTR_FORMAT,
-         total.reserve, p2i(base_addr), p2i(base_addr + size));
+         (size_t)total.reserve, p2i(base_addr), p2i(base_addr + size));
   VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag));
   apply_summary_diff(diff);
   return true;
