@@ -78,9 +78,8 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
         if (alreadySubscribed) {
             subscription.cancel();
         } else {
-            downstreamSubscriber.onSubscribe(subscription);
             length = 0;
-            subscription.request(1);    // Request piecemeal
+            downstreamSubscriber.onSubscribe(subscription);
         }
     }
 
@@ -97,7 +96,6 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
         assert subscription != null;
         if (lengthAllocated) {
             downstreamSubscriber.onNext(buffers);
-            subscription.request(1);    // Request piecemeal
         }
 
         // See if we can consume the input partially

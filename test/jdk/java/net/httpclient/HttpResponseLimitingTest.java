@@ -276,7 +276,7 @@ class HttpResponseLimitingTest {
 
         @Override
         public void onSubscribe(Subscription subscription) {
-            // Do nothing
+            subscription.request(Long.MAX_VALUE);
         }
 
         @Override
