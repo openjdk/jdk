@@ -53,10 +53,8 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * {@code setInput()} methods. The output byte sequence is written to the
  * output byte array or {@code ByteBuffer} passed to the {@code inflate()} methods.
  * <p>
- * To release resources used by the {@code Inflater}, applications must close the
- * {@code Inflater} by calling either the {@link #end()} or the {@link #close()} method.
- * After the {@code Inflater} has been closed, subsequent calls to several methods
- * of the {@code Inflater} will throw an {@link IllegalStateException}.
+ * To release the resources used by an {@code Inflater}, an application must close it
+ * by invoking its {@link #end()} or {@link #close()} method.
  *
  * @apiNote
  * This class implements {@link AutoCloseable} to facilitate its usage with
