@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,7 +400,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     if ((result == nullptr) && (QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc)("ParallelScavengeHeap::mem_allocate retries %d times", loop_count);
-      log_warning(gc)("\tsize=" SIZE_FORMAT, size);
+      log_warning(gc)("\tsize=%zu", size);
     }
   }
 

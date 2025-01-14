@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,7 +251,7 @@ bool PSOldGen::expand_by(size_t bytes) {
   if (result) {
     size_t new_mem_size = virtual_space()->committed_size();
     size_t old_mem_size = new_mem_size - bytes;
-    log_debug(gc)("Expanding %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+    log_debug(gc)("Expanding %s from %zuK by %zuK to %zuK",
                   name(), old_mem_size/K, bytes/K, new_mem_size/K);
   }
 
@@ -279,7 +279,7 @@ void PSOldGen::shrink(size_t bytes) {
 
     size_t new_mem_size = virtual_space()->committed_size();
     size_t old_mem_size = new_mem_size + bytes;
-    log_debug(gc)("Shrinking %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
+    log_debug(gc)("Shrinking %s from %zuK by %zuK to %zuK",
                   name(), old_mem_size/K, bytes/K, new_mem_size/K);
   }
 }
@@ -309,9 +309,9 @@ void PSOldGen::resize(size_t desired_free_space) {
   const size_t current_size = capacity_in_bytes();
 
   log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: "
-    "desired free: " SIZE_FORMAT " used: " SIZE_FORMAT
-    " new size: " SIZE_FORMAT " current size " SIZE_FORMAT
-    " gen limits: " SIZE_FORMAT " / " SIZE_FORMAT,
+    "desired free: %zu used: %zu"
+    " new size: %zu current size %zu"
+    " gen limits: %zu / %zu",
     desired_free_space, used_in_bytes(), new_size, current_size,
     max_gen_size(), min_gen_size());
 
@@ -329,7 +329,7 @@ void PSOldGen::resize(size_t desired_free_space) {
     shrink(change_bytes);
   }
 
-  log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: collection: %d (" SIZE_FORMAT ") -> (" SIZE_FORMAT ") ",
+  log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: collection: %d (%zu) -> (%zu) ",
                       ParallelScavengeHeap::heap()->total_collections(),
                       size_before,
                       virtual_space()->committed_size());
@@ -367,7 +367,7 @@ void PSOldGen::post_resize() {
 void PSOldGen::print() const { print_on(tty);}
 void PSOldGen::print_on(outputStream* st) const {
   st->print(" %-15s", name());
-  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+  st->print(" total %zuK, used %zuK",
               capacity_in_bytes()/K, used_in_bytes()/K);
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                 p2i(virtual_space()->low_boundary()),

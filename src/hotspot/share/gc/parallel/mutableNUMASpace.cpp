@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ void MutableNUMASpace::ensure_parsability() {
         while (words_left_to_fill > 0) {
           size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
           assert(words_to_fill >= CollectedHeap::min_fill_size(),
-                 "Remaining size (" SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
+                 "Remaining size (%zu) is too small to fill (based on %zu and %zu)",
                  words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size());
           CollectedHeap::fill_with_object(cur_top, words_to_fill);
           cur_top += words_to_fill;
@@ -619,8 +619,8 @@ void MutableNUMASpace::print_on(outputStream* st) const {
       for (int i = 0; i < lgrp_spaces()->length(); i++) {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }
-      st->print("    local/remote/unbiased/uncommitted: " SIZE_FORMAT "K/"
-                SIZE_FORMAT "K/" SIZE_FORMAT "K/" SIZE_FORMAT "K\n",
+      st->print("    local/remote/unbiased/uncommitted: %zuK/"
+                "%zuK/%zuK/%zuK\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,
                 ls->space_stats()->_unbiased_space / K,

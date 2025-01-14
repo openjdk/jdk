@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,7 @@ ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
-         SIZE_FORMAT, total_reserved, alignment);
+         "Gen size; total_reserved=%zu, alignment=%zu", total_reserved, alignment);
 
   ReservedHeapSpace heap_rs = Universe::reserve_heap(total_reserved, alignment);
   size_t used_page_size = heap_rs.page_size();
@@ -400,7 +399,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
           log_warning(gc, ergo)("SerialHeap::mem_allocate_work retries %d times,"
-                                " size=" SIZE_FORMAT " %s", try_count, size, is_tlab ? "(TLAB)" : "");
+                                " size=%zu %s", try_count, size, is_tlab ? "(TLAB)" : "");
     }
   }
 }
