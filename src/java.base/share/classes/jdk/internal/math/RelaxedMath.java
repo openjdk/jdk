@@ -44,16 +44,23 @@ public class RelaxedMath {
      */
     private RelaxedMath() {}
 
+    /**
+     * Modes, can be composed with logical OR "|" to combine bit pattern.
+     */
+    public static int Default = 0;
+    public static int AllowReductionReordering = 1;
+    public static int AllowFMA = 2;
+
     // TODO description?
     @IntrinsicCandidate
-    public static float add(float a, float b) { return a + b; }
+    public static float add(float a, float b, int optimizationMode) { return a + b; }
 
     @IntrinsicCandidate
-    public static float mul(float a, float b) { return a * b; }
+    public static float mul(float a, float b, int optimizationMode) { return a * b; }
 
     @IntrinsicCandidate
-    public static double add(double a, double b) { return a + b; }
+    public static double add(double a, double b, int optimizationMode) { return a + b; }
 
     @IntrinsicCandidate
-    public static double mul(double a, double b) { return a * b; }
+    public static double mul(double a, double b, int optimizationMode) { return a * b; }
 }

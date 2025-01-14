@@ -235,10 +235,12 @@ class methodHandle;
    do_signature(float_f16_signature,                             "(F)S")                                                \
                                                                                                                         \
   do_class(jdk_internal_math_RelaxedMath, "jdk/internal/math/RelaxedMath")                                              \
-  do_intrinsic(_RelaxedMath_float_add,    jdk_internal_math_RelaxedMath, add_name,  float2_float_signature,  F_S)       \
-  do_intrinsic(_RelaxedMath_float_mul,    jdk_internal_math_RelaxedMath, mul_name,  float2_float_signature,  F_S)       \
-  do_intrinsic(_RelaxedMath_double_add,   jdk_internal_math_RelaxedMath, add_name,  double2_double_signature, F_S)      \
-  do_intrinsic(_RelaxedMath_double_mul,   jdk_internal_math_RelaxedMath, mul_name,  double2_double_signature, F_S)      \
+  do_signature(RelaxedMath_float_signature,    "(FFI)F")                                                                \
+  do_signature(RelaxedMath_double_signature,   "(DDI)D")                                                                \
+  do_intrinsic(_RelaxedMath_float_add,    jdk_internal_math_RelaxedMath, add_name,  RelaxedMath_float_signature,  F_S)  \
+  do_intrinsic(_RelaxedMath_float_mul,    jdk_internal_math_RelaxedMath, mul_name,  RelaxedMath_float_signature,  F_S)  \
+  do_intrinsic(_RelaxedMath_double_add,   jdk_internal_math_RelaxedMath, add_name,  RelaxedMath_double_signature, F_S)  \
+  do_intrinsic(_RelaxedMath_double_mul,   jdk_internal_math_RelaxedMath, mul_name,  RelaxedMath_double_signature, F_S)  \
                                                                                                                         \
   do_intrinsic(_compareUnsigned_i,        java_lang_Integer,      compareUnsigned_name,     int2_int_signature,  F_S)   \
   do_intrinsic(_compareUnsigned_l,        java_lang_Long,         compareUnsigned_name,     long2_int_signature, F_S)   \

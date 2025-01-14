@@ -589,19 +589,6 @@ Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return commute(phase, this) ? this : nullptr;
 }
 
-Node* RelaxedMathAddFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  Node* n = AddFNode::Ideal(phase, can_reshape);
-  if (n != nullptr) { return n; }
-
-  if (!phase->C->post_loop_opts_phase()) {
-    phase->C->record_for_post_loop_opts_igvn(this);
-    return nullptr;
-  }
-
-  tty->print_cr("Lowering!");
-  return new AddFNode(in(1), in(2));
-}
-
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If one input is a constant 0, return the other input.

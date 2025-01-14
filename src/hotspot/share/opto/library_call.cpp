@@ -5025,11 +5025,12 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
 bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
   Node* n1 = argument(0);
   Node* n2 = argument(1);
+  Node* n3 = argument(2); // TODO
   Node* result = nullptr;
 
   switch (id) {
   case vmIntrinsics::_RelaxedMath_float_add:
-    result = new RelaxedMathAddFNode(n1, n2);
+    result = new AddFNode(n1, n2);
     break;
   case vmIntrinsics::_RelaxedMath_float_mul:
     result = new MulFNode(n1, n2);

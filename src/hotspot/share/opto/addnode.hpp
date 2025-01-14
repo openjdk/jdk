@@ -155,16 +155,6 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
 };
 
-// RelaxedMath semantics version of AddF:
-// TODO description of semantics
-// TODO check all the cases where we use Op_AddF
-class RelaxedMathAddFNode : public AddFNode {
-public:
-  RelaxedMathAddFNode(Node* in1, Node* in2) : AddFNode(in1, in2) {}
-  virtual int Opcode() const;
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-};
-
 //------------------------------AddPNode---------------------------------------
 // Add pointer plus integer to get pointer.  NOT commutative, really.
 // So not really an AddNode.  Lives here, because people associate it with

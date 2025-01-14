@@ -50,8 +50,6 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_AddF: return (bt == T_FLOAT  ? Op_AddVF : 0);
   case Op_AddD: return (bt == T_DOUBLE ? Op_AddVD : 0);
 
-  case Op_RelaxedMathAddF: return (bt == T_FLOAT  ? Op_AddVF : 0);
-
   case Op_SubI:
     switch (bt) {
     case T_BOOLEAN:
@@ -634,7 +632,6 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
     *end   = (n->is_Con() && Matcher::supports_vector_constant_rotates(n->get_int())) ? 2 : 3;
     break;
   case Op_AddI: case Op_AddL: case Op_AddF: case Op_AddD:
-  case Op_RelaxedMathAddF:
   case Op_SubI: case Op_SubL: case Op_SubF: case Op_SubD:
   case Op_MulI: case Op_MulL: case Op_MulF: case Op_MulD:
   case Op_DivF: case Op_DivD:
@@ -1251,7 +1248,6 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       vopc = Op_AddReductionVL;
       break;
     case Op_AddF:
-    case Op_RelaxedMathAddF:
       assert(bt == T_FLOAT, "must be");
       vopc = Op_AddReductionVF;
       break;

@@ -300,7 +300,6 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_datan2:
   case vmIntrinsics::_floatToIntBits:
   case vmIntrinsics::_doubleToLongBits:
-  // TODO add here or somewhere else?
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:
   case vmIntrinsics::_maxF:
@@ -313,6 +312,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_minF_strict:
   case vmIntrinsics::_maxD_strict:
   case vmIntrinsics::_minD_strict:
+  case vmIntrinsics::_RelaxedMath_float_add:
+  case vmIntrinsics::_RelaxedMath_float_mul:
+  case vmIntrinsics::_RelaxedMath_double_add:
+  case vmIntrinsics::_RelaxedMath_double_mul:
     if (!InlineMathNatives) return true;
     break;
   case vmIntrinsics::_fmaD:

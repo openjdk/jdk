@@ -568,7 +568,6 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
   if (n_op == Op_AddI ||
       n_op == Op_AddL ||
       n_op == Op_AddF ||
-      n_op == Op_RelaxedMathAddF ||
       n_op == Op_AddD ||
       n_op == Op_MulI ||
       n_op == Op_MulL ||
