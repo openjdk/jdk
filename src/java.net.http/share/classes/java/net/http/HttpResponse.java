@@ -750,13 +750,14 @@ public interface HttpResponse<T> {
                                 bufferSize);
          }
 
-         /**
+        /**
          * {@return a handler limiting the number of bytes consumed and passed to the given downstream}
          *
          * @param downstreamHandler the downstream handler to pass received data to
          * @param capacity the maximum number of bytes that are allowed
          * @param discardExcess if {@code true}, excessive input will be discarded; otherwise, it will throw an exception
          * @throws IllegalArgumentException if {@code capacity < 0}
+         * @since 25
          */
         public static <T> BodyHandler<T> limiting(
                 BodyHandler<T> downstreamHandler,
@@ -1382,6 +1383,7 @@ public interface HttpResponse<T> {
          * @param capacity the maximum number of bytes that are allowed
          * @param discardExcess if {@code true}, excessive input will be discarded; otherwise, it will throw an exception
          * @throws IllegalArgumentException if {@code capacity < 0}
+         * @since 25
          */
         public static <T> BodySubscriber<T> limiting(
                 BodySubscriber<T> downstreamSubscriber,
