@@ -64,6 +64,5 @@ public class Password {
         h.handle(callbacks);
         System.out.println("You input " + new String(nc.getPassword()) +
                 " and " + new String(nc2.getPassword()));
-
    }
 }
