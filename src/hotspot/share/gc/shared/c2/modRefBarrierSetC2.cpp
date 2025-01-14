@@ -26,7 +26,6 @@
 #include "opto/arraycopynode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
-#include "opto/narrowptrnode.hpp"
 #include "gc/shared/c2/modRefBarrierSetC2.hpp"
 #include "utilities/macros.hpp"
 
