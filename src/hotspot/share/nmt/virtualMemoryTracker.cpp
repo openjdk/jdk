@@ -88,10 +88,6 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
         ) {
       overlap_accepted = true;
     }
-    if (!overlap_accepted) {
-      tree()->print_on(tty);
-      summary.print_on(tty);
-    }
   }
   assert(overlap_accepted, "overlap regions, total reserved area= " SIZE_FORMAT ", new region: base= " INTPTR_FORMAT ", end=" INTPTR_FORMAT,
          total.reserve, p2i(base_addr), p2i(base_addr + size));
