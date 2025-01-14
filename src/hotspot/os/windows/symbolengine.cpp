@@ -526,7 +526,7 @@ namespace { // Do not export.
   };
 }
 
-// Called as early as possible
+// Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
 void SymbolEngine::pre_initialize() {
   ::InitializeCriticalSection(&g_cs);
 }

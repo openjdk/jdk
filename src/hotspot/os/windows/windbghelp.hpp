@@ -67,7 +67,7 @@ namespace WindowsDbgHelp {
   // missing - if any, and the dbhelp API version)
   void print_state_on(outputStream* st);
 
-  // Called as early as possible
+  // Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
   void pre_initialize();
 
 };
