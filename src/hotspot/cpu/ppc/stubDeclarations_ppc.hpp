@@ -48,9 +48,6 @@
                                        do_arch_entry,                   \
                                        do_arch_entry_init)              \
   do_arch_blob(compiler, 24000)                                         \
-  /* this is coded but not currently used or even generated */          \
-  /* assuming it is intended for use as a compiler stub */              \
-  do_stub(compiler, zero_words_aligned8)                                \
 
 
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
