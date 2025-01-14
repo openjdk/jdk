@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Ensure Object natives stay registered after redefinition
  * @requires vm.jvmti
  * @library /test/lib
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.org.objectweb.asm
  *          java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
@@ -48,12 +48,12 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.ASM6;
-import static jdk.internal.org.objectweb.asm.Opcodes.V1_8;
+import static org.objectweb.asm.Opcodes.ASM6;
+import static org.objectweb.asm.Opcodes.V1_8;
 
 public class RedefineObject {
 

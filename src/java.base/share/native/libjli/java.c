@@ -1018,6 +1018,8 @@ SetClassPath(const char *s)
     if (s == NULL)
         return;
     s = JLI_WildcardExpandClasspath(s);
+    if (s == NULL)
+        return;
     if (sizeof(format) - 2 + JLI_StrLen(s) < JLI_StrLen(s))
         // s is became corrupted after expanding wildcards
         return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1305,7 +1305,7 @@ static void print_negative_lookup_stats(uintx bitmap, outputStream* st) {
 void Klass::print_secondary_supers_on(outputStream* st) const {
   if (secondary_supers() != nullptr) {
     st->print("  - "); st->print("%d elements;", _secondary_supers->length());
-    st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _secondary_supers_bitmap);
+    st->print_cr(" bitmap: " UINTX_FORMAT_X_0, _secondary_supers_bitmap);
     if (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
         _secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
       st->print("  - "); print_positive_lookup_stats(secondary_supers(),

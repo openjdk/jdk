@@ -36,5 +36,5 @@ $(eval $(call SetupBuildLauncher, jconsole, \
         --add-modules ALL-DEFAULT \
         -Djconsole.showOutputViewer \
         -Djdk.attach.allowAttachSelf=true, \
-    CFLAGS_windows := -DJAVAW, \
+    WINDOWS_JAVAW := true, \
 ))

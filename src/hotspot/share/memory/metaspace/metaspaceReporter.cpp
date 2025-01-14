@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -218,7 +218,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
     {
       uintx num_loaders = cl._num_loaders_by_spacetype[space_type];
       uintx num_classes = cl._num_classes_by_spacetype[space_type];
-      out->print("%s - " UINTX_FORMAT " %s",
+      out->print("%s - %zu %s",
         describe_spacetype((Metaspace::MetaspaceType)space_type),
         num_loaders, loaders_plural(num_loaders));
       if (num_classes > 0) {
@@ -239,7 +239,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
   out->cr();
   {
     uintx num_loaders = cl._num_loaders;
-    out->print("Total Usage - " UINTX_FORMAT " %s, ",
+    out->print("Total Usage - %zu %s, ",
       num_loaders, loaders_plural(num_loaders));
     print_number_of_classes(out, cl._num_classes, cl._num_classes_shared);
     out->print(":");
@@ -360,7 +360,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
       cl._stats_total._arena_stats_class._free_blocks_word_size;
   out->print("Deallocated from chunks in use: ");
   print_scaled_words_and_percentage(out, free_blocks_cap_words, committed_words, scale, 6);
-  out->print(" (" UINTX_FORMAT " blocks)", free_blocks_num);
+  out->print(" (%zu blocks)", free_blocks_num);
   out->cr();
 
   // Print total waste.
