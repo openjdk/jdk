@@ -886,17 +886,17 @@ public:
  public:
 
   // arith
-  void add(Register Rd, Register Rn, int64_t increment, Register tmp = t0);
-  void sub(Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
-  void addw(Register Rd, Register Rn, int32_t increment, Register tmp = t0);
-  void subw(Register Rd, Register Rn, int32_t decrement, Register tmp = t0);
+  void add (Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void sub (Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
+  void addw(Register Rd, Register Rn, int64_t increment, Register tmp = t0);
+  void subw(Register Rd, Register Rn, int64_t decrement, Register tmp = t0);
 
-  void subi(Register Rd, Register Rn, int32_t decrement) {
+  void subi(Register Rd, Register Rn, int64_t decrement) {
     assert(is_simm12(-decrement), "Must be");
     addi(Rd, Rn, -decrement);
   }
 
-  void subiw(Register Rd, Register Rn, int32_t decrement) {
+  void subiw(Register Rd, Register Rn, int64_t decrement) {
     assert(is_simm12(-decrement), "Must be");
     addiw(Rd, Rn, -decrement);
   }
