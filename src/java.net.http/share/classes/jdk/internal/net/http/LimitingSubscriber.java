@@ -50,9 +50,17 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
     private final long capacity;
 
-    private final AtomicReference<Subscription> subscriptionRef = new AtomicReference<>();
+    private final AtomicReference<State> stateRef = new AtomicReference<>();
 
     private long length;
+
+    private interface State {
+
+        enum Terminated implements State { INSTANCE }
+
+        record Subscribed(Subscription subscription) implements State {}
+
+    }
 
     /**
      * @param downstreamSubscriber the downstream subscriber to pass received data to
@@ -70,11 +78,10 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
     @Override
     public void onSubscribe(Subscription subscription) {
         requireNonNull(subscription, "subscription");
-        boolean alreadySubscribed = !subscriptionRef.compareAndSet(null, subscription);
-        if (alreadySubscribed) {
+        boolean subscribed = stateRef.compareAndSet(null, new State.Subscribed(subscription));
+        if (!subscribed) {
             subscription.cancel();
         } else {
-            length = 0;
             downstreamSubscriber.onSubscribe(subscription);
         }
     }
@@ -86,19 +93,21 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
         requireNonNull(buffers, "buffers");
         assert Utils.hasRemaining(buffers);
 
-        // See if we can consume the input completely
-        boolean lengthAllocated = allocateLength(buffers);
-        Subscription subscription = subscriptionRef.get();
-        assert subscription != null;
-        if (lengthAllocated) {
+        // Short-circuit if not subscribed
+        if (!(stateRef.get() instanceof State.Subscribed subscribed)) {
+            return;
+        }
+
+        // See if we may consume the input
+        if (allocateLength(buffers)) {
             downstreamSubscriber.onNext(buffers);
         }
 
         // Otherwise, trigger failure
-        else {
+        else if (stateRef.compareAndSet(subscribed, State.Terminated.INSTANCE)) {
             downstreamSubscriber.onError(new IOException(
                     "the maximum number of bytes that are allowed to be consumed is exceeded"));
-            subscription.cancel();
+            subscribed.subscription.cancel();
         }
 
     }
@@ -116,12 +125,21 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
     @Override
     public void onError(Throwable throwable) {
         requireNonNull(throwable, "throwable");
-        downstreamSubscriber.onError(throwable);
+        if (terminate()) {
+            downstreamSubscriber.onError(throwable);
+        }
     }
 
     @Override
     public void onComplete() {
-        downstreamSubscriber.onComplete();
+        if (terminate()) {
+            downstreamSubscriber.onComplete();
+        }
+    }
+
+    private boolean terminate() {
+        return stateRef.get() instanceof State.Subscribed subscribed &&
+                stateRef.compareAndSet(subscribed, State.Terminated.INSTANCE);
     }
 
     @Override
