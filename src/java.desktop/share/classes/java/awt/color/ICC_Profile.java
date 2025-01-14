@@ -992,7 +992,9 @@ public sealed class ICC_Profile implements Serializable
             case icSigColorSpaceClass -> CLASS_COLORSPACECONVERSION;
             case icSigAbstractClass -> CLASS_ABSTRACT;
             case icSigNamedColorClass -> CLASS_NAMEDCOLOR;
-            default -> throw new IllegalArgumentException("Unknown device class");
+            default -> {
+                throw new IllegalArgumentException("Unknown profile class");
+            }
         };
     }
 

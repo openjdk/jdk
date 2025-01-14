@@ -145,7 +145,7 @@ public class ICC_ColorSpace extends ColorSpace {
                 && profileClass != ICC_Profile.CLASS_COLORSPACECONVERSION
                 && profileClass != ICC_Profile.CLASS_NAMEDCOLOR
                 && profileClass != ICC_Profile.CLASS_ABSTRACT) {
-            throw new IllegalArgumentException("Invalid device class");
+            throw new IllegalArgumentException("Invalid profile class");
         }
 
         thisProfile = profile;
