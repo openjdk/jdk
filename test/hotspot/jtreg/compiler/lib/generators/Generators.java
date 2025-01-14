@@ -401,7 +401,7 @@ public final class Generators {
     }
 
     /**
-     * Returns a restrictable mixed generator that mixes the provided background generator and SPECIAL_DOUBLES with the provided
+     * Returns a restrictable mixed generator that mixes the provided background generator and {@link #SPECIAL_DOUBLES} with the provided
      * weights.
      */
     public RestrictableGenerator<Double> mixedWithSpecialDoubles(RestrictableGenerator<Double> background, int weightNormal, int weightSpecial) {
