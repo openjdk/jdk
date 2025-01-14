@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
-import jdk.internal.util.OSVersion;
 import jdk.internal.util.StaticProperty;
 
 /**
