@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@ import java.io.Serializable;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Objects;
 
 /**
@@ -68,43 +65,43 @@ public final class SerializedLambda implements Serializable {
     @java.io.Serial
     private static final long serialVersionUID = 8025925345765570181L;
     /**
-     * The capturing class.
+     * @serial The capturing class.
      */
     private final Class<?> capturingClass;
     /**
-     * The functional interface class.
+     * @serial The functional interface class.
      */
     private final String functionalInterfaceClass;
     /**
-     * The functional interface method name.
+     * @serial The functional interface method name.
      */
     private final String functionalInterfaceMethodName;
     /**
-     * The functional interface method signature.
+     * @serial The functional interface method signature.
      */
     private final String functionalInterfaceMethodSignature;
     /**
-     * The implementation class.
+     * @serial The implementation class.
      */
     private final String implClass;
     /**
-     * The implementation method name.
+     * @serial The implementation method name.
      */
     private final String implMethodName;
     /**
-     * The implementation method signature.
+     * @serial The implementation method signature.
      */
     private final String implMethodSignature;
     /**
-     * The implementation method kind.
+     * @serial The implementation method kind.
      */
     private final int implMethodKind;
     /**
-     * The instantiated method type.
+     * @serial The instantiated method type.
      */
     private final String instantiatedMethodType;
     /**
-     * The captured arguments.
+     * @serial The captured arguments.
      */
     @SuppressWarnings("serial") // Not statically typed as Serializable
     private final Object[] capturedArgs;
@@ -265,25 +262,11 @@ public final class SerializedLambda implements Serializable {
     @java.io.Serial
     private Object readResolve() throws ObjectStreamException {
         try {
-            @SuppressWarnings("removal")
-            Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                public Method run() throws Exception {
-                    Method m = capturingClass.getDeclaredMethod("$deserializeLambda$", SerializedLambda.class);
-                    m.setAccessible(true);
-                    return m;
-                }
-            });
-
+            Method deserialize = capturingClass.getDeclaredMethod("$deserializeLambda$", SerializedLambda.class);
+            deserialize.setAccessible(true);
             return deserialize.invoke(null, this);
         } catch (ReflectiveOperationException roe) {
             throw new InvalidObjectException("ReflectiveOperationException during deserialization", roe);
-        } catch (PrivilegedActionException e) {
-            Exception cause = e.getException();
-            if (cause instanceof RuntimeException re)
-                throw re;
-            else
-                throw new RuntimeException("Exception in SerializedLambda.readResolve", e);
         }
     }
 

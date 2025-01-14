@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,7 +360,7 @@ class ScanHazardPtrPrintMatchingThreadsClosure : public ThreadClosure {
     JavaThreadIterator jti(current_list);
     for (JavaThread *p = jti.first(); p != nullptr; p = jti.next()) {
       if (p == _thread) {
-        log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::smr_delete: thread1=" INTPTR_FORMAT " has a hazard pointer for thread2=" INTPTR_FORMAT, os::current_thread_id(), p2i(thread), p2i(_thread));
+        log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::smr_delete: thread1=" INTPTR_FORMAT " has a hazard pointer for thread2=" INTPTR_FORMAT, os::current_thread_id(), p2i(thread), p2i(_thread));
         break;
       }
     }
@@ -514,7 +514,7 @@ void SafeThreadsListPtr::acquire_stable_list_nested_path() {
 
   verify_hazard_ptr_scanned();
 
-  log_debug(thread, smr)("tid=" UINTX_FORMAT ": SafeThreadsListPtr::acquire_stable_list: add nested list pointer to ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(_list));
+  log_debug(thread, smr)("tid=%zu: SafeThreadsListPtr::acquire_stable_list: add nested list pointer to ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(_list));
 }
 
 // Release a stable ThreadsList.
@@ -547,7 +547,7 @@ void SafeThreadsListPtr::release_stable_list() {
     // ref count. We no longer need that protection.
     _list->dec_nested_handle_cnt();
 
-    log_debug(thread, smr)("tid=" UINTX_FORMAT ": SafeThreadsListPtr::release_stable_list: delete nested list pointer to ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(_list));
+    log_debug(thread, smr)("tid=%zu: SafeThreadsListPtr::release_stable_list: delete nested list pointer to ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(_list));
   }
 
   // After releasing the hazard ptr, other threads may go ahead and
@@ -860,7 +860,7 @@ void ThreadsSMRSupport::add_thread(JavaThread *thread){
     update_java_thread_list_max(new_list->length());
   }
   // Initial _java_thread_list will not generate a "Threads::add" mesg.
-  log_debug(thread, smr)("tid=" UINTX_FORMAT ": Threads::add: new ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(new_list));
+  log_debug(thread, smr)("tid=%zu: Threads::add: new ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(new_list));
 
   ThreadsList *old_list = xchg_java_thread_list(new_list);
   free_list(old_list);
@@ -895,7 +895,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   if (is_bootstrap_list(threads)) {
     // The bootstrap list cannot be freed and is empty so
     // it does not need to be scanned. Nothing to do here.
-    log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::free_list: bootstrap ThreadsList=" INTPTR_FORMAT " is no longer in use.", os::current_thread_id(), p2i(threads));
+    log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::free_list: bootstrap ThreadsList=" INTPTR_FORMAT " is no longer in use.", os::current_thread_id(), p2i(threads));
     return;
   }
 
@@ -932,7 +932,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
         _to_delete_list = next;
       }
 
-      log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is freed.", os::current_thread_id(), p2i(current));
+      log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is freed.", os::current_thread_id(), p2i(current));
       if (current == threads) threads_is_freed = true;
       delete current;
       if (EnableThreadSMRStatistics) {
@@ -948,7 +948,7 @@ void ThreadsSMRSupport::free_list(ThreadsList* threads) {
   if (!threads_is_freed) {
     // Only report "is not freed" on the original call to
     // free_list() for this ThreadsList.
-    log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is not freed.", os::current_thread_id(), p2i(threads));
+    log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::free_list: threads=" INTPTR_FORMAT " is not freed.", os::current_thread_id(), p2i(threads));
   }
 
   ValidateHazardPtrsClosure validate_cl;
@@ -1012,7 +1012,7 @@ void ThreadsSMRSupport::release_stable_list_wake_up(bool is_nested) {
     // Notify any exiting JavaThreads that are waiting in smr_delete()
     // that we've released a ThreadsList.
     ml.notify_all();
-    log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::release_stable_list notified %s", os::current_thread_id(), log_str);
+    log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::release_stable_list notified %s", os::current_thread_id(), log_str);
   }
 }
 
@@ -1024,7 +1024,7 @@ void ThreadsSMRSupport::remove_thread(JavaThread *thread) {
   }
 
   // Final _java_thread_list will not generate a "Threads::remove" mesg.
-  log_debug(thread, smr)("tid=" UINTX_FORMAT ": Threads::remove: new ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(new_list));
+  log_debug(thread, smr)("tid=%zu: Threads::remove: new ThreadsList=" INTPTR_FORMAT, os::current_thread_id(), p2i(new_list));
 
   ThreadsList *old_list = ThreadsSMRSupport::xchg_java_thread_list(new_list);
   ThreadsSMRSupport::free_list(old_list);
@@ -1056,7 +1056,7 @@ void ThreadsSMRSupport::smr_delete(JavaThread *thread) {
     ThreadsSMRSupport::update_deleted_thread_time_max(millis);
   }
 
-  log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::smr_delete: thread=" INTPTR_FORMAT " is deleted.", os::current_thread_id(), p2i(thread));
+  log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::smr_delete: thread=" INTPTR_FORMAT " is deleted.", os::current_thread_id(), p2i(thread));
 }
 
 void ThreadsSMRSupport::wait_until_not_protected(JavaThread *thread) {
@@ -1085,14 +1085,14 @@ void ThreadsSMRSupport::wait_until_not_protected(JavaThread *thread) {
       }
       if (!has_logged_once) {
         has_logged_once = true;
-        log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::wait_until_not_protected: thread=" INTPTR_FORMAT " is not deleted.", os::current_thread_id(), p2i(thread));
+        log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::wait_until_not_protected: thread=" INTPTR_FORMAT " is not deleted.", os::current_thread_id(), p2i(thread));
         if (log_is_enabled(Debug, os, thread)) {
           ScanHazardPtrPrintMatchingThreadsClosure scan_cl(thread);
           threads_do(&scan_cl);
           ThreadsList* current = _to_delete_list;
           while (current != nullptr) {
             if (current->_nested_handle_cnt != 0 && current->includes(thread)) {
-              log_debug(thread, smr)("tid=" UINTX_FORMAT ": ThreadsSMRSupport::wait_until_not_protected: found nested hazard pointer to thread=" INTPTR_FORMAT, os::current_thread_id(), p2i(thread));
+              log_debug(thread, smr)("tid=%zu: ThreadsSMRSupport::wait_until_not_protected: found nested hazard pointer to thread=" INTPTR_FORMAT, os::current_thread_id(), p2i(thread));
             }
             current = current->next_list();
           }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ bool G1PeriodicGCTask::should_start_periodic_gc(G1CollectedHeap* g1h,
   // Check if enough time has passed since the last GC.
   uintx time_since_last_gc = (uintx)g1h->time_since_last_collection().milliseconds();
   if ((time_since_last_gc < G1PeriodicGCInterval)) {
-    log_debug(gc, periodic)("Last GC occurred " UINTX_FORMAT "ms before which is below threshold " UINTX_FORMAT "ms. Skipping.",
+    log_debug(gc, periodic)("Last GC occurred %zums before which is below threshold %zums. Skipping.",
                             time_since_last_gc, G1PeriodicGCInterval);
     return false;
   }

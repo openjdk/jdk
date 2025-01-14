@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
-#include "classfile/classLoadInfo.hpp"
 #include "classfile/classFileStream.hpp"
+#include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
@@ -51,7 +51,7 @@
 #include "runtime/mutexLocker.hpp"
 
 GrowableArrayCHeap<char*, mtClassShared>* LambdaFormInvokers::_lambdaform_lines = nullptr;
-Array<Array<char>*>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
+Array<u4>*  LambdaFormInvokers::_static_archive_invokers = nullptr;
 
 #define NUM_FILTER 4
 static const char* filter[NUM_FILTER] = {"java.lang.invoke.Invokers$Holder",
@@ -93,6 +93,21 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
+    return;
+  }
+
+  if (CDSConfig::is_dumping_static_archive() && CDSConfig::is_dumping_invokedynamic()) {
+    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
+    log_info(cds)("Archived MethodHandles may refer to lambda form holder classes. Cannot regenerate.");
+    return;
+  }
+
+  if (CDSConfig::is_dumping_dynamic_archive() && CDSConfig::is_dumping_aot_linked_classes() &&
+      CDSConfig::is_using_aot_linked_classes()) {
+    // The base archive may have some pre-resolved CP entries that point to the lambda form holder
+    // classes in the base archive. If we generate new versions of these classes, those CP entries
+    // will be pointing to invalid classes.
+    log_info(cds)("Base archive already has aot-linked lambda form holder classes. Cannot regenerate.");
     return;
   }
 
@@ -166,7 +181,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       // make a copy of class bytes so GC will not affect us.
       char *buf = NEW_RESOURCE_ARRAY(char, len);
       memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
-      ClassFileStream st((u1*)buf, len, nullptr, ClassFileStream::verify);
+      ClassFileStream st((u1*)buf, len, nullptr);
       regenerate_class(class_name, st, CHECK);
     }
   }
@@ -216,7 +231,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
     }
     if (count > 0) {
-      _static_archive_invokers = ArchiveBuilder::new_ro_array<Array<char>*>(count);
+      _static_archive_invokers = ArchiveBuilder::new_ro_array<u4>(count);
       int index = 0;
       for (int i = 0; i < len; i++) {
         char* str = _lambdaform_lines->at(i);
@@ -225,8 +240,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
           Array<char>* line = ArchiveBuilder::new_ro_array<char>((int)str_len);
           strncpy(line->adr_at(0), str, str_len);
 
-          _static_archive_invokers->at_put(index, line);
-          ArchivePtrMarker::mark_pointer(_static_archive_invokers->adr_at(index));
+          _static_archive_invokers->at_put(index, ArchiveBuilder::current()->any_to_offset_u4(line));
           index++;
         }
       }
@@ -239,7 +253,8 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
 void LambdaFormInvokers::read_static_archive_invokers() {
   if (_static_archive_invokers != nullptr) {
     for (int i = 0; i < _static_archive_invokers->length(); i++) {
-      Array<char>* line = _static_archive_invokers->at(i);
+      u4 offset = _static_archive_invokers->at(i);
+      Array<char>* line = ArchiveUtils::offset_to_archived_address<Array<char>*>(offset);
       char* str = line->adr_at(0);
       append(str);
     }

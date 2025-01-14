@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,8 @@ int Method::bci_from(address bcp) const {
 
 
 int Method::validate_bci(int bci) const {
-  return (bci == 0 || bci < code_size()) ? bci : -1;
+  // Called from the verifier, and should return -1 if not valid.
+  return ((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size())) ? bci : -1;
 }
 
 // Return bci if it appears to be a valid bcp
@@ -867,6 +868,11 @@ bool Method::needs_clinit_barrier() const {
   return is_static() && !method_holder()->is_initialized();
 }
 
+bool Method::is_object_wait0() const {
+  return klass_name() == vmSymbols::java_lang_Object()
+         && name() == vmSymbols::wait_name();
+}
+
 objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
   int length = method->checked_exceptions_length();
   if (length == 0) {  // common case
@@ -922,8 +928,7 @@ bool Method::is_klass_loaded_by_klass_index(int klass_index) const {
     Thread *thread = Thread::current();
     Symbol* klass_name = constants()->klass_name_at(klass_index);
     Handle loader(thread, method_holder()->class_loader());
-    Handle prot  (thread, method_holder()->protection_domain());
-    return SystemDictionary::find_instance_klass(thread, klass_name, loader, prot) != nullptr;
+    return SystemDictionary::find_instance_klass(thread, klass_name, loader) != nullptr;
   } else {
     return true;
   }
@@ -1016,7 +1021,7 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != nullptr)) {
     ttyLocker ttyl;
-    xtty->begin_elem("make_not_compilable thread='" UINTX_FORMAT "' osr='%d' level='%d'",
+    xtty->begin_elem("make_not_compilable thread='%zu' osr='%d' level='%d'",
                      os::current_thread_id(), is_osr, comp_level);
     if (reason != nullptr) {
       xtty->print(" reason=\'%s\'", reason);
@@ -1427,6 +1432,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
   cp->set_has_preresolution();
+  cp->set_is_for_method_handle_intrinsic();
 
   // decide on access bits:  public or not?
   int flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
@@ -1474,6 +1480,16 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 
   return m;
 }
+
+#if INCLUDE_CDS
+void Method::restore_archived_method_handle_intrinsic(methodHandle m, TRAPS) {
+  m->link_method(m, CHECK);
+
+  if (m->intrinsic_id() == vmIntrinsics::_linkToNative) {
+    m->set_interpreter_entry(m->adapter()->get_i2c_entry());
+  }
+}
+#endif
 
 Klass* Method::check_non_bcp_klass(Klass* klass) {
   if (klass != nullptr && klass->class_loader() != nullptr) {
@@ -1636,8 +1652,8 @@ void Method::init_intrinsic_id(vmSymbolID klass_id) {
       && sig_id == vmSymbolID::NO_SID) {
     return;
   }
-  jshort flags = access_flags().as_short();
 
+  u2 flags = access_flags().as_method_flags();
   vmIntrinsics::ID id = vmIntrinsics::find_id(klass_id, name_id, sig_id, flags);
   if (id != vmIntrinsics::_none) {
     set_intrinsic_id(id);
@@ -2284,7 +2300,7 @@ void Method::print_on(outputStream* st) const {
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
   st->print   (" - constants:         " PTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
-  st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
+  st->print   (" - access:            0x%x  ", access_flags().as_method_flags()); access_flags().print_on(st); st->cr();
   st->print   (" - flags:             0x%x  ", _flags.as_int()); _flags.print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
   st->print   (" - signature:         ");    signature()->print_value_on(st); st->cr();

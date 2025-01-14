@@ -32,10 +32,9 @@ import jdk.jpackage.test.Executor;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimeImageTest.java
  * @run main/othervm/timeout=1400 jdk.jpackage.test.Main
  *  --jpt-run=RuntimeImageTest
@@ -54,7 +53,7 @@ public class RuntimeImageTest {
         .dumpOutput()
         .addArguments(
                 "--output", jlinkOutputDir.toString(),
-                "--add-modules", "ALL-MODULE-PATH",
+                "--add-modules", "java.desktop",
                 "--strip-debug",
                 "--no-header-files",
                 "--no-man-pages",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,9 +209,9 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     } else if (is_uint()) {
       st->print("%u", get_uint());
     } else if (is_intx()) {
-      st->print(INTX_FORMAT, get_intx());
+      st->print("%zd", get_intx());
     } else if (is_uintx()) {
-      st->print(UINTX_FORMAT, get_uintx());
+      st->print("%zu", get_uintx());
     } else if (is_uint64_t()) {
       st->print(UINT64_FORMAT, get_uint64_t());
     } else if (is_size_t()) {
@@ -411,9 +411,9 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   } else if (is_uint()) {
     st->print("-XX:%s=%u", _name, get_uint());
   } else if (is_intx()) {
-    st->print("-XX:%s=" INTX_FORMAT, _name, get_intx());
+    st->print("-XX:%s=%zd", _name, get_intx());
   } else if (is_uintx()) {
-    st->print("-XX:%s=" UINTX_FORMAT, _name, get_uintx());
+    st->print("-XX:%s=%zu", _name, get_uintx());
   } else if (is_uint64_t()) {
     st->print("-XX:%s=" UINT64_FORMAT, _name, get_uint64_t());
   } else if (is_size_t()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -681,7 +681,7 @@ VectorNode* VectorNode::make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, 
   }
 }
 
-// Make a vector node for binary operation
+// Make a vector node for unary or binary operation
 VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask, bool is_var_shift, bool is_unsigned) {
   // This method should not be called for unimplemented vectors.
   guarantee(vopc > 0, "vopc must be > 0");
@@ -762,6 +762,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_URShiftVI: return new URShiftVINode(n1, n2, vt, is_var_shift);
   case Op_URShiftVL: return new URShiftVLNode(n1, n2, vt, is_var_shift);
 
+  case Op_LShiftCntV: return new LShiftCntVNode(n1, vt);
+  case Op_RShiftCntV: return new RShiftCntVNode(n1, vt);
+
   case Op_AndV: return new AndVNode(n1, n2, vt);
   case Op_OrV:  return new OrVNode (n1, n2, vt);
   case Op_XorV: return new XorVNode(n1, n2, vt);
@@ -780,6 +783,18 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
 
   case Op_SaturatingAddV: return new SaturatingAddVNode(n1, n2, vt, is_unsigned);
   case Op_SaturatingSubV: return new SaturatingSubVNode(n1, n2, vt, is_unsigned);
+
+  case Op_VectorCastB2X:  return new VectorCastB2XNode(n1, vt);
+  case Op_VectorCastS2X:  return new VectorCastS2XNode(n1, vt);
+  case Op_VectorCastI2X:  return new VectorCastI2XNode(n1, vt);
+  case Op_VectorCastL2X:  return new VectorCastL2XNode(n1, vt);
+  case Op_VectorCastF2X:  return new VectorCastF2XNode(n1, vt);
+  case Op_VectorCastD2X:  return new VectorCastD2XNode(n1, vt);
+  case Op_VectorUCastB2X: return new VectorUCastB2XNode(n1, vt);
+  case Op_VectorUCastS2X: return new VectorUCastS2XNode(n1, vt);
+  case Op_VectorUCastI2X: return new VectorUCastI2XNode(n1, vt);
+  case Op_VectorCastHF2F: return new VectorCastHF2FNode(n1, vt);
+  case Op_VectorCastF2HF: return new VectorCastF2HFNode(n1, vt);
 
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
@@ -806,6 +821,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   case Op_SelectFromTwoVector: return new SelectFromTwoVectorNode(n1, n2, n3, vt);
   case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
+  case Op_VectorBlend: return new VectorBlendNode(n1, n2, n3);
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return nullptr;
@@ -833,22 +849,26 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, BasicType bt, bool is_
 }
 
 VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt) {
-  // Match shift count type with shift vector type.
+  int vopc = VectorNode::shift_count_opcode(opc);
   const TypeVect* vt = TypeVect::make(bt, vlen);
+  return VectorNode::make(vopc, cnt, nullptr, vt);
+}
+
+int VectorNode::shift_count_opcode(int opc) {
   switch (opc) {
   case Op_LShiftI:
   case Op_LShiftL:
-    return new LShiftCntVNode(cnt, vt);
+    return Op_LShiftCntV;
   case Op_RShiftI:
   case Op_RShiftL:
   case Op_URShiftB:
   case Op_URShiftS:
   case Op_URShiftI:
   case Op_URShiftL:
-    return new RShiftCntVNode(cnt, vt);
+    return Op_RShiftCntV;
   default:
-    fatal("Missed vector creation for '%s'", NodeClassNames[opc]);
-    return nullptr;
+    fatal("Node class '%s' is not supported for shift count", NodeClassNames[opc]);
+    return -1;
   }
 }
 
@@ -1428,24 +1448,9 @@ VectorStoreMaskNode* VectorStoreMaskNode::make(PhaseGVN& gvn, Node* in, BasicTyp
   return new VectorStoreMaskNode(in, gvn.intcon(elem_size), vt);
 }
 
-VectorCastNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen) {
+VectorNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
-  switch (vopc) {
-    case Op_VectorCastB2X:  return new VectorCastB2XNode(n1, vt);
-    case Op_VectorCastS2X:  return new VectorCastS2XNode(n1, vt);
-    case Op_VectorCastI2X:  return new VectorCastI2XNode(n1, vt);
-    case Op_VectorCastL2X:  return new VectorCastL2XNode(n1, vt);
-    case Op_VectorCastF2X:  return new VectorCastF2XNode(n1, vt);
-    case Op_VectorCastD2X:  return new VectorCastD2XNode(n1, vt);
-    case Op_VectorUCastB2X: return new VectorUCastB2XNode(n1, vt);
-    case Op_VectorUCastS2X: return new VectorUCastS2XNode(n1, vt);
-    case Op_VectorUCastI2X: return new VectorUCastI2XNode(n1, vt);
-    case Op_VectorCastHF2F: return new VectorCastHF2FNode(n1, vt);
-    case Op_VectorCastF2HF: return new VectorCastF2HFNode(n1, vt);
-    default:
-      assert(false, "unknown node: %s", NodeClassNames[vopc]);
-      return nullptr;
-  }
+  return VectorNode::make(vopc, n1, nullptr, vt);
 }
 
 int VectorCastNode::opcode(int sopc, BasicType bt, bool is_signed) {
@@ -1482,6 +1487,9 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
   if (is_java_primitive(dst_type) &&
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
+      // In rare case, the input to the VectorCast could be a Replicate node. We need to make sure creating is supported:
+      // check the src_type:
+      VectorNode::vector_size_supported_auto_vectorization(src_type, vlen) &&
       VectorNode::vector_size_supported_auto_vectorization(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(opc, src_type);
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
@@ -1744,19 +1752,13 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
 
-        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
-        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
+        bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         if (is_vector_mask) {
           // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
           return new VectorMaskCastNode(value, vmask_type);
-        } else if (is_vector_shuffle) {
-          if (!is_shuffle_to_vector()) {
-            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
-            return new VectorLoadShuffleNode(value, out_vt);
-          }
         } else {
-          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
+          // Vector type mismatch is only supported for masks, but sometimes it happens in pathological cases.
         }
       } else {
         // Vector length mismatch.
@@ -2100,6 +2102,55 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
   return this;
+}
+static bool is_replicate_uint_constant(const Node* n) {
+  return n->Opcode() == Op_Replicate &&
+         n->in(1)->is_Con() &&
+         n->in(1)->bottom_type()->isa_long() &&
+         n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
+}
+
+static bool has_vector_elements_fit_uint(Node* n) {
+  auto is_lower_doubleword_mask_pattern = [](const Node* n) {
+    return n->Opcode() == Op_AndV &&
+           (is_replicate_uint_constant(n->in(1)) ||
+            is_replicate_uint_constant(n->in(2)));
+  };
+
+  auto is_clear_upper_doubleword_uright_shift_pattern = [](const Node* n) {
+    return n->Opcode() == Op_URShiftVL &&
+           n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
+           n->in(2)->in(1)->bottom_type()->isa_int() &&
+           n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
+  };
+  return is_lower_doubleword_mask_pattern(n) ||             // (AndV     SRC (Replicate C)) where C <= 0xFFFFFFFF
+         is_clear_upper_doubleword_uright_shift_pattern(n); // (URShiftV SRC S) where S >= 32
+}
+
+static bool has_vector_elements_fit_int(Node* n) {
+  auto is_cast_integer_to_long_pattern = [](const Node* n) {
+    return n->Opcode() == Op_VectorCastI2X && Matcher::vector_element_basic_type(n) == T_LONG;
+  };
+
+  auto is_clear_upper_doubleword_right_shift_pattern = [](const Node* n) {
+    return n->Opcode() == Op_RShiftVL &&
+           n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
+           n->in(2)->in(1)->bottom_type()->isa_int() &&
+           n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
+  };
+
+  return is_cast_integer_to_long_pattern(n) ||             // (VectorCastI2X SRC)
+         is_clear_upper_doubleword_right_shift_pattern(n); // (RShiftV SRC S) where S >= 32
+}
+
+bool MulVLNode::has_int_inputs() const {
+  return has_vector_elements_fit_int(in(1)) &&
+         has_vector_elements_fit_int(in(2));
+}
+
+bool MulVLNode::has_uint_inputs() const {
+  return has_vector_elements_fit_uint(in(1)) &&
+         has_vector_elements_fit_uint(in(2));
 }
 
 #ifndef PRODUCT

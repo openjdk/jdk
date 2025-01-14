@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -83,6 +83,11 @@ int Deoptimization::last_frame_adjust(int callee_parameters,
 uint SharedRuntime::out_preserve_stack_slots() {
   ShouldNotCallThis();
   return 0;
+}
+
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
 }
 
 JRT_LEAF(void, zero_stub())

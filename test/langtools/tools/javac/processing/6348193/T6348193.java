@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,11 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  * @compile -proc:none T6348193.java
- * @run main/othervm -Djava.security.manager=allow T6348193
+ * @run main/othervm T6348193
  */
 
 import java.io.*;
 import java.net.*;
-import java.security.*;
 import java.util.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
@@ -51,23 +50,17 @@ public class T6348193 extends AbstractProcessor
     public static final String myName = T6348193.class.getName();
 
     public static void main(String... args) throws IOException {
-        if (System.getSecurityManager() != null)
-            throw new AssertionError("unexpected security manager");
 
-        for (NoYes secMgr: EnumSet.allOf(NoYes.class))
-            for (NoGoodBad config: EnumSet.allOf(NoGoodBad.class))
-                for (NoYes proc: EnumSet.allOf(NoYes.class))
-                    test(secMgr, config, proc);
+        for (NoGoodBad config: EnumSet.allOf(NoGoodBad.class))
+            for (NoYes proc: EnumSet.allOf(NoYes.class))
+                test(config, proc);
     }
 
     private static File processed = new File("processed");
 
-    public static void test(NoYes secMgr, NoGoodBad config, NoYes proc) throws IOException {
+    public static void test(NoGoodBad config, NoYes proc) throws IOException {
         if (verbose)
-            System.err.println("secMgr:" + secMgr + " config:" + config + " proc:" + proc);
-
-        if (secMgr == NoYes.YES && System.getSecurityManager() == null)
-            System.setSecurityManager(new NoLoaderSecurityManager());
+            System.err.println("config:" + config + " proc:" + proc);
 
         installConfigFile(config);
 
@@ -95,16 +88,9 @@ public class T6348193 extends AbstractProcessor
             boolean ok = t.getTask(out, null, dl, args, null, files).call();
 
             if (config == NoGoodBad.GOOD || proc == NoYes.YES) {
-                if (secMgr == NoYes.YES) {
-                    if (dl.last == null)
-                        throw new AssertionError("Security manager installed, and processors present, "
-                                                 + " but no diagnostic received");
-                }
-                else {
-                    if (!processed.exists())
-                        throw new AssertionError("No security manager installed, and processors present, "
-                                                 + " but no processing occurred");
-                }
+                if (!processed.exists())
+                    throw new AssertionError("Processors present, "
+                                             + " but no processing occurred");
             }
             else if (config == NoGoodBad.BAD) {
                 // TODO: should verify that no compiler crash occurred
@@ -168,22 +154,5 @@ public class T6348193 extends AbstractProcessor
         }
 
         Diagnostic<? extends JavaFileObject> last;
-    }
-
-    static class NoLoaderSecurityManager extends SecurityManager
-    {
-        public void checkCreateClassLoader() {
-            throw new SecurityException("Not today, thanks you!");
-        }
-
-        public void checkPropertyAccess(String key) { /*OK*/ }
-
-        public void checkDelete(String file) { /*OK*/ }
-        public void checkPermission(Permission perm) { /*OK*/ }
-        public void checkRead(FileDescriptor fd) { /*OK*/ }
-        public void checkRead(String file) { /*OK*/ }
-        public void checkRead(String file, Object context) { /*OK*/ }
-        public void checkWrite(String file) { /*OK*/ }
-
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,7 @@ import java.nio.ByteBuffer;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 
-import java.io.IOException;
 import java.util.List;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 public abstract class FileFont extends PhysicalFont {
 
@@ -108,11 +104,10 @@ public abstract class FileFont extends PhysicalFont {
     }
 
     static void setFileToRemove(List<Font2D> fonts,
-                                File file, int cnt,
-                                CreatedFontTracker tracker)
+                                File file, int cnt)
     {
         CreatedFontFileDisposerRecord dr =
-            new CreatedFontFileDisposerRecord(file, cnt, tracker);
+            new CreatedFontFileDisposerRecord(file, cnt);
 
         for (Font2D f : fonts) {
             Disposer.addObjectRecord(f, dr);
@@ -243,93 +238,38 @@ public abstract class FileFont extends PhysicalFont {
 
         File fontFile = null;
         int count = 0; // number of fonts referencing this file object.
-        CreatedFontTracker tracker;
 
-        private CreatedFontFileDisposerRecord(File file, int cnt,
-                                              CreatedFontTracker tracker) {
+        private CreatedFontFileDisposerRecord(File file, int cnt) {
             fontFile = file;
             count = (cnt > 0) ? cnt : 1;
-            this.tracker = tracker;
         }
 
-        @SuppressWarnings("removal")
         public void dispose() {
-            java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction<Object>() {
-                      public Object run() {
-                          synchronized (fontFile) {
-                              count--;
-                              if (count > 0) {
-                                  return null;
-                              }
-                          }
-                          if (fontFile != null) {
-                              try {
-                                  if (tracker != null) {
-                                      tracker.subBytes((int)fontFile.length());
-                                  }
-                                  /* REMIND: is it possible that the file is
-                                   * still open? It will be closed when the
-                                   * font2D is disposed but could this code
-                                   * execute first? If so the file would not
-                                   * be deleted on MS-windows.
-                                   */
-                                  fontFile.delete();
-                                  /* remove from delete on exit hook list : */
-                                  // FIXME: still need to be refactored
-                                  SunFontManager.getInstance().tmpFontFiles.remove(fontFile);
-                              } catch (Exception e) {
-                              }
-                          }
-                          return null;
-                      }
-            });
+              synchronized (fontFile) {
+                  count--;
+                  if (count > 0) {
+                      return;
+                  }
+              }
+              if (fontFile != null) {
+                  try {
+                      /* REMIND: is it possible that the file is
+                       * still open? It will be closed when the
+                       * font2D is disposed but could this code
+                       * execute first? If so the file would not
+                       * be deleted on MS-windows.
+                       */
+                      fontFile.delete();
+                      /* remove from delete on exit hook list : */
+                      // FIXME: still need to be refactored
+                      SunFontManager.getInstance().tmpFontFiles.remove(fontFile);
+                  } catch (Exception e) {
+                  }
+              }
         }
     }
 
-    @SuppressWarnings("removal")
     protected String getPublicFileName() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
             return platName;
-        }
-        boolean canReadProperty = true;
-
-        try {
-            sm.checkPropertyAccess("java.io.tmpdir");
-        } catch (SecurityException e) {
-            canReadProperty = false;
-        }
-
-        if (canReadProperty) {
-            return platName;
-        }
-
-        final File f = new File(platName);
-
-        Boolean isTmpFile = Boolean.FALSE;
-        try {
-            isTmpFile = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Boolean>() {
-                    public Boolean run() {
-                        File tmp = new File(System.getProperty("java.io.tmpdir"));
-                        try {
-                            String tpath = tmp.getCanonicalPath();
-                            String fpath = f.getCanonicalPath();
-
-                            return (fpath == null) || fpath.startsWith(tpath);
-                        } catch (IOException e) {
-                            return Boolean.TRUE;
-                        }
-                    }
-                }
-            );
-        } catch (PrivilegedActionException e) {
-            // unable to verify whether value of java.io.tempdir will be
-            // exposed, so return only a name of the font file.
-            isTmpFile = Boolean.TRUE;
-        }
-
-        return  isTmpFile ? "temp file" : platName;
     }
 }

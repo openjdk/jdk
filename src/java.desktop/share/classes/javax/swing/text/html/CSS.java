@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.swing.ImageIcon;
@@ -1089,7 +1090,7 @@ public class CSS implements Serializable {
      * Therefore, the value associated with each HTML.Attribute.
      * key ends up being an array of CSS.Attribute.* objects.
      */
-    private static final Hashtable<HTML.Attribute, CSS.Attribute[]> htmlAttrToCssAttrMap = new Hashtable<HTML.Attribute, CSS.Attribute[]>(20);
+    private static final Map<HTML.Attribute, CSS.Attribute[]> htmlAttrToCssAttrMap;
 
     /**
      * The hashtable and static initialization that follows sets
@@ -1113,53 +1114,57 @@ public class CSS implements Serializable {
             valueMap.put(Value.allValues[i].toString(),
                              Value.allValues[i]);
         }
-
-        htmlAttrToCssAttrMap.put(HTML.Attribute.COLOR,
-                                 new CSS.Attribute[]{CSS.Attribute.COLOR});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.TEXT,
-                                 new CSS.Attribute[]{CSS.Attribute.COLOR});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.CLEAR,
-                                 new CSS.Attribute[]{CSS.Attribute.CLEAR});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.BACKGROUND,
-                                 new CSS.Attribute[]{CSS.Attribute.BACKGROUND_IMAGE});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.BGCOLOR,
-                                 new CSS.Attribute[]{CSS.Attribute.BACKGROUND_COLOR});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.WIDTH,
-                                 new CSS.Attribute[]{CSS.Attribute.WIDTH});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.HEIGHT,
-                                 new CSS.Attribute[]{CSS.Attribute.HEIGHT});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.BORDER,
-                                 new CSS.Attribute[]{CSS.Attribute.BORDER_TOP_WIDTH, CSS.Attribute.BORDER_RIGHT_WIDTH, CSS.Attribute.BORDER_BOTTOM_WIDTH, CSS.Attribute.BORDER_LEFT_WIDTH});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.CELLPADDING,
-                                 new CSS.Attribute[]{CSS.Attribute.PADDING});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.CELLSPACING,
-                                 new CSS.Attribute[]{CSS.Attribute.BORDER_SPACING});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.MARGINWIDTH,
-                                 new CSS.Attribute[]{CSS.Attribute.MARGIN_LEFT,
-                                                     CSS.Attribute.MARGIN_RIGHT});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.MARGINHEIGHT,
-                                 new CSS.Attribute[]{CSS.Attribute.MARGIN_TOP,
-                                                     CSS.Attribute.MARGIN_BOTTOM});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.HSPACE,
-                                 new CSS.Attribute[]{CSS.Attribute.PADDING_LEFT,
-                                                     CSS.Attribute.PADDING_RIGHT});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.VSPACE,
-                                 new CSS.Attribute[]{CSS.Attribute.PADDING_BOTTOM,
-                                                     CSS.Attribute.PADDING_TOP});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.FACE,
-                                 new CSS.Attribute[]{CSS.Attribute.FONT_FAMILY});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.SIZE,
-                                 new CSS.Attribute[]{CSS.Attribute.FONT_SIZE});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.VALIGN,
-                                 new CSS.Attribute[]{CSS.Attribute.VERTICAL_ALIGN});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.ALIGN,
-                                 new CSS.Attribute[]{CSS.Attribute.VERTICAL_ALIGN,
-                                                     CSS.Attribute.TEXT_ALIGN,
-                                                     CSS.Attribute.FLOAT});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.TYPE,
-                                 new CSS.Attribute[]{CSS.Attribute.LIST_STYLE_TYPE});
-        htmlAttrToCssAttrMap.put(HTML.Attribute.NOWRAP,
-                                 new CSS.Attribute[]{CSS.Attribute.WHITE_SPACE});
+        htmlAttrToCssAttrMap = Map.ofEntries(
+                Map.entry(HTML.Attribute.COLOR,
+                          new CSS.Attribute[]{CSS.Attribute.COLOR}),
+                Map.entry(HTML.Attribute.TEXT,
+                          new CSS.Attribute[]{CSS.Attribute.COLOR}),
+                Map.entry(HTML.Attribute.CLEAR,
+                          new CSS.Attribute[]{CSS.Attribute.CLEAR}),
+                Map.entry(HTML.Attribute.BACKGROUND,
+                          new CSS.Attribute[]{CSS.Attribute.BACKGROUND_IMAGE}),
+                Map.entry(HTML.Attribute.BGCOLOR,
+                          new CSS.Attribute[]{CSS.Attribute.BACKGROUND_COLOR}),
+                Map.entry(HTML.Attribute.WIDTH,
+                          new CSS.Attribute[]{CSS.Attribute.WIDTH}),
+                Map.entry(HTML.Attribute.HEIGHT,
+                          new CSS.Attribute[]{CSS.Attribute.HEIGHT}),
+                Map.entry(HTML.Attribute.BORDER,
+                          new CSS.Attribute[]{CSS.Attribute.BORDER_TOP_WIDTH,
+                                              CSS.Attribute.BORDER_RIGHT_WIDTH,
+                                              CSS.Attribute.BORDER_BOTTOM_WIDTH,
+                                              CSS.Attribute.BORDER_LEFT_WIDTH}),
+                Map.entry(HTML.Attribute.CELLPADDING,
+                          new CSS.Attribute[]{CSS.Attribute.PADDING}),
+                Map.entry(HTML.Attribute.CELLSPACING,
+                          new CSS.Attribute[]{CSS.Attribute.BORDER_SPACING}),
+                Map.entry(HTML.Attribute.MARGINWIDTH,
+                          new CSS.Attribute[]{CSS.Attribute.MARGIN_LEFT,
+                                              CSS.Attribute.MARGIN_RIGHT}),
+                Map.entry(HTML.Attribute.MARGINHEIGHT,
+                          new CSS.Attribute[]{CSS.Attribute.MARGIN_TOP,
+                                              CSS.Attribute.MARGIN_BOTTOM}),
+                Map.entry(HTML.Attribute.HSPACE,
+                          new CSS.Attribute[]{CSS.Attribute.PADDING_LEFT,
+                                              CSS.Attribute.PADDING_RIGHT}),
+                Map.entry(HTML.Attribute.VSPACE,
+                          new CSS.Attribute[]{CSS.Attribute.PADDING_BOTTOM,
+                                              CSS.Attribute.PADDING_TOP}),
+                Map.entry(HTML.Attribute.FACE,
+                          new CSS.Attribute[]{CSS.Attribute.FONT_FAMILY}),
+                Map.entry(HTML.Attribute.SIZE,
+                          new CSS.Attribute[]{CSS.Attribute.FONT_SIZE}),
+                Map.entry(HTML.Attribute.VALIGN,
+                          new CSS.Attribute[]{CSS.Attribute.VERTICAL_ALIGN}),
+                Map.entry(HTML.Attribute.ALIGN,
+                          new CSS.Attribute[]{CSS.Attribute.VERTICAL_ALIGN,
+                                              CSS.Attribute.TEXT_ALIGN,
+                                              CSS.Attribute.FLOAT}),
+                Map.entry(HTML.Attribute.TYPE,
+                          new CSS.Attribute[]{CSS.Attribute.LIST_STYLE_TYPE}),
+                Map.entry(HTML.Attribute.NOWRAP,
+                          new CSS.Attribute[]{CSS.Attribute.WHITE_SPACE})
+        );
 
         // initialize StyleConstants mapping
         styleConstantToCssMap.put(StyleConstants.FontFamily,

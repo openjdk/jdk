@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -517,12 +517,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm7, Assembler::AVX_512bit);
-#ifdef _LP64
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm8, Assembler::AVX_512bit);
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm31, Assembler::AVX_512bit);
-#endif // _LP64
 #endif // _WINDOWS
 
       // load value into all 64 bytes of zmm7 register
@@ -546,12 +544,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #ifdef _WINDOWS
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm7);
-#ifdef _LP64
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm8);
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm15);
-#endif // _LP64
 #endif // _WINDOWS
 
     // load value into all 32 bytes of ymm7 register
@@ -611,12 +607,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
       __ evmovdqul(xmm31, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
       __ evmovdqul(xmm8, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
-#endif // _LP64
       __ evmovdqul(xmm7, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
 #endif // _WINDOWS
@@ -641,12 +635,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
     __ vmovdqu(xmm15, Address(rsp, 0));
     __ addptr(rsp, 32);
     __ vmovdqu(xmm8, Address(rsp, 0));
     __ addptr(rsp, 32);
-#endif // _LP64
     __ vmovdqu(xmm7, Address(rsp, 0));
     __ addptr(rsp, 32);
 #endif // _WINDOWS
@@ -1730,9 +1722,9 @@ void VM_Version::get_processor_features() {
       if (ArrayOperationPartialInlineSize > MaxVectorSize) {
         ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
         if (ArrayOperationPartialInlineSize) {
-          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize" INTX_FORMAT ")", MaxVectorSize);
+          warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
         } else {
-          warning("Setting ArrayOperationPartialInlineSize as " INTX_FORMAT, ArrayOperationPartialInlineSize);
+          warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
         }
       }
     }

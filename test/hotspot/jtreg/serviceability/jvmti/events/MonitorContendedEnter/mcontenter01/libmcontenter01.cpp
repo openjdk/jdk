@@ -35,7 +35,6 @@ extern "C" {
 /* ========================================================================== */
 
 /* scaffold objects */
-static JNIEnv *jni = nullptr;
 static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
@@ -71,7 +70,7 @@ MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj) {
 
 /* ========================================================================== */
 
-static int prepare() {
+static int prepare(JNIEnv* jni) {
   jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     jni->FatalError("Error enabling JVMTI_EVENT_MONITOR_CONTENDED_ENTER.");
@@ -92,15 +91,14 @@ static int clean() {
 /* agent algorithm
  */
 static void JNICALL
-agentProc(jvmtiEnv *jvmti, JNIEnv *agentJNI, void *arg) {
-  jni = agentJNI;
+agentProc(jvmtiEnv *jvmti, JNIEnv *jni, void *arg) {
 
   /* wait for initial sync */
   if (!agent_wait_for_sync(timeout)) {
     return;
   }
 
-  if (!prepare()) {
+  if (!prepare(jni)) {
     set_agent_fail_status();
     return;
   }

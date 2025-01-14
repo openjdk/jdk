@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -89,103 +90,6 @@ JvmtiAgentThread::call_start_function() {
     _start_fn(_env->jvmti_external(), jni_environment(), (void*)_start_arg);
 }
 
-
-//
-// class GrowableCache - private methods
-//
-
-void GrowableCache::recache() {
-  int len = _elements->length();
-
-  FREE_C_HEAP_ARRAY(address, _cache);
-  _cache = NEW_C_HEAP_ARRAY(address,len+1, mtInternal);
-
-  for (int i=0; i<len; i++) {
-    _cache[i] = _elements->at(i)->getCacheValue();
-    //
-    // The cache entry has gone bad. Without a valid frame pointer
-    // value, the entry is useless so we simply delete it in product
-    // mode. The call to remove() will rebuild the cache again
-    // without the bad entry.
-    //
-    if (_cache[i] == nullptr) {
-      assert(false, "cannot recache null elements");
-      remove(i);
-      return;
-    }
-  }
-  _cache[len] = nullptr;
-
-  _listener_fun(_this_obj,_cache);
-}
-
-//
-// class GrowableCache - public methods
-//
-
-GrowableCache::GrowableCache() {
-  _this_obj       = nullptr;
-  _listener_fun   = nullptr;
-  _elements       = nullptr;
-  _cache          = nullptr;
-}
-
-GrowableCache::~GrowableCache() {
-  clear();
-  delete _elements;
-  FREE_C_HEAP_ARRAY(address, _cache);
-}
-
-void GrowableCache::initialize(void *this_obj, void listener_fun(void *, address*) ) {
-  _this_obj       = this_obj;
-  _listener_fun   = listener_fun;
-  _elements       = new (mtServiceability) GrowableArray<GrowableElement*>(5, mtServiceability);
-  recache();
-}
-
-// number of elements in the collection
-int GrowableCache::length() {
-  return _elements->length();
-}
-
-// get the value of the index element in the collection
-GrowableElement* GrowableCache::at(int index) {
-  GrowableElement *e = (GrowableElement *) _elements->at(index);
-  assert(e != nullptr, "e != nullptr");
-  return e;
-}
-
-int GrowableCache::find(const GrowableElement* e) const {
-  return _elements->find_if([&](const GrowableElement* other_e) { return e->equals(other_e); });
-}
-
-// append a copy of the element to the end of the collection
-void GrowableCache::append(GrowableElement* e) {
-  GrowableElement *new_e = e->clone();
-  _elements->append(new_e);
-  recache();
-}
-
-// remove the element at index
-void GrowableCache::remove (int index) {
-  GrowableElement *e = _elements->at(index);
-  assert(e != nullptr, "e != nullptr");
-  _elements->remove(e);
-  delete e;
-  recache();
-}
-
-// clear out all elements, release all heap space and
-// let our listener know that things have changed.
-void GrowableCache::clear() {
-  int len = _elements->length();
-  for (int i=0; i<len; i++) {
-    delete _elements->at(i);
-  }
-  _elements->clear();
-  recache();
-}
-
 //
 // class JvmtiBreakpoint
 //
@@ -194,18 +98,17 @@ JvmtiBreakpoint::JvmtiBreakpoint(Method* m_method, jlocation location)
     : _method(m_method), _bci((int)location) {
   assert(_method != nullptr, "No method for breakpoint.");
   assert(_bci >= 0, "Negative bci for breakpoint.");
-  oop class_holder_oop  = _method->method_holder()->klass_holder();
+  oop class_holder_oop = _method->method_holder()->klass_holder();
   _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), class_holder_oop);
+}
+
+JvmtiBreakpoint::JvmtiBreakpoint(const JvmtiBreakpoint& bp)
+    : _method(bp._method), _bci(bp._bci) {
+  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), bp._class_holder.resolve());
 }
 
 JvmtiBreakpoint::~JvmtiBreakpoint() {
   _class_holder.release(JvmtiExport::jvmti_oop_storage());
-}
-
-void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
-  _method   = bp._method;
-  _bci      = bp._bci;
-  _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), bp._class_holder.resolve());
 }
 
 bool JvmtiBreakpoint::equals(const JvmtiBreakpoint& bp) const {
@@ -301,8 +204,8 @@ void VM_ChangeBreakpoints::doit() {
 // a JVMTI internal collection of JvmtiBreakpoint
 //
 
-JvmtiBreakpoints::JvmtiBreakpoints(void listener_fun(void *,address *)) {
-  _bps.initialize(this,listener_fun);
+JvmtiBreakpoints::JvmtiBreakpoints()
+    : _elements(5, mtServiceability) {
 }
 
 JvmtiBreakpoints:: ~JvmtiBreakpoints() {}
@@ -312,9 +215,9 @@ void JvmtiBreakpoints::print() {
   LogTarget(Trace, jvmti) log;
   LogStream log_stream(log);
 
-  int n = _bps.length();
-  for (int i=0; i<n; i++) {
-    JvmtiBreakpoint& bp = _bps.at(i);
+  int n = length();
+  for (int i = 0; i < n; i++) {
+    JvmtiBreakpoint& bp = at(i);
     log_stream.print("%d: ", i);
     bp.print_on(&log_stream);
     log_stream.cr();
@@ -326,9 +229,9 @@ void JvmtiBreakpoints::print() {
 void JvmtiBreakpoints::set_at_safepoint(JvmtiBreakpoint& bp) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  int i = _bps.find(bp);
+  int i = find(bp);
   if (i == -1) {
-    _bps.append(bp);
+    append(bp);
     bp.set();
   }
 }
@@ -336,18 +239,16 @@ void JvmtiBreakpoints::set_at_safepoint(JvmtiBreakpoint& bp) {
 void JvmtiBreakpoints::clear_at_safepoint(JvmtiBreakpoint& bp) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
 
-  int i = _bps.find(bp);
+  int i = find(bp);
   if (i != -1) {
-    _bps.remove(i);
+    remove(i);
     bp.clear();
   }
 }
 
-int JvmtiBreakpoints::length() { return _bps.length(); }
-
 int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
-  if ( _bps.find(bp) != -1) {
-     return JVMTI_ERROR_DUPLICATE;
+  if (find(bp) != -1) {
+    return JVMTI_ERROR_DUPLICATE;
   }
   VM_ChangeBreakpoints set_breakpoint(VM_ChangeBreakpoints::SET_BREAKPOINT, &bp);
   VMThread::execute(&set_breakpoint);
@@ -355,8 +256,8 @@ int JvmtiBreakpoints::set(JvmtiBreakpoint& bp) {
 }
 
 int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
-  if ( _bps.find(bp) == -1) {
-     return JVMTI_ERROR_NOT_FOUND;
+  if (find(bp) == -1) {
+    return JVMTI_ERROR_NOT_FOUND;
   }
 
   VM_ChangeBreakpoints clear_breakpoint(VM_ChangeBreakpoints::CLEAR_BREAKPOINT, &bp);
@@ -365,27 +266,14 @@ int JvmtiBreakpoints::clear(JvmtiBreakpoint& bp) {
 }
 
 void JvmtiBreakpoints::clearall_in_class_at_safepoint(Klass* klass) {
-  bool changed = true;
-  // We are going to run thru the list of bkpts
-  // and delete some.  This deletion probably alters
-  // the list in some implementation defined way such
-  // that when we delete entry i, the next entry might
-  // no longer be at i+1.  To be safe, each time we delete
-  // an entry, we'll just start again from the beginning.
-  // We'll stop when we make a pass thru the whole list without
-  // deleting anything.
-  while (changed) {
-    int len = _bps.length();
-    changed = false;
-    for (int i = 0; i < len; i++) {
-      JvmtiBreakpoint& bp = _bps.at(i);
-      if (bp.method()->method_holder() == klass) {
-        bp.clear();
-        _bps.remove(i);
-        // This changed 'i' so we have to start over.
-        changed = true;
-        break;
-      }
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+
+  // Go backwards because this removes entries that are freed.
+  for (int i = length() - 1; i >= 0; i--) {
+    JvmtiBreakpoint& bp = at(i);
+    if (bp.method()->method_holder() == klass) {
+      bp.clear();
+      remove(i);
     }
   }
 }
@@ -395,25 +283,18 @@ void JvmtiBreakpoints::clearall_in_class_at_safepoint(Klass* klass) {
 //
 
 JvmtiBreakpoints *JvmtiCurrentBreakpoints::_jvmti_breakpoints  = nullptr;
-address *         JvmtiCurrentBreakpoints::_breakpoint_list    = nullptr;
-
 
 JvmtiBreakpoints& JvmtiCurrentBreakpoints::get_jvmti_breakpoints() {
-  if (_jvmti_breakpoints != nullptr) return (*_jvmti_breakpoints);
-  _jvmti_breakpoints = new JvmtiBreakpoints(listener_fun);
-  assert(_jvmti_breakpoints != nullptr, "_jvmti_breakpoints != nullptr");
+  if (_jvmti_breakpoints == nullptr) {
+    JvmtiBreakpoints* breakpoints = new JvmtiBreakpoints();
+    if (!Atomic::replace_if_null(&_jvmti_breakpoints, breakpoints)) {
+      // already created concurently
+      delete breakpoints;
+    }
+  }
   return (*_jvmti_breakpoints);
 }
 
-void  JvmtiCurrentBreakpoints::listener_fun(void *this_obj, address *cache) {
-  JvmtiBreakpoints *this_jvmti = (JvmtiBreakpoints *) this_obj;
-  assert(this_jvmti != nullptr, "this_jvmti != nullptr");
-
-  debug_only(int n = this_jvmti->length(););
-  assert(cache[n] == nullptr, "cache must be null terminated");
-
-  set_breakpoint_list(cache);
-}
 
 ///////////////////////////////////////////////////////////////
 //

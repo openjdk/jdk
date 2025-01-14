@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -218,7 +218,7 @@ void Thread::call_run() {
 
   JFR_ONLY(Jfr::on_thread_start(this);)
 
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack dimensions: "
+  log_debug(os, thread)("Thread %zu stack dimensions: "
     PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
     os::current_thread_id(), p2i(stack_end()),
     p2i(stack_base()), stack_size()/1024);

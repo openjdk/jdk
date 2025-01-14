@@ -29,11 +29,8 @@ import org.ietf.jgss.*;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
-import javax.security.auth.kerberos.ServicePermission;
 import java.security.Provider;
 import java.util.Vector;
-
-import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * Krb5 Mechanism plug in for JGSS
@@ -71,19 +68,8 @@ public final class Krb5MechFactory implements MechanismFactory {
                                    Krb5InitCredential.class :
                                    Krb5AcceptCredential.class));
 
-        Krb5CredElement result = ((creds == null || creds.isEmpty()) ?
-                                  null : creds.firstElement());
-
-        // Force permission check before returning the cred to caller
-        if (result != null) {
-            if (initiate) {
-                checkInitCredPermission((Krb5NameElement) result.getName());
-            } else {
-                checkAcceptCredPermission
-                    ((Krb5NameElement) result.getName(), name);
-            }
-        }
-        return result;
+        return ((creds == null || creds.isEmpty()) ?
+                null : creds.firstElement());
     }
 
     public Krb5MechFactory() {
@@ -126,60 +112,15 @@ public final class Krb5MechFactory implements MechanismFactory {
                     (caller, (Krb5NameElement) name, initLifetime);
                 credElement = Krb5ProxyCredential.tryImpersonation(
                         caller, (Krb5InitCredential)credElement);
-                checkInitCredPermission
-                    ((Krb5NameElement) credElement.getName());
             } else if (usage == GSSCredential.ACCEPT_ONLY) {
                 credElement =
                     Krb5AcceptCredential.getInstance(caller,
                                                      (Krb5NameElement) name);
-                checkAcceptCredPermission
-                    ((Krb5NameElement) credElement.getName(), name);
             } else
                 throw new GSSException(GSSException.FAILURE, -1,
                                        "Unknown usage mode requested");
         }
         return credElement;
-    }
-
-    public static void checkInitCredPermission(Krb5NameElement name) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            String realm = (name.getKrb5PrincipalName()).getRealmAsString();
-            String tgsPrincipal = "krbtgt/" + realm + '@' + realm;
-            ServicePermission perm =
-                new ServicePermission(tgsPrincipal, "initiate");
-            try {
-                sm.checkPermission(perm);
-            } catch (SecurityException e) {
-                if (DEBUG != null) {
-                    DEBUG.println("Permission to initiate " +
-                        "kerberos init credential" + e.getMessage());
-                }
-                throw e;
-            }
-        }
-    }
-
-    public static void checkAcceptCredPermission(Krb5NameElement name,
-                                           GSSNameSpi originalName) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null && name != null) {
-            ServicePermission perm = new ServicePermission
-                (name.getKrb5PrincipalName().getName(), "accept");
-            try {
-                sm.checkPermission(perm);
-            } catch (SecurityException e) {
-                if (originalName == null) {
-                    // Don't disclose the name of the principal
-                    e = new SecurityException("No permission to acquire "
-                                      + "Kerberos accept credential");
-                    // Don't call e.initCause() with caught exception
-                }
-                throw e;
-            }
-        }
     }
 
     public GSSContextSpi getMechanismContext(GSSNameSpi peer,

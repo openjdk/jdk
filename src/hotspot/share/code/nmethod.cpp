@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,7 +708,8 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
 
   // handle the case of an anchor explicitly set in continuation code that doesn't have a callee
   JavaThread* thread = reg_map->thread();
-  if (thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp()) {
+  if ((thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp())
+      JVMTI_ONLY(|| (method()->is_continuation_enter_intrinsic() && thread->on_monitor_waited_event()))) {
     return;
   }
 
@@ -1298,7 +1299,7 @@ nmethod::nmethod(
     _comp_level              = CompLevel_none;
     _compiler_type           = type;
     _orig_pc_offset          = 0;
-    _num_stack_arg_slots     = _method->constMethod()->num_stack_arg_slots();
+    _num_stack_arg_slots     = 0;
 
     if (offsets->value(CodeOffsets::Exceptions) != -1) {
       // Continuation enter intrinsic
@@ -1585,7 +1586,7 @@ void nmethod::log_identity(xmlStream* log) const {
 
 #define LOG_OFFSET(log, name)                    \
   if (p2i(name##_end()) - p2i(name##_begin())) \
-    log->print(" " XSTR(name) "_offset='" INTX_FORMAT "'"    , \
+    log->print(" " XSTR(name) "_offset='%zd'"    , \
                p2i(name##_begin()) - p2i(this))
 
 
@@ -1961,7 +1962,7 @@ void nmethod::log_state_change() const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'",
+      xtty->begin_elem("make_not_entrant thread='%zu'",
                        os::current_thread_id());
       log_identity(xtty);
       xtty->stamp();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -70,20 +70,20 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(notBool);
   mv(t1, T_BYTE);
   bne(t0, t1, notByte);
-  sign_extend(result, result, 8);
+  sext(result, result, 8);
   j(done);
 
   bind(notByte);
   mv(t1, T_CHAR);
   bne(t0, t1, notChar);
-  zero_extend(result, result, 16);
+  zext(result, result, 16);
   j(done);
 
   bind(notChar);
-  sign_extend(result, result, 16);
+  sext(result, result, 16);
 
   bind(done);
-  sign_extend(result, result, 32);
+  sext(result, result, 32);
 }
 
 void InterpreterMacroAssembler::jump_to_entry(address entry) {
@@ -179,15 +179,10 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
 void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  if (AvoidUnalignedAccesses && (bcp_offset % 2)) {
-    lbu(t1, Address(xbcp, bcp_offset));
-    lbu(reg, Address(xbcp, bcp_offset + 1));
-    slli(t1, t1, 8);
-    add(reg, reg, t1);
-  } else {
-    lhu(reg, Address(xbcp, bcp_offset));
-    revb_h_h_u(reg, reg);
-  }
+  lbu(t1, Address(xbcp, bcp_offset));
+  lbu(reg, Address(xbcp, bcp_offset + 1));
+  slli(t1, t1, 8);
+  add(reg, reg, t1);
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
@@ -200,15 +195,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    if (AvoidUnalignedAccesses) {
-      assert_different_registers(index, tmp);
-      load_unsigned_byte(index, Address(xbcp, bcp_offset));
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
-      slli(tmp, tmp, 8);
-      add(index, index, tmp);
-    } else {
-      load_unsigned_short(index, Address(xbcp, bcp_offset));
-    }
+    load_short_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
   } else if (index_size == sizeof(u4)) {
     load_int_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
   } else if (index_size == sizeof(u1)) {
@@ -283,18 +270,18 @@ void InterpreterMacroAssembler::pop_l(Register r) {
 }
 
 void InterpreterMacroAssembler::push_ptr(Register r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   sd(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_i(Register r) {
-  addi(esp, esp, -wordSize);
-  sign_extend(r, r, 32);
+  subi(esp, esp, wordSize);
+  sext(r, r, 32);
   sd(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_l(Register r) {
-  addi(esp, esp, -2 * wordSize);
+  subi(esp, esp, 2 * wordSize);
   sd(zr, Address(esp, wordSize));
   sd(r, Address(esp));
 }
@@ -310,12 +297,12 @@ void InterpreterMacroAssembler::pop_d(FloatRegister r) {
 }
 
 void InterpreterMacroAssembler::push_f(FloatRegister r) {
-  addi(esp, esp, -wordSize);
+  subi(esp, esp, wordSize);
   fsw(r, Address(esp, 0));
 }
 
 void InterpreterMacroAssembler::push_d(FloatRegister r) {
-  addi(esp, esp, -2 * wordSize);
+  subi(esp, esp, 2 * wordSize);
   fsd(r, Address(esp, 0));
 }
 
@@ -441,7 +428,14 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               Register Rs) {
   // Pay attention to the argument Rs, which is acquiesce in t0.
   if (VerifyActivationFrameSize) {
-    Unimplemented();
+    Label L;
+    sub(t1, fp, esp);
+    int min_frame_size =
+      (frame::link_offset - frame::interpreter_frame_initial_sp_offset + frame::metadata_words) * wordSize;
+    sub(t1, t1, min_frame_size);
+    bgez(t1, L);
+    stop("broken stack frame");
+    bind(L);
   }
   if (verifyoop && state == atos) {
     verify_oop(x10);
@@ -550,7 +544,7 @@ void InterpreterMacroAssembler::remove_activation(
 
   // get method access flags
   ld(x11, Address(fp, frame::interpreter_frame_method_offset * wordSize));
-  ld(x12, Address(x11, Method::access_flags_offset()));
+  load_unsigned_short(x12, Address(x11, Method::access_flags_offset()));
   test_bit(t0, x12, exact_log2(JVM_ACC_SYNCHRONIZED));
   beqz(t0, unlocked);
 
@@ -721,7 +715,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
   if (LockingMode == LM_MONITOR) {
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
@@ -752,7 +746,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
-      j(count);
+      j(done);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
       ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
@@ -781,19 +775,19 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
       // Save the test result, for recursive case, the result is zero
       sd(swap_reg, Address(lock_reg, mark_offset));
-      beqz(swap_reg, count);
+      bnez(swap_reg, slow_case);
+
+      bind(count);
+      inc_held_monitor_count(t0);
+      j(done);
     }
 
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
-    j(done);
-
-    bind(count);
-    increment(Address(xthread, JavaThread::held_monitor_count_offset()));
 
     bind(done);
   }
@@ -839,12 +833,10 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     // Free entry
     sd(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
 
+    Label slow_case;
     if (LockingMode == LM_LIGHTWEIGHT) {
-      Label slow_case;
       lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
-      j(count);
-
-      bind(slow_case);
+      j(done);
     } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       ld(header_reg, Address(swap_reg,
@@ -854,20 +846,19 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       beqz(header_reg, count);
 
       // Atomic swap back the old header
-      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, tmp_reg, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, tmp_reg, count, &slow_case);
+
+      bind(count);
+      dec_held_monitor_count(t0);
+      j(done);
     }
 
+    bind(slow_case);
     // Call the runtime routine for slow case.
     sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
-    j(done);
-
-    bind(count);
-    decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
-
     bind(done);
-
     restore_bcp();
   }
 }
@@ -904,7 +895,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   assert(ProfileInterpreter, "must be profiling interpreter");
 #ifdef ASSERT
   Label verify_continue;
-  add(sp, sp, -4 * wordSize);
+  subi(sp, sp, 4 * wordSize);
   sd(x10, Address(sp, 0));
   sd(x11, Address(sp, wordSize));
   sd(x12, Address(sp, 2 * wordSize));
@@ -929,7 +920,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   ld(x11, Address(sp, wordSize));
   ld(x12, Address(sp, 2 * wordSize));
   ld(x13, Address(sp, 3 * wordSize));
-  add(sp, sp, 4 * wordSize);
+  addi(sp, sp, 4 * wordSize);
 #endif // ASSERT
 }
 
@@ -970,7 +961,7 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Register mdp_in,
 
   if (decrement) {
     ld(t0, addr);
-    addi(t0, t0, -DataLayout::counter_increment);
+    subi(t0, t0, DataLayout::counter_increment);
     Label L;
     bltz(t0, L);      // skip store if counter underflow
     sd(t0, addr);
@@ -1037,7 +1028,7 @@ void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
 void InterpreterMacroAssembler::update_mdp_by_constant(Register mdp_in,
                                                        int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  addi(mdp_in, mdp_in, (unsigned)constant);
+  add(mdp_in, mdp_in, (unsigned)constant);
   sd(mdp_in, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
 }
 
@@ -1046,7 +1037,7 @@ void InterpreterMacroAssembler::update_mdp_for_ret(Register return_bci) {
   assert(ProfileInterpreter, "must be profiling interpreter");
 
   // save/restore across call_VM
-  addi(sp, sp, -2 * wordSize);
+  subi(sp, sp, 2 * wordSize);
   sd(zr, Address(sp, 0));
   sd(return_bci, Address(sp, wordSize));
   call_VM(noreg,
@@ -1575,6 +1566,55 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
   restore_locals();
 }
 
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                                    address entry_point,
+                                                    Register arg_1) {
+  assert(arg_1 == c_rarg1, "");
+  Label resume_pc, not_preempted;
+
+#ifdef ASSERT
+  {
+    Label L;
+    ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    beqz(t0, L);
+    stop("Should not have alternate return address set");
+    bind(L);
+  }
+#endif /* ASSERT */
+
+  // Force freeze slow path.
+  push_cont_fastpath();
+
+  // Make VM call. In case of preemption set last_pc to the one we want to resume to.
+  la(t0, resume_pc);
+  sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
+  call_VM_base(oop_result, noreg, noreg, entry_point, 1, false /*check_exceptions*/);
+
+  pop_cont_fastpath();
+
+  // Check if preempted.
+  ld(t1, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  beqz(t1, not_preempted);
+  sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+  jr(t1);
+
+  // In case of preemption, this is where we will resume once we finally acquire the monitor.
+  bind(resume_pc);
+  restore_after_resume(false /* is_native */);
+
+  bind(not_preempted);
+}
+
+void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
+  la(t1, ExternalAddress(Interpreter::cont_resume_interpreter_adapter()));
+  jalr(t1);
+  if (is_native) {
+    // On resume we need to set up stack as expected
+    push(dtos);
+    push(ltos);
+  }
+}
+
 void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& mdo_addr, Register tmp) {
   assert_different_registers(obj, tmp, t0, mdo_addr.base());
   Label update, next, none;
@@ -1699,7 +1739,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       add(t0, mdp, t0);
       ld(t0, Address(t0));
       sub(tmp, tmp, t0);
-      addi(tmp, tmp, -1);
+      subi(tmp, tmp, 1);
       Address arg_addr = argument_address(tmp);
       ld(tmp, arg_addr);
 
@@ -1722,7 +1762,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
 
       if (MethodData::profile_return()) {
         ld(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())));
-        addi(tmp, tmp, -TypeProfileArgsLimit*TypeStackSlotEntries::per_arg_count());
+        sub(tmp, tmp, TypeProfileArgsLimit * TypeStackSlotEntries::per_arg_count());
       }
 
       add(t0, mdp, off_to_args);
@@ -1809,7 +1849,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     // mdo start + parameters offset + array length - 1
     add(mdp, mdp, tmp1);
     ld(tmp1, Address(mdp, ArrayData::array_len_offset()));
-    add(tmp1, tmp1, - TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
 
     Label loop;
     bind(loop);
@@ -1835,7 +1875,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     profile_obj_type(tmp2, arg_type, tmp3);
 
     // go to next parameter
-    add(tmp1, tmp1, - TypeStackSlotEntries::per_arg_count());
+    subi(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
     bgez(tmp1, loop);
 
     bind(profile_continue);
@@ -1850,7 +1890,7 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   slli(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
-  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 
@@ -1866,7 +1906,7 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   }
   // Get address of field entries array
   ld(cache, Address(xcpool, ConstantPoolCache::field_entries_offset()));
-  add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
   // Prevents stale data from being read after the bytecode is patched to the fast bytecode
   membar(MacroAssembler::LoadLoad);
@@ -1892,7 +1932,7 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
 
   // Get address of field entries array
   ld(cache, Address(xcpool, ConstantPoolCache::method_entries_offset()));
-  add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+  addi(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 

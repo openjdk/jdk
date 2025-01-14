@@ -55,11 +55,10 @@ import static jdk.jpackage.test.TKit.assertFalse;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest == null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
@@ -68,11 +67,10 @@ import static jdk.jpackage.test.TKit.assertFalse;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest != null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test
@@ -103,6 +101,7 @@ public class RuntimePackageTest {
         .forTypes(types)
         .addInitializer(cmd -> {
             final Path runtimeImageDir;
+
             if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
                 runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
             } else {
@@ -113,7 +112,7 @@ public class RuntimePackageTest {
                 .dumpOutput()
                 .addArguments(
                         "--output", runtimeImageDir.toString(),
-                        "--add-modules", "ALL-MODULE-PATH",
+                        "--add-modules", "java.desktop",
                         "--strip-debug",
                         "--no-header-files",
                         "--no-man-pages")

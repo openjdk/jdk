@@ -70,7 +70,7 @@ class AutoJavaString {
   const char* m_buf;
 
 public:
-  // check env->ExceptionOccurred() after ctor
+  // check env->ExceptionCheck() after ctor
   AutoJavaString(JNIEnv* env, jstring str)
     : m_env(env), m_str(str), m_buf(str == NULL ? NULL : env->GetStringUTFChars(str, NULL)) {
   }
@@ -101,8 +101,8 @@ static jmethodID listAdd_ID = 0;
  */
 static char *saaltroot = NULL;
 
-#define CHECK_EXCEPTION_(value) if (env->ExceptionOccurred()) { return value; }
-#define CHECK_EXCEPTION if (env->ExceptionOccurred()) { return;}
+#define CHECK_EXCEPTION_(value) if (env->ExceptionCheck()) { return value; }
+#define CHECK_EXCEPTION if (env->ExceptionCheck()) { return;}
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { throw_new_debugger_exception(env, str); return value; }
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
 

@@ -39,7 +39,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
@@ -48,6 +47,7 @@
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -227,7 +227,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    const char* policy)
   : Generation(rs, initial_size),
     _promotion_failed(false),
-    _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
     _string_dedup_requests()
 {
@@ -609,8 +608,6 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
 
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
-  // The preserved marks should be empty at the start of the GC.
-  _preserved_marks_set.init(1);
 
   YoungGenScanClosure young_gen_cl(this);
   OldGenScanClosure   old_gen_cl(this);
@@ -681,8 +678,6 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(heap->reset_promotion_should_fail();)
   }
-  // We should have processed and cleared all the preserved marks.
-  _preserved_marks_set.reclaim();
 
   heap->trace_heap_after_gc(_gc_tracer);
 
@@ -706,19 +701,17 @@ void DefNewGeneration::remove_forwarding_pointers() {
   // starts. (The mark word is overloaded: `is_marked()` == `is_forwarded()`.)
   struct ResetForwardedMarkWord : ObjectClosure {
     void do_object(oop obj) override {
-      if (obj->is_forwarded()) {
-        obj->init_mark();
+      if (obj->is_self_forwarded()) {
+        obj->unset_self_forwarded();
+      } else if (obj->is_forwarded()) {
+        // To restore the klass-bits in the header.
+        // Needed for object iteration to work properly.
+        obj->set_mark(obj->forwardee()->prototype_mark());
       }
     }
   } cl;
   eden()->object_iterate(&cl);
   from()->object_iterate(&cl);
-
-  restore_preserved_marks();
-}
-
-void DefNewGeneration::restore_preserved_marks() {
-  _preserved_marks_set.restore(nullptr);
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
@@ -726,12 +719,11 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
-  _preserved_marks_set.get()->push_if_necessary(old, old->mark());
 
   ContinuationGCSupport::transform_stack_chunk(old);
 
   // forward to self
-  old->forward_to(old);
+  old->forward_to_self();
 
   _promo_failure_scan_stack.push(old);
 

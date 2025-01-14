@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ void VM_Version::initialize() {
     default: break;
   }
   guarantee(PowerArchitecturePPC64_ok, "PowerArchitecturePPC64 cannot be set to "
-            UINTX_FORMAT " on this machine", PowerArchitecturePPC64);
+            "%zu on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
   if (PowerArchitecturePPC64 >= 8 && has_mfdscr()) {
@@ -108,6 +108,17 @@ void VM_Version::initialize() {
   if (!UseSIGTRAP) {
     MSG(TrapBasedRangeChecks);
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
+  }
+
+  // Power7 and later.
+  if (PowerArchitecturePPC64 > 6) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      FLAG_SET_ERGO(UsePopCountInstruction, true);
+    }
+  }
+
+  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
+    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
   }
 
   if (PowerArchitecturePPC64 >= 8) {
@@ -168,6 +179,17 @@ void VM_Version::initialize() {
       warning("UseByteReverseInstructions specified, but needs at least Power10.");
       FLAG_SET_DEFAULT(UseByteReverseInstructions, false);
     }
+  }
+
+  if (OptimizeFill) {
+    warning("OptimizeFill is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptimizeFill, false);
+  }
+
+  if (OptoScheduling) {
+    // The OptoScheduling information is not maintained in ppd.ad.
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
   }
 #endif
 
@@ -401,7 +423,7 @@ void VM_Version::check_virtualizations() {
 
   while (fgets(line, sizeof(line), fp) != nullptr) {
     if (strncmp(line, system_type, strlen(system_type)) == 0) {
-      if (strstr(line, "qemu") != 0) {
+      if (strstr(line, "qemu") != nullptr) {
         Abstract_VM_Version::_detected_virtualization = PowerKVM;
         fclose(fp);
         return;
