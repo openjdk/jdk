@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 #include "memory/allocation.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;
@@ -43,7 +41,9 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = n
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
-  _table = (MallocSiteHashtableEntry**)permit_forbidden_function::calloc(table_size, sizeof(MallocSiteHashtableEntry*));
+
+  ALLOW_C_FUNCTION(::calloc,
+                   _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry*));)
   if (_table == nullptr) {
     return false;
   }
