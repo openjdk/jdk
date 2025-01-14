@@ -1413,6 +1413,9 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
   int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
   int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
 
+  assert((base_offset1 % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
+  assert((base_offset2 % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
+
   BLOCK_COMMENT("string_compare {");
 
   // Bizarrely, the counts are passed in bytes, regardless of whether they
@@ -1665,6 +1668,8 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2,
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset   = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
 
+  assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
+
   Register cnt1 = tmp3;
   Register cnt2 = tmp1;  // cnt2 only used in array length compare
   Label DONE, SAME, NEXT_WORD, SHORT, TAIL03, TAIL01;
@@ -1785,6 +1790,8 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
 
   int base_offset = arrayOopDesc::base_offset_in_bytes(T_BYTE);
+
+  assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
 
   BLOCK_COMMENT("string_equals {");
 
@@ -2580,6 +2587,8 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   Register cnt2 = tmp2;
   int length_offset = arrayOopDesc::length_offset_in_bytes();
   int base_offset = arrayOopDesc::base_offset_in_bytes(elem_size == 2 ? T_CHAR : T_BYTE);
+
+  assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
 
   BLOCK_COMMENT("arrays_equals_v {");
 

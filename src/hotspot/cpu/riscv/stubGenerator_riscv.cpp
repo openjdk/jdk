@@ -2467,6 +2467,8 @@ class StubGenerator: public StubCodeGenerator {
 
     int base_offset = arrayOopDesc::base_offset_in_bytes(T_CHAR);
 
+    assert((base_offset % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
+
     // strL is 8-byte aligned
     __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
@@ -2503,6 +2505,9 @@ class StubGenerator: public StubCodeGenerator {
 
     int base_offset1 = arrayOopDesc::base_offset_in_bytes(T_BYTE);
     int base_offset2 = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    assert((base_offset1 % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
+    assert((base_offset2 % (UseCompactObjectHeaders ? 4 : 8)) == 0, "Must be");
 
     // cnt2 == amount of characters left to compare
     // Check already loaded first 4 symbols
