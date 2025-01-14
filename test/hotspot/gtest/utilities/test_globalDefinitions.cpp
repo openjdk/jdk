@@ -279,6 +279,9 @@ TEST(globalDefinitions, format_specifiers) {
 
   check_format("%zd",                  (intx)123,         "123");
   check_format("%#zx",                 (intx)0x123,       "0x123");
+  check_format("%#zx",                 (intx)0x0,         "0");
+  check_format("0x%zx",                (intx)0x123,       "0x123");
+  check_format("0x%zx",                (intx)0x0,         "0x0");
   check_format("%5zd",                 (intx)123,         "  123");
   check_format("%-5zd",                (intx)123,         "123  ");
 
