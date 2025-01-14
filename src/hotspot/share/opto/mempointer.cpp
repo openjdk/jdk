@@ -30,9 +30,9 @@
 
 MemPointerParserCallback MemPointerParserCallback::_empty;
 
-MemPointer::MemPointer(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
-                       const MemNode* mem,
-                       MemPointerParserCallback& callback) :
+MemPointer::MemPointer(const MemNode* mem,
+                       MemPointerParserCallback& callback
+                       NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
   MemPointer(MemPointerParser::parse(NOT_PRODUCT(trace COMMA)
                                      mem,
                                      callback)) {}

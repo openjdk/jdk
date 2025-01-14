@@ -695,9 +695,16 @@ private:
 
 public:
   // Parse pointer of MemNode. Delegates to MemPointerParser::parse.
-  MemPointer(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
-             const MemNode* mem,
-             MemPointerParserCallback& callback = MemPointerParserCallback::empty());
+  // callback: receives a callback for every decomposed (inner) node
+  //           of the pointer expression.
+  MemPointer(const MemNode* mem,
+             MemPointerParserCallback& callback
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace));
+
+  // Parse pointer of MemNode. Delegates to MemPointerParser::parse.
+  MemPointer(const MemNode* mem
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+    MemPointer(mem, MemPointerParserCallback::empty() NOT_PRODUCT(COMMA trace)) {}
 
   static MemPointer make_trivial(Node* pointer,
                                  const jint size

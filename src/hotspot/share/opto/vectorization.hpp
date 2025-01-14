@@ -744,9 +744,9 @@ public:
            const VLoop& vloop,
            MemPointerParserCallback& callback = MemPointerParserCallback::empty()) :
     VPointer(vloop,
-             MemPointer(NOT_PRODUCT(vloop.mptrace() COMMA)
-                        mem,
-                        callback))
+             MemPointer(mem,
+                        callback
+                        NOT_PRODUCT(COMMA vloop.mptrace())))
   {
 #ifndef PRODUCT
     if (vloop.mptrace().is_trace_parsing()) {
