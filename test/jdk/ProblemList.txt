@@ -583,8 +583,6 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 
 # jdk_nio
 
-java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
-
 java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
 
 java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
@@ -718,6 +716,8 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 
 # core_tools
 
+tools/jlink/runtimeImage/JavaSEReproducibleTest.java 8347376 generic-all
+tools/jlink/runtimeImage/PackagedModulesVsRuntimeImageLinkTest.java 8347376 generic-all
 
 ############################################################################
 

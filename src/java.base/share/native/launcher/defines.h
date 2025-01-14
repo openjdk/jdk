@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,18 +50,9 @@ static const char* const_progname = PROGNAME;
 static char* const_progname = NULL;
 #endif
 static const char* const_jargs[] = JAVA_ARGS;
-#ifdef EXTRA_JAVA_ARGS
-static const char* const_extra_jargs[] = EXTRA_JAVA_ARGS;
-#else
-static const char** const_extra_jargs = NULL;
-#endif
 #else  /* !JAVA_ARGS */
-#ifdef EXTRA_JAVA_ARGS
-#error "EXTRA_JAVA_ARGS defined without JAVA_ARGS"
-#endif
 static const char* const_progname = "java";
 static const char** const_jargs = NULL;
-static const char** const_extra_jargs = NULL;
 #endif /* JAVA_ARGS */
 
 #ifdef LAUNCHER_NAME
