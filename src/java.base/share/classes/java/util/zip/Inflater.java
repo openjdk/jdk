@@ -59,8 +59,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * @apiNote
  * This class implements {@link AutoCloseable} to facilitate its usage with
  * {@code try}-with-resources statement. The {@linkplain Inflater#close() close() method} simply
- * calls {@code end()}. Subclasses should override {@linkplain #end()} to clean up the
- * resources acquired by the subclass.
+ * calls {@code end()}.
  *
  * <p>
  * The following code fragment demonstrates a trivial compression
@@ -702,6 +701,9 @@ public class Inflater implements AutoCloseable {
      * and discards any unprocessed input.
      * <p>
      * If the {@code Inflater} is already closed then invoking this method has no effect.
+     *
+     * @implSpec Subclasses should override this method to clean up the resources
+     * acquired by the subclass.
      *
      * @see #close()
      */
