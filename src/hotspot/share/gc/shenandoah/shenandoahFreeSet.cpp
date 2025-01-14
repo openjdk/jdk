@@ -729,7 +729,6 @@ void ShenandoahRegionPartitions::assert_bounds() {
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
-  _trash_regions(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, max_regions, mtGC)),
   _mutator_words_allocated(0),
   _mutator_words_allocated_at_rebuild(0),
   _mutator_words_at_last_sample(0),
