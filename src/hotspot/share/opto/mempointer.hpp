@@ -832,9 +832,9 @@ private:
     _mem_pointer(parse(callback)) {}
 
 public:
-  static MemPointer parse(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
-                          const MemNode* mem,
-                          MemPointerParserCallback& callback = MemPointerParserCallback::empty()) {
+  static MemPointer parse(const MemNode* mem,
+                          MemPointerParserCallback& callback
+                          NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are allowed");
     ResourceMark rm;
     MemPointerParser parser(mem, callback NOT_PRODUCT(COMMA trace));

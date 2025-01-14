@@ -33,9 +33,9 @@ MemPointerParserCallback MemPointerParserCallback::_empty;
 MemPointer::MemPointer(const MemNode* mem,
                        MemPointerParserCallback& callback
                        NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
-  MemPointer(MemPointerParser::parse(NOT_PRODUCT(trace COMMA)
-                                     mem,
-                                     callback)) {}
+  MemPointer(MemPointerParser::parse(mem,
+                                     callback
+                                     NOT_PRODUCT(COMMA trace))) {}
 
 // Recursively parse the pointer expression with a DFS all-path traversal
 // (i.e. with node repetitions), starting at the pointer.
