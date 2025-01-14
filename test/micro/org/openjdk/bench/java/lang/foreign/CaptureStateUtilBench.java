@@ -23,7 +23,7 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
-import jdk.internal.foreign.CaptureStateUtil;
+import jdk.internal.foreign.CaptureStateUtil2;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -98,7 +98,7 @@ public class CaptureStateUtilBench {
 
     private static MethodHandle dummyTlAlloc() {
         final MethodHandle handle = dummyExplicitAlloc();
-        return CaptureStateUtil.adaptSystemCall(handle, ERRNO_NAME);
+        return CaptureStateUtil2.adaptSystemCall(handle, ERRNO_NAME);
     }
 
     // Dummy method that is just returning the provided parameters

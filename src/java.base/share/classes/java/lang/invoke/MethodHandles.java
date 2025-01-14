@@ -4614,7 +4614,7 @@ return invoker;
      * Call {@code #I} the number of incoming parameters (the value
      * {@code newType.parameterCount()}, and call {@code #O} the number
      * of outgoing parameters (the value {@code target.type().parameterCount()}).
-     * Then the length of the reordering array must be {@code #O},
+     * Then the length of the reordering array must be {@code #O    },
      * and each element must be a non-negative number less than {@code #I}.
      * For every {@code N} less than {@code #O}, the {@code N}-th
      * outgoing argument will be taken from the {@code I}-th incoming
