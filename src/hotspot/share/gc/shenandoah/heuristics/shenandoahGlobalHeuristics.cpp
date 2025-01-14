@@ -92,8 +92,8 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
   size_t free_target = (capacity * ShenandoahMinFreeThreshold) / 100 + max_young_cset;
   size_t min_garbage = (free_target > actual_free) ? (free_target - actual_free) : 0;
 
-  log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Max Young Evacuation: " SIZE_FORMAT
-                     "%s, Max Old Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+  log_info(gc, ergo)("Adaptive CSet Selection for GLOBAL. Max Young Evacuation: %zu"
+                     "%s, Max Old Evacuation: %zu%s, Actual Free: %zu%s.",
                      byte_size_in_proper_unit(max_young_cset), proper_unit_for_byte_size(max_young_cset),
                      byte_size_in_proper_unit(max_old_cset), proper_unit_for_byte_size(max_old_cset),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));

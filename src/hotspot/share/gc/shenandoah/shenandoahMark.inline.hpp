@@ -128,7 +128,7 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
 
   if (!region->is_humongous_start()) {
     assert(!region->is_humongous(), "Cannot have continuations here");
-    assert(region->is_affiliated(), "Do not count live data within Free Regular Region " SIZE_FORMAT, region_idx);
+    assert(region->is_affiliated(), "Do not count live data within Free Regular Region %zu", region_idx);
     ShenandoahLiveData cur = live_data[region_idx];
     size_t new_val = size + cur;
     if (new_val >= SHENANDOAH_LIVEDATA_MAX) {
@@ -143,11 +143,11 @@ inline void ShenandoahMark::count_liveness(ShenandoahLiveData* live_data, oop ob
     shenandoah_assert_in_correct_region(nullptr, obj);
     size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
 
-    assert(region->is_affiliated(), "Do not count live data within FREE Humongous Start Region " SIZE_FORMAT, region_idx);
+    assert(region->is_affiliated(), "Do not count live data within FREE Humongous Start Region %zu", region_idx);
     for (size_t i = region_idx; i < region_idx + num_regions; i++) {
       ShenandoahHeapRegion* chain_reg = heap->get_region(i);
       assert(chain_reg->is_humongous(), "Expecting a humongous region");
-      assert(chain_reg->is_affiliated(), "Do not count live data within FREE Humongous Continuation Region " SIZE_FORMAT, i);
+      assert(chain_reg->is_affiliated(), "Do not count live data within FREE Humongous Continuation Region %zu", i);
       chain_reg->increase_live_data_gc_words(chain_reg->used() >> LogHeapWordSize);
     }
   }

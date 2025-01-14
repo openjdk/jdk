@@ -33,8 +33,8 @@ ShenandoahAgeCensus::ShenandoahAgeCensus() {
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "Only in generational mode");
   if (ShenandoahGenerationalMinTenuringAge > ShenandoahGenerationalMaxTenuringAge) {
     vm_exit_during_initialization(
-      err_msg("ShenandoahGenerationalMinTenuringAge=" SIZE_FORMAT
-              " should be no more than ShenandoahGenerationalMaxTenuringAge=" SIZE_FORMAT,
+      err_msg("ShenandoahGenerationalMinTenuringAge=%zu"
+              " should be no more than ShenandoahGenerationalMaxTenuringAge=%zu",
               ShenandoahGenerationalMinTenuringAge, ShenandoahGenerationalMaxTenuringAge));
   }
 
@@ -327,7 +327,7 @@ double ShenandoahAgeCensus::mortality_rate(size_t prev_pop, size_t cur_pop) {
     // or increased.
     if (cur_pop > prev_pop) {
       log_trace(gc, age)
-        (" (dark matter) Cohort population " SIZE_FORMAT_W(10) " to " SIZE_FORMAT_W(10),
+        (" (dark matter) Cohort population %10zu to %10zu",
         prev_pop*oopSize, cur_pop*oopSize);
     }
     return 0.0;
@@ -356,7 +356,7 @@ void ShenandoahAgeCensus::print() {
     // Suppress printing when everything is zero
     if (prev_pop + cur_pop > 0) {
       log_info(gc, age)
-        (" - age %3u: prev " SIZE_FORMAT_W(10) " bytes, curr " SIZE_FORMAT_W(10) " bytes, mortality %.2f ",
+        (" - age %3u: prev %10zu bytes, curr %10zu bytes, mortality %.2f ",
          i, prev_pop*oopSize, cur_pop*oopSize, mr);
     }
     total += cur_pop;
@@ -375,8 +375,8 @@ void ShenandoahNoiseStats::print(size_t total) {
     float f_aged    = (float)aged/(float)total;
     float f_clamped = (float)clamped/(float)total;
     float f_young   = (float)young/(float)total;
-    log_info(gc, age)("Skipped: " SIZE_FORMAT_W(10) " (%.2f),  R-Aged: " SIZE_FORMAT_W(10) " (%.2f),  "
-                      "Clamped: " SIZE_FORMAT_W(10) " (%.2f),  R-Young: " SIZE_FORMAT_W(10) " (%.2f)",
+    log_info(gc, age)("Skipped: %10zu (%.2f),  R-Aged: %10zu (%.2f),  "
+                      "Clamped: %10zu (%.2f),  R-Young: %10zu (%.2f)",
                       skipped*oopSize, f_skipped, aged*oopSize, f_aged,
                       clamped*oopSize, f_clamped, young*oopSize, f_young);
   }

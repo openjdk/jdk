@@ -31,9 +31,9 @@
 #ifndef PRODUCT
 void ShenandoahCardStats::log() const {
   if (ShenandoahEnableCardStats) {
-    log_info(gc,remset)("Card stats: dirty " SIZE_FORMAT " (max run: " SIZE_FORMAT "),"
-      " clean " SIZE_FORMAT " (max run: " SIZE_FORMAT "),"
-      " dirty scans/objs " SIZE_FORMAT,
+    log_info(gc,remset)("Card stats: dirty %zu (max run: %zu),"
+      " clean %zu (max run: %zu),"
+      " dirty scans/objs %zu",
       _dirty_card_cnt, _max_dirty_run,
       _clean_card_cnt, _max_clean_run,
       _dirty_scan_obj_cnt);

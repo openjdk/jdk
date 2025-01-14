@@ -40,7 +40,7 @@ void ShenandoahInitLogger::print() {
 void ShenandoahInitLogger::print_heap() {
   GCInitLogger::print_heap();
 
-  log_info(gc, init)("Heap Region Count: " SIZE_FORMAT, ShenandoahHeapRegion::region_count());
+  log_info(gc, init)("Heap Region Count: %zu", ShenandoahHeapRegion::region_count());
   log_info(gc, init)("Heap Region Size: " EXACTFMT, EXACTFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
   log_info(gc, init)("TLAB Size Max: " EXACTFMT, EXACTFMTARGS(ShenandoahHeapRegion::max_tlab_size_bytes()));
 }

@@ -81,7 +81,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegionSetIterator::next() {
 }
 
 void ShenandoahHeapRegionSet::print_on(outputStream* out) const {
-  out->print_cr("Region Set : " SIZE_FORMAT "", count());
+  out->print_cr("Region Set : %zu", count());
   for (size_t index = 0; index < _heap->num_regions(); index++) {
     if (is_in(index)) {
       _heap->get_region(index)->print_on(out);
