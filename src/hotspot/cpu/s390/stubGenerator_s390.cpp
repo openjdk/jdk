@@ -1361,47 +1361,47 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_conjoint_nonoop_copy(StubGenStubId stub_id) {
     bool aligned;
-    int element_size;
+    int shift; // i.e. log2(element size)
     address nooverlap_target;
     switch (stub_id) {
     case jbyte_arraycopy_id:
       aligned = false;
-      element_size = 1;
+      shift = 0;
       nooverlap_target = StubRoutines::jbyte_disjoint_arraycopy();
       break;
     case arrayof_jbyte_arraycopy_id:
       aligned = true;
-      element_size = 1;
+      shift = 0;
       nooverlap_target = StubRoutines::arrayof_jbyte_disjoint_arraycopy();
       break;
     case jshort_arraycopy_id:
       aligned = false;
-      element_size = 2;
+      shift = 1;
       nooverlap_target = StubRoutines::jshort_disjoint_arraycopy();
       break;
     case arrayof_jshort_arraycopy_id:
       aligned = true;
-      element_size = 2;
+      shift = 1;
       nooverlap_target = StubRoutines::arrayof_jshort_disjoint_arraycopy();
       break;
     case jint_arraycopy_id:
       aligned = false;
-      element_size = 4;
+      shift = 2;
       nooverlap_target = StubRoutines::jint_disjoint_arraycopy();
       break;
     case arrayof_jint_arraycopy_id:
       aligned = true;
-      element_size = 4;
+      shift = 2;
       nooverlap_target = StubRoutines::arrayof_jint_disjoint_arraycopy();
       break;
     case jlong_arraycopy_id:
       aligned = false;
-      element_size = 8;
+      shift = 3;
       nooverlap_target = StubRoutines::jlong_disjoint_arraycopy();
       break;
     case arrayof_jlong_arraycopy_id:
       aligned = true;
-      element_size = 8;
+      shift = 3;
       nooverlap_target = StubRoutines::arrayof_jlong_disjoint_arraycopy();
       break;
     default:
@@ -1409,7 +1409,8 @@ class StubGenerator: public StubCodeGenerator {
     }
     StubCodeMark mark(this, stub_id);
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
-    generate_conjoint_copy(aligned, element_size, false);
+    array_overlap_test(nooverlap_target, shift); // Branch away to nooverlap_target if disjoint.
+    generate_conjoint_copy(aligned, 1 << shift, false);
     return __ addr_at(start_off);
   }
 
@@ -1430,12 +1431,12 @@ class StubGenerator: public StubCodeGenerator {
       break;
     case oop_arraycopy_uninit_id:
       aligned = false;
-      dest_uninitialized = false;
+      dest_uninitialized = true;
       nooverlap_target = StubRoutines::oop_disjoint_arraycopy(dest_uninitialized);
       break;
     case arrayof_oop_arraycopy_uninit_id:
       aligned = true;
-      dest_uninitialized = false;
+      dest_uninitialized = true;
       nooverlap_target = StubRoutines::arrayof_oop_disjoint_arraycopy(dest_uninitialized);
       break;
     default:
