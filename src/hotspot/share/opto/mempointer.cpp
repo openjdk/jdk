@@ -39,7 +39,8 @@ MemPointer::MemPointer(const MemNode* mem,
 
 // Recursively parse the pointer expression with a DFS all-path traversal
 // (i.e. with node repetitions), starting at the pointer.
-MemPointer MemPointerParser::parse(MemPointerParserCallback& callback) {
+MemPointer MemPointerParser::parse(MemPointerParserCallback& callback
+                                   NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
@@ -55,14 +56,14 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback) {
   while (_worklist.is_nonempty()) {
     // Bail out if the graph is too complex.
     if (traversal_count++ > 1000) {
-      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA _trace));
+      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
     }
     parse_sub_expression(_worklist.pop(), callback);
   }
 
   // Bail out if there is a constant overflow.
   if (_con.is_NaN()) {
-    return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA _trace));
+    return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
   }
 
   // Sorting by variable idx means that all summands with the same variable are consecutive.
@@ -83,7 +84,7 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback) {
     }
     // Bail out if scale is NaN.
     if (scale.is_NaN()) {
-      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA _trace));
+      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
     }
     // Keep summands with non-zero scale.
     if (!scale.is_zero()) {
@@ -92,7 +93,7 @@ MemPointer MemPointerParser::parse(MemPointerParserCallback& callback) {
   }
   _summands.trunc_to(pos_put);
 
-  return MemPointer::make(pointer, _summands, _con, size NOT_PRODUCT(COMMA _trace));
+  return MemPointer::make(pointer, _summands, _con, size NOT_PRODUCT(COMMA trace));
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the

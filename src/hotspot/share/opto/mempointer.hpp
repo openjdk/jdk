@@ -811,8 +811,6 @@ public:
 
 class MemPointerParser : public StackObj {
 private:
-  NOT_PRODUCT( const TraceMemPointer& _trace; )
-
   const MemNode* _mem;
 
   // Internal data-structures for parsing.
@@ -826,10 +824,9 @@ private:
   MemPointerParser(const MemNode* mem,
                    MemPointerParserCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
-    NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
     _con(NoOverflowInt(0)),
-    _mem_pointer(parse(callback)) {}
+    _mem_pointer(parse(callback NOT_PRODUCT(COMMA trace))) {}
 
 public:
   static MemPointer parse(const MemNode* mem,
@@ -856,7 +853,8 @@ public:
 private:
   const MemPointer& mem_pointer() const { return _mem_pointer; }
 
-  MemPointer parse(MemPointerParserCallback& callback);
+  MemPointer parse(MemPointerParserCallback& callback
+                   NOT_PRODUCT(COMMA const TraceMemPointer& trace));
 
   void parse_sub_expression(const MemPointerSummand& summand, MemPointerParserCallback& callback);
   static bool sub_expression_has_native_base_candidate(Node* n);
