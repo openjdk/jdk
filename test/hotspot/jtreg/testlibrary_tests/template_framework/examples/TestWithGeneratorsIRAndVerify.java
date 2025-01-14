@@ -37,15 +37,15 @@ package template_framework.examples;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 /**
- * TODO adjust this comment.
- *
- * This test shows that the IR verification can be done on code compiled by the Compile Framework.
- * The "@compile" command for JTREG is required so that the IRFramework is compiled, other javac
- * might not compile it because it is not present in the class, only in the dynamically compiled
- * code.
+ * This is a basic IR verification test, in combination with Generators for random input generation
+ * and Verify for output verification.
+ * <p>
+ * The "@compile" command for JTREG is required so that the frameworks used in the Template code
+ * are compiled and available for the Test-VM.
  * <p>
  * Additionally, we must set the classpath for the Test-VM, so that it has access to all compiled
  * classes (see {@link CompileFramework#getEscapedClassPathOfCompiledClasses}).
@@ -77,6 +77,9 @@ public class TestWithGeneratorsIRAndVerify {
         CodeGeneratorLibrary library = CodeGeneratorLibrary.standard();
         TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest", library, imports);
 
+        // Definie the main method body, where we laungh the IR tests from. It is imporant
+        // that we pass the classpath to the Test-VM, so that it has access to all compiled
+        // classes.
         Template mainTemplate = new Template("my_example_main",
             """
             TestFramework framework = new TestFramework(InnerTest.class);
@@ -87,9 +90,26 @@ public class TestWithGeneratorsIRAndVerify {
         instantiator.where("classpath", comp.getEscapedClassPathOfCompiledClasses())
                     .add(null, mainTemplate, null);
 
-        Template staticsTemplate = new Template("my_example_statics",
+        // We define a Test-Template:
+        // - static fields for inputs: INPUT_A and INPUT_B
+        //   - Data generated with Generators and template holes (int_con).
+        // - GOLD value precomputed with dedicated call to test.
+        //   - This ensures that the GOLD value is computed in the interpreter
+        //     most likely, since the test method is not yet compiled.
+        //     This allows us later to compare to the results of the compiled
+        //     code.
+        //     The input data is cloned, so that the original INPUT_A is never
+        //     modified and can serve as identical input in later calls to test.
+        // - In the Setup method, we clone the input data, since the input data
+        //   could be modified inside the test method.
+        // - The test method can further make use of template holes, e.g.
+        //   recursive calls to other generators (e.g. int_con) or holes that
+        //   are filled with parameter values (e.g. OP).
+        // - The Check method verifies the results of the test method with the
+        //   GOLD value.
+        Template testTemplate = new Template("my_example_test",
             """
-            // $statics with length #{size:int_con(lo=10000,hi=20000)}
+            // $test with length #{size:int_con(lo=10000,hi=20000)}
             private static int[] $INPUT_A = new int[#{size}];
             static {
                 Generators.G.fill(Generators.G.ints(), $INPUT_A);
@@ -97,10 +117,7 @@ public class TestWithGeneratorsIRAndVerify {
 
             private static int $INPUT_B = #{:int_con};
             private static Object $GOLD = $test($INPUT_A.clone(), $INPUT_B);
-            """
-        );
-        Template testTemplate = new Template("my_example_test",
-            """
+
             @Setup
             public static Object[] $setup() {
                 // Must make sure to clone input arrays, if it is mutated in the test.
@@ -111,7 +128,8 @@ public class TestWithGeneratorsIRAndVerify {
             @Arguments(setup = "$setup")
             public static Object $test(int[] a, int b) {
                 for (int i = 0; i < a.length; i++) {
-                    a[i] = a[i] + b;
+                    int con = #{:int_con(lo=1,hi=max_int)};
+                    a[i] = (a[i] * con) #{OP} b;
                 }
                 return a;
             }
@@ -123,8 +141,10 @@ public class TestWithGeneratorsIRAndVerify {
             """
         );
 
-        // TODO desc, and maybe extend
-        instantiator.add(staticsTemplate, null, testTemplate);
+        // Instantiate the test twice (repeat 2) for each operator OP.
+        instantiator.where("OP", Arrays.asList("+", "-", "*", "&", "|"))
+                    .repeat(2)
+                    .add(null, null, testTemplate);
 
         // Collect everything into a String.
         return instantiator.instantiate();

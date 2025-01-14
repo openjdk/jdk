@@ -262,7 +262,7 @@ public final class TestClassInstantiator {
          * @return The Instantiator for chaining.
          */
         public Instantiator repeat(int repeatCount) {
-            if (repeatCount <= 2 || repeatCount > 1000) {
+            if (repeatCount < 2 || repeatCount > 1000) {
                 throw new TemplateFrameworkException("Bad repeat count: " + repeatCount + " should be 2..1000");
             }
             if (this.repeatCount > 1) {
