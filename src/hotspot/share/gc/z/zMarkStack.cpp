@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   // if they see the old or new values.
   Atomic::store(&_nstripes_mask, nstripes - 1);
 
-  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", nstripes);
+  log_debug(gc, marking)("Using %zu mark stripes", nstripes);
 }
 
 size_t ZMarkStripeSet::nstripes() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ static ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& s
   const double time_until_gc = time_until_oom - actual_gc_duration;
 
   log_debug(gc, director)("Rule Minor: Allocation Rate (Dynamic GC Workers), "
-                          "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: " SIZE_FORMAT "MB, GCCPUTime: %.3f, "
+                          "MaxAllocRate: %.1fMB/s (+/-%.1f%%), Free: %zuMB, GCCPUTime: %.3f, "
                           "GCDuration: %.3fs, TimeUntilOOM: %.3fs, TimeUntilGC: %.3fs, GCWorkers: %u",
                           alloc_rate / M,
                           alloc_rate_sd_percent * 100,
@@ -288,7 +288,7 @@ static bool rule_minor_allocation_rate_static(const ZDirectorStats& stats) {
   // time and end up starting the GC too late in the next interval.
   const double time_until_gc = time_until_oom - gc_duration;
 
-  log_debug(gc, director)("Rule Minor: Allocation Rate (Static GC Workers), MaxAllocRate: %.1fMB/s, Free: " SIZE_FORMAT "MB, GCDuration: %.3fs, TimeUntilGC: %.3fs",
+  log_debug(gc, director)("Rule Minor: Allocation Rate (Static GC Workers), MaxAllocRate: %.1fMB/s, Free: %zuMB, GCDuration: %.3fs, TimeUntilGC: %.3fs",
                           max_alloc_rate / M, free / M, gc_duration, time_until_gc);
 
   return time_until_gc <= 0;
@@ -386,7 +386,7 @@ static bool rule_minor_high_usage(const ZDirectorStats& stats) {
   const double free_percent = percent_of(free, soft_max_capacity);
 
   auto print_function = [&](size_t free, double free_percent) {
-    log_debug(gc, director)("Rule Minor: High Usage, Free: " SIZE_FORMAT "MB(%.1f%%)",
+    log_debug(gc, director)("Rule Minor: High Usage, Free: %zuMB(%.1f%%)",
                             free / M, free_percent);
   };
 
@@ -430,7 +430,7 @@ static bool rule_major_warmup(const ZDirectorStats& stats) {
   const double used_threshold_percent = (stats._old_stats._cycle._nwarmup_cycles + 1) * 0.1;
   const size_t used_threshold = (size_t)(soft_max_capacity * used_threshold_percent);
 
-  log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
+  log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: %zuMB, UsedThreshold: %zuMB",
                           used_threshold_percent * 100, used / M, used_threshold / M);
 
   return used >= used_threshold;
@@ -593,7 +593,7 @@ static bool rule_major_proactive(const ZDirectorStats& stats) {
   const double time_since_last_gc_threshold = 5 * 60; // 5 minutes
   if (used < used_threshold && time_since_last_gc < time_since_last_gc_threshold) {
     // Don't even consider doing a proactive GC
-    log_debug(gc, director)("Rule Major: Proactive, UsedUntilEnabled: " SIZE_FORMAT "MB, TimeUntilEnabled: %.3fs",
+    log_debug(gc, director)("Rule Major: Proactive, UsedUntilEnabled: %zuMB, TimeUntilEnabled: %.3fs",
                             (used_threshold - used) / M,
                             time_since_last_gc_threshold - time_since_last_gc);
     return false;

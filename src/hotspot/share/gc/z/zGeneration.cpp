@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,7 +361,7 @@ void ZGeneration::log_phase_switch(Phase from, Phase to) {
     index += 1;
   }
 
-  assert(index < ARRAY_SIZE(str), "OOB: " SIZE_FORMAT " < " SIZE_FORMAT, index, ARRAY_SIZE(str));
+  assert(index < ARRAY_SIZE(str), "OOB: %zu < %zu", index, ARRAY_SIZE(str));
 
   Events::log_zgc_phase_switch("%-21s %4u", str[index], seqnum());
 }
@@ -796,8 +796,8 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   // if the GC is finding it hard to keep up with the allocation rate.
   const double tenuring_threshold_raw = young_life_decay_factor * young_log_residency;
 
-  log_trace(gc, reloc)("Young Allocated: " SIZE_FORMAT "M", young_allocated / M);
-  log_trace(gc, reloc)("Young Garbage: " SIZE_FORMAT "M", young_garbage / M);
+  log_trace(gc, reloc)("Young Allocated: %zuM", young_allocated / M);
+  log_trace(gc, reloc)("Young Garbage: %zuM", young_garbage / M);
   log_debug(gc, reloc)("Allocated To Garbage: %.1f", allocated_garbage_ratio);
   log_trace(gc, reloc)("Young Log: %.1f", young_log);
   log_trace(gc, reloc)("Young Residency Reciprocal: %.1f", young_residency_reciprocal);

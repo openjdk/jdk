@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,12 +363,12 @@ void ZCollectedHeap::print_on_error(outputStream* st) const {
   st->print_cr("ZGC Globals:");
   st->print_cr(" Young Collection:   %s/%u", ZGeneration::young()->phase_to_string(), ZGeneration::young()->seqnum());
   st->print_cr(" Old Collection:     %s/%u", ZGeneration::old()->phase_to_string(), ZGeneration::old()->seqnum());
-  st->print_cr(" Offset Max:         " SIZE_FORMAT "%s (" PTR_FORMAT ")",
+  st->print_cr(" Offset Max:         %zu%s (" PTR_FORMAT ")",
                byte_size_in_exact_unit(ZAddressOffsetMax),
                exact_unit_for_byte_size(ZAddressOffsetMax),
                ZAddressOffsetMax);
-  st->print_cr(" Page Size Small:    " SIZE_FORMAT "M", ZPageSizeSmall / M);
-  st->print_cr(" Page Size Medium:   " SIZE_FORMAT "M", ZPageSizeMedium / M);
+  st->print_cr(" Page Size Small:    %zuM", ZPageSizeSmall / M);
+  st->print_cr(" Page Size Medium:   %zuM", ZPageSizeMedium / M);
   st->cr();
   st->print_cr("ZGC Metadata Bits:");
   st->print_cr(" LoadGood:           " PTR_FORMAT, ZPointerLoadGoodMask);
