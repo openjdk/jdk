@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
 
 void MutableSpace::print_short() const { print_short_on(tty); }
 void MutableSpace::print_short_on( outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %d%% used", capacity_in_bytes() / K,
+  st->print(" space %zuK, %d%% used", capacity_in_bytes() / K,
             (int) ((double) used_in_bytes() * 100 / capacity_in_bytes()));
 }
 

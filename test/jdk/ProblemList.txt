@@ -716,9 +716,6 @@ javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
 
 # core_tools
 
-tools/jlink/runtimeImage/JavaSEReproducibleTest.java 8347376 generic-all
-tools/jlink/runtimeImage/PackagedModulesVsRuntimeImageLinkTest.java 8347376 generic-all
-
 ############################################################################
 
 # core_svc
@@ -727,8 +724,6 @@ tools/jlink/runtimeImage/PackagedModulesVsRuntimeImageLinkTest.java 8347376 gene
 
 # jdk_jdi
 
-com/sun/jdi/ProcessAttachTest.java         8346827 linux-all
-com/sun/jdi/ReattachStressTest.java        8346827 linux-all
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all

@@ -247,6 +247,9 @@ void Thread::call_run() {
   // asynchronously with respect to its termination - that is what _run_state can
   // be used to check.
 
+  // Logically we should do this->unregister_thread_stack_with_NMT() here, but we
+  // had to move that into post_run() because of the `this` deletion issue.
+
   assert(Thread::current_or_null() == nullptr, "current thread still present");
 }
 

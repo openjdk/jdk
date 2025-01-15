@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "os_linux.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 
 #include <malloc.h>
 
@@ -37,7 +36,7 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
 #ifdef __GLIBC__
   char* buf;
   size_t size;
-  FILE* stream = ::open_memstream(&buf, &size);
+  ALLOW_C_FUNCTION(::open_memstream, FILE* stream = ::open_memstream(&buf, &size);)
   if (stream == nullptr) {
     _output->print_cr("Error: Could not call malloc_info(3)");
     return;
@@ -45,7 +44,7 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
 
   int err = os::Linux::malloc_info(stream);
   if (err == 0) {
-    fflush(stream);
+    ALLOW_C_FUNCTION(::fflush, fflush(stream);)
     _output->print_raw(buf);
     _output->cr();
   } else if (err == -1) {
@@ -55,8 +54,8 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
   } else {
     ShouldNotReachHere();
   }
-  ::fclose(stream);
-  permit_forbidden_function::free(buf);
+  ALLOW_C_FUNCTION(::fclose, ::fclose(stream);)
+  ALLOW_C_FUNCTION(::free, ::free(buf);)
 #else
   _output->print_cr(malloc_info_unavailable);
 #endif // __GLIBC__

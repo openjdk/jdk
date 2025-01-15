@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
@@ -122,7 +123,7 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The heap region is populated by HeapShared::archive_objects.
+// The heap region is written by HeapShared::write_heap().
 //
 // The bitmap region is used to relocate the ro/rw/hp regions.
 
@@ -544,6 +545,7 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
+    AOTArtifactFinder::all_cached_classes_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
@@ -614,7 +616,15 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  SystemDictionaryShared::find_all_archivable_classes();
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (HeapShared::can_write() && _extra_interned_strings != nullptr) {
+    for (int i = 0; i < _extra_interned_strings->length(); i ++) {
+      OopHandle string = _extra_interned_strings->at(i);
+      HeapShared::add_to_dumped_interned_strings(string.resolve());
+    }
+  }
+#endif
 
   _builder.gather_source_objs();
   _builder.reserve_buffer();
@@ -626,12 +636,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   _builder.dump_ro_metadata();
   _builder.relocate_metaspaceobj_embedded_pointers();
 
-  dump_java_heap_objects(_builder.klasses());
-  dump_shared_symbol_table(_builder.symbols());
-
   log_info(cds)("Make classes shareable");
   _builder.make_klasses_shareable();
   MetaspaceShared::make_method_handle_intrinsics_shareable();
+
+  dump_java_heap_objects(_builder.klasses());
+  dump_shared_symbol_table(_builder.symbols());
 
   char* early_serialized_data = dump_early_read_only_tables();
   char* serialized_data = dump_read_only_tables();
@@ -1000,7 +1010,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
-  if(!HeapShared::can_write()) {
+  if (!HeapShared::can_write()) {
     log_info(cds)(
       "Archived java heap is not supported as UseG1GC "
       "and UseCompressedClassPointers are required."
@@ -1008,25 +1018,7 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
       BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedClassPointers));
     return;
   }
-  // Find all the interned strings that should be dumped.
-  int i;
-  for (i = 0; i < klasses->length(); i++) {
-    Klass* k = klasses->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      ik->constants()->add_dumped_interned_strings();
-    }
-  }
-  if (_extra_interned_strings != nullptr) {
-    for (i = 0; i < _extra_interned_strings->length(); i ++) {
-      OopHandle string = _extra_interned_strings->at(i);
-      HeapShared::add_to_dumped_interned_strings(string.resolve());
-    }
-  }
-
-  HeapShared::archive_objects(&_heap_info);
-  ArchiveBuilder::OtherROAllocMark mark;
-  HeapShared::write_subgraph_info_table();
+  HeapShared::write_heap(&_heap_info);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
