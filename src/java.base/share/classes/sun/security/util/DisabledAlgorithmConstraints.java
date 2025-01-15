@@ -163,7 +163,16 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     @Override
     public final boolean permits(Set<CryptoPrimitive> primitives,
-            String algorithm, AlgorithmParameters parameters) {
+                                 String algorithm,
+                                 AlgorithmParameters parameters) {
+
+        if (algorithm.equals("SHA1withRSA")
+                || algorithm.equals("rsa_pkcs1_sha1")) {
+            System.err.printf(
+                    "------ Got %s with %s%n",
+                    algorithm, primitives.stream().findFirst().get());
+        }
+
         if (primitives == null || primitives.isEmpty()) {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
