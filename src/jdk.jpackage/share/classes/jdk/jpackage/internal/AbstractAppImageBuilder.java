@@ -87,7 +87,7 @@ public abstract class AbstractAppImageBuilder {
             public String name() {
                 return APP_NAME.fetchFrom(params);
             }
-        }).create(ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, appLayout);
+        }).create(appLayout, appLayout);
     }
 
     protected void copyApplication(Map<String, ? super Object> params)
