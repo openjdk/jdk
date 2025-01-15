@@ -30,7 +30,7 @@ import java.util.*;
 import jdk.test.lib.Utils;
 
 /**
- * The generators class provides a set of random generator functions for testing.
+ * The Generators class provides a set of random generator functions for testing.
  * The goal is to cover many special cases, such as NaNs in Floats or values
  * close to overflow in ints. They should produce values from specific
  * "interesting" distributions which might trigger various behaviours in
@@ -89,6 +89,9 @@ import jdk.test.lib.Utils;
  * (namely, {@link #orderedRandomElement(Collection)} and {@link #single(Comparable)}) that work with comparable types.
  * For example, you might restrict a generator choosing strings at random:
  * <pre><code>G.orderedRandomElement(List.of("Bob", "Alice", "Carol")).restricted("Al", "Bz")</code></pre>
+ * This returns a new generator which only returns elements greater or equal than "Al" and less than or equal to
+ * "Bz". Thus, the only two values remaining in the example are "Alice" and "Bob". In general, you should always refer
+ * to the method that created the generator to learn about the exact semantics of restricting it.
  * <p>
  * For all the generators created by instances of this class, the following rule applies: Integral generators are
  * always inclusive of both the lower and upper bound, while floating point generators are always inclusive of the
@@ -196,7 +199,8 @@ public final class Generators {
 
     /**
      * Returns a restrictable generator that uniformly randomly samples elements from the provided collection.
-     * Duplicate elements are discarded from the collection.
+     * Duplicate elements are discarded from the collection. Restrictions are inclusive of both the uppper and lower
+     * bound.
      */
     public <T extends Comparable<T>> RestrictableGenerator<T> orderedRandomElement(Collection<T> list) {
         NavigableSet<T> set = list instanceof NavigableSet<T> ? (NavigableSet<T>) list : new TreeSet<>(list);

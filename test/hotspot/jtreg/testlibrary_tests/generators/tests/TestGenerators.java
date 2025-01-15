@@ -151,7 +151,7 @@ public class TestGenerators {
         Asserts.assertEQ(g1r1.next(), -1);
     }
 
-    static void testSpecialFloat() {
+    static void testSpecialDouble() {
         mockSource
                 .checkEmpty()
                 .enqueueInteger(0, 10, 3)
@@ -163,7 +163,7 @@ public class TestGenerators {
         Asserts.assertEQ(g.next(), -1d);
     }
 
-    static void testSpecialDouble() {
+    static void testSpecialFloat() {
         mockSource
                 .checkEmpty()
                 .enqueueInteger(0, 10, 3)
@@ -197,7 +197,7 @@ public class TestGenerators {
 
         mockSource.checkEmpty().enqueueInteger(0, 8, 1).enqueueInteger(0, 8, 2);
         // The list below is intentionally not sorted and is equivalent to: 1, 4, 4, 8, 9, 10, 13, 18, 20
-        // It contains 8 distinct values. Note that orderedRandomElement removes duplicates. Therefor the internal
+        // It contains 8 distinct values. Note that orderedRandomElement removes duplicates. Therefore the internal
         // value list is: 1, 4, 8, 9, 10, 13, 18, 20
         var g1 = mockGS.orderedRandomElement(List.of(10, 4, 1, 8, 9, 4, 20, 18, 13));
         Asserts.assertEQ(g1.next(), 4);
@@ -451,7 +451,7 @@ public class TestGenerators {
     }
 
     static void testFill() {
-        // All we need to test really is that fill calls the generators sequentially and correctly write the values
+        // All we need to test really is that fill calls the generators sequentially and correctly writes the values
         // into the arrays. Since fill with arrays uses memory segments internally, these are also tested.
 
         Generator<Double> doubleGen = new Generator<>() {
