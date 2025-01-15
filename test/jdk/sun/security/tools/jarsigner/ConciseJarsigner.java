@@ -43,8 +43,15 @@ public class ConciseJarsigner {
     static OutputAnalyzer kt(String cmd) throws Exception {
         // Choose 2048-bit RSA to make sure it runs fine and fast. In
         // fact, every keyalg/keysize combination is OK for this test.
-        return SecurityTools.keytool("-storepass changeit -keypass changeit "
-                + "-keystore ks -keyalg rsa -keysize 2048 " + cmd);
+        // The start date is set to -1M to prevent the certificate not yet valid during fast enough execution.
+        // If -startdate is specified in cmd, cmd version will be used.
+        if (cmd.contains("-startdate")) {
+            return SecurityTools.keytool("-storepass changeit -keypass changeit "
+                    + "-keystore ks -keyalg rsa -keysize 2048 " + cmd);
+        } else {
+            return SecurityTools.keytool("-storepass changeit -keypass changeit "
+                    + "-keystore ks -keyalg rsa -keysize 2048 -startdate -1M " + cmd);
+        }
     }
 
     static void gencert(String owner, String cmd) throws Exception {
@@ -256,9 +263,9 @@ public class ConciseJarsigner {
 
         // This certchain contains a cross-signed weak catwo.cert
         Files.write(Path.of("ee2"), List.of(
-                kt("-gencert -alias catwo -rfc -infile ee.req -startdate -1M").getOutput(),
+                kt("-gencert -alias catwo -rfc -infile ee.req").getOutput(),
                 kt("-gencert -alias caone -sigalg MD5withRSA -rfc "
-                        + "-infile catwo.req -startdate -1M").getOutput()));
+                        + "-infile catwo.req").getOutput()));
 
         kt("-importcert -alias ee -file ee2");
 
