@@ -565,7 +565,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       } else {
         tty->print("CodeCache");
       }
-      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
+      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (%zd bytes)",
                     (intptr_t)heap->low_boundary(), (intptr_t)heap->high(),
                     (address)heap->high() - (address)heap->low_boundary());
     }
@@ -1491,10 +1491,10 @@ void CodeCache::print_memory_overhead() {
   }
   // Print bytes that are allocated in the freelist
   ttyLocker ttl;
-  tty->print_cr("Number of elements in freelist: " SSIZE_FORMAT,       freelists_length());
-  tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelists()/K);
-  tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
-  tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
+  tty->print_cr("Number of elements in freelist: %zd",       freelists_length());
+  tty->print_cr("Allocated in freelist:          %zdkB",  bytes_allocated_in_freelists()/K);
+  tty->print_cr("Unused bytes in CodeBlobs:      %zdkB",  (wasted_bytes/K));
+  tty->print_cr("Segment map size:               %zdkB",  allocated_segments()/K); // 1 byte per segment
 }
 
 //------------------------------------------------------------------------------------------------

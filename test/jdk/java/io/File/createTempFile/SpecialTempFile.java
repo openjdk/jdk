@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.nio.file.Path;
 
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.OSVersion;
+import jdk.internal.util.StaticProperty;
 
 public class SpecialTempFile {
     private static void test(String name, String[] prefix, String[] suffix,
@@ -108,7 +109,7 @@ public class SpecialTempFile {
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
         boolean exceptionExpected =
-            !(System.getProperty("os.name").endsWith("11") ||
+            !(StaticProperty.osName().matches("^.*[11|2025]$") ||
               new OSVersion(10, 0).compareTo(OSVersion.current()) > 0);
         test("ReservedName", resvPre, resvSuf, exceptionExpected);
     }
