@@ -285,7 +285,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
   st->print_cr("- compact_strings:                %d", _compact_strings);
   st->print_cr("- compact_headers:                %d", _compact_headers);
-  st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
+  st->print_cr("- max_heap_size:                  %zu", _max_heap_size);
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
@@ -2373,7 +2373,7 @@ bool FileMapInfo::map_heap_region_impl() {
   }
   log_info(cds)("Heap data mapped at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
                 p2i(mapped_start), _mapped_heap_memregion.byte_size());
-  log_info(cds)("CDS heap data relocation delta = " INTX_FORMAT " bytes", delta);
+  log_info(cds)("CDS heap data relocation delta = %zd bytes", delta);
   return true;
 }
 

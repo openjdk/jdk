@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ public class CancelledPartialResponseTest {
     SSLContext sslContext;
 
     static PrintStream err = new PrintStream(System.err);
+    static PrintStream out = System.out;
 
     // TODO: Investigate further if checking against HTTP/3 Full Response is necessary
     @DataProvider(name = "testData")
@@ -106,17 +107,24 @@ public class CancelledPartialResponseTest {
 
     @Test(dataProvider = "testData")
     public void test(Version version, URI uri) {
-        err.printf("Testing with Version: %s, URI: %s\n", version, uri.toASCIIString());
+        out.printf("\nTesting with Version: %s, URI: %s\n", version, uri.toASCIIString());
+        err.printf("\nTesting with Version: %s, URI: %s\n", version, uri.toASCIIString());
         Iterable<byte[]> iterable = EndlessDataChunks::new;
         HttpRequest.BodyPublisher testPub = HttpRequest.BodyPublishers.ofByteArrays(iterable);
-        Throwable testThrowable = null;
+        Exception expectedException = null;
         try {
             performRequest(version, testPub, uri);
+            throw new AssertionError("Expected exception not raised for " + uri);
         } catch (Exception e) {
-            testThrowable = e.getCause();
+            expectedException = e;
         }
-        assertNotNull(testThrowable, "Request should have completed exceptionally but testThrowable is null");
-        assertEquals(testThrowable.getClass(), IOException.class, "Test should have closed with an IOException");
+        Throwable testThrowable = expectedException.getCause();
+        if (testThrowable == null) {
+            throw new AssertionError("Unexpected null cause for " + expectedException,
+                    expectedException);
+        }
+        assertEquals(testThrowable.getClass(), IOException.class,
+                "Test should have closed with an IOException");
         testThrowable.printStackTrace();
         if (version == HTTP_3) {
             if (testThrowable.getMessage().contains(Http3Error.H3_EXCESSIVE_LOAD.name())) {
@@ -234,7 +242,7 @@ public class CancelledPartialResponseTest {
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100, 0);
+            exchange.sendResponseHeaders(100, -1);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {
                 err.println("Sending Reset");
                 err.println(exchange.getRequestURI().getPath());
@@ -254,7 +262,8 @@ public class CancelledPartialResponseTest {
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             err.println("Sending 100");
-            exchange.sendResponseHeaders(100, 0);
+            exchange.sendResponseHeaders(100, -1);
+
             err.println("Sending 200");
             exchange.sendResponseHeaders(200, 0);
             if (exchange instanceof ExpectContinueResetTestExchangeImpl testExchange) {

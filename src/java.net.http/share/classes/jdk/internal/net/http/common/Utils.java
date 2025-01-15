@@ -66,6 +66,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -690,7 +691,6 @@ public final class Utils {
         return Integer.parseInt(System.getProperty(name, String.valueOf(defaultValue)));
     }
 
-    @SuppressWarnings("removal")
     public static long getLongProperty(String name, long defaultValue) {
         return Long.parseLong(System.getProperty(name, String.valueOf(defaultValue)));
     }
@@ -1746,5 +1746,32 @@ public final class Utils {
     }
     public static String stringForApplicationCode(long code) {
         return Http3Error.stringForCode(code);
+    }
+
+    /**
+     * {@return the exception the given {@code cf} was completed with,
+     * or a {@link CancellationException} if the given {@code cf} was
+     * cancelled}
+     *
+     * @param cf a {@code CompletableFuture} exceptionally completed
+     * @throws IllegalArgumentException if the given cf was not
+     *    {@linkplain CompletableFuture#isCompletedExceptionally()
+     *    completed exceptionally}
+     */
+    public static Throwable exceptionNow(CompletableFuture<?> cf) {
+        if (cf.isCompletedExceptionally()) {
+            if (cf.isCancelled()) {
+                try {
+                    cf.join();
+                } catch (CancellationException x) {
+                    return x;
+                } catch (CompletionException x) {
+                    return x.getCause();
+                }
+            } else {
+                return cf.exceptionNow();
+            }
+        }
+        throw new IllegalArgumentException("cf is not completed exceptionally");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ void VMOperationTimeoutTask::task() {
   if (is_armed()) {
     jlong delay = nanos_to_millis(os::javaTimeNanos() - _arm_time);
     if (delay > AbortVMOnVMOperationTimeoutDelay) {
-      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: " INTX_FORMAT " ms)",
+      fatal("%s VM operation took too long: " JLONG_FORMAT " ms elapsed since VM-op start (timeout: %zd ms)",
             _vm_op_name, delay, AbortVMOnVMOperationTimeoutDelay);
     }
   }
@@ -88,7 +88,7 @@ void VMOperationTimeoutTask::disarm() {
   // VMOperationTimeoutTask might miss the arm-disarm window depending on
   // the scheduling.
   if (vm_op_duration > AbortVMOnVMOperationTimeoutDelay) {
-    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: " INTX_FORMAT " ms)",
+    fatal("%s VM operation took too long: completed in " JLONG_FORMAT " ms (timeout: %zd ms)",
           _vm_op_name, vm_op_duration, AbortVMOnVMOperationTimeoutDelay);
   }
   _vm_op_name = nullptr;

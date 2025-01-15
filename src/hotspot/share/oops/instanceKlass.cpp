@@ -3654,7 +3654,7 @@ void InstanceKlass::print_on(outputStream* st) const {
       st->print("   ");
     }
   }
-  if (n >= MaxSubklassPrintSize) st->print("(" INTX_FORMAT " more klasses...)", n - MaxSubklassPrintSize);
+  if (n >= MaxSubklassPrintSize) st->print("(%zd more klasses...)", n - MaxSubklassPrintSize);
   st->cr();
 
   if (is_interface()) {

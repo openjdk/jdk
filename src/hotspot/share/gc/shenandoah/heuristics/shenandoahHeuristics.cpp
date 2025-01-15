@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +195,7 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
+      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
                    last_time_ms, _guaranteed_gc_interval);
       return true;
     }
@@ -209,7 +210,7 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range before adjustment: " INTX_FORMAT, _gc_time_penalties);
+         "In range before adjustment: %zd", _gc_time_penalties);
 
   intx new_val = _gc_time_penalties + step;
   if (new_val < 0) {
@@ -221,7 +222,7 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
   _gc_time_penalties = new_val;
 
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range after adjustment: " INTX_FORMAT, _gc_time_penalties);
+         "In range after adjustment: %zd", _gc_time_penalties);
 }
 
 void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {

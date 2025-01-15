@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,10 +525,12 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                     // synchronous send will rethrow exceptions
                     Throwable throwable = t.getCause();
                     assert throwable != null;
-
-                    if (thrower.test(where, throwable)) {
-                        System.out.println(now() + "Got expected exception: " + throwable);
-                    } else throw causeNotFound(where, t);
+                    Throwable cause = findCause(where, throwable, thrower);
+                    if (cause == null) {
+                        throw causeNotFound(where, t);
+                    } else {
+                        System.out.println(now() + "Got expected exception: " + cause);
+                    }
                 }
             }
             if (response != null) {
