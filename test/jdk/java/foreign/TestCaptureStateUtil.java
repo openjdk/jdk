@@ -70,7 +70,7 @@ final class TestCaptureStateUtil {
 
     @Test
     void successfulInt() throws Throwable {
-        int r = (int) ADAPTED_INT.invoke(1, 0);
+        int r = (int) ADAPTED_INT.invokeExact(1, 0);
         assertEquals(1, r);
     }
 
@@ -78,19 +78,19 @@ final class TestCaptureStateUtil {
 
     @Test
     void errorInt() throws Throwable {
-        int r = (int) ADAPTED_INT.invoke(-1, EACCES);
+        int r = (int) ADAPTED_INT.invokeExact(-1, EACCES);
         assertEquals(-EACCES, r);
     }
 
     @Test
     void successfulLong() throws Throwable {
-        long r = (long) ADAPTED_LONG.invoke(1, 0);
+        long r = (long) ADAPTED_LONG.invokeExact(1L, 0);
         assertEquals(1, r);
     }
 
     @Test
     void errorLong() throws Throwable {
-        long r = (long) ADAPTED_LONG.invoke(-1, EACCES);
+        long r = (long) ADAPTED_LONG.invokeExact(-1L, EACCES);
         assertEquals(-EACCES, r);
     }
 
