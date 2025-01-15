@@ -41,8 +41,8 @@ import jdk.test.lib.Utils;
  * Generators offers generators with essential distributions, for example, {@link #uniformInts(int, int)},
  * {@link #uniformLongs(long, long)}, {@link #uniformDoubles(double, double)} or {@link #uniformFloats()}. For floating
  * points, you may choose to get random bit patterns uniformly at random, rather than the values they represent.
- * Generators also offers special generators of interesting values such as {@link #specialInts(int)},
- * {@link #specialLongs(int)}, which are values close to the powers of 2, or {@link #SPECIAL_DOUBLES} and
+ * Generators also offers special generators of interesting values such as {@link #powerOfTwoInts(int)},
+ * {@link #powerOfTwoLongs(int)}, which are values close to the powers of 2, or {@link #SPECIAL_DOUBLES} and
  * {@link #SPECIAL_FLOATS}, which are values such as infinity, NaN, zero or the maximum and minimum values.
  * <p>
  * Many distributions are <i>restrictable</i>. For example, if you first create a uniform integer generator over [1, 10],
@@ -268,11 +268,11 @@ public final class Generators {
     public RestrictableGenerator<Integer> ints() {
         switch(random.nextInt(0, 6)) {
             case 0  -> { return uniformInts(); }
-            case 1  -> { return specialInts(0); }
-            case 2  -> { return specialInts(2); }
-            case 3  -> { return specialInts(16); }
-            case 4  -> { return uniformIntsMixedWithSpecials(1, 1, 16); }
-            case 5  -> { return uniformIntsMixedWithSpecials(1, 2, 2); }
+            case 1  -> { return powerOfTwoInts(0); }
+            case 2  -> { return powerOfTwoInts(2); }
+            case 3  -> { return powerOfTwoInts(16); }
+            case 4  -> { return uniformIntsMixedWithPowersOfTwo(1, 1, 16); }
+            case 5  -> { return uniformIntsMixedWithPowersOfTwo(1, 2, 2); }
             default -> { throw new RuntimeException("impossible"); }
         }
     }
@@ -280,9 +280,10 @@ public final class Generators {
     /**
      * A generator of special ints. Special ints are powers of two or values close to powers of 2, where a value
      * is close to a power of two p if it is in the interval [p - range, p + range]. Note that we also consider negative
-     * values as powers of two.
+     * values as powers of two. Note that for range >= 1, the set of values includes {@link Integer#MAX_VALUE} and
+     * {@link Integer#MIN_VALUE}.
      */
-    public RestrictableGenerator<Integer> specialInts(int range) {
+    public RestrictableGenerator<Integer> powerOfTwoInts(int range) {
         TreeSet<Integer> set = new TreeSet<>();
         for (int i = 0; i < 32; i++) {
             int pow2 = 1 << i;
@@ -295,10 +296,10 @@ public final class Generators {
     }
 
     /**
-     * A convenience helper to mix {@link #specialInts(int)} with {@link #uniformInts(int, int)}.
+     * A convenience helper to mix {@link #powerOfTwoInts(int)} with {@link #uniformInts(int, int)}.
      */
-    public RestrictableGenerator<Integer> uniformIntsMixedWithSpecials(int weightUniform, int weightSpecial, int rangeSpecial) {
-        return mixed(uniformInts(), specialInts(rangeSpecial), weightUniform, weightSpecial);
+    public RestrictableGenerator<Integer> uniformIntsMixedWithPowersOfTwo(int weightUniform, int weightSpecial, int rangeSpecial) {
+        return mixed(uniformInts(), powerOfTwoInts(rangeSpecial), weightUniform, weightSpecial);
     }
 
     /**
@@ -309,11 +310,11 @@ public final class Generators {
     public RestrictableGenerator<Long> longs() {
         switch(random.nextInt(0, 6)) {
             case 0  -> { return uniformLongs(); }
-            case 1  -> { return specialLongs(0); }
-            case 2  -> { return specialLongs(2); }
-            case 3  -> { return specialLongs(16); }
-            case 4  -> { return uniformLongsMixedWithSpecials(1, 1, 16); }
-            case 5  -> { return uniformLongsMixedWithSpecials(1, 2, 2); }
+            case 1  -> { return powerOfTwoLongs(0); }
+            case 2  -> { return powerOfTwoLongs(2); }
+            case 3  -> { return powerOfTwoLongs(16); }
+            case 4  -> { return uniformLongsMixedWithPowerOfTwos(1, 1, 16); }
+            case 5  -> { return uniformLongsMixedWithPowerOfTwos(1, 2, 2); }
             default -> { throw new RuntimeException("impossible"); }
         }
     }
@@ -321,9 +322,10 @@ public final class Generators {
     /**
      * A generator of special longs. Special longs are powers of two or values close to powers of 2, where a value
      * is close to a power of two p if it is in the interval [p - range, p + range]. Note that we also consider negative
-     * values as powers of two.
+     * values as powers of two. Note that for range >= 1, the set of values includes {@link Long#MAX_VALUE} and
+     * {@link Long#MIN_VALUE}.
      */
-    public RestrictableGenerator<Long> specialLongs(int range) {
+    public RestrictableGenerator<Long> powerOfTwoLongs(int range) {
         TreeSet<Long> set = new TreeSet<>();
         for (int i = 0; i < 64; i++) {
             long pow2 = 1L << i;
@@ -336,10 +338,10 @@ public final class Generators {
     }
 
     /**
-     * A convenience helper to mix {@link #specialLongs(int)} with {@link #uniformLongs(long, long)}.
+     * A convenience helper to mix {@link #powerOfTwoLongs(int)} with {@link #uniformLongs(long, long)}.
      */
-    public RestrictableGenerator<Long> uniformLongsMixedWithSpecials(int weightUniform, int weightSpecial, int rangeSpecial) {
-        return mixed(uniformLongs(), specialLongs(rangeSpecial), weightUniform, weightSpecial);
+    public RestrictableGenerator<Long> uniformLongsMixedWithPowerOfTwos(int weightUniform, int weightSpecial, int rangeSpecial) {
+        return mixed(uniformLongs(), powerOfTwoLongs(rangeSpecial), weightUniform, weightSpecial);
     }
 
     /**

@@ -216,23 +216,23 @@ public class TestGenerators {
 
     static void specialInt() {
         mockSource.checkEmpty().enqueueInteger(0, 63, 1).enqueueInteger(0, 63, 32);
-        var si = mockGS.specialInts(0);
+        var si = mockGS.powerOfTwoInts(0);
         Asserts.assertEQ(si.next(), -(1 << 30));
         Asserts.assertEQ(si.next(), 1);
 
         mockSource.checkEmpty().enqueueInteger(0, 182, 1);
-        var si1 = mockGS.specialInts(1);
+        var si1 = mockGS.powerOfTwoInts(1);
         Asserts.assertEQ(si1.next(), -(1 << 31) + 1);
     }
 
     static void specialLong() {
         mockSource.checkEmpty().enqueueInteger(0, 127, 1).enqueueInteger(0, 127, 64);
-        var si = mockGS.specialLongs(0);
+        var si = mockGS.powerOfTwoLongs(0);
         Asserts.assertEQ(si.next(), -(1L << 62));
         Asserts.assertEQ(si.next(), 1L);
 
         mockSource.checkEmpty().enqueueInteger(0, 374, 1);
-        var si1 = mockGS.specialLongs(1);
+        var si1 = mockGS.powerOfTwoLongs(1);
         Asserts.assertEQ(si1.next(), -(1L << 63) + 1);
     }
 

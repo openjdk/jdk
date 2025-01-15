@@ -66,7 +66,7 @@ public class ExampleTest {
         }
         try {
             // 408 ints => 1/408 * 1/408 * 1/408 => 1/67_917_312 => with 70_000_000 loop iterations we should trigger
-            test(G.specialInts(3));
+            test(G.powerOfTwoInts(3));
         } catch (FakeException e) {
             System.out.println("Assertion triggered by special");
         }
