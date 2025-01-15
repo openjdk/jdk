@@ -24,12 +24,10 @@
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
-#include "utilities/ostream.hpp"
 
-#include "utilities/vmassert_uninstall.hpp"
-BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include <iostream>
-END_ALLOW_FORBIDDEN_FUNCTIONS
+#include "utilities/ostream.hpp"
+#include "utilities/vmassert_uninstall.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 #include "unittest.hpp"
 

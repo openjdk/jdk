@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Google LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,22 @@
  * questions.
  */
 
-/*
+import org.testng.annotations.Test;
+
+import java.util.Objects;
+
+/**
  * @test
- * @bug 6648816
- * @summary REGRESSION: setting -Djava.security.debug=failure result in NPE
- * in ACC
- * @run main/othervm -Djava.security.debug=failure FailureDebugOption
+ *
+ * @bug 8323740
+ * @summary test that class initializers don't crash
+ * @run testng/othervm InitializerTest
  */
+public class InitializerTest {
 
-import java.security.ProtectionDomain;
-import java.security.AccessController;
-import java.security.AccessControlException;
-import java.security.BasicPermission;
-
-public class FailureDebugOption {
-
-   public static void main (String argv[]) throws Exception {
-        try {
-            AccessController.checkPermission(
-                        new BasicPermission("no such permission"){});
-        } catch (NullPointerException npe) {
-           throw new Exception("Unexpected NullPointerException for security" +
-                        " debug option, -Djava.security.debug=failure");
-        } catch (AccessControlException ace) {
-        }
-   }
+    @Test
+    public void testXMLOutputFactory() throws Exception {
+        String name = "com.sun.org.apache.xerces.internal.impl.XMLDocumentFragmentScannerImpl";
+        Objects.requireNonNull(Class.forName(name));
+    }
 }

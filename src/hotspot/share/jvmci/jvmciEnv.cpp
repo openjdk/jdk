@@ -47,7 +47,6 @@
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -614,7 +613,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    permit_forbidden_function::free((void*)_init_error_msg);
+    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
   }
   if (_init_error != JNI_OK) {
     return;
