@@ -62,15 +62,14 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * attribute instance in the built {@code Code} attribute.
  * <p>
  * This attribute is not predefined in the Java SE Platform.  This is a
- * JDK-specific nonstandard attribute produced by the {@linkplain jdk.compiler/
- * implementation of the system Java compiler}.
+ * JDK-specific nonstandard attribute produced by the reference implementation
+ * of the system Java compiler, defined by the {@code jdk.compiler} module.
  *
  * @see Attributes#characterRangeTable()
  * @see CompilationIDAttribute
  * @see SourceIDAttribute
  * @since 24
  */
-@SuppressWarnings("doclint:reference")
 public sealed interface CharacterRangeTableAttribute
         extends Attribute<CharacterRangeTableAttribute>
         permits BoundAttribute.BoundCharacterRangeTableAttribute,

@@ -45,15 +45,14 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
  * <p>
  * This attribute is not predefined in the Java SE Platform.  This is a
- * JDK-specific nonstandard attribute produced by the {@linkplain jdk.compiler/
- * implementation of the system Java compiler}.
+ * JDK-specific nonstandard attribute produced by the reference implementation
+ * of the system Java compiler, defined by the {@code jdk.compiler} module.
  *
  * @see Attributes#compilationId()
  * @see CharacterRangeTableAttribute
  * @see SourceIDAttribute
  * @since 24
  */
-@SuppressWarnings("doclint:reference")
 public sealed interface CompilationIDAttribute
         extends Attribute<CompilationIDAttribute>, ClassElement
         permits BoundAttribute.BoundCompilationIDAttribute,

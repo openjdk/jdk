@@ -60,15 +60,14 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
  * <p>
  * This attribute is not predefined in the Java SE Platform.  This is a
- * JDK-specific nonstandard attribute produced by the {@linkplain jdk.jlink/
- * jlink and jmod tools} and used by the implementation.
+ * JDK-specific nonstandard attribute produced by the {@code jdk.jlink} module,
+ * which defines the {@code jlink} and {@code jmod} tools.
  *
  * @see Attributes#moduleTarget()
  * @see ModuleHashesAttribute
  * @see ModuleResolutionAttribute
  * @since 24
  */
-@SuppressWarnings("doclint:reference")
 public sealed interface ModuleTargetAttribute
         extends Attribute<ModuleTargetAttribute>, ClassElement
         permits BoundAttribute.BoundModuleTargetAttribute, UnboundAttribute.UnboundModuleTargetAttribute {

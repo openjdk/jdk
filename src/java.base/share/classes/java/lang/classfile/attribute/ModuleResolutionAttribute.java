@@ -65,15 +65,14 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * {@linkplain AttributeStability#STATELESS no data dependency}.
  * <p>
  * This attribute is not predefined in the Java SE Platform.  This is a
- * JDK-specific nonstandard attribute produced by the {@linkplain jdk.jlink/
- * jlink and jmod tools} and used by the implementation.
+ * JDK-specific nonstandard attribute produced by the {@code jdk.jlink} module,
+ * which defines the {@code jlink} and {@code jmod} tools.
  *
  * @see Attributes#moduleResolution()
  * @see ModuleHashesAttribute
  * @see ModuleTargetAttribute
  * @since 24
  */
-@SuppressWarnings("doclint:reference")
 public sealed interface ModuleResolutionAttribute
         extends Attribute<ModuleResolutionAttribute>, ClassElement
         permits BoundAttribute.BoundModuleResolutionAttribute, UnboundAttribute.UnboundModuleResolutionAttribute {
