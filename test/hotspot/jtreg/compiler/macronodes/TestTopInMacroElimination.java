@@ -38,7 +38,7 @@ public class TestTopInMacroElimination {
 
     public static void main(String[] strArr) {
         int i2 = 0;
-        for (int i = 0; i < 50; ++i)
+        for (int i = 0; i < 50; ++i) {
             try {
                 synchronized (new A()) {
                     synchronized (TestTopInMacroElimination.class) {
@@ -50,5 +50,6 @@ public class TestTopInMacroElimination {
                 for (int var8 = 0; var8 < 10000; ++var8) ;
             } catch (ArithmeticException a_e) {
             }
+        }
     }
 }
