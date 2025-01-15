@@ -173,7 +173,7 @@ class HttpResponseLimitingTest {
     }
 
     /**
-     * An HTTP server always returning an excessive response.
+     * An HTTP server always returning a fixed response containing a non-empty body.
      */
     private static final class HttpServer implements Runnable, AutoCloseable {
 
