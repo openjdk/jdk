@@ -572,7 +572,6 @@ void Modules::dump_main_module_name() {
 }
 
 void Modules::check_archived_flag_consistency(char* archived_flag, const char* runtime_flag, const char* property) {
-  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   log_info(cds)("%s %s", property,
     archived_flag != nullptr ? archived_flag : "(null)");
   bool disable = false;
@@ -615,7 +614,6 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
 }
 
 void Modules::serialize(SerializeClosure* soc) {
-  ResourceMark rm;
   soc->do_ptr(&_archived_main_module_name);
   if (soc->reading()) {
     const char* runtime_main_module = Arguments::get_property("jdk.module.main");
@@ -662,6 +660,7 @@ void Modules::dump_addmods_names() {
 }
 
 const char* Modules::get_addmods_names_as_sorted_string() {
+  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   return get_numbered_property_as_sorted_string("jdk.module.addmods");
 }
 
