@@ -35,6 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
@@ -52,7 +53,7 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
     private final AtomicReference<State> stateRef = new AtomicReference<>();
 
-    private long length;
+    private final AtomicLong lengthRef = new AtomicLong();
 
     private interface State {
 
@@ -114,12 +115,16 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
     private boolean allocateLength(List<ByteBuffer> buffers) {
         long bufferLength = buffers.stream().mapToLong(Buffer::remaining).sum();
-        long nextReceivedByteCount = Math.addExact(length, bufferLength);
-        if (nextReceivedByteCount > capacity) {
-            return false;
+        while (true) {
+            long length = lengthRef.get();
+            long nextLength = Math.addExact(length, bufferLength);
+            if (nextLength > capacity) {
+                return false;
+            }
+            if (lengthRef.compareAndSet(length, nextLength)) {
+                return true;
+            }
         }
-        length = nextReceivedByteCount;
-        return true;
     }
 
     @Override
