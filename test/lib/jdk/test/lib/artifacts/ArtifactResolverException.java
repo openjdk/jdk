@@ -23,10 +23,14 @@
 
 package jdk.test.lib.artifacts;
 
+import java.io.Serial;
+
 /**
  * Thrown by the ArtifactResolver when failing to resolve an Artifact.
  */
 public class ArtifactResolverException extends Exception {
+    @Serial
+    private static final long serialVersionUID = 8341884506180926911L;
 
     public ArtifactResolverException(String message) {
         super(message);

@@ -23,6 +23,8 @@
 
 package jdk.test.lib.jvmti;
 
+import java.io.Serial;
+
 /**
  * Base class for debuggee class in JVMTI tests.
  *
@@ -70,6 +72,9 @@ public class DebugeeClass {
     }
 
     public class Failure extends RuntimeException {
+        @Serial
+        private static final long serialVersionUID = -4069390356498980839L;
+
         public Failure() {
         }
 
