@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -488,8 +488,7 @@ class JavaThreadInObjectWaitState : public JavaThreadStatusChanger {
 
  public:
   JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed) :
-    JavaThreadStatusChanger(java_thread,
-                            timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT) {
+    JavaThreadStatusChanger(java_thread, java_lang_Thread::get_thread_status(java_thread->threadObj())) {
     if (is_alive()) {
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();
