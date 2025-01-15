@@ -365,6 +365,7 @@ public final class FileUtils {
     }
 
     // Return the current process handle count
+    @SuppressWarnings("restricted")
     public static long getProcessHandleCount() {
         if (IS_WINDOWS) {
             if (!nativeLibLoaded) {

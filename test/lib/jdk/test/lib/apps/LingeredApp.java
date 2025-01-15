@@ -599,6 +599,7 @@ public class LingeredApp {
      * This part is the application itself. First arg is optional "forceCrash".
      * Following arg is the lock file name.
      */
+    @SuppressWarnings("restricted")
     public static void main(String args[]) {
         boolean forceCrash = false;
 

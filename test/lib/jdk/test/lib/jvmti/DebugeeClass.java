@@ -51,6 +51,7 @@ public class DebugeeClass {
     /**
      * This method is used to load library with native methods implementation, if needed.
      */
+    @SuppressWarnings("restricted")
     public static void loadLibrary(String name) {
         try {
             System.loadLibrary(name);
