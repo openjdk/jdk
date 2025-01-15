@@ -148,7 +148,7 @@ bool verifyStubIds() {
 
   // ensure 1) global stub ids lie in the range of the associated blob
   // and 2) each blob's base + local stub id == global stub id
-  int globalStubId, blobId, localStubId, localStubLimit;
+  int globalStubId, blobId, localStubId;
   STUBGEN_STUBS_DO(STUB_VERIFY);
   return true;
 }
