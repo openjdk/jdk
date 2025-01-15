@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/iterator.inline.hpp"
@@ -323,6 +324,10 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
 
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, src_obj);
     _buffer_offset_to_source_obj_table->maybe_grow();
+
+    if (java_lang_Module::is_instance(src_obj)) {
+      Modules::check_archived_module_oop(src_obj);
+    }
   }
 
   log_info(cds)("Size of heap region = " SIZE_FORMAT " bytes, %d objects, %d roots, %d native ptrs",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,6 +409,17 @@ void ConstantPoolCache::remove_unshareable_info() {
   if (_resolved_method_entries != nullptr) {
     remove_resolved_method_entries_if_non_deterministic();
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  _archived_references_index = -1;
+  if (CDSConfig::is_dumping_heap()) {
+    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(constant_pool());
+    oop rr = HeapShared::scratch_resolved_references(src_cp);
+    if (rr != nullptr) {
+      _archived_references_index = HeapShared::append_root(rr);
+    }
+  }
+#endif
 }
 
 void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
@@ -609,11 +620,6 @@ void ConstantPoolCache::clear_archived_references() {
     HeapShared::clear_root(_archived_references_index);
     _archived_references_index = -1;
   }
-}
-
-void ConstantPoolCache::set_archived_references(int root_index) {
-  assert(CDSConfig::is_dumping_heap(), "sanity");
-  _archived_references_index = root_index;
 }
 #endif
 

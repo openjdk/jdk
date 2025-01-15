@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,9 +144,6 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   if (ik->is_hidden()) {
     assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
     if (!CDSConfig::is_dumping_invokedynamic()) {
-      return false;
-    }
-    if (!SystemDictionaryShared::should_hidden_class_be_archived(ik)) {
       return false;
     }
     if (HeapShared::is_lambda_proxy_klass(ik)) {

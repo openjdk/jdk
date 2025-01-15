@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
@@ -220,7 +221,9 @@ bool HeapShared::has_been_archived(oop obj) {
 
 int HeapShared::append_root(oop obj) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
-
+  if (obj != nullptr) {
+    assert(has_been_archived(obj), "must be");
+  }
   // No GC should happen since we aren't scanning _pending_roots.
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
 
@@ -290,7 +293,7 @@ void HeapShared::clear_root(int index) {
   }
 }
 
-bool HeapShared::archive_object(oop obj) {
+bool HeapShared::archive_object(oop obj, KlassSubGraphInfo* subgraph_info) {
   assert(CDSConfig::is_dumping_heap(), "dump-time only");
 
   assert(!obj->is_stackChunk(), "do not archive stack chunks");
@@ -311,6 +314,36 @@ bool HeapShared::archive_object(oop obj) {
     archived_object_cache()->maybe_grow();
     mark_native_pointers(obj);
 
+    Klass* k = obj->klass();
+    if (k->is_instance_klass()) {
+      // Whenever we see a non-array Java object of type X, we mark X to be aot-initialized.
+      // This ensures that during the production run, whenever Java code sees a cached object
+      // of type X, we know that X is already initialized. (see TODO comment below ...)
+
+      if (InstanceKlass::cast(k)->is_enum_subclass()
+          // We can't rerun <clinit> of enum classes (see cdsEnumKlass.cpp) so
+          // we must store them as AOT-initialized.
+          || (subgraph_info == _dump_time_special_subgraph))
+          // TODO: we do this only for the special subgraph for now. Extending this to
+          // other subgraphs would require more refactoring of the core library (such as
+          // move some initialization logic into runtimeSetup()).
+          //
+          // For the other subgraphs, we have a weaker mechanism to ensure that
+          // all classes in a subgraph are initialized before the subgraph is programmatically
+          // returned from jdk.internal.misc.CDS::initializeFromArchive().
+          // See HeapShared::initialize_from_archived_subgraph().
+      {
+        AOTArtifactFinder::add_aot_inited_class(InstanceKlass::cast(k));
+      }
+
+      if (java_lang_Class::is_instance(obj)) {
+        Klass* mirror_k = java_lang_Class::as_Klass(obj);
+        if (mirror_k != nullptr) {
+          AOTArtifactFinder::add_cached_class(mirror_k);
+        }
+      }
+    }
+
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       LogTarget(Debug, cds, heap) log;
@@ -326,10 +359,6 @@ bool HeapShared::archive_object(oop obj) {
         }
       }
       out.cr();
-    }
-
-    if (java_lang_Module::is_instance(obj) && Modules::check_archived_module_oop(obj)) {
-      Modules::update_oops_in_archived_module(obj, append_root(obj));
     }
 
     return true;
@@ -367,7 +396,9 @@ public:
 };
 
 void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
-  _scratch_references_table->set_oop(src, dest);
+  if (SystemDictionaryShared::is_builtin_loader(src->pool_holder()->class_loader_data())) {
+    _scratch_references_table->set_oop(src, dest);
+  }
 }
 
 objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
@@ -466,11 +497,15 @@ bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
     (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik) || is_string_concat_klass(ik));
 }
 
-void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m) {
-  assert(orig_k->is_instance_klass(), "sanity");
-  InstanceKlass* ik = InstanceKlass::cast(orig_k);
-  InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(ik);
 
+void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
+  ik->set_has_aot_initialized_mirror();
+  if (AOTClassInitializer::is_runtime_setup_required(ik)) {
+    ik->set_is_runtime_setup_required();
+  }
+
+  oop orig_mirror = ik->java_mirror();
+  oop m = scratch_java_mirror(ik);
   assert(ik->is_initialized(), "must be");
 
   int nfields = 0;
@@ -481,7 +516,19 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
       switch (fd.field_type()) {
       case T_OBJECT:
       case T_ARRAY:
-        m->obj_field_put(offset, orig_mirror->obj_field(offset));
+        {
+          oop field_obj = orig_mirror->obj_field(offset);
+          if (offset == java_lang_Class::reflection_data_offset()) {
+            // Class::reflectData use SoftReference, which cannot be archived. Set it
+            // to null and it will be recreated at runtime.
+            field_obj = nullptr;
+          }
+          m->obj_field_put(offset, field_obj);
+          if (field_obj != nullptr) {
+            bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, field_obj);
+            assert(success, "sanity");
+          }
+        }
         break;
       case T_BOOLEAN:
         m->bool_field_put(offset, orig_mirror->bool_field(offset));
@@ -514,16 +561,18 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
     }
   }
 
-  java_lang_Class::set_class_data(m, java_lang_Class::class_data(orig_mirror));
-
-  // Class::reflectData use SoftReference, which cannot be archived. Set it
-  // to null and it will be recreated at runtime.
-  java_lang_Class::set_reflection_data(m, nullptr);
+  oop class_data = java_lang_Class::class_data(orig_mirror);
+  java_lang_Class::set_class_data(m, class_data);
+  if (class_data != nullptr) {
+    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, class_data);
+    assert(success, "sanity");
+  }
 
   if (log_is_enabled(Info, cds, init)) {
     ResourceMark rm;
-    log_debug(cds, init)("copied %3d field(s) in aot-initialized mirror %s%s", nfields, ik->external_name(),
-                         ik->is_hidden() ? " (hidden)" : "");
+    log_debug(cds, init)("copied %3d field(s) in aot-initialized mirror %s%s%s", nfields, ik->external_name(),
+                         ik->is_hidden() ? " (hidden)" : "",
+                         ik->is_enum_subclass() ? " (enum)" : "");
   }
 }
 
@@ -546,10 +595,7 @@ static void copy_java_mirror_hashcode(oop orig_mirror, oop scratch_m) {
 }
 
 static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
-  InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(src_ik);
-  if (buffered_ik->is_shared_boot_class() ||
-      buffered_ik->is_shared_platform_class() ||
-      buffered_ik->is_shared_app_class()) {
+  if (SystemDictionaryShared::is_builtin_loader(src_ik->class_loader_data())) {
     objArrayOop rr = src_ik->constants()->resolved_references_or_null();
     if (rr != nullptr && !ArchiveHeapWriter::is_too_large_to_archive(rr)) {
       return HeapShared::scratch_resolved_references(src_ik->constants());
@@ -558,68 +604,8 @@ static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
   return nullptr;
 }
 
-void HeapShared::archive_java_mirrors() {
-  for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-    BasicType bt = (BasicType)i;
-    if (!is_reference_type(bt)) {
-      oop orig_mirror = Universe::java_mirror(bt);
-      oop m = _scratch_basic_type_mirrors[i].resolve();
-      assert(m != nullptr, "sanity");
-      copy_java_mirror_hashcode(orig_mirror, m);
-      bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, m);
-      assert(success, "sanity");
-
-      log_trace(cds, heap, mirror)(
-        "Archived %s mirror object from " PTR_FORMAT,
-        type2name(bt), p2i(m));
-
-      Universe::set_archived_basic_type_mirror_index(bt, append_root(m));
-    }
-  }
-
-  GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
-  assert(klasses != nullptr, "sanity");
-
-  for (int i = 0; i < klasses->length(); i++) {
-    Klass* orig_k = klasses->at(i);
-    oop orig_mirror = orig_k->java_mirror();
-    oop m = scratch_java_mirror(orig_k);
-    if (m != nullptr) {
-      copy_java_mirror_hashcode(orig_mirror, m);
-    }
-  }
-
-  for (int i = 0; i < klasses->length(); i++) {
-    Klass* orig_k = klasses->at(i);
-    oop orig_mirror = orig_k->java_mirror();
-    oop m = scratch_java_mirror(orig_k);
-    if (m != nullptr) {
-      Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
-      bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, m);
-      guarantee(success, "scratch mirrors must point to only archivable objects");
-      buffered_k->set_archived_java_mirror(append_root(m));
-      ResourceMark rm;
-      log_trace(cds, heap, mirror)(
-        "Archived %s mirror object from " PTR_FORMAT,
-        buffered_k->external_name(), p2i(m));
-
-      // archive the resolved_referenes array
-      if (buffered_k->is_instance_klass()) {
-        InstanceKlass* ik = InstanceKlass::cast(buffered_k);
-        objArrayOop rr = get_archived_resolved_references(InstanceKlass::cast(orig_k));
-        if (rr != nullptr) {
-          bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
-          assert(success, "must be");
-          int root_index = append_root(rr);
-          ik->constants()->cache()->set_archived_references(root_index);
-        }
-      }
-    }
-  }
-}
-
 void HeapShared::archive_strings() {
-  oop shared_strings_array = StringTable::init_shared_table(_dumped_interned_strings);
+  oop shared_strings_array = StringTable::init_shared_strings_array(_dumped_interned_strings);
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, shared_strings_array);
   // We must succeed because:
   // - _dumped_interned_strings do not contain any large strings.
@@ -656,115 +642,9 @@ void HeapShared::set_has_native_pointers(oop src_obj) {
   info->set_has_native_pointers();
 }
 
-void HeapShared::start_finding_required_hidden_classes() {
-  if (!CDSConfig::is_dumping_invokedynamic()) {
-    return;
-  }
-  NoSafepointVerifier nsv;
-
-  init_seen_objects_table();
-
-  // We first scan the objects that are known to be archived (from the archive_subgraph
-  // tables)
-  find_required_hidden_classes_helper(archive_subgraph_entry_fields);
-  if (CDSConfig::is_dumping_full_module_graph()) {
-    find_required_hidden_classes_helper(fmg_archive_subgraph_entry_fields);
-  }
-
-  // Later, SystemDictionaryShared::find_all_archivable_classes_impl() will start
-  // scanning the constant pools of all classes that it decides to archive.
-}
-
-void HeapShared::end_finding_required_hidden_classes() {
-  if (!CDSConfig::is_dumping_invokedynamic()) {
-    return;
-  }
-  NoSafepointVerifier nsv;
-
-  delete_seen_objects_table();
-}
-
-void HeapShared::find_required_hidden_classes_helper(ArchivableStaticFieldInfo fields[]) {
-  if (!CDSConfig::is_dumping_heap()) {
-    return;
-  }
-  for (int i = 0; fields[i].valid(); i++) {
-    ArchivableStaticFieldInfo* f = &fields[i];
-    InstanceKlass* k = f->klass;
-    oop m = k->java_mirror();
-    oop o = m->obj_field(f->offset);
-    if (o != nullptr) {
-      find_required_hidden_classes_in_object(o);
-    }
-  }
-}
-
-class HeapShared::FindRequiredHiddenClassesOopClosure: public BasicOopIterateClosure {
-  GrowableArray<oop> _stack;
-  template <class T> void do_oop_work(T *p) {
-    // Recurse on a GrowableArray to avoid overflowing the C stack.
-    oop o = RawAccess<>::oop_load(p);
-    if (o != nullptr) {
-      _stack.append(o);
-    }
-  }
-
- public:
-
-  void do_oop(narrowOop *p) { FindRequiredHiddenClassesOopClosure::do_oop_work(p); }
-  void do_oop(      oop *p) { FindRequiredHiddenClassesOopClosure::do_oop_work(p); }
-
-  FindRequiredHiddenClassesOopClosure(oop o) {
-    _stack.append(o);
-  }
-  oop pop() {
-    if (_stack.length() == 0) {
-      return nullptr;
-    } else {
-      return _stack.pop();
-    }
-  }
-};
-
-static void mark_required_if_hidden_class(Klass* k) {
-  if (k != nullptr && k->is_instance_klass()) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    if (ik->is_hidden()) {
-      SystemDictionaryShared::mark_required_hidden_class(ik);
-    }
-  }
-}
-
-
-void HeapShared::find_required_hidden_classes_in_object(oop root) {
-  ResourceMark rm;
-  FindRequiredHiddenClassesOopClosure c(root);
-  oop o;
-  while ((o = c.pop()) != nullptr) {
-    if (!has_been_seen_during_subgraph_recording(o)) {
-      set_has_been_seen_during_subgraph_recording(o);
-
-      // Mark the klass of this object
-      mark_required_if_hidden_class(o->klass());
-
-      // For special objects, mark the klass that they contain information about.
-      // - a Class that refers to an hidden class
-      // - a ResolvedMethodName that refers to a method declared in a hidden class
-      if (java_lang_Class::is_instance(o)) {
-        mark_required_if_hidden_class(java_lang_Class::as_Klass(o));
-      } else if (java_lang_invoke_ResolvedMethodName::is_instance(o)) {
-        Method* m = java_lang_invoke_ResolvedMethodName::vmtarget(o);
-        if (m != nullptr) {
-          mark_required_if_hidden_class(m->method_holder());
-        }
-      }
-
-      o->oop_iterate(&c);
-    }
-  }
-}
-
-void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
+// Between start_scanning_for_oops() and end_scanning_for_oops(), we discover all Java heap objects that
+// should be stored in the AOT cache. The scanning is coordinated by AOTArtifactFinder.
+void HeapShared::start_scanning_for_oops() {
   {
     NoSafepointVerifier nsv;
 
@@ -782,61 +662,60 @@ void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
                     UseCompressedOops ? p2i(CompressedOops::end()) :
                                         p2i((address)G1CollectedHeap::heap()->reserved().end()));
     }
-    copy_objects();
 
+    archive_subgraphs();
+  }
+
+  init_seen_objects_table();
+  Universe::archive_exception_instances();
+}
+
+void HeapShared::end_scanning_for_oops() {
+  archive_strings();
+  delete_seen_objects_table();
+}
+
+void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
+  {
+    NoSafepointVerifier nsv;
     CDSHeapVerifier::verify();
     check_special_subgraph_classes();
   }
 
+  StringTable::write_shared_table(_dumped_interned_strings);
   ArchiveHeapWriter::write(_pending_roots, heap_info);
+
+  ArchiveBuilder::OtherROAllocMark mark;
+  write_subgraph_info_table();
 }
 
-void HeapShared::copy_interned_strings() {
-  init_seen_objects_table();
-
-  auto copier = [&] (oop s, bool value_ignored) {
-    assert(s != nullptr, "sanity");
-    assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "large strings must have been filtered");
-    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, s);
-    assert(success, "must be");
-    // Prevent string deduplication from changing the value field to
-    // something not in the archive.
-    java_lang_String::set_deduplication_forbidden(s);
-  };
-  _dumped_interned_strings->iterate_all(copier);
-
-  delete_seen_objects_table();
-}
-
-void HeapShared::copy_special_subgraph() {
-  copy_interned_strings();
-
-  init_seen_objects_table();
-  {
-    archive_java_mirrors();
-    archive_strings();
-    Universe::archive_exception_instances();
+void HeapShared::scan_java_mirror(oop orig_mirror) {
+  oop m = scratch_java_mirror(orig_mirror);
+  if (m != nullptr) { // nullptr if for custom class loader
+    copy_java_mirror_hashcode(orig_mirror, m);
+    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, m);
+    assert(success, "sanity");
   }
-  delete_seen_objects_table();
 }
 
-void HeapShared::prepare_resolved_references() {
-  GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
-  for (int i = 0; i < klasses->length(); i++) {
-    Klass* src_k = klasses->at(i);
-    if (src_k->is_instance_klass()) {
-      InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(InstanceKlass::cast(src_k));
-      buffered_ik->constants()->prepare_resolved_references_for_archiving();
+void HeapShared::scan_java_class(Klass* orig_k) {
+  scan_java_mirror(orig_k->java_mirror());
+
+  if (orig_k->is_instance_klass()) {
+    InstanceKlass* orig_ik = InstanceKlass::cast(orig_k);
+    orig_ik->constants()->prepare_resolved_references_for_archiving();
+    objArrayOop rr = get_archived_resolved_references(orig_ik);
+    if (rr != nullptr) {
+      bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
+      assert(success, "must be");
     }
+
+    orig_ik->constants()->add_dumped_interned_strings();
   }
 }
 
-void HeapShared::copy_objects() {
+void HeapShared::archive_subgraphs() {
   assert(HeapShared::can_write(), "must be");
-
-  prepare_resolved_references();
-  find_all_aot_initialized_classes();
-  copy_special_subgraph();
 
   archive_object_subgraphs(archive_subgraph_entry_fields,
                            false /* is_full_module_graph */);
@@ -846,198 +725,6 @@ void HeapShared::copy_objects() {
                              true /* is_full_module_graph */);
     Modules::verify_archived_modules();
   }
-}
-
-// Closure used by HeapShared::scan_for_aot_initialized_classes() to look for all objects
-// that are reachable from a given root.
-class HeapShared::AOTInitializedClassScanner : public BasicOopIterateClosure {
-  bool _made_progress;
-
-  template <class T> void check(T *p) {
-    oop obj = HeapAccess<>::oop_load(p);
-    if (!java_lang_Class::is_instance(obj)) {
-      // Don't scan the mirrors, as we may see an orig_mirror while scanning
-      // the object graph, .... TODO more info
-      _made_progress |= HeapShared::scan_for_aot_initialized_classes(obj);
-    }
-  }
-
-public:
-  AOTInitializedClassScanner() : _made_progress(false) {}
-  void do_oop(narrowOop *p) { check(p); }
-  void do_oop(      oop *p) { check(p); }
-  bool made_progress() { return _made_progress; }
-};
-
-// If <buffered_ik> has been initialized during the assembly phase, mark its
-// has_aot_initialized_mirror bit. And then do the same for all supertypes of
-// <buffered_ik>.
-//
-// Note: a super interface <intf> of <buffered_ik> may not have been initialized, if
-// <intf> has not declared any default methods.
-//
-// Note: this function doesn not call InstanceKlass::initialize() -- we are inside
-// a safepoint.
-//
-// Returns true if one or more classes have been newly marked.
-static bool mark_for_aot_initialization(InstanceKlass* buffered_ik) {
-  assert(SafepointSynchronize::is_at_safepoint(), "sanity");
-  assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_ik), "sanity");
-
-  if (buffered_ik->has_aot_initialized_mirror()) { // already marked
-    return false;
-  }
-
-  bool made_progress = false;
-  if (buffered_ik->is_initialized()) {
-    if (log_is_enabled(Info, cds, init)) {
-      ResourceMark rm;
-      log_info(cds, init)("Mark class for aot-init: %s", buffered_ik->external_name());
-    }
-
-    InstanceKlass* src_ik = ArchiveBuilder::current()->get_source_addr(buffered_ik);
-
-    // If we get here with a "wild" user class, which may have
-    // uncontrolled <clinit> code, exit with an error.  Obviously
-    // filtering logic upstream needs to detect APP classes and not mark
-    // them for aot-init in the first place, but this will be the final
-    // firewall.
-
-#ifndef PRODUCT
-    // ArchiveHeapTestClass is used for a very small number of internal regression
-    // tests (non-product builds only). It may initialize some unexpected classes.
-    if (ArchiveHeapTestClass == nullptr)
-#endif
-    {
-      if (!src_ik->in_javabase_module()) {
-        // Class/interface types in the boot loader may have been initialized as side effects
-        // of JVM bootstrap code, so they are fine. But we need to check all other classes.
-        if (buffered_ik->is_interface()) {
-          // This probably means a bug in AOTConstantPoolResolver.::is_indy_resolution_deterministic()
-          guarantee(!buffered_ik->interface_needs_clinit_execution_as_super(),
-                    "should not have initialized an interface whose <clinit> might have unpredictable side effects");
-        } else {
-          // "normal" classes
-          guarantee(HeapShared::is_archivable_hidden_klass(buffered_ik),
-                    "should not have initialized any non-interface, non-hidden classes outside of java.base");
-        }
-      }
-    }
-
-    buffered_ik->set_has_aot_initialized_mirror();
-    if (AOTClassInitializer::is_runtime_setup_required(src_ik)) {
-      buffered_ik->set_is_runtime_setup_required();
-    }
-    made_progress = true;
-
-    InstanceKlass* super = buffered_ik->java_super();
-    if (super != nullptr) {
-      mark_for_aot_initialization(super);
-    }
-
-    Array<InstanceKlass*>* interfaces = buffered_ik->transitive_interfaces();
-    for (int i = 0; i < interfaces->length(); i++) {
-      InstanceKlass* intf = interfaces->at(i);
-      mark_for_aot_initialization(intf);
-      if (!intf->is_initialized()) {
-        assert(!intf->interface_needs_clinit_execution_as_super(/*also_check_supers*/false), "sanity");
-        assert(!intf->has_aot_initialized_mirror(), "must not be marked");
-      }
-    }
-  }
-
-  return made_progress;
-}
-
-void HeapShared::find_all_aot_initialized_classes() {
-  if (!CDSConfig::is_dumping_aot_linked_classes()) {
-    return;
-  }
-
-  init_seen_objects_table();
-  find_all_aot_initialized_classes_helper();
-  delete_seen_objects_table();
-}
-
-// Recursively find all class that should be aot-initialized:
-// - the class has at least one instance that can be reachable from the special subgraph; or
-// - the class is hard-coded in AOTClassInitializer::can_archive_initialized_mirror()
-void HeapShared::find_all_aot_initialized_classes_helper() {
-  GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
-  assert(klasses != nullptr, "sanity");
-
-  // First scan all resolved constant pools references.
-  for (int i = 0; i < klasses->length(); i++) {
-    Klass* src_k = klasses->at(i);
-    if (src_k->is_instance_klass()) {
-      InstanceKlass* src_ik = InstanceKlass::cast(src_k);
-      InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(src_ik);
-      objArrayOop rr = get_archived_resolved_references(src_ik);
-      if (rr != nullptr) {
-        objArrayOop scratch_rr = scratch_resolved_references(src_ik->constants());
-        for (int i = 0; i < scratch_rr->length(); i++) {
-          scan_for_aot_initialized_classes(scratch_rr->obj_at(i));
-        }
-      }
-
-      // If a class is hard-coded to be aot-initialize, mark it as such.
-      if (AOTClassInitializer::can_archive_initialized_mirror(src_ik)) {
-        mark_for_aot_initialization(buffered_ik);
-      }
-    }
-  }
-
-  // These objects also belong to the special subgraph
-  scan_for_aot_initialized_classes(Universe::null_ptr_exception_instance());
-  scan_for_aot_initialized_classes(Universe::arithmetic_exception_instance());
-  scan_for_aot_initialized_classes(Universe::internal_error_instance());
-  scan_for_aot_initialized_classes(Universe::array_index_out_of_bounds_exception_instance());
-  scan_for_aot_initialized_classes(Universe::array_store_exception_instance());
-  scan_for_aot_initialized_classes(Universe::class_cast_exception_instance());
-
-  bool made_progress;
-  do {
-    // In each pass, we copy the scratch mirrors of the classes that were marked
-    // as aot-init in the previous pass. We then scan these mirrors, which may
-    // mark more classes. Keep iterating until no more progress can be made.
-    made_progress = false;
-    for (int i = 0; i < klasses->length(); i++) {
-      Klass* orig_k = klasses->at(i);
-      if (orig_k->is_instance_klass()) {
-        InstanceKlass* orig_ik = InstanceKlass::cast(orig_k);
-        if (ArchiveBuilder::current()->get_buffered_addr(orig_ik)->has_aot_initialized_mirror()) {
-          oop orig_mirror = orig_ik->java_mirror();
-          oop scratch_mirror = scratch_java_mirror(orig_k);
-          if (!has_been_seen_during_subgraph_recording(scratch_mirror)) {
-            // Scan scratch_mirror instead of orig_mirror (which has fields like ClassLoader that
-            // are not archived).
-            copy_aot_initialized_mirror(orig_k, orig_mirror, scratch_mirror);
-            made_progress |= scan_for_aot_initialized_classes(scratch_mirror);
-          }
-        }
-      }
-    }
-  } while (made_progress);
-}
-
-bool HeapShared::scan_for_aot_initialized_classes(oop obj) {
-  if (obj == nullptr || has_been_seen_during_subgraph_recording(obj)) {
-    return false;
-  }
-  set_has_been_seen_during_subgraph_recording(obj);
-
-  bool made_progress = false;
-  Klass* k = obj->klass();
-  if (k->is_instance_klass()) {
-    InstanceKlass* orig_ik = InstanceKlass::cast(k);
-    InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(orig_ik);
-    made_progress = mark_for_aot_initialization(buffered_ik);
-  }
-
-  AOTInitializedClassScanner scanner;
-  obj->oop_iterate(&scanner);
-  made_progress |= scanner.made_progress();
-  return made_progress;
 }
 
 //
@@ -1052,9 +739,8 @@ HeapShared::RunTimeKlassSubGraphInfoTable   HeapShared::_run_time_subgraph_info_
 KlassSubGraphInfo* HeapShared::init_subgraph_info(Klass* k, bool is_full_module_graph) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
   bool created;
-  Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   KlassSubGraphInfo* info =
-    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(buffered_k, is_full_module_graph),
+    _dump_time_subgraph_info_table->put_if_absent(k, KlassSubGraphInfo(k, is_full_module_graph),
                                                   &created);
   assert(created, "must not initialize twice");
   return info;
@@ -1082,30 +768,29 @@ void KlassSubGraphInfo::add_subgraph_entry_field(int static_field_offset, oop v)
 // Only objects of boot classes can be included in sub-graph.
 void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
   assert(CDSConfig::is_dumping_heap(), "dump time only");
-  Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);
 
   if (_subgraph_object_klasses == nullptr) {
     _subgraph_object_klasses =
       new (mtClass) GrowableArray<Klass*>(50, mtClass);
   }
 
-  assert(ArchiveBuilder::current()->is_in_buffer_space(buffered_k), "must be a shared class");
-
-  if (_k == buffered_k) {
+  if (_k == orig_k) {
     // Don't add the Klass containing the sub-graph to it's own klass
     // initialization list.
     return;
   }
 
-  if (buffered_k->is_instance_klass()) {
+  if (orig_k->is_instance_klass()) {
+#ifdef ASSERT
+    InstanceKlass* ik = InstanceKlass::cast(orig_k);
     if (CDSConfig::is_dumping_invokedynamic()) {
-      assert(InstanceKlass::cast(buffered_k)->is_shared_boot_class() ||
-             HeapShared::is_lambda_proxy_klass(InstanceKlass::cast(buffered_k)),
+      assert(ik->class_loader() == nullptr ||
+             HeapShared::is_lambda_proxy_klass(ik),
             "we can archive only instances of boot classes or lambda proxy classes");
     } else {
-      assert(InstanceKlass::cast(buffered_k)->is_shared_boot_class(),
-             "must be boot class");
+      assert(ik->class_loader() == nullptr, "must be boot class");
     }
+#endif
     // vmClasses::xxx_klass() are not updated, need to check
     // the original Klass*
     if (orig_k == vmClasses::String_klass() ||
@@ -1114,37 +799,33 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
       // to the sub-graph object class list.
       return;
     }
-    if (buffered_k->has_aot_initialized_mirror()) {
-      // No need to add to the runtime-init list.
-      return;
-    }
     check_allowed_klass(InstanceKlass::cast(orig_k));
-  } else if (buffered_k->is_objArray_klass()) {
-    Klass* abk = ObjArrayKlass::cast(buffered_k)->bottom_klass();
+  } else if (orig_k->is_objArray_klass()) {
+    Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
     if (abk->is_instance_klass()) {
       assert(InstanceKlass::cast(abk)->is_shared_boot_class(),
             "must be boot class");
       check_allowed_klass(InstanceKlass::cast(ObjArrayKlass::cast(orig_k)->bottom_klass()));
     }
-    if (buffered_k == Universe::objectArrayKlass()) {
+    if (orig_k == Universe::objectArrayKlass()) {
       // Initialized early during Universe::genesis. No need to be added
       // to the list.
       return;
     }
   } else {
-    assert(buffered_k->is_typeArray_klass(), "must be");
+    assert(orig_k->is_typeArray_klass(), "must be");
     // Primitive type arrays are created early during Universe::genesis.
     return;
   }
 
   if (log_is_enabled(Debug, cds, heap)) {
-    if (!_subgraph_object_klasses->contains(buffered_k)) {
+    if (!_subgraph_object_klasses->contains(orig_k)) {
       ResourceMark rm;
       log_debug(cds, heap)("Adding klass %s", orig_k->external_name());
     }
   }
 
-  _subgraph_object_klasses->append_if_missing(buffered_k);
+  _subgraph_object_klasses->append_if_missing(orig_k);
   _has_non_early_klasses |= is_non_early_klass(orig_k);
 }
 
@@ -1200,7 +881,7 @@ bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
 
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
 void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
-  _k = info->klass();
+  _k = ArchiveBuilder::get_buffered_klass(info->klass());
   _entry_field_records = nullptr;
   _subgraph_object_klasses = nullptr;
   _is_full_module_graph = info->is_full_module_graph();
@@ -1233,15 +914,28 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
     }
   }
 
-  // the Klasses of the objects in the sub-graphs
-  GrowableArray<Klass*>* subgraph_object_klasses = info->subgraph_object_klasses();
-  if (subgraph_object_klasses != nullptr) {
-    int num_subgraphs_klasses = subgraph_object_klasses->length();
-    _subgraph_object_klasses =
-      ArchiveBuilder::new_ro_array<Klass*>(num_subgraphs_klasses);
+  // <recorded_klasses> has the Klasses of all the objects that are referenced by this subgraph.
+  // Copy those that need to be explicitly initialized into <_subgraph_object_klasses>.
+  GrowableArray<Klass*>* recorded_klasses = info->subgraph_object_klasses();
+  if (recorded_klasses != nullptr) {
+    // AOT-inited classes are automatically marked as "initialized" during bootstrap. When
+    // programmatically loading a subgraph, we only need to explicitly initialize the classes
+    // that are not aot-inited.
+    int num_to_copy = 0;
+    for (int i = 0; i < recorded_klasses->length(); i++) {
+      Klass* subgraph_k = ArchiveBuilder::get_buffered_klass(recorded_klasses->at(i));
+      if (!subgraph_k->has_aot_initialized_mirror()) {
+        num_to_copy ++;
+      }
+    }
+
+    _subgraph_object_klasses = ArchiveBuilder::new_ro_array<Klass*>(num_to_copy);
     bool is_special = (_k == ArchiveBuilder::get_buffered_klass(vmClasses::Object_klass()));
-    for (int i = 0; i < num_subgraphs_klasses; i++) {
-      Klass* subgraph_k = subgraph_object_klasses->at(i);
+    for (int i = 0, n = 0; i < recorded_klasses->length(); i++) {
+      Klass* subgraph_k = ArchiveBuilder::get_buffered_klass(recorded_klasses->at(i));
+      if (subgraph_k->has_aot_initialized_mirror()) {
+        continue;
+      }
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm;
         const char* owner_name =  is_special ? "<special>" : _k->external_name();
@@ -1250,10 +944,11 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
         }
         log_info(cds, heap)(
           "Archived object klass %s (%2d) => %s",
-          owner_name, i, subgraph_k->external_name());
+          owner_name, n, subgraph_k->external_name());
       }
-      _subgraph_object_klasses->at_put(i, subgraph_k);
-      ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(i));
+      _subgraph_object_klasses->at_put(n, subgraph_k);
+      ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(n));
+      n++;
     }
   }
 
@@ -1831,7 +1526,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
   bool record_klasses_only = already_archived;
   if (!already_archived) {
     ++_num_new_archived_objs;
-    if (!archive_object(orig_obj)) {
+    if (!archive_object(orig_obj, subgraph_info)) {
       // Skip archiving the sub-graph referenced from the current entry field.
       ResourceMark rm;
       log_error(cds, heap)(
@@ -2011,7 +1706,7 @@ void HeapShared::check_special_subgraph_classes() {
     int num = klasses->length();
     for (int i = 0; i < num; i++) {
       Klass* subgraph_k = klasses->at(i);
-      Symbol* name = ArchiveBuilder::current()->get_source_addr(subgraph_k->name());
+      Symbol* name = subgraph_k->name();
       if (subgraph_k->is_instance_klass() &&
           name != vmSymbols::java_lang_Class() &&
           name != vmSymbols::java_lang_String() &&
@@ -2337,8 +2032,15 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
   bool created;
   _dumped_interned_strings->put_if_absent(string, true, &created);
   if (created) {
+    // Prevent string deduplication from changing the value field to
+    // something not in the archive.
+    java_lang_String::set_deduplication_forbidden(string);
     _dumped_interned_strings->maybe_grow();
   }
+}
+
+bool HeapShared::is_dumped_interned_string(oop o) {
+  return _dumped_interned_strings->get(o) != nullptr;
 }
 
 void HeapShared::debug_trace() {

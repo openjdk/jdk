@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -483,9 +483,7 @@ static bool _seen_platform_unnamed_module = false;
 static bool _seen_system_unnamed_module = false;
 
 // Validate the states of an java.lang.Module oop to be archived.
-//
-// Returns true iff the oop has an archived ModuleEntry.
-bool Modules::check_archived_module_oop(oop orig_module_obj) {
+void Modules::check_archived_module_oop(oop orig_module_obj) {
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert(java_lang_Module::is_instance(orig_module_obj), "must be");
 
@@ -498,7 +496,6 @@ bool Modules::check_archived_module_oop(oop orig_module_obj) {
     //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
     log_info(cds, module)("Archived java.lang.Module oop " PTR_FORMAT " with no ModuleEntry*", p2i(orig_module_obj));
     assert(java_lang_Module::name(orig_module_obj) == nullptr, "must be unnamed");
-    return false;
   } else {
     // This java.lang.Module oop has an ModuleEntry*. Check if the latter is archived.
     if (log_is_enabled(Info, cds, module)) {
@@ -516,7 +513,6 @@ bool Modules::check_archived_module_oop(oop orig_module_obj) {
     if (orig_module_ent->name() != nullptr) {
       // For each named module, we archive both the java.lang.Module oop and the ModuleEntry.
       assert(orig_module_ent->has_been_archived(), "sanity");
-      return true;
     } else {
       // We only archive two unnamed module oops (for platform and system loaders). These do NOT have an archived
       // ModuleEntry.
@@ -538,22 +534,8 @@ bool Modules::check_archived_module_oop(oop orig_module_obj) {
         // not in the archived module graph. These are always allocated at runtime.
         ShouldNotReachHere();
       }
-      return false;
     }
   }
-}
-
-void Modules::update_oops_in_archived_module(oop orig_module_obj, int archived_module_root_index) {
-  // This java.lang.Module oop must have an archived ModuleEntry
-  assert(check_archived_module_oop(orig_module_obj) == true, "sanity");
-
-  // We remember the oop inside the ModuleEntry::_archived_module_index. At runtime, we use
-  // this index to reinitialize the ModuleEntry inside ModuleEntry::restore_archived_oops().
-  //
-  // ModuleEntry::verify_archived_module_entries(), called below, ensures that every archived
-  // ModuleEntry has been assigned an _archived_module_index.
-  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
-  ModuleEntry::get_archived_entry(orig_module_ent)->update_oops_in_archived_module(archived_module_root_index);
 }
 
 void Modules::verify_archived_modules() {

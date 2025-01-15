@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,8 +332,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   }
 
   InstanceKlass *ik = pool_holder();
-  if (!(ik->is_shared_boot_class() || ik->is_shared_platform_class() ||
-        ik->is_shared_app_class())) {
+  if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
     return nullptr;
@@ -345,12 +344,11 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
     int rr_len = rr->length();
     GrowableArray<bool> keep_resolved_refs(rr_len, rr_len, false);
 
-    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    src_cp->iterate_archivable_resolved_references([&](int rr_index) {
+    iterate_archivable_resolved_references([&](int rr_index) {
       keep_resolved_refs.at_put(rr_index, true);
     });
 
-    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(src_cp);
+    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(this);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     for (int i = 0; i < rr_len; i++) {
@@ -376,32 +374,6 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
     return scratch_rr;
   }
   return rr;
-}
-
-void ConstantPool::find_required_hidden_classes() {
-  if (_cache == nullptr) {
-    return;
-  }
-
-  ClassLoaderData* loader_data = pool_holder()->class_loader_data();
-  if (loader_data == nullptr) {
-    // These are custom loader classes from the preimage
-    return;
-  }
-
-  if (!SystemDictionaryShared::is_builtin_loader(loader_data)) {
-    // Archiving resolved references for classes from non-builtin loaders
-    // is not yet supported.
-    return;
-  }
-
-  objArrayOop rr = resolved_references();
-  if (rr != nullptr) {
-    iterate_archivable_resolved_references([&](int rr_index) {
-      oop obj = rr->obj_at(rr_index);
-      HeapShared::find_required_hidden_classes_in_object(obj);
-    });
-  }
 }
 
 void ConstantPool::add_dumped_interned_strings() {
