@@ -492,9 +492,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
 
   freeze_result result;
 
-  { // Change java thread status to indicate blocked on monitor enter.
-    JavaThreadBlockedOnMonitorEnterState jtbmes(current, this);
-
+  {
     assert(current->current_pending_monitor() == nullptr, "invariant");
     current->set_current_pending_monitor(this);
 
@@ -532,6 +530,9 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
         return;
       }
     }
+
+    // Change java thread status to indicate blocked on monitor enter.
+    JavaThreadBlockedOnMonitorEnterState jtbmes(current, this);
 
     OSThreadContendState osts(current->osthread());
 
