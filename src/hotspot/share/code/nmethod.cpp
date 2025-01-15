@@ -1327,17 +1327,12 @@ nmethod::nmethod(
     _deopt_mh_handler_offset = 0;
     _unwind_handler_offset   = 0;
 
-    int reloc_size = align_up(code_buffer->total_relocation_size(), oopSize);
-    int oop_size = align_up(code_buffer->total_oop_size(), oopSize);
+    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    CHECKED_CAST(_metadata_offset, uint16_t, reloc_size + oop_size);
-    int data_end_offset = _metadata_offset + metadata_size;
-#if INCLUDE_JVMCI
-    // jvmci_data_size is 0 in native wrapper but we need to set offset
-    // to correctly calculate metadata_end address
-    CHECKED_CAST(_jvmci_data_offset, uint16_t, data_end_offset);
-#endif
-    assert(data_end_offset <= mutable_data_size, "wrong nmutable_data_size: %d < %d", data_end_offset, mutable_data_size);
+    JVMCI_ONLY( _jvmci_data_size = 0; )
+    assert(_mutable_data_size == _relocation_size + _oops_size + metadata_size,
+           "wrong mutable data size: %d != %d + %d + %d",
+           _mutable_data_size, _relocation_size, _oops_size, metadata_size);
 
     // native wrapper does not have read-only data but we need unique not null address
     _immutable_data          = blob_end();
@@ -1506,18 +1501,13 @@ nmethod::nmethod(
       _unwind_handler_offset = -1;
     }
 
-    int reloc_size = align_up(code_buffer->total_relocation_size(), oopSize);
-    int oop_size = align_up(code_buffer->total_oop_size(), oopSize);
-    int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    CHECKED_CAST(_metadata_offset, uint16_t, reloc_size + oop_size);
-    int jvmci_data_size = 0;
-#if INCLUDE_JVMCI
-    CHECKED_CAST(_jvmci_data_offset, uint16_t, _metadata_offset + metadata_size);
-    jvmci_data_size = align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize);
-#endif
-    assert(_mutable_data_size == reloc_size + oop_size + metadata_size + jvmci_data_size,
+    CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
+    uint16_t metadata_size = (uint16_t)align_up(code_buffer->total_metadata_size(), wordSize);
+    JVMCI_ONLY(CHECKED_CAST(_jvmci_data_size, uint16_t, align_up(compiler->is_jvmci() ? jvmci_data->size() : 0, oopSize)));
+    int jvmci_data_size = 0 JVMCI_ONLY(+ _jvmci_data_size);
+    assert(_mutable_data_size == _relocation_size + _oops_size + metadata_size + jvmci_data_size,
            "wrong mutable data size: %d != %d + %d + %d + %d",
-           _mutable_data_size, reloc_size, oop_size, metadata_size, jvmci_data_size);
+           _mutable_data_size, _relocation_size, _oops_size, metadata_size, jvmci_data_size);
     assert(nmethod_size == code_end() - header_begin(), "wrong nmethod size: %d != %d",
            nmethod_size, (int)(code_end() - header_begin()));
 
