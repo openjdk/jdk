@@ -40,6 +40,7 @@ import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
+import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
@@ -382,24 +383,93 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    static class Segment {
+        private static final int CACHED_SIZE = 256;
+
+        private final Arena arena = Arena.ofShared();
+        private final MemorySegment segment;
+
+        public Segment(long size) {
+            segment = arena.allocate(Math.max(size, CACHED_SIZE));
+        }
+
+        boolean supports(long size) {
+            return segment.byteSize() > size;
+        }
+
+        private SegmentAllocator slicingAllocator() {
+            return SegmentAllocator.slicingAllocator(segment);
+        }
+
+        private Scope scope() {
+            return segment.scope();
+        }
+
+        boolean canCache() {
+            return segment.byteSize() == CACHED_SIZE;
+        }
+
+        void close() {
+            arena.close();
+        }
+    }
+
+    static class SegmentCache {
+        private Segment segment = null;
+
+        Segment acquire(long size) {
+            if (segment == null || !segment.supports(size)) {
+                return new Segment(size);
+            }
+            Segment result = segment;
+            segment = null;
+            return result;
+        }
+
+        private boolean canCache(Segment released) {
+            return this.segment == null && released.canCache();
+        }
+
+        void release(Segment released) {
+            if (canCache(released)) this.segment = released;
+            else released.close();
+        }
+
+        void close() {
+            if (this.segment != null) this.segment.close();
+        }
+    }
+
+    private static final TerminatingThreadLocal<SegmentCache> segmentCache = new TerminatingThreadLocal<SegmentCache>() {
+        @Override
+        protected SegmentCache initialValue() {
+            return new SegmentCache();
+        }
+
+        @Override
+        protected void threadTerminated(SegmentCache cache) {
+            cache.close();
+        }
+    };
+
     public static Arena newBoundedArena(long size) {
         return new Arena() {
-            final Arena arena = Arena.ofConfined();
-            final SegmentAllocator slicingAllocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
+            final Segment segment = SharedUtils.segmentCache.get().acquire(size);
+            final SegmentAllocator allocator = segment.slicingAllocator();
+
+            @Override
+            public MemorySegment allocate(long byteSize, long byteAlignment) {
+                return allocator.allocate(byteSize, byteAlignment);
+            }
 
             @Override
             public Scope scope() {
-                return arena.scope();
+                return segment.scope();
             }
 
             @Override
             public void close() {
-                arena.close();
-            }
-
-            @Override
-            public MemorySegment allocate(long byteSize, long byteAlignment) {
-                return slicingAllocator.allocate(byteSize, byteAlignment);
+                SharedUtils.segmentCache.get().release(segment);
             }
         };
     }
