@@ -1006,8 +1006,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   in_new_region = r->is_empty();
 
   if (in_new_region) {
-    log_debug(gc)("Using new region (" SIZE_FORMAT ") for %s (" PTR_FORMAT ").",
-                       r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+    log_debug(gc, free)("Using new region (" SIZE_FORMAT ") for %s (" PTR_FORMAT ").",
+                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
     assert(!r->is_affiliated(), "New region " SIZE_FORMAT " should be unaffiliated", r->index());
     r->set_affiliation(req.affiliation());
     if (r->is_old()) {
@@ -1027,8 +1027,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     assert(ctx->top_at_mark_start(r) == r->bottom(), "Newly established allocation region starts with TAMS equal to bottom");
     assert(ctx->is_bitmap_range_within_region_clear(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
 #endif
-    log_debug(gc)("Using new region (" SIZE_FORMAT ") for %s (" PTR_FORMAT ").",
-                       r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+    log_debug(gc, free)("Using new region (" SIZE_FORMAT ") for %s (" PTR_FORMAT ").",
+                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
   } else {
     assert(r->is_affiliated(), "Region " SIZE_FORMAT " that is not new should be affiliated", r->index());
     if (r->affiliation() != req.affiliation()) {
@@ -1425,23 +1425,23 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
       }
     }
   }
-  log_debug(gc)("  At end of prep_to_rebuild, mutator_leftmost: " SIZE_FORMAT
-                ", mutator_rightmost: " SIZE_FORMAT
-                ", mutator_leftmost_empty: " SIZE_FORMAT
-                ", mutator_rightmost_empty: " SIZE_FORMAT
-                ", mutator_regions: " SIZE_FORMAT
-                ", mutator_used: " SIZE_FORMAT,
-                mutator_leftmost, mutator_rightmost, mutator_leftmost_empty, mutator_rightmost_empty,
-                mutator_regions, mutator_used);
+  log_debug(gc, free)("  At end of prep_to_rebuild, mutator_leftmost: " SIZE_FORMAT
+                      ", mutator_rightmost: " SIZE_FORMAT
+                      ", mutator_leftmost_empty: " SIZE_FORMAT
+                      ", mutator_rightmost_empty: " SIZE_FORMAT
+                      ", mutator_regions: " SIZE_FORMAT
+                      ", mutator_used: " SIZE_FORMAT,
+                      mutator_leftmost, mutator_rightmost, mutator_leftmost_empty, mutator_rightmost_empty,
+                      mutator_regions, mutator_used);
 
-  log_debug(gc)("  old_collector_leftmost: " SIZE_FORMAT
-                ", old_collector_rightmost: " SIZE_FORMAT
-                ", old_collector_leftmost_empty: " SIZE_FORMAT
-                ", old_collector_rightmost_empty: " SIZE_FORMAT
-                ", old_collector_regions: " SIZE_FORMAT
-                ", old_collector_used: " SIZE_FORMAT,
-                old_collector_leftmost, old_collector_rightmost, old_collector_leftmost_empty, old_collector_rightmost_empty,
-                old_collector_regions, old_collector_used);
+  log_debug(gc, free)("  old_collector_leftmost: " SIZE_FORMAT
+                      ", old_collector_rightmost: " SIZE_FORMAT
+                      ", old_collector_leftmost_empty: " SIZE_FORMAT
+                      ", old_collector_rightmost_empty: " SIZE_FORMAT
+                      ", old_collector_regions: " SIZE_FORMAT
+                      ", old_collector_used: " SIZE_FORMAT,
+                      old_collector_leftmost, old_collector_rightmost, old_collector_leftmost_empty, old_collector_rightmost_empty,
+                      old_collector_regions, old_collector_used);
 
   idx_t rightmost_idx = (mutator_leftmost == max_regions)? -1: (idx_t) mutator_rightmost;
   idx_t rightmost_empty_idx = (mutator_leftmost_empty == max_regions)? -1: (idx_t) mutator_rightmost_empty;
@@ -1451,12 +1451,12 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
   rightmost_empty_idx = (old_collector_leftmost_empty == max_regions)? -1: (idx_t) old_collector_rightmost_empty;
   _partitions.establish_old_collector_intervals(old_collector_leftmost, rightmost_idx, old_collector_leftmost_empty,
                                                 rightmost_empty_idx, old_collector_regions, old_collector_used);
-  log_debug(gc)("  After find_regions_with_alloc_capacity(), Mutator range [%zd, %zd],"
-                "  Old Collector range [%zd, %zd]",
-                _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
-                _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
-                _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
-                _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
+  log_debug(gc, free)("  After find_regions_with_alloc_capacity(), Mutator range [%zd, %zd],"
+                      "  Old Collector range [%zd, %zd]",
+                      _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
+                      _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
+                      _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
+                      _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
 }
 
 // Returns number of regions transferred, adds transferred bytes to var argument bytes_transferred
@@ -1467,7 +1467,6 @@ size_t ShenandoahFreeSet::transfer_empty_regions_from_collector_set_to_mutator_s
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t transferred_regions = 0;
   ShenandoahLeftRightIterator iterator(&_partitions, which_collector, true);
-  idx_t rightmost = _partitions.rightmost_empty(which_collector);
   for (idx_t idx = iterator.current(); transferred_regions < max_xfer_regions && iterator.has_next(); idx = iterator.next()) {
     // Note: can_allocate_from() denotes that region is entirely empty
     if (can_allocate_from(idx)) {
@@ -1713,13 +1712,13 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
         // OLD regions that have available memory are already in the old_collector free set.
         _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                      ShenandoahFreeSetPartitionId::OldCollector, ac);
-        log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to old_collector_free", idx);
-        log_debug(gc)("  Shifted Mutator range [%zd, %zd],"
-                      "  Old Collector range [%zd, %zd]",
-                      _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
-                      _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
-                      _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
-                      _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
+        log_trace(gc, free)("  Shifting region " SIZE_FORMAT " from mutator_free to old_collector_free", idx);
+        log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
+                            "  Old Collector range [%zd, %zd]",
+                            _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
+                            _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
+                            _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
+                            _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector));
         old_region_count++;
         continue;
       }
@@ -1736,13 +1735,13 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
       // collection set, and they are easily evacuated because they have low density of live objects.
       _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                    ShenandoahFreeSetPartitionId::Collector, ac);
-      log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
-      log_debug(gc)("  Shifted Mutator range [%zd, %zd],"
-                    "  Collector range [%zd, %zd]",
-                    _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
-                    _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
-                    _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector),
-                    _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector));
+      log_trace(gc, free)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
+      log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
+                          "  Collector range [%zd, %zd]",
+                          _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
+                          _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
+                          _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector),
+                          _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector));
     }
   }
 
@@ -1754,8 +1753,8 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
     }
     size_t reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
     if (reserve < to_reserve) {
-      log_debug(gc)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
-                    PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
+      log_info(gc, free)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
+                          PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
     }
   }
 }
@@ -1806,34 +1805,41 @@ void ShenandoahFreeSet::log_status() {
 
 #ifdef ASSERT
   // Dump of the FreeSet details is only enabled if assertions are enabled
-  if (LogTarget(Debug, gc, free)::is_enabled()) {
+  LogTarget(Debug, gc, free) debug_free;
+  if (debug_free.is_enabled()) {
 #define BUFFER_SIZE 80
+    LogStream ls(debug_free);
 
     char buffer[BUFFER_SIZE];
     for (uint i = 0; i < BUFFER_SIZE; i++) {
       buffer[i] = '\0';
     }
 
-    log_debug(gc)("FreeSet map legend:"
-                       " M:mutator_free C:collector_free O:old_collector_free"
-                       " H:humongous ~:retired old _:retired young");
-    log_debug(gc)(" mutator free range [" SIZE_FORMAT ".." SIZE_FORMAT "] allocating from %s, "
-                  " collector free range [" SIZE_FORMAT ".." SIZE_FORMAT "], "
-                  "old collector free range [" SIZE_FORMAT ".." SIZE_FORMAT "] allocates from %s",
-                  _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
-                  _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
-                  _partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::Mutator)? "left to right": "right to left",
-                  _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector),
-                  _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector),
-                  _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
-                  _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector),
-                  _partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::OldCollector)? "left to right": "right to left");
+    ls.cr();
+    ls.print_cr("Mutator free range [%zd..%zd] allocating from %s",
+                _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
+                _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
+                _partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::Mutator)? "left to right": "right to left");
+
+    ls.print_cr("Collector free range [%zd..%zd] allocating from %s",
+                _partitions.leftmost(ShenandoahFreeSetPartitionId::Collector),
+                _partitions.rightmost(ShenandoahFreeSetPartitionId::Collector),
+                _partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::Collector)? "left to right": "right to left");
+
+    ls.print_cr("Old collector free range [%zd..%zd] allocates from %s",
+                _partitions.leftmost(ShenandoahFreeSetPartitionId::OldCollector),
+                _partitions.rightmost(ShenandoahFreeSetPartitionId::OldCollector),
+                _partitions.alloc_from_left_bias(ShenandoahFreeSetPartitionId::OldCollector)? "left to right": "right to left");
+    ls.cr();
+    ls.print_cr("FreeSet map legend:");
+    ls.print_cr(" M/m:mutator, C/c:collector O/o:old_collector (Empty/Occupied)");
+    ls.print_cr(" H/h:humongous, X/x:no alloc capacity, ~/_:retired (Old/Young)");
 
     for (uint i = 0; i < _heap->num_regions(); i++) {
       ShenandoahHeapRegion *r = _heap->get_region(i);
       uint idx = i % 64;
       if ((i != 0) && (idx == 0)) {
-        log_debug(gc)(" %6u: %s", i-64, buffer);
+        ls.print_cr(" %6u: %s", i-64, buffer);
       }
       if (_partitions.in_free_set(ShenandoahFreeSetPartitionId::Mutator, i)) {
         size_t capacity = alloc_capacity(r);
@@ -1847,17 +1853,11 @@ void ShenandoahFreeSet::log_status() {
         size_t capacity = alloc_capacity(r);
         buffer[idx] = (capacity == ShenandoahHeapRegion::region_size_bytes()) ? 'O' : 'o';
       } else if (r->is_humongous()) {
-        if (r->is_old()) {
-          buffer[idx] = 'H';
-        } else {
-          buffer[idx] = 'h';
-        }
+        buffer[idx] = (r->is_old() ? 'H' : 'h');
+      } else if (alloc_capacity(r) == 0) {
+        buffer[idx] = (r->is_old() ? 'X' : 'x');
       } else {
-        if (r->is_old()) {
-          buffer[idx] = '~';
-        } else {
-          buffer[idx] = '_';
-        }
+        buffer[idx] = (r->is_old() ? '~' : '_');
       }
     }
     uint remnant = _heap->num_regions() % 64;
@@ -1866,7 +1866,7 @@ void ShenandoahFreeSet::log_status() {
     } else {
       remnant = 64;
     }
-    log_debug(gc)(" %6u: %s", (uint) (_heap->num_regions() - remnant), buffer);
+    ls.print_cr(" %6u: %s", (uint) (_heap->num_regions() - remnant), buffer);
   }
 #endif
 
