@@ -77,9 +77,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/fastrand.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #ifdef LINUX
@@ -120,7 +118,7 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  int result = permit_forbidden_function::vsnprintf(buf, len, fmt, args);
+  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -657,7 +655,7 @@ void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  void* const outer_ptr = permit_forbidden_function::malloc(outer_size);
+  ALLOW_C_FUNCTION(::malloc, void* const outer_ptr = ::malloc(outer_size);)
   if (outer_ptr == nullptr) {
     return nullptr;
   }
@@ -724,7 +722,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     header->mark_block_as_dead();
 
     // the real realloc
-    void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
+    ALLOW_C_FUNCTION(::realloc, void* const new_outer_ptr = ::realloc(header, new_outer_size);)
 
     if (new_outer_ptr == nullptr) {
       // realloc(3) failed and the block still exists.
@@ -752,7 +750,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
   } else {
 
     // NMT disabled.
-    rc = permit_forbidden_function::realloc(memblock, size);
+    ALLOW_C_FUNCTION(::realloc, rc = ::realloc(memblock, size);)
     if (rc == nullptr) {
       return nullptr;
     }
@@ -780,7 +778,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  permit_forbidden_function::free(old_outer_ptr);
+  ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }
 
 void os::init_random(unsigned int initval) {
