@@ -45,16 +45,15 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * When this attribute is present, the {@link Deprecated} annotation should
  * also be present in the {@link RuntimeVisibleAnnotationsAttribute
  * RuntimeVisibleAnnotations} attribute to provide more obvious alerts.
- * The {@linkplain jdk.compiler/ implementation of the system Java compiler}
- * emits this attribute without the annotation when a {@code @deprecated} tag
- * is present in the documentation comments without the annotation.
+ * The reference implementation of the system Java compiler emits this attribute
+ * without the annotation when a {@code @deprecated} tag is present in the
+ * documentation comments without the annotation.
  *
  * @see Attributes#deprecated()
  * @see Deprecated
  * @jvms 4.7.15 The {@code Deprecated} Attribute
  * @since 24
  */
-@SuppressWarnings("doclint:reference")
 public sealed interface DeprecatedAttribute
         extends Attribute<DeprecatedAttribute>,
                 ClassElement, MethodElement, FieldElement
