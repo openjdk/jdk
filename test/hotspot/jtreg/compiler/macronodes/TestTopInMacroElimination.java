@@ -26,8 +26,6 @@
  * @bug 8325030
  * @summary Regression test for an assert triggered during allocation elimination because top is found during
  * constructing new phis.
- * @modules java.base/jdk.internal.misc
- * @library /test/lib /
  * @run main/othervm -XX:-ProfileExceptionHandlers compiler.macronodes.TestTopInMacroElimination
  */
 
