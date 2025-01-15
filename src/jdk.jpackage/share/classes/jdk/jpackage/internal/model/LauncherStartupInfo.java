@@ -42,6 +42,14 @@ public interface LauncherStartupInfo {
     String qualifiedClassName();
 
     /**
+     * Returns the simple name of the main class of this launcher startup configuration as given in the source code.
+     * @return the simple name of the main class of this launcher startup configuration as given in the source code
+     */
+    default String simpleClassName() {
+        return ClassDesc.of(qualifiedClassName()).displayName();
+    }
+
+    /**
      * Gets the package name of the main class of this launcher startup configuration.
      * @return the package name of the main class of this launcher startup configuration
      */
