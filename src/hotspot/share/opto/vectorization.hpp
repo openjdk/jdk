@@ -86,7 +86,7 @@ private:
   CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
 
   NOT_PRODUCT(VTrace _vtrace;)
-  NOT_PRODUCT(TraceMemPointer _mptrace; )
+  NOT_PRODUCT(TraceMemPointer _mptrace;)
 
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
   static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
@@ -187,7 +187,7 @@ public:
 
   // Some nodes must be pre-loop invariant, so that they can be used for conditions
   // before or inside the pre-loop. For example, alignment of main-loop vector
-  // memops must be acheived in the pre-loop, via the exit check in the pre-loop.
+  // memops must be achieved in the pre-loop, via the exit check in the pre-loop.
   bool is_pre_loop_invariant(Node* n) const {
     // Must be in the main-loop, otherwise we can't access the pre-loop.
     // This fails during SuperWord::unrolling_analysis, but that is ok.
@@ -698,7 +698,7 @@ private:
   VStatus setup_submodules_helper();
 };
 
-// VPointer wraps the MemPointer to the use in a loop:
+// VPointer wraps the MemPointer for the use in a loop:
 //
 //   pointer = SUM(summands) + con
 //
@@ -719,7 +719,7 @@ private:
 //       If we find a summand where the variable is the iv, we set iv_scale to the
 //       corresponding scale. If there is no such summand, then we know that the
 //       pointer does not depend on the iv, since otherwise there would have to be
-//       a summand where its variable it main-loop variant.
+//       a summand where its variable is main-loop variant.
 //
 class VPointer : public ArenaObj {
 private:
@@ -801,9 +801,9 @@ public:
 
   // Accessors
   bool is_valid()                 const { return _is_valid; }
-  const MemPointer& mem_pointer() const { assert(_is_valid, ""); return _mem_pointer; }
-  jint size()                     const { assert(_is_valid, ""); return mem_pointer().size(); }
-  jint iv_scale()                 const { assert(_is_valid, ""); return _iv_scale; }
+  const MemPointer& mem_pointer() const { assert(_is_valid, "must be valid"); return _mem_pointer; }
+  jint size()                     const { assert(_is_valid, "must be valid"); return mem_pointer().size(); }
+  jint iv_scale()                 const { assert(_is_valid, "must be valid"); return _iv_scale; }
   jint con()                      const { return mem_pointer().con().value(); }
 
   template<typename Callback>
@@ -918,7 +918,7 @@ private:
       }
     }
 
-    // In the pointer analysis, and especially the AlignVector, analysis we assume that
+    // In the pointer analysis, and especially the AlignVector analysis, we assume that
     // stride and scale are not too large. For example, we multiply "iv_scale * iv_stride",
     // and assume that this does not overflow the int range. We also take "abs(iv_scale)"
     // and "abs(iv_stride)", which would overflow for min_int = -(2^31). Still, we want
