@@ -2883,17 +2883,15 @@ static bool recoverable_mmap_error(int err) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu"
-          ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
-          os::strerror(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, exec, os::strerror(err), err);
 }
 
 static void warn_fail_commit_memory(char* addr, size_t size,
                                     size_t alignment_hint, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu"
-          ", %zu, %d) failed; error='%s' (errno=%d)", p2i(addr), size,
-          alignment_hint, exec, os::strerror(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, alignment_hint, exec, os::strerror(err), err);
 }
 
 // NOTE: Linux kernel does not really reserve the pages for us.

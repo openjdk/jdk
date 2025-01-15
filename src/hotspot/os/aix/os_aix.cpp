@@ -1757,9 +1757,8 @@ static bool uncommit_mmaped_memory(char* addr, size_t size) {
 #ifdef PRODUCT
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu"
-          ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
-          os::errno_name(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, exec, os::errno_name(err), err);
 }
 #endif
 
