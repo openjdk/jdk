@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -683,7 +683,7 @@ JVM_ENTRY(jlong, jmm_SetPoolThreshold(JNIEnv* env, jobject obj, jmmThresholdType
 
   if ((size_t)threshold > max_uintx) {
     stringStream st;
-    st.print("Invalid valid threshold value. Threshold value (" JLONG_FORMAT ") > max value of size_t (" UINTX_FORMAT ")", threshold, max_uintx);
+    st.print("Invalid valid threshold value. Threshold value (" JLONG_FORMAT ") > max value of size_t (%zu)", threshold, max_uintx);
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), st.as_string(), -1);
   }
 

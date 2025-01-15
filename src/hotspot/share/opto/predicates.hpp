@@ -26,7 +26,6 @@
 #define SHARE_OPTO_PREDICATES_HPP
 
 #include "opto/cfgnode.hpp"
-#include "opto/connode.hpp"
 #include "opto/opaquenode.hpp"
 
 class IdealLoopTree;
@@ -232,7 +231,7 @@ class Predicate : public StackObj {
 // Generic predicate visitor that does nothing. Subclass this visitor to add customized actions for each predicate.
 // The visit methods of this visitor are called from the predicate iterator classes which walk the predicate chain.
 // Use the UnifiedPredicateVisitor if the type of the predicate does not matter.
-class PredicateVisitor : StackObj {
+class PredicateVisitor : public StackObj {
  public:
   virtual void visit(const ParsePredicate& parse_predicate) {}
   virtual void visit(const RuntimePredicate& runtime_predicate) {}
@@ -297,6 +296,8 @@ class ParsePredicate : public Predicate {
   }
 
   static ParsePredicateNode* init_parse_predicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
+  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_true_path_loop,
+                                                       const ParsePredicateSuccessProj* success_proj);)
 
  public:
   ParsePredicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason)
@@ -324,6 +325,15 @@ class ParsePredicate : public Predicate {
   ParsePredicateSuccessProj* tail() const override {
     assert(is_valid(), "must be valid");
     return _success_proj;
+  }
+
+  ParsePredicateSuccessProj* clone_to_unswitched_loop(Node* new_control, bool is_true_path_loop,
+                                                      PhaseIdealLoop* phase) const;
+
+  // Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
+  void kill(const PhaseIterGVN& igvn) const {
+    _parse_predicate_node->mark_useless();
+    igvn._worklist.push(_parse_predicate_node);
   }
 };
 
@@ -399,6 +409,7 @@ class TemplateAssertionPredicate : public Predicate {
   IfTrueNode* initialize(PhaseIdealLoop* phase, Node* new_control) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
+  void kill(PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
 
 #ifdef ASSERT
@@ -1006,25 +1017,103 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
-// This visitor collects all Template Assertion Predicates If nodes or the corresponding Opaque nodes, depending on the
-// provided 'get_opaque' flag, to the provided list.
-class TemplateAssertionPredicateCollector : public PredicateVisitor {
-  Unique_Node_List& _list;
-  const bool _get_opaque;
+// This class establishes a predicate chain at the target loop by rewiring newly cloned predicates to the current head
+// of the predicate chain.
+class TargetLoopPredicateChain : public StackObj {
+  DEBUG_ONLY(const Node* const _old_target_loop_entry;)
+  DEBUG_ONLY(const node_idx_t _node_index_before_cloning;)
+  Node* _current_predicate_chain_head;
+  PhaseIdealLoop* const _phase;
+
+  void rewire_to_target_chain_head(IfTrueNode* template_assertion_predicate_success_proj) const;
+
+public:
+  TargetLoopPredicateChain(LoopNode* loop_head, PhaseIdealLoop* phase);
+  NONCOPYABLE(TargetLoopPredicateChain);
+
+  void insert_predicate(IfTrueNode* predicate_success_proj);
+};
+
+// This class clones Parse and Template Assertion Predicates to the provided target loop. This also involves rewiring
+// of any data pinned to Template Assertion Predicates. The Template Assertion Predicate Expressions are cloned
+// without applying any changes to them.
+//
+// Each time a predicate is cloned, it is inserted at the top of previously cloned predicates. This ensures that the
+// target loop predicate chain order of the newly cloned predicates is the same as in the source loop from which the
+// predicates were cloned from.
+//
+// Template Assertion Predicate Example:
+//
+//            x                           _old_target_loop_entry                                 _old_target_loop_entry
+//            |                                |           |                                               |
+//    Template Assertion                       |       Cloned Template       2. rewire data          Cloned Template
+//        Predicate           1. clone         |     Assertion Predicate        and predicate      Assertion Predicate
+//            |     \         =======>         |                             ===============>           |        \
+//            |     data                       |                                                        |        data
+//            |                                |                                                        |
+//    source loop head                      target loop head                                       target loop head
+class ClonePredicateToTargetLoop : public StackObj {
+  Node* const _old_target_loop_entry; // Used as control for each newly cloned predicate.
+  TargetLoopPredicateChain _target_loop_predicate_chain;
+  const NodeInLoopBody& _node_in_loop_body;
+  PhaseIdealLoop* const _phase;
+
+public:
+  ClonePredicateToTargetLoop(LoopNode* target_loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
+
+  // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
+  void clone_parse_predicate(const ParsePredicate& parse_predicate, bool is_true_path_loop) {
+    ParsePredicateSuccessProj* cloned_parse_predicate_success_proj =
+      parse_predicate.clone_to_unswitched_loop(_old_target_loop_entry, is_true_path_loop, _phase);
+    _target_loop_predicate_chain.insert_predicate(cloned_parse_predicate_success_proj);
+  }
+
+  // Clones the provided Template Assertion Predicate to the head of the current predicate chain at the target loop.
+  void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate) {
+    IfTrueNode* cloned_template_success_proj = template_assertion_predicate.clone(_old_target_loop_entry,
+                                                                                  _phase);
+    template_assertion_predicate.rewire_loop_data_dependencies(cloned_template_success_proj, _node_in_loop_body, _phase);
+    _target_loop_predicate_chain.insert_predicate(cloned_template_success_proj);
+  }
+};
+
+// Visitor to clone Parse and Template Assertion Predicates from a loop to its unswitched true and false path loop.
+// The cloned predicates are not updated in any way. Thus, an Initialized Assertion Predicate is also not required to
+// be created. Note that the data dependencies from the Template Assertion Predicates are also updated to the newly
+// cloned Template Assertion Predicates, depending on whether they belong to the true or false path loop.
+class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
+  ClonePredicateToTargetLoop _clone_predicate_to_true_path_loop;
+  ClonePredicateToTargetLoop _clone_predicate_to_false_path_loop;
+
+  PhaseIdealLoop* const _phase;
+  bool _has_hoisted_check_parse_predicates;
 
  public:
-  TemplateAssertionPredicateCollector(Unique_Node_List& list, const bool get_opaque)
-      : _list(list),
-        _get_opaque(get_opaque) {}
+  CloneUnswitchedLoopPredicatesVisitor(LoopNode* true_path_loop_head,
+                                       LoopNode* false_path_loop_head,
+                                       const NodeInOriginalLoopBody& node_in_true_path_loop_body,
+                                       const NodeInClonedLoopBody& node_in_false_path_loop_body,
+                                       PhaseIdealLoop* phase);
+  NONCOPYABLE(CloneUnswitchedLoopPredicatesVisitor);
+
+  using PredicateVisitor::visit;
+
+  void visit(const ParsePredicate& parse_predicate) override;
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
+};
+
+// This visitor collects all OpaqueTemplateAssertionNodes of Template Assertion Predicates. This is used for cleaning
+// up unused Template Assertion Predicates.
+class OpaqueTemplateAssertionPredicateCollector : public PredicateVisitor {
+  Unique_Node_List& _list;
+
+ public:
+  explicit OpaqueTemplateAssertionPredicateCollector(Unique_Node_List& list) : _list(list) {}
 
   using PredicateVisitor::visit;
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
-    if (_get_opaque) {
-      _list.push(template_assertion_predicate.opaque_node());
-    } else {
-      _list.push(template_assertion_predicate.tail());
-    }
+    _list.push(template_assertion_predicate.opaque_node());
   }
 };
 

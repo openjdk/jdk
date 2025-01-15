@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,7 +400,12 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   assert(is_named(), "unnamed packages/modules are not archived");
   ModuleEntry* archived_entry = (ModuleEntry*)ArchiveBuilder::rw_region_alloc(sizeof(ModuleEntry));
   memcpy((void*)archived_entry, (void*)this, sizeof(ModuleEntry));
-  archived_entry->_archived_module_index = -1;
+
+  if (CDSConfig::is_dumping_full_module_graph()) {
+    archived_entry->_archived_module_index = HeapShared::append_root(module());
+  } else {
+    archived_entry->_archived_module_index = -1;
+  }
 
   if (_archive_modules_entries == nullptr) {
     _archive_modules_entries = new (mtClass)ArchivedModuleEntries();
@@ -408,6 +413,14 @@ ModuleEntry* ModuleEntry::allocate_archived_entry() const {
   assert(_archive_modules_entries->get(this) == nullptr, "Each ModuleEntry must not be shared across ModuleEntryTables");
   _archive_modules_entries->put(this, archived_entry);
   DEBUG_ONLY(_num_archived_module_entries++);
+
+  assert(archived_entry->shared_protection_domain() == nullptr, "never set during -Xshare:dump");
+  // Clear handles and restore at run time. Handles cannot be archived.
+  OopHandle null_handle;
+  archived_entry->_module = null_handle;
+
+  // For verify_archived_module_entries()
+  DEBUG_ONLY(_num_inited_module_entries++);
 
   if (log_is_enabled(Info, cds, module)) {
     ResourceMark rm;
@@ -487,22 +500,6 @@ void ModuleEntry::init_as_archived_entry() {
   ArchivePtrMarker::mark_pointer((address*)&_reads);
   ArchivePtrMarker::mark_pointer((address*)&_version);
   ArchivePtrMarker::mark_pointer((address*)&_location);
-}
-
-void ModuleEntry::update_oops_in_archived_module(int root_oop_index) {
-  assert(CDSConfig::is_dumping_full_module_graph(), "sanity");
-  assert(_archived_module_index == -1, "must be set exactly once");
-  assert(root_oop_index >= 0, "sanity");
-
-  _archived_module_index = root_oop_index;
-
-  assert(shared_protection_domain() == nullptr, "never set during -Xshare:dump");
-  // Clear handles and restore at run time. Handles cannot be archived.
-  OopHandle null_handle;
-  _module = null_handle;
-
-  // For verify_archived_module_entries()
-  DEBUG_ONLY(_num_inited_module_entries++);
 }
 
 #ifndef PRODUCT
