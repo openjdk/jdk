@@ -573,6 +573,11 @@ public:
   // variables. It should be rare that we have more than 9 variables.
   static const int SUMMANDS_SIZE = 10;
 
+  // A base can be:
+  // - Known:
+  //   - On-heap: Object
+  //   - Off-heap: Native
+  // - Unknown
   class Base : public StackObj {
   private:
     enum Kind { Unknown, Object, Native };

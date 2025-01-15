@@ -698,28 +698,52 @@ private:
   VStatus setup_submodules_helper();
 };
 
-// VPointer wraps the MemPointer for the use in a loop:
+// Reminder: MemPointer have the form:
 //
 //   pointer = SUM(summands) + con
 //
-// We define invar_summands as all summands, except those where the variable is
-// the base or the loop iv. We can thus write:
+// Where every summand in summands has the form:
+//
+//   summand = scale * variable
+//
+// The VPointer wraps a MemPointer for the use in loops. A "valid" VPointer has
+// the form:
 //
 //   pointer = base + invar + iv_scale * iv + con
 //
 //   invar = SUM(invar_summands)
 //
-// We have the following components:
-//   - base:
+// Where:
+//   - base: is the known base of the MemPointer.
 //       on-heap (object base) or off-heap (native base address)
-//   - invar_summands:
-//       pre-loop invariant. This is important when we need to memory align a
-//       pointer using the pre-loop limit.
-//   - iv and iv_scale:
+//   - iv and iv_scale: i.e. the iv_summand = iv * iv_scale.
 //       If we find a summand where the variable is the iv, we set iv_scale to the
 //       corresponding scale. If there is no such summand, then we know that the
 //       pointer does not depend on the iv, since otherwise there would have to be
 //       a summand where its variable is main-loop variant.
+//   - invar_summands: all other summands except base and iv_summand.
+//       All variables must be pre-loop invariant. This is important when we need
+//       to memory align a pointer using the pre-loop limit.
+//
+// A VPointer can be marked "invalid", if some of these conditions are not met, or
+// it is unknown if they are met. If a VPointer is marked "invalid", it always
+// returns conservative answers to aliasing queries, which means that we do not
+// optimize in these cases. For example:
+//    - is_adjacent_to_and_before: returning true would allow optimizations such as
+//                                 packing into vectors. So for "invalid" VPointers
+//                                 we always return false (i.e. unknown).
+//    - never_overlaps_with: returning true would allow optimizations such as
+//                           swapping the order of memops. So for "invalid" VPointers
+//                           we always return false (i.e. unknown).
+//
+// These are examples where a VPointer becomes "invalid":
+//    - If the MemPointer does not have the required form for VPointer,
+//      i.e. if one of these conditions is not met (see init_is_valid):
+//      - Base must be known.
+//      - All summands except the iv-summand must be pre-loop invariant.
+//      - Some restrictions on iv_scale and iv_stride, to avoid overflow in
+//        alignment computations.
+//    - If the new con computed in make_with_iv_offset overflows.
 //
 class VPointer : public ArenaObj {
 private:
@@ -738,6 +762,10 @@ private:
     _mem_pointer(mem_pointer),
     _iv_scale(init_iv_scale()),
     _is_valid(!must_be_invalid && init_is_valid()) {}
+
+  VPointer make_invalid() const {
+    return VPointer(_vloop, mem_pointer(), true /* must be invalid*/);
+  }
 
 public:
   VPointer(const MemNode* mem,
@@ -793,10 +821,6 @@ public:
     }
 #endif
     return p;
-  }
-
-  VPointer make_invalid() const {
-    return VPointer(_vloop, mem_pointer(), true /* must be invalid*/);
   }
 
   // Accessors
