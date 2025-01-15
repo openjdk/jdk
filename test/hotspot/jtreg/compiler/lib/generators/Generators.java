@@ -38,10 +38,10 @@ import jdk.test.lib.Utils;
  * <p>
  * Normally, clients get the default Generators instance by referring to the static variable {@link #G}.
  * <p>
- * Generators offers generators with essential distributions, for example, {@link #uniformInts(int, int)},
+ * The Generators class offers generators with essential distributions, for example, {@link #uniformInts(int, int)},
  * {@link #uniformLongs(long, long)}, {@link #uniformDoubles(double, double)} or {@link #uniformFloats()}. For floating
  * points, you may choose to get random bit patterns uniformly at random, rather than the values they represent.
- * Generators also offers special generators of interesting values such as {@link #powerOfTwoInts(int)},
+ * The Generators class also offers special generators of interesting values such as {@link #powerOfTwoInts(int)},
  * {@link #powerOfTwoLongs(int)}, which are values close to the powers of 2, or {@link #SPECIAL_DOUBLES} and
  * {@link #SPECIAL_FLOATS}, which are values such as infinity, NaN, zero or the maximum and minimum values.
  * <p>
