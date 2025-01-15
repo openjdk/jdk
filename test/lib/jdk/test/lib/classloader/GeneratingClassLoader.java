@@ -38,13 +38,13 @@ class TemplateClass {
 
 public class GeneratingClassLoader extends ClassLoader {
 
-    public synchronized Class loadClass(String name) throws ClassNotFoundException {
+    public synchronized Class<?> loadClass(String name) throws ClassNotFoundException {
         return loadClass(name, false);
     }
 
-    public synchronized Class loadClass(String name, boolean resolve)
+    public synchronized Class<?> loadClass(String name, boolean resolve)
             throws ClassNotFoundException {
-        Class c = findLoadedClass(name);
+        Class<?> c = findLoadedClass(name);
         if (c != null) {
             return c;
         }
