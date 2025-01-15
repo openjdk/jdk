@@ -94,13 +94,13 @@ public final class CaptureStateUtil {
     // (int.class | long.class) ->
     //   ({"GetLastError" | "WSAGetLastError"} | "errno") ->
     //     MethodHandle
-    private static final Map<Class<?>, Map<String, MethodHandle>> CAPTURE_STATE_EXTRACTORS;
+    private static final Map<Class<?>, Map<String, MethodHandle>> INNER_HANDLES;
 
     static {
 
         final StructLayout stateLayout = Linker.Option.captureStateLayout();
         final Map<Class<?>, Map<String, MethodHandle>> classMap = new HashMap<>();
-        for (var clazz : new Class<?>[]{int.class, long.class}) {
+        for (var returnType : new Class<?>[]{int.class, long.class}) {
             Map<String, MethodHandle> handles = stateLayout
                     .memberLayouts().stream()
                     .collect(Collectors.toUnmodifiableMap(
@@ -108,14 +108,28 @@ public final class CaptureStateUtil {
                             member -> {
                                 VarHandle vh = stateLayout.varHandle(MemoryLayout.PathElement.groupElement(member.name().orElseThrow()));
                                 // (MemorySegment, long)int
-                                MethodHandle mh = vh.toMethodHandle(VarHandle.AccessMode.GET);
+                                MethodHandle intExtractor = vh.toMethodHandle(VarHandle.AccessMode.GET);
                                 // (MemorySegment)int
-                                return MethodHandles.insertArguments(mh, 1, 0L);
+                                intExtractor = MethodHandles.insertArguments(intExtractor, 1, 0L);
+
+                                if (returnType.equals(int.class)) {
+                                    // (int, MemorySegment)int
+                                    return MethodHandles.guardWithTest(
+                                            NON_NEGATIVE_INT_MH,
+                                            SUCCESS_INT_MH,
+                                            ERROR_INT_MH.bindTo(intExtractor));
+                                } else {
+                                    // (long, MemorySegment)long
+                                    return MethodHandles.guardWithTest(
+                                            NON_NEGATIVE_LONG_MH,
+                                            SUCCESS_LONG_MH,
+                                            ERROR_LONG_MH.bindTo(intExtractor));
+                                }
                             }
                     ));
-            classMap.put(clazz, handles);
+            classMap.put(returnType, handles);
         }
-        CAPTURE_STATE_EXTRACTORS = Map.copyOf(classMap);
+        INNER_HANDLES = Map.copyOf(classMap);
     }
 
     private CaptureStateUtil() {
@@ -192,21 +206,14 @@ public final class CaptureStateUtil {
         }
 
         // ((int | long), MemorySegment)(int | long)
-        final MethodHandle captureStateExtractor = CAPTURE_STATE_EXTRACTORS
+        MethodHandle inner = INNER_HANDLES
                 .get(returnType)
                 .get(stateName);
-        if (captureStateExtractor == null) {
+        if (inner == null) {
             throw new IllegalArgumentException("Unknown state name: " + stateName);
         }
 
-        final boolean isInt = (returnType == int.class);
-
-        // Todo: Cache the error handles
-        // ((int|long), MemorySegment)(int|long)
-        MethodHandle inner = MethodHandles.guardWithTest(
-                isInt ? NON_NEGATIVE_INT_MH : NON_NEGATIVE_LONG_MH,
-                isInt ? SUCCESS_INT_MH : SUCCESS_LONG_MH,
-                (isInt ? ERROR_INT_MH : ERROR_LONG_MH).bindTo(captureStateExtractor));
+        // Make `target` specific adaptations
 
         // (C0=MemorySegment, C1-Cn, MemorySegment)(int|long)
         inner = MethodHandles.collectArguments(inner, 0, target);
