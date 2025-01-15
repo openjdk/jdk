@@ -835,7 +835,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
 // Immediate Instruction
 #define INSN(NAME, op, funct3)                                                              \
-  void NAME(Register Rd, Register Rs1, int32_t imm) {                                       \
+  void NAME(Register Rd, Register Rs1, int64_t imm) {                                       \
     guarantee(is_simm12(imm), "Immediate is out of validity");                              \
     unsigned insn = 0;                                                                      \
     patch((address)&insn, 6, 0, op);                                                        \
@@ -846,17 +846,17 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     emit(insn);                                                                             \
   }
 
-  INSN(_addi,      0b0010011, 0b000);
-  INSN(slti,       0b0010011, 0b010);
-  INSN(_addiw,     0b0011011, 0b000);
-  INSN(_and_imm12, 0b0010011, 0b111);
-  INSN(ori,        0b0010011, 0b110);
-  INSN(xori,       0b0010011, 0b100);
+  INSN(_addi,  0b0010011, 0b000);
+  INSN(_addiw, 0b0011011, 0b000);
+  INSN(_andi,  0b0010011, 0b111);
+  INSN(ori,    0b0010011, 0b110);
+  INSN(xori,   0b0010011, 0b100);
+  INSN(slti,   0b0010011, 0b010);
 
 #undef INSN
 
 #define INSN(NAME, op, funct3)                                                              \
-  void NAME(Register Rd, Register Rs1, uint32_t imm) {                                      \
+  void NAME(Register Rd, Register Rs1, uint64_t imm) {                                      \
     guarantee(is_uimm12(imm), "Immediate is out of validity");                              \
     unsigned insn = 0;                                                                      \
     patch((address)&insn,6, 0,  op);                                                        \
@@ -2230,7 +2230,7 @@ public:
   }
 
 #define INSN(NAME, funct3, op)                                                               \
-  void NAME(Register Rd_Rs1, int32_t imm) {                                                  \
+  void NAME(Register Rd_Rs1, int64_t imm) {                                                  \
     assert_cond(is_simm6(imm));                                                              \
     uint16_t insn = 0;                                                                       \
     c_patch((address)&insn, 1, 0, op);                                                       \
@@ -2247,7 +2247,7 @@ public:
 #undef INSN
 
 #define INSN(NAME, funct3, op)                                                               \
-  void NAME(int32_t imm) {                                                                   \
+  void NAME(int64_t imm) {                                                                   \
     assert_cond(is_simm10(imm));                                                             \
     assert_cond((imm & 0b1111) == 0);                                                        \
     assert_cond(imm != 0);                                                                   \
@@ -2268,7 +2268,7 @@ public:
 #undef INSN
 
 #define INSN(NAME, funct3, op)                                                               \
-  void NAME(Register Rd, uint32_t uimm) {                                                    \
+  void NAME(Register Rd, uint64_t uimm) {                                                    \
     assert_cond(is_uimm10(uimm));                                                            \
     assert_cond((uimm & 0b11) == 0);                                                         \
     assert_cond(uimm != 0);                                                                  \
@@ -2325,7 +2325,7 @@ public:
 #undef INSN
 
 #define INSN(NAME, funct3, funct2, op)                                                       \
-  void NAME(Register Rd_Rs1, int32_t imm) {                                                  \
+  void NAME(Register Rd_Rs1, int64_t imm) {                                                  \
     assert_cond(is_simm6(imm));                                                              \
     uint16_t insn = 0;                                                                       \
     c_patch((address)&insn, 1, 0, op);                                                       \
@@ -2950,7 +2950,7 @@ public:
 // Immediate Instructions
 // --------------------------
 #define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs1, int32_t imm) {                                        \
+  void NAME(Register Rd, Register Rs1, int64_t imm) {                                        \
     /* addi -> c.addi/c.nop/c.mv/c.addi16sp/c.addi4spn */                                    \
     if (do_compress()) {                                                                     \
       if (Rd == Rs1 && is_simm6(imm)) {                                                      \
@@ -2978,7 +2978,7 @@ public:
 
 // --------------------------
 #define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs1, int32_t imm) {                                        \
+  void NAME(Register Rd, Register Rs1, int64_t imm) {                                        \
     /* addiw -> c.addiw */                                                                   \
     if (do_compress() && (Rd == Rs1 && Rd != x0 && is_simm6(imm))) {                         \
       c_addiw(Rd, imm);                                                                      \
@@ -2993,17 +2993,17 @@ public:
 
 // --------------------------
 #define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs1, int32_t imm) {                                        \
-    /* and_imm12 -> c.andi */                                                                \
+  void NAME(Register Rd, Register Rs1, int64_t imm) {                                        \
+    /* andi -> c.andi */                                                                     \
     if (do_compress() &&                                                                     \
         (Rd == Rs1 && Rd->is_compressed_valid() && is_simm6(imm))) {                         \
       c_andi(Rd, imm);                                                                       \
       return;                                                                                \
     }                                                                                        \
-    _and_imm12(Rd, Rs1, imm);                                                                \
+    _andi(Rd, Rs1, imm);                                                                     \
   }
 
-  INSN(and_imm12);
+  INSN(andi);
 
 #undef INSN
 

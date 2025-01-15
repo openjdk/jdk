@@ -241,8 +241,7 @@ public final class FlightRecorder {
     }
 
     /**
-     * Adds a recorder listener and captures the {@code AccessControlContext} to
-     * use when invoking the listener.
+     * Adds a recorder listener.
      * <p>
      * If Flight Recorder is already initialized when the listener is added, then the method
      * {@link FlightRecorderListener#recorderInitialized(FlightRecorder)} method is

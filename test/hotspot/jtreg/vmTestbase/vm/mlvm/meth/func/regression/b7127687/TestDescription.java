@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 /*
  * @test
  * @bug 7127687
- * @modules java.base/jdk.internal.org.objectweb.asm
  *
  * @summary converted from VM Testbase vm/mlvm/meth/func/regression/b7127687.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
@@ -37,6 +36,7 @@
  *     So previous implementation of MethodType.methodType() throws OOM exception
  *     in this test case.
  *
+ * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *

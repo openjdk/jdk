@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,20 +258,19 @@ void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol*
   _table.put(field, info);
 }
 
+// This function is called once for every archived heap object. Warn if this object is referenced by
+// a static field of a class that's not aot-initialized.
 inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value) {
   _archived_objs++;
 
+  if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
+    // It's quite often for static fields to have interned strings. These are most likely not
+    // problematic (and are hard to filter). So we will ignore them.
+    return true; /* keep on iterating */
+  }
+
   StaticFieldInfo* info = _table.get(orig_obj);
   if (info != nullptr) {
-    if (value.orig_referrer() == nullptr && java_lang_String::is_instance(orig_obj)) {
-      // This string object is not referenced by any of the archived object graphs. It's archived
-      // only because it's in the interned string table. So we are not in a condition that
-      // should be flagged by CDSHeapVerifier.
-      return true; /* keep on iterating */
-    }
-    if (info->_holder->is_hidden()) {
-      return true;
-    }
     ResourceMark rm;
     char* class_name = info->_holder->name()->as_C_string();
     char* field_name = info->_name->as_C_string();

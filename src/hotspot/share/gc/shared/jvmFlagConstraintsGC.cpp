@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,8 @@ JVMFlag::Error OldPLABSizeConstraintFunc(size_t value, bool verbose) {
 JVMFlag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
   if (value > MaxHeapFreeRatio) {
     JVMFlag::printError(verbose,
-                        "MinHeapFreeRatio (" UINTX_FORMAT ") must be "
-                        "less than or equal to MaxHeapFreeRatio (" UINTX_FORMAT ")\n",
+                        "MinHeapFreeRatio (%zu) must be "
+                        "less than or equal to MaxHeapFreeRatio (%zu)\n",
                         value, MaxHeapFreeRatio);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -111,8 +111,8 @@ JVMFlag::Error MinHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
 JVMFlag::Error MaxHeapFreeRatioConstraintFunc(uintx value, bool verbose) {
   if (value < MinHeapFreeRatio) {
     JVMFlag::printError(verbose,
-                        "MaxHeapFreeRatio (" UINTX_FORMAT ") must be "
-                        "greater than or equal to MinHeapFreeRatio (" UINTX_FORMAT ")\n",
+                        "MaxHeapFreeRatio (%zu) must be "
+                        "greater than or equal to MinHeapFreeRatio (%zu)\n",
                         value, MinHeapFreeRatio);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -125,7 +125,7 @@ static JVMFlag::Error CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(size_t maxHeap,
     JVMFlag::printError(verbose,
                         "Desired lifetime of SoftReferences cannot be expressed correctly. "
                         "MaxHeapSize (" SIZE_FORMAT ") or SoftRefLRUPolicyMSPerMB "
-                        "(" INTX_FORMAT ") is too large\n",
+                        "(%zd) is too large\n",
                         maxHeap, softRef);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -357,7 +357,7 @@ JVMFlag::Error TLABWasteIncrementConstraintFunc(uintx value, bool verbose) {
     // Compare with 'max_uintx' as ThreadLocalAllocBuffer::_refill_waste_limit is 'size_t'.
     if (refill_waste_limit > (max_uintx - value)) {
       JVMFlag::printError(verbose,
-                          "TLABWasteIncrement (" UINTX_FORMAT ") must be "
+                          "TLABWasteIncrement (%zu) must be "
                           "less than or equal to ergonomic TLAB waste increment maximum size(" SIZE_FORMAT ")\n",
                           value, (max_uintx - refill_waste_limit));
       return JVMFlag::VIOLATES_CONSTRAINT;
@@ -370,7 +370,7 @@ JVMFlag::Error SurvivorRatioConstraintFunc(uintx value, bool verbose) {
   if (FLAG_IS_CMDLINE(SurvivorRatio) &&
       (value > (MaxHeapSize / SpaceAlignment))) {
     JVMFlag::printError(verbose,
-                        "SurvivorRatio (" UINTX_FORMAT ") must be "
+                        "SurvivorRatio (%zu) must be "
                         "less than or equal to ergonomic SurvivorRatio maximum (" SIZE_FORMAT ")\n",
                         value,
                         (MaxHeapSize / SpaceAlignment));

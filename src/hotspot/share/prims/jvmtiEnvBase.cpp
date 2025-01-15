@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1367,6 +1367,13 @@ JvmtiEnvBase::set_frame_pop(JvmtiThreadState* state, javaVFrame* jvf, jint depth
   return JVMTI_ERROR_NONE;
 }
 
+jvmtiError
+JvmtiEnvBase::clear_all_frame_pops(JvmtiThreadState* state) {
+  JvmtiEnvThreadState* ets = state->env_thread_state(this);
+  ets->clear_all_frame_pops();
+  return JVMTI_ERROR_NONE;
+}
+
 bool
 JvmtiEnvBase::is_cthread_with_mounted_vthread(JavaThread* jt) {
   oop thread_oop = jt->threadObj();
@@ -2482,7 +2489,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target) {
 }
 
 void
-SetFramePopClosure::do_thread(Thread *target) {
+SetOrClearFramePopClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
   JavaThread* java_thread = JavaThread::cast(target);
@@ -2493,6 +2500,10 @@ SetFramePopClosure::do_thread(Thread *target) {
 
   if (!_self && !java_thread->is_suspended()) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
+    return;
+  }
+  if (!_set) { // ClearAllFramePops
+    _result = _env->clear_all_frame_pops(_state);
     return;
   }
   if (!java_thread->has_last_Java_frame()) {
@@ -2506,11 +2517,11 @@ SetFramePopClosure::do_thread(Thread *target) {
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::include);
   javaVFrame* jvf = JvmtiEnvBase::get_cthread_last_java_vframe(java_thread, &reg_map);
-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
+  _result = _env->set_frame_pop(_state, jvf, _depth);
 }
 
 void
-SetFramePopClosure::do_vthread(Handle target_h) {
+SetOrClearFramePopClosure::do_vthread(Handle target_h) {
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
 
@@ -2518,8 +2529,12 @@ SetFramePopClosure::do_vthread(Handle target_h) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
     return;
   }
+  if (!_set) { // ClearAllFramePops
+    _result = _env->clear_all_frame_pops(_state);
+    return;
+  }
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(target_h());
-  _result = ((JvmtiEnvBase*)_env)->set_frame_pop(_state, jvf, _depth);
+  _result = _env->set_frame_pop(_state, jvf, _depth);
 }
 
 void
