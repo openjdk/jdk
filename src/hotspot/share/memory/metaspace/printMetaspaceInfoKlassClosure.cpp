@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,7 +38,7 @@ PrintMetaspaceInfoKlassClosure::PrintMetaspaceInfoKlassClosure(outputStream* out
 void PrintMetaspaceInfoKlassClosure::do_klass(Klass* k) {
   _cnt++;
   _out->cr_indent();
-  _out->print(UINTX_FORMAT_W(4) ": ", _cnt);
+  _out->print("%4zu: ", _cnt);
 
   // Print a 's' for shared classes
   _out->put(k->is_shared() ? 's': ' ');

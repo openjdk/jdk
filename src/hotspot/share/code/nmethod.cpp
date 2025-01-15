@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1586,7 +1586,7 @@ void nmethod::log_identity(xmlStream* log) const {
 
 #define LOG_OFFSET(log, name)                    \
   if (p2i(name##_end()) - p2i(name##_begin())) \
-    log->print(" " XSTR(name) "_offset='" INTX_FORMAT "'"    , \
+    log->print(" " XSTR(name) "_offset='%zd'"    , \
                p2i(name##_begin()) - p2i(this))
 
 
@@ -1962,7 +1962,7 @@ void nmethod::log_state_change() const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'",
+      xtty->begin_elem("make_not_entrant thread='%zu'",
                        os::current_thread_id());
       log_identity(xtty);
       xtty->stamp();

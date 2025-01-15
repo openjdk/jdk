@@ -1354,7 +1354,7 @@ bool ObjectSynchronizer::is_async_deflation_needed() {
     // We need to clean up the used monitors even if the threshold is
     // not reached, to keep the memory utilization at bay when many threads
     // touched many monitors.
-    log_info(monitorinflation)("Async deflation needed: guaranteed interval (" INTX_FORMAT " ms) "
+    log_info(monitorinflation)("Async deflation needed: guaranteed interval (%zd ms) "
                                "is greater than time since last deflation (" JLONG_FORMAT " ms)",
                                GuaranteedAsyncDeflationInterval, time_since_last);
 
