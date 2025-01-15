@@ -53,7 +53,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * constructed with {@link LineNumber}, resulting in at most one attribute
  * instance in the built {@code Code} attribute.
  * <p>
- * The attribute was introduced in the Java SE Platform version 1.0.2, major
+ * The attribute was introduced in the Java Platform version 1.0.2, major
  * version {@value ClassFile#JAVA_1_VERSION}.
  *
  * @see Attributes#lineNumberTable()

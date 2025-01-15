@@ -77,8 +77,8 @@ public sealed interface BufWriter
      * writing process may be slower.
      *
      * @apiNote
-     * This is a hint that has changes no visible state of the buffer; it helps
-     * to reduce reallocation of the underlying storage by allocating sufficient
+     * This is a hint that changes no visible state of the buffer; it helps to
+     * reduce reallocation of the underlying storage by allocating sufficient
      * space at once.
      *
      * @param freeBytes the number of bytes to reserve
@@ -111,8 +111,8 @@ public sealed interface BufWriter
     /**
      * Writes a float value, of 4 bytes, to the buffer.
      * <p>
-     * In the conversions, all NaN values of the {@code float} may be collapsed
-     * into a single {@linkplain Float#NaN "canonical" NaN value}.
+     * In the conversions, all NaN values of the {@code float} may or may not be
+     * collapsed into a single {@linkplain Float#NaN "canonical" NaN value}.
      *
      * @param x the float value
      */
@@ -128,8 +128,8 @@ public sealed interface BufWriter
     /**
      * Writes a double value, of 8 bytes, to the buffer.
      * <p>
-     * In the conversions, all NaN values of the {@code double} may be collapsed
-     * into a single {@linkplain Double#NaN "canonical" NaN value}.
+     * In the conversions, all NaN values of the {@code double} may or may not
+     * be collapsed into a single {@linkplain Double#NaN "canonical" NaN value}.
      *
      * @param x the double value
      */

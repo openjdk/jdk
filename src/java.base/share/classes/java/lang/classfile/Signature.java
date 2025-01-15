@@ -57,7 +57,7 @@ public sealed interface Signature {
     String signatureString();
 
     /**
-     * Parses generic Java type signature from raw string.
+     * Parses a Java type signature from a raw string.
      *
      * @param javaTypeSignature raw Java type signature string
      * @return a Java type signature

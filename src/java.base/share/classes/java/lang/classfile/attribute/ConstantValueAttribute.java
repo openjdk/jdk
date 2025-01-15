@@ -46,7 +46,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * AttributeMapper#allowMultiple multiple instances} in a field.  It has a
  * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
  * <p>
- * This attribute was introduced in the Java SE Platform version 1.0.2, major
+ * This attribute was introduced in the Java Platform version 1.0.2, major
  * version {@value ClassFile#JAVA_1_VERSION}.
  *
  * @see Attributes#constantValue()
