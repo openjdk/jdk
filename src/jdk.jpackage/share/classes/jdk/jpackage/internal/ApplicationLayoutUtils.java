@@ -43,7 +43,7 @@ final class ApplicationLayoutUtils {
     private final static ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
             .launchersDirectory("Contents/MacOS")
             .appDirectory("Contents/app")
-            .runtimeDirectory("Contents/runtime")
+            .runtimeDirectory("Contents/runtime/Contents/Home")
             .destktopIntegrationDirectory("Contents/Resources")
             .appModsDirectory("Contents/app/mods")
             .contentDirectory("Contents")
