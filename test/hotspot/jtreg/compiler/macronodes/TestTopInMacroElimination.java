@@ -27,13 +27,13 @@
  * constructing new phis.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.macronodes.TestEliminateAllocationPhi
+ * @run driver compiler.macronodes.TestTopInMacroElimination
  */
 
 package compiler.macronodes;
 
-class TestEliminateAllocationPhi {
-    static class A {
+public class TestTopInMacroElimination {
+    public static class A {
         int a;
     }
 
@@ -42,7 +42,7 @@ class TestEliminateAllocationPhi {
         for (int i = 0; i < 50; ++i)
             try {
                 synchronized (new A()) {
-                    synchronized (Test.class) {
+                    synchronized (TestTopInMacroElimination.class) {
                         for (int var19 = 0; var19 < Integer.valueOf(i2);) {
                             Integer.valueOf(var19);
                         }
