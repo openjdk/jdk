@@ -1398,6 +1398,9 @@ public interface HttpResponse<T> {
          */
         public static <T> BodySubscriber<T> limiting(BodySubscriber<T> downstreamSubscriber, long capacity) {
             Objects.requireNonNull(downstreamSubscriber, "downstreamSubscriber");
+            if (capacity < 0) {
+                throw new IllegalArgumentException("was expecting \"capacity >= 0\", found: " + capacity);
+            }
             return new LimitingSubscriber<>(downstreamSubscriber, capacity);
         }
 
