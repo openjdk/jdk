@@ -36,8 +36,8 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent) {
-  MemBarNode* mb = MemBarNode::make(C, opcode, Compile::AliasIdxBot, precedent);
+void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, int alias_idx, Node* precedent) {
+  MemBarNode* mb = MemBarNode::make(C, opcode, alias_idx, precedent);
   mb->init_req(TypeFunc::Control, *ctrl);
   mb->init_req(TypeFunc::Memory, *mem);
   transform_later(mb);
@@ -45,7 +45,14 @@ void PhaseMacroExpand::insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node*
   transform_later(*ctrl);
   Node* mem_proj = new ProjNode(mb,TypeFunc::Memory);
   transform_later(mem_proj);
-  *mem = mem_proj;
+  if (alias_idx == Compile::AliasIdxBot) {
+    *mem = mem_proj;
+  } else {
+    MergeMemNode* mm = (*mem)->clone()->as_MergeMem();
+    mm->set_memory_at(alias_idx, mem_proj);
+    transform_later(mm);
+    *mem = mm;
+  }
 }
 
 Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType elembt) {
@@ -818,9 +825,18 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // Do not let stores that initialize this object be reordered with
     // a subsequent store that would make this object accessible by
     // other threads.
-    insert_mem_bar(ctrl, &out_mem, Op_MemBarStoreStore);
+    assert(ac->_dest_type == TypeOopPtr::BOTTOM, "non escaping destination shouldn't have narrow slice");
+    insert_mem_bar(ctrl, &out_mem, Op_MemBarStoreStore, Compile::AliasIdxBot);
   } else {
-    insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder);
+    int alias_idx = Compile::AliasIdxBot;
+    if (ac->_dest_type != TypeOopPtr::BOTTOM) {
+      // The graph was transformed under the assumption the ArrayCopy node only had an effect on a narrow slice. We can't
+      // insert a wide membar now that it's being expanded: a load that uses the input memory state of the ArrayCopy
+      // could then become anti dependent on the membar when it was not anti dependent on the ArrayCopy leading to a
+      // broken graph.
+      alias_idx = C->get_alias_index(ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr());
+    }
+    insert_mem_bar(ctrl, &out_mem, Op_MemBarCPUOrder, alias_idx);
   }
 
   if (is_partial_array_copy) {
@@ -1311,7 +1327,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // Do not let writes into the source float below the arraycopy.
     {
       Node* mem = ac->in(TypeFunc::Memory);
-      insert_mem_bar(&ctrl, &mem, Op_MemBarCPUOrder);
+      insert_mem_bar(&ctrl, &mem, Op_MemBarCPUOrder, Compile::AliasIdxBot);
 
       merge_mem = MergeMemNode::make(mem);
       transform_later(merge_mem);
