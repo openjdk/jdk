@@ -572,6 +572,7 @@ void Modules::dump_main_module_name() {
 }
 
 void Modules::check_archived_flag_consistency(char* archived_flag, const char* runtime_flag, const char* property) {
+  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   log_info(cds)("%s %s", property,
     archived_flag != nullptr ? archived_flag : "(null)");
   bool disable = false;
@@ -614,6 +615,7 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
 }
 
 void Modules::serialize(SerializeClosure* soc) {
+  ResourceMark rm;
   soc->do_ptr(&_archived_main_module_name);
   if (soc->reading()) {
     const char* runtime_main_module = Arguments::get_property("jdk.module.main");
@@ -628,34 +630,34 @@ void Modules::serialize(SerializeClosure* soc) {
 }
 
 void Modules::dump_native_access_flag() {
+  ResourceMark rm;
   const char* native_access_names = get_native_access_flags_as_sorted_string();
   if (native_access_names != nullptr) {
     _archived_native_access_flags = ArchiveBuilder::current()->ro_strdup(native_access_names);
-    os::free((void*)native_access_names);
   }
 }
 
 const char* Modules::get_native_access_flags_as_sorted_string() {
+  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   return get_numbered_property_as_sorted_string("jdk.module.enable.native.access");
 }
 
 void Modules::serialize_native_access_flags(SerializeClosure* soc) {
+  ResourceMark rm;
   soc->do_ptr(&_archived_native_access_flags);
   if (soc->reading()) {
-    const char* native_access_names = get_native_access_flags_as_sorted_string();
-    check_archived_flag_consistency(_archived_native_access_flags, native_access_names, "jdk.module.enable.native.access");
+    check_archived_flag_consistency(_archived_native_access_flags, get_native_access_flags_as_sorted_string(), "jdk.module.enable.native.access");
 
     // Don't hold onto the pointer, in case we might decide to unmap the archive.
     _archived_native_access_flags = nullptr;
-    os::free((void*)native_access_names);
   }
 }
 
 void Modules::dump_addmods_names() {
+  ResourceMark rm;
   const char* addmods_names = get_addmods_names_as_sorted_string();
   if (addmods_names != nullptr) {
     _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
-    os::free((void*)addmods_names);
   }
 }
 
@@ -664,6 +666,7 @@ const char* Modules::get_addmods_names_as_sorted_string() {
 }
 
 void Modules::serialize_addmods_names(SerializeClosure* soc) {
+  ResourceMark rm;
   soc->do_ptr(&_archived_addmods_names);
   if (soc->reading()) {
     const char* addmods_names = get_addmods_names_as_sorted_string();
@@ -671,12 +674,11 @@ void Modules::serialize_addmods_names(SerializeClosure* soc) {
 
     // Don't hold onto the pointer, in case we might decide to unmap the archive.
     _archived_addmods_names = nullptr;
-    os::free((void*)addmods_names);
   }
 }
 
 const char* Modules::get_numbered_property_as_sorted_string(const char* property) {
-  ResourceMark rm;
+  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   // theoretical string size limit for decimal int, but the following loop will end much sooner due to
   // OS command-line size limit.
   const int max_digits = 10;
@@ -729,7 +731,7 @@ const char* Modules::get_numbered_property_as_sorted_string(const char* property
     }
   }
 
-  return (st.size() > 0) ? os::strdup(st.as_string()) : nullptr;  // Example: "java.base,java.compiler"
+  return (st.size() > 0) ? st.as_string() : nullptr;  // Example: "java.base,java.compiler"
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
