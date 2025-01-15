@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats const& c
   Klass* class_loader_klass = (cls._class_loader == nullptr ? nullptr : cls._class_loader->klass());
   Klass* parent_klass = (cls._parent == nullptr ? nullptr : cls._parent->klass());
 
-  _out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  " INTPTR_FORMAT "  " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "  ",
+  _out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  " INTPTR_FORMAT "  %6zu  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "  ",
       p2i(class_loader_klass), p2i(parent_klass), p2i(cls._cld),
       cls._classes_count,
       cls._chunk_sz, cls._block_sz);
@@ -123,7 +123,7 @@ bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats const& c
   }
   _out->cr();
   if (cls._hidden_classes_count > 0) {
-    _out->print_cr(SPACE SPACE SPACE "                                    " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "   + hidden classes",
+    _out->print_cr(SPACE SPACE SPACE "                                    %6zu  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "   + hidden classes",
         "", "", "",
         cls._hidden_classes_count,
         cls._hidden_chunk_sz, cls._hidden_block_sz);
@@ -135,9 +135,9 @@ bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats const& c
 void ClassLoaderStatsClosure::print() {
   _out->print_cr("ClassLoader" SPACE " Parent" SPACE "      CLD*" SPACE "       Classes   ChunkSz   BlockSz  Type", "", "", "");
   _stats->iterate(this);
-  _out->print("Total = " UINTX_FORMAT_W(-6), _total_loaders);
+  _out->print("Total = %-6zu", _total_loaders);
   _out->print(SPACE SPACE SPACE "                      ", "", "", "");
-  _out->print_cr(UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "  ",
+  _out->print_cr("%6zu  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "  ",
       _total_classes,
       _total_chunk_sz,
       _total_block_sz);

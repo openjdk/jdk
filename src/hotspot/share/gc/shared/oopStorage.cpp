@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,7 +323,7 @@ void OopStorage::Block::atomic_add_allocated(uintx add) {
   // facto verifies the precondition held; if there were any set bits in
   // common, then after the add at least one of them will be zero.
   uintx sum = Atomic::add(&_allocated_bitmask, add);
-  assert((sum & add) == add, "some already present: " UINTX_FORMAT ":" UINTX_FORMAT,
+  assert((sum & add) == add, "some already present: %zu:%zu",
          sum, add);
 }
 
