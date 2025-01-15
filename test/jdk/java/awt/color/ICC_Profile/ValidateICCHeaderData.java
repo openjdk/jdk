@@ -81,7 +81,7 @@ public class ValidateICCHeaderData {
         profile = ICC_Profile.getInstance(builtInProfile.getData());
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         createCopyOfBuiltInProfile();
 
         System.out.println("CASE 1: Testing VALID Profile Classes ...");
@@ -152,7 +152,17 @@ public class ValidateICCHeaderData {
         testInvalidHeaderSize();
         System.out.println("CASE 12: Passed \n");
 
-        System.out.println("Successfully completed testing all 12 cases. Test Passed !!");
+        System.out.println("CASE 13: Testing ICC_Profile.getInstance(..)"
+                           + " with VALID profile data ...");
+        testProfileCreation(true);
+        System.out.println("CASE 13: Passed \n");
+
+        System.out.println("CASE 14: Testing ICC_Profile.getInstance(..)"
+                           + " with INVALID profile data ...");
+        testProfileCreation(false);
+        System.out.println("CASE 14: Passed \n");
+
+        System.out.println("Successfully completed testing all 14 cases. Test Passed !!");
     }
 
     private static void testValidHeaderData(int[] validData, int startIndex,
@@ -166,10 +176,9 @@ public class ValidateICCHeaderData {
                                               int fieldLength) {
         try {
             setTag(invalidData, startIndex, fieldLength);
-            throw new RuntimeException("Test Failed ! Expected IllegalArgumentException:"
-                                       + " NOT thrown");
+            throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
         } catch (IllegalArgumentException iae) {
-            System.out.println("Expected IllegalArgumentException thrown: " + iae.getMessage());
+            System.out.println("Expected IAE thrown: " + iae.getMessage());
         }
     }
 
@@ -195,6 +204,32 @@ public class ValidateICCHeaderData {
         profile.setData(HEADER_TAG, iccProfileHeaderData);
     }
 
+    private static void testProfileCreation(boolean validCase) {
+        ICC_Profile builtInProfile = ICC_Profile.getInstance(ColorSpace.CS_GRAY);
+        byte[] profileData = builtInProfile.getData();
+
+        int validDeviceClass = ICC_Profile.icSigInputClass;
+        BigInteger big = BigInteger.valueOf(validDeviceClass);
+        //valid case set device class to 0x73636E72 (icSigInputClass)
+        //invalid case set device class to 0x00000000
+        byte[] field = validCase ? big.toByteArray()
+                                 : ByteBuffer.allocate(4).putInt(0).array();
+        System.arraycopy(field, 0, profileData, PROFILE_CLASS_START_INDEX, 4);
+
+        try {
+            ICC_Profile.getInstance(profileData);
+            if (!validCase) {
+                throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
+            }
+        } catch (IllegalArgumentException iae) {
+            if (!validCase) {
+                System.out.println("Expected IAE thrown: " + iae.getMessage());
+            } else {
+                throw new RuntimeException("Unexpected IAE thrown");
+            }
+        }
+    }
+
     private static void testInvalidHeaderSize() {
         byte[] iccProfileHeaderData = profile.getData(HEADER_TAG);
         byte[] invalidHeaderSize = new byte[VALID_HEADER_SIZE - 1];
@@ -202,11 +237,9 @@ public class ValidateICCHeaderData {
                 invalidHeaderSize, 0, invalidHeaderSize.length);
         try {
             profile.setData(HEADER_TAG, invalidHeaderSize);
-            throw new RuntimeException("Test Failed ! Expected IllegalArgumentException:"
-                                       + " NOT thrown");
+            throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
         } catch (IllegalArgumentException iae) {
-            System.out.println("Expected IllegalArgumentException thrown: "
-                               + iae.getMessage());
+            System.out.println("Expected IAE thrown: " + iae.getMessage());
         }
     }
 }
