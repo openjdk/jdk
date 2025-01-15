@@ -107,7 +107,7 @@ public class ArrayDiff<E> implements Diff {
      * @throws NullPointerException if at least one of the arrays is null
      * @return an ArrayDiff instance for the two arrays and formatting parameters provided
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static ArrayDiff<?> of(Object first, Object second, int width, int contextBefore) {
         Objects.requireNonNull(first);
         Objects.requireNonNull(second);

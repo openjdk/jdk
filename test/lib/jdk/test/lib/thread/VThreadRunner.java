@@ -57,6 +57,7 @@ public class VThreadRunner {
      * @param task the task to run
      * @throws X the exception thrown by the task
      */
+    @SuppressWarnings("unchecked")
     public static <X extends Throwable> void run(String name,
                                                  int characteristics,
                                                  ThrowingRunnable<X> task) throws X {
@@ -94,7 +95,9 @@ public class VThreadRunner {
                 throw e;
             if (ex instanceof Error e)
                 throw e;
-            throw (X) ex;
+            if ((X) ex == ex) {
+                throw (X) ex;
+            }
         }
     }
 

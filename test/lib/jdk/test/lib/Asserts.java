@@ -638,7 +638,7 @@ public class Asserts {
             testMethod.execute();
         } catch (Throwable exc) {
             if (expected.isInstance(exc)) {
-                return (T) exc;
+                return expected.cast(exc);
             } else {
                 fail(Objects.toString(msg, "An unexpected exception was thrown.")
                         + " Expected " + expected.getName(), exc);

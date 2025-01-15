@@ -266,7 +266,7 @@ public final class FileUtils {
                     (new InputStreamReader(proc.getInputStream()));
                 // Skip the first line as it is the "df" output header.
                 if (reader.readLine() != null ) {
-                    Set mountPoints = new HashSet();
+                    Set<String> mountPoints = new HashSet<>();
                     String mountPoint = null;
                     while ((mountPoint = reader.readLine()) != null) {
                         if (!mountPoints.add(mountPoint)) {
@@ -299,8 +299,8 @@ public final class FileUtils {
             };
         });
 
-        final AtomicReference throwableReference =
-            new AtomicReference<Throwable>();
+        final AtomicReference<Throwable> throwableReference =
+            new AtomicReference<>();
         thr.setUncaughtExceptionHandler(
             new Thread.UncaughtExceptionHandler() {
                 public void uncaughtException(Thread t, Throwable e) {
