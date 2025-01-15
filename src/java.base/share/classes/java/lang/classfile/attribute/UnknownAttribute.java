@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,22 @@
 
 package java.lang.classfile.attribute;
 
-import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.FieldElement;
-import java.lang.classfile.MethodElement;
+import java.lang.classfile.*;
+import java.lang.classfile.AttributeMapper.AttributeStability;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 
 /**
- * Models an unknown attribute on a class, method, or field.
+ * Models an unknown attribute read from a {@code class} file.  An attribute is
+ * unknown if it is not recognized by one of the mappers in {@link Attributes}
+ * and is not recognized by the {@link ClassFile.AttributesProcessingOption}.
+ * <p>
+ * This attribute is not delivered in the traversal of a {@link CodeModel}.
+ * <p>
+ * An unknown attribute may appear anywhere where an attribute may appear, and
+ * has an {@linkplain AttributeStability#UNKNOWN unknown} data dependency.
  *
+ * @see CustomAttribute
  * @since 24
  */
 public sealed interface UnknownAttribute

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,39 @@
 package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.instruction.LineNumber;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code LineNumberTable} attribute (JVMS {@jvms 4.7.12}), which can appear
- * on a {@code Code} attribute, and records the mapping between indexes into
- * the code table and line numbers in the source file.
- * Delivered as a {@link java.lang.classfile.instruction.LineNumber} when traversing the
- * elements of a {@link java.lang.classfile.CodeModel}, according to the setting of the
- * {@link java.lang.classfile.ClassFile.LineNumbersOption} option.
+ * Models the {@link Attributes#lineNumberTable() LineNumberTable} attribute
+ * (JVMS {@jvms 4.7.12}), which records the mapping between indexes into
+ * the {@code code} array and line numbers in the source file.  Its entries are
+ * delivered as {@link LineNumber} when traversing the elements of a {@link
+ * CodeModel}, which is toggled by {@link ClassFile.LineNumbersOption}.
  * <p>
- * The attribute permits multiple instances in a given location.
+ * This attribute only appears on {@code Code} attributes, and permits {@linkplain
+ * AttributeMapper#allowMultiple() multiple instances} in a {@code Code}
+ * attribute.  It has a data dependency on {@linkplain AttributeStability#LABELS
+ * labels}.
+ * <p>
+ * This attribute cannot be sent to a {@link CodeBuilder}; its entries can be
+ * constructed with {@link LineNumber}, resulting in at most one attribute
+ * instance in the built {@code Code} attribute.
+ * <p>
+ * The attribute was introduced in the Java Platform version 1.0.2, major
+ * version {@value ClassFile#JAVA_1_VERSION}.
  *
+ * @see Attributes#lineNumberTable()
+ * @jvms 4.7.12 The {@code LineNumberTable} Attribute
  * @since 24
  */
 public sealed interface LineNumberTableAttribute
@@ -54,6 +72,12 @@ public sealed interface LineNumberTableAttribute
 
     /**
      * {@return a {@code LineNumberTable} attribute}
+     *
+     * @apiNote
+     * The created attribute cannot be written to a {@link CodeBuilder}.  Call
+     * {@link CodeBuilder#lineNumber CodeBuilder::lineNumber} in the correct
+     * order instead.
+     *
      * @param lines the line number descriptions
      */
     static LineNumberTableAttribute of(List<LineNumberInfo> lines) {

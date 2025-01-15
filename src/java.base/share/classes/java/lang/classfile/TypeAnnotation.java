@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public sealed interface TypeAnnotation
     /**
      * The kind of target on which the annotation appears, as defined in JVMS {@jvms 4.7.20.1}.
      *
+     * @see TargetInfo#targetType()
      * @since 24
      */
     public enum TargetType {
@@ -189,6 +190,7 @@ public sealed interface TypeAnnotation
     /**
      * Specifies which type in a declaration or expression is being annotated.
      *
+     * @see #targetInfo()
      * @sealedGraph
      * @since 24
      */
@@ -440,8 +442,11 @@ public sealed interface TypeAnnotation
         }
 
         /**
-         * {@return a target for annotations on the type in a formal parameter declaration of a method,
-         * constructor, or lambda expression}
+         * {@return a target for annotations on the type in a formal parameter
+         * declaration of a method, constructor, or lambda expression}  The
+         * index may differ from the index in the method descriptor because some
+         * synthetic or implicit parameters are omitted.
+         *
          * @param formalParameterIndex specifies which formal parameter declaration has an annotated type
          */
         static FormalParameterTarget ofMethodFormalParameter(int formalParameterIndex) {
@@ -498,7 +503,7 @@ public sealed interface TypeAnnotation
          * @param targetType {@link TargetType#INSTANCEOF}, {@link TargetType#NEW},
          *                   {@link TargetType#CONSTRUCTOR_REFERENCE},
          *                   or {@link TargetType#METHOD_REFERENCE}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofOffset(TargetType targetType, Label target) {
             return new TargetInfoImpl.OffsetTargetImpl(targetType, target);
@@ -506,7 +511,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type in an instanceof expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofInstanceofExpr(Label target) {
             return ofOffset(TargetType.INSTANCEOF, target);
@@ -514,7 +519,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type in a new expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofNewExpr(Label target) {
             return ofOffset(TargetType.NEW, target);
@@ -522,7 +527,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type before the :: in a constructor reference expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofConstructorReference(Label target) {
             return ofOffset(TargetType.CONSTRUCTOR_REFERENCE, target);
@@ -530,7 +535,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the type before the :: in a method reference expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          */
         static OffsetTarget ofMethodReference(Label target) {
             return ofOffset(TargetType.METHOD_REFERENCE, target);
@@ -545,7 +550,7 @@ public sealed interface TypeAnnotation
          *                   {@link TargetType#METHOD_INVOCATION_TYPE_ARGUMENT},
          *                   {@link TargetType#CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT},
          *                   or {@link TargetType#METHOD_REFERENCE_TYPE_ARGUMENT}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the cast operator or argument is annotated
          */
         static TypeArgumentTarget ofTypeArgument(TargetType targetType, Label target, int typeArgumentIndex) {
@@ -554,7 +559,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return a target for annotations on the i'th type in a cast expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the cast operator is annotated
          */
         static TypeArgumentTarget ofCastExpr(Label target, int typeArgumentIndex) {
@@ -564,7 +569,7 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * an explicit constructor invocation statement}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
          */
         static TypeArgumentTarget ofConstructorInvocationTypeArgument(Label target, int typeArgumentIndex) {
@@ -574,7 +579,7 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * a method invocation expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
          */
         static TypeArgumentTarget ofMethodInvocationTypeArgument(Label target, int typeArgumentIndex) {
@@ -584,7 +589,7 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * a new expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
          */
         static TypeArgumentTarget ofConstructorReferenceTypeArgument(Label target, int typeArgumentIndex) {
@@ -594,7 +599,7 @@ public sealed interface TypeAnnotation
         /**
          * {@return a target for annotations on the i'th type argument in the explicit type argument list for
          * a method reference expression}
-         * @param target the code label corresponding to the instruction
+         * @param target the label right before the instruction
          * @param typeArgumentIndex specifies which type in the argument is annotated
          */
         static TypeArgumentTarget ofMethodReferenceTypeArgument(Label target, int typeArgumentIndex) {
@@ -607,6 +612,9 @@ public sealed interface TypeAnnotation
      * parameter of a generic class, generic interface, generic method, or
      * generic constructor.
      *
+     * @see #ofTypeParameter(TargetType, int)
+     * @see #ofClassTypeParameter(int)
+     * @see #ofMethodTypeParameter(int)
      * @since 24
      */
     sealed interface TypeParameterTarget extends TargetInfo
@@ -625,6 +633,7 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on a type in the extends or implements
      * clause of a class or interface declaration.
      *
+     * @see #ofClassExtends(int)
      * @since 24
      */
     sealed interface SupertypeTarget extends TargetInfo
@@ -648,6 +657,9 @@ public sealed interface TypeAnnotation
      * type parameter declaration of a generic class, interface, method, or
      * constructor.
      *
+     * @see #ofTypeParameterBound(TargetType, int, int)
+     * @see #ofClassTypeParameterBound(int, int)
+     * @see #ofMethodTypeParameterBound(int, int)
      * @since 24
      */
     sealed interface TypeParameterBoundTarget extends TargetInfo
@@ -673,6 +685,10 @@ public sealed interface TypeAnnotation
      * declaration, the return type of a method, the type of a newly constructed
      * object, or the receiver type of a method or constructor.
      *
+     * @see #of(TargetType)
+     * @see #ofField()
+     * @see #ofMethodReturn()
+     * @see #ofMethodReceiver()
      * @since 24
      */
     sealed interface EmptyTarget extends TargetInfo
@@ -683,16 +699,17 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the type in a formal parameter
      * declaration of a method, constructor, or lambda expression.
      *
+     * @see #ofMethodFormalParameter(int)
      * @since 24
      */
     sealed interface FormalParameterTarget extends TargetInfo
             permits TargetInfoImpl.FormalParameterTargetImpl {
 
         /**
-         * Which formal parameter declaration has an annotated type.
-         *
-         * @return the index into the formal parameter declarations, in the order
-         * declared in the source code
+         * {@return the index into the formal parameter declarations, in the
+         * order declared in the source code}  The index may differ from the
+         * index in the method descriptor because some synthetic or implicit
+         * parameters are omitted.
          */
         int formalParameterIndex();
     }
@@ -701,6 +718,7 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the i'th type in the throws
      * clause of a method or constructor declaration.
      *
+     * @see #ofThrows(int)
      * @since 24
      */
     sealed interface ThrowsTarget extends TargetInfo
@@ -720,13 +738,14 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the type in a local variable declaration,
      * including a variable declared as a resource in a try-with-resources statement.
      *
+     * @see #ofLocalVariable(List)
      * @since 24
      */
     sealed interface LocalVarTarget extends TargetInfo
             permits TargetInfoImpl.LocalVarTargetImpl {
 
         /**
-         * {@return the table of local variable location/indices.}
+         * {@return the table of local variable location/indices}
          */
         List<LocalVarTargetInfo> table();
     }
@@ -736,6 +755,7 @@ public sealed interface TypeAnnotation
      * has a value, and the index into the local variable array of the current
      * frame at which that local variable can be found.
      *
+     * @see LocalVarTarget
      * @since 24
      */
     sealed interface LocalVarTargetInfo
@@ -782,6 +802,7 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on the i'th type in an exception parameter
      * declaration.
      *
+     * @see #ofExceptionParameter(int)
      * @since 24
      */
     sealed interface CatchTarget extends TargetInfo
@@ -800,17 +821,22 @@ public sealed interface TypeAnnotation
      * Indicates that an annotation appears on either the type in an instanceof expression
      * or a new expression, or the type before the :: in a method reference expression.
      *
+     * @see #ofOffset(TargetType, Label)
+     * @see #ofNewExpr(Label)
+     * @see #ofInstanceofExpr(Label)
+     * @see #ofConstructorReference(Label)
+     * @see #ofMethodReference(Label)
      * @since 24
      */
     sealed interface OffsetTarget extends TargetInfo
             permits TargetInfoImpl.OffsetTargetImpl {
 
         /**
-         * The code array offset of either the bytecode instruction
-         * corresponding to the instanceof expression, the new bytecode instruction corresponding to the new
-         * expression, or the bytecode instruction corresponding to the method reference expression.
+         * The label right before the {@link Instruction} corresponding to the
+         * instanceof expression, the new expression, or the method reference
+         * expression.
          *
-         * @return the code label corresponding to the instruction
+         * @return the label right before the instruction
          */
         Label target();
     }
@@ -821,19 +847,24 @@ public sealed interface TypeAnnotation
      * expression, an explicit constructor invocation statement, a method invocation expression, or a method reference
      * expression.
      *
+     * @see #ofTypeArgument(TargetType, Label, int)
+     * @see #ofCastExpr(Label, int)
+     * @see #ofConstructorInvocationTypeArgument(Label, int)
+     * @see #ofConstructorReferenceTypeArgument(Label, int)
+     * @see #ofMethodInvocationTypeArgument(Label, int)
+     * @see #ofMethodReferenceTypeArgument(Label, int)
      * @since 24
      */
     sealed interface TypeArgumentTarget extends TargetInfo
             permits TargetInfoImpl.TypeArgumentTargetImpl {
 
         /**
-         * The code array offset of either the bytecode instruction
-         * corresponding to the cast expression, the new bytecode instruction corresponding to the new expression, the
-         * bytecode instruction corresponding to the explicit constructor invocation statement, the bytecode
-         * instruction corresponding to the method invocation expression, or the bytecode instruction corresponding to
-         * the method reference expression.
+         * The label right before the {@link Instruction} corresponding to the
+         * cast expression, the new expression, the explicit constructor
+         * invocation statement, the method invocation expression, or the method
+         * reference expression.
          *
-         * @return the code label corresponding to the instruction
+         * @return the label right before the instruction
          */
         Label target();
 
@@ -856,6 +887,7 @@ public sealed interface TypeAnnotation
      * JVMS: Type_path structure identifies which part of the type is annotated,
      * as defined in JVMS {@jvms 4.7.20.2}
      *
+     * @see #targetPath()
      * @since 24
      */
     sealed interface TypePathComponent

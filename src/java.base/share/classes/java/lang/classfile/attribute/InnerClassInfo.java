@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,38 +36,52 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models a single inner class in the {@link InnerClassesAttribute}.
+ * Models a single entry in the {@link InnerClassesAttribute}.
  *
+ * @see InnerClassesAttribute#classes()
+ * @jvms 4.7.6 The {@code InnerClasses} Attribute
  * @since 24
  */
 public sealed interface InnerClassInfo
         permits UnboundAttribute.UnboundInnerClassInfo {
 
     /**
-     * {@return the class described by this inner class description}
+     * {@return the nested class described by this entry}
      */
     ClassEntry innerClass();
 
     /**
-     * {@return the class or interface of which this class is a member, if it is a
-     * member of a class or interface}
+     * {@return the class or interface of which this class is a member, if it is
+     * a member of a class or interface}  This may be empty if this class is
+     * local or anonymous.
+     *
+     * @see Class#getDeclaringClass()
      */
     Optional<ClassEntry> outerClass();
 
     /**
      * {@return the simple name of this class, or empty if this class is anonymous}
+     *
+     * @see Class#getSimpleName()
      */
     Optional<Utf8Entry> innerName();
 
     /**
      * {@return a bit mask of flags denoting access permissions and properties
      * of the inner class}
+     *
+     * @see Class#getModifiers()
+     * @see AccessFlag.Location#INNER_CLASS
      */
     int flagsMask();
 
     /**
      * {@return a set of flag enums denoting access permissions and properties
-     * of the inner class}
+     * of the nested class}
+     *
+     * @throws IllegalArgumentException if the flags mask has any undefined bit set
+     * @see Class#accessFlags()
+     * @see AccessFlag.Location#INNER_CLASS
      */
     default Set<AccessFlag> flags() {
         return AccessFlag.maskToAccessFlags(flagsMask(), AccessFlag.Location.INNER_CLASS);
@@ -75,17 +89,19 @@ public sealed interface InnerClassInfo
 
     /**
      * {@return whether a specific access flag is set}
+     *
      * @param flag the access flag
+     * @see AccessFlag.Location#INNER_CLASS
      */
     default boolean has(AccessFlag flag) {
         return Util.has(AccessFlag.Location.INNER_CLASS, flagsMask(), flag);
     }
 
     /**
-     * {@return an inner class description}
-     * @param innerClass the inner class being described
-     * @param outerClass the class containing the inner class, if any
-     * @param innerName the name of the inner class, if it is not anonymous
+     * {@return a nested class description}
+     * @param innerClass the nested class being described
+     * @param outerClass the class that has the nested class as a member, if it exists
+     * @param innerName the simple name of the nested class, if it is not anonymous
      * @param flags the inner class access flags
      */
     static InnerClassInfo of(ClassEntry innerClass, Optional<ClassEntry> outerClass,
@@ -94,10 +110,10 @@ public sealed interface InnerClassInfo
     }
 
     /**
-     * {@return an inner class description}
-     * @param innerClass the inner class being described
-     * @param outerClass the class containing the inner class, if any
-     * @param innerName the name of the inner class, if it is not anonymous
+     * {@return a nested class description}
+     * @param innerClass the nested class being described
+     * @param outerClass the class that has the nested class as a member, if it exists
+     * @param innerName the simple name of the nested class, if it is not anonymous
      * @param flags the inner class access flags
      * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass} represents a primitive type
      */
@@ -109,12 +125,14 @@ public sealed interface InnerClassInfo
     }
 
     /**
-     * {@return an inner class description}
-     * @param innerClass the inner class being described
-     * @param outerClass the class containing the inner class, if any
-     * @param innerName the name of the inner class, if it is not anonymous
+     * {@return a nested class description}
+     * @param innerClass the nested class being described
+     * @param outerClass the class that has the nested class as a member, if it exists
+     * @param innerName the name of the nested class, if it is not anonymous
      * @param flags the inner class access flags
-     * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass} represents a primitive type
+     * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass}
+     *         represents a primitive type, or if any flag cannot be applied to
+     *         the {@link AccessFlag.Location#INNER_CLASS} location
      */
     static InnerClassInfo of(ClassDesc innerClass, Optional<ClassDesc> outerClass, Optional<String> innerName, AccessFlag... flags) {
         return of(innerClass, outerClass, innerName, Util.flagsToBits(AccessFlag.Location.INNER_CLASS, flags));
