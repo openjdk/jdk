@@ -37,7 +37,7 @@ import java.util.*;
 import jdk.test.lib.hprof.parser.ReadBuffer;
 import jdk.test.lib.hprof.util.Misc;
 
-/**
+/*
  *
  * @author      Bill Foote
  */

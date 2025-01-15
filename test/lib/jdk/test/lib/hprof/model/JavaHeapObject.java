@@ -36,7 +36,7 @@ import java.util.Map;
 import jdk.test.lib.hprof.util.Misc;
 
 
-/**
+/*
  *
  * @author      Bill Foote
  */

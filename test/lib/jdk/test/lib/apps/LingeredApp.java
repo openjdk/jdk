@@ -429,7 +429,7 @@ public class LingeredApp {
         }
     }
 
-    /**
+    /*
      *  High level interface for test writers
      */
 

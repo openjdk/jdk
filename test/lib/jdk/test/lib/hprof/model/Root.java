@@ -32,7 +32,7 @@ package jdk.test.lib.hprof.model;
 
 import jdk.test.lib.hprof.util.Misc;
 
-/**
+/*
  *
  * @author      Bill Foote
  */
