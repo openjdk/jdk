@@ -60,6 +60,7 @@ public class IPSupport {
         }
     }
 
+    @SuppressWarnings("try")
     private static boolean isSupported(Class<? extends InetAddress> addressType) {
         ProtocolFamily family = addressType == Inet4Address.class ?
                 StandardProtocolFamily.INET : StandardProtocolFamily.INET6;

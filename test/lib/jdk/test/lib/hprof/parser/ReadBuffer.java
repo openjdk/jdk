@@ -43,4 +43,5 @@ public interface ReadBuffer extends AutoCloseable {
     public short getShort(long pos) throws IOException;
     public int   getInt(long pos) throws IOException;
     public long  getLong(long pos) throws IOException;
+    public void  close() throws IOException;
 }

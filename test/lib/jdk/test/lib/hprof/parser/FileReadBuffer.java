@@ -86,7 +86,7 @@ class FileReadBuffer implements ReadBuffer {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         file.close();
     }
 }

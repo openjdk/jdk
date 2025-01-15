@@ -30,6 +30,7 @@
 
 package jdk.test.lib.hprof.model;
 
+import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.*;
 
@@ -637,7 +638,7 @@ public class Snapshot implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         readBuf.close();
     }
 

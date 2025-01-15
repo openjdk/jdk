@@ -160,7 +160,6 @@ public class HugePageConfiguration {
             while (scanner.hasNextLine()) {
                 Matcher mat = pat.matcher(scanner.nextLine());
                 if (mat.matches()) {
-                    scanner.close();
                     return Long.parseLong(mat.group(1)) * 1024;
                 }
             }
