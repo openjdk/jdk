@@ -4433,21 +4433,13 @@ bool os::message_box(const char* title, const char* message) {
   return result == IDYES;
 }
 
-HMODULE GetHotspotModuleHandle() {
-    HMODULE hModule = NULL;
-    GetModuleHandleEx(
-        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-        (LPCTSTR) &GetHotspotModuleHandle,
-        &hModule
-    );
-    return hModule;
-}
-
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
   if (is_vm_statically_linked()) {
     // Mimick what is done in DllMain for non-static builds
-    windows_preinit(GetHotspotModuleHandle());
+    HMODULE hModule = NULL;
+    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
+    windows_preinit(hModule);
     atexit(windows_atexit);
   }
 
