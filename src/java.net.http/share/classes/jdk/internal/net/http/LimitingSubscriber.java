@@ -35,8 +35,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
@@ -51,9 +49,9 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
     private final long capacity;
 
-    private final AtomicReference<State> stateRef = new AtomicReference<>();
+    private State state;
 
-    private final AtomicLong lengthRef = new AtomicLong();
+    private long length;
 
     private interface State {
 
@@ -79,10 +77,10 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
     @Override
     public void onSubscribe(Subscription subscription) {
         requireNonNull(subscription, "subscription");
-        boolean subscribed = stateRef.compareAndSet(null, new State.Subscribed(subscription));
-        if (!subscribed) {
+        if (state != null) {
             subscription.cancel();
         } else {
+            state = new State.Subscribed(subscription);
             downstreamSubscriber.onSubscribe(subscription);
         }
     }
@@ -95,7 +93,7 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
         assert Utils.hasRemaining(buffers);
 
         // Short-circuit if not subscribed
-        if (!(stateRef.get() instanceof State.Subscribed subscribed)) {
+        if (!(state instanceof State.Subscribed subscribed)) {
             return;
         }
 
@@ -107,48 +105,39 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
 
         // Otherwise, trigger failure
         else {
-            boolean terminated = stateRef.compareAndSet(subscribed, State.Terminated.INSTANCE);
-            if (terminated) {
-                downstreamSubscriber.onError(new IOException(
-                        "the maximum number of bytes that are allowed to be consumed is exceeded"));
-                subscribed.subscription.cancel();
-            }
+            state = State.Terminated.INSTANCE;
+            downstreamSubscriber.onError(new IOException(
+                    "the maximum number of bytes that are allowed to be consumed is exceeded"));
+            subscribed.subscription.cancel();
         }
 
     }
 
     private boolean allocateLength(List<ByteBuffer> buffers) {
         long bufferLength = buffers.stream().mapToLong(Buffer::remaining).sum();
-        while (true) {
-            long length = lengthRef.get();
-            long nextLength = Math.addExact(length, bufferLength);
-            if (nextLength > capacity) {
-                return false;
-            }
-            if (lengthRef.compareAndSet(length, nextLength)) {
-                return true;
-            }
+        long nextLength = Math.addExact(length, bufferLength);
+        if (nextLength > capacity) {
+            return false;
         }
+        length = nextLength;
+        return true;
     }
 
     @Override
     public void onError(Throwable throwable) {
         requireNonNull(throwable, "throwable");
-        if (terminate()) {
+        if (state instanceof State.Subscribed) {
+            state = State.Terminated.INSTANCE;
             downstreamSubscriber.onError(throwable);
         }
     }
 
     @Override
     public void onComplete() {
-        if (terminate()) {
+        if (state instanceof State.Subscribed) {
+            state = State.Terminated.INSTANCE;
             downstreamSubscriber.onComplete();
         }
-    }
-
-    private boolean terminate() {
-        return stateRef.get() instanceof State.Subscribed subscribed &&
-                stateRef.compareAndSet(subscribed, State.Terminated.INSTANCE);
     }
 
     @Override
