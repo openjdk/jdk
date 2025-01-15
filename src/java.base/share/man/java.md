@@ -3998,11 +3998,11 @@ be logged:
 
  `subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled`
 
--   If any of the VM options `--upgrade-module-path`, `--patch-module` or
-    `--limit-modules` are specified, CDS is disabled. This means that the
-    JVM will execute without loading any CDS archives. In addition, if
-    you try to create a CDS archive with any of these 3 options specified,
-    the JVM will report an error.
+If any of the VM options `--upgrade-module-path`, `--patch-module` or
+`--limit-modules` are specified, CDS is disabled. This means that the
+JVM will execute without loading any CDS archives. In addition, if
+you try to create a CDS archive with any of these 3 options specified,
+the JVM will report an error.
 
 ## Performance Tuning Examples
 
