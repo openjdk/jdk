@@ -196,8 +196,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the float value at the specified offset within the {@code class}
      * file}  Reads 4 bytes of value.
      * <p>
-     * In the conversions, all NaN values of the {@code float} may be collapsed
-     * into a single {@linkplain Float#NaN "canonical" NaN value}.
+     * In the conversions, all NaN values of the {@code float} may or may not be
+     * collapsed into a single {@linkplain Float#NaN "canonical" NaN value}.
      *
      * @param offset the offset within the {@code class} file
      */
@@ -207,8 +207,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the double value at the specified offset within the {@code
      * class} file}  Reads 8 bytes of value.
      * <p>
-     * In the conversions, all NaN values of the {@code double} may be collapsed
-     * into a single {@linkplain Double#NaN "canonical" NaN value}.
+     * In the conversions, all NaN values of the {@code double} may or may not
+     * be collapsed into a single {@linkplain Double#NaN "canonical" NaN value}.
      *
      * @param offset the offset within the {@code class} file
      */
