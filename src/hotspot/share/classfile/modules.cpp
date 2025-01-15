@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -631,6 +631,7 @@ void Modules::dump_native_access_flag() {
   const char* native_access_names = get_native_access_flags_as_sorted_string();
   if (native_access_names != nullptr) {
     _archived_native_access_flags = ArchiveBuilder::current()->ro_strdup(native_access_names);
+    os::free((void*)native_access_names);
   }
 }
 
@@ -641,10 +642,12 @@ const char* Modules::get_native_access_flags_as_sorted_string() {
 void Modules::serialize_native_access_flags(SerializeClosure* soc) {
   soc->do_ptr(&_archived_native_access_flags);
   if (soc->reading()) {
-    check_archived_flag_consistency(_archived_native_access_flags, get_native_access_flags_as_sorted_string(), "jdk.module.enable.native.access");
+    const char* native_access_names = get_native_access_flags_as_sorted_string();
+    check_archived_flag_consistency(_archived_native_access_flags, native_access_names, "jdk.module.enable.native.access");
 
     // Don't hold onto the pointer, in case we might decide to unmap the archive.
     _archived_native_access_flags = nullptr;
+    os::free((void*)native_access_names);
   }
 }
 
@@ -652,6 +655,7 @@ void Modules::dump_addmods_names() {
   const char* addmods_names = get_addmods_names_as_sorted_string();
   if (addmods_names != nullptr) {
     _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
+    os::free((void*)addmods_names);
   }
 }
 
@@ -662,10 +666,12 @@ const char* Modules::get_addmods_names_as_sorted_string() {
 void Modules::serialize_addmods_names(SerializeClosure* soc) {
   soc->do_ptr(&_archived_addmods_names);
   if (soc->reading()) {
-    check_archived_flag_consistency(_archived_addmods_names, get_addmods_names_as_sorted_string(), "jdk.module.addmods");
+    const char* addmods_names = get_addmods_names_as_sorted_string();
+    check_archived_flag_consistency(_archived_addmods_names, addmods_names, "jdk.module.addmods");
 
     // Don't hold onto the pointer, in case we might decide to unmap the archive.
     _archived_addmods_names = nullptr;
+    os::free((void*)addmods_names);
   }
 }
 
