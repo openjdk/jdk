@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.util.LocalizedExceptionBuilder;
 import jdk.jpackage.internal.util.MultiResourceBundle;
 import jdk.jpackage.internal.util.StringBundle;
 
@@ -39,6 +40,10 @@ final class I18N {
 
     static String format(String key, Object ... args) {
         return BUNDLE.format(key, args);
+    }
+
+    static LocalizedExceptionBuilder<?> buildException() {
+        return LocalizedExceptionBuilder.buildLocalizedException(BUNDLE);
     }
 
     static ConfigException.Builder buildConfigException() {
