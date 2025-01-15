@@ -101,8 +101,13 @@ public:
     return a.value() % b.value() == 0;
   }
 
+  // This "cmp" is used for sort only.
+  // Note: the NaN semantics are different from floating arithmetic NaNs!
+  // - Smaller non-NaN are before larger non-NaN.
+  // - Any non-NaN are before NaN.
+  // - NaN is equal to NaN.
+  // Note: NaN indicate overflow, uninitialized, etc.
   static int cmp(const NoOverflowInt& a, const NoOverflowInt& b) {
-    // Order NaN (overflow, uninitialized, etc) after non-NaN.
     if (a.is_NaN()) {
       return b.is_NaN() ? 0 : 1;
     } else if (b.is_NaN()) {
