@@ -1356,6 +1356,9 @@ void PhaseCFG::verify() const {
       verify_memory_writer_placement(block, n);
       if (n->needs_anti_dependence_check()) {
         verify_anti_dependences(block, n);
+        if (C->failing()) {
+          return;
+        }
       }
       for (uint k = 0; k < n->req(); k++) {
         Node *def = n->in(k);

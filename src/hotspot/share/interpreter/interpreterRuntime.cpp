@@ -77,9 +77,6 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 // Helper class to access current interpreter state
 class LastFrameAccessor : public StackObj {

@@ -1155,6 +1155,44 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
+  if (!VM_Version::supports_float16()) return nullptr;
+
+  address entry = __ pc();
+
+  __ lfs(F1, Interpreter::stackElementSize, R15_esp);
+  __ f2hf(R3_RET, F1, F0);
+
+  // Restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
+  __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
+  __ blr();
+
+  __ flush();
+
+  return entry;
+}
+
+address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
+  if (!VM_Version::supports_float16()) return nullptr;
+
+  address entry = __ pc();
+
+  // Note: Could also use:
+  //__ li(R3, Interpreter::stackElementSize);
+  //__ lfiwax(F1_RET, R15_esp, R3); // short stored as 32 bit integer
+  //__ xscvhpdp(F1_RET->to_vsr(), F1_RET->to_vsr());
+  __ lwa(R3, Interpreter::stackElementSize, R15_esp);
+  __ hf2f(F1_RET, R3);
+
+  // Restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
+  __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
+  __ blr();
+
+  __ flush();
+
+  return entry;
+}
+
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Quick & dirty stack overflow checking: bang the stack & handle trap.
   // Note that we do the banging after the frame is setup, since the exception
@@ -1965,8 +2003,6 @@ address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() { re
 address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() { return nullptr; }
 address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() { return nullptr; }
-address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() { return nullptr; }
 
 // =============================================================================
 // Exceptions

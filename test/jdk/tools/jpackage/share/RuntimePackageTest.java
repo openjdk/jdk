@@ -101,6 +101,8 @@ public class RuntimePackageTest {
         .forTypes(types)
         .addInitializer(cmd -> {
             final Path runtimeImageDir;
+            final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+
             if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
                 runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
             } else {
@@ -112,6 +114,7 @@ public class RuntimePackageTest {
                 .addArguments(
                         "--output", runtimeImageDir.toString(),
                         "--add-modules", "ALL-MODULE-PATH",
+                        "--module-path", jmods.toString(),
                         "--strip-debug",
                         "--no-header-files",
                         "--no-man-pages")

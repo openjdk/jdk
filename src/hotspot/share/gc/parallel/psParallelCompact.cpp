@@ -70,6 +70,7 @@
 #include "gc/shared/workerUtils.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -240,11 +241,14 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
+  const size_t rs_align = MAX2(page_sz, granularity);
 
-  const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
-    MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
+  _reserved_byte_size = align_up(raw_bytes, rs_align);
+
+  ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
+                                             rs_align,
+                                             page_sz);
+
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
@@ -257,7 +261,10 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
     }
     delete vspace;
     // Release memory reserved in the space.
-    rs.release();
+    if (rs.is_reserved()) {
+      MemoryReserver::release(rs);
+      rs = {};
+    }
   }
 
   return nullptr;
@@ -2137,13 +2144,9 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
   }
 
   if (src_region_ptr < top_region_ptr) {
-    // The next source region is in the current space.  Update src_region_idx
-    // and the source address to match src_region_ptr.
+    // Found the first non-empty region in the same space.
     src_region_idx = sd.region(src_region_ptr);
-    HeapWord* const src_region_addr = sd.region_to_addr(src_region_idx);
-    if (src_region_addr > closure.source()) {
-      closure.set_source(src_region_addr);
-    }
+    closure.set_source(sd.region_to_addr(src_region_idx));
     return src_region_idx;
   }
 
@@ -2167,13 +2170,10 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
       RegionData* cur = sd.region(cur_region);
       if (cur->live_obj_size() > 0) {
         HeapWord* region_start_addr = sd.region_to_addr(cur_region);
-        HeapWord* region_end_addr = region_start_addr + ParallelCompactData::RegionSize;
-        HeapWord* first_live_word = mark_bitmap()->find_obj_beg(region_start_addr, region_end_addr);
-        assert(first_live_word < region_end_addr, "inv");
 
         src_space_id = SpaceId(space_id);
         src_space_top = top;
-        closure.set_source(first_live_word);
+        closure.set_source(region_start_addr);
         return cur_region;
       }
     }

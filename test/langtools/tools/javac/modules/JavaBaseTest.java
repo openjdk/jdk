@@ -26,13 +26,11 @@
  * @bug 8193125 8196623 8335989
  * @summary test modifiers with java.base
  * @library /tools/lib
- * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.jvm
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.platform
- *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main JavaBaseTest
  */

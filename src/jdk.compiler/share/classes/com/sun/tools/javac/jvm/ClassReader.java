@@ -64,6 +64,7 @@ import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
@@ -855,8 +856,8 @@ public class ClassReader {
                 if (lintClassfile && !warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
-                                    Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
+                        log.warning((DiagnosticPosition) null,
+                                    LintWarnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
                     }
@@ -1610,7 +1611,7 @@ public class ClassReader {
             //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
             //provide annotations for a different number of parameters, ignore:
             if (lintClassfile) {
-                log.warning(LintCategory.CLASSFILE, Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
+                log.warning(LintWarnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
             }
             for (int pnum = 0; pnum < numParameters; pnum++) {
                 readAnnotations();
@@ -2078,9 +2079,9 @@ public class ClassReader {
             try {
                 if (lintClassfile) {
                     if (failure == null) {
-                        log.warning(Warnings.AnnotationMethodNotFound(container, name));
+                        log.warning(LintWarnings.AnnotationMethodNotFound(container, name));
                     } else {
-                        log.warning(Warnings.AnnotationMethodNotFoundReason(container,
+                        log.warning(LintWarnings.AnnotationMethodNotFoundReason(container,
                                                                             name,
                                                                             failure.getDetailValue()));//diagnostic, if present
                     }
@@ -2960,7 +2961,7 @@ public class ClassReader {
     private void dropParameterAnnotations() {
         parameterAnnotations = null;
         if (lintClassfile) {
-            log.warning(LintCategory.CLASSFILE, Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
+            log.warning(LintWarnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
         }
     }
     /**

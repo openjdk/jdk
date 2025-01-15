@@ -63,6 +63,7 @@
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -186,10 +187,10 @@ jint SerialHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
 
-  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
-  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
+  ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, GenAlignment);
+  ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, GenAlignment);
 
-  _rem_set = new CardTableRS(heap_rs.region());
+  _rem_set = new CardTableRS(_reserved);
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);

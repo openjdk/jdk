@@ -30,8 +30,6 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "compiler/compilerDirectives.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
 
 class CompilationFailureInfo;

@@ -456,8 +456,10 @@ public:
   // Check if this klass is a nestmate of k - resolves this nest-host and k's
   bool has_nestmate_access_to(InstanceKlass* k, TRAPS);
 
-  // Called to verify that k is a permitted subclass of this class
-  bool has_as_permitted_subclass(const InstanceKlass* k) const;
+  // Called to verify that k is a permitted subclass of this class.
+  // The incoming stringStream is used for logging, and for the caller to create
+  // a detailed exception message on failure.
+  bool has_as_permitted_subclass(const InstanceKlass* k, stringStream& ss) const;
 
   enum InnerClassAttributeOffset {
     // From http://mirror.eng/products/jdk/1.1/docs/guide/innerclasses/spec/innerclasses.doc10.html#18814

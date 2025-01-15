@@ -392,7 +392,7 @@ public final class ProcessTools {
                 "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
 
         final List<String> doubleWordArgs = List.of(
-                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports",
+                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports", "--enable-native-access",
                 "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
 
         ArrayList<String> args = new ArrayList<>();

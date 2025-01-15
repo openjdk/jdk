@@ -980,6 +980,10 @@ public:
     assert( ctrl == find_non_split_ctrl(ctrl), "must set legal crtl" );
     _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)ctrl + 1));
   }
+  void set_root_as_ctrl(Node* n) {
+    assert(!has_node(n) || has_ctrl(n), "");
+    _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)C->root() + 1));
+  }
   // Set control and update loop membership
   void set_ctrl_and_loop(Node* n, Node* ctrl) {
     IdealLoopTree* old_loop = get_loop(get_ctrl(n));
@@ -1363,6 +1367,12 @@ public:
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
+  // Replace the control input of 'node' with 'new_control' and set the dom depth to the one of 'new_control'.
+  void replace_control(Node* node, Node* new_control) {
+    _igvn.replace_input_of(node, 0, new_control);
+    set_idom(node, new_control, dom_depth(new_control));
+  }
+
   void replace_loop_entry(LoopNode* loop_head, Node* new_entry) {
     _igvn.replace_input_of(loop_head, LoopNode::EntryControl, new_entry);
     set_idom(loop_head, new_entry, dom_depth(new_entry));
@@ -1416,7 +1426,7 @@ public:
   }
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-  void do_range_check(IdealLoopTree *loop, Node_List &old_new);
+  void do_range_check(IdealLoopTree* loop);
 
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
@@ -1784,6 +1794,16 @@ public:
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+
+  ConINode* intcon(jint i);
+
+  ConLNode* longcon(jlong i);
+
+  ConNode* makecon(const Type* t);
+
+  ConNode* integercon(jlong l, BasicType bt);
+
+  ConNode* zerocon(BasicType bt);
 };
 
 

@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"

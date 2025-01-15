@@ -105,6 +105,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
 #endif
   _gc_par_phases[EagerlyReclaimHumongousObjects] = new WorkerDataArray<double>("EagerlyReclaimHumongousObjects", "Eagerly Reclaim Humongous Objects (ms):", max_gc_threads);
+  _gc_par_phases[ResetPartialArrayStateManager] = new WorkerDataArray<double>("ResetPartialArrayStateManager", "Reset Partial Array State Manager (ms):", max_gc_threads);
   _gc_par_phases[ProcessEvacuationFailedRegions] = new WorkerDataArray<double>("ProcessEvacuationFailedRegions", "Process Evacuation Failed Regions (ms):", max_gc_threads);
 
   _gc_par_phases[ScanHR]->create_thread_work_items("Scanned Cards:", ScanHRScannedCards);
@@ -517,6 +518,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
   debug_phase(_gc_par_phases[EagerlyReclaimHumongousObjects], 1);
+  trace_phase(_gc_par_phases[ResetPartialArrayStateManager]);
 
   if (G1CollectedHeap::heap()->should_sample_collection_set_candidates()) {
     debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);

@@ -31,7 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @summary Test of diagnostic command System.map
  * @library /test/lib
- * @requires (os.family == "linux" | os.family == "windows")
+ * @requires (os.family == "linux" | os.family == "windows" | os.family == "mac")
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management

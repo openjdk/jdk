@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,13 @@
 /*
  * @test
  * @bug 8256811
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native ClassUnloadEventTest run
  */
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 import com.sun.jdi.*;
@@ -45,6 +40,9 @@ import com.sun.jdi.request.*;
 
 import java.util.*;
 import java.io.*;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 
 public class ClassUnloadEventTest {
     static final String CLASS_NAME_PREFIX = "SampleClass__";
@@ -65,18 +63,13 @@ public class ClassUnloadEventTest {
         }
     }
 
-    private static class TestClassLoader extends ClassLoader implements Opcodes {
+    private static class TestClassLoader extends ClassLoader {
         private static byte[] generateSampleClass(String name) {
-            ClassWriter cw = new ClassWriter(0);
-
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC, name, null, "java/lang/Object", null);
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "m", "()V", null, null);
-            mv.visitCode();
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-            cw.visitEnd();
-            return cw.toByteArray();
+            return ClassFile.of().build(ClassDesc.of(name), clb ->
+                clb.withVersion(52, 0)
+                   .withFlags(ClassFile.ACC_SUPER | ClassFile.ACC_PUBLIC)
+                   .withMethodBody("m", ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, cob ->
+                           cob.return_()));
         }
 
         @Override

@@ -94,10 +94,11 @@ vframe* vframe::new_vframe(const frame* f, const RegisterMap* reg_map, JavaThrea
 }
 
 vframe* vframe::sender() const {
-  RegisterMap temp_map = *register_map();
   assert(is_top(), "just checking");
   if (_fr.is_empty()) return nullptr;
   if (_fr.is_entry_frame() && _fr.is_first_frame()) return nullptr;
+
+  RegisterMap temp_map = *register_map();
   frame s = _fr.real_sender(&temp_map);
   if (s.is_first_frame()) return nullptr;
   return vframe::new_vframe(&s, &temp_map, thread());
@@ -493,10 +494,10 @@ void vframeStreamCommon::found_bad_method_frame() const {
 #endif
 
 vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool stop_at_java_call_stub)
- : vframeStreamCommon(RegisterMap(thread,
-                                  RegisterMap::UpdateMap::include,
-                                  RegisterMap::ProcessFrames::include,
-                                  RegisterMap::WalkContinuation::include)) {
+ : vframeStreamCommon(thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::include) {
 
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _continuation_scope = continuation_scope;
@@ -514,7 +515,7 @@ vframeStream::vframeStream(JavaThread* thread, Handle continuation_scope, bool s
 }
 
 vframeStream::vframeStream(oop continuation, Handle continuation_scope)
- : vframeStreamCommon(RegisterMap(continuation, RegisterMap::UpdateMap::include)) {
+ : vframeStreamCommon(continuation) {
 
   _stop_at_java_call_stub = false;
   _continuation_scope = continuation_scope;
@@ -530,6 +531,10 @@ vframeStream::vframeStream(oop continuation, Handle continuation_scope)
   }
 }
 
+vframeStreamCommon::vframeStreamCommon(oop continuation)
+  : _reg_map(continuation, RegisterMap::UpdateMap::include), _cont_entry(nullptr) {
+  _thread = _reg_map.thread();
+}
 
 // Step back n frames, skip any pseudo frames in between.
 // This function is used in Class.forName, Class.newInstance, and Method.Invoke.

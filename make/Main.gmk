@@ -1310,7 +1310,10 @@ endif
 ################################################################################
 
 # all-images builds all our deliverables as images.
-all-images: product-images static-jdk-image test-image all-docs-images
+all-images: product-images test-image all-docs-images
+ifeq ($(call isTargetOs, linux macosx windows), true)
+  all-images: static-jdk-image
+endif
 
 # all-bundles packages all our deliverables as tar.gz bundles.
 all-bundles: product-bundles test-bundles docs-bundles static-libs-bundles

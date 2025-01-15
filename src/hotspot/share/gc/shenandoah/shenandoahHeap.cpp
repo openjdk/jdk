@@ -25,8 +25,9 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "memory/universe.hpp"
+
+#include "cds/archiveHeapWriter.hpp"
+#include "classfile/systemDictionary.hpp"
 
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -42,17 +43,16 @@
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -65,13 +65,14 @@
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
+#include "gc/shenandoah/shenandoahUncommitThread.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
@@ -79,17 +80,17 @@
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-#include "cds/archiveHeapWriter.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allocation.hpp"
 #include "memory/classLoaderMetaspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/universe.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -102,6 +103,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -153,6 +155,19 @@ public:
     }
   }
 };
+
+static ReservedSpace reserve(size_t size, size_t preferred_page_size) {
+  // When a page size is given we don't want to mix large
+  // and normal pages. If the size is not a multiple of the
+  // page size it will be aligned up to achieve this.
+  size_t alignment = os::vm_allocation_granularity();
+  if (preferred_page_size != os::vm_page_size()) {
+    alignment = MAX2(preferred_page_size, alignment);
+    size = align_up(size, alignment);
+  }
+
+  return MemoryReserver::reserve(size, alignment, preferred_page_size);
+}
 
 jint ShenandoahHeap::initialize() {
   //
@@ -279,7 +294,7 @@ jint ShenandoahHeap::initialize() {
             "Bitmap slices should be page-granular: bps = " SIZE_FORMAT ", page size = " SIZE_FORMAT,
             _bitmap_bytes_per_slice, bitmap_page_size);
 
-  ReservedSpace bitmap(_bitmap_size, bitmap_page_size);
+  ReservedSpace bitmap = reserve(_bitmap_size, bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Mark Bitmap",
                                           bitmap_size_orig, bitmap_page_size,
                                           bitmap.base(),
@@ -299,7 +314,7 @@ jint ShenandoahHeap::initialize() {
   _marking_context = new ShenandoahMarkingContext(_heap_region, _bitmap_region, _num_regions);
 
   if (ShenandoahVerify) {
-    ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);
+    ReservedSpace verify_bitmap = reserve(_bitmap_size, bitmap_page_size);
     os::trace_page_sizes_for_requested_size("Verify Bitmap",
                                             bitmap_size_orig, bitmap_page_size,
                                             verify_bitmap.base(),
@@ -317,7 +332,7 @@ jint ShenandoahHeap::initialize() {
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
   size_t aux_bitmap_page_size = bitmap_page_size;
 
-  ReservedSpace aux_bitmap(_bitmap_size, aux_bitmap_page_size);
+  ReservedSpace aux_bitmap = reserve(_bitmap_size, aux_bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Aux Bitmap",
                                           bitmap_size_orig, aux_bitmap_page_size,
                                           aux_bitmap.base(),
@@ -335,7 +350,7 @@ jint ShenandoahHeap::initialize() {
   size_t region_storage_size = align_up(region_storage_size_orig,
                                         MAX2(region_page_size, os::vm_allocation_granularity()));
 
-  ReservedSpace region_storage(region_storage_size, region_page_size);
+  ReservedSpace region_storage = reserve(region_storage_size, region_page_size);
   os::trace_page_sizes_for_requested_size("Region Storage",
                                           region_storage_size_orig, region_page_size,
                                           region_storage.base(),
@@ -361,7 +376,7 @@ jint ShenandoahHeap::initialize() {
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      cset_rs = ReservedSpace(cset_size, cset_align, cset_page_size, req_addr);
+      cset_rs = MemoryReserver::reserve(req_addr, cset_size, cset_align, cset_page_size);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -370,7 +385,7 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == nullptr) {
-      cset_rs = ReservedSpace(cset_size, cset_align, os::vm_page_size());
+      cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size());
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
     os::trace_page_sizes_for_requested_size("Collection Set",
@@ -459,6 +474,10 @@ jint ShenandoahHeap::initialize() {
 
   initialize_controller();
 
+  if (ShenandoahUncommit) {
+    _uncommit_thread = new ShenandoahUncommitThread(this);
+  }
+
   print_init_logger();
 
   FullGCForwarding::initialize(_heap_region);
@@ -530,6 +549,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _update_refs_iterator(this),
   _global_generation(nullptr),
   _control_thread(nullptr),
+  _uncommit_thread(nullptr),
   _young_generation(nullptr),
   _old_generation(nullptr),
   _shenandoah_policy(policy),
@@ -538,7 +558,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _pacer(nullptr),
   _verifier(nullptr),
   _phase_timings(nullptr),
-  _mmu_tracker(),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
   _stw_memory_manager("Shenandoah Pauses"),
@@ -632,6 +651,8 @@ public:
 
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
+
+  // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
 
   MutexLocker ml(Threads_lock);
@@ -800,60 +821,15 @@ bool ShenandoahHeap::is_in(const void* p) const {
   }
 }
 
-void ShenandoahHeap::maybe_uncommit(double shrink_before, size_t shrink_until) {
-  assert (ShenandoahUncommit, "should be enabled");
-
-  // Determine if there is work to do. This avoids taking heap lock if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
-
-  if (committed() <= shrink_until) return;
-
-  bool has_work = false;
-  for (size_t i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      has_work = true;
-      break;
-    }
-  }
-
-  if (has_work) {
-    static const char* msg = "Concurrent uncommit";
-    ShenandoahConcurrentPhase gcPhase(msg, ShenandoahPhaseTimings::conc_uncommit, true /* log_heap_usage */);
-    EventMark em("%s", msg);
-
-    op_uncommit(shrink_before, shrink_until);
+void ShenandoahHeap::notify_soft_max_changed() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->notify_soft_max_changed();
   }
 }
 
-void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
-  assert (ShenandoahUncommit, "should be enabled");
-
-  // Application allocates from the beginning of the heap, and GC allocates at
-  // the end of it. It is more efficient to uncommit from the end, so that applications
-  // could enjoy the near committed regions. GC allocations are much less frequent,
-  // and therefore can accept the committing costs.
-
-  size_t count = 0;
-  for (size_t i = num_regions(); i > 0; i--) { // care about size_t underflow
-    ShenandoahHeapRegion* r = get_region(i - 1);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      ShenandoahHeapLocker locker(lock());
-      if (r->is_empty_committed()) {
-        if (committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
-          break;
-        }
-
-        r->make_uncommitted();
-        count++;
-      }
-    }
-    SpinPause(); // allow allocators to take the lock
-  }
-
-  if (count > 0) {
-    notify_heap_changed();
+void ShenandoahHeap::notify_explicit_gc_requested() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->notify_explicit_gc_requested();
   }
 }
 
@@ -1507,6 +1483,10 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
     tcl->do_thread(_control_thread);
   }
 
+  if (_uncommit_thread != nullptr) {
+    tcl->do_thread(_uncommit_thread);
+  }
+
   workers()->threads_do(tcl);
   if (_safepoint_workers != nullptr) {
     _safepoint_workers->threads_do(tcl);
@@ -2084,6 +2064,9 @@ void ShenandoahHeap::stop() {
   // Step 0. Notify policy to disable event recording and prevent visiting gc threads during shutdown
   _shenandoah_policy->record_shutdown();
 
+  // Step 0a. Stop reporting on gc thread cpu utilization
+  mmu_tracker()->stop();
+
   // Step 1. Notify control thread that we are in shutdown.
   // Note that we cannot do that with stop(), because stop() is blocking and waits for the actual shutdown.
   // Doing stop() here would wait for the normal GC cycle to complete, never falling through to cancel below.
@@ -2094,6 +2077,11 @@ void ShenandoahHeap::stop() {
 
   // Step 3. Wait until GC worker exits normally.
   control_thread()->stop();
+
+  // Stop 4. Shutdown uncommit thread.
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->stop();
+  }
 }
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
@@ -2521,7 +2509,7 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 
   if (is_bitmap_slice_committed(r, true)) {
     // Some other region from the group is still committed, meaning the bitmap
-    // slice is should stay committed, exit right away.
+    // slice should stay committed, exit right away.
     return true;
   }
 
@@ -2534,6 +2522,27 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   }
   return true;
 }
+
+void ShenandoahHeap::forbid_uncommit() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->forbid_uncommit();
+  }
+}
+
+void ShenandoahHeap::allow_uncommit() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->allow_uncommit();
+  }
+}
+
+#ifdef ASSERT
+bool ShenandoahHeap::is_uncommit_in_progress() {
+  if (_uncommit_thread != nullptr) {
+    return _uncommit_thread->is_uncommit_in_progress();
+  }
+  return false;
+}
+#endif
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
   StackWatermarkSet::safepoint_synchronize_begin();
@@ -2742,4 +2751,3 @@ void ShenandoahHeap::log_heap_status(const char* msg) const {
     global_generation()->log_status(msg);
   }
 }
-

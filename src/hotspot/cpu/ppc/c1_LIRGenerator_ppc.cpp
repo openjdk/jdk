@@ -296,13 +296,19 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
-  if (is_power_of_2(c + 1)) {
-    __ shift_left(left, log2i_exact(c + 1), result);
+  // Using unsigned arithmetics to avoid undefined behavior due to integer overflow.
+  // The involved operations are not sensitive to signedness.
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, log2i_exact(u_value + 1), result);
     __ sub(result, left, result);
     return true;
-  } else if (is_power_of_2(c - 1)) {
-    __ shift_left(left, log2i_exact(c - 1), result);
+  } else if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, log2i_exact(u_value - 1), result);
     __ add(result, left, result);
+    return true;
+  } else if (c == -1) {
+    __ negate(left, result);
     return true;
   }
   return false;
@@ -688,6 +694,25 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       value.load_item();
       LIR_Opr dst = rlock_result(x);
       __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
+      break;
+    }
+    case vmIntrinsics::_floatToFloat16: {
+      assert(x->number_of_arguments() == 1, "wrong type");
+      LIRItem value(x->argument_at(0), this);
+      value.load_item();
+      LIR_Opr dst = rlock_result(x);
+      LIR_Opr tmp = new_register(T_FLOAT);
+      // f2hf treats tmp as live_in. Workaround: initialize to some value.
+      __ move(LIR_OprFact::floatConst(-0.0), tmp); // just to satisfy LinearScan
+      __ f2hf(value.result(), dst, tmp);
+      break;
+    }
+    case vmIntrinsics::_float16ToFloat: {
+      assert(x->number_of_arguments() == 1, "wrong type");
+      LIRItem value(x->argument_at(0), this);
+      value.load_item();
+      LIR_Opr dst = rlock_result(x);
+      __ hf2f(value.result(), dst, LIR_OprFact::illegalOpr);
       break;
     }
     case vmIntrinsics::_dsqrt:

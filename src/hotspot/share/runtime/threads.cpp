@@ -171,7 +171,7 @@ static void create_initial_thread(Handle thread_group, JavaThread* thread,
 
   DEBUG_ONLY(int64_t main_thread_tid = java_lang_Thread::thread_id(thread_oop());)
   assert(main_thread_tid == ThreadIdentifier::initial(), "");
-  assert(main_thread_tid == thread->lock_id(), "");
+  assert(main_thread_tid == thread->monitor_owner_id(), "");
   JFR_ONLY(assert(JFR_JVM_THREAD_ID(thread) == static_cast<traceid>(main_thread_tid), "initial tid mismatch");)
 
   // Set thread status to running since main thread has
@@ -548,9 +548,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
   MACOS_AARCH64_ONLY(main_thread->init_wx());
 
-  // Set the lock_id now since we will run Java code before the Thread instance
+  // Set the _monitor_owner_id now since we will run Java code before the Thread instance
   // is even created. The same value will be assigned to the Thread instance on init.
-  main_thread->set_lock_id(ThreadIdentifier::next());
+  main_thread->set_monitor_owner_id(ThreadIdentifier::next());
 
   if (!Thread::set_as_starting_thread(main_thread)) {
     vm_shutdown_during_initialization(
@@ -1360,8 +1360,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {
-          // _lock_id is the thread ID of the mounted virtual thread
-          st->print_cr("   Mounted virtual thread #" INT64_FORMAT, p->lock_id());
+          st->print_cr("   Mounted virtual thread #" INT64_FORMAT, java_lang_Thread::thread_id(p->vthread()));
           p->print_vthread_stack_on(st);
         }
       }

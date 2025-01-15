@@ -49,6 +49,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiAgent.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1119,6 +1120,31 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
       }
     }
   }
+}
+
+void os::print_jvmti_agent_info(outputStream* st) {
+#if INCLUDE_JVMTI
+  const JvmtiAgentList::Iterator it = JvmtiAgentList::all();
+  if (it.has_next()) {
+    st->print_cr("JVMTI agents:");
+  } else {
+    st->print_cr("JVMTI agents: none");
+  }
+  while (it.has_next()) {
+    const JvmtiAgent* agent = it.next();
+    if (agent != nullptr) {
+      const char* dyninfo = agent->is_dynamic() ? "dynamic " : "";
+      const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib " : "";
+      const char* loadinfo = agent->is_loaded() ? "loaded" : "not loaded";
+      const char* initinfo = agent->is_initialized() ? "initialized" : "not initialized";
+      const char* optionsinfo = agent->options();
+      const char* pathinfo = agent->os_lib_path();
+      if (optionsinfo == nullptr) optionsinfo = "none";
+      if (pathinfo == nullptr) pathinfo = "none";
+      st->print_cr("%s path:%s, %s, %s, %s%soptions:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
+    }
+  }
+#endif
 }
 
 void os::print_register_info(outputStream* st, const void* context) {

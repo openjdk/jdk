@@ -37,19 +37,6 @@ import javax.crypto.DecapsulateException;
 
 public final class ML_KEM_Impls {
 
-    static int name2int(String name) {
-        if (name.endsWith("512")) {
-            return 512;
-        } else if (name.endsWith("768")) {
-            return 768;
-        } else if (name.endsWith("1024")) {
-            return 1024;
-        } else {
-            // should not happen
-            throw new ProviderException("Unknown name " + name);
-        }
-    }
-
     public sealed static class KPG
         extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
 
@@ -164,17 +151,8 @@ public final class ML_KEM_Impls {
 
             ML_KEM mlKem = new ML_KEM(name);
             var kpkeCipherText = new ML_KEM.K_PKE_CipherText(cipherText);
-
-            byte[] decapsulateResult;
-            try {
-                decapsulateResult = mlKem.decapsulate(
-                        new ML_KEM.ML_KEM_DecapsulationKey(
-                            decapsulationKey), kpkeCipherText);
-            } catch (DecapsulateException e) {
-                throw new DecapsulateException("Decapsulate error", e) ;
-            }
-
-            return decapsulateResult;
+            return mlKem.decapsulate(new ML_KEM.ML_KEM_DecapsulationKey(
+                    decapsulationKey), kpkeCipherText);
         }
 
         @Override

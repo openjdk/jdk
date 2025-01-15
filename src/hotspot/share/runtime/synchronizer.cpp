@@ -1243,13 +1243,13 @@ void ObjectSynchronizer::owned_monitors_iterate_filtered(MonitorClosure* closure
 // Iterate ObjectMonitors where the owner == thread; this does NOT include
 // ObjectMonitors where owner is set to a stack-lock address in thread.
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, JavaThread* thread) {
-  int64_t key = ObjectMonitor::owner_from(thread);
+  int64_t key = ObjectMonitor::owner_id_from(thread);
   auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
   return owned_monitors_iterate_filtered(closure, thread_filter);
 }
 
 void ObjectSynchronizer::owned_monitors_iterate(MonitorClosure* closure, oop vthread) {
-  int64_t key = ObjectMonitor::owner_from(vthread);
+  int64_t key = ObjectMonitor::owner_id_from(vthread);
   auto thread_filter = [&](ObjectMonitor* monitor) { return monitor->owner() == key; };
   return owned_monitors_iterate_filtered(closure, thread_filter);
 }

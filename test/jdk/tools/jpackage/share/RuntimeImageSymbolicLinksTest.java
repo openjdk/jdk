@@ -51,6 +51,7 @@ public class RuntimeImageSymbolicLinksTest {
 
     @Test
     public static void test() throws Exception {
+        final Path jmods = Path.of(System.getProperty("java.home"), "jmods");
         final Path workDir = TKit.createTempDirectory("runtime").resolve("data");
         final Path jlinkOutputDir = workDir.resolve("temp.runtime");
         Files.createDirectories(jlinkOutputDir.getParent());
@@ -61,6 +62,7 @@ public class RuntimeImageSymbolicLinksTest {
         .addArguments(
                 "--output", jlinkOutputDir.toString(),
                 "--add-modules", "ALL-MODULE-PATH",
+                "--module-path", jmods.toString(),
                 "--strip-debug",
                 "--no-header-files",
                 "--no-man-pages",

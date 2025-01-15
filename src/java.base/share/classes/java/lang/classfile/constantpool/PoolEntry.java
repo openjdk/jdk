@@ -98,7 +98,7 @@ public sealed interface PoolEntry
      * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_UTF8},
      * describe the possible return values of this method.
      */
-    byte tag();
+    int tag();
 
     /**
      * {@return the index within the constant pool corresponding to this entry}

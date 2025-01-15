@@ -313,8 +313,7 @@ IdealLoopTree* PhaseIdealLoop::insert_outer_loop(IdealLoopTree* loop, LoopNode* 
 IdealLoopTree* PhaseIdealLoop::create_outer_strip_mined_loop(BoolNode *test, Node *cmp, Node *init_control,
                                                              IdealLoopTree* loop, float cl_prob, float le_fcnt,
                                                              Node*& entry_control, Node*& iffalse) {
-  Node* outer_test = _igvn.intcon(0);
-  set_ctrl(outer_test, C->root());
+  Node* outer_test = intcon(0);
   Node *orig = iffalse;
   iffalse = iffalse->clone();
   _igvn.register_new_node_with_optimizer(iffalse);
@@ -969,16 +968,14 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
     inner_iters_actual_int = inner_iters_actual;
   }
 
-  Node* int_zero = _igvn.intcon(0);
-  set_ctrl(int_zero, C->root());
+  Node* int_zero = intcon(0);
   if (stride_con < 0) {
     inner_iters_actual_int = new SubINode(int_zero, inner_iters_actual_int);
     _igvn.register_new_node_with_optimizer(inner_iters_actual_int);
   }
 
   // Clone the iv data nodes as an integer iv
-  Node* int_stride = _igvn.intcon(stride_con);
-  set_ctrl(int_stride, C->root());
+  Node* int_stride = intcon(stride_con);
   Node* inner_phi = new PhiNode(x->in(0), TypeInt::INT);
   Node* inner_incr = new AddINode(inner_phi, int_stride);
   Node* inner_cmp = nullptr;
@@ -1273,14 +1270,10 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jint st
 void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List &range_checks, Node* outer_phi,
                                                  Node* inner_iters_actual_int, Node* inner_phi,
                                                  Node* iv_add, LoopNode* inner_head) {
-  Node* long_zero = _igvn.longcon(0);
-  set_ctrl(long_zero, C->root());
-  Node* int_zero = _igvn.intcon(0);
-  set_ctrl(int_zero, this->C->root());
-  Node* long_one = _igvn.longcon(1);
-  set_ctrl(long_one, this->C->root());
-  Node* int_stride = _igvn.intcon(checked_cast<int>(stride_con));
-  set_ctrl(int_stride, this->C->root());
+  Node* long_zero = longcon(0);
+  Node* int_zero = intcon(0);
+  Node* long_one = longcon(1);
+  Node* int_stride = intcon(checked_cast<int>(stride_con));
 
   for (uint i = 0; i < range_checks.size(); i++) {
     ProjNode* proj = range_checks.at(i)->as_Proj();
@@ -1302,8 +1295,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     Node* entry_control = inner_head->in(LoopNode::EntryControl);
 
     Node* R = range;
-    Node* K = _igvn.longcon(scale);
-    set_ctrl(K, this->C->root());
+    Node* K = longcon(scale);
 
     Node* L = offset;
 
@@ -1334,8 +1326,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
       // So this transformation could cause spurious deoptimizations and failed range check elimination
       // (but not incorrect execution) for unlikely corner cases with overflow.
       // If this causes problems in practice, we could maybe direct execution to a post-loop, instead of deoptimizing.
-      Node* max_jint_plus_one_long = _igvn.longcon((jlong)max_jint + 1);
-      set_ctrl(max_jint_plus_one_long, C->root());
+      Node* max_jint_plus_one_long = longcon((jlong)max_jint + 1);
       Node* max_range = new AddLNode(max_jint_plus_one_long, L);
       register_new_node(max_range, entry_control);
       R = MaxNode::unsigned_min(R, max_range, TypeLong::POS, _igvn);
@@ -1389,8 +1380,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
 
     // H_clamp = Q_max+1 < Q_min ? max_jlong : Q_max+1
     // (Because Q_min and Q_max are close, the overflow check could also be encoded as Q_max+1 < 0 & Q_min >= 0.)
-    Node* max_jlong_long = _igvn.longcon(max_jlong);
-    set_ctrl(max_jlong_long, this->C->root());
+    Node* max_jlong_long = longcon(max_jlong);
     Node* Q_max_cmp = new CmpLNode(Q_max_plus_one, Q_min);
     register_new_node(Q_max_cmp, entry_control);
     Node* Q_max_bool = new BoolNode(Q_max_cmp, BoolTest::lt);
@@ -1424,8 +1414,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     // to:     j*K + L_2 <u32 R_2
     // that is:
     //   (j*K + Q_first) - L_clamp <u32 clamp(R, L_clamp, H_clamp) - L_clamp
-    K = _igvn.intcon(checked_cast<int>(scale));
-    set_ctrl(K, this->C->root());
+    K = intcon(checked_cast<int>(scale));
     Node* scaled_iv = new MulINode(inner_phi, K);
     register_new_node(scaled_iv, c);
     Node* scaled_iv_plus_offset = new AddINode(scaled_iv, L_2);
@@ -3155,7 +3144,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   // make counted loop exit test always fail
   ConINode* zero = igvn->intcon(0);
   if (iloop != nullptr) {
-    iloop->set_ctrl(zero, igvn->C->root());
+    iloop->set_root_as_ctrl(zero);
   }
   igvn->replace_input_of(cle, 1, zero);
   // replace outer loop end with CountedLoopEndNode with formers' CLE's exit test
@@ -4067,8 +4056,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // variable differs from the trip counter by a loop-invariant
     // amount, the difference between their respective initial values.
     // It is scaled by the 'ratio_con'.
-    Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
-    set_ctrl(ratio, C->root());
+    Node* ratio = integercon(ratio_con, stride_con2_bt);
 
     Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
     Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
@@ -4488,8 +4476,7 @@ void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node
     OpaqueTemplateAssertionPredicateNode* opaque_node =
         C->template_assertion_predicate_opaq_node(i - 1)->as_OpaqueTemplateAssertionPredicate();
     if (!useful_predicates.member(opaque_node)) { // not in the useful list
-      ConINode* one = _igvn.intcon(1);
-      set_ctrl(one, C->root());
+      ConINode* one = intcon(1);
       _igvn.replace_node(opaque_node, one);
     }
   }
@@ -4899,7 +4886,10 @@ void PhaseIdealLoop::build_and_optimize() {
   // that require basic-block info (like cloning through Phi's)
   if (!C->major_progress() && SplitIfBlocks && do_split_ifs) {
     visited.clear();
-    split_if_with_blocks( visited, nstack);
+    split_if_with_blocks(visited, nstack);
+    if (C->failing()) {
+      return;
+    }
     DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
   }
 
@@ -6423,6 +6413,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 #ifdef ASSERT
   if (_verify_only && !n->is_CFG()) {
     // Check def-use domination.
+    // We would like to expose this check in product but it appears to be expensive.
     compute_lca_of_uses(n, get_ctrl(n), true /* verify */);
   }
 #endif
@@ -6864,6 +6855,36 @@ void PhaseIdealLoop::rpo(Node* start, Node_Stack &stk, VectorSet &visited, Node_
       stk.pop();
     }
   }
+}
+
+ConINode* PhaseIdealLoop::intcon(jint i) {
+  ConINode* node = _igvn.intcon(i);
+  set_root_as_ctrl(node);
+  return node;
+}
+
+ConLNode* PhaseIdealLoop::longcon(jlong i) {
+  ConLNode* node = _igvn.longcon(i);
+  set_root_as_ctrl(node);
+  return node;
+}
+
+ConNode* PhaseIdealLoop::makecon(const Type* t) {
+  ConNode* node = _igvn.makecon(t);
+  set_root_as_ctrl(node);
+  return node;
+}
+
+ConNode* PhaseIdealLoop::integercon(jlong l, BasicType bt) {
+  ConNode* node = _igvn.integercon(l, bt);
+  set_root_as_ctrl(node);
+  return node;
+}
+
+ConNode* PhaseIdealLoop::zerocon(BasicType bt) {
+  ConNode* node = _igvn.zerocon(bt);
+  set_root_as_ctrl(node);
+  return node;
 }
 
 

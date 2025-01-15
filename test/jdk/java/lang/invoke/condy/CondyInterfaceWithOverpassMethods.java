@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @summary Test for an interface using condy with default overpass methods
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @enablePreview
  * @run testng CondyInterfaceWithOverpassMethods
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyInterfaceWithOverpassMethods
  */

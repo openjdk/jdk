@@ -70,20 +70,20 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(notBool);
   mv(t1, T_BYTE);
   bne(t0, t1, notByte);
-  sign_extend(result, result, 8);
+  sext(result, result, 8);
   j(done);
 
   bind(notByte);
   mv(t1, T_CHAR);
   bne(t0, t1, notChar);
-  zero_extend(result, result, 16);
+  zext(result, result, 16);
   j(done);
 
   bind(notChar);
-  sign_extend(result, result, 16);
+  sext(result, result, 16);
 
   bind(done);
-  sign_extend(result, result, 32);
+  sext(result, result, 32);
 }
 
 void InterpreterMacroAssembler::jump_to_entry(address entry) {
@@ -276,7 +276,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_i(Register r) {
   addi(esp, esp, -wordSize);
-  sign_extend(r, r, 32);
+  sext(r, r, 32);
   sd(r, Address(esp, 0));
 }
 

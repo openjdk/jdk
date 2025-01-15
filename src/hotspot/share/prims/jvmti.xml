@@ -1218,7 +1218,7 @@ jvmtiEnv *jvmti;
                             <li><i>Timed wait?</i>
                               <ul>
                                 <li>Indefinite (<datalink
-                                    id="JVMTI_THREAD_STATE_WAITING_INDEFINITELY"><code>JVMTI_THREAD_STATE_WAITING_INDEFINITELY</code></datalink></li>
+                                    id="JVMTI_THREAD_STATE_WAITING_INDEFINITELY"><code>JVMTI_THREAD_STATE_WAITING_INDEFINITELY</code></datalink>)</li>
                                 <li>Timed (<datalink
                                     id="JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT"><code>JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT</code></datalink>)</li>
                               </ul>

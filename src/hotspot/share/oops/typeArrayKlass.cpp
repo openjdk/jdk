@@ -75,6 +75,10 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
   return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
 }
 
+jint TypeArrayKlass::compute_modifier_flags() const {
+  return JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC;
+}
+
 TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, Kind) {
   set_layout_helper(array_layout_helper(type));
   assert(is_array_klass(), "sanity");
@@ -84,6 +88,9 @@ TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, 
   assert(size() >= TypeArrayKlass::header_size(), "bad size");
 
   set_class_loader_data(ClassLoaderData::the_null_class_loader_data());
+
+  // Compute modifier flags.
+  set_modifier_flags(compute_modifier_flags());
 }
 
 typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {

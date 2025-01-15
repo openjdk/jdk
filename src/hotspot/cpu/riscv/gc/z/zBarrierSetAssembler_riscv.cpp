@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -286,7 +286,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     __ relocate(barrier_Relocation::spec(), [&] {
       __ li16u(rtmp1, barrier_Relocation::unpatched);
     }, ZBarrierRelocationFormatStoreGoodBits);
-    __ cmpxchg_weak(rtmp2, zr, rtmp1,
+    __ weak_cmpxchg(rtmp2, zr, rtmp1,
                     Assembler::int64,
                     Assembler::relaxed /* acquire */, Assembler::relaxed /* release */,
                     rtmp3);
