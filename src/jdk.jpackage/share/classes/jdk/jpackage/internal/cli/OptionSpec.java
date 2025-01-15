@@ -26,12 +26,15 @@
 package jdk.jpackage.internal.cli;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import jdk.jpackage.internal.model.PackageType;
 
 
-public record OptionSpec(String name, ValueConverter<?> valueConverter, String shortName, Set<PackageType> supportedPackageTypes, Consumer<?> valueValidator) {
+public record OptionSpec(String name, Optional<ValueConverter<?>> valueConverter,
+        Optional<String> shortName, Set<PackageType> supportedPackageTypes, Optional<Consumer<?>> valueValidator) {
+
     public OptionSpec {
         Objects.requireNonNull(name);
         if (supportedPackageTypes.isEmpty()) {
@@ -40,6 +43,6 @@ public record OptionSpec(String name, ValueConverter<?> valueConverter, String s
     }
 
     public boolean withValue() {
-        return valueConverter != null;
+        return valueConverter.isPresent();
     }
 }

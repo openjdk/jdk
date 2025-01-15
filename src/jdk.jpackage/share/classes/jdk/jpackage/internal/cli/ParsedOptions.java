@@ -26,8 +26,15 @@
 package jdk.jpackage.internal.cli;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 
 public interface ParsedOptions {
-    public <T> Optional<T> get(Option id);
+
+    <T> Optional<T> find(Option id);
+
+    default <T> void copy(Option id, Consumer<T> consumer) {
+        final Optional<T> opt = find(id);
+        opt.ifPresent(consumer);
+    }
 }

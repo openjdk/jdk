@@ -24,17 +24,20 @@
  */
 package jdk.jpackage.internal.cli;
 
-import java.util.Set;
-import java.util.function.Consumer;
-import jdk.jpackage.internal.model.PackageType;
 import static jdk.jpackage.internal.cli.StandardValueConverter.IDENTITY_CONV;
 import static jdk.jpackage.internal.cli.StandardValueConverter.PATH_ARRAY_CONV;
 import static jdk.jpackage.internal.cli.StandardValueConverter.PATH_CONV;
 import static jdk.jpackage.internal.cli.StandardValueConverter.STRING_ARRAY_CONV;
 
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import jdk.jpackage.internal.model.PackageType;
+
 final class OptionSpecBuilder {
     OptionSpec create() {
-        return new OptionSpec(name, valueConverter, shortName, supportedPackageTypes, valueValidator);
+        return new OptionSpec(name, Optional.ofNullable(valueConverter), Optional.ofNullable(shortName),
+                supportedPackageTypes, Optional.ofNullable(valueValidator));
     }
 
     OptionSpecBuilder ofString() {
