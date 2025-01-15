@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,9 +43,18 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 
+import jtreg.SkippedException;
+
 public class Test8152419 {
 
     public static void main(String args[]) throws Exception {
+
+        // ColorChooser UI design is different for GTK L&F.
+        // There are no tabs available for GTK L&F, skip the testing.
+        if (UIManager.getLookAndFeel().getName().contains("GTK")) {
+            throw new SkippedException("Test not applicable for GTK L&F");
+        }
+
         final CountDownLatch latch = new CountDownLatch(1);
 
         JColorChooserTest test = new JColorChooserTest(latch);
