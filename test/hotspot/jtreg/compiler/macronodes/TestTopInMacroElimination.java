@@ -27,7 +27,7 @@
  * constructing new phis.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.macronodes.TestTopInMacroElimination
+ * @run main/othervm -XX:-ProfileExceptionHandlers compiler.macronodes.TestTopInMacroElimination
  */
 
 package compiler.macronodes;
