@@ -26,8 +26,6 @@ package jdk.internal.foreign;
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.Continuation;
-import jdk.internal.vm.ContinuationSupport;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.Linker;
@@ -49,29 +47,54 @@ public final class CaptureStateUtil {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final long SIZE = Linker.Option.captureStateLayout().byteSize();
 
-    private static final TerminatingThreadLocal<MemorySegment> TL = new TerminatingThreadLocal<>() {
+    private static final TerminatingThreadLocal<SegmentCache> TL_CACHE = new TerminatingThreadLocal<>() {
         @Override
-        protected void threadTerminated(MemorySegment value) {
-            free(value);
+        protected void threadTerminated(SegmentCache stack) {
+            stack.close();
         }
     };
 
-    private static final MethodHandle ACQUIRE_MH =
-            MhUtil.findStatic(LOOKUP, "acquireCaptureStateSegment",
+    private static final MethodHandle NON_NEGATIVE_INT_MH =
+            MhUtil.findStatic(LOOKUP, "nonNegative",
+                    MethodType.methodType(boolean.class, int.class));
+
+    private static final MethodHandle SUCCESS_INT_MH =
+            MhUtil.findStatic(LOOKUP, "success",
+                    MethodType.methodType(int.class, int.class, MemorySegment.class));
+
+    private static final MethodHandle ERROR_INT_MH =
+            MhUtil.findStatic(LOOKUP, "error",
+                    MethodType.methodType(int.class, MethodHandle.class, int.class, MemorySegment.class));
+
+    private static final MethodHandle NON_NEGATIVE_LONG_MH =
+            MhUtil.findStatic(LOOKUP, "nonNegative",
+                    MethodType.methodType(boolean.class, long.class));
+
+    private static final MethodHandle SUCCESS_LONG_MH =
+            MhUtil.findStatic(LOOKUP, "success",
+                    MethodType.methodType(long.class, long.class, MemorySegment.class));
+
+    private static final MethodHandle ERROR_LONG_MH =
+            MhUtil.findStatic(LOOKUP, "error",
+                    MethodType.methodType(long.class, MethodHandle.class, long.class, MemorySegment.class));
+
+    private static final MethodHandle ACQUIRE_CACHE_MH =
+            MhUtil.findStatic(LOOKUP, "acquireCache",
+                    MethodType.methodType(SegmentCache.class));
+
+    private static final MethodHandle ACQUIRE_SEGMENT_MH =
+            MhUtil.findVirtual(LOOKUP, SegmentCache.class, "acquire",
                     MethodType.methodType(MemorySegment.class));
 
-    private static final MethodHandle INT_RETURN_FILTER_MH =
-            MhUtil.findStatic(LOOKUP, "returnFilter",
-                    MethodType.methodType(int.class, MethodHandle.class, int.class));
+    private static final MethodHandle RELEASE_SEGMENT_MH =
+            MhUtil.findVirtual(LOOKUP, SegmentCache.class, "release",
+                    MethodType.methodType(void.class, MemorySegment.class));
 
-    private static final MethodHandle LONG_RETURN_FILTER_MH =
-            MhUtil.findStatic(LOOKUP, "returnFilter",
-                    MethodType.methodType(long.class, MethodHandle.class, long.class));
 
     // (int.class | long.class) ->
     //   ({"GetLastError" | "WSAGetLastError"} | "errno") ->
     //     MethodHandle
-    private static final Map<Class<?>, Map<String, MethodHandle>> RETURN_FILTERS;
+    private static final Map<Class<?>, Map<String, MethodHandle>> CAPTURE_STATE_EXTRACTORS;
 
     static {
 
@@ -83,17 +106,16 @@ public final class CaptureStateUtil {
                     .collect(Collectors.toUnmodifiableMap(
                             member -> member.name().orElseThrow(),
                             member -> {
-                                MethodHandle mh = getAsIntHandle(stateLayout, member);
-                                MethodHandle returnFilter = clazz.equals(int.class)
-                                        ? INT_RETURN_FILTER_MH
-                                        : LONG_RETURN_FILTER_MH;
-                                // (int)int
-                                return returnFilter.bindTo(mh);
+                                VarHandle vh = stateLayout.varHandle(MemoryLayout.PathElement.groupElement(member.name().orElseThrow()));
+                                // (MemorySegment, long)int
+                                MethodHandle mh = vh.toMethodHandle(VarHandle.AccessMode.GET);
+                                // (MemorySegment)int
+                                return MethodHandles.insertArguments(mh, 1, 0L);
                             }
                     ));
             classMap.put(clazz, handles);
         }
-        RETURN_FILTERS = Map.copyOf(classMap);
+        CAPTURE_STATE_EXTRACTORS = Map.copyOf(classMap);
     }
 
     private CaptureStateUtil() {
@@ -125,6 +147,28 @@ public final class CaptureStateUtil {
      *      }
      *
      *}
+     * For a method handle that takes a MemorySegment and two int parameters, the method
+     * combinators are doing the equivalent of:
+     *
+     * {@snippet lang = java:
+     *         public int invoke(int a, int b) {
+     *             final SegmentCache segmentCache = acquireCache();
+     *             final MemorySegment segment = segmentCache.acquire();
+     *             try {
+     *                 final int result = (int) handle.invoke(segment, a, b);
+     *                 if (result >= 0) {
+     *                     return result;
+     *                 }
+     *                 return -(int) errorHandle.get(segment);
+     *             } finally {
+     *                 segmentCache.release(segment);
+     *             }
+     *         }
+     *}
+     * Where {@code handle} is the original method handle with the coordinated
+     * {@code (MemorySegment, int, int)int} and {@code errnoHandle} is a method handle
+     * that retrieves the error code from the capturing segment.
+     *
      *
      * @param target    method handle that returns an {@code int} or a {@code long} and has
      *                  a capturing state MemorySegment as its first parameter
@@ -147,56 +191,66 @@ public final class CaptureStateUtil {
             throw illegalArgDoesNot(target, "have a MemorySegment as the first parameter");
         }
 
-        // (int | long)(int | long)
-        final MethodHandle returnFilter = RETURN_FILTERS
+        // ((int | long), MemorySegment)(int | long)
+        final MethodHandle captureStateExtractor = CAPTURE_STATE_EXTRACTORS
                 .get(returnType)
                 .get(stateName);
-        if (returnFilter == null) {
+        if (captureStateExtractor == null) {
             throw new IllegalArgumentException("Unknown state name: " + stateName);
         }
 
-        // (MemorySegment, C*)(int | long) -> (C*)(int | long)
-        target = MethodHandles.collectArguments(target, 0, ACQUIRE_MH);
+        final boolean isInt = (returnType == int.class);
 
-        // (C*)(int | long) -> (C*)(int | long)
-        return MethodHandles.filterReturnValue(target, returnFilter);
-    }
+        // Todo: Cache the error handles
+        // ((int|long), MemorySegment)(int|long)
+        MethodHandle inner = MethodHandles.guardWithTest(
+                isInt ? NON_NEGATIVE_INT_MH : NON_NEGATIVE_LONG_MH,
+                isInt ? SUCCESS_INT_MH : SUCCESS_LONG_MH,
+                (isInt ? ERROR_INT_MH : ERROR_LONG_MH).bindTo(captureStateExtractor));
 
-    // Used reflectively via ACQUIRE_MH
-    private static MemorySegment acquireCaptureStateSegment() {
-        MemorySegment segment = TL.get();
-        if (segment == null) {
-            TL.set(segment = malloc());
+        // (C0=MemorySegment, C1-Cn, MemorySegment)(int|long)
+        inner = MethodHandles.collectArguments(inner, 0, target);
+
+        int[] perm = new int[target.type().parameterCount() + 1];
+        for (int i = 0; i < target.type().parameterCount(); i++) {
+            perm[i] = i;
         }
-        return segment;
-    }
+        perm[target.type().parameterCount()] = 0;
+        // Deduplicate the first and last coordinate and only use the first
+        // (C0=MemorySegment, C1-Cn)(int|long)
+        inner = MethodHandles.permuteArguments(inner, target.type(), perm);
 
-    // Used reflectively via INT_RETURN_FILTER_MH
-    @ForceInline
-    private static int returnFilter(MethodHandle errorHandle, int result) throws Throwable {
-        if (result >= 0) {
-            return result;
+        // (SegmentStack, C0=MemorySegment, C1-Cn)(int|long)
+        inner = MethodHandles.dropArguments(inner, 0, SegmentCache.class);
+
+        // ((int|long))(int|long)
+        MethodHandle cleanup = MethodHandles.identity(returnType);
+        // (Throwable, (int|long))(int|long)
+        cleanup = MethodHandles.dropArguments(cleanup, 0, Throwable.class);
+        // (Throwable, (int|long), SegmentStack, C0=MemorySegment)(int|long)
+        // Cleanup does not have to have all parameters. It can have zero or more.
+        cleanup = MethodHandles.collectArguments(cleanup, 2, RELEASE_SEGMENT_MH);
+
+        // (SegmentStack, C0=MemorySegment, C1-Cn)(int|long)
+        MethodHandle tryFinally = MethodHandles.tryFinally(inner, cleanup);
+
+        // (SegmentStack, SegmentStack, C1-Cn)(int|long)
+        MethodHandle result = MethodHandles.filterArguments(tryFinally, 1, ACQUIRE_SEGMENT_MH);
+
+        final MethodType newType = result.type().dropParameterTypes(0, 1);
+        perm = new int[result.type().parameterCount()];
+        perm[0] = 0;
+        for (int i = 1; i < result.type().parameterCount(); i++) {
+            perm[i] = i - 1;
         }
-        return -(int) errorHandle.invoke();
-    }
+        // Deduplicate the first and second coordinate and only use the first
+        // (SegmentStack, C1-Cn)(int|long)
+        result = MethodHandles.permuteArguments(result, newType, perm);
 
-    // Used reflectively via LONG_RETURN_FILTER_MH
-    @ForceInline
-    private static long returnFilter(MethodHandle errorHandle, long result) throws Throwable {
-        if (result >= 0) {
-            return result;
-        }
-        return -(int) errorHandle.invoke();
-    }
+        // Finally we arrive at (C1-Cn)(int|long)
+        result = MethodHandles.collectArguments(result, 0, ACQUIRE_CACHE_MH);
 
-    @SuppressWarnings("restricted")
-    private static MemorySegment malloc() {
-        final long address = UNSAFE.allocateMemory(SIZE);
-        return MemorySegment.ofAddress(address).reinterpret(SIZE);
-    }
-
-    private static void free(MemorySegment segment) {
-        UNSAFE.freeMemory(segment.address());
+        return result;
     }
 
     private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
@@ -204,31 +258,119 @@ public final class CaptureStateUtil {
                 + " does not " + info);
     }
 
-    private static MethodHandle getAsIntHandle(StructLayout parent, MemoryLayout layout) {
-        final MethodHandle handle = MhUtil.findStatic(LOOKUP, "getStateAsInt", MethodType.methodType(int.class, VarHandle.class));
-        return handle.bindTo(parent.varHandle(MemoryLayout.PathElement.groupElement(layout.name().orElseThrow())));
-    }
+    /**
+     * A cache of a memory segments to allow reuse. In many cases, only one segment will
+     * ever be allocated per platform thread. However, if a virtual thread becomes
+     * unmounted from its platform thread and another virtual thread acquires a new
+     * segment. Having a secondary cache of these is slower than using malloc/free directly.
+     * <p>
+     * The `cachedField` is about three times faster than a more general `deque`.
+     * <p>
+     * The class is using Unsafe rather than other supported APIs to allow early use
+     * in the boostrap sequence.
+     */
+    private static final class SegmentCache {
 
-    // Used reflectively by `getAsIntHandle(MemoryLayout layout)`
-    private static int getStateAsInt(VarHandle handle) {
-        if (ContinuationSupport.isSupported() && Thread.currentThread().isVirtual()) {
-            // Make sure we are not unmounted/remounted from/on another platform thread
-            // during the critical read region. This prevents access across platform threads.
-            Continuation.pin();
-            try {
-                return getStateAsIntCriticalRegion(handle);
-            } finally {
-                Continuation.unpin();
-            }
-        } else {
-            // On platform threads, we always remain on the PT itself
-            return getStateAsIntCriticalRegion(handle);
+        private static final long CACHED_SEGMENT_OFFSET =
+                UNSAFE.objectFieldOffset(SegmentCache.class, "cachedSegment");
+        private MemorySegment cachedSegment;
+
+        // Used reflectively
+        @ForceInline
+        private MemorySegment acquire() {
+            final MemorySegment segment = acquireFromCache();
+            return segment == null ? malloc() : segment;
         }
+
+        // Used reflectively
+        @ForceInline
+        private void release(MemorySegment segment) {
+            if (!releaseToCache(segment)) {
+                free(segment);
+            }
+        }
+
+        // This method is called by a separate cleanup thread when the associated
+        // platform thread is dead. So, there is no concurrent use here.
+        // The method consumes the cached element in order for the method to be idempotent
+        // which might be a bit paranoid.
+        private void close() {
+            final MemorySegment cSeg = acquireFromCache();
+            if (cSeg != null) {
+                free(cSeg);
+            }
+        }
+
+        @ForceInline
+        private MemorySegment acquireFromCache() {
+            return (MemorySegment) UNSAFE.getAndSetReference(this, CACHED_SEGMENT_OFFSET, null);
+        }
+
+        @ForceInline
+        private boolean releaseToCache(MemorySegment segment) {
+            return UNSAFE.compareAndSetReference(this, CACHED_SEGMENT_OFFSET, null, segment);
+        }
+
+        @SuppressWarnings("restricted")
+        @ForceInline
+        private static MemorySegment malloc() {
+            final long address = UNSAFE.allocateMemory(SIZE);
+            return MemorySegment.ofAddress(address).reinterpret(SIZE);
+        }
+
+        @ForceInline
+        private static void free(MemorySegment segment) {
+            UNSAFE.freeMemory(segment.address());
+        }
+
     }
 
-    // Critical read region for VTs.
-    private static int getStateAsIntCriticalRegion(VarHandle handle) {
-        return (int) handle.get(acquireCaptureStateSegment(), 0);
+    // Support method used as method handles
+
+    // Used reflectively
+    @ForceInline
+    private static SegmentCache acquireCache() {
+        SegmentCache cache = TL_CACHE.get();
+        if (cache == null) {
+            TL_CACHE.set(cache = new SegmentCache());
+        }
+        return cache;
+    }
+
+    // Used reflectively
+    @ForceInline
+    private static boolean nonNegative(int value) {
+        return value >= 0;
+    }
+
+    // Used reflectively
+    @ForceInline
+    private static int success(int value, MemorySegment segment) {
+        return value;
+    }
+
+    // Used reflectively
+    @ForceInline
+    private static int error(MethodHandle errorHandle, int value, MemorySegment segment) throws Throwable {
+        return -(int) errorHandle.invokeExact(segment);
+    }
+
+    // Used reflectively
+    @ForceInline
+    private static boolean nonNegative(long value) {
+        return value >= 0L;
+    }
+
+    // Used reflectively
+    @ForceInline
+    private static long success(long value, MemorySegment segment) {
+        return value;
+    }
+
+    // Used reflectively
+    @ForceInline
+    private static long error(MethodHandle errorHandle, long value, MemorySegment segment) throws Throwable {
+        return -(int) errorHandle.invokeExact(segment);
     }
 
 }

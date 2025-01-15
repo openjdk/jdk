@@ -23,7 +23,7 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
-import jdk.internal.foreign.CaptureStateUtil2;
+import jdk.internal.foreign.CaptureStateUtil;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -64,33 +64,33 @@ public class CaptureStateUtilBench {
     private static final MethodHandle DUMMY_TL_ALLOC = dummyTlAlloc();
 
     @Benchmark
-    public int explicitSuccess() throws Throwable {
+    public int explicitAllocationSuccess() throws Throwable {
         try (var arena = Arena.ofConfined()) {
             return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(SIZE), 0, 0);
         }
     }
 
     @Benchmark
-    public int explicitFail() throws Throwable {
+    public int explicitAllocationFail() throws Throwable {
         try (var arena = Arena.ofConfined()) {
             return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(SIZE), -1, 1);
         }
     }
 
     @Benchmark
-    public int tlSuccess() throws Throwable {
+    public int threadLocalReuseSuccess() throws Throwable {
         return (int) DUMMY_TL_ALLOC.invoke(0, 0);
-
     }
 
     @Benchmark
-    public int tlFail() throws Throwable {
+    public int threadLocalFail() throws Throwable {
         return (int) DUMMY_TL_ALLOC.invoke( -1, 1);
     }
 
     private static MethodHandle dummyExplicitAlloc() {
         try {
-            return MethodHandles.lookup().findStatic(CaptureStateUtilBench.class, "dummy", MethodType.methodType(int.class, MemorySegment.class, int.class, int.class));
+            return MethodHandles.lookup().findStatic(CaptureStateUtilBench.class,
+                    "dummy", MethodType.methodType(int.class, MemorySegment.class, int.class, int.class));
         } catch (ReflectiveOperationException roe) {
             throw new RuntimeException(roe);
         }
@@ -98,7 +98,7 @@ public class CaptureStateUtilBench {
 
     private static MethodHandle dummyTlAlloc() {
         final MethodHandle handle = dummyExplicitAlloc();
-        return CaptureStateUtil2.adaptSystemCall(handle, ERRNO_NAME);
+        return CaptureStateUtil.adaptSystemCall(handle, ERRNO_NAME);
     }
 
     // Dummy method that is just returning the provided parameters
