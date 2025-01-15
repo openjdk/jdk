@@ -615,6 +615,7 @@ Node *AddDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return commute(phase, this) ? this : nullptr;
 }
 
+
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If one input is a constant 0, return the other input.
