@@ -100,15 +100,19 @@ public final class LimitingSubscriber<T> implements TrustedSubscriber<T> {
         }
 
         // See if we may consume the input
-        if (allocateLength(buffers)) {
+        boolean lengthAllocated = allocateLength(buffers);
+        if (lengthAllocated) {
             downstreamSubscriber.onNext(buffers);
         }
 
         // Otherwise, trigger failure
-        else if (stateRef.compareAndSet(subscribed, State.Terminated.INSTANCE)) {
-            downstreamSubscriber.onError(new IOException(
-                    "the maximum number of bytes that are allowed to be consumed is exceeded"));
-            subscribed.subscription.cancel();
+        else {
+            boolean terminated = stateRef.compareAndSet(subscribed, State.Terminated.INSTANCE);
+            if (terminated) {
+                downstreamSubscriber.onError(new IOException(
+                        "the maximum number of bytes that are allowed to be consumed is exceeded"));
+                subscribed.subscription.cancel();
+            }
         }
 
     }
