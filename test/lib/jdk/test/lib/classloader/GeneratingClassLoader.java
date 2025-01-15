@@ -129,7 +129,7 @@ public class GeneratingClassLoader extends ClassLoader {
                 throw new RuntimeException("Class name not found in template class file");
             }
         }
-        return (byte[]) bytecode.clone();
+        return bytecode.clone();
     }
 
     private void readByteCode() throws ClassNotFoundException {

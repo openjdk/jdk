@@ -315,7 +315,7 @@ public final class FileUtils {
             throw new RuntimeException(ie);
         }
 
-        Throwable uncaughtException = (Throwable)throwableReference.get();
+        Throwable uncaughtException = throwableReference.get();
         if (uncaughtException != null) {
             throw new RuntimeException(uncaughtException);
         }
