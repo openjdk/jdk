@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @author Eamonn McManus
  *
  * @run main SameObjectTwoNamesTest
- * @run main/othervm -Djmx.mxbean.multiname=true SameObjectTwoNamesTest
  */
 
 import javax.management.InstanceAlreadyExistsException;
@@ -41,8 +40,7 @@ import javax.management.ObjectName;
 public class SameObjectTwoNamesTest {
 
     public static void main(String[] args) throws Exception {
-        boolean expectException =
-                (System.getProperty("jmx.mxbean.multiname") == null);
+        boolean expectException = true;
         try {
             ObjectName objectName1 = new ObjectName("test:index=1");
             ObjectName objectName2 = new ObjectName("test:index=2");
