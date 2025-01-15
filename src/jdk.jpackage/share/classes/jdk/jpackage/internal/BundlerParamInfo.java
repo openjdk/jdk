@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,14 @@
  */
 package jdk.jpackage.internal;
 
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 /**
  * BundlerParamInfo<T>
@@ -48,14 +51,39 @@ record BundlerParamInfo<T>(String id, Class<T> valueType,
         Function<Map<String, ? super Object>, T> defaultValueFunction,
         BiFunction<String, Map<String, ? super Object>, T> stringConverter) {
 
+    BundlerParamInfo {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(valueType);
+    }
+
     static BundlerParamInfo<String> createStringBundlerParam(String id) {
         return new BundlerParamInfo<>(id, String.class, null, null);
     }
 
+    static BundlerParamInfo<Boolean> createBooleanBundlerParam(String id) {
+        return new BundlerParamInfo<>(id, Boolean.class, null, BundlerParamInfo::toBoolean);
+    }
+
+    static BundlerParamInfo<Path> createPathBundlerParam(String id) {
+        return new BundlerParamInfo<>(id, Path.class, null, BundlerParamInfo::toPath);
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
-    static <T2> BundlerParamInfo<T2> createBundlerParam(String id,
-            ThrowingFunction<Map<String, ? super Object>, T2> valueFunc) {
-        return new BundlerParamInfo(id, Object.class, toFunction(valueFunc), null);
+    static <U> BundlerParamInfo<U> createBundlerParam(String id, Class<? super U> valueType,
+            ThrowingFunction<Map<String, ? super Object>, U> valueCtor) {
+        return new BundlerParamInfo(id, valueType, ThrowingFunction.toFunction(valueCtor), null);
+    }
+
+    static boolean toBoolean(String value, Map<String, ? super Object> params) {
+        if (value == null || "null".equalsIgnoreCase(value)) {
+            return false;
+        } else {
+            return Boolean.valueOf(value);
+        }
+    }
+
+    static Path toPath(String value, Map<String, ? super Object> params) {
+        return Path.of(value);
     }
 
     String getID() {
@@ -130,5 +158,17 @@ record BundlerParamInfo<T>(String id, Class<T> valueType,
 
         // ultimate fallback
         return null;
+    }
+
+    Optional<T> findIn(Map<String, ? super Object> params) {
+        if (params.containsKey(getID())) {
+            return Optional.of(fetchFrom(params, true));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    void copyInto(Map<String, ? super Object> params, Consumer<T> consumer) {
+        findIn(params).ifPresent(consumer);
     }
 }
