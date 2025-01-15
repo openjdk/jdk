@@ -330,7 +330,106 @@ class InternalAddress: public Address {
 };
 
 class Assembler : public AbstractAssembler {
-public:
+private:
+
+  bool static zfa_zli_lookup_double(uint64_t value, int* Rs) {
+    (*Rs) = -1;
+    switch(value) {
+      case 0xbff0000000000000 : (*Rs) =   0; return true;
+      case 0x0010000000000000 : (*Rs) =   1; return true;
+      case 0x3ef0000000000000 : (*Rs) =   2; return true;
+      case 0x3f00000000000000 : (*Rs) =   3; return true;
+      case 0x3f70000000000000 : (*Rs) =   4; return true;
+      case 0x3f80000000000000 : (*Rs) =   5; return true;
+      case 0x3fb0000000000000 : (*Rs) =   6; return true;
+      case 0x3fc0000000000000 : (*Rs) =   7; return true;
+      case 0x3fd0000000000000 : (*Rs) =   8; return true;
+      case 0x3fd4000000000000 : (*Rs) =   9; return true;
+      case 0x3fd8000000000000 : (*Rs) =  10; return true;
+      case 0x3fdc000000000000 : (*Rs) =  11; return true;
+      case 0x3fe0000000000000 : (*Rs) =  12; return true;
+      case 0x3fe4000000000000 : (*Rs) =  13; return true;
+      case 0x3fe8000000000000 : (*Rs) =  14; return true;
+      case 0x3fec000000000000 : (*Rs) =  15; return true;
+      case 0x3ff0000000000000 : (*Rs) =  16; return true;
+      case 0x3ff4000000000000 : (*Rs) =  17; return true;
+      case 0x3ff8000000000000 : (*Rs) =  18; return true;
+      case 0x3ffc000000000000 : (*Rs) =  19; return true;
+      case 0x4000000000000000 : (*Rs) =  20; return true;
+      case 0x4004000000000000 : (*Rs) =  21; return true;
+      case 0x4008000000000000 : (*Rs) =  22; return true;
+      case 0x4010000000000000 : (*Rs) =  23; return true;
+      case 0x4020000000000000 : (*Rs) =  24; return true;
+      case 0x4030000000000000 : (*Rs) =  25; return true;
+      case 0x4060000000000000 : (*Rs) =  26; return true;
+      case 0x4070000000000000 : (*Rs) =  27; return true;
+      case 0x40e0000000000000 : (*Rs) =  28; return true;
+      case 0x40f0000000000000 : (*Rs) =  29; return true;
+      case 0x7ff0000000000000 : (*Rs) =  30; return true;
+      case 0x7ff8000000000000 : (*Rs) =  31; return true;
+      default: break;
+    }
+    return false;
+  }
+
+
+  bool static zfa_zli_lookup_float(uint32_t value, int* Rs = nullptr) {
+    (*Rs) = -1;
+    switch(value) {
+      case 0xbf800000 : (*Rs) =  0; return true;
+      case 0x00800000 : (*Rs) =  1; return true;
+      case 0x37800000 : (*Rs) =  2; return true;
+      case 0x38000000 : (*Rs) =  3; return true;
+      case 0x3b800000 : (*Rs) =  4; return true;
+      case 0x3c000000 : (*Rs) =  5; return true;
+      case 0x3d800000 : (*Rs) =  6; return true;
+      case 0x3e000000 : (*Rs) =  7; return true;
+      case 0x3e800000 : (*Rs) =  8; return true;
+      case 0x3ea00000 : (*Rs) =  9; return true;
+      case 0x3ec00000 : (*Rs) = 10; return true;
+      case 0x3ee00000 : (*Rs) = 11; return true;
+      case 0x3f000000 : (*Rs) = 12; return true;
+      case 0x3f200000 : (*Rs) = 13; return true;
+      case 0x3f400000 : (*Rs) = 14; return true;
+      case 0x3f600000 : (*Rs) = 15; return true;
+      case 0x3f800000 : (*Rs) = 16; return true;
+      case 0x3fa00000 : (*Rs) = 17; return true;
+      case 0x3fc00000 : (*Rs) = 18; return true;
+      case 0x3fe00000 : (*Rs) = 19; return true;
+      case 0x40000000 : (*Rs) = 20; return true;
+      case 0x40200000 : (*Rs) = 21; return true;
+      case 0x40400000 : (*Rs) = 22; return true;
+      case 0x40800000 : (*Rs) = 23; return true;
+      case 0x41000000 : (*Rs) = 24; return true;
+      case 0x41800000 : (*Rs) = 25; return true;
+      case 0x43000000 : (*Rs) = 26; return true;
+      case 0x43800000 : (*Rs) = 27; return true;
+      case 0x47000000 : (*Rs) = 28; return true;
+      case 0x47800000 : (*Rs) = 29; return true;
+      case 0x7f800000 : (*Rs) = 30; return true;
+      case 0x7fc00000 : (*Rs) = 31; return true;
+      default: break;
+    }
+    return false;
+  }
+
+ public:
+
+  static bool can_zfa_zli_float(jfloat f, int* Rs) {
+    if (!UseZfa) {
+      return false;
+    }
+    uint32_t f_bits = (uint32_t)jint_cast(f);
+    return zfa_zli_lookup_float(f_bits, Rs);
+  }
+
+  static bool can_zfa_zli_double(jdouble d, int* Rs) {
+    if (!UseZfa) {
+      return false;
+    }
+    uint64_t d_bits = (uint64_t)julong_cast(d);
+    return zfa_zli_lookup_double(d_bits, Rs);
+  }
 
   enum {
     instruction_size = 4,
@@ -1090,6 +1189,30 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   INSN(fmv_d_x,  0b1010011, 0b000, 0b00000, 0b1111001);
 
 #undef INSN
+
+  void _fli_s(FloatRegister Rd, uint8_t Rs1) {
+    guarantee(is_uimm5(Rs1), "uimm is invalid");
+    unsigned insn = 0;
+    patch((address)&insn,   6, 0, 0b1010011);
+    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn, 14, 12, 0b000);
+    patch((address)&insn, 19, 15, Rs1);
+    patch((address)&insn,     20, 0b00001);
+    patch((address)&insn, 31, 25, 0b1111000);
+    emit(insn);
+  }
+
+  void _fli_d(FloatRegister Rd, uint8_t Rs1) {
+    guarantee(is_uimm5(Rs1), "uimm is invalid");
+    unsigned insn = 0;
+    patch((address)&insn,   6, 0, 0b1010011);
+    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn, 14, 12, 0b000);
+    patch((address)&insn, 19, 15, Rs1);
+    patch((address)&insn,     20, 0b00001);
+    patch((address)&insn, 31, 25, 0b1111001);
+    emit(insn);
+  }
 
 enum fclass_mask {
   minf       = 1 << 0,   // negative infinite

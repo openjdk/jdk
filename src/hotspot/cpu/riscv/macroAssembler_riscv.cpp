@@ -2605,6 +2605,47 @@ void MacroAssembler::movptr2(Register Rd, uint64_t addr, int32_t &offset, Regist
   offset = lower12;
 }
 
+// floating point imm move
+bool MacroAssembler::can_fp_imm_load(float imm) {
+  jint f_bits = jint_cast(imm);
+  if (f_bits == 0) {
+    return true;
+  }
+  int dummy;
+  return can_zfa_zli_float(imm, &dummy);
+}
+
+bool MacroAssembler::can_dp_imm_load(double imm) {
+  julong d_bits = julong_cast(imm);
+  if (d_bits == 0) {
+    return true;
+  }
+  int dummy;
+  return can_zfa_zli_double(imm, &dummy);
+}
+
+void MacroAssembler::fli_s(FloatRegister Rd, float imm) {
+  jint f_bits = jint_cast(imm);
+  if (f_bits == 0) {
+    fmv_w_x(Rd, zr);
+    return;
+  }
+  int Rs = -1;
+  can_zfa_zli_float(imm, &Rs);
+  _fli_s(Rd, Rs);
+}
+
+void MacroAssembler::fli_d(FloatRegister Rd, double imm) {
+  uint64_t d_bits = (uint64_t)julong_cast(imm);
+  if (d_bits == 0) {
+    fmv_d_x(Rd, zr);
+    return;
+  }
+  int Rs = -1;
+  can_zfa_zli_double(imm, &Rs);
+  _fli_d(Rd, Rs);
+}
+
 void MacroAssembler::add(Register Rd, Register Rn, int64_t increment, Register tmp) {
   if (is_simm12(increment)) {
     addi(Rd, Rn, increment);
