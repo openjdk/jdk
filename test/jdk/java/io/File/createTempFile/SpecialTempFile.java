@@ -29,6 +29,7 @@
  * @author Dan Xu
  */
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,6 +40,8 @@ import jdk.internal.util.OSVersion;
 import jdk.internal.util.StaticProperty;
 
 public class SpecialTempFile {
+    private static final int WINDOWS_11_MINIMUM_BUILD = 22000;
+
     private static void test(String name, String[] prefix, String[] suffix,
                              boolean exceptionExpected) throws IOException
     {
@@ -84,6 +87,30 @@ public class SpecialTempFile {
         }
     }
 
+    private static int windowsBuild() throws IOException {
+        if (!OperatingSystem.isWindows())
+            throw new UnsupportedOperationException();
+
+        String cmd = "Systeminfo";
+        Process p = Runtime.getRuntime().exec(new String[] {cmd});
+        int build = 0;
+        try (BufferedReader in = p.inputReader()) {
+            String s;
+            int i = 0;
+            while ((s = in.readLine()) != null) {
+                // skip header
+                if (i++ == 0) continue;
+                if (s.startsWith("OS Version")) {
+                    String[] elts = s.trim().split(" ");
+                    String buildString = elts[elts.length - 1];
+                    build = Integer.valueOf(buildString);
+                    break;
+                }
+            }
+        }
+        return build;
+    }
+
     public static void main(String[] args) throws Exception {
         // Common test
         final String name = "SpecialTempFile";
@@ -108,18 +135,12 @@ public class SpecialTempFile {
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
-        String osName = StaticProperty.osName();
-        OSVersion osVersion = OSVersion.current();
-        System.out.println("OS name:    " + osName + "\n" +
-                           "OS version: " + osVersion);
 
-        String[] nameElements = osName.split(" ");
-        int nameVers = Integer.valueOf(nameElements[nameElements.length - 1]);
-        System.out.println("OS version from name: " + nameVers);
-
-        boolean exceptionExpected =
-            !(new OSVersion(10, 0).compareTo(osVersion) > 0 ||
-              osName.contains("Server") ? nameVers > 2022 : nameVers > 10);
+        int osBuild = windowsBuild();
+        System.out.println("OS name:    " + StaticProperty.osName() + "\n" +
+                           "OS version: " + OSVersion.current() + "\n" +
+                           "OS build:   " + osBuild);
+        boolean exceptionExpected = osBuild < WINDOWS_11_MINIMUM_BUILD;
 
         test("ReservedName", resvPre, resvSuf, exceptionExpected);
     }
