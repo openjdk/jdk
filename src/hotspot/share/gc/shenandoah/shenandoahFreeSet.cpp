@@ -999,6 +999,8 @@ HeapWord* ShenandoahFreeSet::allocate_aligned_plab(size_t size, ShenandoahAllocR
 HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, ShenandoahAllocRequest& req, bool& in_new_region) {
   assert (has_alloc_capacity(r), "Performance: should avoid full regions on this path: " SIZE_FORMAT, r->index());
   if (_heap->is_concurrent_weak_root_in_progress() && r->is_trash()) {
+    // We cannot use this region for allocation when weak roots are in progress because the collector may need
+    // to reference unmarked oops during concurrent classunloading.
     return nullptr;
   }
   HeapWord* result = nullptr;
