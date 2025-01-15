@@ -446,6 +446,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
           fi
           if test "x$TOOLCHAIN_TYPE" = "xclang"; then
             ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-address-use-after-return=never"
+            ASAN_LDFLAGS="$ASAN_LDFLAGS -shared-libasan"
           fi
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
