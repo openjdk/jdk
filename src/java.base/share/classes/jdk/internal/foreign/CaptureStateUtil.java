@@ -27,6 +27,7 @@ import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
@@ -278,21 +279,26 @@ public final class CaptureStateUtil {
      */
     private static final class SegmentCache {
 
-        private static final long CACHED_SEGMENT_OFFSET =
-                UNSAFE.objectFieldOffset(SegmentCache.class, "cachedSegment");
-        private MemorySegment cachedSegment;
+        private static final long ALLOCATED_OFFSET =
+                UNSAFE.objectFieldOffset(SegmentCache.class, "lock");
+
+        // Using an int lock is faster than CASing a reference field
+        private int lock;
+        @Stable
+        private final MemorySegment cachedSegment = malloc();
 
         // Used reflectively
         @ForceInline
         private MemorySegment acquire() {
-            final MemorySegment segment = acquireFromCache();
-            return segment == null ? malloc() : segment;
+            return lock() ? cachedSegment : malloc();
         }
 
         // Used reflectively
         @ForceInline
         private void release(MemorySegment segment) {
-            if (!releaseToCache(segment)) {
+            if (segment == cachedSegment) {
+                unlock();
+            } else {
                 free(segment);
             }
         }
@@ -302,20 +308,17 @@ public final class CaptureStateUtil {
         // The method consumes the cached element in order for the method to be idempotent
         // which might be a bit paranoid.
         private void close() {
-            final MemorySegment cSeg = acquireFromCache();
-            if (cSeg != null) {
-                free(cSeg);
-            }
+            free(cachedSegment);
         }
 
         @ForceInline
-        private MemorySegment acquireFromCache() {
-            return (MemorySegment) UNSAFE.getAndSetReference(this, CACHED_SEGMENT_OFFSET, null);
+        private boolean lock() {
+            return UNSAFE.getAndSetInt(this, ALLOCATED_OFFSET, 1) == 0;
         }
 
         @ForceInline
-        private boolean releaseToCache(MemorySegment segment) {
-            return UNSAFE.compareAndSetReference(this, CACHED_SEGMENT_OFFSET, null, segment);
+        private void unlock() {
+            UNSAFE.putIntVolatile(this, ALLOCATED_OFFSET, 0);
         }
 
         @SuppressWarnings("restricted")

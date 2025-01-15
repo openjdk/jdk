@@ -66,25 +66,25 @@ public class CaptureStateUtilBench {
     @Benchmark
     public int explicitAllocationSuccess() throws Throwable {
         try (var arena = Arena.ofConfined()) {
-            return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(SIZE), 0, 0);
+            return (int) DUMMY_EXPLICIT_ALLOC.invokeExact(arena.allocate(SIZE), 0, 0);
         }
     }
 
     @Benchmark
     public int explicitAllocationFail() throws Throwable {
         try (var arena = Arena.ofConfined()) {
-            return (int) DUMMY_EXPLICIT_ALLOC.invoke(arena.allocate(SIZE), -1, 1);
+            return (int) DUMMY_EXPLICIT_ALLOC.invokeExact(arena.allocate(SIZE), -1, 1);
         }
     }
 
     @Benchmark
     public int threadLocalReuseSuccess() throws Throwable {
-        return (int) DUMMY_TL_ALLOC.invoke(0, 0);
+        return (int) DUMMY_TL_ALLOC.invokeExact(0, 0);
     }
 
     @Benchmark
     public int threadLocalFail() throws Throwable {
-        return (int) DUMMY_TL_ALLOC.invoke( -1, 1);
+        return (int) DUMMY_TL_ALLOC.invokeExact( -1, 1);
     }
 
     private static MethodHandle dummyExplicitAlloc() {
