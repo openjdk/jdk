@@ -233,10 +233,10 @@ class nmethod : public CodeBlob {
   // Number of arguments passed on the stack
   uint16_t _num_stack_arg_slots;
 
-  // Offsets in mutable data section
-  uint16_t _metadata_offset; // embedded meta data table
+  // mutable data section
+  uint16_t _oops_size;
 #if INCLUDE_JVMCI
-  uint16_t _jvmci_data_offset;
+  uint16_t _jvmci_data_size;
 #endif
 
   // Offset in immutable data section
@@ -533,11 +533,11 @@ public:
 
   // mutable data
   oop*    oops_begin            () const { return (oop*)       (mutable_data_begin() + _relocation_size); }
-  oop*    oops_end              () const { return (oop*)       (mutable_data_begin() + _metadata_offset); }
-  Metadata** metadata_begin     () const { return (Metadata**) (mutable_data_begin() + _metadata_offset); }
+  oop*    oops_end              () const { return (oop*)       (mutable_data_begin() + _relocation_size + _oops_size); }
+  Metadata** metadata_begin     () const { return (Metadata**) (mutable_data_begin() + _relocation_size + _oops_size); }
 #if INCLUDE_JVMCI
-  Metadata** metadata_end       () const { return (Metadata**) (mutable_data_begin() + _jvmci_data_offset); }
-  address jvmci_data_begin      () const { return               mutable_data_begin() + _jvmci_data_offset; }
+  Metadata** metadata_end       () const { return (Metadata**) (mutable_data_end() - _jvmci_data_size); }
+  address jvmci_data_begin      () const { return               mutable_data_end() - _jvmci_data_size; }
   address jvmci_data_end        () const { return               mutable_data_end(); }
 #else
   Metadata** metadata_end       () const { return (Metadata**)  mutable_data_end(); }
