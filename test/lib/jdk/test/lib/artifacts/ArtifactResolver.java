@@ -33,7 +33,7 @@ public class ArtifactResolver {
         try {
             String managerName = System.getProperty("jdk.test.lib.artifacts.artifactmanager");
             if (managerName != null) {
-                manager = (ArtifactManager) Class.forName(managerName).newInstance();
+                manager = (ArtifactManager) Class.forName(managerName).getDeclaredConstructor().newInstance();
             } else if (System.getenv().containsKey(JibArtifactManager.JIB_HOME_ENV_NAME)) {
                 manager = JibArtifactManager.newInstance();
             } else {

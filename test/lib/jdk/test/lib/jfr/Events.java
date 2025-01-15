@@ -233,7 +233,7 @@ public class Events {
 
     private static void assertThread(RecordedThread eventThread, Thread thread) {
         assertNotNull(eventThread, "Thread in event was null");
-        assertEquals(eventThread.getJavaThreadId(), thread.getId(), "Wrong thread id");
+        assertEquals(eventThread.getJavaThreadId(), thread.threadId(), "Wrong thread id");
         assertEquals(eventThread.getJavaName(), thread.getName(), "Wrong thread name");
 
         ThreadGroup threadGroup = thread.getThreadGroup();

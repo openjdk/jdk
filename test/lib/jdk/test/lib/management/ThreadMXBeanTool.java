@@ -45,7 +45,7 @@ public final class ThreadMXBeanTool {
                 + Integer.toHexString(System.identityHashCode(object));
         ThreadMXBean tmx = ManagementFactory.getThreadMXBean();
         while (thread.isAlive()) {
-            ThreadInfo ti = tmx.getThreadInfo(thread.getId());
+            ThreadInfo ti = tmx.getThreadInfo(thread.threadId());
             if (ti.getThreadState() == state
                     && (want == null || want.equals(ti.getLockName()))) {
                 return;
@@ -60,7 +60,7 @@ public final class ThreadMXBeanTool {
     public static void waitUntilInNative(Thread thread) throws InterruptedException {
         ThreadMXBean tmx = ManagementFactory.getThreadMXBean();
         while (thread.isAlive()) {
-            ThreadInfo ti = tmx.getThreadInfo(thread.getId());
+            ThreadInfo ti = tmx.getThreadInfo(thread.threadId());
             if (ti.isInNative()) {
                 return;
             }
