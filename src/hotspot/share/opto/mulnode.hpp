@@ -39,11 +39,12 @@ class PhaseTransform;
 // multiply-double, and binary-and are all inherited from this class.  The
 // various identity values are supplied by virtual functions.
 class MulNode : public Node {
-  virtual uint hash() const;
 public:
   MulNode(Node *in1, Node *in2): Node(nullptr,in1,in2) {
     init_class_id(Class_Mul);
   }
+
+  virtual uint hash() const;
 
   // Handle algebraic identities here.  If we have an identity, return the Node
   // we are equivalent to.  We look for "add of zero" as an identity.
@@ -132,6 +133,8 @@ public:
   const RelaxedMathOptimizationMode _optimization_mode;
   MulFNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
     MulNode(in1, in2), _optimization_mode(optimization_mode) {}
+  virtual uint hash() const;
+  virtual bool cmp(const Node& n) const;
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
@@ -144,9 +147,8 @@ public:
   const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual uint size_of() const { return sizeof(*this); }
-  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
-    return _optimization_mode;
-  }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const { return _optimization_mode; }
+  virtual void dump_spec(outputStream* st) const;
 };
 
 //------------------------------MulDNode---------------------------------------
@@ -156,6 +158,8 @@ public:
   const RelaxedMathOptimizationMode _optimization_mode;
   MulDNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
     MulNode(in1, in2), _optimization_mode(optimization_mode) {}
+  virtual uint hash() const;
+  virtual bool cmp(const Node& n) const;
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *mul_ring( const Type *, const Type * ) const;
@@ -168,9 +172,8 @@ public:
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual uint size_of() const { return sizeof(*this); }
-  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
-    return _optimization_mode;
-  }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const { return _optimization_mode; }
+  virtual void dump_spec(outputStream* st) const;
 };
 
 //-------------------------------MulHiLNode------------------------------------

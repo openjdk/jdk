@@ -41,11 +41,12 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 // all inherited from this class.  The various identity values are supplied
 // by virtual functions.
 class AddNode : public Node {
-  virtual uint hash() const;
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     init_class_id(Class_Add);
   }
+
+  virtual uint hash() const;
 
   // Handle algebraic identities here.  If we have an identity, return the Node
   // we are equivalent to.  We look for "add of zero" as an identity.
@@ -125,10 +126,11 @@ public:
 // Add 2 floats
 class AddFNode : public AddNode {
 public:
-  // TODO hash, dump
   const RelaxedMathOptimizationMode _optimization_mode;
   AddFNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
     AddNode(in1, in2), _optimization_mode(optimization_mode) {}
+  virtual uint hash() const;
+  virtual bool cmp(const Node& n) const;
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
@@ -140,9 +142,8 @@ public:
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual uint size_of() const { return sizeof(*this); }
-  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
-    return _optimization_mode;
-  }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const { return _optimization_mode; }
+  virtual void dump_spec(outputStream* st) const;
 };
 
 //------------------------------AddDNode---------------------------------------
@@ -152,6 +153,8 @@ public:
   const RelaxedMathOptimizationMode _optimization_mode;
   AddDNode(Node* in1, Node* in2, RelaxedMathOptimizationMode optimization_mode) :
     AddNode(in1, in2), _optimization_mode(optimization_mode) {}
+  virtual uint hash() const;
+  virtual bool cmp(const Node& n) const;
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
@@ -163,9 +166,8 @@ public:
   virtual Node* Identity(PhaseGVN* phase) { return this; }
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual uint size_of() const { return sizeof(*this); }
-  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const {
-    return _optimization_mode;
-  }
+  virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const { return _optimization_mode; }
+  virtual void dump_spec(outputStream* st) const;
 };
 
 //------------------------------AddPNode---------------------------------------

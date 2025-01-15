@@ -518,6 +518,20 @@ Node *MulLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
+uint MulFNode::hash() const {
+  return MulNode::hash() + _optimization_mode.mode();
+}
+
+bool MulFNode::cmp(const Node& n) const {
+  return MulNode::cmp(n) &&
+         relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
+}
+
+void MulFNode::dump_spec(outputStream* st) const {
+  MulNode::dump_spec(st);
+  _optimization_mode.dump_on(st);
+}
+
 //=============================================================================
 //------------------------------mul_ring---------------------------------------
 // Compute the product type of two double ranges into this node.
@@ -538,6 +552,20 @@ Node* MulFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   return MulNode::Ideal(phase, can_reshape);
+}
+
+uint MulDNode::hash() const {
+  return MulNode::hash() + _optimization_mode.mode();
+}
+
+bool MulDNode::cmp(const Node& n) const {
+  return MulNode::cmp(n) &&
+         relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
+}
+
+void MulDNode::dump_spec(outputStream* st) const {
+  MulNode::dump_spec(st);
+  _optimization_mode.dump_on(st);
 }
 
 //=============================================================================
