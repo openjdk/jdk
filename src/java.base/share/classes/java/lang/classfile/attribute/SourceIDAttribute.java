@@ -46,7 +46,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * data dependency on the {@linkplain AttributeStability#CP_REFS constant pool}.
  * <p>
  * This attribute is not predefined in the Java SE Platform.  This is a
- * JDK-specific nonstandard attribute produced bythe reference implementation
+ * JDK-specific nonstandard attribute produced by the reference implementation
  * of the system Java compiler, defined by the {@code jdk.compiler} module.
  *
  * @see Attributes#sourceId()
