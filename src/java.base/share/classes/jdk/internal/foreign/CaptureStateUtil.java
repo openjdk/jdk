@@ -193,6 +193,8 @@ public final class CaptureStateUtil {
      *                                  not {@code int} or {@code long}
      * @throws IllegalArgumentException if the provided {@code target}'s first parameter
      *                                  type is not {@linkplain MemorySegment}
+     * @throws IllegalArgumentException if the provided {@code stateName} is unknown
+     *                                  on the current platform
      */
     public static MethodHandle adaptSystemCall(MethodHandle target, String stateName) {
         // Implicit null check
@@ -202,7 +204,7 @@ public final class CaptureStateUtil {
         if (!(returnType.equals(int.class) || returnType.equals(long.class))) {
             throw illegalArgDoesNot(target, "return an int or a long");
         }
-        if (target.type().parameterType(0) != MemorySegment.class) {
+        if (target.type().parameterCount() == 0 || target.type().parameterType(0) != MemorySegment.class) {
             throw illegalArgDoesNot(target, "have a MemorySegment as the first parameter");
         }
 
@@ -211,7 +213,8 @@ public final class CaptureStateUtil {
                 .get(returnType)
                 .get(stateName);
         if (inner == null) {
-            throw new IllegalArgumentException("Unknown state name: " + stateName);
+            throw new IllegalArgumentException("Unknown state name: " + stateName +
+                    ". Known on this platform: " + Linker.Option.captureStateLayout());
         }
 
         // Make `target` specific adaptations
@@ -256,9 +259,7 @@ public final class CaptureStateUtil {
         result = MethodHandles.permuteArguments(result, newType, perm);
 
         // Finally we arrive at (C1-Cn)(int|long)
-        result = MethodHandles.collectArguments(result, 0, ACQUIRE_CACHE_MH);
-
-        return result;
+        return MethodHandles.collectArguments(result, 0, ACQUIRE_CACHE_MH);
     }
 
     private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
@@ -270,12 +271,13 @@ public final class CaptureStateUtil {
      * A cache of a memory segments to allow reuse. In many cases, only one segment will
      * ever be allocated per platform thread. However, if a virtual thread becomes
      * unmounted from its platform thread and another virtual thread acquires a new
-     * segment. Having a secondary cache of these is slower than using malloc/free directly.
+     * segment, there will be no reuse. Having a secondary cache of these is slower than
+     * using malloc/free directly.
      * <p>
-     * The `cachedField` is about three times faster than a more general `deque`.
+     * The cache is about three times faster than a more general `deque`.
      * <p>
-     * The class is using Unsafe rather than other supported APIs to allow early use
-     * in the boostrap sequence.
+     * The class is using j.i.m.Unsafe rather than other supported APIs to allow early
+     * use in the boostrap sequence.
      */
     private static final class SegmentCache {
 
@@ -304,9 +306,7 @@ public final class CaptureStateUtil {
         }
 
         // This method is called by a separate cleanup thread when the associated
-        // platform thread is dead. So, there is no concurrent use here.
-        // The method consumes the cached element in order for the method to be idempotent
-        // which might be a bit paranoid.
+        // platform thread is dead.
         private void close() {
             free(cachedSegment);
         }
