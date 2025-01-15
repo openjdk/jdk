@@ -1007,7 +1007,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
 
   if (in_new_region) {
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
-                       r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
     assert(!r->is_affiliated(), "New region %zu should be unaffiliated", r->index());
 
     r->set_affiliation(req.affiliation());
@@ -1029,7 +1029,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     assert(ctx->is_bitmap_range_within_region_clear(ctx->top_bitmap(r), r->end()), "Bitmap above top_bitmap() must be clear");
 #endif
     log_debug(gc, free)("Using new region (%zu) for %s (" PTR_FORMAT ").",
-                       r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
+                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
   } else {
     assert(r->is_affiliated(), "Region %zu that is not new should be affiliated", r->index());
     if (r->affiliation() != req.affiliation()) {
@@ -1714,8 +1714,8 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
         // OLD regions that have available memory are already in the old_collector free set.
         _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                      ShenandoahFreeSetPartitionId::OldCollector, ac);
-        log_debug(gc, free)("  Shifting region %zu from mutator_free to old_collector_free", idx);
-        log_debug(gc, free)("  Shifted Mutator range [%zd, %zd],"
+        log_trace(gc, free)("  Shifting region %zu from mutator_free to old_collector_free", idx);
+        log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
                             "  Old Collector range [%zd, %zd]",
                             _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
                             _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
@@ -1738,8 +1738,8 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
       // collection set, and they are easily evacuated because they have low density of live objects.
       _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                    ShenandoahFreeSetPartitionId::Collector, ac);
-      log_debug(gc, free)("  Shifting region %zu from mutator_free to collector_free", idx);
-      log_debug(gc, free)("  Shifted Mutator range [%zd, %zd],"
+      log_trace(gc, free)("  Shifting region %zu from mutator_free to collector_free", idx);
+      log_trace(gc, free)("  Shifted Mutator range [%zd, %zd],"
                           "  Collector range [%zd, %zd]",
                           _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
                           _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator),
