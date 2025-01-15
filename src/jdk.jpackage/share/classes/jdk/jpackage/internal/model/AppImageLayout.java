@@ -49,6 +49,7 @@ public interface AppImageLayout {
 
     /**
      * A path to Java runtime directory.
+     * The directory should have standard JDK subdirectories like "bin", "lib", etc.
      *
      * @return Java runtime sub-directory within this app image
      */

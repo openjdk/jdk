@@ -37,7 +37,7 @@ import jdk.jpackage.internal.model.ApplicationLayout;
 final class WinAppImageBuilder {
 
     static AppImageBuilder.Builder build() {
-        return new AppImageBuilder.Builder()
+        return AppImageBuilder.build()
                 .itemGroup(AppImageItemGroup.LAUNCHERS)
                 .addItem(WinAppImageBuilder::rebrandLaunchers);
     }

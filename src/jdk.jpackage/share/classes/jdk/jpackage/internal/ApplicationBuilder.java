@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.I18N.buildConfigException;
+
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
@@ -31,7 +33,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
@@ -60,11 +61,11 @@ final class ApplicationBuilder {
         } else if (!launchersAsList.isEmpty()) {
             effectiveName = launchers.mainLauncher().name();
         } else {
-            throw buildConfigException()
-                    .message("error.no.name")
-                    .advice("error.no.name.advice")
-                    .create();
+            throw buildConfigException().message("error.no.name").advice("error.no.name.advice").create();
         }
+
+        Objects.requireNonNull(launchersAsList);
+        Objects.requireNonNull(appImageLayout);
 
         return new Application.Stub(
                 effectiveName,
@@ -73,7 +74,8 @@ final class ApplicationBuilder {
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
                 Optional.ofNullable(srcDir),
-                contentDirs, appImageLayout, Optional.ofNullable(runtimeBuilder), launchersAsList);
+                Optional.ofNullable(contentDirs).orElseGet(List::of),
+                appImageLayout, Optional.ofNullable(runtimeBuilder), launchersAsList);
     }
 
     ApplicationBuilder runtimeBuilder(RuntimeBuilder v) {

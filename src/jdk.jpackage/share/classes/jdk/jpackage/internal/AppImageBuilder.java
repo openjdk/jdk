@@ -53,6 +53,9 @@ final class AppImageBuilder {
 
     static final class Builder {
 
+        private Builder() {
+        }
+
         Builder addItem(AppImageItem v) {
             Objects.requireNonNull(v);
             Optional.ofNullable(customAppImageItemGroups.get(curGroup)).orElseGet(() -> {
