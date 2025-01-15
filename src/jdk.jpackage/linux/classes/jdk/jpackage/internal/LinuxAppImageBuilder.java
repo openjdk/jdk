@@ -37,7 +37,7 @@ import jdk.jpackage.internal.resources.ResourceLocator;
 final class LinuxAppImageBuilder {
 
     static AppImageBuilder.Builder build() {
-        return new AppImageBuilder.Builder()
+        return AppImageBuilder.build()
                 .itemGroup(AppImageItemGroup.LAUNCHERS)
                 .addItem(LinuxAppImageBuilder::writeLauncherLib)
                 .addItem(LinuxAppImageBuilder::writeLauncherIcons);

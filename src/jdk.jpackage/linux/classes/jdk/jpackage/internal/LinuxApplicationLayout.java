@@ -24,10 +24,11 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
+
 import java.nio.file.Path;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.util.CompositeProxy;
-import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
 interface LinuxApplicationLayout extends ApplicationLayout, LinuxApplicationLayoutMixin {
 
