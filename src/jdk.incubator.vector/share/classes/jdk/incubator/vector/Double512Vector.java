@@ -141,24 +141,15 @@ final class Double512Vector extends DoubleVector {
     @ForceInline
     Double512Shuffle iotaShuffle() { return Double512Shuffle.IOTA; }
 
+    @Override
     @ForceInline
     Double512Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Double512Shuffle)VectorSupport.shuffleIota(ETYPE, Double512Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Double512Shuffle)VectorSupport.shuffleIota(ETYPE, Double512Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+        return (Double512Shuffle) iotaShuffleTemplate(start, step, wrap);
     }
 
     @Override
     @ForceInline
-    Double512Shuffle shuffleFromBytes(byte[] reorder) { return new Double512Shuffle(reorder); }
-
-    @Override
-    @ForceInline
-    Double512Shuffle shuffleFromArray(int[] indexes, int i) { return new Double512Shuffle(indexes, i); }
+    Double512Shuffle shuffleFromArray(int[] indices, int i) { return new Double512Shuffle(indices, i); }
 
     @Override
     @ForceInline
@@ -344,9 +335,16 @@ final class Double512Vector extends DoubleVector {
         return (long) super.reduceLanesTemplate(op, Double512Mask.class, (Double512Mask) m);  // specialized
     }
 
+    @Override
     @ForceInline
-    public VectorShuffle<Double> toShuffle() {
-        return super.toShuffleTemplate(Double512Shuffle.class); // specialize
+    final <F> VectorShuffle<F> bitsToShuffle(AbstractSpecies<F> dsp) {
+        throw new AssertionError();
+    }
+
+    @Override
+    @ForceInline
+    public final Double512Shuffle toShuffle() {
+        return (Double512Shuffle) toShuffle(vspecies(), false);
     }
 
     // Specialized unary testing
@@ -792,25 +790,28 @@ final class Double512Vector extends DoubleVector {
 
     static final class Double512Shuffle extends AbstractShuffle<Double> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Double> ETYPE = double.class; // used by the JVM
+        static final Class<Long> ETYPE = long.class; // used by the JVM
 
-        Double512Shuffle(byte[] reorder) {
-            super(VLENGTH, reorder);
+        Double512Shuffle(long[] indices) {
+            super(indices);
+            assert(VLENGTH == indices.length);
+            assert(indicesInRange(indices));
         }
 
-        public Double512Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+        Double512Shuffle(int[] indices, int i) {
+            this(prepare(indices, i));
         }
 
-        public Double512Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+        Double512Shuffle(IntUnaryOperator fn) {
+            this(prepare(fn));
         }
 
-        public Double512Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+        long[] indices() {
+            return (long[])getPayload();
         }
 
         @Override
+        @ForceInline
         public DoubleSpecies vspecies() {
             return VSPECIES;
         }
@@ -818,47 +819,122 @@ final class Double512Vector extends DoubleVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Byte.MAX_VALUE);
-            assert(Byte.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Long.MAX_VALUE);
+            assert(Long.MIN_VALUE <= -VLENGTH);
         }
         static final Double512Shuffle IOTA = new Double512Shuffle(IDENTITY);
 
         @Override
         @ForceInline
         public Double512Vector toVector() {
-            return VectorSupport.shuffleToVector(VCLASS, ETYPE, Double512Shuffle.class, this, VLENGTH,
-                                                    (s) -> ((Double512Vector)(((AbstractShuffle<Double>)(s)).toVectorTemplate())));
+            return (Double512Vector) toBitsVector().castShape(vspecies(), 0);
         }
 
         @Override
         @ForceInline
-        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
-            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
-            if (length() != species.laneCount())
-                throw new IllegalArgumentException("VectorShuffle length and species length differ");
-            int[] shuffleArray = toArray();
-            return s.shuffleFromArray(shuffleArray, 0).check(s);
+        Long512Vector toBitsVector() {
+            return (Long512Vector) super.toBitsVectorTemplate();
+        }
+
+        @Override
+        Long512Vector toBitsVector0() {
+            return ((Long512Vector) vspecies().asIntegral().dummyVector()).vectorFactory(indices());
         }
 
         @Override
         @ForceInline
-        public Double512Shuffle wrapIndexes() {
-            return VectorSupport.wrapShuffleIndexes(ETYPE, Double512Shuffle.class, this, VLENGTH,
-                                                    (s) -> ((Double512Shuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
+        public int laneSource(int i) {
+            return (int)toBitsVector().lane(i);
         }
 
-        @ForceInline
         @Override
-        public Double512Shuffle rearrange(VectorShuffle<Double> shuffle) {
-            Double512Shuffle s = (Double512Shuffle) shuffle;
-            byte[] reorder1 = reorder();
-            byte[] reorder2 = s.reorder();
-            byte[] r = new byte[reorder1.length];
-            for (int i = 0; i < reorder1.length; i++) {
-                int ssi = reorder2[i];
-                r[i] = reorder1[ssi];  // throws on exceptional index
+        @ForceInline
+        public void intoArray(int[] a, int offset) {
+            switch (length()) {
+                case 1 -> a[offset] = laneSource(0);
+                case 2 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_64, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                case 4 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_128, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                case 8 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_256, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                case 16 -> toBitsVector()
+                        .convertShape(VectorOperators.L2I, IntVector.SPECIES_512, 0)
+                        .reinterpretAsInts()
+                        .intoArray(a, offset);
+                default -> {
+                    VectorIntrinsics.checkFromIndexSize(offset, length(), a.length);
+                    for (int i = 0; i < length(); i++) {
+                        a[offset + i] = laneSource(i);
+                    }
+                }
             }
-            return new Double512Shuffle(r);
+        }
+
+        @Override
+        @ForceInline
+        public final Double512Mask laneIsValid() {
+            return (Double512Mask) toBitsVector().compare(VectorOperators.GE, 0)
+                    .cast(vspecies());
+        }
+
+        @ForceInline
+        @Override
+        public final Double512Shuffle rearrange(VectorShuffle<Double> shuffle) {
+            Double512Shuffle concreteShuffle = (Double512Shuffle) shuffle;
+            return (Double512Shuffle) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_512))
+                    .toShuffle(vspecies(), false);
+        }
+
+        @ForceInline
+        @Override
+        public final Double512Shuffle wrapIndexes() {
+            Long512Vector v = toBitsVector();
+            if ((length() & (length() - 1)) == 0) {
+                v = (Long512Vector) v.lanewise(VectorOperators.AND, length() - 1);
+            } else {
+                v = (Long512Vector) v.blend(v.lanewise(VectorOperators.ADD, length()),
+                            v.compare(VectorOperators.LT, 0));
+            }
+            return (Double512Shuffle) v.toShuffle(vspecies(), false);
+        }
+
+        private static long[] prepare(int[] indices, int offset) {
+            long[] a = new long[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = indices[offset + i];
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (long)si;
+            }
+            return a;
+        }
+
+        private static long[] prepare(IntUnaryOperator f) {
+            long[] a = new long[VLENGTH];
+            for (int i = 0; i < VLENGTH; i++) {
+                int si = f.applyAsInt(i);
+                si = partiallyWrapIndex(si, VLENGTH);
+                a[i] = (long)si;
+            }
+            return a;
+        }
+
+        private static boolean indicesInRange(long[] indices) {
+            int length = indices.length;
+            for (long si : indices) {
+                if (si >= (long)length || si < (long)(-length)) {
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
+                                  java.util.Arrays.toString(indices));
+                    throw new AssertionError(msg);
+                }
+            }
+            return true;
         }
     }
 

@@ -452,7 +452,7 @@ bool oopDesc::mark_must_be_preserved() const {
 }
 
 bool oopDesc::mark_must_be_preserved(markWord m) const {
-  return m.must_be_preserved(this);
+  return m.must_be_preserved();
 }
 
 #endif // SHARE_OOPS_OOP_INLINE_HPP

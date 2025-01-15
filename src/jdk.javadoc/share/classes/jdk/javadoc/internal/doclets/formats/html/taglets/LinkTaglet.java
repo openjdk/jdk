@@ -264,14 +264,14 @@ public class LinkTaglet extends BaseTaglet {
                 }
             }
             String refMemName = refFragment;
-            if (config.currentTypeElement != containing) {
+            if (htmlWriter.getCurrentTypeElement() != containing) {
                 refMemName = (utils.isConstructor(refMem))
                         ? refMemName
                         : utils.getSimpleName(containing) + "." + refMemName;
             }
             if (utils.isExecutableElement(refMem)) {
                 if (refMemName.indexOf('(') < 0) {
-                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, false, true);
                 }
                 if (overriddenMethod != null) {
                     // The method to actually link.

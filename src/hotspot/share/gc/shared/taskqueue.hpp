@@ -34,20 +34,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
 
-// Simple TaskQueue stats that are collected by default in debug builds.
-
-#if !defined(TASKQUEUE_STATS) && defined(ASSERT)
-#define TASKQUEUE_STATS 1
-#elif !defined(TASKQUEUE_STATS)
-#define TASKQUEUE_STATS 0
-#endif
-
-#if TASKQUEUE_STATS
-#define TASKQUEUE_STATS_ONLY(code) code
-#else
-#define TASKQUEUE_STATS_ONLY(code)
-#endif // TASKQUEUE_STATS
-
 #if TASKQUEUE_STATS
 class TaskQueueStats {
 public:

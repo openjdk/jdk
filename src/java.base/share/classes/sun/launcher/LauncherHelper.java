@@ -589,6 +589,15 @@ public final class LauncherHelper {
         }
     }
 
+    /**
+     * Prints the short usage text to the desired output stream.
+     */
+    static void printConciseUsageMessage(boolean printToStderr) {
+        initOutput(printToStderr);
+        ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
+                File.pathSeparator));
+    }
+
     static void initOutput(boolean printToStderr) {
         ostream =  (printToStderr) ? System.err : System.out;
     }

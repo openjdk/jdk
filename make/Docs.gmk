@@ -107,15 +107,13 @@ JAVA_WARNINGS_ARE_ERRORS ?= -Werror
 JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
-    --override-methods=summary \
-    --no-external-specs-page
+    --override-methods=summary
 
 # The reference options must stay stable to allow for comparisons across the
 # development cycle.
 REFERENCE_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
     -encoding ISO-8859-1 -breakiterator -splitIndex --system none \
-    -html5 -javafx --expand-requires transitive \
-    --no-external-specs-page
+    -html5 -javafx --expand-requires transitive
 
 # Should we add DRAFT stamps to the generated javadoc?
 ifeq ($(VERSION_IS_GA), true)

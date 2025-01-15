@@ -33,6 +33,8 @@
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
 
+#include <limits>
+
 ZDirector* ZDirector::_director;
 
 constexpr double one_in_1000 = 3.290527;
@@ -453,16 +455,22 @@ static double calculate_extra_young_gc_time(const ZDirectorStats& stats) {
   // relocation headroom into account to avoid in-place relocation.
   const size_t old_used = stats._old_stats._general._used;
   const size_t old_live = stats._old_stats._stat_heap._live_at_mark_end;
-  const size_t old_garbage = old_used - old_live;
+  const double old_garbage = double(old_used - old_live);
 
   const double young_gc_time = gc_time(stats._young_stats);
 
   // Calculate how much memory young collections are predicted to free.
-  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
 
   // Calculate current YC time and predicted YC time after an old collection.
-  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
-  const double potential_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc + old_garbage);
+  const double current_young_gc_time_per_bytes_freed = young_gc_time / reclaimed_per_young_gc;
+  const double potential_young_gc_time_per_bytes_freed = young_gc_time / (reclaimed_per_young_gc + old_garbage);
+
+  if (current_young_gc_time_per_bytes_freed == std::numeric_limits<double>::infinity()) {
+    // Young collection's are not reclaiming any memory. Return infinity as a signal
+    // to trigger an old collection, regardless of the amount of old garbage.
+    return std::numeric_limits<double>::infinity();
+  }
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -483,13 +491,12 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
   const double young_gc_time = gc_time(stats._young_stats);
 
   // Calculate how much memory collections are predicted to free.
-  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
-  const size_t reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
 
   // Calculate the GC cost for each reclaimed byte
-  const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
-  const double current_old_gc_time_per_bytes_freed = reclaimed_per_old_gc == 0 ? std::numeric_limits<double>::infinity()
-                                                                               : (double(old_gc_time) / double(reclaimed_per_old_gc));
+  const double current_young_gc_time_per_bytes_freed = young_gc_time / reclaimed_per_young_gc;
+  const double current_old_gc_time_per_bytes_freed = old_gc_time / reclaimed_per_old_gc;
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -531,10 +538,10 @@ static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
 
   const double young_gc_time = gc_time(stats._young_stats);
   const double old_gc_time = gc_time(stats._old_stats);
-  const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
-  const size_t reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
-  const double current_young_bytes_freed_per_gc_time = double(reclaimed_per_young_gc) / double(young_gc_time);
-  const double current_old_bytes_freed_per_gc_time = double(reclaimed_per_old_gc) / double(old_gc_time);
+  const double reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
+  const double reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
+  const double current_young_bytes_freed_per_gc_time = reclaimed_per_young_gc / young_gc_time;
+  const double current_old_bytes_freed_per_gc_time = reclaimed_per_old_gc / old_gc_time;
 
   if (current_young_bytes_freed_per_gc_time == 0.0) {
     if (current_old_bytes_freed_per_gc_time == 0.0) {

@@ -29,7 +29,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -80,15 +80,14 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
 
-  const size_t rs_align = _page_size == os::vm_page_size() ? 0 :
-    MAX2(_page_size, os::vm_allocation_granularity());
-  ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size);
+  const size_t rs_align = MAX2(_page_size, os::vm_allocation_granularity());
+  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
 
-  MemTracker::record_virtual_memory_tag((address)heap_rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
-                       heap_rs.base(), heap_rs.size(), _page_size);
-  if (!heap_rs.is_reserved()) {
+                       rs.base(), rs.size(), _page_size);
+  if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
                                   "card marking array");
   }
@@ -97,7 +96,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   // then add it to _byte_map_base, i.e.
   //
   //   _byte_map = _byte_map_base + (uintptr_t(low_bound) >> card_shift)
-  _byte_map = (CardValue*) heap_rs.base();
+  _byte_map = (CardValue*) rs.base();
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");

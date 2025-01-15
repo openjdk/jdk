@@ -80,7 +80,7 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   if (bytes == 0) {
     return true;  // That's what grow_by(0) would return
   }
-  size_t aligned_bytes  = ReservedSpace::page_align_size_up(bytes);
+  size_t aligned_bytes = os::align_up_vm_page_size(bytes);
   if (aligned_bytes == 0){
     // The alignment caused the number of bytes to wrap.  An expand_by(0) will
     // return true with the implication that an expansion was done when it
@@ -88,9 +88,9 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
     // but not a guarantee.  Align down to give a best effort.  This is likely
     // the most that the generation can expand since it has some capacity to
     // start with.
-    aligned_bytes = ReservedSpace::page_align_size_down(bytes);
+    aligned_bytes = os::align_down_vm_page_size(bytes);
   }
-  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
+  size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   bool success = false;
   if (aligned_expand_bytes > aligned_bytes) {
     success = grow_by(aligned_expand_bytes);
@@ -122,7 +122,7 @@ bool TenuredGeneration::grow_to_reserved() {
 void TenuredGeneration::shrink(size_t bytes) {
   assert_correct_size_change_locking();
 
-  size_t size = ReservedSpace::page_align_size_down(bytes);
+  size_t size = os::align_down_vm_page_size(bytes);
   if (size == 0) {
     return;
   }
@@ -378,11 +378,14 @@ void TenuredGeneration::update_counters() {
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = _the_space->free() + _virtual_space.uncommitted_size();
-  size_t av_promo  = (size_t)_avg_promoted->padded_average();
-  bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
+
+  size_t avg_promoted  = (size_t)_avg_promoted->padded_average();
+  size_t promotion_estimate = MIN2(avg_promoted, max_promotion_in_bytes);
+
+  bool res = (promotion_estimate <= available);
 
   log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
-    res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
+    res? "":" not", available, res? ">=":"<", avg_promoted, max_promotion_in_bytes);
 
   return res;
 }

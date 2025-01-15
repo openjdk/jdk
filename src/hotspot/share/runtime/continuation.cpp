@@ -60,14 +60,14 @@ JVM_END
 #if INCLUDE_JVMTI
 class JvmtiUnmountBeginMark : public StackObj {
   Handle _vthread;
-  JavaThread* _target;
+  JavaThread* _current;
   freeze_result _result;
   bool _failed;
 
  public:
   JvmtiUnmountBeginMark(JavaThread* t) :
-    _vthread(t, t->vthread()), _target(t), _result(freeze_pinned_native), _failed(false) {
-    assert(!_target->is_in_VTMS_transition(), "must be");
+    _vthread(t, t->vthread()), _current(t), _result(freeze_pinned_native), _failed(false) {
+    assert(!_current->is_in_VTMS_transition(), "must be");
 
     if (JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
       JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)_vthread.raw_value(), true);
@@ -75,26 +75,26 @@ class JvmtiUnmountBeginMark : public StackObj {
       // Don't preempt if there is a pending popframe or earlyret operation. This can
       // be installed in start_VTMS_transition() so we need to check it here.
       if (JvmtiExport::can_pop_frame() || JvmtiExport::can_force_early_return()) {
-        JvmtiThreadState* state = _target->jvmti_thread_state();
-        if (_target->has_pending_popframe() || (state != nullptr && state->is_earlyret_pending())) {
+        JvmtiThreadState* state = _current->jvmti_thread_state();
+        if (_current->has_pending_popframe() || (state != nullptr && state->is_earlyret_pending())) {
           _failed = true;
         }
       }
 
       // Don't preempt in case there is an async exception installed since
       // we would incorrectly throw it during the unmount logic in the carrier.
-      if (_target->has_async_exception_condition()) {
+      if (_current->has_async_exception_condition()) {
         _failed = true;
       }
     } else {
-      _target->set_is_in_VTMS_transition(true);
+      _current->set_is_in_VTMS_transition(true);
       java_lang_Thread::set_is_in_VTMS_transition(_vthread(), true);
     }
   }
   ~JvmtiUnmountBeginMark() {
-    assert(!_target->is_suspended(), "must be");
+    assert(!_current->is_suspended(), "must be");
 
-    assert(_target->is_in_VTMS_transition(), "must be");
+    assert(_current->is_in_VTMS_transition(), "must be");
     assert(java_lang_Thread::is_in_VTMS_transition(_vthread()), "must be");
 
     // Read it again since for late binding agents the flag could have
@@ -106,7 +106,7 @@ class JvmtiUnmountBeginMark : public StackObj {
       if (jvmti_present) {
         JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)_vthread.raw_value(), false);
       } else {
-        _target->set_is_in_VTMS_transition(false);
+        _current->set_is_in_VTMS_transition(false);
         java_lang_Thread::set_is_in_VTMS_transition(_vthread(), false);
       }
     }
@@ -115,51 +115,59 @@ class JvmtiUnmountBeginMark : public StackObj {
   bool failed() { return _failed; }
 };
 
-static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* target) {
-  if (target->is_in_VTMS_transition()) {
-    // We caught target at the end of a mount transition.
+static bool is_vthread_safe_to_preempt_for_jvmti(JavaThread* current) {
+  if (current->is_in_VTMS_transition()) {
+    // We are at the end of a mount transition.
     return false;
   }
   return true;
 }
 #endif // INCLUDE_JVMTI
 
-static bool is_vthread_safe_to_preempt(JavaThread* target, oop vthread) {
+static bool is_vthread_safe_to_preempt(JavaThread* current, oop vthread) {
   assert(java_lang_VirtualThread::is_instance(vthread), "");
   if (java_lang_VirtualThread::state(vthread) != java_lang_VirtualThread::RUNNING) {  // inside transition
     return false;
   }
-  return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(target)) NOT_JVMTI(true);
+  return JVMTI_ONLY(is_vthread_safe_to_preempt_for_jvmti(current)) NOT_JVMTI(true);
 }
 
 typedef freeze_result (*FreezeContFnT)(JavaThread*, intptr_t*);
 
-static void verify_preempt_preconditions(JavaThread* target, oop continuation) {
-  assert(target == JavaThread::current(), "no support for external preemption");
-  assert(target->has_last_Java_frame(), "");
-  assert(!target->preempting(), "");
-  assert(target->last_continuation() != nullptr, "");
-  assert(target->last_continuation()->cont_oop(target) == continuation, "");
+static void verify_preempt_preconditions(JavaThread* current, oop continuation) {
+  assert(current == JavaThread::current(), "no support for external preemption");
+  assert(current->has_last_Java_frame(), "");
+  assert(!current->preempting(), "");
+  assert(current->last_continuation() != nullptr, "");
+  assert(current->last_continuation()->cont_oop(current) == continuation, "");
   assert(Continuation::continuation_scope(continuation) == java_lang_VirtualThread::vthread_scope(), "");
-  assert(!target->has_pending_exception(), "");
+  assert(!current->has_pending_exception(), "");
 }
 
-freeze_result Continuation::try_preempt(JavaThread* target, oop continuation) {
-  verify_preempt_preconditions(target, continuation);
+freeze_result Continuation::try_preempt(JavaThread* current, oop continuation) {
+  verify_preempt_preconditions(current, continuation);
 
   if (LockingMode == LM_LEGACY) {
     return freeze_unsupported;
   }
 
-  if (!is_vthread_safe_to_preempt(target, target->vthread())) {
+  if (!is_vthread_safe_to_preempt(current, current->vthread())) {
     return freeze_pinned_native;
   }
 
-  JVMTI_ONLY(JvmtiUnmountBeginMark jubm(target);)
+  JVMTI_ONLY(JvmtiUnmountBeginMark jubm(current);)
   JVMTI_ONLY(if (jubm.failed()) return freeze_pinned_native;)
-  freeze_result res = CAST_TO_FN_PTR(FreezeContFnT, freeze_preempt_entry())(target, target->last_Java_sp());
+  freeze_result res = CAST_TO_FN_PTR(FreezeContFnT, freeze_preempt_entry())(current, current->last_Java_sp());
   log_trace(continuations, preempt)("try_preempt: %d", res);
   JVMTI_ONLY(jubm.set_result(res);)
+
+  if (current->has_pending_exception()) {
+    assert(res == freeze_exception, "expecting an exception result from freeze");
+    // We don't want to throw exceptions, especially when returning
+    // from monitorenter since the compiler does not expect one. We
+    // just ignore the exception and pin the vthread to the carrier.
+    current->clear_pending_exception();
+  }
   return res;
 }
 

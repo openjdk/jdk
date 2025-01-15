@@ -163,8 +163,14 @@ public final class FallbackLinker extends AbstractLinker {
             acquiredSessions.add(targetImpl);
 
             MemorySegment capturedState = null;
+            Object captureStateHeapBase = null;
             if (invData.capturedStateMask() != 0) {
                 capturedState = SharedUtils.checkCaptureSegment((MemorySegment) args[argStart++]);
+                if (!invData.allowsHeapAccess) {
+                    SharedUtils.checkNative(capturedState);
+                } else {
+                    captureStateHeapBase = capturedState.heapBase().orElse(null);
+                }
                 MemorySessionImpl capturedStateImpl = ((AbstractMemorySegmentImpl) capturedState).sessionImpl();
                 capturedStateImpl.acquire0();
                 acquiredSessions.add(capturedStateImpl);
@@ -199,7 +205,8 @@ public final class FallbackLinker extends AbstractLinker {
                 retSeg = (invData.returnLayout() instanceof GroupLayout ? returnAllocator : arena).allocate(invData.returnLayout);
             }
 
-            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs, capturedState, invData.capturedStateMask(),
+            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs,
+                                   captureStateHeapBase, capturedState, invData.capturedStateMask(),
                                    heapBases, args.length);
 
             Reference.reachabilityFence(invData.cif());

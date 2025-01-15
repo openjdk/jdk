@@ -64,7 +64,8 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
     if (mode == ShenandoahGenerationalControlThread::none) {
       if (should_start_metaspace_gc()) {
         if (request_concurrent_gc(GLOBAL)) {
-          log_debug(gc)("Heuristics request for global (unload classes) accepted.");
+          // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
+          _global_heuristics->log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
         }
       } else {
         if (_young_heuristics->should_start_gc()) {

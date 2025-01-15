@@ -22,8 +22,6 @@
  *
  */
 
-#include <cstdio>
-
 #include "precompiled.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"

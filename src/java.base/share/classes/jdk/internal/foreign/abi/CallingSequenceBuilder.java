@@ -108,9 +108,18 @@ public class CallingSequenceBuilder {
         MethodType calleeMethodType;
         if (!forUpcall) {
             if (linkerOptions.hasCapturedCallState()) {
-                addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
-                        Binding.unboxAddress(),
-                        Binding.vmStore(abi.capturedStateStorage(), long.class)));
+                if (linkerOptions.allowsHeapAccess()) {
+                    addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                            Binding.dup(),
+                            Binding.segmentBase(),
+                            Binding.vmStore(abi.capturedStateStorage(), Object.class),
+                            Binding.segmentOffsetAllowHeap(),
+                            Binding.vmStore(null, long.class)));
+                } else {
+                    addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
+                            Binding.unboxAddress(),
+                            Binding.vmStore(abi.capturedStateStorage(), long.class)));
+                }
             }
             addArgumentBinding(0, MemorySegment.class, ValueLayout.ADDRESS, List.of(
                 Binding.unboxAddress(),

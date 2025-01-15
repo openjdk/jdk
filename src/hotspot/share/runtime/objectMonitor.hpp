@@ -170,7 +170,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static const int64_t ANONYMOUS_OWNER = 1;
   static const int64_t DEFLATER_MARKER = 2;
 
-  int64_t volatile _owner;  // Either tid of owner, NO_OWNER, ANONYMOUS_OWNER or DEFLATER_MARKER.
+  int64_t volatile _owner;  // Either owner_id of owner, NO_OWNER, ANONYMOUS_OWNER or DEFLATER_MARKER.
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
@@ -284,25 +284,25 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   int64_t   owner_raw() const;
 
   // These methods return the value we set in _owner when acquiring
-  // the monitor with the given thread/vthread (tid).
-  static int64_t owner_from(JavaThread* thread);
-  static int64_t owner_from(oop vthread);
+  // the monitor with the given thread/vthread, AKA owner_id.
+  static int64_t owner_id_from(JavaThread* thread);
+  static int64_t owner_id_from(oop vthread);
 
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
   bool      is_being_async_deflated();
-  // Clear _owner field; current value must match thread's tid.
+  // Clear _owner field; current value must match thread's owner_id.
   void      release_clear_owner(JavaThread* thread);
   // Simply set _owner field to new_value; current value must match old_value.
   void      set_owner_from_raw(int64_t old_value, int64_t new_value);
-  // Same as above but uses tid of current as new value.
+  // Same as above but uses owner_id of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   int64_t   try_set_owner_from_raw(int64_t old_value, int64_t new_value);
-  // Same as above but uses tid of current as new_value.
+  // Same as above but uses owner_id of current as new_value.
   int64_t   try_set_owner_from(int64_t old_value, JavaThread* current);
 
   // Methods to check and set _succ. The successor is the thread selected
@@ -316,11 +316,11 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      clear_successor();
   int64_t   successor() const;
 
-  // Returns true if _owner field == tid of thread, false otherwise.
-  bool has_owner(JavaThread* thread) const { return owner() == owner_from(thread); }
-  // Set _owner field to tid of thread; current value must be NO_OWNER.
+  // Returns true if _owner field == owner_id of thread, false otherwise.
+  bool has_owner(JavaThread* thread) const { return owner() == owner_id_from(thread); }
+  // Set _owner field to owner_id of thread; current value must be NO_OWNER.
   void set_owner(JavaThread* thread) { set_owner_from(NO_OWNER, thread); }
-  // Try to set _owner field from NO_OWNER to tid of thread.
+  // Try to set _owner field from NO_OWNER to owner_id of thread.
   bool try_set_owner(JavaThread* thread) {
     return try_set_owner_from(NO_OWNER, thread) == NO_OWNER;
   }

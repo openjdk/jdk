@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.inline.hpp"
@@ -205,7 +206,7 @@ void CodeCache::initialize_heaps() {
   const bool cache_size_set   = FLAG_IS_CMDLINE(ReservedCodeCacheSize);
   const size_t ps             = page_size(false, 8);
   const size_t min_size       = MAX2(os::vm_allocation_granularity(), ps);
-  const size_t min_cache_size = CompilerConfig::min_code_cache_size(); // Make sure we have enough space for VM internal code
+  const size_t min_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3); // Make sure we have enough space for VM internal code
   size_t cache_size           = align_up(ReservedCodeCacheSize, min_size);
 
   // Prerequisites
@@ -318,7 +319,7 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled.size);
   FLAG_SET_ERGO(ReservedCodeCacheSize, cache_size);
 
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
+  ReservedSpace rs = reserve_heap_memory(cache_size, ps);
 
   // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
   LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
@@ -348,11 +349,12 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
                    os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
+ReservedSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
+
+  ReservedSpace rs = CodeMemoryReserver::reserve(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
                                           rs_size/K));
@@ -433,7 +435,7 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_b
 
   // Reserve Space
   size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
-  size_initial = align_up(size_initial, os::vm_page_size());
+  size_initial = align_up(size_initial, rs.page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
                                           heap->name(), size_initial/K));
@@ -563,7 +565,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       } else {
         tty->print("CodeCache");
       }
-      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
+      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (%zd bytes)",
                     (intptr_t)heap->low_boundary(), (intptr_t)heap->high(),
                     (address)heap->high() - (address)heap->low_boundary());
     }
@@ -1130,7 +1132,7 @@ void CodeCache::initialize() {
     // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
     // users want to use the largest available page.
     const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
+    ReservedSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1489,10 +1491,10 @@ void CodeCache::print_memory_overhead() {
   }
   // Print bytes that are allocated in the freelist
   ttyLocker ttl;
-  tty->print_cr("Number of elements in freelist: " SSIZE_FORMAT,       freelists_length());
-  tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelists()/K);
-  tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
-  tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
+  tty->print_cr("Number of elements in freelist: %zd",       freelists_length());
+  tty->print_cr("Allocated in freelist:          %zdkB",  bytes_allocated_in_freelists()/K);
+  tty->print_cr("Unused bytes in CodeBlobs:      %zdkB",  (wasted_bytes/K));
+  tty->print_cr("Segment map size:               %zdkB",  allocated_segments()/K); // 1 byte per segment
 }
 
 //------------------------------------------------------------------------------------------------

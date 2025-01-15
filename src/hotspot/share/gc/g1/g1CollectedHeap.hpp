@@ -82,6 +82,7 @@ class GCMemoryManager;
 class G1HeapRegion;
 class MemoryPool;
 class nmethod;
+class PartialArrayStateManager;
 class ReferenceProcessor;
 class STWGCTimer;
 class WorkerThreads;
@@ -807,8 +808,9 @@ public:
   // The concurrent refiner.
   G1ConcurrentRefine* _cr;
 
-  // The parallel task queues
-  G1ScannerTasksQueueSet *_task_queues;
+  // Reusable parallel task queues and partial array manager.
+  G1ScannerTasksQueueSet* _task_queues;
+  PartialArrayStateManager* _partial_array_state_manager;
 
   // ("Weak") Reference processing support.
   //
@@ -873,6 +875,8 @@ public:
 
   G1ScannerTasksQueueSet* task_queues() const;
   G1ScannerTasksQueue* task_queue(uint i) const;
+
+  PartialArrayStateManager* partial_array_state_manager() const;
 
   // Create a G1CollectedHeap.
   // Must call the initialize method afterwards.

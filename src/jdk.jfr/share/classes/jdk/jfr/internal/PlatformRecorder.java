@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,7 @@ import static jdk.jfr.internal.LogTag.JFR;
 import static jdk.jfr.internal.LogTag.JFR_SYSTEM;
 
 import java.io.IOException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -46,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.FlightRecorderListener;
@@ -54,8 +52,6 @@ import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
-import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.consumer.EventLog;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.Utils;
@@ -64,7 +60,7 @@ public final class PlatformRecorder {
 
 
     private final ArrayList<PlatformRecording> recordings = new ArrayList<>();
-    private static final List<SecureRecorderListener> changeListeners = new ArrayList<>();
+    private static final List<FlightRecorderListener> changeListeners = new ArrayList<>();
     private final Repository repository;
     private final Thread shutdownHook;
 
@@ -83,25 +79,9 @@ public final class PlatformRecorder {
         JDKEvents.initialize();
         Logger.log(JFR_SYSTEM, INFO, "Registered JDK events");
         startDiskMonitor();
-        shutdownHook = SecuritySupport.createThreadWitNoPermissions("JFR Shutdown Hook", new ShutdownHook(this));
-        SecuritySupport.setUncaughtExceptionHandler(shutdownHook, new ShutdownHook.ExceptionHandler());
-        SecuritySupport.registerShutdownHook(shutdownHook);
-    }
-
-
-    private static Timer createTimer() {
-        try {
-            List<Timer> result = new CopyOnWriteArrayList<>();
-            Thread t = SecuritySupport.createThreadWitNoPermissions("Permissionless thread", ()-> {
-                result.add(new Timer("JFR Recording Scheduler", true));
-            });
-            JVM.exclude(t);
-            t.start();
-            t.join();
-            return result.getFirst();
-        } catch (InterruptedException e) {
-            throw new IllegalStateException("Not able to create timer task. " + e.getMessage(), e);
-        }
+        shutdownHook = new ShutdownHook(this);
+        shutdownHook.setUncaughtExceptionHandler(new ShutdownHook.ExceptionHandler());
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
     }
 
     public synchronized PlatformRecording newRecording(Map<String, String> settings) {
@@ -138,27 +118,18 @@ public final class PlatformRecorder {
     }
 
     public static synchronized void addListener(FlightRecorderListener changeListener) {
-        @SuppressWarnings("removal")
-        AccessControlContext context = AccessController.getContext();
-        SecureRecorderListener sl = new SecureRecorderListener(context, changeListener);
         boolean runInitialized;
         synchronized (PlatformRecorder.class) {
             runInitialized = FlightRecorder.isInitialized();
-            changeListeners.add(sl);
+            changeListeners.add(changeListener);
         }
         if (runInitialized) {
-            sl.recorderInitialized(FlightRecorder.getFlightRecorder());
+            changeListener.recorderInitialized(FlightRecorder.getFlightRecorder());
         }
     }
 
     public static synchronized boolean removeListener(FlightRecorderListener changeListener) {
-        for (SecureRecorderListener s : new ArrayList<>(changeListeners)) {
-            if (s.getChangeListener() == changeListener) {
-                changeListeners.remove(s);
-                return true;
-            }
-        }
-        return false;
+        return changeListeners.remove(changeListener);
     }
 
     static synchronized List<FlightRecorderListener> getListeners() {
@@ -167,7 +138,7 @@ public final class PlatformRecorder {
 
     synchronized Timer getTimer() {
         if (timer == null) {
-            timer = createTimer();
+            timer = new Timer("JFR Recording Scheduler", true);
         }
         return timer;
     }
@@ -366,7 +337,7 @@ public final class PlatformRecorder {
     }
 
     private Instant dumpMemoryToDestination(PlatformRecording recording)  {
-        WriteableUserPath dest = recording.getDestination();
+        WriteablePath dest = recording.getDestination();
         if (dest != null) {
             Instant t = MetadataRepository.getInstance().setOutput(dest.getRealPathText());
             recording.clearDestination();
@@ -441,8 +412,8 @@ public final class PlatformRecorder {
     }
 
     private void startDiskMonitor() {
-        Thread t = SecuritySupport.createThreadWitNoPermissions("JFR Periodic Tasks", () -> periodicTask());
-        SecuritySupport.setDaemonThread(t, true);
+        Thread t = new Thread(() -> periodicTask(), "JFR Periodic Tasks");
+        t.setDaemon(true);
         t.start();
     }
 
@@ -472,7 +443,7 @@ public final class PlatformRecorder {
         if (ActiveRecordingEvent.enabled()) {
             for (PlatformRecording r : getRecordings()) {
                 if (r.getState() == RecordingState.RUNNING && r.shouldWriteMetadataEvent()) {
-                    WriteableUserPath path = r.getDestination();
+                    WriteablePath path = r.getDestination();
                     Duration age = r.getMaxAge();
                     Duration flush = r.getFlushInterval();
                     Long size = r.getMaxSize();
@@ -519,7 +490,7 @@ public final class PlatformRecorder {
                 wait = Math.min(minDelta, Options.getWaitInterval());
             } catch (Throwable t) {
                 // Catch everything and log, but don't allow it to end the periodic task
-                Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + t.getClass().getName());
+                Logger.log(JFR_SYSTEM, WARN, "Error in Periodic task: " + t.getMessage());
             } finally {
                 takeNap(wait);
             }
@@ -660,7 +631,7 @@ public final class PlatformRecorder {
         target.setInternalDuration(startTime.until(endTime));
     }
 
-    public synchronized void migrate(SafePath repo) throws IOException {
+    public synchronized void migrate(Path repo) throws IOException {
         // Must set repository while holding recorder lock so
         // the final chunk in repository gets marked correctly
         Repository.getRepository().setBasePath(repo);

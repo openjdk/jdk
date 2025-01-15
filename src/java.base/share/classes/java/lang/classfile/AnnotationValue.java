@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @see Annotation
  * @see AnnotationElement
+ * @see java.lang.reflect.AnnotatedElement Annotations in core reflection
  *
  * @sealedGraph
  * @since 24
@@ -456,9 +457,11 @@ public sealed interface AnnotationValue {
      *
      * @apiNote
      * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_INT},
-     * describe the possible return values of this method.
+     * describe the possible return values of this method.  The return type is
+     * {@code int} for consistency with union indicator items in other union
+     * structures in the {@code class} file format.
      */
-    char tag();
+    int tag();
 
     /**
      * {@return an enum value for an element-value pair}

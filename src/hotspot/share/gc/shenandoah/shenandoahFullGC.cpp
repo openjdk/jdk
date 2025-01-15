@@ -541,7 +541,7 @@ public:
   ShenandoahEnsureHeapActiveClosure() : _heap(ShenandoahHeap::heap()) {}
   void heap_region_do(ShenandoahHeapRegion* r) {
     if (r->is_trash()) {
-      r->recycle();
+      r->try_recycle_under_lock();
     }
     if (r->is_cset()) {
       // Leave affiliation unchanged
@@ -990,7 +990,7 @@ public:
     // Recycle all trash regions
     if (r->is_trash()) {
       live = 0;
-      r->recycle();
+      r->try_recycle_under_lock();
     } else {
       if (r->is_old()) {
         ShenandoahGenerationalFullGC::account_for_region(r, _old_regions, _old_usage, _old_humongous_waste);
