@@ -27,7 +27,6 @@
 #define CPU_ARM_STUBDECLARATIONS_HPP
 
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
-                                      repeat_stub,                      \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
                                       do_arch_entry_init)               \
@@ -43,7 +42,6 @@
                 atomic_store_long_entry, atomic_store_long_entry)       \
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \
-                                           repeat_stub,                 \
                                            do_arch_blob,                \
                                            do_arch_entry,               \
                                            do_arch_entry_init)          \
@@ -51,7 +49,6 @@
 
 
 #define STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,                         \
-                                       repeat_stub,                     \
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
                                        do_arch_entry_init)              \
@@ -62,7 +59,6 @@
 
 
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \
-                                    repeat_stub,                        \
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
                                     do_arch_entry_init)                 \

@@ -56,70 +56,21 @@ address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 #define DEFINE_BLOB_NAME(blob_name)             \
   # blob_name,
 
-const char* StubRoutines::_blob_names[] = {
+const char* StubRoutines::_blob_names[StubGenBlobId::NUM_BLOBIDS] = {
   STUBGEN_BLOBS_DO(DEFINE_BLOB_NAME)
 };
 
 #undef DEFINE_BLOB_NAME
 
-// stub repeats mean that we cannot fill in the _stub_names array
-// using a generated initializer (even though the repeat count is a
-// compile time constant). what we can do is declare the array using
-// the correct size and generate some code that will fill in the
-// names, inlcuding the repated ones. the generated code is used to
-// initialize a local (static) var i.e. before anyone can use
-// _stub_names.
-
-const char* StubRoutines::_stub_names[StubGenStubId::NUM_STUBIDS];
-
 #define DEFINE_STUB_NAME(blob_name, stub_name)          \
-  stub_id = StubGenStubId:: STUB_ID_NAME(stub_name);    \
-  _stub_names[stub_id] = # stub_name ;                  \
+  # stub_name ,                                         \
 
+// use a template to generate the initializer for the stub names array
+const char* StubRoutines::_stub_names[StubGenStubId::NUM_STUBIDS] = {
+  STUBGEN_STUBS_DO(DEFINE_STUB_NAME)
+};
 
-#define REPEAT_STUB_NAME(blob_name, stub_name, count)            \
-  stub_id = StubGenStubId:: STUB_ID_NAME(stub_name);             \
-  const char *name = # stub_name;                                \
-  int len = (int)strlen(name);                                   \
-  _stub_names[stub_id] = name ;                                  \
-  assert(count < 100, "increase digit count in repeat names");   \
-  for (int i = 1; i < count; i++) {                              \
-    assert(buffer + len + 3 < name_buffer_end,                   \
-           "increase size of repeat stub name_buffer");          \
-    _stub_names[stub_id + i] = buffer;                           \
-    strcpy(buffer, name);                                        \
-    buffer += strlen(buffer);                                    \
-    if (i < 10) {                                                \
-      *buffer++ = '0' + i;                                       \
-    } else {                                                     \
-      *buffer++ = '0' + (i / 10);                                \
-      *buffer++ = '0' + (i % 10);                                \
-    }                                                            \
-    *buffer++ = '\0';                                             \
-  }                                                              \
-
-// this should be big enough to hold all the repeat stub names we
-// need. it allows for 100 stub repeats in total with 100 bytes for
-// the stub name (inlcuding 1 or 2 digit numeric suffix). if we don't
-// have enough space or need more digits the generated init function
-// will assert.
-
-static char name_buffer[100 * 100];
-static char* name_buffer_end = name_buffer + sizeof(name_buffer);
-
-bool StubRoutines::init_names() {
-  assert(!_inited_names, "should only be called once!");
-  _inited_names = true;
-  char *buffer = name_buffer;
-  StubGenStubId stub_id;
-  STUBGEN_STUBS_DO(DEFINE_STUB_NAME, REPEAT_STUB_NAME);
-  return _inited_names;
-}
-
-#undef REPEAT_STUB_NAME
 #undef DEFINE_STUB_NAME
-
-bool StubRoutines::_inited_names = StubRoutines::init_names();
 
 // Define fields used to store blobs
 
@@ -138,8 +89,12 @@ STUBGEN_BLOBS_DO(DEFINE_BLOB_FIELD)
 #define DEFINE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: STUB_FIELD_NAME(field_name) = CAST_FROM_FN_PTR(address, init_function);
 
-STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT)
+#define DEFINE_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: STUB_FIELD_NAME(field_name)[count] = { nullptr };
 
+STUBGEN_ENTRIES_DO(DEFINE_ENTRY_FIELD, DEFINE_ENTRY_FIELD_INIT, DEFINE_ENTRY_FIELD_ARRAY)
+
+#undef DEFINE_ENTRY_FIELD_ARRAY
 #undef DEFINE_ENTRY_FIELD_INIT
 #undef DEFINE_ENTRY_FIELD
 
@@ -148,7 +103,6 @@ jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_string_indexof_array[4]   =    { nullptr };
 address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
-address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
 
 const char* StubRoutines::get_blob_name(StubGenBlobId id) {
   assert(0 <= id && id < StubGenBlobId::NUM_BLOBIDS, "invalid blob id");
@@ -185,12 +139,6 @@ static int _blob_limits[StubGenBlobId::NUM_BLOBIDS + 1];
   assert(globalStubId == _blob_limits[blobId] + localStubId,            \
          "stub " # stub_name " id found at wrong offset!");             \
 
-#define REPEAT_VERIFY(blob_name, stub_name, count)                      \
-  STUB_VERIFY(blob_name, stub_name)                                     \
-  localStubLimit = (int) (StubGenStubId_ ## blob_name :: blob_name ## _ ## stub_name ## _limit); \
-  assert(globalStubId + (count - 1) == _blob_limits[blobId] + localStubLimit, \
-         "stub " # stub_name " limit found at wrong offset!");          \
-
 bool verifyStubIds() {
   // first compute the blob limits
   int counter = 0;
@@ -201,7 +149,7 @@ bool verifyStubIds() {
   // ensure 1) global stub ids lie in the range of the associated blob
   // and 2) each blob's base + local stub id == global stub id
   int globalStubId, blobId, localStubId, localStubLimit;
-  STUBGEN_STUBS_DO(STUB_VERIFY, REPEAT_VERIFY);
+  STUBGEN_STUBS_DO(STUB_VERIFY);
   return true;
 }
 

@@ -3004,11 +3004,10 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #ifdef COMPILER2
-  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
-    StubGenStubId stub_id = (StubGenStubId)(StubGenStubId::lookup_secondary_supers_table_id + super_klass_index);
+  void generate_lookup_secondary_supers_table_stub() {
+    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
     const Register
       r_super_klass  = x10,
       r_array_base   = x11,
@@ -3018,15 +3017,16 @@ class StubGenerator: public StubCodeGenerator {
       result         = x15,
       r_bitmap       = x16;
 
-    Label L_success;
-    __ enter();
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
-                                     r_array_base, r_array_length, r_array_index,
-                                     r_bitmap, super_klass_index, /*stub_is_near*/true);
-    __ leave();
-    __ ret();
-
-    return start;
+    for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
+      Label L_success;
+      __ enter();
+      __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                       r_array_base, r_array_length, r_array_index,
+                                       r_bitmap, slot, /*stub_is_near*/true);
+      __ leave();
+      __ ret();
+    }
   }
 
   // Slow path implementation for UseSecondarySupersTable.
@@ -6526,10 +6526,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseSecondarySupersTable) {
       StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
       if (!InlineSecondarySupersTest) {
-        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
-            = generate_lookup_secondary_supers_table_stub(slot);
-        }
+        generate_lookup_secondary_supers_table_stub();
       }
     }
 #endif // COMPILER2

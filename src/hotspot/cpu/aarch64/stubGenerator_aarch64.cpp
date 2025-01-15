@@ -7193,11 +7193,10 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
-    StubGenStubId stub_id = (StubGenStubId)(StubGenStubId::lookup_secondary_supers_table_id + super_klass_index);
+  void generate_lookup_secondary_supers_table_stub() {
+    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
     const Register
       r_super_klass  = r0,
       r_array_base   = r1,
@@ -7209,16 +7208,17 @@ class StubGenerator: public StubCodeGenerator {
     const FloatRegister
       vtemp          = v0;
 
-    Label L_success;
-    __ enter();
-    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
-                                           r_array_base, r_array_length, r_array_index,
-                                           vtemp, result, super_klass_index,
-                                           /*stub_is_near*/true);
-    __ leave();
-    __ ret(lr);
-
-    return start;
+    for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
+      Label L_success;
+      __ enter();
+      __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                             r_array_base, r_array_length, r_array_index,
+                                             vtemp, result, slot,
+                                             /*stub_is_near*/true);
+      __ leave();
+      __ ret(lr);
+    }
   }
 
   // Slow path implementation for UseSecondarySupersTable.
@@ -8791,10 +8791,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSecondarySupersTable) {
       StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
       if (! InlineSecondarySupersTest) {
-        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
-            = generate_lookup_secondary_supers_table_stub(slot);
-        }
+        generate_lookup_secondary_supers_table_stub();
       }
     }
 #endif

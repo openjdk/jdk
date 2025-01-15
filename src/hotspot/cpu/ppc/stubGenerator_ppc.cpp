@@ -4584,11 +4584,10 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // VM_LITTLE_ENDIAN
 
-address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
-    StubGenStubId stub_id = (StubGenStubId)(StubGenStubId::lookup_secondary_supers_table_id + super_klass_index);
+void generate_lookup_secondary_supers_table_stub() {
+    StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
     const Register
       r_super_klass  = R4_ARG2,
       r_array_base   = R3_ARG1,
@@ -4598,12 +4597,14 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
       r_bitmap       = R11_scratch1,
       result         = R8_ARG6;
 
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     r_bitmap, result, super_klass_index);
-    __ blr();
+    for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+      StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
+      __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
+                                       r_array_base, r_array_length, r_array_index,
+                                       r_bitmap, result, slot);
+      __ blr();
+    }
 
-    return start;
   }
 
   // Slow path implementation for UseSecondarySupersTable.
@@ -4894,10 +4895,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     if (UseSecondarySupersTable) {
       StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
       if (!InlineSecondarySupersTest) {
-        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
-            = generate_lookup_secondary_supers_table_stub(slot);
-        }
+        generate_lookup_secondary_supers_table_stub();
       }
     }
 

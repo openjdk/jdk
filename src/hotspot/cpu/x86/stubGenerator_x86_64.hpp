@@ -621,7 +621,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_upcall_stub_load_target();
 
   // Specialized stub implementations for UseSecondarySupersTable.
-  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index);
+  void generate_lookup_secondary_supers_table_stub();
 
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub();

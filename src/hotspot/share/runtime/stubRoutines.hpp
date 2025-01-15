@@ -177,11 +177,7 @@ enum StubGenBlobId : int {
 #define BLOB_LOCAL_STUB_ENUM_DECLARE(blob_name, stub_name) \
   blob_name ## _ ## stub_name ## _id,
 
-#define BLOB_LOCAL_STUB_ENUM_REPEAT_DECLARE(blob_name, stub_name, count)       \
-  blob_name ## _ ## stub_name ## _id,                                   \
-  blob_name ## _ ## stub_name ## _limit = blob_name ## _ ## stub_name ## _id + (count - 1),
-
-STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_STUB_ENUM_DECLARE, BLOB_LOCAL_STUB_ENUM_REPEAT_DECLARE)
+STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_STUB_ENUM_DECLARE)
 
 #undef BLOB_LOCAL_ENUM_START
 #undef BLOB_LOCAL_ENUM_END
@@ -192,13 +188,9 @@ STUBGEN_BLOBS_STUBS_DO(BLOB_LOCAL_ENUM_START, BLOB_LOCAL_ENUM_END, BLOB_LOCAL_ST
 #define STUB_ENUM_DECLARE(blob_name, stub_name) \
   STUB_ID_NAME(stub_name) ,
 
-#define STUB_ENUM_REPEAT(blob_name, stub_name, count)                   \
-  STUB_ID_NAME(stub_name),                                              \
-  stub_name ## _limit = STUB_ID_NAME(stub_name) + (count - 1),
-
 enum StubGenStubId : int {
   NO_STUBID = -1,
-  STUBGEN_STUBS_DO(STUB_ENUM_DECLARE, STUB_ENUM_REPEAT)
+  STUBGEN_STUBS_DO(STUB_ENUM_DECLARE)
   NUM_STUBIDS
 };
 
@@ -246,9 +238,13 @@ private:
 #define DECLARE_ENTRY_FIELD_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
   DECLARE_ENTRY_FIELD(blob_name, stub_name, field_name, getter_name)
 
-private:
-  STUBGEN_ENTRIES_DO(DECLARE_ENTRY_FIELD, DECLARE_ENTRY_FIELD_INIT);
+#define DECLARE_ENTRY_FIELD_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+  static address STUB_FIELD_NAME(field_name)[count];
 
+private:
+  STUBGEN_ENTRIES_DO(DECLARE_ENTRY_FIELD, DECLARE_ENTRY_FIELD_INIT, DECLARE_ENTRY_FIELD_ARRAY);
+
+#undef DECLARE_ENTRY_FIELD_ARRAY
 #undef DECLARE_ENTRY_FIELD_INIT
 #undef DECLARE_ENTRY_FIELD
 
@@ -260,9 +256,16 @@ private:
 #define DEFINE_ENTRY_GETTER_INIT(blob_name, stub_name, field_name, getter_name, init_function) \
   DEFINE_ENTRY_GETTER(blob_name, stub_name, field_name, getter_name)
 
-public:
-  STUBGEN_ENTRIES_DO(DEFINE_ENTRY_GETTER, DEFINE_ENTRY_GETTER_INIT);
+#define DEFINE_ENTRY_GETTER_ARRAY(blob_name, stub_name, field_name, getter_name, count) \
+  static address getter_name(int idx) {                                 \
+    assert(idx < count, "out of bounds");                               \
+    return STUB_FIELD_NAME(field_name)[idx];                            \
+  }                                                                     \
 
+public:
+  STUBGEN_ENTRIES_DO(DEFINE_ENTRY_GETTER, DEFINE_ENTRY_GETTER_INIT, DEFINE_ENTRY_GETTER_ARRAY);
+
+#undef DEFINE_ENTRY_GETTER_ARRAY
 #undef DEFINE_ENTRY_GETTER_INIT
 #undef DEFINE_ENTRY_GETTER
 
@@ -386,16 +389,6 @@ public:
     MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
-  }
-
-  /* special case: stub employs array of entries */
-
-  static address _lookup_secondary_supers_table_stubs[];
-
-  static address lookup_secondary_supers_table_stub(u1 slot) {
-    assert(slot < Klass::SECONDARY_SUPERS_TABLE_SIZE, "out of bounds");
-    assert(_lookup_secondary_supers_table_stubs[slot] != nullptr, "not implemented");
-    return _lookup_secondary_supers_table_stubs[slot];
   }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);

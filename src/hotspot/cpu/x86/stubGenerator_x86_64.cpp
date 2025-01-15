@@ -3996,27 +3996,23 @@ address StubGenerator::generate_upcall_stub_load_target() {
   return start;
 }
 
-address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
-  StubGenStubId stub_id = (StubGenStubId)(StubGenStubId::lookup_secondary_supers_table_id + super_klass_index);
-  assert(stub_id >= StubGenStubId::lookup_secondary_supers_table_id &&
-         stub_id >= StubGenStubId::lookup_secondary_supers_table_limit,
-         "super klass index out of expected range!");
+void StubGenerator::generate_lookup_secondary_supers_table_stub() {
+  StubGenStubId stub_id = StubGenStubId::lookup_secondary_supers_table_id;
   StubCodeMark mark(this, stub_id);
-
-  address start = __ pc();
 
   const Register
       r_super_klass = rax,
       r_sub_klass   = rsi,
       result        = rdi;
 
-  __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
-                                         rdx, rcx, rbx, r11, // temps
-                                         result,
-                                         super_klass_index);
-  __ ret(0);
-
-  return start;
+  for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+    StubRoutines::_lookup_secondary_supers_table_stubs[slot] = __ pc();
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           rdx, rcx, rbx, r11, // temps
+                                           result,
+                                           slot);
+    __ ret(0);
+  }
 }
 
 // Slow path implementation for UseSecondarySupersTable.
@@ -4156,9 +4152,7 @@ void StubGenerator::generate_final_stubs() {
   if (UseSecondarySupersTable) {
     StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
     if (! InlineSecondarySupersTest) {
-      for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
-        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
-      }
+      generate_lookup_secondary_supers_table_stub();
     }
   }
 #endif // COMPILER2

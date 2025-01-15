@@ -320,6 +320,15 @@
 //    static address call_stub_entry() { return _call_stub; }
 //    static address call_stub_return_address() { return _call_stub_return_address; }
 //
+// In special cases a stub may declare a (compile-time) fixed size
+// array of entries, in which case an address array field is
+// generated,along with a getter that accepts an index as argument:
+//
+//    . . .
+//   static address _lookup_secondary_supers_table[Klass::SECONDARY_SUPERS_TABLE_SIZE];
+//   . . .
+//   static address lookup_secondary_supers_table(int i);
+//
 // CPU-specific stub entry points and associated getters:
 //
 // For an arch-specific stub with name <nnn> belonging to architecture
@@ -356,16 +365,16 @@
 // adding suitable declarations within the scope of the relevant blob.
 // For the blob with name BLOB_NAME add your declarations to macro
 // STUBGEN_<BLOB_NAME>_STUBS_DO. Generic stubs and entries are
-// declared using the do_stub, repeat_stub, do_entry and do_entry_init
-// templates (see below for full details). The do_blob and end_blob
-// templates should never need to be modified.
+// declared using the do_stub, do_entry and do_entry_init and
+// array_entry templates (see below for full details). The do_blob
+// and end_blob templates should never need to be modified.
 //
 // Some stubs and their associated entries are architecture-specific.
 // They need to be declared in the architecture-specific header file
 // src/cpu/<arch>stubDecolaration_<arch>.cpp. For the blob with name
 // BLOB_NAME the correspnding declarations macro are provided by macro
 // STUBGEN_<BLOB_NAME>_STUBS_ARCH_DO. Arch-specific stubs and entries
-// are declared using the do_stub, repeat_stub, do_arch_entry and
+// are declared using the do_stub, do_arch_entry and
 // do_arch_entry_init templates (see below for details). An
 // architecure also needs to specify architecture parameters used when
 // creating each blob. These are defined using the do_arch_blob
@@ -413,26 +422,13 @@
 // validate correct use of stubs within their declared blob. Finally,
 // it is also used to declare a name for each stub.
 //
-// The repeat_stub template receives a blob name, stub name and a
-// (constant expression) count as argument.
-//
-// repeat_stub(blob_name, stub_name, count)
-//
-// repeat_stub is needed as an alternative to do_stub in the special
-// case where a series of stubs are generated with the same base name,
-// currently only for the 'lookup_secondary_supers_table_index' stub.
-// It generates all the same code elements as do_stub. However, it
-// also bumps the current enum tag to accomomodate the multi-stub
-// range and generates extra numbered stub names for each stub in the
-// multi-stub range. It is not (yet) possible to use entry
-// declarations to associate either single entries or an array of
-// entries with the resulting series of stubs.
-//
-// The do_entry templates receive 4 or 5 arguments
+// The do_entry and do_entry_array templates receive 4 or 5 arguments
 //
 // do_entry(blob_name, stub_name, field_name, getter_name)
 //
 // do_entry_init(blob_name, stub_name, field_name, getter_name, init_function)
+//
+// do_entry_array(blob_name, stub_name, field_name, getter_name, count)
 //
 // do_entry is used to declare or define a static field of class
 // StubRoutines with type address that stores a specific entry point
@@ -440,9 +436,19 @@
 // is often one but it can be more than one and, in a few special
 // cases, it is zero. do_entry is also used to declare and define an
 // associated getter method for the field. do_entry is used to declare
-// fields that shoudl eb initialized to nullptr. do_entry5 is used
-// when the field needs to be initialized a specific function or
-// method.
+// fields that should be initialized to nullptr.
+//
+// do_entry_init is used when the field needs to be initialized a
+// specific function or method .
+//
+// do_entry_array is used for the special case where a stub employs an
+// array to store multiple entries which are stored at generate time
+// and subsequently accessed using an associated index (e.g. the
+// secondary supers table stub which has 63 qassociated entries).
+// Note that this distinct from the case where a stub generates
+// multiple entries each of them stored in its own named field with
+// its own named getter. In the latter case multiple do_entry or
+// do_entry_init declarations are associated with the stub.
 //
 // blob_name and stub_name are the names of the blob and stub to which
 // the entry belongs.
@@ -451,15 +457,20 @@
 // the field used to store an entry address for the stub. For stubs
 // with one entry field_name is normally, but not always, the same as
 // stub_name.  Obviously when a stub has multiple entries secondary
-// names must be different to stub_name.
+// names must be different to stub_name. For normal entry declarations
+// the field type is address. For do_entry_array declarations the field
+// type is an address[] whose size is defined by then parameter.
 //
 // getter_name is the name of a getter that is generated to allow
 // access to the field. It is normally, but not always, the same as
-// stub_name.
+// stub_name. For normal entry declarations the getter signature is
+// (void).  For do_entry_array declarations the getter signature is
+// (int).
 //
 // init_function is the name of an function or method which should be
 // assigned to the field as a default value (n.b. fields declared
-// using do_entry are intialised to nullptr).
+// using do_entry are intialised to nullptr, array fields declared
+// using do_entry_array have their elements initalized to nullptr).
 //
 // Architecture-specific blob details need to be specified using the
 // do_arch_blob template
@@ -481,6 +492,8 @@
 // The only difference between these templates and the generic ones is
 // that they receive an extra argument which identifies the current
 // architecture e.g. x86, aarch64 etc.
+//
+// Currently there is no support for a do_arch_array_entry template.
 
 // Include arch-specific stub and entry declarations and make sure the
 // relevant template macros ahve been defined
@@ -520,8 +533,9 @@
 // immediately after their associated stub declaration.
 
 #define STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                     \
-                                 do_stub, repeat_stub,                  \
+                                 do_stub,                               \
                                  do_entry, do_entry_init,               \
+                                 do_entry_array,                        \
                                  do_arch_blob,                          \
                                  do_arch_entry, do_arch_entry_init)     \
   do_blob(initial)                                                      \
@@ -587,15 +601,15 @@
   do_entry(initial, dlibm_tan_cot_huge, dlibm_tan_cot_huge,             \
            dlibm_tan_cot_huge)                                          \
   /* merge in stubs and entries declared in arch header */              \
-  STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub, repeat_stub,                   \
-                                do_arch_blob,                           \
+  STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub, do_arch_blob,                  \
                                 do_arch_entry, do_arch_entry_init)      \
   end_blob(initial)                                                     \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_DO(do_blob, end_blob,                \
-                                      do_stub, repeat_stub,             \
+                                      do_stub,                          \
                                       do_entry, do_entry_init,          \
+                                      do_entry_array,                   \
                                       do_arch_blob,                     \
                                       do_arch_entry, do_arch_entry_init) \
   do_blob(continuation)                                                 \
@@ -604,22 +618,22 @@
   do_stub(continuation, cont_preempt)                                   \
   do_entry(continuation, cont_prempt, cont_preempt_stub,                \
            cont_preempt_stub)                                           \
-do_stub(continuation, cont_returnBarrier)                               \
+  do_stub(continuation, cont_returnBarrier)                             \
   do_entry(continuation, cont_returnBarrier, cont_returnBarrier,        \
            cont_returnBarrier)                                          \
   do_stub(continuation, cont_returnBarrierExc)                          \
   do_entry(continuation, cont_returnBarrierExc, cont_returnBarrierExc,  \
            cont_returnBarrierExc)                                       \
   /* merge in stubs and entries declared in arch header */              \
-  STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub, repeat_stub,              \
-                                     do_arch_blob,                      \
+  STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,  do_arch_blob,            \
                                      do_arch_entry, do_arch_entry_init) \
   end_blob(continuation)                                                \
 
 
 #define STUBGEN_COMPILER_BLOBS_DO(do_blob, end_blob,                    \
-                                  do_stub, repeat_stub,                 \
+                                  do_stub,                              \
                                   do_entry, do_entry_init,              \
+                                  do_entry_array,                       \
                                   do_arch_blob,                         \
                                   do_arch_entry, do_arch_entry_init)    \
   do_blob(compiler)                                                     \
@@ -735,15 +749,15 @@ do_stub(continuation, cont_returnBarrier)                               \
   do_entry(compiler, bigIntegerLeftShiftWorker,                         \
            bigIntegerLeftShiftWorker, bigIntegerLeftShift)              \
   /* merge in stubs and entries declared in arch header */              \
-  STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub, repeat_stub,                  \
-                                     do_arch_blob,                      \
+  STUBGEN_COMPILER_BLOBS_ARCH_DO(do_stub,  do_arch_blob,                \
                                      do_arch_entry, do_arch_entry_init) \
   end_blob(compiler)                                                    \
 
 
 #define STUBGEN_FINAL_BLOBS_DO(do_blob, end_blob,                       \
-                               do_stub, repeat_stub,                    \
+                               do_stub,                                 \
                                do_entry, do_entry_init,                 \
+                               do_entry_array,                          \
                                do_arch_blob,                            \
                                do_arch_entry, do_arch_entry_init)       \
   do_blob(final)                                                        \
@@ -889,16 +903,17 @@ do_stub(continuation, cont_returnBarrier)                               \
   do_stub(final, upcall_stub_load_target)                               \
   do_entry(final, upcall_stub_load_target, upcall_stub_load_target,     \
            upcall_stub_load_target)                                     \
-  /* n.b. entry array for next two stubs is hand-generated */           \
-  repeat_stub(final, lookup_secondary_supers_table,                     \
-              Klass::SECONDARY_SUPERS_TABLE_SIZE)                       \
+  do_stub(final, lookup_secondary_supers_table)                         \
+  do_entry_array(final, lookup_secondary_supers_table,                  \
+                 lookup_secondary_supers_table_stubs,                   \
+                 lookup_secondary_supers_table_stub,                    \
+                 Klass::SECONDARY_SUPERS_TABLE_SIZE)                    \
   do_stub(final, lookup_secondary_supers_table_slow_path)               \
   do_entry(final, lookup_secondary_supers_table_slow_path,              \
            lookup_secondary_supers_table_slow_path_stub,                \
            lookup_secondary_supers_table_slow_path_stub)                \
   /* merge in stubs and entries declared in arch header */              \
-  STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub, repeat_stub,                     \
-                              do_arch_blob,                             \
+  STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,  do_arch_blob,                   \
                               do_arch_entry, do_arch_entry_init)        \
   end_blob(final)                                                       \
 
@@ -936,13 +951,11 @@ do_stub(continuation, cont_returnBarrier)                               \
 // ignore do_stub(blob_name, stub_name) declarations
 #define DO_STUB_EMPTY2(blob_name, stub_name)
 
-// ignore repeat_stub(blob_name, stub_name, count) declarations
-#define REPEAT_STUB_EMPTY3(blob_name, stub_name, count)
-
 // ignore do_entry(blob_name, stub_name, fieldname, getter_name) declarations
 #define DO_ENTRY_EMPTY4(blob_name, stub_name, fieldname, getter_name)
 
-// ignore do_entry(blob_name, stub_name, fieldname, getter_name, init_function) declarations
+// ignore do_entry(blob_name, stub_name, fieldname, getter_name, init_function) and
+// do_entry_array(blob_name, stub_name, fieldname, getter_name, count) declarations
 #define DO_ENTRY_EMPTY5(blob_name, stub_name, fieldname, getter_name, init_function)
 
 // ignore do_arch_blob(blob_name, size) declarations
@@ -959,28 +972,33 @@ do_stub(continuation, cont_returnBarrier)                               \
 // client macro for emitting StubGenerator blobs, stubs and entries
 
 #define STUBGEN_ALL_DO(do_blob, end_blob,                               \
-                       do_stub, repeat_stub,                            \
+                       do_stub,                                         \
                        do_entry, do_entry_init,                         \
+                       do_entry_array,                                  \
                        do_arch_blob,                                    \
                        do_arch_entry, do_arch_entry_init)               \
   STUBGEN_INITIAL_BLOBS_DO(do_blob, end_blob,                           \
-                           do_stub, repeat_stub,                        \
+                           do_stub,                                     \
                            do_entry, do_entry_init,                     \
+                           do_entry_array,                              \
                            do_arch_blob,                                \
                            do_arch_entry, do_arch_entry_init)           \
   STUBGEN_CONTINUATION_BLOBS_DO(do_blob, end_blob,                      \
-                                do_stub, repeat_stub,                   \
+                                do_stub,                                \
                                 do_entry, do_entry_init,                \
+                                do_entry_array,                         \
                                 do_arch_blob,                           \
                                 do_arch_entry, do_arch_entry_init)      \
   STUBGEN_COMPILER_BLOBS_DO(do_blob, end_blob,                          \
-                            do_stub, repeat_stub,                       \
+                            do_stub,                                    \
                             do_entry, do_entry_init,                    \
+                            do_entry_array,                             \
                             do_arch_blob,                               \
                             do_arch_entry, do_arch_entry_init)          \
   STUBGEN_FINAL_BLOBS_DO(do_blob, end_blob,                             \
-                         do_stub, repeat_stub,                          \
+                         do_stub,                                       \
                          do_entry, do_entry_init,                       \
+                         do_entry_array,                                \
                          do_arch_blob,                                  \
                          do_arch_entry, do_arch_entry_init)             \
 
@@ -988,35 +1006,39 @@ do_stub(continuation, cont_returnBarrier)                               \
 
 #define STUBGEN_BLOBS_DO(do_blob)                                       \
   STUBGEN_ALL_DO(do_blob, DO_BLOB_EMPTY1,                               \
-                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 DO_STUB_EMPTY2,                                        \
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
 
 // client macro to operate only on StubGenerator stubs
 
-#define STUBGEN_STUBS_DO(do_stub, repeat_stub)                          \
+#define STUBGEN_STUBS_DO(do_stub)                                       \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
-                 do_stub, repeat_stub,                                  \
+                 do_stub,                                               \
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
 
 // client macro to operate only on StubGenerator blobs and stubs
 
-#define STUBGEN_BLOBS_STUBS_DO(do_blob, end_blob, do_stub, repeat_stub) \
+#define STUBGEN_BLOBS_STUBS_DO(do_blob, end_blob, do_stub)              \
   STUBGEN_ALL_DO(do_blob, end_blob,                                     \
-                 do_stub, repeat_stub,                                  \
+                 do_stub,                                               \
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5,DO_ARCH_ENTRY_EMPTY6)             \
 
 // client macro to operate only on StubGenerator entries
 
-#define STUBGEN_ENTRIES_DO(do_entry, do_entry_init)                     \
+#define STUBGEN_ENTRIES_DO(do_entry, do_entry_init, do_entry_array)     \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
-                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 DO_STUB_EMPTY2,                                        \
                  do_entry, do_entry_init,                               \
+                 do_entry_array,                                        \
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
 
@@ -1025,8 +1047,9 @@ do_stub(continuation, cont_returnBarrier)                               \
 
 #define STUBGEN_ARCH_BLOBS_DO(do_arch_blob)                             \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
-                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 DO_STUB_EMPTY2,                                        \
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ENTRY_EMPTY5,                                       \
                  do_arch_blob,                                          \
                  DO_ARCH_ENTRY_EMPTY5, DO_ARCH_ENTRY_EMPTY6)            \
 
@@ -1034,8 +1057,9 @@ do_stub(continuation, cont_returnBarrier)                               \
 
 #define STUBGEN_ARCH_ENTRIES_DO(do_arch_entry, do_arch_entry_init)      \
   STUBGEN_ALL_DO(DO_BLOB_EMPTY1, DO_BLOB_EMPTY1,                        \
-                 DO_STUB_EMPTY2, REPEAT_STUB_EMPTY3,                    \
+                 DO_STUB_EMPTY2,                                        \
                  DO_ENTRY_EMPTY4, DO_ENTRY_EMPTY5,                      \
+                 DO_ENTRY_EMPTY5,                                       \
                  DO_ARCH_BLOB_EMPTY2,                                   \
                  do_arch_entry, do_arch_entry_init)                     \
 
