@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -112,7 +113,6 @@ public:
 
     // Block concurrent class unloading from changing the _dumptime_table
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-    SystemDictionaryShared::find_all_archivable_classes();
 
     if (SystemDictionaryShared::is_dumptime_table_empty()) {
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
@@ -132,8 +132,6 @@ public:
     dump_rw_metadata();
     dump_ro_metadata();
     relocate_metaspaceobj_embedded_pointers();
-
-    verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
 
     sort_methods();
 
@@ -159,8 +157,6 @@ public:
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
-    verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
-
     log_info(cds)("Adjust lambda proxy class dictionary");
     SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
 
@@ -178,6 +174,7 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
+    AOTArtifactFinder::all_cached_classes_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
     iterate_primitive_array_klasses(it);
   }

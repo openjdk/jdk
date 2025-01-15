@@ -403,7 +403,7 @@ public final class KeyUtil {
         try {
             DerValue val = new DerValue(publicKey.getEncoded());
             val.data.getDerValue();
-            byte[] rawKey = new DerValue(val.data.getBitString()).getOctetString();
+            byte[] rawKey = val.data.getBitString();
             // According to https://www.rfc-editor.org/rfc/rfc8554.html:
             // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
             // is the LMS public key for the top-level tree.

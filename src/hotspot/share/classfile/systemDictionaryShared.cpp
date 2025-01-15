@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,15 +205,6 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   return info;
 }
 
-void SystemDictionaryShared::mark_required_hidden_class(InstanceKlass* k) {
-  assert(k->is_hidden(), "sanity");
-  DumpTimeClassInfo* info = _dumptime_table->get(k);
-  ResourceMark rm;
-  if (info != nullptr) {
-    info->set_is_required_hidden_class();
-  }
-}
-
 bool SystemDictionaryShared::check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info) {
   if (MetaspaceShared::is_in_shared_metaspace(k)) {
     // We have reached a super type that's already in the base archive. Treat it
@@ -256,13 +247,17 @@ bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
 
 bool SystemDictionaryShared::is_registered_lambda_proxy_class(InstanceKlass* ik) {
   DumpTimeClassInfo* info = _dumptime_table->get(ik);
-  return (info != nullptr) ? info->_is_archived_lambda_proxy : false;
+  bool result = (info != nullptr) ? info->_is_registered_lambda_proxy : false;
+  if (result) {
+    assert(!CDSConfig::is_dumping_invokedynamic(), "only used in legacy lambda proxy support");
+  }
+  return result;
 }
 
 void SystemDictionaryShared::reset_registered_lambda_proxy_class(InstanceKlass* ik) {
   DumpTimeClassInfo* info = _dumptime_table->get(ik);
   if (info != nullptr) {
-    info->_is_archived_lambda_proxy = false;
+    info->_is_registered_lambda_proxy = false;
     info->set_excluded();
   }
 }
@@ -338,11 +333,6 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
       // at runtime.
       return warn_excluded(k, "Old class has been linked");
     }
-  }
-
-  if (k->is_hidden() && !should_hidden_class_be_archived(k)) {
-    log_info(cds)("Skipping %s: Hidden class", k->name()->as_C_string());
-    return true;
   }
 
   InstanceKlass* super = k->java_super();
@@ -601,9 +591,7 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   guarantee(!info->is_excluded(), "Should not attempt to archive excluded class %s", name);
   if (is_builtin(k)) {
     if (k->is_hidden()) {
-      if (CDSConfig::is_dumping_invokedynamic()) {
-        assert(should_hidden_class_be_archived(k), "unexpected hidden class %s", name);
-      } else {
+      if (!CDSConfig::is_dumping_invokedynamic()) {
         assert(is_registered_lambda_proxy_class(k), "unexpected hidden class %s", name);
       }
     }
@@ -657,29 +645,6 @@ public:
   }
 };
 
-void SystemDictionaryShared::scan_constant_pool(InstanceKlass* k) {
-  if (CDSConfig::is_dumping_invokedynamic()) {
-    k->constants()->find_required_hidden_classes();
-  }
-}
-
-bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
-  assert(k->is_hidden(), "sanity");
-  if (is_registered_lambda_proxy_class(k)) {
-    return true;
-  }
-
-  if (CDSConfig::is_dumping_invokedynamic()) {
-    DumpTimeClassInfo* info = _dumptime_table->get(k);
-    if (info != nullptr && info->is_required_hidden_class()) {
-      guarantee(HeapShared::is_archivable_hidden_klass(k), "required hidden class must be archivable");
-      return true;
-    }
-  }
-
-  return false;
-}
-
 // Returns true if the class should be excluded. This can be called by
 // AOTConstantPoolResolver before or after we enter the CDS safepoint.
 // When called before the safepoint, we need to link the class so that
@@ -729,24 +694,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
   }
 }
 
-void SystemDictionaryShared::find_all_archivable_classes() {
-  HeapShared::start_finding_required_hidden_classes();
-  find_all_archivable_classes_impl();
-  HeapShared::end_finding_required_hidden_classes();
-}
-
-// Iterate over all the classes in _dumptime_table, marking the ones that must be
-// excluded from the archive. Those that are not excluded will be archivable.
-//
-// (a) Non-hidden classes are easy. They are only check by the rules in
-//     SystemDictionaryShared::check_for_exclusion().
-// (b) For hidden classes, we only archive those that are required (i.e., they are
-//     referenced by Java objects (such as CallSites) that are reachable from
-//     ConstantPools). This needs help from HeapShared.
-void SystemDictionaryShared::find_all_archivable_classes_impl() {
-  assert(!class_loading_may_happen(), "class loading must be disabled");
-  assert_lock_strong(DumpTimeTable_lock);
-
+void SystemDictionaryShared::finish_exclusion_checks() {
   if (CDSConfig::is_dumping_dynamic_archive()) {
     // Do this first -- if a base class is excluded due to duplication,
     // all of its subclasses will also be excluded.
@@ -756,58 +704,11 @@ void SystemDictionaryShared::find_all_archivable_classes_impl() {
     dup_checker.mark_duplicated_classes();
   }
 
-  ResourceMark rm;
+  _dumptime_table->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
+    SystemDictionaryShared::check_for_exclusion(k, &info);
+  });
 
-  // First, scan all non-hidden classes
-  auto check_non_hidden = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (!k->is_hidden()) {
-      SystemDictionaryShared::check_for_exclusion(k, &info);
-      if (!info.is_excluded() && !info.has_scanned_constant_pool()) {
-        scan_constant_pool(k);
-        info.set_has_scanned_constant_pool();
-      }
-    }
-  };
-  _dumptime_table->iterate_all_live_classes(check_non_hidden);
-
-  // Then, scan all the hidden classes that have been marked as required to
-  // discover more hidden classes. Stop when we cannot make progress anymore.
-  bool made_progress;
-  do {
-    made_progress = false;
-    auto check_hidden = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-      if (k->is_hidden() && should_hidden_class_be_archived(k)) {
-        SystemDictionaryShared::check_for_exclusion(k, &info);
-        if (info.is_excluded()) {
-          guarantee(!info.is_required_hidden_class(), "A required hidden class cannot be marked as excluded");
-        } else if (!info.has_scanned_constant_pool()) {
-          scan_constant_pool(k);
-          info.set_has_scanned_constant_pool();
-          // The CP entries in k *MAY* refer to other hidden classes, so scan
-          // every hidden class again.
-          made_progress = true;
-        }
-      }
-    };
-    _dumptime_table->iterate_all_live_classes(check_hidden);
-  } while (made_progress);
-
-  // Now, all hidden classes that have not yet been scanned must be marked as excluded
-  auto exclude_remaining_hidden = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
-    if (k->is_hidden()) {
-      SystemDictionaryShared::check_for_exclusion(k, &info);
-      if (CDSConfig::is_dumping_invokedynamic()) {
-        if (should_hidden_class_be_archived(k)) {
-          guarantee(!info.is_excluded(), "Must be");
-        } else {
-          guarantee(info.is_excluded(), "Must be");
-        }
-      }
-    }
-  };
-  _dumptime_table->iterate_all_live_classes(exclude_remaining_hidden);
   _dumptime_table->update_counts();
-
   cleanup_lambda_proxy_class_dictionary();
 }
 
@@ -936,9 +837,9 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
   if (info != nullptr && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
       // Don't include the lambda proxy if its nest host is not in the "linked" state.
       && nest_host->is_linked()) {
-    // Set _is_archived_lambda_proxy in DumpTimeClassInfo so that the lambda_ik
-    // won't be excluded during dumping of shared archive. See ExcludeDumpTimeSharedClasses.
-    info->_is_archived_lambda_proxy = true;
+    // Set _is_registered_lambda_proxy in DumpTimeClassInfo so that the lambda_ik
+    // won't be excluded during dumping of shared archive.
+    info->_is_registered_lambda_proxy = true;
     info->set_nest_host(nest_host);
 
     LambdaProxyClassKey key(caller_ik,
@@ -1347,13 +1248,6 @@ public:
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     // In static dump, info._proxy_klasses->at(0) is already relocated to point to the archived class
     // (not the original class).
-    //
-    // The following check has been moved to SystemDictionaryShared::find_all_archivable_classes(), which
-    // happens before the classes are copied.
-    //
-    // if (SystemDictionaryShared::is_excluded_class(info._proxy_klasses->at(0))) {
-    //  return true;
-    //}
     ResourceMark rm;
     log_info(cds,dynamic)("Archiving hidden %s", info._proxy_klasses->at(0)->external_name());
     size_t byte_size = sizeof(RunTimeLambdaProxyClassInfo);

@@ -4477,15 +4477,15 @@ void os::Linux::numa_init() {
   // bitmask when externally configured to run on all or fewer nodes.
 
   if (!Linux::libnuma_init()) {
-    disable_numa("Failed to initialize libnuma");
+    disable_numa("Failed to initialize libnuma", true);
   } else {
     Linux::set_configured_numa_policy(Linux::identify_numa_policy());
     if (Linux::numa_max_node() < 1) {
-      disable_numa("Only a single NUMA node is available");
+      disable_numa("Only a single NUMA node is available", false);
     } else if (Linux::is_bound_to_single_mem_node()) {
-      disable_numa("The process is bound to a single NUMA node");
+      disable_numa("The process is bound to a single NUMA node", true);
     } else if (Linux::mem_and_cpu_node_mismatch()) {
-      disable_numa("The process memory and cpu node configuration does not match");
+      disable_numa("The process memory and cpu node configuration does not match", true);
     } else {
       LogTarget(Info,os) log;
       LogStream ls(log);
@@ -4527,11 +4527,15 @@ void os::Linux::numa_init() {
   }
 }
 
-void os::Linux::disable_numa(const char* reason) {
+void os::Linux::disable_numa(const char* reason, bool warning) {
   if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
       (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
-    // Only issue a warning if the user explicitly asked for NUMA support
-    log_warning(os)("NUMA support disabled: %s", reason);
+    // Only issue a message if the user explicitly asked for NUMA support
+    if (warning) {
+      log_warning(os)("NUMA support disabled: %s", reason);
+    } else {
+      log_info(os)("NUMA support disabled: %s", reason);
+    }
   }
   FLAG_SET_ERGO(UseNUMA, false);
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
