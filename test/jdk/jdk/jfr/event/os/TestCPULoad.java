@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class TestCPULoad {
         recording.enable(EVENT_NAME);
         recording.start();
         // Need to sleep so a time delta can be calculated
-        Thread.sleep(100);
+        Thread.sleep(600);
         recording.stop();
 
         List<RecordedEvent> events = Events.fromRecording(recording);
