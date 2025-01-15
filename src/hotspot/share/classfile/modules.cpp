@@ -669,8 +669,7 @@ void Modules::serialize_addmods_names(SerializeClosure* soc) {
   ResourceMark rm;
   soc->do_ptr(&_archived_addmods_names);
   if (soc->reading()) {
-    const char* addmods_names = get_addmods_names_as_sorted_string();
-    check_archived_flag_consistency(_archived_addmods_names, addmods_names, "jdk.module.addmods");
+    check_archived_flag_consistency(_archived_addmods_names, get_addmods_names_as_sorted_string(), "jdk.module.addmods");
 
     // Don't hold onto the pointer, in case we might decide to unmap the archive.
     _archived_addmods_names = nullptr;
