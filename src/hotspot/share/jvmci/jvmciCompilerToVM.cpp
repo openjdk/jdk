@@ -1499,7 +1499,7 @@ static methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symb
 /*
  * Used by c2v_iterateFrames to make a new vframeStream at the given compiled frame id (stack pointer) and vframe id.
  */
-static void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
+static void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
   vfst = vframeStream(thread);
   while (vfst.frame_id() != stack_pointer && !vfst.at_end()) {
     vfst.next();
@@ -1555,10 +1555,11 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
 
   while (!vfst.at_end()) { // frame loop
     bool realloc_called = false;
-    intptr_t* frame_id = vfst.frame_id();
+    intptr_t frame_id = vfst.frame_id();
 
     // Previous compiledVFrame of this frame; use with at_scope() to reuse scope object pool.
     compiledVFrame* prev_cvf = nullptr;
+    intptr_t prev_cvf_frame_id = 0;
 
     for (; !vfst.at_end() && vfst.frame_id() == frame_id; vfst.next()) { // vframe loop
       int frame_number = 0;
@@ -1572,7 +1573,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
           continue;
         }
         javaVFrame* vf;
-        if (prev_cvf != nullptr && prev_cvf->frame_pointer()->id() == frame_id) {
+        if (prev_cvf != nullptr && prev_cvf_frame_id == frame_id) {
           assert(prev_cvf->is_compiled_frame(), "expected compiled Java frame");
           vf = prev_cvf->at_scope(vfst.decode_offset(), vfst.vframe_id());
         } else {
@@ -1589,6 +1590,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
           // native wrappers do not have a scope
           if (scope != nullptr && scope->objects() != nullptr) {
             prev_cvf = cvf;
+            prev_cvf_frame_id = vfst.frame_id();
 
             GrowableArray<ScopeValue*>* objects = nullptr;
             if (!realloc_called) {
@@ -1677,7 +1679,8 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
         if (HotSpotJVMCI::HotSpotStackFrameReference::objectsMaterialized(JVMCIENV, frame_reference()) == JNI_TRUE) {
           // the frame has been deoptimized, we need to re-synchronize the frame and vframe
           prev_cvf = nullptr;
-          intptr_t* stack_pointer = (intptr_t*) HotSpotJVMCI::HotSpotStackFrameReference::stackPointer(JVMCIENV, frame_reference());
+          prev_cvf_frame_id = 0;
+          intptr_t stack_pointer = (intptr_t) HotSpotJVMCI::HotSpotStackFrameReference::stackPointer(JVMCIENV, frame_reference());
           resync_vframestream_to_compiled_frame(vfst, stack_pointer, frame_number, thread, CHECK_NULL);
         }
       }
@@ -1797,12 +1800,12 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
   JVMCIENV->HotSpotStackFrameReference_initialize(JVMCI_CHECK);
 
   // look for the given stack frame
-  StackFrameStream fst(thread, false /* update */, true /* process_frames */);
-  intptr_t* stack_pointer = (intptr_t*) JVMCIENV->get_HotSpotStackFrameReference_stackPointer(hs_frame);
-  while (fst.current()->id() != stack_pointer && !fst.is_done()) {
+  vframeStream fst(thread);
+  intptr_t stack_pointer = (intptr_t) JVMCIENV->get_HotSpotStackFrameReference_stackPointer(hs_frame);
+  while (fst.frame_id() != stack_pointer && !fst.at_end()) {
     fst.next();
   }
-  if (fst.current()->id() != stack_pointer) {
+  if (fst.frame_id() != stack_pointer) {
     JVMCI_THROW_MSG(IllegalStateException, "stack frame not found");
   }
 
@@ -1812,17 +1815,24 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     }
     fst.current()->cb()->as_nmethod()->make_not_entrant();
   }
-  Deoptimization::deoptimize(thread, *fst.current(), Deoptimization::Reason_none);
+  {
+    frame fr = *fst.current();
+    javaVFrame* vf = fst.asJavaVFrame();
+    if (vf->stack_chunk() != nullptr) {
+      fr = vf->stack_chunk()->derelativize(fr);
+    }
+    Deoptimization::deoptimize(thread, fr, Deoptimization::Reason_none);
+  }
   // look for the frame again as it has been updated by deopt (pc, deopt state...)
-  StackFrameStream fstAfterDeopt(thread, true /* update */, true /* process_frames */);
-  while (fstAfterDeopt.current()->id() != stack_pointer && !fstAfterDeopt.is_done()) {
+  vframeStream fstAfterDeopt(thread);
+  while (fstAfterDeopt.frame_id() != stack_pointer && !fstAfterDeopt.at_end()) {
     fstAfterDeopt.next();
   }
-  if (fstAfterDeopt.current()->id() != stack_pointer) {
+  if (fstAfterDeopt.frame_id() != stack_pointer) {
     JVMCI_THROW_MSG(IllegalStateException, "stack frame not found after deopt");
   }
 
-  vframe* vf = vframe::new_vframe(fstAfterDeopt.current(), fstAfterDeopt.register_map(), thread);
+  vframe* vf = vframe::new_vframe(fstAfterDeopt.current(), fstAfterDeopt.reg_map(), thread);
   if (!vf->is_compiled_frame()) {
     JVMCI_THROW_MSG(IllegalStateException, "compiled stack frame expected");
   }
@@ -1851,8 +1861,8 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     return;
   }
 
-  bool realloc_failures = Deoptimization::realloc_objects(thread, fstAfterDeopt.current(), fstAfterDeopt.register_map(), objects, CHECK);
-  Deoptimization::reassign_fields(fstAfterDeopt.current(), fstAfterDeopt.register_map(), objects, realloc_failures, false);
+  bool realloc_failures = Deoptimization::realloc_objects(thread, fstAfterDeopt.current(), fstAfterDeopt.reg_map(), objects, CHECK);
+  Deoptimization::reassign_fields(fstAfterDeopt.current(), fstAfterDeopt.reg_map(), objects, realloc_failures, false);
 
   for (int frame_index = 0; frame_index < virtualFrames->length(); frame_index++) {
     compiledVFrame* cvf = virtualFrames->at(frame_index);

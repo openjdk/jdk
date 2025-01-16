@@ -56,6 +56,8 @@ class compiledVFrame: public javaVFrame {
     return (compiledVFrame*) vf;
   }
 
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* get_deferred_locals() const;
+
   void update_deferred_value(BasicType type, int index, jvalue value);
 
   // After object deoptimization, that is object reallocation and relocking, we

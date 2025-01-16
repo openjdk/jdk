@@ -391,9 +391,9 @@ static bool rematerialize_objects(JavaThread* thread, int exec_mode, nmethod* co
 }
 
 static void restore_eliminated_locks(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures,
-                                     frame& deoptee, int exec_mode, bool& deoptimized_objects) {
+                                     frame& deoptee, const RegisterMap* reg_map, int exec_mode, bool& deoptimized_objects) {
   JavaThread* deoptee_thread = chunk->at(0)->thread();
-  assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee.id()), "must relock just once");
+  assert(!EscapeBarrier::objs_are_deoptimized(deoptee_thread, deoptee, reg_map), "must relock just once");
   assert(thread == Thread::current(), "should be");
   HandleMark hm(thread);
 #ifndef PRODUCT
@@ -464,7 +464,7 @@ bool Deoptimization::deoptimize_objects_internal(JavaThread* thread, GrowableArr
 
   // Now relock objects if synchronization on them was eliminated.
   if (jvmci_enabled COMPILER2_PRESENT(|| ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks))) {
-    restore_eliminated_locks(thread, chunk, realloc_failures, deoptee, Unpack_none, deoptimized_objects);
+    restore_eliminated_locks(thread, chunk, realloc_failures, deoptee, &map, Unpack_none, deoptimized_objects);
   }
   return deoptimized_objects;
 }
@@ -542,9 +542,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
 #if COMPILER2_OR_JVMCI
   if ((jvmci_enabled COMPILER2_PRESENT( || ((DoEscapeAnalysis || EliminateNestedLocks) && EliminateLocks) ))
-      && !EscapeBarrier::objs_are_deoptimized(current, deoptee.id())) {
+      && !EscapeBarrier::objs_are_deoptimized(current, deoptee, &map)) {
     bool unused = false;
-    restore_eliminated_locks(current, chunk, realloc_failures, deoptee, exec_mode, unused);
+    restore_eliminated_locks(current, chunk, realloc_failures, deoptee, &map, exec_mode, unused);
   }
 #endif // COMPILER2_OR_JVMCI
 
@@ -579,8 +579,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Now that the vframeArray has been created if we have any deferred local writes
   // added by jvmti then we can free up that structure as the data is now in the
   // vframeArray
-
-  JvmtiDeferredUpdates::delete_updates_for_frame(current, array->original().id());
+  deoptee.clear_deferred_locals(nullptr);
 
   // Compute the caller frame based on the sender sp of stub_frame and stored frame sizes info.
   CodeBlob* cb = stub_frame.cb();
@@ -1187,7 +1186,7 @@ public:
 
 BooleanBoxCache* BooleanBoxCache::_singleton = nullptr;
 
-oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS) {
+oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, const RegisterMap* reg_map, bool& cache_init_error, TRAPS) {
    Klass* k = java_lang_Class::as_Klass(bv->klass()->as_ConstantOopReadValue()->value()());
    BasicType box_type = vmClasses::box_klass_type(k);
    if (box_type != T_OBJECT) {
@@ -1207,7 +1206,7 @@ oop Deoptimization::get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMa
 #endif // INCLUDE_JVMCI
 
 #if COMPILER2_OR_JVMCI
-bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
+bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, const RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS) {
   Handle pending_exception(THREAD, thread->pending_exception());
   const char* exception_file = thread->exception_file();
   int exception_line = thread->exception_line();
@@ -1341,7 +1340,7 @@ static void byte_array_put(typeArrayOop obj, StackValue* value, int index, int b
 
 
 // restore elements of an eliminated type array
-void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type) {
+void Deoptimization::reassign_type_array_elements(frame* fr, const RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type) {
   int index = 0;
 
   for (int i = 0; i < sv->field_size(); i++) {
@@ -1433,7 +1432,7 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
 }
 
 // restore fields of an eliminated object array
-void Deoptimization::reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj) {
+void Deoptimization::reassign_object_array_elements(frame* fr, const RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj) {
   for (int i = 0; i < sv->field_size(); i++) {
     StackValue* value = StackValue::create_stack_value(fr, reg_map, sv->field_at(i));
     assert(value->type() == T_OBJECT, "object element expected");
@@ -1458,7 +1457,7 @@ static int compare(ReassignedField* left, ReassignedField* right) {
 
 // Restore fields of an eliminated instance object using the same field order
 // returned by HotSpotResolvedObjectTypeImpl.getInstanceFields(true)
-static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool skip_internal) {
+static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, const RegisterMap* reg_map, ObjectValue* sv, int svIndex, oop obj, bool skip_internal) {
   GrowableArray<ReassignedField>* fields = new GrowableArray<ReassignedField>();
   InstanceKlass* ik = klass;
   while (ik != nullptr) {
@@ -1554,7 +1553,7 @@ static int reassign_fields_by_klass(InstanceKlass* klass, frame* fr, RegisterMap
 }
 
 // restore fields of all eliminated objects and arrays
-void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
+void Deoptimization::reassign_fields(frame* fr, const RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal) {
   for (int i = 0; i < objects->length(); i++) {
     assert(objects->at(i)->is_object(), "invalid debug information");
     ObjectValue* sv = (ObjectValue*) objects->at(i);
@@ -1649,7 +1648,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
                 mon_info->lock()->set_bad_metadata_deopt();
               }
 #endif
-              JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
+              deoptee_thread->inc_relock_count_after_wait();
               continue;
             }
           }

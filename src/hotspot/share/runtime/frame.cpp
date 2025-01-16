@@ -42,6 +42,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -233,6 +234,31 @@ void frame::set_pc(address newpc) {
 
 }
 
+address* frame::orig_pc_addr(stackChunkOop chunk, nmethod* nm) const {
+  if (chunk != nullptr) {
+    return (address*) chunk->usp_offset_to_location(*this, nm->orig_pc_offset());
+  }
+  return (address*) ((address)unextended_sp() + nm->orig_pc_offset());
+}
+
+void frame::set_original_pc(stackChunkOop chunk, nmethod* nm, address pc) {
+  *orig_pc_addr(chunk, nm) = pc;
+}
+
+address frame::get_original_pc(stackChunkOop chunk, nmethod* nm) const {
+  address ptr = *orig_pc_addr(chunk, nm);
+  if (ptr != nullptr) {
+    if (nm->is_deopt_pc(_pc)) {
+      if (CodeCache::contains(ptr)) {
+        return ptr;
+      }
+      JvmtiDeferredUpdates* updates = (JvmtiDeferredUpdates*) ptr;
+      return updates->original_pc();
+    }
+  }
+  return ptr;
+}
+
 // type testers
 bool frame::is_ignored_frame() const {
   return false;  // FIXME: some LambdaForm frames should be ignored
@@ -358,12 +384,12 @@ void frame::deoptimize(JavaThread* thread) {
   NativePostCallNop* inst = nativePostCallNop_at(pc());
 
   // Save the original pc before we patch in the new one
-  nm->set_original_pc(this, pc());
+  set_original_pc(nullptr, nm, pc());
   patch_pc(thread, deopt);
   assert(is_deoptimized_frame(), "must be");
 
 #ifdef ASSERT
-  if (thread != nullptr) {
+  if (thread != nullptr && !_on_heap) {
     frame check = thread->last_frame();
     if (is_older(check.id())) {
       RegisterMap map(thread,
@@ -377,6 +403,50 @@ void frame::deoptimize(JavaThread* thread) {
     }
   }
 #endif // ASSERT
+}
+
+GrowableArray<jvmtiDeferredLocalVariableSet*>* frame::deferred_locals(stackChunkOop chunk) const {
+  nmethod* nm = _cb->as_nmethod();
+  if (!is_deoptimized_frame()) {
+    guarantee(is_compiled_frame(), "must at least be compiled");
+    return nullptr;
+  }
+
+  address ptr = *orig_pc_addr(chunk, nm);
+  if (ptr != nullptr) {
+    if (CodeCache::contains(ptr)) {
+      return nullptr;
+    }
+    JvmtiDeferredUpdates* updates = (JvmtiDeferredUpdates*) ptr;
+    return updates->deferred_locals();
+  }
+  return nullptr;
+}
+
+GrowableArray<jvmtiDeferredLocalVariableSet*>* frame::create_deferred_locals(stackChunkOop chunk) const {
+  nmethod* nm = _cb->as_nmethod();
+  guarantee(is_deoptimized_frame(), "must be deoptimized frame");
+
+  address ptr = *orig_pc_addr(chunk, nm);
+
+  // deferred updates can only be set after deopt
+  guarantee(CodeCache::contains(ptr), "should currently be deopt pc");
+
+  JvmtiDeferredUpdates* updates = new JvmtiDeferredUpdates(ptr);
+  *orig_pc_addr(chunk, nm) = (address) updates;
+  return updates->deferred_locals();
+}
+
+void frame::clear_deferred_locals(stackChunkOop chunk) {
+  if (deferred_locals(chunk) != nullptr) {
+    nmethod* nm = _cb->as_nmethod();
+    guarantee(is_deoptimized_frame(), "must be deoptimized frame");
+    address ptr = *orig_pc_addr(chunk, nm);
+    guarantee(!CodeCache::contains(ptr), "should be DeferredUpdates*");
+    JvmtiDeferredUpdates* updates = (JvmtiDeferredUpdates*) ptr;
+    *orig_pc_addr(chunk, nm) = updates->original_pc();
+    delete updates;
+  }
 }
 
 frame frame::java_sender() const {
@@ -998,6 +1068,15 @@ void frame::oops_nmethod_do(OopClosure* f, NMethodClosure* cf, DerivedOopClosure
   // closure decides how it wants nmethods to be traced.
   if (cf != nullptr && _cb->is_nmethod())
     cf->do_nmethod(_cb->as_nmethod());
+
+  if (is_deoptimized_frame() && _cb->is_nmethod()) {
+    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = deferred_locals(reg_map->stack_chunk()());
+    if (list != nullptr) {
+      for (int i = 0; i < list->length(); i++) {
+        list->at(i)->oops_do(f);
+      }
+    }
+  }
 }
 
 class CompiledArgumentOopFinder: public SignatureIterator {

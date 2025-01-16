@@ -64,7 +64,7 @@ inline void frame::setup(kind knd) {
     }
   }
 
-  address original_pc = get_deopt_original_pc();
+  address original_pc = get_deopt_original_pc(nullptr);
   if (original_pc != nullptr) {
     _pc = original_pc;
     _deopt_state = is_deoptimized;

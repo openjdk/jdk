@@ -30,6 +30,7 @@
 #include "code/location.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/stackValue.hpp"
@@ -71,6 +72,8 @@ class vframe: public ResourceObj {
   // Accessors
   frame             fr() const { return _fr;       }
   CodeBlob*         cb() const { return _fr.cb();  }
+
+  intptr_t          frame_identity() const { return _fr.frame_identity(&_reg_map); }
 
 // ???? Does this need to be a copy?
   frame*             frame_pointer() { return &_fr;       }
@@ -287,7 +290,7 @@ class vframeStreamCommon : StackObj {
   // Accessors
   Method* method() const { return _method; }
   int bci() const { return _bci; }
-  inline intptr_t* frame_id() const;
+  inline intptr_t frame_id() const;
   address frame_pc() const { return _frame.pc(); }
   inline int vframe_id() const;
   inline int decode_offset() const;
@@ -300,6 +303,7 @@ class vframeStreamCommon : StackObj {
   }
 
   const RegisterMap* reg_map() { return &_reg_map; }
+  frame* current() { return &_frame; }
 
   javaVFrame* asJavaVFrame();
 

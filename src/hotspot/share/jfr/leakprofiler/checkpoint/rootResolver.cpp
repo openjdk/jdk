@@ -263,13 +263,6 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
     return true;
   }
 
-  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* const list = JvmtiDeferredUpdates::deferred_locals(jt);
-  if (list != nullptr) {
-    for (int i = 0; i < list->length(); i++) {
-      list->at(i)->oops_do(&rcl);
-    }
-  }
-
   if (rcl.complete()) {
     return true;
   }

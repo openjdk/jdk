@@ -426,7 +426,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _deopt_nmethod(nullptr),
   _vframe_array_head(nullptr),
   _vframe_array_last(nullptr),
-  _jvmti_deferred_updates(nullptr),
+  _relock_count_after_wait(0),
   _callee_target(nullptr),
   _vm_result(nullptr),
   _vm_result_2(nullptr),
@@ -692,14 +692,8 @@ JavaThread::~JavaThread() {
     delete old_array;
   }
 
-  JvmtiDeferredUpdates* updates = deferred_updates();
-  if (updates != nullptr) {
-    // This can only happen if thread is destroyed before deoptimization occurs.
-    assert(updates->count() > 0, "Updates holder not deleted");
-    // free deferred updates.
-    delete updates;
-    set_deferred_updates(nullptr);
-  }
+  // This can only happen if thread is destroyed before deoptimization occurs.
+  // XXX release deferred updates for any live frames
 
   // All Java related clean up happens in exit
   ThreadSafepointState::destroy(this);
@@ -1406,14 +1400,6 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   DEBUG_ONLY(verify_frame_info();)
 
   assert(vframe_array_head() == nullptr, "deopt in progress at a safepoint!");
-  // If we have deferred set_locals there might be oops waiting to be
-  // written
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(this);
-  if (list != nullptr) {
-    for (int i = 0; i < list->length(); i++) {
-      list->at(i)->oops_do(f);
-    }
-  }
 
   // Traverse instance variables at the end since the GC may be moving things
   // around using this function

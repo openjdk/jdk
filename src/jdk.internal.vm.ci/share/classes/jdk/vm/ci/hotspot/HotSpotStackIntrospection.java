@@ -42,7 +42,6 @@ public class HotSpotStackIntrospection implements StackIntrospection {
 
     @Override
     public boolean canMaterializeVirtualObjects() {
-        // Virtual threads do not support materializing locals (JDK-8307125)
-        return !Thread.currentThread().isVirtual();
+        return true;
     }
 }

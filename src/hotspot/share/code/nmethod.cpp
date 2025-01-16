@@ -857,10 +857,6 @@ void nmethod::cleanup_inline_caches_whitebox() {
   cleanup_inline_caches_impl(false /* unloading_occurred */, true /* clean_all */);
 }
 
-address* nmethod::orig_pc_addr(const frame* fr) {
-  return (address*) ((address)fr->unextended_sp() + orig_pc_offset());
-}
-
 // Called to clean up after class unloading for live nmethods
 void nmethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all) {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");

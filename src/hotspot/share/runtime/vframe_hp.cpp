@@ -65,7 +65,7 @@ StackValueCollection* compiledVFrame::locals() const {
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_locals.
   if (!register_map()->in_cont()) { // LOOM TODO
-    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
+    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = get_deferred_locals();
     if (list != nullptr ) {
       // In real life this never happens or is typically a single element search
       for (int i = 0; i < list->length(); i++) {
@@ -105,8 +105,7 @@ void compiledVFrame::update_monitor(int index, MonitorInfo* val) {
 
 void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue value) {
   assert(fr().is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-  assert(!Continuation::is_frame_in_continuation(thread(), fr()), "No support for deferred values in continuations");
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = JvmtiDeferredUpdates::deferred_locals(thread());
+  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = get_deferred_locals();
   jvmtiDeferredLocalVariableSet* locals = nullptr;
   if (deferred != nullptr ) {
     // See if this vframe has already had locals with deferred writes
@@ -120,13 +119,12 @@ void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue val
   } else {
     // No deferred updates pending for this thread.
     // allocate in C heap
-    JvmtiDeferredUpdates::create_for(thread());
-    deferred = JvmtiDeferredUpdates::deferred_locals(thread());
+
+    deferred = fr().create_deferred_locals(_chunk());
   }
   if (locals == nullptr) {
-    locals = new jvmtiDeferredLocalVariableSet(method(), bci(), fr().id(), vframe_id());
+    locals = new jvmtiDeferredLocalVariableSet(method(), bci(), vframe_id());
     deferred->push(locals);
-    assert(locals->id() == fr().id(), "Huh? Must match");
   }
   locals->set_value_at(index, type, value);
 }
@@ -198,7 +196,7 @@ StackValueCollection* compiledVFrame::expressions() const {
   if (!register_map()->in_cont()) { // LOOM TODO
     // Replace the original values with any stores that have been
     // performed through compiledVFrame::update_stack.
-    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
+    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = get_deferred_locals();
     if (list != nullptr ) {
       // In real life this never happens or is typically a single element search
       for (int i = 0; i < list->length(); i++) {
@@ -281,7 +279,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_monitors.
   if (thread() == nullptr) return result; // Unmounted continuations have no thread so nothing to do.
-  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
+  GrowableArrayView<jvmtiDeferredLocalVariableSet*>* list = get_deferred_locals();
   if (list != nullptr ) {
     // In real life this never happens or is typically a single element search
     for (int i = 0; i < list->length(); i++) {
@@ -404,10 +402,13 @@ vframe* compiledVFrame::sender() const {
   }
 }
 
-jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id, int vframe_id) {
+GrowableArray<jvmtiDeferredLocalVariableSet*>* compiledVFrame::get_deferred_locals() const {
+  return fr().deferred_locals(_chunk());
+}
+
+jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, int vframe_id) {
   _method = method;
   _bci = bci;
-  _id = id;
   _vframe_id = vframe_id;
   // Always will need at least one, must be on C heap
   _locals = new(mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, mtCompiler);
@@ -425,7 +426,7 @@ jvmtiDeferredLocalVariableSet::~jvmtiDeferredLocalVariableSet() {
 bool jvmtiDeferredLocalVariableSet::matches(const vframe* vf) {
   if (!vf->is_compiled_frame()) return false;
   compiledVFrame* cvf = (compiledVFrame*)vf;
-  if (cvf->fr().id() == id() && cvf->vframe_id() == vframe_id()) {
+  if (cvf->vframe_id() == vframe_id()) {
     assert(cvf->method() == method() && cvf->bci() == bci(), "must agree");
     return true;
   }
