@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -54,8 +55,6 @@ void ShenandoahCardTable::initialize() {
   //   _byte_map = _byte_map_base + (uintptr_t(low_bound) >> card_shift)
   _byte_map = (CardValue*) write_space.base();
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
-  assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
-  assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
 
   _write_byte_map = _byte_map;
   _write_byte_map_base = _byte_map_base;
@@ -65,8 +64,6 @@ void ShenandoahCardTable::initialize() {
 
   _read_byte_map = (CardValue*) read_space.base();
   _read_byte_map_base = _read_byte_map - (uintptr_t(low_bound) >> card_shift());
-  assert(read_byte_for(low_bound) == &_read_byte_map[0], "Checking start of map");
-  assert(read_byte_for(high_bound-1) <= &_read_byte_map[last_valid_index()], "Checking end of map");
 
   _covered[0] = _whole_heap;
 
@@ -104,4 +101,8 @@ CardValue* ShenandoahCardTable::read_byte_for(const void* p) {
 
 size_t ShenandoahCardTable::last_valid_index() {
   return CardTable::last_valid_index();
+}
+
+CardValue* ShenandoahCardTable::byte_map_base() const {
+  return ShenandoahThreadLocalData::card_table(Thread::current());
 }

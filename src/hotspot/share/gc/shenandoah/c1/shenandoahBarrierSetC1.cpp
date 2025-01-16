@@ -310,10 +310,12 @@ void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_O
     return;
   }
 
-  BarrierSet* bs = BarrierSet::barrier_set();
-  ShenandoahBarrierSet* ctbs = barrier_set_cast<ShenandoahBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-  LIR_Const* card_table_base = new LIR_Const(ct->byte_map_base());
+  LIR_Opr thrd = gen->getThreadPointer();
+  const int curr_ct_holder_offset = in_bytes(ShenandoahThreadLocalData::card_table_offset());
+  LIR_Address* curr_ct_holder_addr = new LIR_Address(thrd, curr_ct_holder_offset, T_ADDRESS);
+  LIR_Opr curr_ct_holder_ptr_reg = gen->new_register(T_ADDRESS);
+  __ move(curr_ct_holder_addr, curr_ct_holder_ptr_reg);
+
   if (addr->is_address()) {
     LIR_Address* address = addr->as_address_ptr();
     // ptr cannot be an object because we use this barrier for array card marks
@@ -337,13 +339,7 @@ void ShenandoahBarrierSetC1::post_barrier(LIRAccess& access, LIR_Opr addr, LIR_O
     __ unsigned_shift_right(addr, CardTable::card_shift(), tmp);
   }
 
-  LIR_Address* card_addr;
-  if (gen->can_inline_as_constant(card_table_base)) {
-    card_addr = new LIR_Address(tmp, card_table_base->as_jint(), T_BYTE);
-  } else {
-    card_addr = new LIR_Address(tmp, gen->load_constant(card_table_base), T_BYTE);
-  }
-
+  LIR_Address* card_addr = new LIR_Address(curr_ct_holder_ptr_reg, tmp, T_BYTE);
   LIR_Opr dirty = LIR_OprFact::intConst(CardTable::dirty_card_val());
   if (UseCondCardMark) {
     LIR_Opr cur_value = gen->new_register(T_INT);

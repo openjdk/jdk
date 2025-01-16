@@ -615,31 +615,31 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
 
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
-
-  ShenandoahBarrierSet* ctbs = ShenandoahBarrierSet::barrier_set();
-  CardTable* ct = ctbs->card_table();
-
   __ shrptr(obj, CardTable::card_shift());
 
-  Address card_addr;
+  // We'll use this register as the TLS base address and also later on
+  // to hold the byte_map_base.
+  Register thread = LP64_ONLY(r15_thread) NOT_LP64(rcx);
+  Register tmp = LP64_ONLY(rscratch1) NOT_LP64(rdx);
 
-  // The calculation for byte_map_base is as follows:
-  // byte_map_base = _byte_map - (uintptr_t(low_bound) >> card_shift);
-  // So this essentially converts an address to a displacement and it will
-  // never need to be relocated. On 64-bit however the value may be too
-  // large for a 32-bit displacement.
-  intptr_t byte_map_base = (intptr_t)ct->byte_map_base();
-  if (__ is_simm32(byte_map_base)) {
-    card_addr = Address(noreg, obj, Address::times_1, byte_map_base);
-  } else {
-    // By doing it as an ExternalAddress 'byte_map_base' could be converted to a rip-relative
-    // displacement and done in a single instruction given favorable mapping and a
-    // smarter version of as_Address. However, 'ExternalAddress' generates a relocation
-    // entry and that entry is not properly handled by the relocation code.
-    AddressLiteral cardtable((address)byte_map_base, relocInfo::none);
-    Address index(noreg, obj, Address::times_1);
-    card_addr = __ as_Address(ArrayAddress(cardtable, index), rscratch1);
+#ifndef _LP64
+  // The next two ifs are just to get temporary registers to use for TLS and card table base.
+  if (thread == obj) {
+    thread = rdx;
+    tmp = rsi;
   }
+  if (tmp == obj) {
+    tmp = rsi;
+  }
+
+  __ push(thread);
+  __ push(tmp);
+  __ get_thread(thread);
+#endif
+
+  Address curr_ct_holder_addr(thread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ movptr(tmp, curr_ct_holder_addr);
+  Address card_addr(tmp, obj, Address::times_1);
 
   int dirty = CardTable::dirty_card_val();
   if (UseCondCardMark) {
@@ -651,6 +651,11 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register o
   } else {
     __ movb(card_addr, dirty);
   }
+
+#ifndef _LP64
+  __ pop(tmp1);
+  __ pop(thread);
+#endif
 }
 
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
@@ -906,10 +911,6 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
                                                                      Register tmp) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
 
-  ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
-  CardTable* ct = bs->card_table();
-  intptr_t disp = (intptr_t) ct->byte_map_base();
-
   Label L_loop, L_done;
   const Register end = count;
   assert_different_registers(addr, end);
@@ -919,13 +920,16 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   __ jccb(Assembler::zero, L_done);
 
 #ifdef _LP64
+  const Register thread = r15_thread;
+  Address curr_ct_holder_addr(thread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ movptr(tmp, curr_ct_holder_addr);
+
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
   __ shrptr(addr, CardTable::card_shift());
   __ shrptr(end, CardTable::card_shift());
   __ subptr(end, addr); // end --> cards count
 
-  __ mov64(tmp, disp);
   __ addptr(addr, tmp);
 
   __ BIND(L_loop);
@@ -933,13 +937,21 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   __ decrement(count);
   __ jccb(Assembler::greaterEqual, L_loop);
 #else
+  const Register thread = tmp;
+  __ get_thread(thread);
+
+  Address curr_ct_holder_addr(thread, in_bytes(ShenandoahThreadLocalData::byte_map_base_offset()));
+  __ movptr(tmp, curr_ct_holder_addr);
+
   __ lea(end, Address(addr, count, Address::times_ptr, -wordSize));
   __ shrptr(addr, CardTable::card_shift());
   __ shrptr(end,  CardTable::card_shift());
   __ subptr(end, addr); // end --> count
 
+  __ addptr(addr, tmp);
+
   __ BIND(L_loop);
-  Address cardtable(addr, count, Address::times_1, disp);
+  Address cardtable(addr, count, Address::times_1, 0);
   __ movb(cardtable, 0);
   __ decrement(count);
   __ jccb(Assembler::greaterEqual, L_loop);

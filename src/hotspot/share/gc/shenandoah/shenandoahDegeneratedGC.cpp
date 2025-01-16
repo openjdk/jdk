@@ -134,7 +134,7 @@ void ShenandoahDegenGC::op_degenerated() {
 
       if (heap->mode()->is_generational() && _generation->is_young()) {
         // Swap remembered sets for young
-        _generation->swap_remembered_set();
+        _generation->swap_card_tables();
       }
 
     case _degenerated_roots:
@@ -166,7 +166,7 @@ void ShenandoahDegenGC::op_degenerated() {
           // We only need this if the concurrent cycle has already swapped the card tables.
           // Marking will use the 'read' table, but interesting pointers may have been
           // recorded in the 'write' table in the time between the cancelled concurrent cycle
-          // and this degenerated cycle. These pointers need to be included the 'read' table
+          // and this degenerated cycle. These pointers need to be included in the 'read' table
           // used to scan the remembered set during the STW mark which follows here.
           _generation->merge_write_table();
         }

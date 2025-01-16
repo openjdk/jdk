@@ -236,15 +236,17 @@ public:
   inline bool is_write_card_dirty(HeapWord* p) const;
   inline void mark_card_as_dirty(HeapWord* p);
   inline void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
-  inline void mark_card_as_clean(HeapWord* p);
   inline void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
+
+  // See comment in ShenandoahScanRemembered
+  inline void mark_read_table_as_clean();
 
   // Merge any dirty values from write table into the read table, while leaving
   // the write table unchanged.
   void merge_write_table(HeapWord* start, size_t word_count);
 
-  // Destructively copy the write table to the read table, and clean the write table.
-  void reset_remset(HeapWord* start, size_t word_count);
+  // See comment in ShenandoahScanRemembered
+  void swap_card_tables();
 };
 
 // A ShenandoahCardCluster represents the minimal unit of work
@@ -755,10 +757,18 @@ public:
   bool is_write_card_dirty(HeapWord* p);
   void mark_card_as_dirty(HeapWord* p);
   void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
-  void mark_card_as_clean(HeapWord* p);
   void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
-  void reset_remset(HeapWord* start, size_t word_count) { _rs->reset_remset(start, word_count); }
+  // This method is used to concurrently clean the "read" card table -
+  // currently, as part of the reset phase. Later on the pointers to the "read"
+  // and "write" card tables are swapped everywhere to enable the GC to
+  // concurrently operate on the "read" table while mutators effect changes on
+  // the "write" table.
+  void mark_read_table_as_clean();
+
+  // Swaps read and write card tables pointers in effect setting a clean card
+  // table for the next GC cycle.
+  void swap_card_tables() { _rs->swap_card_tables(); }
 
   void merge_write_table(HeapWord* start, size_t word_count) { _rs->merge_write_table(start, word_count); }
 

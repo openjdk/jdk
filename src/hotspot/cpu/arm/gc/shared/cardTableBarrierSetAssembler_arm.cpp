@@ -44,10 +44,6 @@
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register addr, Register count, Register tmp) {
   BLOCK_COMMENT("CardTablePostBarrier");
-  BarrierSet* bs = BarrierSet::barrier_set();
-  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
-  CardTable* ct = ctbs->card_table();
-
   Label L_cardtable_loop, L_done;
 
   __ cbz_32(count, L_done); // zero count - nothing to do
@@ -59,8 +55,21 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
   __ logical_shift_right(count, count, CardTable::card_shift());
   __ sub(count, count, addr); // nb of cards
 
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+      Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+      __ ldr(tmp, curr_ct_holder_addr);
+  } else {
+#endif
+  BarrierSet* bs = BarrierSet::barrier_set();
+  CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
+  CardTable* ct = ctbs->card_table();
+
   // warning: Rthread has not been preserved
   __ mov_address(tmp, (address) ct->byte_map_base());
+#if INCLUDE_SHENANDOAHGC
+  }
+#endif
   __ add(addr,tmp, addr);
 
   Register zero = __ zero_register(tmp);
@@ -98,26 +107,17 @@ void CardTableBarrierSetAssembler::store_check_part1(MacroAssembler* masm, Regis
   BarrierSet* bs = BarrierSet::barrier_set();
   assert(bs->kind() == BarrierSet::CardTableBarrierSet,
          "Wrong barrier set kind");
-
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+     ldr(card_table_base, Address(Rthread, JavaThread::card_table_offset()));
+  } else {
+#endif
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(bs);
   CardTable* ct = ctbs->card_table();
-
-  // Load card table base address.
-
-  /* Performance note.
-
-     There is an alternative way of loading card table base address
-     from thread descriptor, which may look more efficient:
-
-     ldr(card_table_base, Address(Rthread, JavaThread::card_table_base_offset()));
-
-     However, performance measurements of micro benchmarks and specJVM98
-     showed that loading of card table base from thread descriptor is
-     7-18% slower compared to loading of literal embedded into the code.
-     Possible cause is a cache miss (card table base address resides in a
-     rarely accessed area of thread descriptor).
-  */
   __ mov_address(card_table_base, (address)ct->byte_map_base());
+#if INCLUDE_SHENANDOAHGC
+  }
+#endif
 }
 
 // The 2nd part of the store check.
@@ -146,6 +146,12 @@ void CardTableBarrierSetAssembler::store_check_part2(MacroAssembler* masm, Regis
 }
 
 void CardTableBarrierSetAssembler::set_card(MacroAssembler* masm, Register card_table_base, Address card_table_addr, Register tmp) {
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    __ mov(tmp, 0);
+    __ strb(tmp, card_table_addr);
+  } else {
+#endif
   CardTableBarrierSet* ctbs = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
   CardTable* ct = ctbs->card_table();
   if ((((uintptr_t)ct->byte_map_base() & 0xff) == 0)) {
@@ -157,4 +163,7 @@ void CardTableBarrierSetAssembler::set_card(MacroAssembler* masm, Register card_
     __ mov(tmp, 0);
     __ strb(tmp, card_table_addr);
   }
+#if INCLUDE_SHENANDOAHGC
+  }
+#endif
 }
