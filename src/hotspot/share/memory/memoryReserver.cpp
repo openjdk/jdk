@@ -131,8 +131,7 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
                                                      size_t alignment,
                                                      size_t page_size,
                                                      bool exec) {
-  log_trace(pagesize)("Attempt special mapping: size: %zu%s, "
-                      "alignment: %zu%s",
+  log_trace(pagesize)("Attempt special mapping: size: %zu%s, alignment: %zu%s",
                       byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
