@@ -51,7 +51,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
@@ -61,6 +60,7 @@ import java.util.concurrent.Flow.Subscription;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.copyOfRange;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,9 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpResponseLimitingTest {
 
-    private static final Charset CHARSET = StandardCharsets.UTF_8;
-
-    private static final byte[] RESPONSE_BODY = "random non-empty body".getBytes(CHARSET);
+    private static final byte[] RESPONSE_BODY = "random non-empty body".getBytes(UTF_8);
 
     @ParameterizedTest
     @MethodSource("sufficientCapacities")
