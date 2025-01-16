@@ -174,8 +174,52 @@ public final class ConstantUtils {
     }
 
     /**
-     * Validates the correctness of a binary class name. In particular checks for the presence of
-     * invalid characters in the name.
+     * Validates the correctness of a class or interface name or a package name.
+     * In particular checks for the presence of invalid characters,
+     * consecutive, leading, or trailing separator char, for both non-internal
+     * and internal forms, and the empty string for class or interface names.
+     *
+     * @param name the name
+     * @param slashSeparator {@code true} means {@code /} is the separator char
+     *     (internal form); otherwise {@code .} is the separator char
+     * @param allowEmpty {@code true} means the empty string is a valid name
+     * @return the name passed if valid
+     * @throws IllegalArgumentException if the name is invalid
+     * @throws NullPointerException if name is {@code null}
+     */
+    private static String validateClassOrPackageName(String name, boolean slashSeparator, boolean allowEmpty) {
+        int len = name.length();  // implicit null check
+        // empty name special rule
+        if (allowEmpty && len == 0)
+            return name;
+        // state variable for detection of illegal states of
+        // empty name, consecutive, leading, or trailing separators
+        int afterSeparator = 0;
+        for (int i = 0; i < len; i++) {
+            char ch = name.charAt(i);
+            // reject ';' or '['
+            if (ch == ';' || ch == '[')
+                throw invalidClassName(name);
+            // encounter a separator
+            boolean foundSlash = ch == '/';
+            if (foundSlash || ch == '.') {
+                // reject the other separator char
+                // reject consecutive or leading separators
+                if (foundSlash != slashSeparator || i == afterSeparator)
+                    throw invalidClassName(name);
+                afterSeparator = i + 1;
+            }
+        }
+        // reject empty name or trailing separators
+        if (len == afterSeparator)
+            throw invalidClassName(name);
+        return name;
+    }
+
+    /**
+     * Validates the correctness of a binary class name.
+     * In particular checks for the presence of invalid characters, empty
+     * name, consecutive, leading, or trailing {@code .}.
      *
      * @param name the class name
      * @return the class name passed if valid
@@ -183,18 +227,13 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateBinaryClassName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/'
-                    || ch == '.' && (i == 0 || i + 1 == name.length() || name.charAt(i - 1) == '.'))
-                throw invalidClassName(name);
-        }
-        return name;
+        return validateClassOrPackageName(name, false, false);
     }
 
     /**
      * Validates the correctness of an internal class name.
-     * In particular checks for the presence of invalid characters in the name.
+     * In particular checks for the presence of invalid characters, empty
+     * name, consecutive, leading, or trailing {@code /}.
      *
      * @param name the class name
      * @return the class name passed if valid
@@ -202,19 +241,13 @@ public final class ConstantUtils {
      * @throws NullPointerException if class name is {@code null}
      */
     public static String validateInternalClassName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.'
-                    || ch == '/' && (i == 0 || i + 1 == name.length() || name.charAt(i - 1) == '/'))
-                throw invalidClassName(name);
-        }
-        return name;
+        return validateClassOrPackageName(name, true, false);
     }
 
     /**
      * Validates the correctness of a binary package name.
-     * In particular checks for the presence of invalid characters in the name.
-     * Empty package name is allowed.
+     * In particular checks for the presence of invalid characters, consecutive,
+     * leading, or trailing {@code .}.  Allows empty strings for the unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -222,18 +255,13 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateBinaryPackageName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
+        return validateClassOrPackageName(name, false, true);
     }
 
     /**
      * Validates the correctness of an internal package name.
-     * In particular checks for the presence of invalid characters in the name.
-     * Empty package name is allowed.
+     * In particular checks for the presence of invalid characters, consecutive,
+     * leading, or trailing {@code /}.  Allows empty strings for the unnamed package.
      *
      * @param name the package name
      * @return the package name passed if valid
@@ -241,12 +269,7 @@ public final class ConstantUtils {
      * @throws NullPointerException if the package name is {@code null}
      */
     public static String validateInternalPackageName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.')
-                throw new IllegalArgumentException("Invalid package name: " + name);
-        }
-        return name;
+        return validateClassOrPackageName(name, true, true);
     }
 
     /**
@@ -423,26 +446,22 @@ public final class ConstantUtils {
                 case JVM_SIGNATURE_DOUBLE:
                     return index - start;
                 case JVM_SIGNATURE_CLASS:
-                    // state variable for detection of illegal states, such as:
-                    // empty unqualified name, '//', leading '/', or trailing '/'
-                    boolean legal = false;
+                    // state variable for detection of illegal states of
+                    // empty name, '//', leading '/', or trailing '/'
+                    int afterSeparator = index + 1; // start of internal name
                     while (index < end) {
-                        switch (descriptor.charAt(index++)) {
-                            case ';' -> {
-                                // illegal state on parser exit indicates empty unqualified name or trailing '/'
-                                return legal ? index - start : 0;
-                            }
-                            case '.', '[' -> {
-                                // do not permit '.' or '['
+                        ch = descriptor.charAt(index++);
+                        if (ch == ';')
+                            // reject empty name or trailing '/'
+                            return index == afterSeparator ? 0 : index - start;
+                        // reject '.' or '['
+                        if (ch == '.' || ch == '[')
+                            return 0;
+                        if (ch == '/') {
+                            // reject '//' or leading '/'
+                            if (index == afterSeparator)
                                 return 0;
-                            }
-                            case '/' -> {
-                                // illegal state when received '/' indicates '//' or leading '/'
-                                if (!legal) return 0;
-                                legal = false;
-                            }
-                            default ->
-                                legal = true;
+                            afterSeparator = index + 1;
                         }
                     }
                     break;

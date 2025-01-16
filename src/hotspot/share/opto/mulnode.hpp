@@ -226,6 +226,19 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+template <typename TypeClass>
+Node* make_and(Node* a, Node* b);
+
+template <>
+inline Node* make_and<TypeLong>(Node* a, Node* b) {
+  return new AndLNode(a, b);
+}
+
+template <>
+inline Node* make_and<TypeInt>(Node* a, Node* b) {
+  return new AndINode(a, b);
+}
+
 class LShiftNode : public Node {
 public:
   LShiftNode(Node *in1, Node *in2) : Node(nullptr,in1,in2) {
@@ -357,6 +370,19 @@ public:
   const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
+
+template <typename TypeClass>
+Node* make_urshift(Node* a, Node* b);
+
+template <>
+inline Node* make_urshift<TypeLong>(Node* a, Node* b) {
+  return new URShiftLNode(a, b);
+}
+
+template <>
+inline Node* make_urshift<TypeInt>(Node* a, Node* b) {
+  return new URShiftINode(a, b);
+}
 
 //------------------------------FmaNode--------------------------------------
 // fused-multiply-add

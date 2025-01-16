@@ -328,15 +328,19 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
-  if (is_power_of_2(c + 1)) {
-    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(c + 1);
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value + 1)) {
+    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(u_value + 1);
     LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
     __ sub(LIR_OprFact::address(addr), left, result); // rsb with shifted register
     return true;
-  } else if (is_power_of_2(c - 1)) {
-    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(c - 1);
+  } else if (is_power_of_2(u_value - 1)) {
+    LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(u_value - 1);
     LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
     __ add(left, LIR_OprFact::address(addr), result); // add with shifted register
+    return true;
+  } else if (c == -1) {
+    __ negate(left, result);
     return true;
   }
   return false;

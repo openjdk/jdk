@@ -26,7 +26,7 @@
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/memoryReserver.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
@@ -81,7 +81,9 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
   size_t size = G1BlockOffsetTable::compute_size(num_regions * region_size / HeapWordSize);
   size_t page_size = os::vm_page_size();
 
-  ReservedSpace rs(size, os::vm_page_size());
+  ReservedSpace rs = MemoryReserver::reserve(size,
+                                             os::vm_allocation_granularity(),
+                                             os::vm_page_size());
 
   G1RegionToSpaceMapper* small_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
@@ -105,8 +107,9 @@ TEST_VM(G1RegionToSpaceMapper, largeStressAdjacent) {
   size_t size = G1BlockOffsetTable::compute_size(num_regions * region_size / HeapWordSize);
   size_t page_size = os::vm_page_size();
 
-  ReservedSpace rs(size, page_size);
-
+  ReservedSpace rs = MemoryReserver::reserve(size,
+                                             os::vm_allocation_granularity(),
+                                             os::vm_page_size());
   G1RegionToSpaceMapper* large_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,

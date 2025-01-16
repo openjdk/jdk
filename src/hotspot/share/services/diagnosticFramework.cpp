@@ -424,7 +424,7 @@ bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
   args.print("%s", line.args_addr());
   char* rest = args.as_string();
   char* token = strtok_r(rest, " ", &rest);
-  while (token != NULL) {
+  while (token != nullptr) {
     if (strcmp(token, "-h") == 0 || strcmp(token, "--help") == 0 ||
         strcmp(token, "-help") == 0) {
       updated_line.print("%s", "help ");
@@ -587,7 +587,7 @@ GrowableArray<DCmdInfo*>* DCmdFactory::DCmdInfo_list(DCmdSource source ) {
     if (!factory->is_hidden() && (factory->export_flags() & source)) {
       array->append(new DCmdInfo(factory->name(),
                     factory->description(), factory->impact(),
-                    factory->permission(), factory->num_arguments(),
+                    factory->num_arguments(),
                     factory->is_enabled()));
     }
     factory = factory->next();

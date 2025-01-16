@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,6 @@ public class AesSha2DkCrypto extends DkCrypto {
         try {
             saltUtf8 = salt.getBytes(UTF_8);
             return stringToKey(password, saltUtf8, s2kparams);
-        } catch (Exception e) {
-            return null;
         } finally {
             if (saltUtf8 != null) {
                 Arrays.fill(saltUtf8, (byte)0);

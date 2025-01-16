@@ -515,11 +515,7 @@ public class SinceChecker {
                     .collect(Collectors.joining(",", "(", ")"));
             suffix = ": " + returnType + " " + te.getQualifiedName() + "." + methodName + descriptor;
         } else if (kind.isDeclaredType()) {
-            if (kind.isClass()) {
-                prefix = "class";
-            } else if (kind.isInterface()) {
-                prefix = "interface";
-            }
+            prefix = "class";
             suffix = ": " + ((TypeElement) element).getQualifiedName();
         } else if (kind == ElementKind.PACKAGE) {
             prefix = "package";
@@ -562,7 +558,7 @@ public class SinceChecker {
                 "field: com.sun.source.tree.CaseTree.CaseKind:STATEMENT",
                 "field: com.sun.source.tree.CaseTree.CaseKind:RULE",
                 "field: com.sun.source.tree.Tree.Kind:SWITCH_EXPRESSION",
-                "interface: com.sun.source.tree.SwitchExpressionTree",
+                "class: com.sun.source.tree.SwitchExpressionTree",
                 "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.SwitchExpressionTree.getExpression()",
                 "method: java.util.List com.sun.source.tree.SwitchExpressionTree.getCases()",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)",
@@ -580,7 +576,7 @@ public class SinceChecker {
                 "field: com.sun.source.tree.CaseTree.CaseKind:STATEMENT",
                 "field: com.sun.source.tree.CaseTree.CaseKind:RULE",
                 "field: com.sun.source.tree.Tree.Kind:SWITCH_EXPRESSION",
-                "interface: com.sun.source.tree.SwitchExpressionTree",
+                "class: com.sun.source.tree.SwitchExpressionTree",
                 "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.SwitchExpressionTree.getExpression()",
                 "method: java.util.List com.sun.source.tree.SwitchExpressionTree.getCases()",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitSwitchExpression(com.sun.source.tree.SwitchExpressionTree,java.lang.Object)",
@@ -591,7 +587,7 @@ public class SinceChecker {
                 "method: java.lang.String java.lang.String.formatted(java.lang.Object[])",
                 "class: javax.swing.plaf.basic.motif.MotifLookAndFeel",
                 "field: com.sun.source.tree.Tree.Kind:YIELD",
-                "interface: com.sun.source.tree.YieldTree",
+                "class: com.sun.source.tree.YieldTree",
                 "method: com.sun.source.tree.ExpressionTree com.sun.source.tree.YieldTree.getValue()",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
                 "method: java.lang.Object com.sun.source.util.SimpleTreeVisitor.visitYield(com.sun.source.tree.YieldTree,java.lang.Object)",
@@ -625,10 +621,10 @@ public class SinceChecker {
                 "method: boolean java.lang.Class.isRecord()",
                 "method: java.lang.reflect.RecordComponent[] java.lang.Class.getRecordComponents()",
                 "class: java.lang.Record",
-                "interface: com.sun.source.tree.PatternTree",
+                "class: com.sun.source.tree.PatternTree",
                 "field: com.sun.source.tree.Tree.Kind:BINDING_PATTERN",
                 "method: com.sun.source.tree.PatternTree com.sun.source.tree.InstanceOfTree.getPattern()",
-                "interface: com.sun.source.tree.BindingPatternTree",
+                "class: com.sun.source.tree.BindingPatternTree",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitBindingPattern(com.sun.source.tree.BindingPatternTree,java.lang.Object)"
         ));
 
@@ -664,10 +660,10 @@ public class SinceChecker {
                 "method: java.util.List com.sun.source.tree.ClassTree.getPermitsClause()",
                 "method: boolean java.lang.Class.isSealed()",
                 "method: java.lang.constant.ClassDesc[] java.lang.Class.permittedSubclasses()",
-                "interface: com.sun.source.tree.PatternTree",
+                "class: com.sun.source.tree.PatternTree",
                 "field: com.sun.source.tree.Tree.Kind:BINDING_PATTERN",
                 "method: com.sun.source.tree.PatternTree com.sun.source.tree.InstanceOfTree.getPattern()",
-                "interface: com.sun.source.tree.BindingPatternTree",
+                "class: com.sun.source.tree.BindingPatternTree",
                 "method: java.lang.Object com.sun.source.tree.TreeVisitor.visitBindingPattern(com.sun.source.tree.BindingPatternTree,java.lang.Object)"
         ));
 

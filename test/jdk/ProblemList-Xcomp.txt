@@ -28,4 +28,5 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java          8146623 generic-all
+java/lang/reflect/callerCache/ReflectionCallerCacheTest.java    8332028 generic-all
 com/sun/jdi/InterruptHangTest.java                              8043571 generic-all

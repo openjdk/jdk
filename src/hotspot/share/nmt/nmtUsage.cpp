@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "nmt/mallocTracker.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
@@ -89,6 +90,16 @@ void NMTUsage::update_vm_usage() {
     _vm_by_type[i].committed = vm->committed();
     _vm_total.reserved += vm->reserved();
     _vm_total.committed += vm->committed();
+  }
+
+  { // MemoryFileTracker addition
+    using MFT = MemoryFileTracker::Instance;
+    MFT::Locker lock;
+    MFT::iterate_summary([&](MemTag tag, const VirtualMemory* vm) {
+      int i = NMTUtil::tag_to_index(tag);
+      _vm_by_type[i].committed += vm->committed();
+      _vm_total.committed += vm->committed();
+    });
   }
 }
 

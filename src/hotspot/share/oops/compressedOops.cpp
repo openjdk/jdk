@@ -26,9 +26,9 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "memory/virtualspace.hpp"
 #include "oops/compressedOops.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "runtime/arguments.hpp"
@@ -66,7 +66,7 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
     set_base((address)heap_space.compressed_oop_base());
   }
 
-  _heap_address_range = heap_space.region();
+  _heap_address_range = MemRegion((HeapWord*)heap_space.base(), (HeapWord*)heap_space.end());
 
   LogTarget(Debug, gc, heap, coops) lt;
   if (lt.is_enabled()) {

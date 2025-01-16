@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,6 +212,7 @@ address    TemplateInterpreter::_throw_ClassCastException_entry             = nu
 address    TemplateInterpreter::_throw_NullPointerException_entry           = nullptr;
 address    TemplateInterpreter::_throw_StackOverflowError_entry             = nullptr;
 address    TemplateInterpreter::_throw_exception_entry                      = nullptr;
+address    TemplateInterpreter::_cont_resume_interpreter_adapter            = nullptr;
 
 #ifndef PRODUCT
 EntryPoint TemplateInterpreter::_trace_code;

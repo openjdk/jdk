@@ -742,6 +742,13 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   if (target() == nullptr) {
     return nullptr;
   }
+
+  // Redefinition support.
+  if (this->is_old() || root_m->is_old() || target->is_old()) {
+    guarantee(CURRENT_THREAD_ENV->jvmti_state_changed(), "old method not detected");
+    return nullptr;
+  }
+
   if (target() == root_m->get_Method()) {
     return root_m;
   }
@@ -782,22 +789,6 @@ bool ciMethod::can_omit_stack_trace() const {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::equals
-//
-// Returns true if the methods are the same, taking redefined methods
-// into account.
-bool ciMethod::equals(const ciMethod* m) const {
-  if (this == m) return true;
-  VM_ENTRY_MARK;
-  Method* m1 = this->get_Method();
-  Method* m2 = m->get_Method();
-  if (m1->is_old()) m1 = m1->get_new_method();
-  if (m2->is_old()) m2 = m2->get_new_method();
-  return m1 == m2;
-}
-
-
-// ------------------------------------------------------------------
 // ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.
@@ -835,6 +826,12 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
 
   ciMethod* result = this;
   if (m != get_Method()) {
+    // Redefinition support.
+    if (this->is_old() || m->is_old()) {
+      guarantee(CURRENT_THREAD_ENV->jvmti_state_changed(), "old method not detected");
+      return nullptr;
+    }
+
     result = CURRENT_THREAD_ENV->get_method(m);
   }
 
@@ -1495,3 +1492,10 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
 }
 
 // ------------------------------------------------------------------
+// ciMethod::is_old
+//
+// Return true for redefined methods
+bool ciMethod::is_old() const {
+  ASSERT_IN_VM;
+  return get_Method()->is_old();
+}

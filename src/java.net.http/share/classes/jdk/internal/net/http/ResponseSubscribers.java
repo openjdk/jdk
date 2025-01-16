@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.io.BufferedReader;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,11 +34,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -164,83 +158,31 @@ public class ResponseSubscribers {
 
     /**
      * A Subscriber that writes the flow of data to a given file.
-     *
-     * Privileged actions are performed within a limited doPrivileged that only
-     * asserts the specific, write, file permissions that were checked during
-     * the construction of this PathSubscriber.
      */
     public static class PathSubscriber implements TrustedSubscriber<Path> {
-
-        private static final FilePermission[] EMPTY_FILE_PERMISSIONS = new FilePermission[0];
-
         private final Path file;
         private final OpenOption[] options;
-        @SuppressWarnings("removal")
-        private final AccessControlContext acc;
-        private final FilePermission[] filePermissions;
-        private final boolean isDefaultFS;
         private final CompletableFuture<Path> result = new MinimalFuture<>();
 
         private final AtomicBoolean subscribed = new AtomicBoolean();
         private volatile Flow.Subscription subscription;
         private volatile FileChannel out;
 
-        private static final String pathForSecurityCheck(Path path) {
-            return path.toFile().getPath();
-        }
-
         /**
          * Factory for creating PathSubscriber.
-         *
-         * Permission checks are performed here before construction of the
-         * PathSubscriber. Permission checking and construction are deliberately
-         * and tightly co-located.
          */
         public static PathSubscriber create(Path file,
                                             List<OpenOption> options) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            FilePermission filePermission = null;
-            if (sm != null) {
-                try {
-                    String fn = pathForSecurityCheck(file);
-                    FilePermission writePermission = new FilePermission(fn, "write");
-                    sm.checkPermission(writePermission);
-                    filePermission = writePermission;
-                } catch (UnsupportedOperationException ignored) {
-                    // path not associated with the default file system provider
-                }
-            }
-
-            assert filePermission == null || filePermission.getActions().equals("write");
-            @SuppressWarnings("removal")
-            AccessControlContext acc = sm != null ? AccessController.getContext() : null;
-            return new PathSubscriber(file, options, acc, filePermission);
+            return new PathSubscriber(file, options);
         }
 
         // pp so handler implementations in the same package can construct
         /*package-private*/ PathSubscriber(Path file,
-                                           List<OpenOption> options,
-                                           @SuppressWarnings("removal") AccessControlContext acc,
-                                           FilePermission... filePermissions) {
+                                           List<OpenOption> options) {
             this.file = file;
             this.options = options.stream().toArray(OpenOption[]::new);
-            this.acc = acc;
-            this.filePermissions = filePermissions == null || filePermissions[0] == null
-                            ? EMPTY_FILE_PERMISSIONS : filePermissions;
-            this.isDefaultFS = isDefaultFS(file);
         }
 
-        private static boolean isDefaultFS(Path file) {
-            try {
-                file.toFile();
-                return true;
-            } catch (UnsupportedOperationException uoe) {
-                return false;
-            }
-        }
-
-        @SuppressWarnings("removal")
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
             Objects.requireNonNull(subscription);
@@ -250,31 +192,12 @@ public class ResponseSubscribers {
             }
 
             this.subscription = subscription;
-            if (acc == null) {
-                try {
-                    out = FileChannel.open(file, options);
-                } catch (IOException ioe) {
-                    result.completeExceptionally(ioe);
-                    subscription.cancel();
-                    return;
-                }
-            } else {
-                try {
-                    PrivilegedExceptionAction<FileChannel> pa =
-                            () -> FileChannel.open(file, options);
-                    out = isDefaultFS
-                            ? AccessController.doPrivileged(pa, acc, filePermissions)
-                            : AccessController.doPrivileged(pa, acc);
-                } catch (PrivilegedActionException pae) {
-                    Throwable t = pae.getCause() != null ? pae.getCause() : pae;
-                    result.completeExceptionally(t);
-                    subscription.cancel();
-                    return;
-                } catch (Exception e) {
-                    result.completeExceptionally(e);
-                    subscription.cancel();
-                    return;
-                }
+            try {
+                out = FileChannel.open(file, options);
+            } catch (IOException ioe) {
+                result.completeExceptionally(ioe);
+                subscription.cancel();
+                return;
             }
             subscription.request(1);
         }
@@ -311,21 +234,8 @@ public class ResponseSubscribers {
             return result;
         }
 
-        @SuppressWarnings("removal")
         private void close() {
-            if (acc == null) {
-                Utils.close(out);
-            } else {
-                PrivilegedAction<Void> pa = () -> {
-                    Utils.close(out);
-                    return null;
-                };
-                if (isDefaultFS) {
-                    AccessController.doPrivileged(pa, acc, filePermissions);
-                } else {
-                    AccessController.doPrivileged(pa, acc);
-                }
-            }
+            Utils.close(out);
         }
     }
 

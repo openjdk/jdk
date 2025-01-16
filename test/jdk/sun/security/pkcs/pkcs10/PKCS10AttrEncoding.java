@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
  * @compile -XDignore.symbol.file PKCS10AttrEncoding.java
- * @run main PKCS10AttrEncoding
+ * @run main PKCS10AttrEncoding DSA 512
+ * @run main PKCS10AttrEncoding Sha256withDSA 2048
  */
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -69,11 +70,13 @@ public class PKCS10AttrEncoding {
             constructedMap.put(ids[j], values[j]);
         }
 
+        String kpgAlgorithm = "DSA";
         X500Name subject = new X500Name("cn=Test");
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA");
-        String sigAlg = "DSA";
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance(kpgAlgorithm);
+        String sigAlg = args[0];
+        int keySize = Integer.parseInt(args[1]);
 
-        keyGen.initialize(512);
+        keyGen.initialize(keySize);
 
         KeyPair pair = keyGen.generateKeyPair();
         X509Key publicKey = (X509Key) pair.getPublic();

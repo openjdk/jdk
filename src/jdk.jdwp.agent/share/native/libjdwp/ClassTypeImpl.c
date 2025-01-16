@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ readStaticFieldValue(JNIEnv *env, PacketInputStream *in, jclass clazz,
     if (isReferenceTag(typeKey)) {
         value.l = inStream_readObjectRef(env, in);
         JNI_FUNC_PTR(env,SetStaticObjectField)(env, clazz, field, value.l);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             return JDWP_ERROR(INTERNAL);
         }
         return JDWP_ERROR(NONE);
@@ -112,7 +112,7 @@ readStaticFieldValue(JNIEnv *env, PacketInputStream *in, jclass clazz,
             break;
     }
 
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         return JDWP_ERROR(INTERNAL);
     }
     return JDWP_ERROR(NONE);

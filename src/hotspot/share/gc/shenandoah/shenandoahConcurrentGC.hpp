@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,8 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
+class ShenandoahGeneration;
+
 class VM_ShenandoahInitMark;
 class VM_ShenandoahFinalMarkStartEvac;
 class VM_ShenandoahInitUpdateRefs;
@@ -42,22 +45,24 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahFinalUpdateRefs;
   friend class VM_ShenandoahFinalRoots;
 
+protected:
+  ShenandoahConcurrentMark    _mark;
+  ShenandoahGeneration* const _generation;
+
 private:
-  ShenandoahConcurrentMark  _mark;
-  ShenandoahDegenPoint      _degen_point;
-  bool                      _abbreviated;
+  ShenandoahDegenPoint        _degen_point;
+  bool                        _abbreviated;
+  const bool                  _do_old_gc_bootstrap;
 
 public:
-  ShenandoahConcurrentGC();
-  bool collect(GCCause::Cause cause);
+  ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap);
+  bool collect(GCCause::Cause cause) override;
   ShenandoahDegenPoint degen_point() const;
 
   // Return true if this cycle found enough immediate garbage to skip evacuation
   bool abbreviated() const { return _abbreviated; }
 
-  // Cancel ongoing concurrent GC
-  static void cancel();
-private:
+protected:
   // Entry points to STW GC operations, these cause a related safepoint, that then
   // call the entry method below
   void vmop_entry_init_mark();
@@ -78,6 +83,7 @@ private:
   // for concurrent operation.
   void entry_reset();
   void entry_mark_roots();
+  void entry_scan_remembered_set();
   void entry_mark();
   void entry_thread_roots();
   void entry_weak_refs();
@@ -90,12 +96,15 @@ private:
   void entry_updaterefs();
   void entry_cleanup_complete();
 
+  // Called when the collection set is empty, but the generational mode has regions to promote in place
+  void entry_promote_in_place();
+
   // Actual work for the phases
   void op_reset();
   void op_init_mark();
   void op_mark_roots();
   void op_mark();
-  void op_final_mark();
+  virtual void op_final_mark();
   void op_thread_roots();
   void op_weak_refs();
   void op_weak_roots();
@@ -110,16 +119,24 @@ private:
   void op_final_roots();
   void op_cleanup_complete();
 
+  // Check GC cancellation and abort concurrent GC
+  bool check_cancellation_and_abort(ShenandoahDegenPoint point);
+
+private:
   void start_mark();
+
+  static bool has_in_place_promotions(ShenandoahHeap* heap) ;
 
   // Messages for GC trace events, they have to be immortal for
   // passing around the logging/tracing systems
   const char* init_mark_event_message() const;
   const char* final_mark_event_message() const;
+  const char* final_roots_event_message() const;
   const char* conc_mark_event_message() const;
-
-  // Check GC cancellation and abort concurrent GC
-  bool check_cancellation_and_abort(ShenandoahDegenPoint point);
+  const char* conc_reset_event_message() const;
+  const char* conc_weak_refs_event_message() const;
+  const char* conc_weak_roots_event_message() const;
+  const char* conc_cleanup_event_message() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTGC_HPP

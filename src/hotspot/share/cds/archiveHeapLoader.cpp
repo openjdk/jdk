@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,7 +308,7 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   }
   assert(r->mapped_base() == (char*)load_address, "sanity");
   log_info(cds)("Loaded heap    region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT
-                " size " SIZE_FORMAT_W(6) " delta " INTX_FORMAT,
+                " size " SIZE_FORMAT_W(6) " delta %zd",
                 loaded_region->_region_index, load_address, load_address + loaded_region->_region_size,
                 loaded_region->_region_size, loaded_region->_runtime_offset);
 
@@ -449,10 +449,6 @@ class PatchNativePointers: public BitMapClosure {
   bool do_bit(size_t offset) {
     Metadata** p = _start + offset;
     *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
-    // Currently we have only Klass pointers in heap objects.
-    // This needs to be relaxed when we support other types of native
-    // pointers such as Method.
-    assert(((Klass*)(*p))->is_klass(), "must be");
     return true;
   }
 };

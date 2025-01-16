@@ -33,8 +33,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -212,23 +210,17 @@ public final class ZoneInfoFile {
         loadTZDB();
     }
 
-    @SuppressWarnings("removal")
     private static void loadTZDB() {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                try {
-                    String libDir = StaticProperty.javaHome() + File.separator + "lib";
-                    try (DataInputStream dis = new DataInputStream(
-                             new BufferedInputStream(new FileInputStream(
-                                 new File(libDir, "tzdb.dat"))))) {
-                        load(dis);
-                    }
-                } catch (Exception x) {
-                    throw new Error(x);
-                }
-                return null;
+        try {
+            String libDir = StaticProperty.javaHome() + File.separator + "lib";
+            try (DataInputStream dis = new DataInputStream(
+                     new BufferedInputStream(new FileInputStream(
+                         new File(libDir, "tzdb.dat"))))) {
+                load(dis);
             }
-        });
+        } catch (Exception x) {
+            throw new Error(x);
+        }
     }
 
     /**

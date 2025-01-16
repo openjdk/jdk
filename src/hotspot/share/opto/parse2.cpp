@@ -1376,9 +1376,9 @@ static volatile int _trap_stress_counter = 0;
 
 void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
-  counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, MemNode::unordered);
   counter = _gvn.transform(new AddINode(counter, intcon(1)));
-  incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+  incr_store = store_to_memory(control(), counter_addr, counter, T_INT, MemNode::unordered);
 }
 
 //----------------------------------do_ifnull----------------------------------
@@ -2836,7 +2836,7 @@ void Parse::do_one_bytecode() {
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(buffer, perBytecode);
+    printer->print_graph(buffer);
     printer->set_traverse_outs(old);
   }
 #endif

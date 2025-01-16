@@ -228,7 +228,13 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       return shift_count;
     } else {
       // Replicate the scalar same_input to every vector element.
-      BasicType element_type = _vloop_analyzer.types().velt_basic_type(p0);
+      // In some rare case, p0 is Convert node such as a ConvL2I: all
+      // ConvL2I nodes in the pack only differ in their types.
+      // velt_basic_type(p0) is the output type of the pack. In the
+      // case of a ConvL2I, it can be int or some narrower type such
+      // as short etc. But given we replicate the input of the Convert
+      // node, we have to use the input type instead.
+      BasicType element_type = p0->is_Convert() ? p0->in(1)->bottom_type()->basic_type() : _vloop_analyzer.types().velt_basic_type(p0);
       if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");

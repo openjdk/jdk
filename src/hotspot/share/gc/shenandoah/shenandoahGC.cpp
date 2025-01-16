@@ -29,7 +29,6 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
@@ -40,6 +39,8 @@ const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
       return "<UNSET>";
     case _degenerated_outside_cycle:
       return "Outside of Cycle";
+    case _degenerated_roots:
+      return "Roots";
     case _degenerated_mark:
       return "Mark";
     case _degenerated_evac:

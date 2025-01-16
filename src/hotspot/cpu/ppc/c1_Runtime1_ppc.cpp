@@ -64,7 +64,8 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result,
 
   address return_pc = call_c(entry_point);
 
-  reset_last_Java_frame();
+  // Last java sp can be null when the RT call was preempted
+  reset_last_Java_frame(false /* check_last_java_sp */);
 
   // Check for pending exceptions.
   {
@@ -257,6 +258,11 @@ void Runtime1::initialize_pd() {
   frame_size_in_bytes = align_up(sp_offset, frame::alignment_in_bytes);
 }
 
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  // On PPC virtual threads don't save the JavaThread* in their context (e.g. C1 stub frames).
+  ShouldNotCallThis();
+  return 0;
+}
 
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   // Make a frame and preserve the caller's caller-save registers.

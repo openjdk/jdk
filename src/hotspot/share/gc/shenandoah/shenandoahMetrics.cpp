@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +49,7 @@ bool ShenandoahMetricsSnapshot::is_good_progress() {
   size_t free_actual   = _heap->free_set()->available();
   size_t free_expected = _heap->max_capacity() / 100 * ShenandoahCriticalFreeThreshold;
   bool prog_free = free_actual >= free_expected;
-  log_info(gc, ergo)("%s progress for free space: " SIZE_FORMAT "%s, need " SIZE_FORMAT "%s",
+  log_info(gc, ergo)("%s progress for free space: %zu%s, need %zu%s",
                      prog_free ? "Good" : "Bad",
                      byte_size_in_proper_unit(free_actual),   proper_unit_for_byte_size(free_actual),
                      byte_size_in_proper_unit(free_expected), proper_unit_for_byte_size(free_expected));
@@ -60,7 +61,7 @@ bool ShenandoahMetricsSnapshot::is_good_progress() {
   size_t progress_actual   = (_used_before > _used_after) ? _used_before - _used_after : 0;
   size_t progress_expected = ShenandoahHeapRegion::region_size_bytes();
   bool prog_used = progress_actual >= progress_expected;
-  log_info(gc, ergo)("%s progress for used space: " SIZE_FORMAT "%s, need " SIZE_FORMAT "%s",
+  log_info(gc, ergo)("%s progress for used space: %zu%s, need %zu%s",
                      prog_used ? "Good" : "Bad",
                      byte_size_in_proper_unit(progress_actual),   proper_unit_for_byte_size(progress_actual),
                      byte_size_in_proper_unit(progress_expected), proper_unit_for_byte_size(progress_expected));

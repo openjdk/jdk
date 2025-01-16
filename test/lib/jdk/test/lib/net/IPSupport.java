@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,13 @@ import jdk.test.lib.Platform;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.ProtocolFamily;
 import java.net.StandardProtocolFamily;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.util.concurrent.Callable;
+
 import jtreg.SkippedException;
 
 /**
@@ -55,12 +51,10 @@ public class IPSupport {
     private static final int IPV6_SNDBUF_AIX = 65487;
 
     static {
-        hasIPv4 = runPrivilegedAction(() -> isSupported(Inet4Address.class));
-        hasIPv6 = runPrivilegedAction(() -> isSupported(Inet6Address.class));
-        preferIPv4Stack = runPrivilegedAction(() -> Boolean.parseBoolean(
-            System.getProperty("java.net.preferIPv4Stack")));
-        preferIPv6Addresses = runPrivilegedAction(() -> Boolean.parseBoolean(
-            System.getProperty("java.net.preferIPv6Addresses")));
+        hasIPv4 = isSupported(Inet4Address.class);
+        hasIPv6 = isSupported(Inet6Address.class);
+        preferIPv4Stack = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack"));
+        preferIPv6Addresses = Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
         if (!preferIPv4Stack && !hasIPv4 && !hasIPv6) {
             throw new AssertionError("IPv4 and IPv6 both not available and java.net.preferIPv4Stack is not true");
         }
@@ -73,16 +67,6 @@ public class IPSupport {
             return true;
         } catch (IOException | UnsupportedOperationException ex) {
             return false;
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private static <T> T runPrivilegedAction(Callable<T> callable) {
-        try {
-            PrivilegedExceptionAction<T> pa = () -> callable.call();
-            return AccessController.doPrivileged(pa);
-        } catch (PrivilegedActionException pae) {
-            throw new UncheckedIOException((IOException) pae.getCause());
         }
     }
 

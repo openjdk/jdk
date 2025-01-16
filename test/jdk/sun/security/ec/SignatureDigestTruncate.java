@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,17 +96,20 @@ public class SignatureDigestTruncate {
         byte[] expectedSig = hex.parseHex(sigStr);
 
         AlgorithmParameters params =
-            AlgorithmParameters.getInstance("EC", "SunEC");
+            AlgorithmParameters.getInstance("EC",
+                    System.getProperty("test.provider.name", "SunEC"));
         params.init(new ECGenParameterSpec(curveName));
         ECParameterSpec ecParams =
             params.getParameterSpec(ECParameterSpec.class);
 
-        KeyFactory kf = KeyFactory.getInstance("EC", "SunEC");
+        KeyFactory kf = KeyFactory.getInstance("EC",
+                            System.getProperty("test.provider.name", "SunEC"));
         BigInteger s = new BigInteger(1, privateKey);
         ECPrivateKeySpec privKeySpec = new ECPrivateKeySpec(s, ecParams);
         PrivateKey privKey = kf.generatePrivate(privKeySpec);
 
-        Signature sig = Signature.getInstance(alg, "SunEC");
+        Signature sig = Signature.getInstance(alg,
+                            System.getProperty("test.provider.name", "SunEC"));
         sig.initSign(privKey, new FixedRandom(k));
         sig.update(msg);
         byte[] computedSig = sig.sign();

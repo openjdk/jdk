@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ void ZMark::start() {
     for (uint worker_id = 0; worker_id < _nworkers; worker_id++) {
       const ZMarkStripe* const stripe = _stripes.stripe_for_worker(_nworkers, worker_id);
       const size_t stripe_id = _stripes.stripe_id(stripe);
-      log.print("  Worker %u(%u) -> Stripe " SIZE_FORMAT "(" SIZE_FORMAT ")",
+      log.print("  Worker %u(%u) -> Stripe %zu(%zu)",
                 worker_id, _nworkers, stripe_id, nstripes);
     }
   }
@@ -194,7 +194,7 @@ void ZMark::push_partial_array(zpointer* addr, size_t length, bool finalizable) 
   const uintptr_t offset = encode_partial_array_offset(addr);
   const ZMarkStackEntry entry(offset, length, finalizable);
 
-  log_develop_trace(gc, marking)("Array push partial: " PTR_FORMAT " (" SIZE_FORMAT "), stripe: " SIZE_FORMAT,
+  log_develop_trace(gc, marking)("Array push partial: " PTR_FORMAT " (%zu), stripe: %zu",
                                  p2i(addr), length, _stripes.stripe_id(stripe));
 
   stacks->push(&_allocator, &_stripes, stripe, &_terminate, entry, false /* publish */);
@@ -213,7 +213,7 @@ static void mark_barrier_on_oop_array(volatile zpointer* p, size_t length, bool 
 void ZMark::follow_array_elements_small(zpointer* addr, size_t length, bool finalizable) {
   assert(length <= ZMarkPartialArrayMinLength, "Too large, should be split");
 
-  log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (" SIZE_FORMAT ")", p2i(addr), length);
+  log_develop_trace(gc, marking)("Array follow small: " PTR_FORMAT " (%zu)", p2i(addr), length);
 
   mark_barrier_on_oop_array(addr, length, finalizable, _generation->is_young());
 }
@@ -232,8 +232,8 @@ void ZMark::follow_array_elements_large(zpointer* addr, size_t length, bool fina
   const size_t    middle_length = align_down(end - middle_start, ZMarkPartialArrayMinLength);
   zpointer* const middle_end = middle_start + middle_length;
 
-  log_develop_trace(gc, marking)("Array follow large: " PTR_FORMAT "-" PTR_FORMAT" (" SIZE_FORMAT "), "
-                                 "middle: " PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT ")",
+  log_develop_trace(gc, marking)("Array follow large: " PTR_FORMAT "-" PTR_FORMAT" (%zu), "
+                                 "middle: " PTR_FORMAT "-" PTR_FORMAT " (%zu)",
                                  p2i(start), p2i(end), length, p2i(middle_start), p2i(middle_end), middle_length);
 
   // Push unaligned trailing part

@@ -35,6 +35,7 @@ import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -71,6 +72,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -804,46 +806,46 @@ public class JShellTool implements MessageHandler {
     }
 
     /**
-     * Add normal prefixing/postfixing to embedded newlines in a string,
+     * Add normal prefixing/postfixing to embedded newlines in a format string,
      * bracketing with normal prefix/postfix
      *
-     * @param s the string to prefix
-     * @return the pre/post-fixed and bracketed string
+     * @param format the format string to prefix/postfix
+     * @return the pre/post-fixed and bracketed format string
      */
-    String prefix(String s) {
-         return prefix(s, feedback.getPre(), feedback.getPost());
+    String prefix(String format) {
+         return prefix(format, feedback.getPre(), feedback.getPost());
     }
 
     /**
-     * Add error prefixing/postfixing to embedded newlines in a string,
+     * Add error prefixing/postfixing to embedded newlines in a format string,
      * bracketing with error prefix/postfix
      *
-     * @param s the string to prefix
-     * @return the pre/post-fixed and bracketed string
+     * @param format the format string to prefix/postfix
+     * @return the pre/post-fixed and bracketed format string
      */
-    String prefixError(String s) {
-         return prefix(s, feedback.getErrorPre(), feedback.getErrorPost());
+    String prefixError(String format) {
+         return prefix(format, feedback.getErrorPre(), feedback.getErrorPost());
     }
 
     /**
-     * Add prefixing/postfixing to embedded newlines in a string,
+     * Add prefixing/postfixing to embedded newlines in a format string,
      * bracketing with prefix/postfix.  No prefixing when non-interactive.
-     * Result is expected to be the format for a printf.
+     * Both input and result strings are expected to be the format for a printf.
      *
-     * @param s the string to prefix
-     * @param pre the string to prepend to each line
-     * @param post the string to append to each line (replacing newline)
-     * @return the pre/post-fixed and bracketed string
+     * @param format the format string to prefix
+     * @param pre the string to prepend to each line (printf safe)
+     * @param post the string to append to each line (replacing newline; printf safe)
+     * @return the pre/post-fixed and bracketed format string
      */
-    String prefix(String s, String pre, String post) {
-        if (s == null) {
+    String prefix(String format, String pre, String post) {
+        if (format == null) {
             return "";
         }
         if (!interactiveModeBegun) {
             // messages expect to be new-line terminated (even when not prefixed)
-            return s + "%n";
+            return format + "%n";
         }
-        String pp = s.replaceAll("\\R", post + pre);
+        String pp = format.replaceAll("\\R", post + pre);
         if (pp.endsWith(post + pre)) {
             // prevent an extra prefix char and blank line when the string
             // already terminates with newline
@@ -858,7 +860,7 @@ public class JShellTool implements MessageHandler {
      * @param key the resource key
      */
     void hardrb(String key) {
-        hard(getResourceString(key));
+        hard(escape(getResourceString(key)));
     }
 
     /**
@@ -881,7 +883,7 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void hardmsg(String key, Object... args) {
-        hard(messageFormat(key, args));
+        hard(escape(messageFormat(key, args)));
     }
 
     /**
@@ -911,13 +913,20 @@ public class JShellTool implements MessageHandler {
     }
 
     <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
-        Map<String, String> a2b = stream.collect(toMap(a, b,
+        Map<String, String> a2b = stream.collect(toMap(a, b.andThen(this::escape),
                 (m1, m2) -> m1,
                 LinkedHashMap::new));
         for (Entry<String, String> e : a2b.entrySet()) {
             hard("%s", e.getKey());
             cmdout.printf(prefix(e.getValue(), feedback.getPre() + "\t", feedback.getPost()));
         }
+    }
+
+    /**
+     * Escape '%' signs in a plain string to make it a valid format string.
+     */
+    String escape(Object s) {
+        return s.toString().replace("%", "%%");
     }
 
     /**
@@ -1192,7 +1201,7 @@ public class JShellTool implements MessageHandler {
 
     //where
     private void startUpRun(String start) {
-        try (IOContext suin = new ScannerIOContext(new StringReader(start))) {
+        try (IOContext suin = new ScannerIOContext(new StringReader(start), userout)) {
             while (run(suin)) {
                 if (!live) {
                     resetState();
@@ -2331,7 +2340,7 @@ public class JShellTool implements MessageHandler {
             sb.append(startup.show(false));
             sb.append(startup.showDetail());
         }
-        hard(sb.toString());
+        hard(escape(sb));
     }
 
     private void showIndent() {
@@ -3125,7 +3134,7 @@ public class JShellTool implements MessageHandler {
                         throw new FileNotFoundException(filename);
                     }
                 }
-                try (var scannerIOContext = new ScannerIOContext(scanner)) {
+                try (var scannerIOContext = new ScannerIOContext(scanner, userout)) {
                     run(scannerIOContext);
                 }
                 return true;
@@ -3261,7 +3270,7 @@ public class JShellTool implements MessageHandler {
                 sb.append(a);
             }
             if (sb.length() > 0) {
-                hard(sb.toString());
+                hard(escape(sb));
             }
             return false;
         }
@@ -3288,8 +3297,10 @@ public class JShellTool implements MessageHandler {
             resetState();
         }
         if (history != null) {
-            run(new ReloadIOContext(history.iterable(),
-                    echo ? cmdout : null));
+            try (ReloadIOContext ctx = new ReloadIOContext(history.iterable(),
+                    echo ? cmdout : null, userout)) {
+                run(ctx);
+            }
         }
         return true;
     }
@@ -3774,7 +3785,7 @@ public class JShellTool implements MessageHandler {
             case NONEXISTENT:
             default:
                 // Should not occur
-                error("Unexpected status: " + previousStatus.toString() + "=>" + status.toString());
+                error("Unexpected status: %s=>%s", previousStatus, status);
                 act = FormatAction.DROPPED;
         }
         return act;
@@ -4107,6 +4118,17 @@ public class JShellTool implements MessageHandler {
         public String readLine(String prompt) {
             try {
                 return input.readUserLine(prompt);
+            } catch (UserInterruptException ex) {
+                return null;
+            } catch (IOException ex) {
+                throw new IOError(ex);
+            }
+        }
+
+        @Override
+        public String readLine() throws IOError {
+            try {
+                return input.readUserLine();
             } catch (IOException ex) {
                 throw new IOError(ex);
             }
@@ -4116,6 +4138,8 @@ public class JShellTool implements MessageHandler {
         public char[] readPassword(String prompt) {
             try {
                 return input.readPassword(prompt);
+            } catch (UserInterruptException ex) {
+                return null;
             } catch (IOException ex) {
                 throw new IOError(ex);
             }
@@ -4134,6 +4158,12 @@ public class JShellTool implements MessageHandler {
 }
 
 abstract class NonInteractiveIOContext extends IOContext {
+
+    private final Writer userOutput;
+
+    public NonInteractiveIOContext(PrintStream userOutput) {
+        this.userOutput = new OutputStreamWriter(userOutput);
+    }
 
     @Override
     public boolean interactiveOutput() {
@@ -4169,17 +4199,33 @@ abstract class NonInteractiveIOContext extends IOContext {
     @Override
     public void replaceLastHistoryEntry(String source) {
     }
+
+    @Override
+    public Writer userOutput() {
+        return userOutput;
+    }
+
+    @Override
+    public void close() {
+        try {
+            userOutput.flush();
+        } catch (IOException _) {
+            //ignore
+        }
+    }
+
 }
 
 class ScannerIOContext extends NonInteractiveIOContext {
     private final Scanner scannerIn;
 
-    ScannerIOContext(Scanner scannerIn) {
+    ScannerIOContext(Scanner scannerIn, PrintStream userOutput) {
+        super(userOutput);
         this.scannerIn = scannerIn;
     }
 
-    ScannerIOContext(Reader rdr) throws FileNotFoundException {
-        this(new Scanner(rdr));
+    ScannerIOContext(Reader rdr, PrintStream userOutput) throws FileNotFoundException {
+        this(new Scanner(rdr), userOutput);
     }
 
     @Override
@@ -4193,6 +4239,7 @@ class ScannerIOContext extends NonInteractiveIOContext {
 
     @Override
     public void close() {
+        super.close();
         scannerIn.close();
     }
 
@@ -4206,7 +4253,8 @@ class ReloadIOContext extends NonInteractiveIOContext {
     private final Iterator<String> it;
     private final PrintStream echoStream;
 
-    ReloadIOContext(Iterable<String> history, PrintStream echoStream) {
+    ReloadIOContext(Iterable<String> history, PrintStream echoStream, PrintStream userOutput) {
+        super(userOutput);
         this.it = history.iterator();
         this.echoStream = echoStream;
     }

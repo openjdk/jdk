@@ -61,6 +61,10 @@ GrowableArrayNestingCheck::GrowableArrayNestingCheck(bool on_resource_area) :
     _nesting(on_resource_area ? Thread::current()->resource_area()->nesting() : 0) {
 }
 
+GrowableArrayNestingCheck::GrowableArrayNestingCheck(Arena* arena) :
+    _nesting((arena->get_tag() == Arena::Tag::tag_ra) ? static_cast<ResourceArea*>(arena)->nesting() : 0) {
+}
+
 void GrowableArrayNestingCheck::on_resource_area_alloc() const {
   // Check for insidious allocation bug: if a GrowableArray overflows, the
   // grown array must be allocated under the same ResourceMark as the original.
@@ -70,6 +74,11 @@ void GrowableArrayNestingCheck::on_resource_area_alloc() const {
   }
 }
 
+void GrowableArrayNestingCheck::on_arena_alloc(Arena* arena) const {
+  if ((arena->get_tag() == Arena::Tag::tag_ra) && (_nesting != static_cast<ResourceArea*>(arena)->nesting())) {
+    fatal("allocation bug: GrowableArray is growing within nested ResourceMark");
+  }
+}
 void GrowableArrayMetadata::init_checks(const GrowableArrayBase* array) const {
   // Stack allocated arrays support all three element allocation locations
   if (array->allocated_on_stack_or_embedded()) {
@@ -87,6 +96,10 @@ void GrowableArrayMetadata::init_checks(const GrowableArrayBase* array) const {
 
 void GrowableArrayMetadata::on_resource_area_alloc_check() const {
   _nesting_check.on_resource_area_alloc();
+}
+
+void GrowableArrayMetadata::on_arena_alloc_check() const {
+  _nesting_check.on_arena_alloc(arena());
 }
 
 #endif // ASSERT

@@ -24,8 +24,6 @@
  */
 package sun.security.validator;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
@@ -86,15 +84,8 @@ enum CADistrustPolicy {
     // The policies set in the jdk.security.caDistrustPolicies property.
     static final EnumSet<CADistrustPolicy> POLICIES = parseProperty();
     private static EnumSet<CADistrustPolicy> parseProperty() {
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public String run() {
-                    return Security.getProperty(
-                        "jdk.security.caDistrustPolicies");
-                }
-            });
+        String property = Security.getProperty(
+                "jdk.security.caDistrustPolicies");
         EnumSet<CADistrustPolicy> set = EnumSet.noneOf(CADistrustPolicy.class);
         // if property is null or empty, the restrictions are not enforced
         if (property == null || property.isEmpty()) {

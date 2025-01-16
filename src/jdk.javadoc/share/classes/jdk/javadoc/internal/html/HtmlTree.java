@@ -1048,54 +1048,15 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Creates an HTML {@code SUP} element with the given content.
+     * Creates an HTML {@code SUP} element with the given style and content.
      *
+     * @param style the style
      * @param body  the content
      * @return the element
      */
-    public static HtmlTree SUP(Content body) {
+    public static HtmlTree SUP(HtmlStyle style, Content body) {
         return new HtmlTree(HtmlTag.SUP)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TD} element with the given style and some content.
-     *
-     * @param style the style
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TD(HtmlStyle style, Content body) {
-        return new HtmlTree(HtmlTag.TD)
                 .setStyle(style)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TH} element with the given style and scope, and some content.
-     *
-     * @param style the style
-     * @param scope the value for the {@code scope} attribute
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TH(HtmlStyle style, String scope, Content body) {
-        return new HtmlTree(HtmlTag.TH)
-                .setStyle(style)
-                .put(HtmlAttr.SCOPE, scope)
-                .add(body);
-    }
-
-    /**
-     * Creates an HTML {@code TH} element with the given scope, and some content.
-     *
-     * @param scope the value for the {@code scope} attribute
-     * @param body  the content
-     * @return the element
-     */
-    public static HtmlTree TH(String scope, Content body) {
-        return new HtmlTree(HtmlTag.TH)
-                .put(HtmlAttr.SCOPE, scope)
                 .add(body);
     }
 

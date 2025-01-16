@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE  xsd:schema  PUBLIC  "-//OPENJDK//XML CATALOG DTD//USECATALOG"  
+     "http://openjdk_java_net/xml/catalog/dtd/usecatalogtest.dtd">
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="test">
+     <xsd:element name="root">
+         <xsd:complexType>
+             <xsd:sequence>
+                 <xsd:element name="child" type="xsd:anyType"/>
+             </xsd:sequence>
+         </xsd:complexType>
+
+         <xsd:key name="key1">
+             <xsd:selector xpath="."/>
+             <xsd:field xpath="child"/>
+         </xsd:key>
+     </xsd:element>
+</xsd:schema>

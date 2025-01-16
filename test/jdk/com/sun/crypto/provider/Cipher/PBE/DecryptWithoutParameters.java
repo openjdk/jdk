@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,8 @@ public class DecryptWithoutParameters {
         boolean status = true;
 
         for (String algo : PBES1ALGOS) {
-            Cipher cipher = Cipher.getInstance(algo, "SunJCE");
+            Cipher cipher = Cipher.getInstance(algo,
+                                    System.getProperty("test.provider.name", "SunJCE"));
             SecretKey key = new SecretKeySpec(new byte[5], algo);
             status = status && test(cipher, key, null);
         }
@@ -122,7 +123,8 @@ public class DecryptWithoutParameters {
         int iterCount = 123456;
         PBEParameterSpec spec = new PBEParameterSpec(salt, iterCount);
         for (String algo : PBES2ALGOS) {
-            Cipher cipher = Cipher.getInstance(algo, "SunJCE");
+            Cipher cipher = Cipher.getInstance(algo,
+                                    System.getProperty("test.provider.name", "SunJCE"));
             SecretKey key = new SecretKeySpec(new byte[5], algo);
             PBEKey key2 = new MyPBEKey(algo,
                 new PBEKeySpec("phrase".toCharArray(), salt, iterCount));

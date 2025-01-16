@@ -959,7 +959,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return Collections.unmodifiableMap(backends);
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private HotSpotCompilationRequestResult compileMethod(HotSpotResolvedJavaMethod method, int entryBCI, long compileState, int id) {
         HotSpotCompilationRequest request = new HotSpotCompilationRequest(method, entryBCI, compileState, id);
@@ -981,13 +980,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return hsResult;
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private boolean isGCSupported(int gcIdentifier) {
         return getCompiler().isGCSupported(gcIdentifier);
     }
 
-    @SuppressWarnings("try")
     @VMEntryPoint
     private boolean isIntrinsicSupported(int intrinsicIdentifier) {
         return getCompiler().isIntrinsicSupported(intrinsicIdentifier);
@@ -1490,5 +1487,13 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         writeDebugOutput(messageBytes, 0, messageBytes.length, true, true);
         exitHotSpot(status);
         throw JVMCIError.shouldNotReachHere();
+    }
+
+    /**
+     * Returns HotSpot's {@code CompileBroker} compilation activity mode which is one of:
+     * {@code stop_compilation = 0}, {@code run_compilation = 1} or {@code shutdown_compilation = 2}
+     */
+    public int getCompilationActivityMode() {
+        return compilerToVm.getCompilationActivityMode();
     }
 }

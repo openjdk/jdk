@@ -38,10 +38,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.Debug;
 import sun.security.util.Event;
 import sun.security.util.IOUtils;
+import sun.security.util.SecurityProperties;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.GeneralName;
@@ -114,7 +114,7 @@ public final class OCSP {
      */
     private static int initializeTimeout(String prop, int def) {
         int timeoutVal =
-                GetPropertyAction.privilegedGetTimeoutProp(prop, def, debug);
+                SecurityProperties.getTimeoutSystemProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + timeoutVal + " milliseconds");
         }
@@ -123,7 +123,7 @@ public final class OCSP {
 
     private static boolean initializeBoolean(String prop, boolean def) {
         boolean value =
-                GetPropertyAction.privilegedGetBooleanProp(prop, def, debug);
+                SecurityProperties.getBooleanSystemProp(prop, def, debug);
         if (debug != null) {
             debug.println(prop + " set to " + value);
         }

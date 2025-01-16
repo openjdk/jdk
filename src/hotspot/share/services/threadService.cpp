@@ -464,23 +464,14 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       } else if (waitingToLockMonitor != nullptr) {
         if (waitingToLockMonitor->has_owner()) {
           currentThread = Threads::owning_thread_from_monitor(t_list, waitingToLockMonitor);
-          if (currentThread == nullptr) {
-            // This function is called at a safepoint so the JavaThread
-            // that owns waitingToLockMonitor should be findable, but
-            // if it is not findable, then the previous currentThread is
-            // blocked permanently. We record this as a deadlock.
-            num_deadlocks++;
-
-            // add this cycle to the deadlocks list
-            if (deadlocks == nullptr) {
-              deadlocks = cycle;
-            } else {
-              last->set_next(cycle);
-            }
-            last = cycle;
-            cycle = new DeadlockCycle();
-            break;
-          }
+          // If currentThread is null we would like to know if the owner
+          // is an unmounted vthread (no JavaThread*), because if it's not,
+          // it would mean the previous currentThread is blocked permanently
+          // and we should record this as a deadlock. Since there is currently
+          // no fast way to determine if the owner is indeed an unmounted
+          // vthread we never record this as a deadlock. Note: unless there
+          // is a bug in the VM, or a thread exits without releasing monitors
+          // acquired through JNI, null should imply an unmounted vthread owner.
         }
       } else {
         if (concurrent_locks) {
@@ -1053,8 +1044,8 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
         // that owns waitingToLockMonitor should be findable, but
         // if it is not findable, then the previous currentThread is
         // blocked permanently.
-        st->print_cr("%s UNKNOWN_owner_addr=" PTR_FORMAT, owner_desc,
-                  p2i(waitingToLockMonitor->owner()));
+        st->print_cr("%s UNKNOWN_owner_addr=" INT64_FORMAT, owner_desc,
+                     waitingToLockMonitor->owner());
         continue;
       }
     } else {

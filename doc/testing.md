@@ -603,6 +603,15 @@ $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
 For more notes about the PKCS11 tests, please refer to
 test/jdk/sun/security/pkcs11/README.
 
+### Testing with alternative security providers
+
+Some security tests use a hardcoded provider for `KeyFactory`, `Cipher`,
+`KeyPairGenerator`, `KeyGenerator`, `AlgorithmParameterGenerator`,
+`KeyAgreement`, `Mac`, `MessageDigest`, `SecureRandom`, `Signature`,
+`AlgorithmParameters`, `Configuration`, `Policy`, or `SecretKeyFactory` objects.
+Specify the `-Dtest.provider.name=NAME` property to use a different provider for
+the service(s).
+
 ### Client UI Tests
 
 #### System key shortcuts

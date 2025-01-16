@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,18 +42,15 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 5049592 5041845 5048932 5064587 5040542 5049531 5049528
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.datatype.ptests.XMLGregorianCalendarTest
  * @run testng/othervm javax.xml.datatype.ptests.XMLGregorianCalendarTest
  * @summary Class containing the test cases for XMLGregorianCalendar
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class XMLGregorianCalendarTest {
 
     private DatatypeFactory datatypeFactory;

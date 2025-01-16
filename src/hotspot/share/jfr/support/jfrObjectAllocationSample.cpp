@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ inline bool send_allocation_sample(const Klass* klass, int64_t allocated_bytes, 
 inline int64_t estimate_tlab_size_bytes(Thread* thread) {
   const size_t desired_tlab_size_bytes = thread->tlab().desired_size() * HeapWordSize;
   const size_t alignment_reserve_bytes = thread->tlab().alignment_reserve_in_bytes();
-  assert(desired_tlab_size_bytes > alignment_reserve_bytes, "invariant");
+  assert(desired_tlab_size_bytes >= alignment_reserve_bytes, "invariant");
   return static_cast<int64_t>(desired_tlab_size_bytes - alignment_reserve_bytes);
 }
 
@@ -66,6 +66,10 @@ static void normalize_as_tlab_and_send_allocation_samples(const Klass* klass, in
     return;
   }
   const int64_t tlab_size_bytes = estimate_tlab_size_bytes(thread);
+  if (tlab_size_bytes <= 0) {
+    // We don't get a TLAB, avoid endless loop below.
+    return;
+  }
   if (allocated_bytes - tl->last_allocated_bytes() < tlab_size_bytes) {
     return;
   }

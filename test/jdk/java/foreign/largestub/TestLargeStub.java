@@ -33,10 +33,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -76,9 +80,17 @@ public class TestLargeStub extends NativeTestHelper {
     @MethodSource("layouts")
     public void testUpcall(ValueLayout layout, int numSlots) {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
-        Linker.nativeLinker().downcallHandle(
-                FunctionDescriptor.of(STRUCT_LL,
-                        Stream.generate(() -> layout).limit(UPCALL_AVAILABLE_SLOTS / numSlots).toArray(MemoryLayout[]::new)));
+        try (Arena arena = Arena.ofConfined()) {
+            Linker.nativeLinker().upcallStub(
+                    MethodHandles.empty(MethodType.methodType(MemorySegment.class,
+                            Stream.generate(() -> layout).limit(UPCALL_AVAILABLE_SLOTS / numSlots)
+                                    .map(ValueLayout::carrier)
+                                    .toArray(Class<?>[]::new))),
+                    FunctionDescriptor.of(STRUCT_LL,
+                            Stream.generate(() -> layout).limit(UPCALL_AVAILABLE_SLOTS / numSlots)
+                                    .toArray(MemoryLayout[]::new)),
+                    arena);
+        }
     }
 
     private static Stream<Arguments> layouts() {
