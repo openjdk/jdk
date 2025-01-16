@@ -915,23 +915,31 @@ private:
     return 0;
   }
 
-  // Check that all variables are either the iv, or else invariants.
+  // Check the conditions for a "valid" VPointer.
   bool init_is_valid() const {
-    if (!_mem_pointer.base().is_known()) {
-      // VPointer needs to know if it is native (off-heap) or object (on-heap).
-      // We may for example have failed to fully decompose the MemPointer, possibly
-      // because such a decomposition is not considered safe.
-#ifndef PRODUCT
-      if (_vloop.mptrace().is_trace_parsing()) {
-        tty->print_cr("VPointer::init_is_valid: base not known.");
-      }
-#endif
-      return false;
-    }
+    return init_is_base_known() &&
+           init_are_non_iv_summands_pre_loop_invariant() &&
+           init_are_scale_and_stride_not_too_large();
+  }
 
-    // All summands, except the iv-summand must be pre-loop invariant. This is necessary
-    // so that we can use the variables in checks inside or before the pre-loop, e.g. for
-    // alignment.
+  // VPointer needs to know if it is native (off-heap) or object (on-heap).
+  // We may for example have failed to fully decompose the MemPointer, possibly
+  // because such a decomposition is not considered safe.
+  bool init_is_base_known() const {
+    if (_mem_pointer.base().is_known()) { return true; }
+
+#ifndef PRODUCT
+    if (_vloop.mptrace().is_trace_parsing()) {
+      tty->print_cr("VPointer::init_is_valid: base not known.");
+    }
+#endif
+    return false;
+  }
+
+  // All summands, except the iv-summand must be pre-loop invariant. This is necessary
+  // so that we can use the variables in checks inside or before the pre-loop, e.g. for
+  // alignment.
+  bool init_are_non_iv_summands_pre_loop_invariant() const {
     for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _mem_pointer.summands_at(i);
       Node* variable = summand.variable();
@@ -946,16 +954,19 @@ private:
         return false;
       }
     }
+    return true;
+  }
 
-    // In the pointer analysis, and especially the AlignVector analysis, we assume that
-    // stride and scale are not too large. For example, we multiply "iv_scale * iv_stride",
-    // and assume that this does not overflow the int range. We also take "abs(iv_scale)"
-    // and "abs(iv_stride)", which would overflow for min_int = -(2^31). Still, we want
-    // to at least allow small and moderately large stride and scale. Therefore, we
-    // allow values up to 2^30, which is only a factor 2 smaller than the max/min int.
-    // Normal performance relevant code will have much lower values. And the restriction
-    // allows us to keep the rest of the autovectorization code much simpler, since we
-    // do not have to deal with overflows.
+  // In the pointer analysis, and especially the AlignVector analysis, we assume that
+  // stride and scale are not too large. For example, we multiply "iv_scale * iv_stride",
+  // and assume that this does not overflow the int range. We also take "abs(iv_scale)"
+  // and "abs(iv_stride)", which would overflow for min_int = -(2^31). Still, we want
+  // to at least allow small and moderately large stride and scale. Therefore, we
+  // allow values up to 2^30, which is only a factor 2 smaller than the max/min int.
+  // Normal performance relevant code will have much lower values. And the restriction
+  // allows us to keep the rest of the autovectorization code much simpler, since we
+  // do not have to deal with overflows.
+  bool init_are_scale_and_stride_not_too_large() const {
     jlong long_iv_scale  = _iv_scale;
     jlong long_iv_stride = _vloop.iv_stride();
     jlong max_val = 1 << 30;
@@ -969,7 +980,6 @@ private:
 #endif
       return false;
     }
-
     return true;
   }
 };
