@@ -442,7 +442,7 @@ public final class SharedUtils {
             if (!isCacheable(size) || (cache = tl.get()).element == null) {
                 return new CallBuffer(size);
             }
-            CallBuffer result = cache.element;
+            final CallBuffer result = cache.element;
             cache.element = null;
             return result;
         }
