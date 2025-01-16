@@ -832,8 +832,8 @@ public:
     Flag_for_post_loop_opts_igvn     = 1 << 15,
     Flag_is_removed_by_peephole      = 1 << 16,
     Flag_is_predicated_using_blend   = 1 << 17,
-    Flag_is_commutative_vector_oper  = 1 << 18,
-    _last_flag                       = Flag_is_commutative_vector_oper
+    Flag_is_commutative_vector_op    = 1 << 18,
+    _last_flag                       = Flag_is_commutative_vector_op
   };
 
   class PD;
@@ -1070,7 +1070,7 @@ public:
 
   bool is_predicated_using_blend() const { return (_flags & Flag_is_predicated_using_blend) != 0; }
 
-  bool is_commutative_vector_operation() const { return (_flags & Flag_is_commutative_vector_oper) != 0; }
+  bool is_commutative_vector_operation() const { return (_flags & Flag_is_commutative_vector_op) != 0; }
 
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }

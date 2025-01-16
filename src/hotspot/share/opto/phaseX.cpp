@@ -64,7 +64,7 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
 
 //-----------------------------------------------------------------------------
 
-bool NodeHash::check_for_collision(const Node* n, const Node* k) {
+bool NodeHash::check_for_collision(const Node* n, const Node* k) const {
   // For commutative operations with same controlling edge
   // perform order agnostic input edge comparison to promote
   // node sharing.
