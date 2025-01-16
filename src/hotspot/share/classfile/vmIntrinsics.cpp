@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,31 +36,31 @@
 #include "utilities/tribool.hpp"
 
 // These are flag-matching functions:
-inline bool match_F_R(jshort flags) {
+inline bool match_F_R(u2 flags) {
   const int req = 0;
   const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_Y(jshort flags) {
+inline bool match_F_Y(u2 flags) {
   const int req = JVM_ACC_SYNCHRONIZED;
   const int neg = JVM_ACC_STATIC | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_RN(jshort flags) {
+inline bool match_F_RN(u2 flags) {
   const int req = JVM_ACC_NATIVE;
   const int neg = JVM_ACC_STATIC | JVM_ACC_SYNCHRONIZED;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_S(jshort flags) {
+inline bool match_F_S(u2 flags) {
   const int req = JVM_ACC_STATIC;
   const int neg = JVM_ACC_SYNCHRONIZED | JVM_ACC_NATIVE;
   return (flags & (req | neg)) == req;
 }
 
-inline bool match_F_SN(jshort flags) {
+inline bool match_F_SN(u2 flags) {
   const int req = JVM_ACC_STATIC | JVM_ACC_NATIVE;
   const int neg = JVM_ACC_SYNCHRONIZED;
   return (flags & (req | neg)) == req;
@@ -711,7 +711,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
 vmIntrinsics::ID vmIntrinsics::find_id_impl(vmSymbolID holder,
                                             vmSymbolID name,
                                             vmSymbolID sig,
-                                            jshort flags) {
+                                            u2 flags) {
   assert((int)vmSymbolID::SID_LIMIT <= (1<<vmSymbols::log2_SID_LIMIT), "must fit");
 
   // Let the C compiler build the decision tree.

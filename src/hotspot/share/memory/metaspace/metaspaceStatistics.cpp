@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -174,13 +174,13 @@ void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const 
     }
     if (_free_blocks_num > 0) {
       st->cr_indent();
-      st->print("deallocated: " UINTX_FORMAT " blocks with ", _free_blocks_num);
+      st->print("deallocated: %zu blocks with ", _free_blocks_num);
       print_scaled_words(st, _free_blocks_word_size, scale);
     }
   } else {
     totals().print_on(st, scale);
     st->print(", ");
-    st->print("deallocated: " UINTX_FORMAT " blocks with ", _free_blocks_num);
+    st->print("deallocated: %zu blocks with ", _free_blocks_num);
     print_scaled_words(st, _free_blocks_word_size, scale);
   }
 }

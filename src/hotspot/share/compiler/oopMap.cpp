@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -929,7 +929,7 @@ void DerivedPointerTable::add(derived_pointer* derived_loc, derived_base* base_l
     tty->print_cr(
       "Add derived pointer@" INTPTR_FORMAT
       " - Derived: " INTPTR_FORMAT
-      " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: " INTX_FORMAT ")",
+      " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: %zd)",
       p2i(derived_loc), derived_pointer_value(*derived_loc), intptr_t(*base_loc), p2i(base_loc), offset
     );
   }
@@ -959,7 +959,7 @@ void DerivedPointerTable::update_pointers() {
 
     if (TraceDerivedPointers) {
       tty->print_cr("Updating derived pointer@" INTPTR_FORMAT
-                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: " INTX_FORMAT ")",
+                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: %zd)",
                     p2i(derived_loc), derived_pointer_value(*derived_loc), p2i(base), offset);
     }
 

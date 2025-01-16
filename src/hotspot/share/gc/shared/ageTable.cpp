@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "utilities/copy.hpp"
 #include "logging/logStream.hpp"
 
-/* Copyright (c) 1992, 2024, Oracle and/or its affiliates, and Stanford University.
+/* Copyright (c) 1992, 2025, Oracle and/or its affiliates, and Stanford University.
    See the LICENSE file for license information. */
 
 AgeTable::AgeTable(bool global) : _use_perf_data(UsePerfData && global) {
@@ -108,7 +108,7 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
   }
 
 
-  log_debug(gc, age)("Desired survivor size %zu bytes, new threshold " UINTX_FORMAT " (max threshold %u)",
+  log_debug(gc, age)("Desired survivor size %zu bytes, new threshold %zu (max threshold %u)",
                      desired_survivor_size * oopSize, (uintx) result, MaxTenuringThreshold);
 
   return result;
@@ -131,7 +131,7 @@ void AgeTable::print_on(outputStream* st) {
     size_t word_size = sizes[age];
     total += word_size;
     if (word_size > 0) {
-      st->print_cr("- age %3u: " SIZE_FORMAT_W(10) " bytes, " SIZE_FORMAT_W(10) " total",
+      st->print_cr("- age %3u: %10zu bytes, %10zu total",
                    age, word_size * oopSize, total * oopSize);
     }
     AgeTableTracer::send_tenuring_distribution_event(age, word_size * oopSize);

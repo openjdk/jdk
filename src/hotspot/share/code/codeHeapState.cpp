@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -370,7 +370,7 @@ void CodeHeapState::prepare_StatArray(outputStream* out, size_t nElem, size_t gr
   if (StatArray == nullptr) {
     //---<  just do nothing if allocation failed  >---
     out->print_cr("Statistics could not be collected for %s, probably out of memory.", heapName);
-    out->print_cr("Current granularity is " SIZE_FORMAT " bytes. Try a coarser granularity.", granularity);
+    out->print_cr("Current granularity is %zu bytes. Try a coarser granularity.", granularity);
     alloc_granules = 0;
     granule_size   = 0;
   } else {
@@ -621,11 +621,11 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
                 "   collected data to be consistent. Only the method names and signatures\n"
                 "   are retrieved at print time. That may lead to rare cases where the\n"
                 "   name of a method is no longer available, e.g. because it was unloaded.\n");
-  ast->print_cr("   CodeHeap committed size " SIZE_FORMAT "K (" SIZE_FORMAT "M), reserved size " SIZE_FORMAT "K (" SIZE_FORMAT "M), %d%% occupied.",
+  ast->print_cr("   CodeHeap committed size %zuK (%zuM), reserved size %zuK (%zuM), %d%% occupied.",
                 size/(size_t)K, size/(size_t)M, res_size/(size_t)K, res_size/(size_t)M, (unsigned int)(100.0*size/res_size));
-  ast->print_cr("   CodeHeap allocation segment size is " SIZE_FORMAT " bytes. This is the smallest possible granularity.", seg_size);
-  ast->print_cr("   CodeHeap (committed part) is mapped to " SIZE_FORMAT " granules of size " SIZE_FORMAT " bytes.", granules, granularity);
-  ast->print_cr("   Each granule takes " SIZE_FORMAT " bytes of C heap, that is " SIZE_FORMAT "K in total for statistics data.", sizeof(StatElement), (sizeof(StatElement)*granules)/(size_t)K);
+  ast->print_cr("   CodeHeap allocation segment size is %zu bytes. This is the smallest possible granularity.", seg_size);
+  ast->print_cr("   CodeHeap (committed part) is mapped to %zu granules of size %zu bytes.", granules, granularity);
+  ast->print_cr("   Each granule takes %zu bytes of C heap, that is %zuK in total for statistics data.", sizeof(StatElement), (sizeof(StatElement)*granules)/(size_t)K);
   ast->print_cr("   The number of granules is limited to %dk, requiring a granules size of at least %d bytes for a 1GB heap.", (unsigned int)(max_granules/K), (unsigned int)(G/max_granules));
   BUFFEREDSTREAM_FLUSH("\n")
 
@@ -697,10 +697,10 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
         insane = true; ast->print_cr("Sanity check: HeapBlock @%p outside used range (%p)", (char*)h, low_bound + size);
       }
       if (ix_end   >= granules) {
-        insane = true; ast->print_cr("Sanity check: end index (%d) out of bounds (" SIZE_FORMAT ")", ix_end, granules);
+        insane = true; ast->print_cr("Sanity check: end index (%d) out of bounds (%zu)", ix_end, granules);
       }
       if (size     != heap->capacity()) {
-        insane = true; ast->print_cr("Sanity check: code heap capacity has changed (" SIZE_FORMAT "K to " SIZE_FORMAT "K)", size/(size_t)K, heap->capacity()/(size_t)K);
+        insane = true; ast->print_cr("Sanity check: code heap capacity has changed (%zuK to %zuK)", size/(size_t)K, heap->capacity()/(size_t)K);
       }
       if (ix_beg   >  ix_end) {
         insane = true; ast->print_cr("Sanity check: end index (%d) lower than begin index (%d)", ix_end, ix_beg);
@@ -1134,7 +1134,7 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
     ast->print_cr("   The aggregate step collects information about all free blocks in CodeHeap.\n"
                   "   Subsequent print functions create their output based on this snapshot.\n");
     ast->print_cr("   Free space in %s is distributed over %d free blocks.", heapName, nBlocks_free);
-    ast->print_cr("   Each free block takes " SIZE_FORMAT " bytes of C heap for statistics data, that is " SIZE_FORMAT "K in total.", sizeof(FreeBlk), (sizeof(FreeBlk)*nBlocks_free)/K);
+    ast->print_cr("   Each free block takes %zu bytes of C heap for statistics data, that is %zuK in total.", sizeof(FreeBlk), (sizeof(FreeBlk)*nBlocks_free)/K);
     BUFFEREDSTREAM_FLUSH("\n")
 
     //----------------------------------------
@@ -2101,7 +2101,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
       size_t end_ix = (ix+granules_per_line <= alloc_granules) ? ix+granules_per_line : alloc_granules;
       ast->cr();
       ast->print_cr("--------------------------------------------------------------------");
-      ast->print_cr("Address range [" INTPTR_FORMAT "," INTPTR_FORMAT "), " SIZE_FORMAT "k", p2i(low_bound+ix*granule_size), p2i(low_bound + end_ix*granule_size), (end_ix - ix)*granule_size/(size_t)K);
+      ast->print_cr("Address range [" INTPTR_FORMAT "," INTPTR_FORMAT "), %zuk", p2i(low_bound+ix*granule_size), p2i(low_bound + end_ix*granule_size), (end_ix - ix)*granule_size/(size_t)K);
       ast->print_cr("--------------------------------------------------------------------");
       BUFFEREDSTREAM_FLUSH_AUTO("")
     }

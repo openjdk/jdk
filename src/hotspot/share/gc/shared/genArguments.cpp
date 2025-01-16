@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,13 +79,13 @@ void GenArguments::initialize_heap_flags_and_sizes() {
 
   assert(GenAlignment != 0, "Generation alignment not set up properly");
   assert(HeapAlignment >= GenAlignment,
-         "HeapAlignment: " SIZE_FORMAT " less than GenAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu less than GenAlignment: %zu",
          HeapAlignment, GenAlignment);
   assert(GenAlignment % SpaceAlignment == 0,
-         "GenAlignment: " SIZE_FORMAT " not aligned by SpaceAlignment: " SIZE_FORMAT,
+         "GenAlignment: %zu not aligned by SpaceAlignment: %zu",
          GenAlignment, SpaceAlignment);
   assert(HeapAlignment % GenAlignment == 0,
-         "HeapAlignment: " SIZE_FORMAT " not aligned by GenAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu not aligned by GenAlignment: %zu",
          HeapAlignment, GenAlignment);
 
   // All generational heaps have a young gen; handle those flags here
@@ -128,8 +128,8 @@ void GenArguments::initialize_heap_flags_and_sizes() {
       // Make sure there is room for an old generation
       size_t smaller_max_new_size = MaxHeapSize - GenAlignment;
       if (FLAG_IS_CMDLINE(MaxNewSize)) {
-        log_warning(gc, ergo)("MaxNewSize (" SIZE_FORMAT "k) is equal to or greater than the entire "
-                              "heap (" SIZE_FORMAT "k).  A new max generation size of " SIZE_FORMAT "k will be used.",
+        log_warning(gc, ergo)("MaxNewSize (%zuk) is equal to or greater than the entire "
+                              "heap (%zuk).  A new max generation size of %zuk will be used.",
                               MaxNewSize/K, MaxHeapSize/K, smaller_max_new_size/K);
       }
       FLAG_SET_ERGO(MaxNewSize, smaller_max_new_size);
@@ -147,8 +147,8 @@ void GenArguments::initialize_heap_flags_and_sizes() {
     // At this point this should only happen if the user specifies a large NewSize and/or
     // a small (but not too small) MaxNewSize.
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      log_warning(gc, ergo)("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
-                            "A new max generation size of " SIZE_FORMAT "k will be used.",
+      log_warning(gc, ergo)("NewSize (%zuk) is greater than the MaxNewSize (%zuk). "
+                            "A new max generation size of %zuk will be used.",
                             NewSize/K, MaxNewSize/K, NewSize/K);
     }
     FLAG_SET_ERGO(MaxNewSize, NewSize);
@@ -245,7 +245,7 @@ void GenArguments::initialize_size_info() {
     }
   }
 
-  log_trace(gc, heap)("1: Minimum young " SIZE_FORMAT "  Initial young " SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
+  log_trace(gc, heap)("1: Minimum young %zu  Initial young %zu  Maximum young %zu",
                       MinNewSize, initial_young_size, max_young_size);
 
   // At this point the minimum, initial and maximum sizes
@@ -287,7 +287,7 @@ void GenArguments::initialize_size_info() {
       initial_young_size = desired_young_size;
     }
 
-    log_trace(gc, heap)("2: Minimum young " SIZE_FORMAT "  Initial young " SIZE_FORMAT "  Maximum young " SIZE_FORMAT,
+    log_trace(gc, heap)("2: Minimum young %zu  Initial young %zu  Maximum young %zu",
                         MinNewSize, initial_young_size, max_young_size);
   }
 
@@ -304,7 +304,7 @@ void GenArguments::initialize_size_info() {
     OldSize = initial_old_size;
   }
 
-  log_trace(gc, heap)("Minimum old " SIZE_FORMAT "  Initial old " SIZE_FORMAT "  Maximum old " SIZE_FORMAT,
+  log_trace(gc, heap)("Minimum old %zu  Initial old %zu  Maximum old %zu",
                       MinOldSize, OldSize, MaxOldSize);
 
   DEBUG_ONLY(assert_size_info();)
