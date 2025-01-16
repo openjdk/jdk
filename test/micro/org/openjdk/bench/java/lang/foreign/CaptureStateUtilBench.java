@@ -98,7 +98,7 @@ public class CaptureStateUtilBench {
 
     private static MethodHandle dummyTlAlloc() {
         final MethodHandle handle = dummyExplicitAlloc();
-        return CaptureStateUtil.adaptSystemCall(handle, ERRNO_NAME);
+        return CaptureStateUtil.adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, handle, ERRNO_NAME);
     }
 
     // Dummy method that is just returning the provided parameters

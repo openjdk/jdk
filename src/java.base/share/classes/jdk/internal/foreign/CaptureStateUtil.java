@@ -24,9 +24,6 @@
 package jdk.internal.foreign;
 
 import jdk.internal.invoke.MhUtil;
-import jdk.internal.misc.TerminatingThreadLocal;
-import jdk.internal.misc.Unsafe;
-import jdk.internal.util.SingleElementPool;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.Arena;
@@ -41,15 +38,32 @@ import java.lang.invoke.VarHandle;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class CaptureStateUtil {
 
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final long SIZE = Linker.Option.captureStateLayout().byteSize();
+
+    /**
+     * The thread local variable means there will be an automatic Arena with
+     * associated cleaner actions for each thread. This is by design as this is much
+     * faster than pooling segments per platform threads.
+     * The actual MemorySegment is typically small (i.e. 4 bytes on most platforms and
+     * 12 bytes on Windows). This is negligible compare to the overall thread data being
+     * stored.
+     */
+    private static final ThreadLocal<MemorySegment> TL_SEGMENTS = createThreadLocalSegments();
+
+    private static ThreadLocal<MemorySegment> createThreadLocalSegments() {
+        return new ThreadLocal<>() {
+            @Override
+            protected MemorySegment initialValue() {
+                return Arena.ofAuto().allocate(SIZE);
+            }
+        };
+    }
+
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     private static final MethodHandle NON_NEGATIVE_INT_MH =
             MhUtil.findStatic(LOOKUP, "nonNegative",
@@ -75,14 +89,9 @@ public final class CaptureStateUtil {
             MhUtil.findStatic(LOOKUP, "error",
                     MethodType.methodType(long.class, MethodHandle.class, long.class, MemorySegment.class));
 
-    private static final MethodHandle TAKE_SEGMENT_MH =
-            MhUtil.findVirtual(LOOKUP, SegmentPool.class, "take",
+    private static final MethodHandle ACQUIRE_SEGMENT =
+            MhUtil.findStatic(LOOKUP, "acquireSegment",
                     MethodType.methodType(MemorySegment.class));
-
-    private static final MethodHandle RELEASE_SEGMENT_MH =
-            MhUtil.findVirtual(LOOKUP, SegmentPool.class, "release",
-                    MethodType.methodType(void.class, MemorySegment.class));
-
 
     // (int.class | long.class) ->
     //   ({"GetLastError" | "WSAGetLastError"} | "errno") ->
@@ -129,6 +138,24 @@ public final class CaptureStateUtil {
     }
 
     /**
+     * Controls how pooling of segments are made.
+     */
+    public enum Pooling {
+        /**
+         * Use a global segment pool for all method handles derived with this option.
+         * This is desirable if the method handle to adapt is guaranteed no to recurse
+         * into another method handle adapted via the CaptureStateUtil class.
+         */
+        GLOBAL,
+        /**
+         * Use a distinct segment pool for the method handles derived with this option.
+         * This is desirable if the method handle to adapt can recurse into another
+         * method handle adapted via the CaptureStateUtil class.
+         */
+        PER_HANDLE;
+    }
+
+    /**
      * {@return a new MethodHandle that adapts the provided {@code target} so that it
      *          directly returns the same value as the {@code target} if it is
      *          non-negative, otherwise returns the negated errno}
@@ -141,7 +168,7 @@ public final class CaptureStateUtil {
      *       static final MethodHandle CAPTURING_OPEN = ...
      *
      *      // (MemorySegment pathname, int flags)int
-     *      static final MethodHandle OPEN = CaptureStateUtil.adaptSystemCall(CAPTURING_OPEN, "errno");
+     *      static final MethodHandle OPEN = CaptureStateUtil.adaptSystemCall(Pooling.GLOBAL, CAPTURING_OPEN, "errno");
      *
      *      try {
      *         int fh = (int)OPEN.invoke(pathName, flags);
@@ -154,22 +181,17 @@ public final class CaptureStateUtil {
      *      }
      *
      *}
-     * For a method handle that takes a MemorySegment and two int parameters, the method
-     * combinators are doing the equivalent of:
+     * For a method handle that takes a MemorySegment and two int parameters using GLOBAL,
+     * the method combinators are doing the equivalent of:
      *
      * {@snippet lang = java:
      *         public int invoke(int a, int b) {
-     *             final SegmentPool segmentPool = acquirePool();
-     *             final MemorySegment segment = segmentPool.acquire();
-     *             try {
-     *                 final int result = (int) handle.invoke(segment, a, b);
-     *                 if (result >= 0) {
-     *                     return result;
-     *                 }
-     *                 return -(int) errorHandle.get(segment);
-     *             } finally {
-     *                 segmentPool.release(segment);
+     *             final MemorySegment segment = acquireSegment();
+     *             final int result = (int) handle.invoke(segment, a, b);
+     *             if (result >= 0) {
+     *                 return result;
      *             }
+     *             return -(int) errorHandle.get(segment);
      *         }
      *}
      * Where {@code handle} is the original method handle with the coordinated
@@ -188,7 +210,8 @@ public final class CaptureStateUtil {
      * @throws IllegalArgumentException if the provided {@code stateName} is unknown
      *                                  on the current platform
      */
-    public static MethodHandle adaptSystemCall(MethodHandle target, String stateName) {
+    public static MethodHandle adaptSystemCall(Pooling pooling, MethodHandle target, String stateName) {
+        Objects.requireNonNull(pooling);
         // Implicit null check
         final Class<?> returnType = target.type().returnType();
         Objects.requireNonNull(stateName);
@@ -223,35 +246,13 @@ public final class CaptureStateUtil {
         // (C0=MemorySegment, C1-Cn)(int|long)
         inner = MethodHandles.permuteArguments(inner, target.type(), perm);
 
-        // (SegmentStack, C0=MemorySegment, C1-Cn)(int|long)
-        inner = MethodHandles.dropArguments(inner, 0, SegmentPool.class);
-
-        // ((int|long))(int|long)
-        MethodHandle cleanup = MethodHandles.identity(returnType);
-        // (Throwable, (int|long))(int|long)
-        cleanup = MethodHandles.dropArguments(cleanup, 0, Throwable.class);
-        // (Throwable, (int|long), SegmentStack, C0=MemorySegment)(int|long)
-        // Cleanup does not have to have all parameters. It can have zero or more.
-        cleanup = MethodHandles.collectArguments(cleanup, 2, RELEASE_SEGMENT_MH);
-
-        // (SegmentStack, C0=MemorySegment, C1-Cn)(int|long)
-        MethodHandle tryFinally = MethodHandles.tryFinally(inner, cleanup);
-
-        // (SegmentStack, SegmentStack, C1-Cn)(int|long)
-        MethodHandle result = MethodHandles.filterArguments(tryFinally, 1, TAKE_SEGMENT_MH);
-
-        final MethodType newType = result.type().dropParameterTypes(0, 1);
-        perm = new int[result.type().parameterCount()];
-        perm[0] = 0;
-        for (int i = 1; i < result.type().parameterCount(); i++) {
-            perm[i] = i - 1;
-        }
-        // Deduplicate the first and second coordinate and only use the first
-        // (SegmentStack, C1-Cn)(int|long)
-        result = MethodHandles.permuteArguments(result, newType, perm);
-
         // Finally we arrive at (C1-Cn)(int|long)
-        return MethodHandles.collectArguments(result, 0, SegmentPool.ACQUIRE_POOL_MH);
+        final MethodHandle ACQUIRE_MH = pooling.equals(Pooling.GLOBAL)
+                ? ACQUIRE_SEGMENT
+                : TlHolder.HOLDER_ACQUIRE_MH.bindTo(new TlHolder());
+
+        return MethodHandles.collectArguments(inner, 0, ACQUIRE_MH);
+
     }
 
     private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
@@ -259,91 +260,26 @@ public final class CaptureStateUtil {
                 + " does not " + info);
     }
 
-    /**
-     * A cache of a memory segments to allow reuse. In many cases, only one segment will
-     * ever be allocated per platform thread. However, if a virtual thread becomes
-     * unmounted from its platform thread and another virtual thread acquires a new
-     * segment, there will be no reuse. Having a secondary cache of these is slower than
-     * using malloc/free directly.
-     * <p>
-     * The cache is about three times faster than a more general `deque`.
-     * <p>
-     * The class is using j.i.m.Unsafe rather than other supported APIs to allow early
-     * use in the boostrap sequence.
-     */
-    private static final class SegmentPool
-            extends SingleElementPool.SingleElementPoolImpl<MemorySegment> {
+    // Support method used as method handles
 
-        private static final TerminatingThreadLocal<SegmentPool> TL_POOLS =
-                new TerminatingThreadLocal<>() {
-                    @Override
-                    protected void threadTerminated(SegmentPool pool) {
-                        pool.close();
-                    }
-                };
-
-        private static final MethodHandle ACQUIRE_POOL_MH =
-                MhUtil.findStatic(MethodHandles.lookup(), "acquirePool",
-                        MethodType.methodType(SegmentPool.class));
-
-
-        private static final Supplier<MemorySegment> FACTORY = new Supplier<>() {
-            @SuppressWarnings("restricted")
-            @ForceInline
-            @Override
-            public MemorySegment get() {
-                // malloc
-                final long address = UNSAFE.allocateMemory(SIZE);
-                return MemorySegment.ofAddress(address).reinterpret(SIZE);
-            }
-        };
-
-        private static final Consumer<MemorySegment> RECYCLER = new Consumer<>() {
-            @ForceInline
-            @Override
-            public void accept(MemorySegment segment) {
-                // free
-                UNSAFE.freeMemory(segment.address());
-            }
-        };
-
-        public SegmentPool() {
-            super(FACTORY.get(), FACTORY, RECYCLER);
+    private record TlHolder(ThreadLocal<MemorySegment> tlSegments) {
+        private static final MethodHandle HOLDER_ACQUIRE_MH =
+                MhUtil.findVirtual(LOOKUP, TlHolder.class,
+                        "acquireSegment", MethodType.methodType(MemorySegment.class));
+        private TlHolder() {
+            this(createThreadLocalSegments());
         }
 
-        // We need to override `take` and `release` to specify the low-level return and
-        // parameter types.
-
-        @ForceInline
-        @Override
-        public MemorySegment take() {
-            return super.take();
-        }
-
-        @ForceInline
-        @Override
-        public void release(MemorySegment element) {
-            super.release(element);
-        }
-
-        // Used reflectively
-        @ForceInline
-        private static SegmentPool acquirePool() {
-            SegmentPool pool = TL_POOLS.get();
-            // Todo: Replace with StableValue
-            if (pool == null) {
-                synchronized (CaptureStateUtil.class) {
-                    pool = TL_POOLS.get();
-                    if (pool != null) {
-                        TL_POOLS.set(pool = new SegmentPool());
-                    }
-                }
-            }
-            return pool;
+        private MemorySegment acquireSegment() {
+            return tlSegments.get();
         }
     }
 
-    // Support method used as method handles
+    // Used reflectively
+    @ForceInline
+    private static MemorySegment acquireSegment() {
+        return TL_SEGMENTS.get();
+    }
 
     // Used reflectively
     @ForceInline

@@ -65,8 +65,10 @@ final class TestCaptureStateUtil {
         }
     }
 
-    private static final MethodHandle ADAPTED_INT = CaptureStateUtil.adaptSystemCall(INT_DUMMY_HANDLE, ERRNO_NAME);
-    private static final MethodHandle ADAPTED_LONG = CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, ERRNO_NAME);
+    private static final MethodHandle ADAPTED_INT = CaptureStateUtil
+            .adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, INT_DUMMY_HANDLE, ERRNO_NAME);
+    private static final MethodHandle ADAPTED_LONG = CaptureStateUtil
+            .adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, LONG_DUMMY_HANDLE, ERRNO_NAME);
 
     @Test
     void successfulInt() throws Throwable {
@@ -100,21 +102,22 @@ final class TestCaptureStateUtil {
                 .findStatic(TestCaptureStateUtil.class, "wrongType",
                         MethodType.methodType(long.class, long.class, int.class));
 
-        var noSegEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, ERRNO_NAME));
+        var noSegEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, noSegment, ERRNO_NAME));
         assertTrue(noSegEx.getMessage().contains("does not have a MemorySegment as the first parameter"));
 
         MethodHandle wrongReturnType = MethodHandles.lookup()
                 .findStatic(TestCaptureStateUtil.class, "wrongType",
                         MethodType.methodType(short.class, MemorySegment.class, long.class, int.class));
 
-        var wrongRetEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(wrongReturnType, ERRNO_NAME));
+        var wrongRetEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, wrongReturnType, ERRNO_NAME));
         assertTrue(wrongRetEx.getMessage().contains("does not return an int or a long"));
 
-        var wrongCaptureName = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, "foo"));
+        var wrongCaptureName = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, LONG_DUMMY_HANDLE, "foo"));
         assertTrue(wrongCaptureName.getMessage().startsWith("Unknown state name: foo"), wrongCaptureName.getMessage());
 
-        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(null, ERRNO_NAME));
-        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, null));
+        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(null, noSegment, ERRNO_NAME));
+        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, null, ERRNO_NAME));
+        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(CaptureStateUtil.Pooling.GLOBAL, noSegment, null));
     }
 
     // Dummy method that is just returning the provided parameters
