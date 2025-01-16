@@ -143,8 +143,9 @@ public final class CaptureStateUtil {
     public enum Pooling {
         /**
          * Use a global segment pool for all method handles derived with this option.
-         * This is desirable if the method handle to adapt is guaranteed no to recurse
-         * into another method handle adapted via the CaptureStateUtil class.
+         * This is desirable if the method handle to adapt is guaranteed not to recurse
+         * into another method handle adapted via the CaptureStateUtil class which also
+         * used {@code GLOBAL}.
          */
         GLOBAL,
         /**
@@ -210,7 +211,9 @@ public final class CaptureStateUtil {
      * @throws IllegalArgumentException if the provided {@code stateName} is unknown
      *                                  on the current platform
      */
-    public static MethodHandle adaptSystemCall(Pooling pooling, MethodHandle target, String stateName) {
+    public static MethodHandle adaptSystemCall(Pooling pooling,
+                                               MethodHandle target,
+                                               String stateName) {
         Objects.requireNonNull(pooling);
         // Implicit null check
         final Class<?> returnType = target.type().returnType();
@@ -270,6 +273,7 @@ public final class CaptureStateUtil {
             this(createThreadLocalSegments());
         }
 
+        @ForceInline
         private MemorySegment acquireSegment() {
             return tlSegments.get();
         }
