@@ -26,8 +26,8 @@ package jdk.internal.foreign;
 import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.SingleElementPool;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
@@ -40,6 +40,8 @@ import java.lang.invoke.VarHandle;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public final class CaptureStateUtil {
@@ -47,13 +49,6 @@ public final class CaptureStateUtil {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final long SIZE = Linker.Option.captureStateLayout().byteSize();
-
-    private static final TerminatingThreadLocal<SegmentCache> TL_CACHE = new TerminatingThreadLocal<>() {
-        @Override
-        protected void threadTerminated(SegmentCache stack) {
-            stack.close();
-        }
-    };
 
     private static final MethodHandle NON_NEGATIVE_INT_MH =
             MhUtil.findStatic(LOOKUP, "nonNegative",
@@ -79,16 +74,12 @@ public final class CaptureStateUtil {
             MhUtil.findStatic(LOOKUP, "error",
                     MethodType.methodType(long.class, MethodHandle.class, long.class, MemorySegment.class));
 
-    private static final MethodHandle ACQUIRE_CACHE_MH =
-            MhUtil.findStatic(LOOKUP, "acquireCache",
-                    MethodType.methodType(SegmentCache.class));
-
-    private static final MethodHandle ACQUIRE_SEGMENT_MH =
-            MhUtil.findVirtual(LOOKUP, SegmentCache.class, "acquire",
+    private static final MethodHandle TAKE_SEGMENT_MH =
+            MhUtil.findVirtual(LOOKUP, SegmentPool.class, "take",
                     MethodType.methodType(MemorySegment.class));
 
     private static final MethodHandle RELEASE_SEGMENT_MH =
-            MhUtil.findVirtual(LOOKUP, SegmentCache.class, "release",
+            MhUtil.findVirtual(LOOKUP, SegmentPool.class, "release",
                     MethodType.methodType(void.class, MemorySegment.class));
 
 
@@ -167,8 +158,8 @@ public final class CaptureStateUtil {
      *
      * {@snippet lang = java:
      *         public int invoke(int a, int b) {
-     *             final SegmentCache segmentCache = acquireCache();
-     *             final MemorySegment segment = segmentCache.acquire();
+     *             final SegmentPool segmentPool = acquirePool();
+     *             final MemorySegment segment = segmentPool.acquire();
      *             try {
      *                 final int result = (int) handle.invoke(segment, a, b);
      *                 if (result >= 0) {
@@ -176,7 +167,7 @@ public final class CaptureStateUtil {
      *                 }
      *                 return -(int) errorHandle.get(segment);
      *             } finally {
-     *                 segmentCache.release(segment);
+     *                 segmentPool.release(segment);
      *             }
      *         }
      *}
@@ -232,7 +223,7 @@ public final class CaptureStateUtil {
         inner = MethodHandles.permuteArguments(inner, target.type(), perm);
 
         // (SegmentStack, C0=MemorySegment, C1-Cn)(int|long)
-        inner = MethodHandles.dropArguments(inner, 0, SegmentCache.class);
+        inner = MethodHandles.dropArguments(inner, 0, SegmentPool.class);
 
         // ((int|long))(int|long)
         MethodHandle cleanup = MethodHandles.identity(returnType);
@@ -246,7 +237,7 @@ public final class CaptureStateUtil {
         MethodHandle tryFinally = MethodHandles.tryFinally(inner, cleanup);
 
         // (SegmentStack, SegmentStack, C1-Cn)(int|long)
-        MethodHandle result = MethodHandles.filterArguments(tryFinally, 1, ACQUIRE_SEGMENT_MH);
+        MethodHandle result = MethodHandles.filterArguments(tryFinally, 1, TAKE_SEGMENT_MH);
 
         final MethodType newType = result.type().dropParameterTypes(0, 1);
         perm = new int[result.type().parameterCount()];
@@ -259,7 +250,7 @@ public final class CaptureStateUtil {
         result = MethodHandles.permuteArguments(result, newType, perm);
 
         // Finally we arrive at (C1-Cn)(int|long)
-        return MethodHandles.collectArguments(result, 0, ACQUIRE_CACHE_MH);
+        return MethodHandles.collectArguments(result, 0, SegmentPool.ACQUIRE_POOL_MH);
     }
 
     private static IllegalArgumentException illegalArgDoesNot(MethodHandle target, String info) {
@@ -279,73 +270,73 @@ public final class CaptureStateUtil {
      * The class is using j.i.m.Unsafe rather than other supported APIs to allow early
      * use in the boostrap sequence.
      */
-    private static final class SegmentCache {
+    private static final class SegmentPool
+            extends SingleElementPool.SingleElementPoolImpl<MemorySegment> {
 
-        private static final long ALLOCATED_OFFSET =
-                UNSAFE.objectFieldOffset(SegmentCache.class, "lock");
+        private static final TerminatingThreadLocal<SegmentPool> TL_POOLS =
+                new TerminatingThreadLocal<>() {
+                    @Override
+                    protected void threadTerminated(SegmentPool pool) {
+                        pool.close();
+                    }
+                };
 
-        // Using an int lock is faster than CASing a reference field
-        private int lock;
-        @Stable
-        private final MemorySegment cachedSegment = malloc();
+        private static final MethodHandle ACQUIRE_POOL_MH =
+                MhUtil.findStatic(MethodHandles.lookup(), "acquirePool",
+                        MethodType.methodType(SegmentPool.class));
 
-        // Used reflectively
-        @ForceInline
-        private MemorySegment acquire() {
-            return lock() ? cachedSegment : malloc();
-        }
 
-        // Used reflectively
-        @ForceInline
-        private void release(MemorySegment segment) {
-            if (segment == cachedSegment) {
-                unlock();
-            } else {
-                free(segment);
+        private static final Supplier<MemorySegment> FACTORY = new Supplier<>() {
+            @SuppressWarnings("restricted")
+            @ForceInline
+            @Override
+            public MemorySegment get() {
+                // malloc
+                final long address = UNSAFE.allocateMemory(SIZE);
+                return MemorySegment.ofAddress(address).reinterpret(SIZE);
             }
+        };
+
+        private static final Consumer<MemorySegment> RECYCLER = new Consumer<>() {
+            @ForceInline
+            @Override
+            public void accept(MemorySegment segment) {
+                // free
+                UNSAFE.freeMemory(segment.address());
+            }
+        };
+
+        public SegmentPool() {
+            super(FACTORY.get(), FACTORY, RECYCLER);
         }
 
-        // This method is called by a separate cleanup thread when the associated
-        // platform thread is dead.
-        private void close() {
-            free(cachedSegment);
+        // We need to override `take` and `release` to specify the low-level return and
+        // parameter types.
+
+        @ForceInline
+        @Override
+        public MemorySegment take() {
+            return super.take();
         }
 
         @ForceInline
-        private boolean lock() {
-            return UNSAFE.getAndSetInt(this, ALLOCATED_OFFSET, 1) == 0;
+        @Override
+        public void release(MemorySegment element) {
+            super.release(element);
         }
 
+        // Used reflectively
         @ForceInline
-        private void unlock() {
-            UNSAFE.putIntVolatile(this, ALLOCATED_OFFSET, 0);
+        private static SegmentPool acquirePool() {
+            SegmentPool cache = TL_POOLS.get();
+            if (cache == null) {
+                TL_POOLS.set(cache = new SegmentPool());
+            }
+            return cache;
         }
-
-        @SuppressWarnings("restricted")
-        @ForceInline
-        private static MemorySegment malloc() {
-            final long address = UNSAFE.allocateMemory(SIZE);
-            return MemorySegment.ofAddress(address).reinterpret(SIZE);
-        }
-
-        @ForceInline
-        private static void free(MemorySegment segment) {
-            UNSAFE.freeMemory(segment.address());
-        }
-
     }
 
     // Support method used as method handles
-
-    // Used reflectively
-    @ForceInline
-    private static SegmentCache acquireCache() {
-        SegmentCache cache = TL_CACHE.get();
-        if (cache == null) {
-            TL_CACHE.set(cache = new SegmentCache());
-        }
-        return cache;
-    }
 
     // Used reflectively
     @ForceInline
