@@ -41,6 +41,7 @@ import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.misc.TerminatingThreadLocal;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -385,82 +386,88 @@ public final class SharedUtils {
     }
 
     // Intermediate buffer needed for a stub call handle. Small buffers may be reused across calls.
-    static class CallBuffer {
+    static final class BufferCache {
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
         // Size for cached buffers.
         private static final int CACHED_SIZE = 256;
 
-        // Not confined: cached buffers may float between threads.
-        private final Arena arena = Arena.ofShared();
-        private final MemorySegment segment;
+        // Two-element stack to support downcall + upcall (cached1 == null => cached2 == null).
+        // Elements are unscoped.
+        private MemorySegment cached1;
+        private MemorySegment cached2;
 
-        public CallBuffer(long size) {
-            // Allocate at least CACHED_SIZE in case we want to reuse this buffer.
-            segment = arena.allocate(Math.max(size, CACHED_SIZE));
+        MemorySegment pop() {
+            MemorySegment result = cached1;
+            cached1 = cached2;
+            cached2 = null;
+            return result;
         }
 
-        private SegmentAllocator slicingAllocator() {
-            return SegmentAllocator.slicingAllocator(segment);
+        boolean push(MemorySegment segment) {
+            if (cached2 != null) {
+                return false;
+            }
+            cached2 = cached1;
+            cached1 = segment;
+            return true;
         }
 
-        private Scope scope() {
-            return segment.scope();
+        void free() {
+            if (cached1 != null) free(cached1);
+            if (cached2 != null) free(cached2);
         }
 
-        static boolean isCacheable(long size) {
+        @SuppressWarnings("restricted")
+        static MemorySegment allocate(long size) {
+            long allocatedSize = Math.max(size, CACHED_SIZE);
+            return MemorySegment
+                    .ofAddress(UNSAFE.allocateMemory(allocatedSize))
+                    .reinterpret(allocatedSize);
+        }
+
+        static void free(MemorySegment segment) {
+            UNSAFE.freeMemory(segment.address());
+        }
+
+        static boolean couldBeSatisfiedFromCache(long size) {
             return size <= CACHED_SIZE;
         }
 
-        boolean isCacheable() {
+        static boolean couldCache(MemorySegment released) {
             // Don't cache larger buffers.
-            return segment.byteSize() == CACHED_SIZE;
+            return released.byteSize() == CACHED_SIZE;
         }
 
-        void close() {
-            arena.close();
-        }
-
-        // A one-element cache.
-        static class Holder {
-            private CallBuffer element = null;
-        }
-
-        private static final TerminatingThreadLocal<Holder> tl = new TerminatingThreadLocal<>() {
+        private static final TerminatingThreadLocal<BufferCache> tl = new TerminatingThreadLocal<>() {
             @Override
-            protected Holder initialValue() {
-                return new Holder();
+            protected BufferCache initialValue() {
+                return new BufferCache();
             }
 
             @Override
-            protected void threadTerminated(Holder holder) {
-                if (holder.element != null) {
-                    holder.element.close();
-                }
+            protected void threadTerminated(BufferCache cache) {
+                cache.free();
             }
         };
 
-        static CallBuffer acquireOrAllocate(long size) {
-            final Holder cache;
+        static MemorySegment acquireOrAllocate(long size) {
             Continuation.pin();
             try {
-                if (!isCacheable(size) || (cache = tl.get()).element == null) {
-                    return new CallBuffer(size);
-                }
-                final CallBuffer result = cache.element;
-                cache.element = null;
-                return result;
+                final MemorySegment result;
+                return !couldBeSatisfiedFromCache(size) || (result = tl.get().pop()) == null
+                        ? allocate(size)
+                        : result;
             } finally {
                 Continuation.unpin();
             }
         }
 
-        static void cacheOrClose(CallBuffer released) {
-            final Holder cache;
+        static void cacheOrClose(MemorySegment released) {
             Continuation.pin();
             try {
-                if (released.isCacheable() && (cache = tl.get()).element == null) {
-                    cache.element = released;
-                } else {
-                    released.close();
+                if (!couldCache(released) || !tl.get().push(released)) {
+                    free(released);
                 }
             } finally {
                 Continuation.unpin();
@@ -468,28 +475,41 @@ public final class SharedUtils {
         }
     }
 
+    @ForceInline
     public static Arena newBoundedArena(long size) {
-        return new Arena() {
-            final CallBuffer buffer = CallBuffer.acquireOrAllocate(size);
-            final SegmentAllocator allocator = buffer.slicingAllocator();
+        return new BoundedArena(size);
+    }
 
-            @Override
-            public MemorySegment allocate(long byteSize, long byteAlignment) {
-                return allocator.allocate(byteSize, byteAlignment);
-            }
+    private static class BoundedArena implements Arena {
+        final MemorySegment buffer;
+        // We'd ideally confine the segments returned from this arena with a
+        //   final Arena callScope = Arena.ofConfined();
+        // and close the scope after the call.
+        // However, the arena creates allocation pressure, without it the call is scalar-replaced.
+        @SuppressWarnings("restricted")
+        final SegmentAllocator allocator;
 
-            @Override
-            public Scope scope() {
-                return buffer.scope();
-            }
+        @ForceInline
+        public BoundedArena(long size) {
+            buffer = BufferCache.acquireOrAllocate(size);
+            allocator = SegmentAllocator.slicingAllocator(buffer/*.reinterpret(callScope, null)*/);
+        }
 
-            @Override
-            public void close() {
-                // Caveat: this may be a carrier thread different from
-                // where the allocation happened.
-                CallBuffer.cacheOrClose(buffer);
-            }
-        };
+        @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
+            return allocator.allocate(byteSize, byteAlignment);
+        }
+
+        @Override
+        public Scope scope() {
+            return Arena.global().scope();  // callScope;
+        }
+
+        @Override
+        public void close() {
+            // callScope.close();
+            BufferCache.cacheOrClose(buffer);
+        }
     }
 
     public static Arena newEmptyArena() {
