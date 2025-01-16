@@ -423,20 +423,20 @@ public final class SharedUtils {
             private CallBuffer element = null;
         }
 
-        private static final TerminatingThreadLocal<SharedUtils.CallBuffer.Holder> tl = new TerminatingThreadLocal<SharedUtils.CallBuffer.Holder>() {
+        private static final TerminatingThreadLocal<Holder> tl = new TerminatingThreadLocal<>() {
             @Override
-            protected SharedUtils.CallBuffer.Holder initialValue() {
-                return new SharedUtils.CallBuffer.Holder();
+            protected Holder initialValue() {
+                return new Holder();
             }
 
             @Override
-            protected void threadTerminated(SharedUtils.CallBuffer.Holder holder) {
+            protected void threadTerminated(Holder holder) {
                 if (holder.element != null) holder.element.close();
             }
         };
 
         static CallBuffer acquire(long size) {
-            SharedUtils.CallBuffer.Holder cache = tl.get();
+            Holder cache = tl.get();
             if (cache.element == null || !cache.element.supports(size)) {
                 return new CallBuffer(size);
             }
@@ -446,7 +446,7 @@ public final class SharedUtils {
         }
 
         static void release(CallBuffer released) {
-            SharedUtils.CallBuffer.Holder cache = tl.get();
+            Holder cache = tl.get();
             if (cache.element == null && released.isCacheable()) cache.element = released;
             else released.close();
         }
@@ -454,7 +454,7 @@ public final class SharedUtils {
 
     public static Arena newBoundedArena(long size) {
         return new Arena() {
-            final CallBuffer buffer = SharedUtils.CallBuffer.acquire(size);
+            final CallBuffer buffer = CallBuffer.acquire(size);
             final SegmentAllocator allocator = buffer.slicingAllocator();
 
             @Override
@@ -471,7 +471,7 @@ public final class SharedUtils {
             public void close() {
                 // Caveat: this may be a carrier thread different from
                 // where the allocation happened.
-                SharedUtils.CallBuffer.release(buffer);
+                CallBuffer.release(buffer);
             }
         };
     }
