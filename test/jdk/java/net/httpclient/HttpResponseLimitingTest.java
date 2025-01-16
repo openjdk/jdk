@@ -114,7 +114,7 @@ class HttpResponseLimitingTest {
                             BodyHandlers.limiting(BodyHandlers.ofByteArray(), insufficientCapacity);
                     CLIENT.send(REQUEST, handler);
                 },
-                "the maximum number of bytes that are allowed to be consumed is exceeded");
+                "body exceeds capacity: " + HttpServer.RESPONSE_BODY.length);
     }
 
     static long[] insufficientCapacities() {
@@ -162,7 +162,7 @@ class HttpResponseLimitingTest {
         assertNull(downstreamSubscriber.lastBuffers);
         assertNotNull(downstreamSubscriber.lastThrowable);
         assertEquals(
-                "the maximum number of bytes that are allowed to be consumed is exceeded",
+                "body exceeds capacity: " + insufficientCapacity,
                 downstreamSubscriber.lastThrowable.getMessage());
         assertFalse(downstreamSubscriber.completed);
 
@@ -180,7 +180,7 @@ class HttpResponseLimitingTest {
         private static final byte[] RESPONSE_BODY = "random non-empty body".getBytes(CHARSET);
 
         private static final byte[] RESPONSE = (
-                "HTTP/1.2 200 OK\r\n" +
+                "HTTP/1.1 200 OK\r\n" +
                         "Content-Length: " + RESPONSE_BODY.length + "\r\n" +
                         "\r\n" +
                         new String(RESPONSE_BODY, CHARSET))
