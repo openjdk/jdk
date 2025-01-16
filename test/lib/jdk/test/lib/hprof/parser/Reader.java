@@ -93,8 +93,8 @@ public abstract class Reader {
                                       callStack, debugLevel);
                 return r.read();
             } else if ((i >>> 8) == GZIP_HEADER_MAGIC) {
-                in.close();
                 // Possible gziped file, try decompress it and get the stack trace.
+                in.close();
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
                 // Decompress to get dump file.
@@ -167,8 +167,8 @@ public abstract class Reader {
                 r.read();
                 return r.printStackTraces();
             } else if ((i >>> 8) == GZIP_HEADER_MAGIC) {
-                in.close();
                 // Possible gziped file, try decompress it and get the stack trace.
+                in.close();
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
                 // Decompress to get dump file.
