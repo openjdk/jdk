@@ -61,6 +61,8 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
     log_trigger("Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    _previous_trigger_declinations = _declined_trigger_count;
+    _declined_trigger_count = 0;
     return true;
   }
 
@@ -69,6 +71,8 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
     log_trigger("Allocated since last cycle (" SIZE_FORMAT "%s) is larger than allocation threshold (" SIZE_FORMAT "%s)",
                 byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),
                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
+    _previous_trigger_declinations = _declined_trigger_count;
+    _declined_trigger_count = 0;
     return true;
   }
 

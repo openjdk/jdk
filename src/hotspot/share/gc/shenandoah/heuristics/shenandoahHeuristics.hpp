@@ -78,6 +78,9 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
 protected:
   static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
+  size_t _declined_trigger_count;
+  size_t _previous_trigger_declinations;
+
   class RegionData {
     private:
     ShenandoahHeapRegion* _region;
