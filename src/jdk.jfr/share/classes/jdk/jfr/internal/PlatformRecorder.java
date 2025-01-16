@@ -650,4 +650,8 @@ public final class PlatformRecorder {
     public RepositoryChunk getCurrentChunk() {
         return currentChunk;
     }
+
+    public synchronized void flush() {
+        MetadataRepository.getInstance().flush();
+    }
 }

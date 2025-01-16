@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -686,7 +687,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
     log_debug(gc)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
-                  SIZE_FORMAT " at offset " SIZE_FORMAT ", size: " SIZE_FORMAT,
+                  "%zu at offset %zu, size: %zu",
                   worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
     if (region->is_old()) {
       size_t cluster_size =
@@ -856,7 +857,7 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* hea
 {
 #ifdef ASSERT
   size_t expected_chunk_size_words = _clusters_in_smallest_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-  assert(smallest_chunk_size_words() == expected_chunk_size_words, "_smallest_chunk_size (" SIZE_FORMAT") is not valid because it does not equal (" SIZE_FORMAT ")",
+  assert(smallest_chunk_size_words() == expected_chunk_size_words, "_smallest_chunk_size (%zu) is not valid because it does not equal (%zu)",
          smallest_chunk_size_words(), expected_chunk_size_words);
 #endif
   assert(_num_groups <= _maximum_groups,
@@ -897,13 +898,13 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* hea
   }
   if (_group_entries[_num_groups-1] < _total_chunks) {
     assert((_total_chunks - _group_entries[_num_groups-1]) * _group_chunk_size[_num_groups-1] + previous_group_span ==
-           heap->num_regions() * words_in_region, "Total region chunks (" SIZE_FORMAT
-           ") do not span total heap regions (" SIZE_FORMAT ")", _total_chunks, _heap->num_regions());
+           heap->num_regions() * words_in_region, "Total region chunks (%zu"
+           ") do not span total heap regions (%zu)", _total_chunks, _heap->num_regions());
     previous_group_span += (_total_chunks - _group_entries[_num_groups-1]) * _group_chunk_size[_num_groups-1];
     _group_entries[_num_groups-1] = _total_chunks;
   }
-  assert(previous_group_span == heap->num_regions() * words_in_region, "Total region chunks (" SIZE_FORMAT
-         ") do not span total heap regions (" SIZE_FORMAT "): " SIZE_FORMAT " does not equal " SIZE_FORMAT,
+  assert(previous_group_span == heap->num_regions() * words_in_region, "Total region chunks (%zu"
+         ") do not span total heap regions (%zu): %zu does not equal %zu",
          _total_chunks, _heap->num_regions(), previous_group_span, heap->num_regions() * words_in_region);
 
   // Not necessary, but keeps things tidy

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +52,8 @@ ShenandoahGenerationSizer::ShenandoahGenerationSizer()
 
   if (NewSize > MaxNewSize) {
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
-      log_warning(gc, ergo)("NewSize (" SIZE_FORMAT "k) is greater than the MaxNewSize (" SIZE_FORMAT "k). "
-                            "A new max generation size of " SIZE_FORMAT "k will be used.",
+      log_warning(gc, ergo)("NewSize (%zuk) is greater than the MaxNewSize (%zuk). "
+                            "A new max generation size of %zuk will be used.",
               NewSize/K, MaxNewSize/K, NewSize/K);
     }
     FLAG_SET_ERGO(MaxNewSize, NewSize);
@@ -138,7 +139,7 @@ bool ShenandoahGenerationSizer::transfer_regions(ShenandoahGeneration* src, Shen
   src->decrease_capacity(bytes_to_transfer);
   dst->increase_capacity(bytes_to_transfer);
   const size_t new_size = dst->max_capacity();
-  log_info(gc, ergo)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+  log_info(gc, ergo)("Transfer %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
                      regions, src->name(), dst->name(), PROPERFMTARGS(new_size));
   return true;
 }
@@ -190,7 +191,7 @@ void ShenandoahGenerationSizer::force_transfer_to_old(size_t regions) const {
   young_gen->decrease_capacity(bytes_to_transfer);
   old_gen->increase_capacity(bytes_to_transfer);
   const size_t new_size = old_gen->max_capacity();
-  log_info(gc, ergo)("Forcing transfer of " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+  log_info(gc, ergo)("Forcing transfer of %zu region(s) from %s to %s, yielding increased size: " PROPERFMT,
                      regions, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_size));
 }
 
