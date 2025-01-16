@@ -931,29 +931,29 @@ void SymbolTable::print_histogram() {
   HistogramIterator hi;
   _local_table->do_scan(Thread::current(), hi);
   tty->print_cr("Symbol Table Histogram:");
-  tty->print_cr("  Total number of symbols  " SIZE_FORMAT_W(7), hi.total_count);
-  tty->print_cr("  Total size in memory     " SIZE_FORMAT_W(7) "K", (hi.total_size * wordSize) / K);
-  tty->print_cr("  Total counted            " SIZE_FORMAT_W(7), _symbols_counted);
-  tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), _symbols_removed);
+  tty->print_cr("  Total number of symbols  %7zu", hi.total_count);
+  tty->print_cr("  Total size in memory     %7zuK", (hi.total_size * wordSize) / K);
+  tty->print_cr("  Total counted            %7zu", _symbols_counted);
+  tty->print_cr("  Total removed            %7zu", _symbols_removed);
   if (_symbols_counted > 0) {
     tty->print_cr("  Percent removed          %3.2f",
           ((double)_symbols_removed / (double)_symbols_counted) * 100);
   }
-  tty->print_cr("  Reference counts         " SIZE_FORMAT_W(7), Symbol::_total_count);
-  tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / K);
-  tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes() / K);
-  tty->print_cr("  Total symbol length      " SIZE_FORMAT_W(7), hi.total_length);
-  tty->print_cr("  Maximum symbol length    " SIZE_FORMAT_W(7), hi.max_length);
+  tty->print_cr("  Reference counts         %7zu", Symbol::_total_count);
+  tty->print_cr("  Symbol arena used        %7zuK", arena()->used() / K);
+  tty->print_cr("  Symbol arena size        %7zuK", arena()->size_in_bytes() / K);
+  tty->print_cr("  Total symbol length      %7zu", hi.total_length);
+  tty->print_cr("  Maximum symbol length    %7zu", hi.max_length);
   tty->print_cr("  Average symbol length    %7.2f", ((double)hi.total_length / (double)hi.total_count));
   tty->print_cr("  Symbol length histogram:");
   tty->print_cr("    %6s %10s %10s", "Length", "#Symbols", "Size");
   for (size_t i = 0; i < hi.results_length; i++) {
     if (hi.counts[i] > 0) {
-      tty->print_cr("    " SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K",
+      tty->print_cr("    %6zu %10zu %10zuK",
                     i, hi.counts[i], (hi.sizes[i] * wordSize) / K);
     }
   }
-  tty->print_cr("  >=" SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K\n",
+  tty->print_cr("  >= %6zu %10zu %10zuK\n",
                 hi.results_length, hi.out_of_range_count, (hi.out_of_range_size*wordSize) / K);
 }
 #endif // PRODUCT

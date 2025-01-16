@@ -2119,18 +2119,18 @@ void HeapShared::print_stats() {
     size_t byte_size_limit = (size_t(1) << i) * HeapWordSize;
     size_t count = _alloc_count[i];
     size_t size = _alloc_size[i];
-    log_info(cds, heap)(SIZE_FORMAT_W(8) " objects are <= " SIZE_FORMAT_W(-6)
-                        " bytes (total " SIZE_FORMAT_W(8) " bytes, avg %8.1f bytes)",
+    log_info(cds, heap)("%8zu objects are <= %-6zu"
+                        " bytes (total %8zu bytes, avg %8.1f bytes)",
                         count, byte_size_limit, size * HeapWordSize, avg_size(size, count));
     huge_count -= count;
     huge_size -= size;
   }
 
-  log_info(cds, heap)(SIZE_FORMAT_W(8) " huge  objects               (total "  SIZE_FORMAT_W(8) " bytes"
+  log_info(cds, heap)("%8zu huge  objects               (total %8zu bytes"
                       ", avg %8.1f bytes)",
                       huge_count, huge_size * HeapWordSize,
                       avg_size(huge_size, huge_count));
-  log_info(cds, heap)(SIZE_FORMAT_W(8) " total objects               (total "  SIZE_FORMAT_W(8) " bytes"
+  log_info(cds, heap)("%8zu total objects               (total %8zu bytes"
                       ", avg %8.1f bytes)",
                       _total_obj_count, _total_obj_size * HeapWordSize,
                       avg_size(_total_obj_size, _total_obj_count));

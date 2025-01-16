@@ -124,7 +124,7 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
       }
       assert(idx < _ptrmap->size(), "must be");
       _ptrmap->set_bit(idx);
-      //tty->print_cr("Marking pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
+      //tty->print_cr("Marking pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ %5zu", p2i(ptr_loc), p2i(*ptr_loc), idx);
     }
   }
 }
@@ -138,7 +138,7 @@ void ArchivePtrMarker::clear_pointer(address* ptr_loc) {
   size_t idx = ptr_loc - ptr_base();
   assert(idx < _ptrmap->size(), "cannot clear pointers that have not been marked");
   _ptrmap->clear_bit(idx);
-  //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ " SIZE_FORMAT_W(5), p2i(ptr_loc), p2i(*ptr_loc), idx);
+  //tty->print_cr("Clearing pointer [" PTR_FORMAT "] -> " PTR_FORMAT " @ %5zu", p2i(ptr_loc), p2i(*ptr_loc), idx);
 }
 
 class ArchivePtrBitmapCleaner: public BitMapClosure {
@@ -163,7 +163,7 @@ public:
       }
     } else {
       _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ " SIZE_FORMAT_W(9), p2i(ptr_loc), offset));
+      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ %9zu", p2i(ptr_loc), offset));
     }
 
     return true;
@@ -239,7 +239,7 @@ void DumpRegion::commit_to(char* newtop) {
   } else {
     which = "shared";
   }
-  log_debug(cds)("Expanding %s spaces by " SIZE_FORMAT_W(7) " bytes [total " SIZE_FORMAT_W(9)  " bytes ending at %p]",
+  log_debug(cds)("Expanding %s spaces by %7zu bytes [total %9zu bytes ending at %p]",
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
@@ -265,7 +265,7 @@ void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
 }
 
 void DumpRegion::print(size_t total_bytes) const {
-  log_debug(cds)("%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used] at " INTPTR_FORMAT,
+  log_debug(cds)("%s space: %9zu [ %4.1f%% of total] out of %9zu bytes [%5.1f%% used] at " INTPTR_FORMAT,
                  _name, used(), percent_of(used(), total_bytes), reserved(), percent_of(used(), reserved()),
                  p2i(ArchiveBuilder::current()->to_requested(_base)));
 }

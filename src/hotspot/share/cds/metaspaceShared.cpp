@@ -1467,8 +1467,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   size_t class_space_size = CompressedClassSpaceSize;
   assert(CompressedClassSpaceSize > 0 &&
          is_aligned(CompressedClassSpaceSize, class_space_alignment),
-         "CompressedClassSpaceSize malformed: "
-         SIZE_FORMAT, CompressedClassSpaceSize);
+         "CompressedClassSpaceSize malformed: %zu", CompressedClassSpaceSize);
 
   const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
   const size_t gap_size = ccs_begin_offset - archive_space_size;

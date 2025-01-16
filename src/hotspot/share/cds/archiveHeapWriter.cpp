@@ -627,7 +627,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
   // The whole heap is covered by total_bits, but there are only non-zero bits within [start ... end).
   size_t start = bitmap->find_first_set_bit(0);
   size_t end = bitmap->size();
-  log_info(cds)("%s = " SIZE_FORMAT_W(7) " ... " SIZE_FORMAT_W(7) " (%3zu%% ... %3zu%% = %3zu%%)", which,
+  log_info(cds)("%s = %7zu ... %7zu (%3zu%% ... %3zu%% = %3zu%%)", which,
                 start, end,
                 start * 100 / total_bits,
                 end * 100 / total_bits,

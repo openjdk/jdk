@@ -500,7 +500,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
   size_t idx;
   bool added = false;
   if (outputstr[0] == '#') { // Output specified using index
-    int ret = sscanf(outputstr + 1, SIZE_FORMAT, &idx);
+    int ret = sscanf(outputstr + 1, "%zu", &idx);
     if (ret != 1 || idx >= _n_outputs) {
       errstream->print_cr("Invalid output index '%s'", outputstr);
       return false;

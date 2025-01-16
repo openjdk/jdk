@@ -1623,7 +1623,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   r->set_file_offset(_file_offset);
   int crc = ClassLoader::crc32(0, base, (jint)size);
   if (size > 0) {
-    log_info(cds)("Shared file region (%s) %d: " SIZE_FORMAT_W(8)
+    log_info(cds)("Shared file region (%s) %d: %8zu"
                    " bytes, addr " INTPTR_FORMAT " file offset 0x%08" PRIxPTR
                    " crc 0x%08x",
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
@@ -2109,7 +2109,7 @@ MemRegion FileMapInfo::get_heap_region_requested_range() {
 
   address start = heap_region_requested_address();
   address end = start + size;
-  log_info(cds)("Requested heap region [" INTPTR_FORMAT " - " INTPTR_FORMAT "] = "  SIZE_FORMAT_W(8) " bytes",
+  log_info(cds)("Requested heap region [" INTPTR_FORMAT " - " INTPTR_FORMAT "] = %8zu bytes",
                 p2i(start), p2i(end), size);
 
   return MemRegion((HeapWord*)start, (HeapWord*)end);
@@ -2371,7 +2371,7 @@ bool FileMapInfo::map_heap_region_impl() {
       return false;
     }
   }
-  log_info(cds)("Heap data mapped at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
+  log_info(cds)("Heap data mapped at " INTPTR_FORMAT ", size = %8zu bytes",
                 p2i(mapped_start), _mapped_heap_memregion.byte_size());
   log_info(cds)("CDS heap data relocation delta = %zd bytes", delta);
   return true;
