@@ -40,7 +40,6 @@ import javax.management.ObjectName;
 public class SameObjectTwoNamesTest {
 
     public static void main(String[] args) throws Exception {
-        boolean expectException = true;
         try {
             ObjectName objectName1 = new ObjectName("test:index=1");
             ObjectName objectName2 = new ObjectName("test:index=2");
@@ -51,19 +50,10 @@ public class SameObjectTwoNamesTest {
 
             mbs.registerMBean(mxBeanObject, objectName2);
 
-            if (expectException) {
-                throw new Exception("TEST FAILED: " +
-                        "InstanceAlreadyExistsException was not thrown");
-            } else
-                System.out.println("Correctly got no exception with compat property");
+            throw new Exception("TEST FAILED: InstanceAlreadyExistsException was not thrown");
         } catch (InstanceAlreadyExistsException e) {
-            if (expectException) {
-                System.out.println("Got expected InstanceAlreadyExistsException:");
-                e.printStackTrace(System.out);
-            } else {
-                throw new Exception(
-                        "TEST FAILED: Got exception even though compat property set", e);
-            }
+            System.out.println("Got expected InstanceAlreadyExistsException:");
+            e.printStackTrace(System.out);
         }
         System.out.println("TEST PASSED");
     }
