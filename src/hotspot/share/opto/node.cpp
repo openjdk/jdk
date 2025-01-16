@@ -3047,3 +3047,76 @@ const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
+
+// This Type node is dead. It could be because the type that it captures and the type of the node computed from its
+// inputs do not intersect anymore. That node has some uses along some control flow paths. Those control flow paths must
+// be unreachable as using a dead value makes no sense. For the Type node to capture a narrowed down type, some control
+// flow construct must guard the Type node (an If node usually). When the Type node becomes dead, the guard usually
+// constant fold and the control flow that leads to the Type node becomes unreachable. There are cases where that doesn't
+// happen, however. They are handled here by following uses of the Type node until a CFG or a Phi to find dead paths.
+// The dead paths are then replaced by a Halt node.
+void TypeNode::make_paths_from_here_dead(PhaseIterGVN* igvn, PhaseIdealLoop* loop) {
+  Unique_Node_List wq;
+  wq.push(this);
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (DUIterator_Fast kmax, k = n->fast_outs(kmax); k < kmax; k++) {
+      Node* u = n->fast_out(k);
+      if (u->is_CFG()) {
+        assert(!u->is_Region(), "Can't reach a Region without going through a Phi");
+        Node* c = u->in(0);
+        if (igvn->type(c) != Type::TOP) {
+          igvn->replace_input_of(u, 0, igvn->C->top());
+          create_halt_path(igvn, c, loop);
+        }
+      } else if (u->is_Phi()) {
+        Node* r = u->in(0);
+        assert(r->is_Region() || r->is_top(), "unexpected Phi's control");
+        if (r->is_Region()) {
+          for (uint k = 1; k < u->req(); ++k) {
+            if (u->in(k) == n) {
+              Node* c = r->in(k);
+              if (igvn->type(c) != Type::TOP) {
+                igvn->replace_input_of(r, k, igvn->C->top());
+                create_halt_path(igvn, c, loop);
+              }
+            }
+          }
+        }
+      } else {
+        wq.push(u);
+      }
+    }
+  }
+}
+
+void TypeNode::create_halt_path(PhaseIterGVN* igvn, Node* c, PhaseIdealLoop* loop) const {
+  Node* frame = new ParmNode(igvn->C->start(), TypeFunc::FramePtr);
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(frame);
+  } else {
+    loop->register_new_node(frame, igvn->C->start());
+  }
+  Node* halt = new HaltNode(c, frame, "dead path discovered by TypeNode");
+  if (loop == nullptr) {
+    igvn->register_new_node_with_optimizer(halt);
+  } else {
+    loop->register_control(halt, loop->ltree_root(), c);
+  }
+  igvn->add_input_to(igvn->C->root(), halt);
+}
+
+Node* TypeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (can_reshape && Value(phase) == Type::TOP) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    Node* top = igvn->C->top();
+    ResourceMark rm;
+    make_paths_from_here_dead(igvn, nullptr);
+    return top;
+  }
+
+  return Node::Ideal(phase, can_reshape);
+}
+
+
+
