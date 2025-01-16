@@ -43,31 +43,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 /**
- * A class for handling {@code -Xlint} suboptions and {@code @SuppressWarnings} annotations.
- *
- * <p>
- * Each lint category can be in one of three states: enabled, suppressed, or neither. The "neither"
- * state means it's effectively up to the code doing the check to determine the default behavior, by
- * warning when enabled (i.e., default suppressed) or not warning when suppressed (i.e., default enabled).
- * Some categories default to enabled; most default to neither and the code warns when enabled.
- *
- * <p>
- * A lint category can be explicitly enabled via the command line flag {@code -Xlint:key}, or explicitly
- * disabled via the command line flag {@code -Xlint:-key}. Some lint categories warn at specific
- * locations in the code and can be suppressed within the scope of a symbol declaration via the
- * {@code @SuppressWarnings} annotation.
- *
- * <p>
- * Further details:
- * <ul>
- *  <li>To build an instance augmented with any new suppressions from {@code @SuppressWarnings} and/or
- *      {@code @Deprecated} annotations on a symbol declaration, use {@link #augment} to establish a
- *      new symbol "scope".
- *  <li>You can manually check whether a category {@link #isEnabled} or {@link #isSuppressed};
- *      the convenience method {@link #logIfEnabled} includes a check for {@link #isEnabled}.
- *  <li>The root {@link Lint} singleton initializes itself lazily, so it can be used safely during
- *      compiler startup as long as {@link Options} has been initialized.
- * </ul>
+ * A class for handling -Xlint suboptions and @SuppressWarnings.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
@@ -76,10 +52,10 @@ import com.sun.tools.javac.util.Options;
  */
 public class Lint {
 
-    /** The context key for the root {@link Lint} singleton. */
+    /** The context key for the root Lint object. */
     protected static final Context.Key<Lint> lintKey = new Context.Key<>();
 
-    /** Get the root {@link Lint} singleton. */
+    /** Get the root Lint instance. */
     public static Lint instance(Context context) {
         Lint instance = context.get(lintKey);
         if (instance == null)
@@ -89,7 +65,7 @@ public class Lint {
 
     /**
      * Obtain an instance with additional warning supression applied from any
-     * {@code @SuppressWarnings} and/or {@code @Deprecated} annotations on the given symbol.
+     * @SuppressWarnings and/or @Deprecated annotations on the given symbol.
      *
      * <p>
      * The returned instance will be different from this instance if and only if
@@ -110,8 +86,7 @@ public class Lint {
     }
 
     /**
-     * Returns a new Lint that has the given {@link LintCategory}s enabled.
-     *
+     * Returns a new Lint that has the given LintCategorys enabled.
      * @param lc one or more categories to be enabled
      */
     public Lint enable(LintCategory... lc) {
@@ -122,8 +97,7 @@ public class Lint {
     }
 
     /**
-     * Returns a new Lint that has the given {@link LintCategory}s suppressed.
-     *
+     * Returns a new Lint that has the given LintCategorys suppressed.
      * @param lc one or more categories to be suppressed
      */
     public Lint suppress(LintCategory... lc) {
@@ -133,7 +107,6 @@ public class Lint {
         return l;
     }
 
-    // Compiler context
     private final Context context;
     private final Options options;
 
@@ -141,14 +114,12 @@ public class Lint {
     private Symtab syms;
     private Names names;
 
-    // For the root instance only, these are initialized lazily
-    private EnumSet<LintCategory> values;           // categories enabled by default or "-Xlint:key" and not (yet) suppressed
-    private EnumSet<LintCategory> suppressedValues; // categories suppressed by augment() or suppress() (but not "-Xlint:-key")
+    // Invariant: it's never the case that a category is in both "values" and "suppressedValues"
+    private EnumSet<LintCategory> values;
+    private EnumSet<LintCategory> suppressedValues;
 
-    // LintCategory lookup by option string
-    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(40);
+    private static final Map<String, LintCategory> map = new ConcurrentHashMap<>(20);
 
-    // Instantiate the root instance
     @SuppressWarnings("this-escape")
     protected Lint(Context context) {
         this.context = context;
@@ -203,7 +174,7 @@ public class Lint {
             values.add(LintCategory.INCUBATING);
         }
 
-        // Look for specific overrides via "-Xlint" flags
+        // Look for specific overrides
         for (LintCategory lc : LintCategory.values()) {
             if (options.isSet(Option.XLINT_CUSTOM, lc.option)) {
                 values.add(lc);
@@ -226,8 +197,8 @@ public class Lint {
      */
     public enum LintCategory {
         /**
-         * Warn when code refers to an auxiliary class that is hidden in a source file (i.e., the source file
-         * name is different from the class name, and the type is not properly nested) and the referring code
+         * Warn when code refers to a auxiliary class that is hidden in a source file (ie source file name is
+         * different from the class name, and the type is not properly nested) and the referring code
          * is not located in the same source file.
          */
         AUXILIARYCLASS("auxiliaryclass"),
@@ -238,10 +209,7 @@ public class Lint {
         CAST("cast"),
 
         /**
-         * Warn about issues related to classfile contents.
-         *
-         * <p>
-         * This category is not supported by {@code @SuppressWarnings}.
+         * Warn about issues related to classfile contents
          */
         CLASSFILE("classfile"),
 
@@ -258,7 +226,7 @@ public class Lint {
 
         /**
          * Warn about items which are documented with an {@code @deprecated} JavaDoc
-         * comment, but which do not have the {@code @Deprecated} annotation.
+         * comment, but which do not have {@code @Deprecated} annotation.
          */
         DEP_ANN("dep-ann"),
 
@@ -313,18 +281,12 @@ public class Lint {
         OPENS("opens"),
 
         /**
-         * Warn about issues relating to use of command line options.
-         *
-         * <p>
-         * This category is not supported by {@code @SuppressWarnings}.
+         * Warn about issues relating to use of command line options
          */
         OPTIONS("options"),
 
         /**
          * Warn when any output file is written to more than once.
-         *
-         * <p>
-         * This category is not supported by {@code @SuppressWarnings}.
          */
         OUTPUT_FILE_CLASH("output-file-clash"),
 
@@ -340,9 +302,8 @@ public class Lint {
 
         /**
          * Warn about invalid path elements on the command line.
-         *
-         * <p>
-         * This category is not supported by {@code @SuppressWarnings}.
+         * Such warnings cannot be suppressed with the SuppressWarnings
+         * annotation.
          */
         PATH("path"),
 
@@ -392,10 +353,7 @@ public class Lint {
         SYNCHRONIZATION("synchronization"),
 
         /**
-         * Warn about issues relating to use of text blocks.
-         *
-         * <p>
-         * This category is not supported by {@code @SuppressWarnings}.
+         * Warn about issues relating to use of text blocks
          */
         TEXT_BLOCKS("text-blocks"),
 
@@ -405,7 +363,7 @@ public class Lint {
         THIS_ESCAPE("this-escape"),
 
         /**
-         * Warn about issues relating to use of try blocks (i.e., try-with-resources).
+         * Warn about issues relating to use of try blocks (i.e. try-with-resources)
          */
         TRY("try"),
 
@@ -421,9 +379,6 @@ public class Lint {
 
         /**
          * Warn about use of preview features.
-         *
-         * <p>
-         * This category is not supported by {@code @SuppressWarnings}.
          */
         PREVIEW("preview"),
 
@@ -447,23 +402,18 @@ public class Lint {
             return Optional.ofNullable(map.get(option));
         }
 
-        /**
-         * Create a new, empty, mutable set of {@link LintCategory}.
-         */
         public static EnumSet<LintCategory> newEmptySet() {
             return EnumSet.noneOf(LintCategory.class);
         }
 
-        /** Get the string representing this category in {@code @SuppressWarnings} and {@code -Xlint:key} flags. */
+        /** Get the string representing this category in @SuppressAnnotations and -Xlint options. */
         public final String option;
     }
 
     /**
      * Checks if a warning category is enabled. A warning category may be enabled
      * on the command line, or by default, and can be temporarily disabled with
-     * the {@code @SuppressWarnings} annotation.
-     *
-     * @param lc lint category
+     * the SuppressWarnings annotation.
      */
     public boolean isEnabled(LintCategory lc) {
         initializeRootIfNeeded();
@@ -471,11 +421,10 @@ public class Lint {
     }
 
     /**
-     * Checks if a warning category has been specifically suppressed, by means of
-     * {@code @SuppressWarnings}, {@code @Deprecated} annotations), or {@link #suppress}.
-     * Note: this does not detect suppressions via {@code -Xlint:-key} flags.
-     *
-     * @param lc lint category
+     * Checks is a warning category has been specifically suppressed, by means
+     * of the SuppressWarnings annotation, or, in the case of the deprecated
+     * category, whether it has been implicitly suppressed by virtue of the
+     * current entity being itself deprecated.
      */
     public boolean isSuppressed(LintCategory lc) {
         initializeRootIfNeeded();
@@ -510,10 +459,7 @@ public class Lint {
      *
      * <p>
      * This set can be non-empty only if the symbol is annotated with either
-     * {@code @SuppressWarnings} or {@code @Deprecated}.
-     *
-     * <p>
-     * Note: The result may include categories that don't support suppression via {@code @SuppressWarnings}.
+     * @SuppressWarnings or @Deprecated.
      *
      * @param symbol symbol corresponding to a possibly-annotated declaration
      * @return new warning suppressions applied to sym
@@ -526,12 +472,9 @@ public class Lint {
     }
 
     /**
-     * Retrieve the recognized lint categories suppressed by the given {@code @SuppressWarnings} annotation.
+     * Retrieve the recognized lint categories suppressed by the given @SuppressWarnings annotation.
      *
-     * <p>
-     * Note: The result may include categories that don't support suppression via {@code @SuppressWarnings}.
-     *
-     * @param annotation {@code @SuppressWarnings} annotation, or null
+     * @param annotation @SuppressWarnings annotation, or null
      * @return set of lint categories, possibly empty but never null
      */
     private EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation) {
