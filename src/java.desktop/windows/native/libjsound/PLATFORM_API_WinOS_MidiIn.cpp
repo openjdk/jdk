@@ -72,8 +72,8 @@ void CALLBACK MIDI_IN_PutMessage( HMIDIIN hMidiIn, UINT wMsg, UINT_PTR dwInstanc
 
     case MIM_MOREDATA:
     case MIM_DATA:
-        TRACE3("  MIDI_IN_PutMessage: MIM_MOREDATA or MIM_DATA. status=0x%" PRIxPTR " data1=0x%" PRIxPTR " data2=0x%" PRIxPTR "\n",
-               (uintptr_t)(dwParam1 & 0xFF), (uintptr_t)((dwParam1 & 0xFF00)>>8), (uintptr_t)((dwParam1 & 0xFF0000)>>16));
+        TRACE3("  MIDI_IN_PutMessage: MIM_MOREDATA or MIM_DATA. status=%x data1=%x data2=%x\n",
+               (int)(dwParam1 & 0xFF), (int)((dwParam1 & 0xFF00)>>8), (int)((dwParam1 & 0xFF0000)>>16));
         if (handle!=NULL && handle->queue!=NULL && handle->platformData) {
             MIDI_QueueAddShort(handle->queue,
                                // queue stores packedMsg in big endian
