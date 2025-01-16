@@ -46,8 +46,8 @@ public class SHA_Test {
                         var msg = toByteArray(c.get("msg").asString());
                         var len = Integer.parseInt(c.get("len").asString());
                         if (msg.length * 8 == len) {
-                            Asserts.assertEqualsByteArray(md.digest(msg),
-                                    toByteArray(c.get("md").asString()));
+                            Asserts.assertEqualsByteArray(
+                                    toByteArray(c.get("md").asString()), md.digest(msg));
                         } else {
                             System.out.print("bits ");
                         }
@@ -70,8 +70,8 @@ public class SHA_Test {
                                         }
                                         MD = md.digest(MD);
                                     }
-                                    Asserts.assertEqualsByteArray(MD,
-                                            toByteArray(r.get("md").asString()));
+                                    Asserts.assertEqualsByteArray(
+                                            toByteArray(r.get("md").asString()), MD);
                                     SEED = MD;
                                 } else {
                                     var A = SEED;
@@ -88,8 +88,8 @@ public class SHA_Test {
                                         B = C;
                                         C = MD;
                                     }
-                                    Asserts.assertEqualsByteArray(MD,
-                                            toByteArray(r.get("md").asString()));
+                                    Asserts.assertEqualsByteArray(
+                                            toByteArray(r.get("md").asString()), MD);
                                     SEED = MD;
                                 }
                             }
@@ -110,8 +110,8 @@ public class SHA_Test {
                             md.update(ct);
                             cc += clen;
                         }
-                        Asserts.assertEqualsByteArray(md.digest(),
-                                toByteArray(c.get("md").asString()));
+                        Asserts.assertEqualsByteArray(
+                                toByteArray(c.get("md").asString()), md.digest());
                     }
                 }
                 default -> throw new UnsupportedOperationException(

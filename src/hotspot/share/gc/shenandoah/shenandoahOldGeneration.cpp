@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +109,7 @@ public:
 
   ~ShenandoahPurgeSATBTask() {
     if (_trashed_oops > 0) {
-      log_debug(gc)("Purged " SIZE_FORMAT " oops from old generation SATB buffers", _trashed_oops);
+      log_debug(gc)("Purged %zu oops from old generation SATB buffers", _trashed_oops);
     }
   }
 
@@ -653,9 +654,9 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
     const size_t words_remaining = (plab == nullptr)? 0: plab->words_remaining();
     const char* promote_enabled = ShenandoahThreadLocalData::allow_plab_promotions(thread)? "enabled": "disabled";
 
-    log_info(gc, ergo)("Promotion failed, size " SIZE_FORMAT ", has plab? %s, PLAB remaining: " SIZE_FORMAT
-                       ", plab promotions %s, promotion reserve: " SIZE_FORMAT ", promotion expended: " SIZE_FORMAT
-                       ", old capacity: " SIZE_FORMAT ", old_used: " SIZE_FORMAT ", old unaffiliated regions: " SIZE_FORMAT,
+    log_info(gc, ergo)("Promotion failed, size %zu, has plab? %s, PLAB remaining: %zu"
+                       ", plab promotions %s, promotion reserve: %zu, promotion expended: %zu"
+                       ", old capacity: %zu, old_used: %zu, old unaffiliated regions: %zu",
                        size * HeapWordSize, plab == nullptr? "no": "yes",
                        words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
                        max_capacity(), used(), free_unaffiliated_regions());
@@ -700,7 +701,7 @@ void ShenandoahOldGeneration::abandon_collection_candidates() {
 void ShenandoahOldGeneration::prepare_for_mixed_collections_after_global_gc() {
   assert(is_mark_complete(), "Expected old generation mark to be complete after global cycle.");
   _old_heuristics->prepare_for_old_collections();
-  log_info(gc, ergo)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: " SIZE_FORMAT,
+  log_info(gc, ergo)("After choosing global collection set, mixed candidates: " UINT32_FORMAT ", coalescing candidates: %zu",
                _old_heuristics->unprocessed_old_collection_candidates(),
                _old_heuristics->coalesce_and_fill_candidates_count());
 }

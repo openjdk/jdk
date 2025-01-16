@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1415,7 +1415,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   BasicType *out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair *out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   // Create the signature for the C call:
   //   1) add the JNIEnv*
@@ -1867,8 +1866,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       break;
   }
 
-  Label after_transition;
-
   // Switch thread to "native transition" state before reading the synchronization state.
   // This additional state is necessary because reading and testing the synchronization
   // state is not atomic w.r.t. GC, as this scenario demonstrates:
@@ -1924,7 +1921,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //--------------------------------------------------------------------
   // Transition from _thread_in_native_trans to _thread_in_Java.
   __ set_thread_state(_thread_in_Java);
-  __ bind(after_transition);
 
   //--------------------------------------------------------------------
   // Reguard any pages if necessary.
@@ -2399,7 +2395,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     Label L_skip_barrier;
 
     { // Bypass the barrier for non-static methods
-      __ testbit(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
+      __ testbit_ushort(Address(Z_method, Method::access_flags_offset()), JVM_ACC_STATIC_BIT);
       __ z_bfalse(L_skip_barrier); // non-static
     }
 

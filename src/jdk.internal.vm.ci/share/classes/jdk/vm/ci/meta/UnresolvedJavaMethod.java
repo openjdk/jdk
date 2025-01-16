@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,27 @@ public final class UnresolvedJavaMethod implements JavaMethod {
     private final Signature signature;
     protected JavaType holder;
 
-    public UnresolvedJavaMethod(String name, Signature signature, JavaType holder) {
+    /**
+     * The reason method resolution failed. Can be null.
+     */
+    private final Throwable cause;
+
+    public UnresolvedJavaMethod(String name, Signature signature, JavaType holder, Throwable cause) {
         this.name = name;
         this.holder = holder;
         this.signature = signature;
+        this.cause = cause;
+    }
+
+    public UnresolvedJavaMethod(String name, Signature signature, JavaType holder) {
+        this(name, signature, holder, null);
+    }
+
+    /**
+     * Gets the exception, if any, representing the reason method resolution resulted in this object.
+     */
+    public Throwable getCause() {
+        return cause;
     }
 
     @Override

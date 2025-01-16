@@ -67,8 +67,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
 
   oop fwd = resolve_forwarded_not_null_mutator(obj);
   if (obj == fwd) {
-    assert(_heap->is_evacuation_in_progress(),
-           "evac should be in progress");
+    assert(_heap->is_evacuation_in_progress(), "evac should be in progress");
     Thread* const t = Thread::current();
     ShenandoahEvacOOMScope scope(t);
     fwd = _heap->evacuate_object(obj, t);
@@ -86,8 +85,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
   if (!ShenandoahLoadRefBarrier) {
     return obj;
   }
-  if (_heap->has_forwarded_objects() &&
-      _heap->in_collection_set(obj)) { // Subsumes null-check
+  if (_heap->has_forwarded_objects() && _heap->in_collection_set(obj)) {
+    // Subsumes null-check
     assert(obj != nullptr, "cset check must have subsumed null-check");
     oop fwd = resolve_forwarded_not_null(obj);
     if (obj == fwd && _heap->is_evacuation_in_progress()) {
@@ -381,7 +380,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
   // this barrier will be called with ENQUEUE=true and HAS_FWD=false, even though the young generation
   // may have forwarded objects. In this case, the `arraycopy_work` is first called with HAS_FWD=true and
   // ENQUEUE=false.
-  assert(HAS_FWD == _heap->has_forwarded_objects() || (_heap->gc_state() & ShenandoahHeap::OLD_MARKING) != 0,
+  assert(HAS_FWD == _heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(),
          "Forwarded object status is sane");
   // This function cannot be called to handle marking and evacuation at the same time (they operate on
   // different sides of the copy).
@@ -418,7 +417,7 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
     return;
   }
 
-  int gc_state = _heap->gc_state();
+  char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
   if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     arraycopy_evacuation(src, count);
   } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {

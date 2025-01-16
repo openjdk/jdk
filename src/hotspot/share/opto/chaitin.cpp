@@ -2563,6 +2563,9 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
 void PhaseChaitin::verify(ResourceArea* a, bool verify_ifg) const {
   if (VerifyRegisterAllocator) {
     _cfg.verify();
+    if (C->failing()) {
+      return;
+    }
     verify_base_ptrs(a);
     if (verify_ifg) {
       _ifg->verify(this);

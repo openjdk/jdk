@@ -111,12 +111,18 @@ public:
   }
 
   static char gc_state(Thread* thread) {
-    assert(thread->is_Java_thread(), "GC state is only synchronized to java threads");
     return data(thread)->_gc_state;
   }
 
+  static bool is_gc_state(Thread* thread, ShenandoahHeap::GCState state) {
+    return (gc_state(thread) & state) != 0;
+  }
+
+  static bool is_gc_state(ShenandoahHeap::GCState state) {
+    return is_gc_state(Thread::current(), state);
+  }
+
   static void initialize_gclab(Thread* thread) {
-    assert (thread->is_Java_thread() || thread->is_Worker_thread(), "Only Java and GC worker threads are allowed to get GCLABs");
     assert(data(thread)->_gclab == nullptr, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
     data(thread)->_gclab_size = 0;

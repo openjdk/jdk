@@ -361,7 +361,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     /**
      * Get the type metadata of the given kind associated with this type (if any).
      */
-    @SuppressWarnings("unchecked")
     public <M extends TypeMetadata> M getMetadata(Class<M> metadataClass) {
         return getMetadata(metadataClass, Function.identity(), null);
     }
@@ -2133,7 +2132,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             addBound(ib, bound, types, false);
         }
 
-        @SuppressWarnings("fallthrough")
         private void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
             if (kind == Kind.CAPTURED && !update) {
                 //Captured inference variables bounds must not be updated during incorporation,
