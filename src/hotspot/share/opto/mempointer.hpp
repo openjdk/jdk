@@ -570,7 +570,7 @@ public:
 //
 // Where SUM() adds all "scale_i * variable_i" for each i together.
 //
-// Node: if the base is known, then it is in the 0th summand. A base can be:
+// Note: if the base is known, then it is in the 0th summand. A base can be:
 //       - on-heap  / object: base().object()
 //       - off-heap / native: base().native()
 //

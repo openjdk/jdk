@@ -709,9 +709,10 @@ private:
 // The VPointer wraps a MemPointer for the use in loops. A "valid" VPointer has
 // the form:
 //
-//   pointer = base + invar + iv_scale * iv + con
-//
+//   pointer = base + invar + iv_summand + con
+// with
 //   invar = SUM(invar_summands)
+//   iv_summand = iv_scale * iv
 //
 // Where:
 //   - base: is the known base of the MemPointer.
@@ -720,21 +721,12 @@ private:
 //       If we find a summand where the variable is the iv, we set iv_scale to the
 //       corresponding scale. If there is no such summand, then we know that the
 //       pointer does not depend on the iv, since otherwise there would have to be
-//       a summand where its variable is main-loop variant.
+//       a summand where its variable is main-loop variant. Note: MemPointer already
+//       ensures that there is at most one summand per variable, so there is at
+//       most one summand with iv.
 //   - invar_summands: all other summands except base and iv_summand.
 //       All variables must be pre-loop invariant. This is important when we need
 //       to memory align a pointer using the pre-loop limit.
-//
-// A VPointer can be marked "invalid", if some of these conditions are not met, or
-// it is unknown if they are met. If a VPointer is marked "invalid", it always
-// returns conservative answers to aliasing queries, which means that we do not
-// optimize in these cases. For example:
-//    - is_adjacent_to_and_before: returning true would allow optimizations such as
-//                                 packing into vectors. So for "invalid" VPointers
-//                                 we always return false (i.e. unknown).
-//    - never_overlaps_with: returning true would allow optimizations such as
-//                           swapping the order of memops. So for "invalid" VPointers
-//                           we always return false (i.e. unknown).
 //
 // These are examples where a VPointer becomes "invalid":
 //    - If the MemPointer does not have the required form for VPointer,
@@ -744,6 +736,16 @@ private:
 //      - Some restrictions on iv_scale and iv_stride, to avoid overflow in
 //        alignment computations.
 //    - If the new con computed in make_with_iv_offset overflows.
+//
+// If a VPointer is marked "invalid", it always returns conservative answers to
+// aliasing queries, which means that we do not optimize in these cases.
+// For example:
+//    - is_adjacent_to_and_before: returning true would allow optimizations such as
+//                                 packing into vectors. So for "invalid" VPointers,
+//                                 we always return false (i.e. unknown).
+//    - never_overlaps_with: returning true would allow optimizations such as
+//                           swapping the order of memops. So for "invalid" VPointers,
+//                           we always return false (i.e. unknown).
 //
 class VPointer : public ArenaObj {
 private:
@@ -923,8 +925,8 @@ private:
   }
 
   // VPointer needs to know if it is native (off-heap) or object (on-heap).
-  // We may for example have failed to fully decompose the MemPointer, possibly
-  // because such a decomposition is not considered safe.
+  // We may, for example, have failed to fully decompose the MemPointer,
+  // possibly because such a decomposition is not considered safe.
   bool init_is_base_known() const {
     if (_mem_pointer.base().is_known()) { return true; }
 
@@ -936,7 +938,7 @@ private:
     return false;
   }
 
-  // All summands, except the iv-summand must be pre-loop invariant. This is necessary
+  // All summands, except the iv-summand, must be pre-loop invariant. This is necessary
   // so that we can use the variables in checks inside or before the pre-loop, e.g. for
   // alignment.
   bool init_are_non_iv_summands_pre_loop_invariant() const {
