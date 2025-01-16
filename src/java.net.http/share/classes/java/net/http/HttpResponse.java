@@ -754,7 +754,7 @@ public interface HttpResponse<T> {
          * {@return a {@code BodyHandler} limiting the number of body bytes
          * consumed and passed to the given downstream {@code BodyHandler}}
          * <p>
-         * If the number of body bytes received exceeds the the given
+         * If the number of body bytes received exceeds the given
          * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
          * is called on the downstream {@code BodySubscriber} with an
          * {@link IOException} indicating that the capacity is exceeded, and
