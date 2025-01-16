@@ -438,7 +438,7 @@ public final class SharedUtils {
         };
 
         static CallBuffer acquireOrAllocate(long size) {
-            Holder cache;
+            final Holder cache;
             if (!isCacheable(size) || (cache = tl.get()).element == null) {
                 return new CallBuffer(size);
             }
@@ -448,7 +448,7 @@ public final class SharedUtils {
         }
 
         static void cacheOrClose(CallBuffer released) {
-            Holder cache;
+            final Holder cache;
             if (released.isCacheable() && (cache = tl.get()).element == null) {
                 cache.element = released;
             } else {
