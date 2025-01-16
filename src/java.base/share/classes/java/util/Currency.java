@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.util.StaticProperty;
 import sun.util.locale.provider.CalendarDataUtility;
@@ -432,16 +433,36 @@ public final class Currency implements Serializable {
     }
 
     /**
-     * Gets the set of available currencies.  The returned set of currencies
-     * contains all of the available currencies, which may include currencies
-     * that represent obsolete ISO 4217 codes.  The set can be modified
+     * {@return a set of available currencies} The returned set of currencies
+     * contains all the available currencies, which may include currencies
+     * that represent obsolete ISO 4217 codes. If there is no currency available
+     * in the runtime, the returned set is empty. The set can be modified
      * without affecting the available currencies in the runtime.
      *
-     * @return the set of available currencies.  If there is no currency
-     *    available in the runtime, the returned set is empty.
      * @since 1.7
      */
     public static Set<Currency> getAvailableCurrencies() {
+        initAvailableCurrencies();
+        return new HashSet<>(available);
+    }
+
+    /**
+     * {@return a stream of available currencies} The returned stream of currencies
+     * contains all the available currencies, which may include currencies
+     * that represent obsolete ISO 4217 codes. If there is no currency
+     * available in the runtime, the returned stream is empty.
+     *
+     * @implNote Unlike {@link #getAvailableCurrencies()}, this method does
+     * not create a defensive copy of the {@code Currency} set.
+     * @since 25
+     */
+    public static Stream<Currency> availableCurrencies() {
+        initAvailableCurrencies();
+        return available.stream();
+    }
+
+    // Initialize the set of available currencies if needed
+    private static void initAvailableCurrencies() {
         synchronized(Currency.class) {
             if (available == null) {
                 available = new HashSet<>(256);
@@ -451,7 +472,7 @@ public final class Currency implements Serializable {
                     for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
                         int tableEntry = getMainTableEntry(c1, c2);
                         if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
-                             && tableEntry != INVALID_COUNTRY_ENTRY) {
+                                && tableEntry != INVALID_COUNTRY_ENTRY) {
                             char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
                             int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
                             int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
@@ -486,7 +507,6 @@ public final class Currency implements Serializable {
                 }
             }
         }
-        return new HashSet<>(available);
     }
 
     /**
