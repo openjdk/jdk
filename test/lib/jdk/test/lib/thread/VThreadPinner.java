@@ -94,7 +94,6 @@ public class VThreadPinner {
      * Runs the given task on a virtual thread pinned to its carrier. If called from a
      * virtual thread then it invokes the task directly.
      */
-    @SuppressWarnings("unchecked")
     public static <X extends Throwable> void runPinned(ThrowingRunnable<X> task) throws X {
         if (!Thread.currentThread().isVirtual()) {
             VThreadRunner.run(() -> runPinned(task));
@@ -115,7 +114,9 @@ public class VThreadPinner {
                 throw e;
             if (ex instanceof Error e)
                 throw e;
-            throw (X) ex;
+            @SuppressWarnings("unchecked")
+            var x = (X) ex;
+            throw x;
         }
     }
 

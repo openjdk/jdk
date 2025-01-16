@@ -37,11 +37,6 @@ import java.util.*;
 import jdk.test.lib.hprof.parser.ReadBuffer;
 import jdk.test.lib.hprof.util.Misc;
 
-/*
- *
- * @author      Bill Foote
- */
-
 /**
  * Represents a snapshot of the Java objects in the VM at one instant.
  * This is the top-level "model" object read out of a single .hprof or .bod

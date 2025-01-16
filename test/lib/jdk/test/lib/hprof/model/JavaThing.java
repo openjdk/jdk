@@ -30,12 +30,6 @@
 
 package jdk.test.lib.hprof.model;
 
-/*
- *
- * @author      Bill Foote
- */
-
-
 /**
  * Represents a java "Thing".  A thing is anything that can be the value of
  * a field.  This includes JavaHeapObject, JavaObjectRef, and JavaValue.

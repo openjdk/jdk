@@ -30,12 +30,6 @@
 
 package jdk.test.lib.hprof.model;
 
-/*
- *
- * @author      Bill Foote
- */
-
-
 /**
  * Represents a stack trace, that is, an ordered collection of stack frames.
  */

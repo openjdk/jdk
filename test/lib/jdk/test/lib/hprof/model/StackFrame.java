@@ -30,12 +30,6 @@
 
 package jdk.test.lib.hprof.model;
 
-/*
- *
- * @author      Bill Foote
- */
-
-
 /**
  * Represents a stack frame.
  */

@@ -32,12 +32,6 @@ package jdk.test.lib.hprof.model;
 
 import jdk.test.lib.hprof.util.Misc;
 
-/*
- *
- * @author      Bill Foote
- */
-
-
 /**
  * Represents a member of the rootset, that is, one of the objects that
  * the GC starts from when marking reachable objects.

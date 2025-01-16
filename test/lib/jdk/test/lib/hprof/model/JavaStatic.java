@@ -30,11 +30,6 @@
 
 package jdk.test.lib.hprof.model;
 
-/*
- *
- * @author      Bill Foote
- */
-
 /**
  * Represents the value of a static field of a JavaClass
  */

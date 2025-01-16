@@ -35,12 +35,6 @@ import java.util.HashMap;
 import java.util.Map;
 import jdk.test.lib.hprof.util.Misc;
 
-
-/*
- *
- * @author      Bill Foote
- */
-
 /**
  * Represents an object that's allocated out of the Java heap.  It occupies
  * memory in the VM, and is the sort of thing that in a JDK 1.1 VM had

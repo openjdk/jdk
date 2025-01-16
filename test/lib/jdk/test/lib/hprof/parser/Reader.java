@@ -63,6 +63,7 @@ public abstract class Reader {
      * @param heapFile The name of a file containing a heap dump
      * @param callStack If true, read the call stack of allocaation sites
      */
+    @SuppressWarnings("try")
     public static Snapshot readFile(String heapFile, boolean callStack,
                                     int debugLevel)
             throws IOException {
@@ -92,6 +93,7 @@ public abstract class Reader {
                                       callStack, debugLevel);
                 return r.read();
             } else if ((i >>> 8) == GZIP_HEADER_MAGIC) {
+                in.close();
                 // Possible gziped file, try decompress it and get the stack trace.
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
@@ -135,6 +137,7 @@ public abstract class Reader {
      *
      * @param heapFile The name of a file containing a heap dump
      */
+    @SuppressWarnings("try")
     public static String getStack(String heapFile, int debugLevel)
             throws IOException {
         int dumpNumber = 1;
@@ -164,6 +167,7 @@ public abstract class Reader {
                 r.read();
                 return r.printStackTraces();
             } else if ((i >>> 8) == GZIP_HEADER_MAGIC) {
+                in.close();
                 // Possible gziped file, try decompress it and get the stack trace.
                 String deCompressedFile = "heapdump" + System.currentTimeMillis() + ".hprof";
                 File out = new File(deCompressedFile);
