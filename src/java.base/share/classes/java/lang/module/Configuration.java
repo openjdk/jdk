@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,6 @@ public final class Configuration {
         this.graph = g;
         this.modules = Set.of(moduleArray);
         this.nameToModule = Map.ofEntries(nameEntries);
-
         this.targetPlatform = resolver.targetPlatform();
     }
 
@@ -359,9 +358,16 @@ public final class Configuration {
      *     that exports {@code p} to {@code M}. </p></li>
      *
      *     <li><p> A module {@code M} declares that it "{@code uses p.S}" or
-     *     "{@code provides p.S with ...}" but package {@code p} is neither in
-     *     module {@code M} nor exported to {@code M} by any module that
-     *     {@code M} reads. </p></li>
+     *     "{@code provides p.S with ...}", but the package {@code p} is neither in
+     *     module {@code M} nor exported to {@code M} by any module that {@code M}
+     *     reads. Additionally, neither of the following is {@code true}:
+     *     <ul>
+     *         <li> {@code M} declares "{@code requires static}" for at least one
+     *         module that is not in the readability graph. </li>
+     *         <li> {@code M} reads another module that declares
+     *         "{@code requires transitive static}" for at least one module that is
+     *         not in the readability graph. </li>
+     *     </ul> </li>
      *
      * </ul>
      *
