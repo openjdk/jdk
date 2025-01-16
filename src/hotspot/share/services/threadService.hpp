@@ -487,9 +487,12 @@ class JavaThreadInObjectWaitState : public JavaThreadStatusChanger {
   bool _active;
 
  public:
-  JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed) :
-    JavaThreadStatusChanger(java_thread, java_lang_Thread::get_thread_status(java_thread->threadObj())) {
-    if (is_alive()) {
+  JavaThreadInObjectWaitState(JavaThread *java_thread, bool timed, bool interruptible) :
+    JavaThreadStatusChanger(java_thread,
+                            interruptible ? (timed ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED : JavaThreadStatus::IN_OBJECT_WAIT)
+                                          : java_lang_Thread::get_thread_status(java_thread->threadObj())) {
+    
+    if (is_alive() && interruptible) {
       _stat = java_thread->get_thread_stat();
       _active = ThreadService::is_thread_monitoring_contention();
       _stat->monitor_wait();

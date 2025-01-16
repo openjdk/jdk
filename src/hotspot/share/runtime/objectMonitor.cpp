@@ -1692,11 +1692,15 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       return;
     }
   }
+#if 1
+  JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
+#else
   if (interruptible) {
     JavaThreadStatus state = millis != 0 ? JavaThreadStatus::IN_OBJECT_WAIT_TIMED
                                          : JavaThreadStatus::IN_OBJECT_WAIT;
     java_lang_Thread::set_thread_status(current->threadObj(), state);
   }
+#endif
 
   // create a node to be put into the queue
   // Critically, after we reset() the event but prior to park(), we must check
