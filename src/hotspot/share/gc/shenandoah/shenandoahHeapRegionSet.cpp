@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +82,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegionSetIterator::next() {
 }
 
 void ShenandoahHeapRegionSet::print_on(outputStream* out) const {
-  out->print_cr("Region Set : " SIZE_FORMAT "", count());
+  out->print_cr("Region Set : %zu", count());
   for (size_t index = 0; index < _heap->num_regions(); index++) {
     if (is_in(index)) {
       _heap->get_region(index)->print_on(out);

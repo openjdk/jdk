@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -599,7 +599,7 @@ public:
   ShenandoahInitMarkUpdateRegionStateClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) {
-    assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
+    assert(!r->has_live(), "Region %zu should have no live data", r->index());
     if (r->is_active()) {
       // Check if region needs updating its TAMS. We have updated it already during concurrent
       // reset, so it is very likely we don't need to do another write here.  Since most regions
@@ -609,7 +609,7 @@ public:
       }
     } else {
       assert(_ctx->top_at_mark_start(r) == r->top(),
-             "Region " SIZE_FORMAT " should already have correct TAMS", r->index());
+             "Region %zu should already have correct TAMS", r->index());
     }
   }
 
