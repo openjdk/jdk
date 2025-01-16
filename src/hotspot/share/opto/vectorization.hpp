@@ -857,12 +857,12 @@ public:
     return invar_count > 0 ? factor : 0;
   }
 
-  int count_invar_summands() const {
+  bool has_invar_summands() const {
     int invar_count = 0;
     for_each_invar_summand([&] (const MemPointerSummand& s) {
       invar_count++;
     });
-    return invar_count;
+    return invar_count > 0;
   }
 
   // If we have the same invar_summands, and the same iv summand with the same iv_scale,
@@ -1026,7 +1026,7 @@ public:
 
   // Implemented by each subclass
   virtual const AlignmentSolution* filter(const AlignmentSolution* other) const = 0;
-  virtual void print() const = 0;
+  DEBUG_ONLY( virtual void print() const = 0; )
 
   // Compute modulo and ensure that we get a positive remainder
   static int mod(int i, int q) {
@@ -1060,9 +1060,11 @@ public:
     return new EmptyAlignmentSolution("empty solution input to filter");
   }
 
+#ifndef PRODUCT
   virtual void print() const override final {
     tty->print_cr("empty solution: %s", reason());
   };
+#endif
 };
 
 class TrivialAlignmentSolution : public AlignmentSolution {
@@ -1083,9 +1085,11 @@ public:
     return other;
   }
 
+#ifndef PRODUCT
   virtual void print() const override final {
     tty->print_cr("pre_iter >= 0 (trivial)");
   };
+#endif
 };
 
 class ConstrainedAlignmentSolution : public AlignmentSolution {
@@ -1158,8 +1162,8 @@ public:
     // Use VPointer to do checks on invar and iv_scale:
     const VPointer& p1 = s1->vpointer();
     const VPointer& p2 = s2->vpointer();
-    bool both_no_invar = p1.count_invar_summands() == 0 &&
-                         p2.count_invar_summands() == 0;
+    bool both_no_invar = !p1.has_invar_summands() &&
+                         !p2.has_invar_summands();
     if(!both_no_invar && !p1.has_same_invar_summands_and_iv_scale_as(p2)) {
       return new EmptyAlignmentSolution("invar alignment term not identical");
     }
@@ -1200,13 +1204,24 @@ public:
     return s2; // return the subset
   }
 
+#ifndef PRODUCT
   virtual void print() const override final {
     tty->print("m * q(%d) + r(%d)", _q, _r);
-    if (_vpointer.count_invar_summands() > 0) {
-      tty->print(" - invar / (iv_scale(%d) * pre_stride)", _vpointer.iv_scale());
+    if (_vpointer.has_invar_summands()) {
+      tty->print(" - invar(");
+      int count = 0;
+      _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
+        if (count > 0) {
+          tty->print(" + ");
+        }
+        s.print_on(tty);
+        count++;
+      });
+      tty->print(") / (iv_scale(%d) * pre_stride)", _vpointer.iv_scale());
     }
     tty->print_cr(" [- init / pre_stride], mem_ref[%d]", mem_ref()->_idx);
   };
+#endif
 };
 
 // When strict alignment is required (e.g. -XX:+AlignVector), then we must ensure

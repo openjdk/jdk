@@ -2849,8 +2849,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     tty->print_cr("  con:       %d", con);
     tty->print("  base:");
     base->dump();
-    if (p.count_invar_summands() == 0) {
-      tty->print_cr("  invar:     null");
+    if (!p.has_invar_summands()) {
+      tty->print_cr("  invar:     none");
     } else {
       tty->print_cr("  invar_summands:");
       p.for_each_invar_summand([&] (const MemPointerSummand& s) {
