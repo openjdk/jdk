@@ -41,6 +41,7 @@ import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.misc.TerminatingThreadLocal;
+import jdk.internal.vm.Continuation;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
@@ -439,20 +440,30 @@ public final class SharedUtils {
 
         static CallBuffer acquireOrAllocate(long size) {
             final Holder cache;
-            if (!isCacheable(size) || (cache = tl.get()).element == null) {
-                return new CallBuffer(size);
+            Continuation.pin();
+            try {
+                if (!isCacheable(size) || (cache = tl.get()).element == null) {
+                    return new CallBuffer(size);
+                }
+                final CallBuffer result = cache.element;
+                cache.element = null;
+                return result;
+            } finally {
+                Continuation.unpin();
             }
-            final CallBuffer result = cache.element;
-            cache.element = null;
-            return result;
         }
 
         static void cacheOrClose(CallBuffer released) {
             final Holder cache;
-            if (released.isCacheable() && (cache = tl.get()).element == null) {
-                cache.element = released;
-            } else {
-                released.close();
+            Continuation.pin();
+            try {
+                if (released.isCacheable() && (cache = tl.get()).element == null) {
+                    cache.element = released;
+                } else {
+                    released.close();
+                }
+            } finally {
+                Continuation.unpin();
             }
         }
     }
