@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import jdk.internal.access.JavaLangAccess;
@@ -2519,7 +2520,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * @param r current ThreadLocalRandom.getProbe() value
      * @param isSubmit false if this is for a common pool fork
      */
-    private WorkQueue submissionQueue(int r) {
+    private WorkQueue submissionQueue(int r, boolean rejectOnShutdown) {
         if (r == 0) {
             ThreadLocalRandom.localInit();           // initialize caller's probe
             r = ThreadLocalRandom.getProbe();
@@ -2534,20 +2535,21 @@ public class ForkJoinPool extends AbstractExecutorService
                 if (w == null)
                     w = new WorkQueue(null, id, 0, false);
                 w.phase = id;
-                long isShutdown = lockRunState() & SHUTDOWN;
-                if (isShutdown == 0L && queues == qs && qs[i] == null) {
+                boolean reject = ((lockRunState() & SHUTDOWN) != 0 &&
+                                  rejectOnShutdown);
+                if (!reject && queues == qs && qs[i] == null) {
                     q = qs[i] = w;                   // else retry
                     w = null;
                 }
                 unlockRunState();
                 if (q != null)
                     return q;
-                if (isShutdown != 0L)
+                if (reject)
                     break;
             }
             else if (!q.tryLockPhase())              // move index
                 r = ThreadLocalRandom.advanceProbe(r);
-            else if ((runState & SHUTDOWN) != 0L) {
+            else if (rejectOnShutdown && (runState & SHUTDOWN) != 0L) {
                 q.unlockPhase();                     // check while q lock held
                 break;
             }
@@ -2566,7 +2568,7 @@ public class ForkJoinPool extends AbstractExecutorService
         }
         else {                     // find and lock queue
             internal = false;
-            q = submissionQueue(ThreadLocalRandom.getProbe());
+            q = submissionQueue(ThreadLocalRandom.getProbe(), true);
         }
         q.push(task, signalIfEmpty ? this : null, internal);
     }
@@ -2580,7 +2582,7 @@ public class ForkJoinPool extends AbstractExecutorService
         int r = ThreadLocalRandom.getProbe();
         return (((qs = queues) != null && (n = qs.length) > 0 &&
                  (q = qs[r & EXTERNAL_ID_MASK & (n - 1)]) != null && r != 0 &&
-                 q.tryLockPhase()) ? q : submissionQueue(r));
+                 q.tryLockPhase()) ? q : submissionQueue(r, true));
     }
 
     /**
@@ -2713,8 +2715,8 @@ public class ForkJoinPool extends AbstractExecutorService
         if (now) {
             DelayScheduler ds;
             releaseWaiters();
-            if ((ds = delayer) != null && !ds.stopped)
-                ds.shutdown();
+            if ((ds = delayer) != null)
+                ds.onTerminate();
             for (;;) {
                 if (((e = runState) & CLEANED) == 0L) {
                     boolean clean = cleanQueues();
@@ -2724,6 +2726,8 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((e & TERMINATED) != 0L)
                     break;
                 if (ctl != 0L) // else loop if didn't finish cleaning
+                    break;
+                if ((ds = delayer) != null && !ds.stopped)
                     break;
                 if ((e & CLEANED) != 0L) {
                     e |= TERMINATED;
@@ -3359,136 +3363,175 @@ public class ForkJoinPool extends AbstractExecutorService
 
     static final class DelayScheduler implements Runnable {
         static final int INITIAL_HEAP_CAPACITY = 1 << 6;
-        final Thread scheduler;
-        final ConcurrentLinkedQueue<DelayedTask<?>> pending;
-        final ConcurrentLinkedQueue<DelayedTask<?>> pendingRemoval;
-        final ReentrantLock heapLock;
         final ForkJoinPool pool;
+        final Thread scheduler;
+        final AtomicReference<DelayedTask<?>> additions;
+        final AtomicReference<DelayedTask<?>> removals;
         DelayedTask<?>[] heap;
         int heapSize;
-        volatile boolean stopped, sleeping;
+        volatile int active;
+        volatile boolean stopped;
+        private static final Unsafe U;
+        static final long ACTIVE;
+        static {
+            U = Unsafe.getUnsafe();
+            Class<DelayScheduler> klass = DelayScheduler.class;
+            ACTIVE = U.objectFieldOffset(klass, "active");
+        }
 
         DelayScheduler(ForkJoinPool p) {
             pool = p;
             heap = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
-            pending = new ConcurrentLinkedQueue<DelayedTask<?>>();
-            pendingRemoval = new ConcurrentLinkedQueue<DelayedTask<?>>();
-            heapLock = new ReentrantLock();
+            removals = new AtomicReference<DelayedTask<?>>();
+            additions = new AtomicReference<DelayedTask<?>>();
             scheduler = new Thread(this);
         }
 
-        public final void run() {
-            ReentrantLock lock; ForkJoinPool p;
-            if ((lock = this.heapLock) != null && (p = pool) != null) {
-                while ((p.runState & STOP) == 0L) {
-                    boolean locked = false; long waitTime;
-                    try {
-                        lock.lockInterruptibly();
-                        locked = true;
-                    } catch (InterruptedException ok) {
-                    }
-                    if (locked && (waitTime = processHeap(null, true)) >= 0L &&
-                        sleeping) {
-                        U.park(false, waitTime);
-                        sleeping = false;
-                    }
+       private boolean compareAndSetActive(int c, int v) {
+            return U.compareAndSetInt(this, ACTIVE, c, v);
+        }
+
+        private int getAndBitwiseOrActive(int v) {
+            return U.getAndBitwiseOrInt(this, ACTIVE, v);
+        }
+
+        private void activate() {
+            Thread st;
+            if ((st = scheduler) != null && active == 0 &&
+                getAndBitwiseOrActive(1) == 0)
+                U.unpark(st);
+        }
+
+        private void pend(DelayedTask<?> task, AtomicReference<DelayedTask<?>> ts) {
+            if (ts != null && task != null) {
+                do {} while (!ts.compareAndSet(task.nextPending = ts.get(), task));
+                activate();
+            }
+        }
+
+        private DelayedTask<?> unpend(AtomicReference<DelayedTask<?>> ts) {
+            if (ts != null) {
+                for (DelayedTask<?> t = ts.get(); t != null; ) {
+                    if (t == (t = ts.compareAndExchange(t, null)))
+                        return t;
                 }
+            }
+            return null;
+        }
+
+        final void add(DelayedTask<?> task) {
+            pend(task, additions);
+        }
+
+        final void remove(DelayedTask<?> task) {
+            pend(task, removals);
+        }
+
+        final void onTerminate() {
+            if (!stopped)
+                activate();
+        }
+
+        public final void run() {
+            try {
+                while (!poolIsStopping(pool)) {
+                    int wasActive = active;
+                    submitReadyTasks();
+                    processPending();
+                    if (active == 1)
+                        compareAndSetActive(1, 0);
+                    else if (wasActive == 0)
+                        deactivate();
+                }
+            } finally {
+                stopped = true;
                 shutdown();
             }
         }
 
-        final long processHeap(DelayedTask<?> task, boolean wait) {
-            long now = System.nanoTime(), waitTime = 0L;
-            boolean wakeScheduler = false;
-            DelayedTask<?> ready = null;
-            try {
-                DelayedTask<?>[] h; int cap;
-                if ((h = heap) != null && (cap = h.length) > 0) {
-                    DelayedTask<?> first;         // dequeue ready tasks
-                    for (int s = heapSize; s > 0 && (first = h[0]) != null;) {
-                        long d = first.when - now; int stat;
-                        if ((stat = first.status) < 0 || d <= 0L) {
-                            first.heapIndex = -1;
-                            h[0] = null;
-                            if (stat >= 0) {
-                                first.nextReady = ready;
-                                ready = first;
-                            }
-                            s = heapSize = ((s > 1) ? replaceAt(now, h, 0, s) : 0);
-                        }
-                        else {
-                            waitTime = d;
-                            break;
-                        }
-                    }
-                    ConcurrentLinkedQueue<DelayedTask<?>> ts = pending;
-                    ConcurrentLinkedQueue<DelayedTask<?>> rs = pendingRemoval;
-                    while (task != null ||        // add or remove pending tasts
-                           (rs != null && (task = rs.poll()) != null) ||
-                           (ts != null && (task = ts.poll()) != null)) {
-                        int s = heapSize, idx = task.heapIndex, newCap;
-                        if (task.status >= 0) {
-                            if (task.when - now <= 0L) {
-                                task.nextReady = ready;
-                                ready = task;
-                            }
-                            else if (s == 0) {
-                                h[0] = task;
-                                wakeScheduler = !wait;
-                                heapSize = 1;
-                            }
-                            else {
-                                if (s >= cap && (newCap = cap << 1) > cap) {
-                                    try {
-                                        h = heap = Arrays.copyOf(heap, newCap);
-                                        cap = h.length;
-                                    } catch (Error | RuntimeException ex) {
-                                    }
-                                }
-                                if (s >= cap) { // can't grow
-                                    try {
-                                        task.cancel(false);
-                                    } catch (Throwable ignore) {
-                                    }
-                                }
-                                else {
-                                    heapSize = add(now, h, s, task);
-                                    if (!wait && h[0] == task)
-                                        wakeScheduler = true;
-                                }
-                            }
-                        }
-                        else if (s > 0 && idx >= 0 && idx < s && h[idx] == task) {
-                            h[idx] = null;
-                            task.heapIndex = -1;
-                            heapSize = (s > 1) ? replaceAt(now, h, idx, s) : 0;
-                        }
-                        task = null;
-                    }
-                }
-                if (wakeScheduler) {
-                    if (!sleeping)
-                        wakeScheduler = false;
-                    else
-                        sleeping = false;
-                }
-                else if (wait && ready == null)
-                    sleeping = true;
-            } finally {
-                ReentrantLock lock;
-                if ((lock = this.heapLock)!= null)
-                    lock.unlock();
+        private void deactivate() {
+            DelayedTask<?>[] h; DelayedTask<?> t;
+            boolean wait = true;
+            long waitTime = 0L;
+            Thread.interrupted(); // clear before parking
+            if (heapSize > 0 && (h = heap) != null &&
+                h.length > 0 && (t = h[0]) != null &&
+                (waitTime = t.when - System.nanoTime()) <= 0L)
+                wait = false;
+            if (active == 0) {
+                if (wait)
+                    U.park(false, waitTime);
+                active = 1;
             }
-            ForkJoinPool p; Thread st;
-            if (wakeScheduler && (st = scheduler) != null)
-                U.unpark(st);
-            if (ready == null || (p = pool) == null)
-                return waitTime;
-            p.submitReadyDelayedTasks(ready);
-            return -1L;
         }
 
-        static int add(long now, DelayedTask<?>[] h, int s, DelayedTask<?> t) {
+        private void submitReadyTasks() {
+            ForkJoinPool p; DelayedTask<?>[] h; int s;
+            if ((s = heapSize) > 0 && (p = pool) != null &&
+                (h = heap) != null && h.length > 0) {
+                DelayedTask<?> first;
+                long now = System.nanoTime();
+                while ((first = h[0]) != null) {
+                    long d = first.when - now; int stat;
+                    if ((stat = first.status) >= 0 && d > 0L)
+                        break;
+                    first.heapIndex = -1;
+                    h[0] = null;
+                    s = heapSize = ((s > 1) ? heapReplace(now, h, 0, s) : 0);
+                    if (stat >= 0)
+                        p.submitReadyDelayedTask(first);
+                    if (s == 0)
+                        break;
+                }
+            }
+        }
+
+        private void processPending() {
+            for (long now = System.nanoTime();;) {
+                DelayedTask<?> t; DelayedTask<?>[] h; ForkJoinPool p;
+                if ((t = unpend(removals)) == null &&
+                    (t = unpend(additions)) == null)
+                    break;
+                while ((p = pool) != null && (h = heap) != null) {
+                    int s = heapSize, cap = h.length, idx, newCap;
+                    DelayedTask<?> next;
+                    if ((next = t.nextPending) != null)
+                        t.nextPending = null;
+                    if ((idx = t.heapIndex) < 0) {
+                        if (t.status < 0)
+                            ;
+                        else if (t.when - now <= 0L)
+                            p.submitReadyDelayedTask(t);
+                        else {
+                            if (s >= cap && (newCap = cap << 1) > cap) {
+                                try {
+                                    h = heap = Arrays.copyOf(heap, newCap);
+                                    cap = h.length;
+                                } catch (Error | RuntimeException ex) {
+                                }
+                            }
+                            if (s >= cap)  // can't grow
+                                t.trySetCancelled();
+                            else if (s > 0)
+                                heapSize = heapAdd(now, h, s, t);
+                            else {
+                                h[0] = t;
+                                heapSize = 1;
+                            }
+                        }
+                    }
+                    else if (idx < s && s <= cap && h[idx] == t) {
+                        h[idx] = null;
+                        t.heapIndex = -1;
+                        heapSize = (s > 1) ? heapReplace(now, h, idx, s) : 0;
+                    }
+                    if ((t = next) == null)
+                        break;
+                }
+            }
+        }
+
+        static int heapAdd(long now, DelayedTask<?>[] h, int s, DelayedTask<?> t) {
             if (h != null && s >= 0 && s < h.length && t != null) {
                 DelayedTask<?> u, p;
                 while (s > 0 && (u = h[s - 1]) != null && u.status < 0) {
@@ -3509,7 +3552,7 @@ public class ForkJoinPool extends AbstractExecutorService
             return s;
         }
 
-        static int replaceAt(long now, DelayedTask<?>[] h, int k, int s) {
+        static int heapReplace(long now, DelayedTask<?>[] h, int k, int s) {
             if (k >= 0 && s >= 0 && h != null && s <= h.length) {
                 DelayedTask<?> t = null;
                 while (s > k) { // find uncancelled replacement
@@ -3547,73 +3590,32 @@ public class ForkJoinPool extends AbstractExecutorService
             return s;
         }
 
-        final void shutdown() {
-            ReentrantLock lock; DelayedTask<?>[] h;
-            Thread st; ConcurrentLinkedQueue<DelayedTask<?>> ts, rs;
-            if ((lock = this.heapLock) != null) {
-                lock.lock();
-                try {
-                    stopped = true;
-                    if ((h = heap) != null && h.length >= heapSize) {
-                        while (heapSize > 0) {
-                            DelayedTask<?> t; int s;
-                            if ((t = h[s = --heapSize]) != null) {
-                                h[s] = null;
-                                t.heapIndex = -1;
-                                if (t.status >= 0) {
-                                    try {
-                                        t.cancel(false);
-                                    } catch (Throwable ignore) {
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if ((ts = pending) != null) {
-                        DelayedTask<?> t;
-                        while ((t = ts.poll()) != null) {
-                            if (t.status >= 0 && t.heapIndex >= 0) {
-                                try {
-                                    t.cancel(false);
-                                } catch (Throwable ignore) {
-                                }
-                            }
-                        }
-                    }
-                    if ((rs = pendingRemoval) != null) {
-                        while (rs.poll() != null) ;
-                    }
-                } finally {
-                    lock.unlock();
-                }
-                if ((st = scheduler) != null && st != Thread.currentThread()) {
-                    try {
-                        st.interrupt();
-                    } catch (Throwable ignore) {
+        private void shutdown() {
+            DelayedTask<?>[] h; ForkJoinPool p;
+            if ((h = heap) != null && h.length >= heapSize) {
+                while (heapSize > 0) {
+                    DelayedTask<?> u; int s;
+                    if ((u = h[s = --heapSize]) != null) {
+                        h[s] = null;
+                        u.heapIndex = -1;
+                        u.trySetCancelled();
                     }
                 }
             }
-        }
+            for (DelayedTask<?> t; (t = unpend(additions)) != null; ) {
+                do {
+                    t.trySetCancelled();
+                } while ((t = t.nextPending) != null);
+            }
+            while (unpend(removals) != null) ;
 
+            if ((p = pool) != null)
+                p.tryTerminate(false, false);
+        }
     }
 
-    final void scheduleDelayedTask(DelayedTask<?> task, long delay,
-                                   boolean resubmit) {
-        DelayScheduler ds; ReentrantLock lock;
-        ConcurrentLinkedQueue<DelayedTask<?>> ts;
-        if (!resubmit && delay <= 0L) {
-            poolSubmit(true, task);
-            return;
-        }
-        if ((runState & SHUTDOWN) != 0L) {
-            if (!resubmit)
-                throw new RejectedExecutionException();
-            try {
-                task.cancel(false);
-            } catch(Throwable ignore) {
-            }
-            return;
-        }
+    final void scheduleDelayedTask(DelayedTask<?> task, long delay) {
+        DelayScheduler ds;
         if ((ds = delayer) == null) {
             Thread st = null;
             lockRunState();
@@ -3633,61 +3635,33 @@ public class ForkJoinPool extends AbstractExecutorService
                     st.start();
             }
         }
-        if (ds != null && (lock = ds.heapLock) != null &&
-            (ts = ds.pending) != null && task != null) {
-            boolean process = false;
-            if (!lock.isLocked() && !lock.hasQueuedThreads() && lock.tryLock())
-                process = true;
-            else {
-                ts.offer(task);
-                task = null;
-                process = lock.tryLock();
-            }
-            if (process)
-                ds.processHeap(task, false);
-        }
+        if (delay <= 0L)
+            poolSubmit(true, task);
+        else if (ds == null || (runState & SHUTDOWN) != 0L)
+            throw new RejectedExecutionException();
+        else
+            ds.add(task);
     }
 
-    final void submitReadyDelayedTasks(DelayedTask<?> task) {
-        while (task != null) {
-            boolean cancel = false;
-            if ((runState & SHUTDOWN) != 0L)
-                cancel = true;
-            else {
-                try {
-                    poolSubmit(true, task);
-                } catch(Error | RuntimeException ex) {
+    final void submitReadyDelayedTask(DelayedTask<?> task) {
+        if (task != null) {
+            boolean cancel = false; // bypass poolSubmit runState checks
+            try {
+                WorkQueue[] qs; WorkQueue q; int n;
+                int r = ThreadLocalRandom.getProbe();
+                if ((runState & STOP) != 0L ||
+                    (((qs = queues) == null || (n = qs.length) <= 0 ||
+                      (q = qs[r & EXTERNAL_ID_MASK & (n - 1)]) == null ||
+                      r == 0 || !q.tryLockPhase()) &&
+                     (q = submissionQueue(r, false)) == null))
                     cancel = true;
-                }
+                else
+                    q.push(task, this, false);
+            } catch(Error | RuntimeException ex) {
+                cancel = true;
             }
-            if (cancel) {
-                try {
-                    task.cancel(false);
-                } catch(Throwable ignore) {
-                }
-            }
-            DelayedTask<?> next = task.nextReady;
-            task.nextReady = null;
-            task = next;
-        }
-    }
-
-    final void removeCancelledDelayedTask(DelayedTask<?> task) {
-        DelayScheduler ds; ReentrantLock lock;
-        ConcurrentLinkedQueue<DelayedTask<?>> rs;
-        if ((runState & STOP) == 0L &&
-            (ds = delayer) != null && (lock = ds.heapLock) != null &&
-            (rs = ds.pendingRemoval) != null && task != null) {
-            boolean process = false;
-            if (!lock.isLocked() && !lock.hasQueuedThreads() && lock.tryLock())
-                process = true;
-            else {
-                rs.offer(task);
-                task = null;
-                process = lock.tryLock();
-            }
-            if (process)
-                ds.processHeap(task, false);
+            if (cancel)
+                task.trySetCancelled();
         }
     }
 
@@ -3701,7 +3675,7 @@ public class ForkJoinPool extends AbstractExecutorService
             throw new NullPointerException();
         long d = Math.min(unit.toNanos(delay), MAX_NANOS);
         DelayedTask<Void> task = new DelayedTask<Void>(command, null, this, d, 0L);
-        scheduleDelayedTask(task, d, false);
+        scheduleDelayedTask(task, d);
         return task;
     }
 
@@ -3712,7 +3686,7 @@ public class ForkJoinPool extends AbstractExecutorService
             throw new NullPointerException();
         long d = Math.min(unit.toNanos(delay), MAX_NANOS);
         DelayedTask<V> task = new DelayedTask<V>(null, callable, this, d, 0L);
-        scheduleDelayedTask(task, d, false);
+        scheduleDelayedTask(task, d);
         return task;
     }
 
@@ -3727,7 +3701,7 @@ public class ForkJoinPool extends AbstractExecutorService
         long d = Math.min(unit.toNanos(initialDelay), MAX_NANOS);
         long p = Math.min(unit.toNanos(period), MAX_NANOS);
         DelayedTask<Void> task = new DelayedTask<Void>(command, null, this, d, -p);
-        scheduleDelayedTask(task, d, false);
+        scheduleDelayedTask(task, d);
         return task;
     }
 
@@ -3742,7 +3716,7 @@ public class ForkJoinPool extends AbstractExecutorService
         long d = Math.min(unit.toNanos(initialDelay), MAX_NANOS);
         long p = Math.min(unit.toNanos(delay), MAX_NANOS);
         DelayedTask<Void> task = new DelayedTask<Void>(command, null, this, d, p);
-        scheduleDelayedTask(task, d, false);
+        scheduleDelayedTask(task, d);
         return task;
     }
 

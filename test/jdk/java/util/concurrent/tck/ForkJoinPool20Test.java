@@ -306,6 +306,27 @@ public class ForkJoinPool20Test extends JSR166TestCase {
     }
 
     /**
+     * scheduleAtFixedRate with 0 initial delay re-rexecutes
+     */
+    public void testSchedule4a() throws Exception {
+        final ForkJoinPool p = new ForkJoinPool(2);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            final long startTime = System.nanoTime();
+            final CountDownLatch done = new CountDownLatch(2);
+            Runnable task = new Runnable() {
+                public void run() {
+                    done.countDown();
+                }};
+            ScheduledFuture<?> f =
+                p.scheduleAtFixedRate(task, 0L, timeoutMillis(),
+                                      MILLISECONDS);
+            await(done);
+            f.cancel(true);
+            assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+        }
+    }
+
+    /**
      * scheduleWithFixedDelay executes runnable after given initial delay
      */
     public void testSchedule5() throws Exception {
@@ -321,6 +342,27 @@ public class ForkJoinPool20Test extends JSR166TestCase {
             ScheduledFuture<?> f =
                 p.scheduleWithFixedDelay(task, timeoutMillis(),
                                          LONG_DELAY_MS, MILLISECONDS);
+            await(done);
+            assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+            f.cancel(true);
+        }
+    }
+
+    /**
+     * scheduleWithFixedDelay with 0 initial delay re-rexecutes
+     */
+    public void testSchedule5a() throws Exception {
+        final ForkJoinPool p = new ForkJoinPool(2);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            final long startTime = System.nanoTime();
+            final CountDownLatch done = new CountDownLatch(2);
+            Runnable task = new Runnable() {
+                public void run() {
+                    done.countDown();
+                }};
+            ScheduledFuture<?> f =
+                p.scheduleWithFixedDelay(task, 0L, timeoutMillis(),
+                                         MILLISECONDS);
             await(done);
             assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
             f.cancel(true);

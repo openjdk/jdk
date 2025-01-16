@@ -1872,7 +1872,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         final Callable<? extends T> callable;
         final ForkJoinPool pool;
         T result;
-        DelayedTask<?> nextReady; // for collecting ready tasks
+        DelayedTask<?> nextPending; // for DelayScheduler submissions
         final long nextDelay;     // 0: once; <0: fixedDelay; >0: fixedRate
         long when;                // nanoTime-based trigger time
         int heapIndex;            // index if queued on heap
@@ -1889,16 +1889,16 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         final boolean postExec() { // resubmit if periodic
-            long d; ForkJoinPool p;
+            long d; ForkJoinPool p;  ForkJoinPool.DelayScheduler ds;
             if ((d = nextDelay) == 0L || status < 0 ||
-                (p = pool) == null || p.isShutdown())
+                (p = pool) == null || (ds = p.delayer) == null)
                 return true;
             heapIndex = -1;
             if (d < 0L)
                 when = System.nanoTime() - d;
             else
                 when += d;
-            p.scheduleDelayedTask(this, 0L, true);
+            ds.add(this);
             return false;
         }
         final T compute() throws Exception {
@@ -1912,10 +1912,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         final Object adaptee() { return (runnable != null) ? runnable : callable; }
         public final boolean cancel(boolean mayInterruptIfRunning) {
-            ForkJoinPool p;
+            ForkJoinPool p; ForkJoinPool.DelayScheduler ds;
             boolean stat = super.cancel(mayInterruptIfRunning);
-            if (heapIndex >= 0 && status < 0 && (p = pool) != null)
-                p.removeCancelledDelayedTask(this); // for heap cleanup
+            if (heapIndex >= 0 && nextPending == null &&
+                (p = pool) != null && (ds = p.delayer) != null)
+                ds.remove(this); // for heap cleanup
             return stat;
         }
         public final long getDelay(TimeUnit unit) {
