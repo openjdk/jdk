@@ -197,21 +197,21 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // Perform update-refs phase.
     if (ShenandoahVerify || ShenandoahPacing) {
-      vmop_entry_init_updaterefs();
+      vmop_entry_init_update_refs();
     }
 
-    entry_updaterefs();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_updaterefs)) {
+    entry_update_refs();
+    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_update_refs)) {
       return false;
     }
 
     // Concurrent update thread roots
     entry_update_thread_roots();
-    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_updaterefs)) {
+    if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_update_refs)) {
       return false;
     }
 
-    vmop_entry_final_updaterefs();
+    vmop_entry_final_update_refs();
 
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
@@ -265,7 +265,7 @@ void ShenandoahConcurrentGC::vmop_entry_final_mark() {
   VMThread::execute(&op); // jump to entry_final_mark under safepoint
 }
 
-void ShenandoahConcurrentGC::vmop_entry_init_updaterefs() {
+void ShenandoahConcurrentGC::vmop_entry_init_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::init_update_refs_gross);
@@ -275,7 +275,7 @@ void ShenandoahConcurrentGC::vmop_entry_init_updaterefs() {
   VMThread::execute(&op);
 }
 
-void ShenandoahConcurrentGC::vmop_entry_final_updaterefs() {
+void ShenandoahConcurrentGC::vmop_entry_final_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->stw_collection_counters());
   ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_update_refs_gross);
@@ -320,16 +320,16 @@ void ShenandoahConcurrentGC::entry_final_mark() {
   op_final_mark();
 }
 
-void ShenandoahConcurrentGC::entry_init_updaterefs() {
+void ShenandoahConcurrentGC::entry_init_update_refs() {
   static const char* msg = "Pause Init Update Refs";
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::init_update_refs);
   EventMark em("%s", msg);
 
   // No workers used in this phase, no setup required
-  op_init_updaterefs();
+  op_init_update_refs();
 }
 
-void ShenandoahConcurrentGC::entry_final_updaterefs() {
+void ShenandoahConcurrentGC::entry_final_update_refs() {
   static const char* msg = "Pause Final Update Refs";
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_update_refs);
   EventMark em("%s", msg);
@@ -338,7 +338,7 @@ void ShenandoahConcurrentGC::entry_final_updaterefs() {
                               ShenandoahWorkerPolicy::calc_workers_for_final_update_ref(),
                               "final reference update");
 
-  op_final_updaterefs();
+  op_final_update_refs();
 }
 
 void ShenandoahConcurrentGC::entry_final_roots() {
@@ -557,7 +557,7 @@ void ShenandoahConcurrentGC::entry_update_thread_roots() {
   op_update_thread_roots();
 }
 
-void ShenandoahConcurrentGC::entry_updaterefs() {
+void ShenandoahConcurrentGC::entry_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   static const char* msg = "Concurrent update references";
@@ -569,7 +569,7 @@ void ShenandoahConcurrentGC::entry_updaterefs() {
                               "concurrent reference update");
 
   heap->try_inject_alloc_failure();
-  op_updaterefs();
+  op_update_refs();
 }
 
 void ShenandoahConcurrentGC::entry_cleanup_complete() {
@@ -1047,17 +1047,17 @@ void ShenandoahConcurrentGC::op_evacuate() {
   ShenandoahHeap::heap()->evacuate_collection_set(true /*concurrent*/);
 }
 
-void ShenandoahConcurrentGC::op_init_updaterefs() {
+void ShenandoahConcurrentGC::op_init_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
-    heap->verifier()->verify_before_updaterefs();
+    heap->verifier()->verify_before_update_refs();
   }
   if (ShenandoahPacing) {
-    heap->pacer()->setup_for_updaterefs();
+    heap->pacer()->setup_for_update_refs();
   }
 }
 
-void ShenandoahConcurrentGC::op_updaterefs() {
+void ShenandoahConcurrentGC::op_update_refs() {
   ShenandoahHeap::heap()->update_heap_references(true /*concurrent*/);
 }
 
@@ -1089,7 +1089,7 @@ void ShenandoahConcurrentGC::op_update_thread_roots() {
   Handshake::execute(&cl);
 }
 
-void ShenandoahConcurrentGC::op_final_updaterefs() {
+void ShenandoahConcurrentGC::op_final_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at safepoint");
   assert(!heap->_update_refs_iterator.has_next(), "Should have finished update references");
@@ -1137,7 +1137,7 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   }
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_updaterefs();
+    heap->verifier()->verify_after_update_refs();
   }
 
   if (VerifyAfterGC) {

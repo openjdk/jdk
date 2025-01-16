@@ -1259,7 +1259,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   // A cancellation at this point means the degenerated cycle must resume from update-refs.
   set_gc_state_concurrent(EVACUATION, false);
   set_gc_state_concurrent(WEAK_ROOTS, false);
-  set_gc_state_concurrent(UPDATEREFS, true);
+  set_gc_state_concurrent(UPDATE_REFS, true);
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
@@ -2024,9 +2024,9 @@ void ShenandoahHeap::set_concurrent_young_mark_in_progress(bool in_progress) {
 
 void ShenandoahHeap::set_concurrent_old_mark_in_progress(bool in_progress) {
 #ifdef ASSERT
-  // has_forwarded_objects() iff UPDATEREFS or EVACUATION
+  // has_forwarded_objects() iff UPDATE_REFS or EVACUATION
   bool has_forwarded = has_forwarded_objects();
-  bool updating_or_evacuating = _gc_state.is_set(UPDATEREFS | EVACUATION);
+  bool updating_or_evacuating = _gc_state.is_set(UPDATE_REFS | EVACUATION);
   bool evacuating = _gc_state.is_set(EVACUATION);
   assert ((has_forwarded == updating_or_evacuating) || (evacuating && !has_forwarded && collection_set()->is_empty()),
           "Updating or evacuating iff has forwarded objects, or if evacuation phase is promoting in place without forwarding");
@@ -2178,7 +2178,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
-// Weak roots are either pre-evacuated (final mark) or updated (final updaterefs),
+// Weak roots are either pre-evacuated (final mark) or updated (final update refs),
 // so they should not have forwarded oops.
 // However, we do need to "null" dead oops in the roots, if can not be done
 // in concurrent cycles.
@@ -2262,7 +2262,7 @@ void ShenandoahHeap::set_full_gc_move_in_progress(bool in_progress) {
 }
 
 void ShenandoahHeap::set_update_refs_in_progress(bool in_progress) {
-  set_gc_state_at_safepoint(UPDATEREFS, in_progress);
+  set_gc_state_at_safepoint(UPDATE_REFS, in_progress);
 }
 
 void ShenandoahHeap::register_nmethod(nmethod* nm) {
@@ -2408,7 +2408,7 @@ private:
       if (r->is_active() && !r->is_cset()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         if (ShenandoahPacing) {
-          _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
+          _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
         }
       }
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
