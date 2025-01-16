@@ -867,7 +867,7 @@ public:
 
   // If we have the same invar_summands, and the same iv summand with the same iv_scale,
   // then all summands except the base must be the same.
-  bool has_same_invar_and_iv_scale_as(const VPointer& other) const {
+  bool has_same_invar_summands_and_iv_scale_as(const VPointer& other) const {
     return mem_pointer().has_same_non_base_summands_as(other.mem_pointer());
   }
 
@@ -1160,7 +1160,7 @@ public:
     const VPointer& p2 = s2->vpointer();
     bool both_no_invar = p1.count_invar_summands() == 0 &&
                          p2.count_invar_summands() == 0;
-    if(!both_no_invar && !p1.has_same_invar_and_iv_scale_as(p2)) {
+    if(!both_no_invar && !p1.has_same_invar_summands_and_iv_scale_as(p2)) {
       return new EmptyAlignmentSolution("invar alignment term not identical");
     }
 
