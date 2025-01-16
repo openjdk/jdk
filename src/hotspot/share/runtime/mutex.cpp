@@ -267,6 +267,16 @@ bool Monitor::wait(uint64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
+static const int MAX_NUM_MUTEX = 1204;
+static Mutex* _internal_mutex_arr[MAX_NUM_MUTEX];
+Mutex** Mutex::_mutex_array = _internal_mutex_arr;
+int Mutex::_num_mutex = 0;
+
+void Mutex::add_mutex(Mutex* var) {
+  assert(Mutex::_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");
+  Mutex::_mutex_array[_num_mutex++] = var;
+}
+
 Mutex::~Mutex() {
   assert_owner(nullptr);
   os::free(const_cast<char*>(_name));
@@ -524,6 +534,61 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
 }
 #endif // ASSERT
 
+// Print all mutexes/monitors that are currently owned by a thread; called
+// by fatal error handler.
+void Mutex::print_owned_locks_on_error(outputStream* st) {
+  st->print("VM Mutex/Monitor currently owned by a thread: ");
+  bool none = true;
+  for (int i = 0; i < _num_mutex; i++) {
+    // see if it has an owner
+    if (_mutex_array[i]->owner() != nullptr) {
+      if (none) {
+        // print format used by Mutex::print_on_error()
+        st->print_cr(" ([mutex/lock_event])");
+        none = false;
+      }
+      _mutex_array[i]->print_on_error(st);
+      st->cr();
+    }
+  }
+  if (none) st->print_cr("None");
+}
+
+void Mutex::print_lock_ranks(outputStream* st) {
+  st->print_cr("VM Mutex/Monitor ranks: ");
+
+#ifdef ASSERT
+  // Be extra defensive and figure out the bounds on
+  // ranks right here. This also saves a bit of time
+  // in the #ranks*#mutexes loop below.
+  int min_rank = INT_MAX;
+  int max_rank = INT_MIN;
+  for (int i = 0; i < _num_mutex; i++) {
+    Mutex* m = _mutex_array[i];
+    int r = (int) m->rank();
+    if (min_rank > r) min_rank = r;
+    if (max_rank < r) max_rank = r;
+  }
+
+  // Print the listings rank by rank
+  for (int r = min_rank; r <= max_rank; r++) {
+    bool first = true;
+    for (int i = 0; i < _num_mutex; i++) {
+      Mutex* m = _mutex_array[i];
+      if (r != (int) m->rank()) continue;
+
+      if (first) {
+        st->cr();
+        st->print_cr("Rank \"%s\":", m->rank_name());
+        first = false;
+      }
+      st->print_cr("  %s", m->name());
+    }
+  }
+#else
+  st->print_cr("  Only known in debug builds.");
+#endif // ASSERT
+}
 
 RecursiveMutex::RecursiveMutex() : _sem(1), _owner(nullptr), _recursions(0) {}
 

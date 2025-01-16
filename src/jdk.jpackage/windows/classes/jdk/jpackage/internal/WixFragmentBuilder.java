@@ -74,7 +74,7 @@ abstract class WixFragmentBuilder {
         return List.of();
     }
 
-    void configureWixPipeline(WixPipeline wixPipeline) {
+    void configureWixPipeline(WixPipeline.Builder wixPipeline) {
         wixPipeline.addSource(configRoot.resolve(outputFileName),
                 Optional.ofNullable(wixVariables).map(WixVariables::getValues).orElse(
                         null));

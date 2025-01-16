@@ -38,7 +38,6 @@ import java.util.Objects;
 import sun.security.jgss.spi.*;
 import sun.security.jgss.wrapper.NativeGSSFactory;
 import sun.security.jgss.wrapper.SunNativeProvider;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class stores the list of providers that this
@@ -102,8 +101,7 @@ public final class ProviderList {
          * with a valid OID value
          */
         Oid defOid = null;
-        String defaultOidStr = GetPropertyAction
-                .privilegedGetProperty("sun.security.jgss.mechanism");
+        String defaultOidStr = System.getProperty("sun.security.jgss.mechanism");
         if (defaultOidStr != null) {
             defOid = GSSUtil.createOid(defaultOidStr);
         }

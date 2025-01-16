@@ -186,6 +186,9 @@ class MacroAssembler: public Assembler {
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
   // Branch-free implementation to convert !=0 to 1.
   void inline normalize_bool(Register dst, Register temp = R0, bool is_64bit = false);
+  // Convert between half precision float encoded into a short and a float in a FloatRegister.
+  void inline f2hf(Register dst, FloatRegister src, FloatRegister tmp);
+  void inline hf2f(FloatRegister dst, Register src);
 
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)

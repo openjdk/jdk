@@ -33,7 +33,7 @@ import java.rmi.server.ObjID;
 import java.util.HashMap;
 import java.util.Map;
 import sun.rmi.runtime.Log;
-import sun.rmi.runtime.NewThreadAction;
+import sun.rmi.runtime.RuntimeUtil;
 
 /**
  * Object table shared by all implementors of the Transport interface.
@@ -271,7 +271,7 @@ public final class ObjectTable {
             keepAliveCount++;
 
             if (reaper == null) {
-                reaper = new NewThreadAction(new Reaper(), "Reaper", false).run();
+                reaper = RuntimeUtil.newSystemThread(new Reaper(), "Reaper", false);
                 reaper.start();
             }
 

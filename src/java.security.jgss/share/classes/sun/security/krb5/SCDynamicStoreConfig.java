@@ -45,18 +45,17 @@ public class SCDynamicStoreConfig {
     private static native List<String> getKerberosConfig();
 
     static {
-        @SuppressWarnings({"removal", "restricted"})
-        boolean isMac = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    if (OperatingSystem.isMacOS()) {
-                        System.loadLibrary("osxkrb5");
-                        return true;
-                    }
-                    return false;
-                }
-            });
+        boolean isMac = loadLibrary();
         if (isMac) installNotificationCallback();
+    }
+
+    @SuppressWarnings("restricted")
+    private static boolean loadLibrary() {
+        if (OperatingSystem.isMacOS()) {
+            System.loadLibrary("osxkrb5");
+            return true;
+        }
+        return false;
     }
 
     /**

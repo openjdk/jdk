@@ -26,7 +26,7 @@
  * @summary Test virtual threads entering a lot of monitors with contention
  * @requires vm.opt.LockingMode != 1
  * @library /test/lib
- * @run main/othervm LotsOfContendedMonitorEnter
+ * @run main LotsOfContendedMonitorEnter
  */
 
 /*

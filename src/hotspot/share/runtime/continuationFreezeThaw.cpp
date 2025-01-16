@@ -256,7 +256,9 @@ public:
   using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
   static freeze_result freeze(JavaThread* thread, intptr_t* const sp) {
-    return freeze_internal<SelfT, false>(thread, sp);
+    freeze_result res = freeze_internal<SelfT, false>(thread, sp);
+    JFR_ONLY(assert((res == freeze_ok) || (res == thread->last_freeze_fail_result()), "freeze failure not set"));
+    return res;
   }
 
   static freeze_result freeze_preempt(JavaThread* thread, intptr_t* const sp) {
@@ -1722,6 +1724,9 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
     verify_continuation(cont.continuation());
     freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    if (!preempt) {
+      JFR_ONLY(current->set_last_freeze_fail_result(res);)
+    }
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     // Avoid Thread.yield() loops without safepoint polls.
     if (SafepointMechanism::should_process(current) && !preempt) {
@@ -2598,6 +2603,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
               || (stub_caller && f.cb()->as_nmethod()->is_marked_for_deoptimization())) {
     // The caller of the safepoint stub when the continuation is preempted is not at a call instruction, and so
     // cannot rely on nmethod patching for deopt.
+    assert(_thread->is_interp_only_mode() || stub_caller, "expected a stub-caller");
 
     log_develop_trace(continuations)("Deoptimizing thawed frame");
     DEBUG_ONLY(ContinuationHelper::Frame::patch_pc(f, nullptr));

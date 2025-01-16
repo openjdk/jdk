@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class MultiVersionError {
     public void compileAll() throws Exception {
         CompilerUtils.cleanDir(MODS_DIR);
         modules.forEach(mn ->
-                assertTrue(CompilerUtils.compileModule(SRC_DIR, MODS_DIR, mn)));
+                assertTrue(CompilerUtils.compileModule(SRC_DIR, MODS_DIR, mn, "--release", "9")));
 
         // create a modular multi-release m1.jar
         Path m1 = MODS_DIR.resolve("m1");

@@ -42,10 +42,9 @@ public final class InterfaceAddress {
     private short        maskLength = 0;
 
     /*
-     * Package private constructor. Can't be built directly, instances are
-     * obtained through the NetworkInterface class.
+     * This constructor is called via JNI in NetworkInterface.c
      */
-    InterfaceAddress() {
+    private InterfaceAddress() {
     }
 
     /**

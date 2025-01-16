@@ -168,10 +168,16 @@ ifeq ($(call isTargetOs, windows macosx), false)
   # static libraries cause linking errors due to duplicate symbols.
   LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS := systemScale.o
 
+  ifneq ($(ENABLE_HEADLESS_ONLY), true)
+    # We cannot link with both awt_headless and awt_xawt at the same time
+    LIBAWT_HEADLESS_ONLY_EXPORTED := true
+  endif
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
       EXCLUDES := medialib, \
+      ONLY_EXPORTED := $(LIBAWT_HEADLESS_ONLY_EXPORTED), \
       OPTIMIZATION := LOW, \
       CFLAGS := -DHEADLESS=true $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) \
           $(X_CFLAGS), \
@@ -308,6 +314,8 @@ ifeq ($(call isTargetOs, macosx), true)
   LIBAWT_LWAWT_EXCLUDE_FILES := fontpath.c awt_Font.c X11Color.c
   LIBAWT_LWAWT_EXCLUDES := $(TOPDIR)/src/$(MODULE)/unix/native/common/awt/medialib
 
+  LIBAWT_LWAWT_STATIC_EXCLUDE_OBJS := systemScale.o
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_LWAWT, \
       NAME := awt_lwawt, \
       EXTRA_SRC := $(LIBAWT_LWAWT_EXTRA_SRC), \
@@ -346,6 +354,7 @@ ifeq ($(call isTargetOs, macosx), true)
           -framework OpenGL \
           -framework QuartzCore \
           -framework Security, \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_LWAWT_STATIC_EXCLUDE_OBJS), \
   ))
 
   TARGETS += $(BUILD_LIBAWT_LWAWT)

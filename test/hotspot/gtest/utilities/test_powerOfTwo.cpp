@@ -306,43 +306,43 @@ TEST(power_of_2, log2i) {
   check_log2i_variants_for((jlong)0);
 }
 
-template <typename T> void test_ceil_log2() {
-  EXPECT_EQ(ceil_log2(T(1)), 0) << "value = " << T(1);
-  EXPECT_EQ(ceil_log2(T(2)), 1) << "value = " << T(2);
-  EXPECT_EQ(ceil_log2(T(3)), 2) << "value = " << T(3);
-  EXPECT_EQ(ceil_log2(T(4)), 2) << "value = " << T(4);
-  EXPECT_EQ(ceil_log2(T(5)), 3) << "value = " << T(5);
-  EXPECT_EQ(ceil_log2(T(6)), 3) << "value = " << T(6);
-  EXPECT_EQ(ceil_log2(T(7)), 3) << "value = " << T(7);
-  EXPECT_EQ(ceil_log2(T(8)), 3) << "value = " << T(8);
-  EXPECT_EQ(ceil_log2(T(9)), 4) << "value = " << T(9);
-  EXPECT_EQ(ceil_log2(T(10)), 4) << "value = " << T(10);
+template <typename T> void test_log2i_ceil() {
+  EXPECT_EQ(log2i_ceil(T(1)), 0) << "value = " << T(1);
+  EXPECT_EQ(log2i_ceil(T(2)), 1) << "value = " << T(2);
+  EXPECT_EQ(log2i_ceil(T(3)), 2) << "value = " << T(3);
+  EXPECT_EQ(log2i_ceil(T(4)), 2) << "value = " << T(4);
+  EXPECT_EQ(log2i_ceil(T(5)), 3) << "value = " << T(5);
+  EXPECT_EQ(log2i_ceil(T(6)), 3) << "value = " << T(6);
+  EXPECT_EQ(log2i_ceil(T(7)), 3) << "value = " << T(7);
+  EXPECT_EQ(log2i_ceil(T(8)), 3) << "value = " << T(8);
+  EXPECT_EQ(log2i_ceil(T(9)), 4) << "value = " << T(9);
+  EXPECT_EQ(log2i_ceil(T(10)), 4) << "value = " << T(10);
 
   // Test max values
   if (std::is_unsigned<T>::value) {
-    EXPECT_EQ(ceil_log2(std::numeric_limits<T>::max()),
+    EXPECT_EQ(log2i_ceil(std::numeric_limits<T>::max()),
             (int)(sizeof(T) * 8)) << "value = " << std::numeric_limits<T>::max();
   } else {
-    EXPECT_EQ(ceil_log2(std::numeric_limits<T>::max()),
+    EXPECT_EQ(log2i_ceil(std::numeric_limits<T>::max()),
             (int)(sizeof(T) * 8 - 1)) << "value = " << std::numeric_limits<T>::max();
   }
 }
 
-TEST(power_of_2, ceil_log2) {
-  test_ceil_log2<int8_t>();
-  test_ceil_log2<int16_t>();
-  test_ceil_log2<int32_t>();
-  test_ceil_log2<int64_t>();
-  test_ceil_log2<uint8_t>();
-  test_ceil_log2<uint16_t>();
-  test_ceil_log2<uint32_t>();
-  test_ceil_log2<uint64_t>();
+TEST(power_of_2, log2i_ceil) {
+  test_log2i_ceil<int8_t>();
+  test_log2i_ceil<int16_t>();
+  test_log2i_ceil<int32_t>();
+  test_log2i_ceil<int64_t>();
+  test_log2i_ceil<uint8_t>();
+  test_log2i_ceil<uint16_t>();
+  test_log2i_ceil<uint32_t>();
+  test_log2i_ceil<uint64_t>();
 }
 
 #ifdef ASSERT
-TEST_VM_ASSERT_MSG(power_of_2, ceil_log2_invalid,
+TEST_VM_ASSERT_MSG(power_of_2, log2i_ceil_invalid,
     ".*Invalid value") {
-  ceil_log2(0);
+  log2i_ceil(0);
 }
 
 #endif // ASSERT

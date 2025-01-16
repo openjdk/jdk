@@ -24,13 +24,9 @@
  */
 package com.sun.jmx.remote.security;
 
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
-import java.security.AccessControlException;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -109,12 +105,9 @@ public class FileLoginModule implements LoginModule {
     private static final String PASSWORD_FILE_NAME = "jmxremote.password";
 
     // Location of the default password file
-    @SuppressWarnings("removal")
     private static final String DEFAULT_PASSWORD_FILE_NAME =
-        AccessController.doPrivileged(new GetPropertyAction("java.home")) +
-        File.separatorChar + "conf" +
-        File.separatorChar + "management" + File.separatorChar +
-        PASSWORD_FILE_NAME;
+        System.getProperty("java.home") + File.separatorChar + "conf" + File.separatorChar
+        + "management" + File.separatorChar + PASSWORD_FILE_NAME;
 
     // Key to retrieve the stored username
     private static final String USERNAME_KEY =
@@ -152,7 +145,6 @@ public class FileLoginModule implements LoginModule {
     private String passwordFile;
     private String passwordFileDisplayName;
     private boolean userSuppliedPasswordFile;
-    private boolean hasJavaHomePermission;
     private HashedPasswordManager hashPwdMgr;
 
     /**
@@ -196,14 +188,7 @@ public class FileLoginModule implements LoginModule {
         if (passwordFile == null) {
             passwordFile = DEFAULT_PASSWORD_FILE_NAME;
             userSuppliedPasswordFile = false;
-            try {
-                System.getProperty("java.home");
-                hasJavaHomePermission = true;
-                passwordFileDisplayName = passwordFile;
-            } catch (SecurityException e) {
-                hasJavaHomePermission = false;
-                passwordFileDisplayName = PASSWORD_FILE_NAME;
-            }
+            passwordFileDisplayName = passwordFile;
         }
     }
 
@@ -233,18 +218,6 @@ public class FileLoginModule implements LoginModule {
                     "Error: unable to load the password file: " +
                     passwordFileDisplayName);
             throw EnvHelp.initCause(le, ioe);
-        } catch (SecurityException e) {
-            if (userSuppliedPasswordFile || hasJavaHomePermission) {
-                throw e;
-            } else {
-                final FilePermission fp
-                        = new FilePermission(passwordFileDisplayName, "read");
-                @SuppressWarnings("removal")
-                AccessControlException ace = new AccessControlException(
-                        "access denied " + fp.toString());
-                ace.initCause(e);
-                throw ace;
-            }
         }
 
         if (logger.debugOn()) {

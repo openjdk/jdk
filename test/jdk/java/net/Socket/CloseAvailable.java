@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4091859 8189366
  * @library /test/lib
- * @summary Test Socket.available()
+ * @summary Test Socket.getInputStream().available()
  * @run main CloseAvailable
  * @run main/othervm -Djava.net.preferIPv4Stack=true CloseAvailable
  */
@@ -48,110 +48,135 @@ public class CloseAvailable {
         testIOEOnClosed(false);
     }
 
+    /*
+     * Verifies that the Socket.getInputStream().available() throws an IOException
+     * if invoked after the socket has been closed.
+     */
     static void testClose() throws IOException {
-        boolean error = true;
-        InetAddress addr = InetAddress.getLocalHost();
-        ServerSocket ss = new ServerSocket(0, 0, addr);
-        int port = ss.getLocalPort();
+        System.out.println("testClose");
+        final InetAddress addr = InetAddress.getLoopbackAddress();
+        final Socket acceptedSocket;
+        try (final ServerSocket ss = new ServerSocket(0, 0, addr)) {
+            System.out.println("created server socket: " + ss);
+            final int port = ss.getLocalPort();
+            // start a thread which initiates a socket connection to the server
+            Thread.ofPlatform().name("Close-Available-1")
+                    .start(() -> {
+                        try {
+                            final Socket s = new Socket(addr, port);
+                            System.out.println("created socket: " + s);
+                            s.close();
+                            System.out.println("closed socket: " + s);
+                        } catch (Exception e) {
+                            System.err.println("exception in " + Thread.currentThread().getName()
+                                    + ": " + e);
+                            e.printStackTrace();
+                        }
+                    });
+            // accept the client connect
+            acceptedSocket = ss.accept();
+            System.out.println(ss + " accepted connection " + acceptedSocket);
+        } // (intentionally) close the ServerSocket
 
-        Thread t = new Thread(new Thread("Close-Available-1") {
-            public void run() {
-                try {
-                    Socket s = new Socket(addr, port);
-                    s.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        t.start();
-
-        Socket  soc = ss.accept();
-        ss.close();
-
-        DataInputStream is = new DataInputStream(soc.getInputStream());
-        is.close();
-
+        final DataInputStream is = new DataInputStream(acceptedSocket.getInputStream());
+        is.close(); // close the inputstream and thus the underlying socket
+        System.out.println("closed inputstream of socket: " + acceptedSocket);
         try {
-            is.available();
+            final int av = is.available();
+            // available() was expected to fail but didn't
+            throw new AssertionError("Socket.getInputStream().available() was expected to fail on "
+                    + acceptedSocket + " but returned " + av);
+        } catch (IOException ex) {
+            // expected IOException
+            System.out.println("received the expected IOException: " + ex);
         }
-        catch (IOException ex) {
-            error = false;
-        }
-        if (error)
-            throw new RuntimeException("Available() can be called after stream closed.");
     }
 
-    // Verifies consistency of `available` behaviour when EOF reached, both
-    // explicitly and implicitly.
+    /*
+     * Verifies consistency of Socket.getInputStream().available() behaviour when EOF reached, both
+     * explicitly and implicitly.
+     */
     static void testEOF(boolean readUntilEOF) throws IOException {
         System.out.println("testEOF, readUntilEOF: " + readUntilEOF);
-        InetAddress addr = InetAddress.getLoopbackAddress();
-        ServerSocket ss = new ServerSocket();
-        ss.bind(new InetSocketAddress(addr, 0), 0);
-        int port = ss.getLocalPort();
+        final InetAddress addr = InetAddress.getLoopbackAddress();
+        try (final ServerSocket ss = new ServerSocket()) {
+            ss.bind(new InetSocketAddress(addr, 0), 0);
+            System.out.println("server socket bound: " + ss);
+            final int port = ss.getLocalPort();
+            try (final Socket s = new Socket(addr, port)) {
+                System.out.println("created socket: " + s);
+                s.getOutputStream().write(0x42);
+                s.shutdownOutput();
 
-        try (Socket s = new Socket(addr, port)) {
-            s.getOutputStream().write(0x42);
-            s.shutdownOutput();
+                try (final Socket soc = ss.accept()) {
+                    System.out.println("accepted socket: " + soc);
+                    ss.close();
+                    System.out.println("closed server socket: " + ss);
 
-            try (Socket soc = ss.accept()) {
-                ss.close();
+                    final InputStream is = soc.getInputStream();
+                    int b = is.read();
+                    assert b == 0x42 : "unexpected byte read: " + b;
+                    assert !s.isClosed() : "socket " + s + " is unexpectedly closed";
+                    if (readUntilEOF) {
+                        b = is.read();
+                        assert b == -1 : "unexpected number of bytes read: " + b;
+                    }
 
-                InputStream is = soc.getInputStream();
-                int b = is.read();
-                assert b == 0x42;
-                assert !s.isClosed();
-                if (readUntilEOF) {
-                    b = is.read();
-                    assert b == -1;
+                    int a;
+                    for (int i = 0; i < 100; i++) {
+                        a = is.available();
+                        System.out.print(a + ", ");
+                        if (a != 0) {
+                            throw new RuntimeException("Unexpected non-zero available: " + a);
+                        }
+                    }
+                    assert !s.isClosed() : "socket " + s + " is unexpectedly closed";
+                    final int more = is.read();
+                    assert more == -1 : "unexpected byte read: " + more;
                 }
-
-                int a;
-                for (int i = 0; i < 100; i++) {
-                    a = is.available();
-                    System.out.print(a + ", ");
-                    if (a != 0)
-                        throw new RuntimeException("Unexpected non-zero available: " + a);
-                }
-                assert !s.isClosed();
-                assert is.read() == -1;
             }
         }
         System.out.println("\ncomplete");
     }
 
-    // Verifies IOException thrown by `available`, on a closed input stream
-    // that may, or may not, have reached EOF prior to closure.
+    /*
+     * Verifies IOException thrown by Socket.getInputStream().available(), on a closed input stream
+     * that may, or may not, have reached EOF prior to closure.
+     */
     static void testIOEOnClosed(boolean readUntilEOF) throws IOException {
         System.out.println("testIOEOnClosed, readUntilEOF: " + readUntilEOF);
-        InetAddress addr = InetAddress.getLoopbackAddress();
-        ServerSocket ss = new ServerSocket();
-        ss.bind(new InetSocketAddress(addr, 0), 0);
-        int port = ss.getLocalPort();
+        final InetAddress addr = InetAddress.getLoopbackAddress();
+        try (final ServerSocket ss = new ServerSocket()) {
+            ss.bind(new InetSocketAddress(addr, 0), 0);
+            System.out.println("server socket bound: " + ss);
+            final int port = ss.getLocalPort();
 
-        try (Socket s = new Socket(addr, port)) {
-            s.getOutputStream().write(0x43);
-            s.shutdownOutput();
+            try (final Socket s = new Socket(addr, port)) {
+                System.out.println("created socket: " + s);
+                s.getOutputStream().write(0x43);
+                s.shutdownOutput();
 
-            try (Socket soc = ss.accept()) {
-                ss.close();
+                try (final Socket soc = ss.accept()) {
+                    System.out.println("accepted socket: " + soc);
+                    ss.close();
+                    System.out.println("closed server socket: " + ss);
 
-                InputStream is = soc.getInputStream();
-                int b = is.read();
-                assert b == 0x43;
-                assert !s.isClosed();
-                if (readUntilEOF) {
-                    b = is.read();
-                    assert b == -1;
-                }
-                is.close();
-                try {
-                    b = is.available();
-                    throw new RuntimeException("UNEXPECTED successful read: " + b);
-                } catch (IOException expected) {
-                    System.out.println("caught expected IOException:" + expected);
+                    final InputStream is = soc.getInputStream();
+                    int b = is.read();
+                    assert b == 0x43 : "unexpected byte read: " + b;
+                    assert !s.isClosed() : "socket " + s + " is unexpectedly closed";
+                    if (readUntilEOF) {
+                        b = is.read();
+                        assert b == -1 : "unexpected byte read: " + b;
+                    }
+                    is.close();
+                    System.out.println("closed inputstream of socket: " + soc);
+                    try {
+                        b = is.available();
+                        throw new RuntimeException("UNEXPECTED successful read: " + b);
+                    } catch (IOException expected) {
+                        System.out.println("caught expected IOException:" + expected);
+                    }
                 }
             }
         }

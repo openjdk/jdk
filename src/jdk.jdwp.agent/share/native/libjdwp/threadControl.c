@@ -2141,7 +2141,7 @@ doPendingTasks(JNIEnv *env, jthread thread, int pendingInterrupt, jobject pendin
 
 void
 threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
-                                 struct bag *eventBag)
+                                 struct bag *eventBag, jobject currentException)
 {
     ThreadNode *node;
     JNIEnv *env = getEnv();
@@ -2178,6 +2178,17 @@ threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
         // locks when doing that. Thus we got all our node updates done first
         // and can now exit the threadLock.
         debugMonitorExit(threadLock);
+        if (currentException != NULL) {
+            // We need to rethrow the exception that was current when we received the
+            // JVMTI event. If there is a pending async exception, StopThread will be
+            // called from doPendingTasks() immediately below. Depending on the VM
+            // implementation and state, the async exception might immediately overwrite
+            // the currentException, or it might be delayed until later.
+            //
+            // Note in order the keep the JNI Checker happy, we had to delay doing this
+            // until now. Otherwise there are complaints when JNI IsVirtualThread is called.
+            JNI_FUNC_PTR(env,Throw)(env, currentException);
+        }
         doPendingTasks(env, thread, pendingInterrupt, pendingStop);
         if (pendingStop != NULL) {
           tossGlobalRef(env, &pendingStop);

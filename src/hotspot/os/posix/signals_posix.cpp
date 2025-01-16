@@ -578,9 +578,8 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Handle assertion poison page accesses.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (!signal_was_handled &&
-      ((sig == SIGSEGV || sig == SIGBUS) && info != nullptr && info->si_addr == g_assert_poison)) {
-    signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
+  if (VMError::was_assert_poison_crash(info)) {
+    signal_was_handled = handle_assert_poison_fault(ucVoid);
   }
 #endif
 
@@ -961,10 +960,6 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGILL,  ILL_PRVREG,   "ILL_PRVREG",   "Privileged register." },
     { SIGILL,  ILL_COPROC,   "ILL_COPROC",   "Coprocessor error." },
     { SIGILL,  ILL_BADSTK,   "ILL_BADSTK",   "Internal stack error." },
-#if defined(IA64) && defined(LINUX)
-    { SIGILL,  ILL_BADIADDR, "ILL_BADIADDR", "Unimplemented instruction address" },
-    { SIGILL,  ILL_BREAK,    "ILL_BREAK",    "Application Break instruction" },
-#endif
     { SIGFPE,  FPE_INTDIV,   "FPE_INTDIV",   "Integer divide by zero." },
     { SIGFPE,  FPE_INTOVF,   "FPE_INTOVF",   "Integer overflow." },
     { SIGFPE,  FPE_FLTDIV,   "FPE_FLTDIV",   "Floating-point divide by zero." },
@@ -978,9 +973,6 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
 #if defined(AIX)
     // no explanation found what keyerr would be
     { SIGSEGV, SEGV_KEYERR,  "SEGV_KEYERR",  "key error" },
-#endif
-#if defined(IA64) && !defined(AIX)
-    { SIGSEGV, SEGV_PSTKOVF, "SEGV_PSTKOVF", "Paragraph stack overflow" },
 #endif
     { SIGBUS,  BUS_ADRALN,   "BUS_ADRALN",   "Invalid address alignment." },
     { SIGBUS,  BUS_ADRERR,   "BUS_ADRERR",   "Nonexistent physical address." },
@@ -1136,8 +1128,16 @@ static const char* get_signal_name(int sig, char* out, size_t outlen) {
 }
 
 void os::print_siginfo(outputStream* os, const void* si0) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  // If we are here because of an assert/guarantee, we suppress
+  // printing the siginfo, because it is only an implementation
+  // detail capturing the context for said assert/guarantee.
+  if (VMError::was_assert_poison_crash(si0)) {
+    return;
+  }
+#endif
 
-  const siginfo_t* const si = (const siginfo_t*) si0;
+  const siginfo_t* const si = (const siginfo_t*)si0;
 
   char buf[20];
   os->print("siginfo:");

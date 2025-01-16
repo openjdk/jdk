@@ -28,11 +28,9 @@ package java.lang.invoke;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.CleanerFactory;
 import sun.invoke.util.Wrapper;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
-import java.util.Properties;
 
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.TRACE_METHOD_LINKAGE;
@@ -707,8 +705,7 @@ class MethodHandleNatives {
     static final boolean USE_SOFT_CACHE;
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
         USE_SOFT_CACHE = Boolean.parseBoolean(
-                props.getProperty("java.lang.invoke.MethodHandleNatives.USE_SOFT_CACHE", "true"));
+                System.getProperty("java.lang.invoke.MethodHandleNatives.USE_SOFT_CACHE", "true"));
     }
 }

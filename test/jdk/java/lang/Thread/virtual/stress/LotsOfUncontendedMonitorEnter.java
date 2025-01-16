@@ -25,7 +25,7 @@
  * @test id=default
  * @summary Test virtual thread entering (and reentering) a lot of monitors with no contention
  * @library /test/lib
- * @run main/othervm LotsOfUncontendedMonitorEnter
+ * @run main LotsOfUncontendedMonitorEnter
  */
 
 /*

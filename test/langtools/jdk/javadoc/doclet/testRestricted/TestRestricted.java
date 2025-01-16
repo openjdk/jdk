@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8316972 8325217
+ * @bug 8316972 8325217 8318416
  * @summary Add javadoc support for restricted methods
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -92,11 +92,12 @@ public class TestRestricted extends JavadocTester {
         checkOutput("pkg/I.html", true,
                 """
                 <ul class="tag-list-long">
-                <li><a href="#restrictedMethod()"><code>restrictedMethod()</code></a><sup><a href="\
-                #restricted-restrictedMethod()">RESTRICTED</a></sup></li>
+                <li><a href="#restrictedMethod()"><code>restrictedMethod()</code></a><sup class="re\
+                stricted-mark"><a href="#restricted-restrictedMethod()">RESTRICTED</a></sup></li>
                 <li><a href="#restrictedPreviewMethod()"><code>restrictedPreviewMethod()</code></a>\
-                <sup><a href="#preview-restrictedPreviewMethod()">PREVIEW</a></sup>&nbsp;<sup><a hr\
-                ef="#restricted-restrictedPreviewMethod()">RESTRICTED</a></sup></li>""",
+                <sup class="preview-mark"><a href="#preview-restrictedPreviewMethod()">PREVIEW</a><\
+                /sup>&nbsp;<sup class="restricted-mark"><a href="#restricted-restrictedPreviewMetho\
+                d()">RESTRICTED</a></sup></li>""",
                         """
                 <div class="block"><span class="restricted-label">Restricted.</span></div>
                 <div class="block">Restricted method.</div>""",
@@ -157,15 +158,16 @@ public class TestRestricted extends JavadocTester {
                 <div class="table-header col-first">Method</div>
                 <div class="table-header col-last">Description</div>
                 <div class="col-summary-item-name even-row-color"><a href="pkg/I.html#restrictedMet\
-                hod()">pkg.I.restrictedMethod()</a><sup><a href="pkg/I.html#restricted-restrictedMe\
-                thod()">RESTRICTED</a></sup></div>
+                hod()">pkg.I.restrictedMethod()</a><sup class="restricted-mark"><a href="pkg/I.html\
+                #restricted-restrictedMethod()">RESTRICTED</a></sup></div>
                 <div class="col-last even-row-color">
                 <div class="block">Restricted method.</div>
                 </div>
                 <div class="col-summary-item-name odd-row-color"><a href="pkg/I.html#restrictedPrev\
-                iewMethod()">pkg.I.restrictedPreviewMethod()</a><sup><a href="pkg/I.html#preview-re\
-                strictedPreviewMethod()">PREVIEW</a></sup>&nbsp;<sup><a href="pkg/I.html#restricted\
-                -restrictedPreviewMethod()">RESTRICTED</a></sup></div>
+                iewMethod()">pkg.I.restrictedPreviewMethod()</a><sup class="preview-mark"><a href="\
+                pkg/I.html#preview-restrictedPreviewMethod()">PREVIEW</a></sup>&nbsp;<sup class="re\
+                stricted-mark"><a href="pkg/I.html#restricted-restrictedPreviewMethod()">RESTRICTED\
+                </a></sup></div>
                 <div class="col-last odd-row-color">
                 <div class="block">Restricted preview method.</div>
                 </div>""");

@@ -28,7 +28,6 @@ package java.net;
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
 import jdk.internal.invoke.MhUtil;
-import sun.security.util.SecurityConstants;
 
 import java.io.InputStream;
 import java.io.InterruptedIOException;
@@ -158,15 +157,6 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Creates an unconnected socket with the given {@code SocketImpl}.
-     */
-    private Socket(Void unused, SocketImpl impl) {
-        if (impl != null) {
-            this.impl = impl;
-        }
-    }
-
-    /**
      * Creates an unconnected Socket.
      * <p>
      * If the application has specified a {@linkplain SocketImplFactory client
@@ -212,22 +202,10 @@ public class Socket implements java.io.Closeable {
                                           : sun.net.ApplicationProxy.create(proxy);
         Proxy.Type type = p.type();
         if (type == Proxy.Type.SOCKS || type == Proxy.Type.HTTP) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
             InetSocketAddress epoint = (InetSocketAddress) p.address();
             if (epoint.getAddress() != null) {
                 checkAddress (epoint.getAddress(), "Socket");
             }
-            if (security != null) {
-                if (epoint.isUnresolved())
-                    epoint = new InetSocketAddress(epoint.getHostName(), epoint.getPort());
-                if (epoint.isUnresolved())
-                    security.checkConnect(epoint.getHostName(), epoint.getPort());
-                else
-                    security.checkConnect(epoint.getAddress().getHostAddress(),
-                                  epoint.getPort());
-            }
-
             // create a SOCKS or HTTP SocketImpl that delegates to a platform SocketImpl
             SocketImpl delegate = SocketImpl.createPlatformSocketImpl(false);
             impl = (type == Proxy.Type.SOCKS) ? new SocksSocketImpl(p, delegate)
@@ -259,18 +237,9 @@ public class Socket implements java.io.Closeable {
      * @since   1.1
      */
     protected Socket(SocketImpl impl) throws SocketException {
-        this(checkPermission(impl), impl);
-    }
-
-    private static Void checkPermission(SocketImpl impl) {
         if (impl != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SecurityConstants.SET_SOCKETIMPL_PERMISSION);
-            }
+            this.impl = impl;
         }
-        return null;
     }
 
     /**
@@ -485,6 +454,7 @@ public class Socket implements java.io.Closeable {
         throws IOException
     {
         Objects.requireNonNull(address);
+        assert address instanceof InetSocketAddress;
 
         // create the SocketImpl and the underlying socket
         SocketImpl impl = createImpl();
@@ -494,16 +464,13 @@ public class Socket implements java.io.Closeable {
         this.state = SOCKET_CREATED;
 
         try {
-            if (localAddr != null)
+            if (localAddr != null) {
                 bind(localAddr);
-            connect(address);
-        } catch (IOException | IllegalArgumentException | SecurityException e) {
-            try {
-                close();
-            } catch (IOException ce) {
-                e.addSuppressed(ce);
             }
-            throw e;
+            connect(address);
+        } catch (Throwable throwable) {
+            closeSuppressingExceptions(throwable);
+            throw throwable;
         }
     }
 
@@ -602,6 +569,9 @@ public class Socket implements java.io.Closeable {
     /**
      * Connects this socket to the server.
      *
+     * <p> If the connection cannot be established, then the socket is closed,
+     * and an {@link IOException} is thrown.
+     *
      * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
      * following circumstances:
      * <ol>
@@ -620,6 +590,8 @@ public class Socket implements java.io.Closeable {
      * @param   endpoint the {@code SocketAddress}
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
+     * @throws  UnknownHostException if the connection could not be established
+     *          because the endpoint is an unresolved {@link InetSocketAddress}
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -635,6 +607,10 @@ public class Socket implements java.io.Closeable {
      * Connects this socket to the server with a specified timeout value.
      * A timeout of zero is interpreted as an infinite timeout. The connection
      * will then block until established or an error occurs.
+     *
+     * <p> If the connection cannot be established, or the timeout expires
+     * before the connection is established, then the socket is closed, and an
+     * {@link IOException} is thrown.
      *
      * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
      * following circumstances:
@@ -656,6 +632,8 @@ public class Socket implements java.io.Closeable {
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
      * @throws  SocketTimeoutException if timeout expires before connecting
+     * @throws  UnknownHostException if the connection could not be established
+     *          because the endpoint is an unresolved {@link InetSocketAddress}
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -675,35 +653,19 @@ public class Socket implements java.io.Closeable {
         if (isClosed(s))
             throw new SocketException("Socket is closed");
         if (isConnected(s))
-            throw new SocketException("already connected");
+            throw new SocketException("Already connected");
 
         if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
 
         InetAddress addr = epoint.getAddress();
-        int port = epoint.getPort();
         checkAddress(addr, "connect");
-
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (epoint.isUnresolved())
-                security.checkConnect(epoint.getHostName(), port);
-            else
-                security.checkConnect(addr.getHostAddress(), port);
-        }
 
         try {
             getImpl().connect(epoint, timeout);
-        } catch (SocketTimeoutException e) {
-            throw e;
-        } catch (InterruptedIOException e) {
-            Thread thread = Thread.currentThread();
-            if (thread.isVirtual() && thread.isInterrupted()) {
-                close();
-                throw new SocketException("Closed by interrupt");
-            }
-            throw e;
+        } catch (IOException error) {
+            closeSuppressingExceptions(error);
+            throw error;
         }
 
         // connect will bind the socket if not previously bound
@@ -743,11 +705,6 @@ public class Socket implements java.io.Closeable {
         InetAddress addr = epoint.getAddress();
         int port = epoint.getPort();
         checkAddress (addr, "bind");
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkListen(port);
-        }
         getImpl().bind(addr, port);
         getAndBitwiseOrState(BOUND);
     }
@@ -795,15 +752,9 @@ public class Socket implements java.io.Closeable {
         InetAddress in = null;
         try {
             in = (InetAddress) getImpl().getOption(SocketOptions.SO_BINDADDR);
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null)
-                sm.checkConnect(in.getHostAddress(), -1);
             if (in.isAnyLocalAddress()) {
                 in = InetAddress.anyLocalAddress();
             }
-        } catch (SecurityException e) {
-            in = InetAddress.getLoopbackAddress();
         } catch (Exception e) {
             in = InetAddress.anyLocalAddress(); // "0.0.0.0"
         }
@@ -1640,6 +1591,14 @@ public class Socket implements java.io.Closeable {
         return ((Boolean) (getImpl().getOption(SocketOptions.SO_REUSEADDR))).booleanValue();
     }
 
+    private void closeSuppressingExceptions(Throwable parentException) {
+        try {
+            close();
+        } catch (IOException exception) {
+            parentException.addSuppressed(exception);
+        }
+    }
+
     /**
      * Closes this socket.
      * <p>
@@ -1854,11 +1813,6 @@ public class Socket implements java.io.Closeable {
     {
         if (factory != null) {
             throw new SocketException("factory already defined");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSetFactory();
         }
         factory = fac;
     }

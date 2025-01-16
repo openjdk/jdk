@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
@@ -129,7 +127,7 @@ final public class XMLReaderFactory
 
         // 1. try the JVM-instance-wide system property
         try {
-            className = SecuritySupport.getSystemProperty(property);
+            className = System.getProperty(property);
         }
         catch (RuntimeException e) { /* continue searching */ }
 
@@ -236,21 +234,11 @@ final public class XMLReaderFactory
      *
      * @return instance of provider class if found or null
      */
-    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type, final ClassLoader loader)
             throws SAXException {
         ClassLoader cl = Objects.requireNonNull(loader);
         try {
-            return AccessController.doPrivileged((PrivilegedAction<T>) () -> {
-                final ServiceLoader<T> serviceLoader;
-                serviceLoader = ServiceLoader.load(type, cl);
-                final Iterator<T> iterator = serviceLoader.iterator();
-                if (iterator.hasNext()) {
-                    return iterator.next();
-                } else {
-                    return null;
-                }
-            });
+            return ServiceLoader.load(type, cl).findFirst().orElse(null);
         } catch(ServiceConfigurationError e) {
             final RuntimeException x = new RuntimeException(
                     "Provider for " + type + " cannot be created", e);

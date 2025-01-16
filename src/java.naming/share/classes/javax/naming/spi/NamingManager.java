@@ -25,8 +25,6 @@
 
 package javax.naming.spi;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.naming.*;
@@ -123,9 +121,12 @@ public class NamingManager {
      *    or {@code Referenceable} containing a factory class name,
      *    use the named factory to create the object.
      *    Return {@code refInfo} if the factory cannot be created.
-     *    Under JDK 1.1, if the factory class must be loaded from a location
-     *    specified in the reference, a {@code SecurityManager} must have
-     *    been installed or the factory creation will fail.
+     *    Downloading a factory class from a location specified in the reference
+     *    can be supported by a custom implementation of {@link ObjectFactoryBuilder}.
+     *    The {@linkplain Reference#getFactoryClassLocation() factory class
+     *    location}, if present, is ignored. A custom {@link ObjectFactoryBuilder}
+     *    {@linkplain #setObjectFactoryBuilder(ObjectFactoryBuilder) may be used}
+     *    if a different policy is desired.
      *    If an exception is encountered while creating the factory,
      *    it is passed up to the caller.
      * <li>If {@code refInfo} is a {@code Reference} or
@@ -468,7 +469,6 @@ public class NamingManager {
      * @see javax.naming.InitialContext
      * @see javax.naming.directory.InitialDirContext
      */
-    @SuppressWarnings("removal")
     public static Context getInitialContext(Hashtable<?,?> env)
         throws NamingException {
         ClassLoader loader;
@@ -489,16 +489,8 @@ public class NamingManager {
                 throw ne;
             }
 
-            if (System.getSecurityManager() == null) {
-                loader = Thread.currentThread().getContextClassLoader();
-                if (loader == null) loader = ClassLoader.getSystemClassLoader();
-            } else {
-                PrivilegedAction<ClassLoader> pa = () -> {
-                    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-                    return (cl == null) ? ClassLoader.getSystemClassLoader() : cl;
-                };
-                loader = AccessController.doPrivileged(pa);
-            }
+            loader = Thread.currentThread().getContextClassLoader();
+            if (loader == null) loader = ClassLoader.getSystemClassLoader();
 
             var key = FACTORIES_CACHE.sub(className);
             try {
@@ -567,12 +559,6 @@ public class NamingManager {
             if (initctx_factory_builder != null)
                 throw new IllegalStateException(
                     "InitialContextFactoryBuilder already set");
-
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                security.checkSetFactory();
-            }
             initctx_factory_builder = builder;
     }
 

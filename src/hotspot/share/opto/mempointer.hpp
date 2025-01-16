@@ -596,7 +596,7 @@ public:
     if (_trace.is_trace_pointer()) {
       tty->print_cr("MemPointer::MemPointer:");
       tty->print("mem: "); mem->dump();
-      _mem->in(MemNode::Address)->dump_bfs(5, 0, "d");
+      _mem->in(MemNode::Address)->dump_bfs(5, nullptr, "d");
       _decomposed_form.print_on(tty);
     }
 #endif

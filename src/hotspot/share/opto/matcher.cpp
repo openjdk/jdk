@@ -1753,18 +1753,19 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
   // Call DFA to match this node, and return
   svec->DFA( n->Opcode(), n );
 
-#ifdef ASSERT
   uint x;
   for( x = 0; x < _LAST_MACH_OPER; x++ )
     if( svec->valid(x) )
       break;
 
   if (x >= _LAST_MACH_OPER) {
+#ifdef ASSERT
     n->dump();
     svec->dump();
-    assert( false, "bad AD file" );
-  }
 #endif
+    assert( false, "bad AD file" );
+    C->record_failure("bad AD file");
+  }
   return control;
 }
 

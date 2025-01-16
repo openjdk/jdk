@@ -83,6 +83,8 @@ void ParallelArguments::initialize() {
   if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
     FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
+
+  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 // The alignment used for boundary between young gen and old gen
@@ -128,7 +130,6 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
     // Redo everything from the start
     initialize_heap_flags_and_sizes_one_pass();
   }
-  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 size_t ParallelArguments::heap_reserved_size_bytes() {

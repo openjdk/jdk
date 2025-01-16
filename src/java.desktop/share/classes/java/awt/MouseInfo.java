@@ -25,7 +25,6 @@
 
 package java.awt;
 
-import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 
 /**
@@ -64,12 +63,6 @@ public class MouseInfo {
     public static PointerInfo getPointerInfo() throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
-        }
-
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.WATCH_MOUSE_PERMISSION);
         }
 
         Toolkit toolkit = Toolkit.getDefaultToolkit();

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +43,19 @@ public class TestCastX2NotProcessedIGVN {
 
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:-AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
+                                   "-XX:+AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:-AlignVector");
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders",
+                                   "-XX:+AlignVector");
     }
 
     @Test
@@ -63,6 +76,7 @@ public class TestCastX2NotProcessedIGVN {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 1"},
+        applyIfOr = {"UseCompactObjectHeaders", "false", "AlignVector", "false"},
         applyIfPlatformOr = {"x64", "true", "aarch64", "true"})
     public static int test2(int stop, int[] array) {
         int v = 0;
@@ -70,6 +84,11 @@ public class TestCastX2NotProcessedIGVN {
         for (int i = 0; i < stop; i++) {
             long offset = ((long)i) * 4;
             array[i] = UNSAFE.getInt(null, offset + base);
+            // With AlignVector, we need 8-byte alignment of vector loads/stores.
+            // UseCompactObjectHeaders=false                  UseCompactObjectHeaders=true
+            // I_adr = base + 16 + 4*i  ->  i % 2 = 0         B_adr = base + 12 + 4*i  ->  i % 2 = 1
+            // N_adr = base      + 4*i  ->  i % 2 = 0         N_adr = base      + 4*i  ->  i % 2 = 0
+            // -> vectorize                                   -> no vectorization
         }
         return v;
     }

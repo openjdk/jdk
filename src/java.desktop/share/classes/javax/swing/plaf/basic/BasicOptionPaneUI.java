@@ -39,10 +39,6 @@ import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Locale;
-import java.security.AccessController;
-
-import sun.security.action.GetPropertyAction;
-
 
 /**
  * Provides the basic look and feel for a <code>JOptionPane</code>.

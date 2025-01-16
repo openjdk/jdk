@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(m.not_null(), "null method handle");
   InstanceKlass* m_klass = m->method_holder();
   assert(m_klass != nullptr, "null holder for method handle");
-  int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
+  int flags = (m->access_flags().as_method_flags());
   int vmindex = Method::invalid_vtable_index;
   LogTarget(Debug, methodhandles, indy) lt_indy;
 
@@ -352,7 +352,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
 
 oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool is_setter) {
   InstanceKlass* ik = fd.field_holder();
-  int flags = (jushort)( fd.access_flags().as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS );
+  int flags = fd.access_flags().as_field_flags();
   flags |= IS_FIELD | ((fd.is_static() ? JVM_REF_getStatic : JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   if (fd.is_trusted_final()) flags |= TRUSTED_FINAL;
   if (is_setter)  flags += ((JVM_REF_putField - JVM_REF_getField) << REFERENCE_KIND_SHIFT);
@@ -404,7 +404,7 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   Method* m = iklass->find_method(name, poly_sig);
   if (m != nullptr) {
     int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
-    int flags = m->access_flags().as_int();
+    int flags = m->access_flags().as_method_flags();
     if ((flags & required) == required) {
       return true;
     }
@@ -417,7 +417,7 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   for (; ms < me; ms++) {
     Method* m = iklass->methods()->at(ms);
     int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
-    int flags = m->access_flags().as_int();
+    int flags = m->access_flags().as_method_flags();
     if ((flags & required) == required && ArgumentCount(m->signature()).size() == 1) {
       return true;
     }
@@ -522,7 +522,7 @@ bool MethodHandles::is_signature_polymorphic_public_name(Klass* klass, Symbol* n
     for (; ms < me; ms++) {
       Method* m = iklass->methods()->at(ms);
       int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS | JVM_ACC_PUBLIC;
-      int flags = m->access_flags().as_int();
+      int flags = m->access_flags().as_method_flags();
       if ((flags & required) == required && ArgumentCount(m->signature()).size() == 1) {
         return true;
       }

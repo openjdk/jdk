@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,15 +60,8 @@ arguments, the `serialver` command prints a usage line.
     application launcher. For example, `-J-Xms48m` sets the startup memory to
     48 MB.
 
-## Notes
+## Warning
 
-The `serialver` command loads and initializes the specified classes in its
-virtual machine, and by default, it doesn't set a security manager. If the
-`serialver` command is to be run with untrusted classes, then a security
-manager can be set with the following option:
-
->   `-J-Djava.security.manager`
-
-When necessary, a security policy can be specified with the following option:
-
->   `-J-Djava.security.policy=`*policy\_file*
+The `serialver` command loads and initializes the specified classes in
+order to determine their `serialVersionUID` values. *DO NOT RUN* `serialver`
+on untrusted classes.
