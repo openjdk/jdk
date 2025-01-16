@@ -252,10 +252,10 @@ public:
     return ((JVMFlagConstraintFunc_size_t)func)(value, verbose);
   }
   void print_range_impl(outputStream* st, size_t min, size_t max) const {
-    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", min, max);
+    st->print("[ %-25zu ... %25zu ]", min, max);
   }
   void print_default_range(outputStream* st) const {
-    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", size_t(0), size_t(SIZE_MAX));
+    st->print("[ %-25zu ... %25zu ]", size_t(0), size_t(SIZE_MAX));
   }
 };
 

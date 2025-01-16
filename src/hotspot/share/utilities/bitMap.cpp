@@ -710,7 +710,7 @@ void BitMap::print_on(outputStream* st) const {
   for (idx_t index = 0; index < size(); index++) {
     if ((index % 64) == 0) {
       st->cr();
-      st->print(SIZE_FORMAT_W(5) ":", index);
+      st->print("%5zu:", index);
     }
     if ((index % 8) == 0) {
       st->print(" ");

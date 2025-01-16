@@ -768,7 +768,7 @@ void VMError::report(outputStream* st, bool _verbose) {
           st->print((_id == (int)OOM_MALLOC_ERROR) ? "(malloc) failed to allocate " :
                     (_id == (int)OOM_MMAP_ERROR)   ? "(mmap) failed to map " :
                                                     "(mprotect) failed to protect ");
-          jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
+          jio_snprintf(buf, sizeof(buf), "%zu", _size);
           st->print("%s", buf);
           st->print(" bytes.");
           if (strlen(_detail_msg) > 0) {
