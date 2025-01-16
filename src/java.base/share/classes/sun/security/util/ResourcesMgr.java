@@ -37,8 +37,7 @@ public class ResourcesMgr {
     private static final Map<String, ResourceBundle> bundles = new ConcurrentHashMap<>();
 
     public static String getString(String s) {
-        return getBundle("sun.security.util.resources.security").getString(
-                s);
+        return getBundle("sun.security.util.resources.security").getString(s);
     }
 
     public static String getAuthResourceString(String s) {
