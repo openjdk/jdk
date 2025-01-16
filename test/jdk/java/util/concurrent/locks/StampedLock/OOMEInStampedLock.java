@@ -42,7 +42,9 @@ import java.util.stream.Stream;
  */
 
 public class OOMEInStampedLock extends Thread {
-    static final int NTHREADS = 3;
+    // Intentionaly non-final to avoid EA of the threads array in main which can cause this test to
+    // fail in Xcomp mode.
+    static int NTHREADS = 3;
     static final int NREPS = 100;
     // statically allocate
     static final StampedLock stampedLock = new StampedLock();
