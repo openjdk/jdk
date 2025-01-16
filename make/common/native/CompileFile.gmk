@@ -258,7 +258,8 @@ define CreatePrecompiledHeader
         ))
 
         $1_USE_PCH_FLAGS := \
-            -FI$$(notdir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
+            -FI$$(notdir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) \
+                -Yu$$(notdir $$($1_PRECOMPILED_HEADER))
 
         $$($1_ALL_OBJS): $$($1_GENERATED_PCH_OBJ)
 
