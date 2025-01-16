@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package jdk.test.lib;
 
+import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -199,10 +201,7 @@ public class Asserts {
      */
     public static void assertEquals(Object lhs, Object rhs, String msg) {
         if ((lhs != rhs) && ((lhs == null) || !(lhs.equals(rhs)))) {
-            msg = Objects.toString(msg, "assertEquals")
-                    + ": expected " + Objects.toString(lhs)
-                    + " to equal " + Objects.toString(rhs);
-            fail(msg);
+            fail((msg == null ? "assertEquals" : msg) + " expected: " + lhs + " but was: " + rhs);
         }
     }
 
@@ -230,6 +229,63 @@ public class Asserts {
             msg = Objects.toString(msg, "assertSame")
                     + ": expected " + Objects.toString(lhs)
                     + " to equal " + Objects.toString(rhs);
+            fail(msg);
+        }
+    }
+
+    /**
+     * Asserts that {@code actual} has the same content as {@code expected}.
+     *
+     * @param expected The expected value
+     * @param actual The actual value
+     * @throws RuntimeException if the assertion is not true.
+     * @see #assertEqualsByteArray(byte[], byte[], String)
+     */
+    public static void assertEqualsByteArray(byte[] expected, byte[] actual) {
+        assertEqualsByteArray(expected, actual, null);
+    }
+
+    /**
+     * Asserts that {@code actual} does not have the same content as {@code unexpected}.
+     *
+     * @param unexpected The unexpected value
+     * @param actual The actual value
+     * @throws RuntimeException if the assertion is not true.
+     * @see #assertNotEqualsByteArray(byte[], byte[], String)
+     */
+    public static void assertNotEqualsByteArray(byte[] unexpected, byte[] actual) {
+        assertNotEqualsByteArray(unexpected, actual, null);
+    }
+
+    /**
+     * Asserts that {@code actual} is the same byte array as {@code expected}.
+     *
+     * @param expected The expected value
+     * @param actual The actual value
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
+     */
+    public static void assertEqualsByteArray(byte[] expected, byte[] actual, String msg) {
+        if (!Arrays.equals(expected, actual)) {
+            msg = Objects.toString(msg, "assertEqualsByteArray")
+                    + ": expected " + HexFormat.of().formatHex(expected)
+                    + " but was " + HexFormat.of().formatHex(actual);
+            fail(msg);
+        }
+    }
+
+    /**
+     * Asserts that {@code actual} is not the same byte array as {@code unexpected}.
+     *
+     * @param unexpected The unexpected value
+     * @param actual The actual value
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
+     */
+    public static void assertNotEqualsByteArray(byte[] unexpected, byte[] actual, String msg) {
+        if (Arrays.equals(unexpected, actual)) {
+            msg = Objects.toString(msg, "assertNotEqualsByteArray")
+                    + ": expected not equals but was " + HexFormat.of().formatHex(actual);
             fail(msg);
         }
     }
@@ -347,50 +403,49 @@ public class Asserts {
     /**
      * Shorthand for {@link #assertNotEquals(Object, Object)}.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param unexpected The unexpected value
+     * @param actual The actual value
      * @see #assertNotEquals(Object, Object)
      */
-    public static void assertNE(Object lhs, Object rhs) {
-        assertNotEquals(lhs, rhs);
+    public static void assertNE(Object unexpected, Object actual) {
+        assertNotEquals(unexpected, actual);
     }
 
     /**
      * Shorthand for {@link #assertNotEquals(Object, Object, String)}.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param unexpected The unexpected value
+     * @param actual The actual value
      * @param msg A description of the assumption; {@code null} for a default message.
      * @see #assertNotEquals(Object, Object, String)
      */
-    public static void assertNE(Object lhs, Object rhs, String msg) {
-        assertNotEquals(lhs, rhs, msg);
+    public static void assertNE(Object unexpected, Object actual, String msg) {
+        assertNotEquals(unexpected, actual, msg);
     }
 
     /**
      * Calls {@link #assertNotEquals(Object, Object, String)} with a default message.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param unexpected The unexpected value
+     * @param actual The actual value
      * @see #assertNotEquals(Object, Object, String)
      */
-    public static void assertNotEquals(Object lhs, Object rhs) {
-        assertNotEquals(lhs, rhs, null);
+    public static void assertNotEquals(Object unexpected, Object actual) {
+        assertNotEquals(unexpected, actual, null);
     }
 
     /**
-     * Asserts that {@code lhs} is not equal to {@code rhs}.
+     * Asserts that {@code actual} is not equal to {@code unexpected}.
      *
-     * @param lhs The left hand side of the comparison.
-     * @param rhs The right hand side of the comparison.
+     * @param unexpected The unexpected value
+     * @param actual The actual value
      * @param msg A description of the assumption; {@code null} for a default message.
      * @throws RuntimeException if the assertion is not true.
      */
-    public static void assertNotEquals(Object lhs, Object rhs, String msg) {
-        if ((lhs == rhs) || (lhs != null && lhs.equals(rhs))) {
+    public static void assertNotEquals(Object unexpected, Object actual, String msg) {
+        if ((unexpected == actual) || (unexpected != null && unexpected.equals(actual))) {
             msg = Objects.toString(msg, "assertNotEquals")
-                    + ": expected " + Objects.toString(lhs)
-                    + " to not equal " + Objects.toString(rhs);
+                    + ": expected not equals but was " + Objects.toString(actual);
             fail(msg);
         }
     }

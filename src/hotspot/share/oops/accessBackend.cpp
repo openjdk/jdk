@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,12 @@
 #include "utilities/debug.hpp"
 #include "utilities/vmError.hpp"
 
+#if defined(TARGET_COMPILER_gcc)
+#define HIDDEN __attribute__ ((visibility ("hidden")))
+#else
+#define HIDDEN
+#endif
+
 namespace AccessInternal {
 // These forward copying calls to Copy without exposing the Copy type in headers unnecessarily
 
@@ -58,102 +64,102 @@ namespace AccessInternal {
                                 reinterpret_cast<HeapWord*>(dst), length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jboolean>(jboolean* src, jboolean* dst, size_t length) {
     Copy::conjoint_jbytes(reinterpret_cast<jbyte*>(src), reinterpret_cast<jbyte*>(dst), length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jbyte>(jbyte* src, jbyte* dst, size_t length) {
     Copy::conjoint_jbytes(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jchar>(jchar* src, jchar* dst, size_t length) {
     Copy::conjoint_jshorts_atomic(reinterpret_cast<jshort*>(src), reinterpret_cast<jshort*>(dst), length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jshort>(jshort* src, jshort* dst, size_t length) {
     Copy::conjoint_jshorts_atomic(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jint>(jint* src, jint* dst, size_t length) {
     Copy::conjoint_jints_atomic(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jfloat>(jfloat* src, jfloat* dst, size_t length) {
     Copy::conjoint_jints_atomic(reinterpret_cast<jint*>(src), reinterpret_cast<jint*>(dst), length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jlong>(jlong* src, jlong* dst, size_t length) {
     Copy::conjoint_jlongs_atomic(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<jdouble>(jdouble* src, jdouble* dst, size_t length) {
     Copy::conjoint_jlongs_atomic(reinterpret_cast<jlong*>(src), reinterpret_cast<jlong*>(dst), length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_arrayof_conjoint<jbyte>(jbyte* src, jbyte* dst, size_t length) {
     Copy::arrayof_conjoint_jbytes(reinterpret_cast<HeapWord*>(src),
                                   reinterpret_cast<HeapWord*>(dst),
                                   length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_arrayof_conjoint<jshort>(jshort* src, jshort* dst, size_t length) {
     Copy::arrayof_conjoint_jshorts(reinterpret_cast<HeapWord*>(src),
                                    reinterpret_cast<HeapWord*>(dst),
                                    length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_arrayof_conjoint<jint>(jint* src, jint* dst, size_t length) {
     Copy::arrayof_conjoint_jints(reinterpret_cast<HeapWord*>(src),
                                  reinterpret_cast<HeapWord*>(dst),
                                  length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_arrayof_conjoint<jlong>(jlong* src, jlong* dst, size_t length) {
     Copy::arrayof_conjoint_jlongs(reinterpret_cast<HeapWord*>(src),
                                   reinterpret_cast<HeapWord*>(dst),
                                   length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint<void>(void* src, void* dst, size_t length) {
     Copy::conjoint_jbytes(reinterpret_cast<jbyte*>(src),
                           reinterpret_cast<jbyte*>(dst),
                           length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint_atomic<jbyte>(jbyte* src, jbyte* dst, size_t length) {
     Copy::conjoint_jbytes_atomic(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint_atomic<jshort>(jshort* src, jshort* dst, size_t length) {
     Copy::conjoint_jshorts_atomic(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint_atomic<jint>(jint* src, jint* dst, size_t length) {
     Copy::conjoint_jints_atomic(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint_atomic<jlong>(jlong* src, jlong* dst, size_t length) {
     Copy::conjoint_jlongs_atomic(src, dst, length);
   }
 
-  template<>
+  template<> HIDDEN
   void arraycopy_conjoint_atomic<void>(void* src, void* dst, size_t length) {
     Copy::conjoint_memory_atomic(src, dst, length);
   }

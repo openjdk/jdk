@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
                     " has been patched. Key size " + keySize +
                     " is not supported");
         }
-        ECParameterSpec ecParams = ECUtil.getECParameterSpec(null, keySize);
+        ECParameterSpec ecParams = ECUtil.getECParameterSpec(keySize);
         try {
             return new KeyPair(new ECPublicKeyImpl(new ECPoint(x, y), ecParams),
                     new ECPrivateKeyImpl(s, ecParams));

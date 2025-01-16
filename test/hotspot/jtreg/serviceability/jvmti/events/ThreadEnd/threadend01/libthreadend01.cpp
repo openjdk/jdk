@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <jvmti.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 
 extern "C" {
@@ -34,12 +34,12 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static int eventsCount = 0;
 static int eventsExpected = 0;
-static const char *prefix = NULL;
+static const char *prefix = nullptr;
 
 void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   jvmtiError err;
@@ -54,10 +54,10 @@ void JNICALL ThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
 
   print_thread_info(jvmti, jni, thread);
 
-  if (inf.name != NULL && strstr(inf.name, prefix) == inf.name) {
+  if (inf.name != nullptr && strstr(inf.name, prefix) == inf.name) {
     eventsCount++;
     snprintf(name, sizeof(name), "%s%d", prefix, eventsCount);
-    if (inf.name == NULL || strcmp(name, inf.name) != 0) {
+    if (inf.name == nullptr || strcmp(name, inf.name) != 0) {
       LOG("(#%d) wrong thread name: \"%s\"",eventsCount, inf.name);
       LOG(", expected: \"%s\"\n", name);
       result = STATUS_FAILED;
@@ -70,7 +70,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -89,19 +89,19 @@ JNIEXPORT void JNICALL
 Java_threadend01_getReady(JNIEnv *jni, jclass cls, jint i, jstring name) {
   jvmtiError err;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return;
   }
 
-  prefix = jni->GetStringUTFChars(name, NULL);
-  if (prefix == NULL) {
+  prefix = jni->GetStringUTFChars(name, nullptr);
+  if (prefix == nullptr) {
     LOG("Failed to copy UTF-8 string!\n");
     result = STATUS_FAILED;
     return;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, nullptr);
   if (err == JVMTI_ERROR_NONE) {
     eventsExpected = i;
   } else {
@@ -112,12 +112,12 @@ Java_threadend01_getReady(JNIEnv *jni, jclass cls, jint i, jstring name) {
 
 JNIEXPORT jint JNICALL
 Java_threadend01_check(JNIEnv *jni, jclass cls) {
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
 
-jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, NULL);
+jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_END, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_THREAD_END: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;

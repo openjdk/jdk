@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
 
 /*
  * @test
- * @bug      7180906 8026567 8239804
+ * @bug      7180906 8026567 8239804 8324342 8332039
  * @summary  Test to make sure that the since tag works correctly
- * @library  ../../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    javadoc.tester.*
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestSinceTag
  */
 
+import java.nio.file.Path;
+
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestSinceTag extends JavadocTester {
 
@@ -40,6 +43,8 @@ public class TestSinceTag extends JavadocTester {
         tester.runTests();
         tester.printSummary();
     }
+
+    private final ToolBox tb = new ToolBox();
 
     @Test
     public void testSince() {
@@ -74,5 +79,112 @@ public class TestSinceTag extends JavadocTester {
                     <dl class="notes">
                     <dt>Since:</dt>
                     <dd>1.4</dd>""");
+    }
+
+    @Test
+    public void testSinceDefault(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @since 99
+                 */
+                 public class C {
+                     /** Class Nested, with no explicit at-since. */
+                     public class Nested { }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99</dd>""");
+
+        checkOutput("p/C.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99</dd>""");
+
+    }
+
+    @Test
+    public void testSinceDefault_Nested(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @since 99
+                 */
+                 public class C {
+                     public class Nested1 {
+                         /** Class Nested, with no explicit at-since. */
+                         public class Nested { }
+                     }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99</dd>""");
+
+        checkOutput("p/C.Nested1.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99</dd>""");
+
+    }
+
+    @Test
+    public void testSinceDefault_NestedTag(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @since 99 {@link C}
+                 */
+                 public class C {
+                     public static class Nested1 {
+                         /** Class Nested, with no explicit at-since. */
+                         public static class Nested { }
+                     }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99 <a href="C.html" title="class in p"><code>C</code></a></dd>""");
+
+        checkOutput("p/C.Nested1.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99 <a href="C.html" title="class in p"><code>C</code></a></dd>""");
+
+        checkOutput("p/C.Nested1.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99 <a href="C.html" title="class in p"><code>C</code></a></dd>""");
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import static helpers.TestConstants.MTD_VOID;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
 import java.lang.constant.MethodTypeDesc;
-import static java.lang.classfile.Opcode.INVOKESPECIAL;
-import static java.lang.classfile.TypeKind.VoidType;
 
 class TempConstantPoolBuilderTest {
 
@@ -58,9 +56,9 @@ class TempConstantPoolBuilderTest {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                            .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                    .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                    .returnInstruction(VoidType)
+                            .withCode(codeb -> codeb.aload(0)
+                                    .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                    .return_()
                             )
                             .with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(INTERFACE,
                                                                                       AnnotationElement.ofString("foo", "bar"))))

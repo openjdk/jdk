@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -563,6 +563,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             writeInt("entryBCI", nmethod.entryBCI);
             writeLong("compileState", nmethod.compileState);
             writeBoolean("hasUnsafeAccess", nmethod.hasUnsafeAccess);
+            writeBoolean("hasScopedAccess", nmethod.hasScopedAccess());
             writeInt("id", nmethod.id);
         }
 

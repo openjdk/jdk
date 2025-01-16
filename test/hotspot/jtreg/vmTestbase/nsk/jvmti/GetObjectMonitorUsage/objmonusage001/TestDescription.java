@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,14 @@
  * VM Testbase keywords: [quick, jpda, jvmti, noras]
  * VM Testbase readme:
  * DESCRIPTION
- *     The test exercises JVMTI function GetObjectMonitorUsage.
+ *     The test exercises JVMTI function GetObjectMonitorUsage. The main
+ *     thread uses a monitor to do coordinated launches of work threads.
+ *     Each worker thread verifies expected GetObjectMonitorUsage values
+ *     when it gets going and the main thread also verifies expected
+ *     GetObjectMonitorUsage values once the worker thread returns
+ *     control flow to the main thread. The test scenario is repeated
+ *     for a fixed number of threads.
+ *
  * COMMENTS
  *     Fixed according to 4669812 bug.
  *     Ported from JVMDI test nsk/jvmdi/GetMonitorInfo/getmoninfo001.

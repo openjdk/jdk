@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@
 #include "oops/oop.hpp"
 #include "runtime/safepoint.hpp"
 
-void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
+void Relocation::pd_set_data_value(address x, bool verify_only) {
 
   NativeMovConstReg* ni = nativeMovConstReg_at(addr());
   if (verify_only) {
-    guarantee(ni->data() == (intptr_t)(x + o), "instructions must match");
+    guarantee(ni->data() == (intptr_t)x, "instructions must match");
   } else {
-    ni->set_data((intptr_t)(x + o));
+    ni->set_data((intptr_t)x);
   }
 }
 

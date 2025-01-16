@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public class CreateFileTree {
 
     private static final Random rand = new Random();
 
-    private static boolean supportsLinks(Path dir) {
+    private static boolean supportsSymbolicLinks(Path dir) {
         Path link = dir.resolve("testlink");
         Path target = dir.resolve("testtarget");
         try {
@@ -77,7 +77,7 @@ public class CreateFileTree {
         }
 
         // create a few sym links in the file tree so as to create cycles
-        if (supportsLinks(top)) {
+        if (supportsSymbolicLinks(top)) {
             int links = 1 + rand.nextInt(5);
             for (int i=0; i<links; i++) {
                 int x = rand.nextInt(dirs.size());

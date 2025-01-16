@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,57 +70,99 @@ public class MonitorUsedDeflationThresholdTest {
                            "MonitorUsedDeflationThresholdTest inflate_count");
     }
 
+
+    private static ProcessBuilder processCommand(String loggingLevel) {
+        return ProcessTools.createLimitedTestJavaProcessBuilder(
+            // Test doesn't need much Java heap:
+            "-Xmx100M",
+            // AvgMonitorsPerThreadEstimate == 1 means we'll start with
+            // an in_use_list_ceiling of <n-threads> plus a couple of
+            // of monitors for threads that call Object.wait().
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:AvgMonitorsPerThreadEstimate=1",
+            // MonitorUsedDeflationThreshold == 10 means we'll request
+            // deflations when 10% of monitors are used rather than the
+            // default 90%. This should allow the test to tolerate a burst
+            // of used monitors by threads not under this test's control.
+            "-XX:MonitorUsedDeflationThreshold=10",
+            // Enable monitorinflation logging so we can see that
+            // MonitorUsedDeflationThreshold and
+            // NoAsyncDeflationProgressMaxoption are working.
+            "-Xlog:monitorinflation=" + loggingLevel,
+            // Run the test with inflate_count == 33 since that
+            // reproduced the bug with JDK13. With inflate_count == 33, an
+            // initial ceiling == 12 and MonitorUsedDeflationThreshold == 10,
+            // we should hit NoAsyncDeflationProgressMax at least 3 times.
+            "MonitorUsedDeflationThresholdTest", "33");
+    }
+
+    private static void testProcess1() throws Exception {
+        ProcessBuilder pb = processCommand("info");
+
+        OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
+        output_detail.shouldHaveExitValue(0);
+
+        // This mesg means:
+        // - AvgMonitorsPerThreadEstimate == 1 reduced in_use_list_ceiling
+        //   to a small number.
+        // - and we crossed MonitorUsedDeflationThreshold:
+        output_detail.shouldMatch("begin deflating: .*");
+        System.out.println("Found beginning of a deflation cycle.");
+
+        // This mesg means we hit NoAsyncDeflationProgressMax and
+        // had to adjust the in_use_list_ceiling:
+        String too_many = output_detail.firstMatch("Too many deflations without progress; .*", 0);
+        if (too_many == null) {
+            output_detail.reportDiagnosticSummary();
+            throw new RuntimeException("Did not find too_many string in output.\n");
+        }
+        System.out.println("too_many='" + too_many + "'");
+        // Uncomment the following line for dumping test output in passing runs:
+        // output_detail.reportDiagnosticSummary();
+
+        System.out.println("PASSED.");
+    }
+
+    private static void testProcess2() throws Exception {
+        ProcessBuilder pb = processCommand("debug");
+        OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
+        output_detail.shouldHaveExitValue(0);
+
+        // Test that logging reports in_use_list with each iteration of the deflation thread in debug mode.
+        // but not monitor details with each report
+        output_detail.shouldMatch(   ".debug..monitorinflation. Checking in_use_list:");
+        output_detail.shouldNotMatch(".debug..monitorinflation. .*is_busy");
+
+        // Reporting stats at exit is in Info mode, and contains monitor details
+        output_detail.shouldMatch(".info ..monitorinflation. Checking in_use_list:");
+        output_detail.shouldMatch(".info ..monitorinflation. .*is_busy");
+
+        System.out.println("PASSED.");
+    }
+
+    private static void testProcess3() throws Exception {
+        ProcessBuilder pb = processCommand("trace");
+        OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
+        output_detail.shouldHaveExitValue(0);
+
+        // Test that logging reports in_use_list with each iteration of the deflation thread in debug mode.
+        // and monitor details with each report
+        output_detail.shouldMatch(".debug..monitorinflation. Checking in_use_list:");
+        output_detail.shouldMatch(".trace..monitorinflation. .*is_busy");
+
+        // Reporting stats at exit is in Info mode, and contains monitor details
+        output_detail.shouldMatch(".info ..monitorinflation. Checking in_use_list:");
+        output_detail.shouldMatch(".info ..monitorinflation. .*is_busy");
+
+        System.out.println("PASSED.");
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            // Without args we invoke the test in a java sub-process:
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                // Test doesn't need much Java heap:
-                "-Xmx100M",
-                // AvgMonitorsPerThreadEstimate == 1 means we'll start with
-                // an in_use_list_ceiling of <n-threads> plus a couple of
-                // of monitors for threads that call Object.wait().
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:AvgMonitorsPerThreadEstimate=1",
-                // MonitorUsedDeflationThreshold == 10 means we'll request
-                // deflations when 10% of monitors are used rather than the
-                // default 90%. This should allow the test to tolerate a burst
-                // of used monitors by threads not under this test's control.
-                "-XX:MonitorUsedDeflationThreshold=10",
-                // Enable monitorinflation logging so we can see that
-                // MonitorUsedDeflationThreshold and
-                // NoAsyncDeflationProgressMaxoption are working.
-                "-Xlog:monitorinflation=info",
-                // Enable some safepoint logging for diagnostic purposes.
-                "-Xlog:safepoint+cleanup=info",
-                "-Xlog:safepoint+stats=debug",
-                // Run the test with inflate_count == 33 since that
-                // reproduced the bug with JDK13. With inflate_count == 33, an
-                // initial ceiling == 12 and MonitorUsedDeflationThreshold == 10,
-                // we should hit NoAsyncDeflationProgressMax at least 3 times.
-                "MonitorUsedDeflationThresholdTest", "33");
-
-            OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
-            output_detail.shouldHaveExitValue(0);
-
-            // This mesg means:
-            // - AvgMonitorsPerThreadEstimate == 1 reduced in_use_list_ceiling
-            //   to a small number.
-            // - and we crossed MonitorUsedDeflationThreshold:
-            output_detail.shouldMatch("begin deflating: .*");
-            System.out.println("Found beginning of a deflation cycle.");
-
-            // This mesg means we hit NoAsyncDeflationProgressMax and
-            // had to adjust the in_use_list_ceiling:
-            String too_many = output_detail.firstMatch("Too many deflations without progress; .*", 0);
-            if (too_many == null) {
-                output_detail.reportDiagnosticSummary();
-                throw new RuntimeException("Did not find too_many string in output.\n");
-            }
-            System.out.println("too_many='" + too_many + "'");
-            // Uncomment the following line for dumping test output in passing runs:
-            // output_detail.reportDiagnosticSummary();
-
-            System.out.println("PASSED.");
+            // Without args we invoke the tests in a java sub-process.
+            testProcess1();
+            testProcess2();
+            testProcess3();
             return;
         }
         // else we are the exec'd java subprocess, so run the actual test:

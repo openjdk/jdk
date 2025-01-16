@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_DEBUG_HPP
 #define SHARE_UTILITIES_DEBUG_HPP
 
-#include "utilities/attributeNoreturn.hpp"
 #include "utilities/breakpoint.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/macros.hpp"
@@ -35,14 +34,15 @@
 
 class oopDesc;
 
-// ShowRegistersOnAssert support (for now Linux only)
-#if defined(LINUX) && !defined(ZERO)
+// ShowRegistersOnAssert support (for now Linux and Windows only)
+#if (defined(LINUX) || defined(_WINDOWS)) && !defined(ZERO)
 #define CAN_SHOW_REGISTERS_ON_ASSERT
 extern char* g_assert_poison;
+extern const char* g_assert_poison_read_only;
 #define TOUCH_ASSERT_POISON (*g_assert_poison) = 'X';
 void initialize_assert_poison();
 void disarm_assert_poison();
-bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address);
+bool handle_assert_poison_fault(const void* ucVoid);
 #else
 #define TOUCH_ASSERT_POISON
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
@@ -106,11 +106,10 @@ public:
 // constant evaluation in the compiler. We don't do something like that now,
 // because we need a fallback when we don't have any mechanism for detecting
 // constant evaluation.
-#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
+#if defined(TARGET_COMPILER_gcc)
 
-// gcc10 added both __has_builtin and __builtin_is_constant_evaluated.
-// clang has had __has_builtin for a long time, so likely also in xlclang++.
-// Similarly, clang has had __builtin_is_constant_evaluated for a long time.
+// Both __has_builtin and __builtin_is_constant_evaluated are available in our
+// minimum required versions of gcc and clang.
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_is_constant_evaluated)
@@ -141,22 +140,25 @@ public:
 
 // assertions
 #ifndef ASSERT
+#define vmassert_with_file_and_line(p, file, line, ...)
 #define vmassert(p, ...)
 #else
 // Note: message says "assert" rather than "vmassert" for backward
 // compatibility with tools that parse/match the message text.
 // Note: The signature is vmassert(p, format, ...), but the solaris
 // compiler can't handle an empty ellipsis in a macro without a warning.
-#define vmassert(p, ...)                                                       \
-do {                                                                           \
-  if (! VMASSERT_CHECK_PASSED(p)) {                                            \
-    TOUCH_ASSERT_POISON;                                                       \
-    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", __VA_ARGS__); \
-  }                                                                            \
+#define vmassert_with_file_and_line(p, file, line, ...)                \
+do {                                                                   \
+  if (! VMASSERT_CHECK_PASSED(p)) {                                    \
+    TOUCH_ASSERT_POISON;                                               \
+    report_vm_error(file, line, "assert(" #p ") failed", __VA_ARGS__); \
+  }                                                                    \
 } while (0)
+#define vmassert(p, ...) vmassert_with_file_and_line(p, __FILE__, __LINE__, __VA_ARGS__)
 #endif
 
 // For backward compatibility.
+#define assert_with_file_and_line(p, file, line, ...) vmassert_with_file_and_line(p, file, line, __VA_ARGS__)
 #define assert(p, ...) vmassert(p, __VA_ARGS__)
 
 #define precond(p)   assert(p, "precond")
@@ -255,32 +257,32 @@ enum VMErrorType : unsigned int {
 };
 
 // error reporting helper functions
-ATTRIBUTE_NORETURN
+[[noreturn]]
 void report_vm_error(const char* file, int line, const char* error_msg);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 ATTRIBUTE_PRINTF(4, 5)
 void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 void report_vm_status_error(const char* file, int line, const char* error_msg,
                             int status, const char* detail);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 ATTRIBUTE_PRINTF(4, 5)
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...);
 
-ATTRIBUTE_NORETURN
+[[noreturn]]
 ATTRIBUTE_PRINTF(5, 6)
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
                              const char* detail_fmt, ...);
 
-ATTRIBUTE_NORETURN void report_should_not_call(const char* file, int line);
-ATTRIBUTE_NORETURN void report_should_not_reach_here(const char* file, int line);
-ATTRIBUTE_NORETURN void report_unimplemented(const char* file, int line);
+[[noreturn]] void report_should_not_call(const char* file, int line);
+[[noreturn]] void report_should_not_reach_here(const char* file, int line);
+[[noreturn]] void report_unimplemented(const char* file, int line);
 
-// NOT ATTRIBUTE_NORETURN
+// NOT [[noreturn]]
 void report_untested(const char* file, int line, const char* message);
 
 ATTRIBUTE_PRINTF(1, 2)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.Lookup;
 
 
-abstract public class ModelAwareAction extends ContextAction<DiagramViewModel> {
+public abstract class ModelAwareAction extends ContextAction<DiagramViewModel> {
 
     public ModelAwareAction() {
         putValue(Action.SMALL_ICON , ImageUtilities.loadImageIcon(iconResource(), true));

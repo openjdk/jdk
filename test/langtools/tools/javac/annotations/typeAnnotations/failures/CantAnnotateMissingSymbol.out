@@ -1,0 +1,2 @@
+CantAnnotateMissingSymbol.java:12:14: compiler.err.cant.resolve.location: kindname.class, NoSuch, , , (compiler.misc.location: kindname.class, CantAnnotateMissingSymbol, null)
+1 error

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 /*
  * @test
  * @summary It tests (almost) all keytool behaviors with NSS.
- * @library /test/lib /test/jdk/sun/security/pkcs11
+ * @library /test/lib /test/jdk/sun/security/pkcs11 /java/security/testlibrary
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.util
  *          java.base/sun.security.x509

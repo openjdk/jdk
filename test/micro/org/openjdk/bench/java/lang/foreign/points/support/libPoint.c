@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <stdlib.h>
+
 #include <math.h>
+#include <stdlib.h>
 
+#include "export.h"
 #include "points.h"
-
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
 
 EXPORT double distance(Point p1, Point p2) {
     int xDist = abs(p1.x - p2.x);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.internal.util;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
+
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
@@ -164,17 +166,177 @@ public class ArraysSupport {
         }
     }
 
+    /**
+     * Calculates the hash code for the subrange of an integer array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(int[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_INT);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a short array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(short[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_SHORT);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a char array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(char[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_CHAR);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a byte array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(byte[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + a[fromIndex];
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_BYTE);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a byte array whose elements
+     * are treated as unsigned bytes.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCodeOfUnsigned(byte[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + Byte.toUnsignedInt(a[fromIndex]);
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_BOOLEAN);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of a byte array whose contents
+     * are treated as UTF-16 chars.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * <p> {@code fromIndex} and {@code length} must be scaled down to char
+     * indexes.
+     *
+     * @param a the array
+     * @param fromIndex the first index of a char in the subrange of the array
+     * @param length the number of chars in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCodeOfUTF16(byte[] a, int fromIndex, int length, int initialValue) {
+        return switch (length) {
+            case 0 -> initialValue;
+            case 1 -> 31 * initialValue + JLA.getUTF16Char(a, fromIndex);
+            default -> vectorizedHashCode(a, fromIndex, length, initialValue, T_CHAR);
+        };
+    }
+
+    /**
+     * Calculates the hash code for the subrange of an object array.
+     *
+     * <p> This method does not perform type checks or bounds checks. It is the
+     * responsibility of the caller to perform such checks before calling this
+     * method.
+     *
+     * @param a the array
+     * @param fromIndex the first index of the subrange of the array
+     * @param length the number of elements in the subrange
+     * @param initialValue the initial hash value, typically 0 or 1
+     *
+     * @return the calculated hash value
+     */
+    public static int hashCode(Object[] a, int fromIndex, int length, int initialValue) {
+        int result = initialValue;
+        int end = fromIndex + length;
+        for (int i = fromIndex; i < end; i++) {
+            result = 31 * result + Objects.hashCode(a[i]);
+        }
+        return result;
+    }
+
     // Possible values for the type operand of the NEWARRAY instruction.
     // See https://docs.oracle.com/javase/specs/jvms/se9/html/jvms-6.html#jvms-6.5.newarray.
 
-    public static final int T_BOOLEAN = 4;
-    public static final int T_CHAR = 5;
-    public static final int T_FLOAT = 6;
-    public static final int T_DOUBLE = 7;
-    public static final int T_BYTE = 8;
-    public static final int T_SHORT = 9;
-    public static final int T_INT = 10;
-    public static final int T_LONG = 11;
+    private static final int T_BOOLEAN = 4;
+    private static final int T_CHAR = 5;
+    private static final int T_FLOAT = 6;
+    private static final int T_DOUBLE = 7;
+    private static final int T_BYTE = 8;
+    private static final int T_SHORT = 9;
+    private static final int T_INT = 10;
+    private static final int T_LONG = 11;
 
     /**
      * Calculate the hash code for an array in a way that enables efficient
@@ -197,10 +359,10 @@ public class ArraysSupport {
      * @return the calculated hash value
      */
     @IntrinsicCandidate
-    public static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
-                                         int basicType) {
+    private static int vectorizedHashCode(Object array, int fromIndex, int length, int initialValue,
+                                          int basicType) {
         return switch (basicType) {
-            case T_BOOLEAN -> signedHashCode(initialValue, (byte[]) array, fromIndex, length);
+            case T_BOOLEAN -> unsignedHashCode(initialValue, (byte[]) array, fromIndex, length);
             case T_CHAR -> array instanceof byte[]
                     ? utf16hashCode(initialValue, (byte[]) array, fromIndex, length)
                     : hashCode(initialValue, (char[]) array, fromIndex, length);
@@ -211,10 +373,10 @@ public class ArraysSupport {
         };
     }
 
-    private static int signedHashCode(int result, byte[] a, int fromIndex, int length) {
+    private static int unsignedHashCode(int result, byte[] a, int fromIndex, int length) {
         int end = fromIndex + length;
         for (int i = fromIndex; i < end; i++) {
-            result = 31 * result + (a[i] & 0xff);
+            result = 31 * result + Byte.toUnsignedInt(a[i]);
         }
         return result;
     }
@@ -255,7 +417,7 @@ public class ArraysSupport {
     /*
      * fromIndex and length must be scaled to char indexes.
      */
-    public static int utf16hashCode(int result, byte[] value, int fromIndex, int length) {
+    private static int utf16hashCode(int result, byte[] value, int fromIndex, int length) {
         int end = fromIndex + length;
         for (int i = fromIndex; i < end; i++) {
             result = 31 * result + JLA.getUTF16Char(value, i);

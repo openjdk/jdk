@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8189841 8253117 8263507
+ * @bug 8189841 8253117 8263507 8320458
  * @summary Error in alternate row coloring in package-summary files
  * @summary Improve structure of package summary pages
  * @library  ../../lib/
@@ -51,37 +51,27 @@ public class TestPackageSummary extends JavadocTester {
 
         checkOutput("pkg/package-summary.html", true,
                 """
-                    <div class="sub-nav">
-                    <div id="navbar-sub-list">
-                    <ul class="sub-nav-list">
-                    <li>Package:&nbsp;</li>
-                    <li>Description&nbsp;|&nbsp;</li>
-                    <li>Related Packages&nbsp;|&nbsp;</li>
-                    <li><a href="#class-summary">Classes and Interfaces</a></li>
-                    </ul>
-                    </div>""");
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
+                    </ol>
+                    """);
         checkOutput("pkg1/package-summary.html", true,
                 """
-                    <div class="sub-nav">
-                    <div id="navbar-sub-list">
-                    <ul class="sub-nav-list">
-                    <li>Package:&nbsp;</li>
-                    <li><a href="#package-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#related-package-summary">Related Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#class-summary">Classes and Interfaces</a></li>
-                    </ul>
-                    </div>""");
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#related-package-summary" tabindex="0">Related Packages</a></li>
+                    <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
+                    </ol>
+                    """);
         checkOutput("pkg1/sub/package-summary.html", true,
                 """
-                    <div class="sub-nav">
-                    <div id="navbar-sub-list">
-                    <ul class="sub-nav-list">
-                    <li>Package:&nbsp;</li>
-                    <li>Description&nbsp;|&nbsp;</li>
-                    <li><a href="#related-package-summary">Related Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#class-summary">Classes and Interfaces</a></li>
-                    </ul>
-                    </div>""");
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#related-package-summary" tabindex="0">Related Packages</a></li>
+                    <li><a href="#class-summary" tabindex="0">Classes and Interfaces</a></li>
+                    </ol>
+                    """);
     }
 
     @Test

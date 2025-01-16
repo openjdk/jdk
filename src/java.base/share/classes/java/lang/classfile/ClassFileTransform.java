@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,13 @@
  */
 package java.lang.classfile;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
-
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.javac.PreviewFeature;
+import java.util.function.Supplier;
 
 /**
  * A transformation on streams of elements. Transforms are used during
  * transformation of classfile entities; a transform is provided to a method like
- * {@link ClassFile#transform(ClassModel, ClassTransform)}, and the elements of the class,
+ * {@link ClassFile#transformClass(ClassModel, ClassTransform)}, and the elements of the class,
  * along with a builder, are presented to the transform.
  *
  * <p>The subtypes of {@linkplain
@@ -63,20 +60,14 @@ import jdk.internal.javac.PreviewFeature;
  * its state must be reset for each traversal; this will happen automatically if
  * the transform is created with {@link ClassTransform#ofStateful(Supplier)} (or
  * corresponding methods for other classfile locations.)
- * <p>
- * Class transformation sample where code transformation is stateful:
- * {@snippet lang="java" class="PackageSnippets" region="codeRelabeling"}
- * <p>
- * Complex class instrumentation sample chaining multiple transformations:
- * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
+ *
  * @param <C> the transform type
  * @param <E> the element type
  * @param <B> the builder type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileTransform<
         C extends ClassFileTransform<C, E, B>,
         E extends ClassFileElement,
@@ -124,46 +115,4 @@ public sealed interface ClassFileTransform<
      * @return the chained transform
      */
     C andThen(C next);
-
-    /**
-     * The result of binding a transform to a builder.  Used primarily within
-     * the implementation to perform transformation.
-     *
-     * @param <E> the element type
-     *
-     * @since 22
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    interface ResolvedTransform<E extends ClassFileElement> {
-        /**
-         * {@return a {@link Consumer} to receive elements}
-         */
-        Consumer<E> consumer();
-
-        /**
-         * {@return an action to call at the end of transformation}
-         */
-        Runnable endHandler();
-
-        /**
-         * {@return an action to call at the start of transformation}
-         */
-        Runnable startHandler();
-    }
-
-    /**
-     * Bind a transform to a builder.  If the transform is chained, intermediate
-     * builders are created for each chain link.  If the transform is stateful
-     * (see, e.g., {@link ClassTransform#ofStateful(Supplier)}), the supplier is
-     * invoked to get a fresh transform object.
-     *
-     * <p>This method is a low-level method that should rarely be used by
-     * user code; most of the time, user code should prefer
-     * {@link ClassFileBuilder#transform(CompoundElement, ClassFileTransform)},
-     * which resolves the transform and executes it on the current builder.
-     *
-     * @param builder the builder to bind to
-     * @return the bound result
-     */
-    ResolvedTransform<E> resolve(B builder);
 }

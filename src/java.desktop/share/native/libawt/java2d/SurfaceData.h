@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #define _Included_SurfaceData
 
 #include <jni.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +53,14 @@ typedef struct {
 } SurfaceDataBounds;
 
 #define SD_RASINFO_PRIVATE_SIZE         64
+
+#define UNSAFE_TO_ADD(a, b) \
+    (((a >= 0) && (b >= 0) && (a > (INT_MAX - b))) || \
+     ((a < 0) && (b < 0) && (a < (INT_MIN - b)))) \
+
+#define UNSAFE_TO_SUB(a, b) \
+    (((b >= 0) && (a < 0) && (a < (INT_MIN + b))) || \
+     ((b < 0) && (a >= 0) && (-b > (INT_MAX - a)))) \
 
 /*
  * The SurfaceDataRasInfo structure is used to pass in and return various

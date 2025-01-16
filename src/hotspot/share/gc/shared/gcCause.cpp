@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
 
     case _metadata_GC_clear_soft_refs:
       return "Metadata GC Clear Soft References";
-
-    case _adaptive_size_policy:
-      return "Ergonomics";
 
     case _g1_inc_collection_pause:
       return "G1 Evacuation Pause";

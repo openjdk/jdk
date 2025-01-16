@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.SettingControl;
 import jdk.jfr.ValueDescriptor;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Internal data structure that describes a type,
@@ -185,14 +186,9 @@ public class Type implements Comparable<Type> {
                 Type type = PrivateAccess.getInstance().getType(subField);
                 return type.getField(post);
             }
-        } else {
-            for (ValueDescriptor v : getFields()) {
-                if (name.equals(v.getName())) {
-                    return v;
-                }
-            }
+            return null;
         }
-        return null;
+        return Utils.findField(getFields(), name);
     }
 
     public List<ValueDescriptor> getFields() {
@@ -220,6 +216,10 @@ public class Type implements Comparable<Type> {
 
     public boolean isDefinedByJVM() {
         return id < JVM.RESERVED_CLASS_ID_LIMIT;
+    }
+
+    public void setFields(List<ValueDescriptor> fields) {
+        this.fields = List.copyOf(fields);
     }
 
     public void add(ValueDescriptor valueDescriptor) {
@@ -258,6 +258,10 @@ public class Type implements Comparable<Type> {
 
     public List<AnnotationElement> getAnnotationElements() {
         return annos.getUnmodifiableAnnotationElements();
+    }
+
+    public <T> T getAnnotationValue(Class<? extends java.lang.annotation.Annotation> clazz, T defaultValue) {
+       return annos.getAnnotationValue(clazz, defaultValue);
     }
 
     public <T> T getAnnotation(Class<? extends java.lang.annotation.Annotation> clazz) {
@@ -354,5 +358,9 @@ public class Type implements Comparable<Type> {
 
     public boolean isInternal() {
         return internal;
+    }
+
+    public boolean hasAnnotation(Class<? extends java.lang.annotation.Annotation> clazz) {
+        return annos.getAnnotationElement(clazz) != null;
     }
 }

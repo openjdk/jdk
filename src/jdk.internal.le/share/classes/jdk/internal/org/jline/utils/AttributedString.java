@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2016, the original author or authors.
+ * Copyright (c) 2002-2016, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.internal.org.jline.terminal.Terminal;
 
 /**
  * Attributed string.
@@ -103,11 +105,28 @@ public class AttributedString extends AttributedCharSequence {
     }
 
     public static AttributedString fromAnsi(String ansi, List<Integer> tabs) {
+        return fromAnsi(ansi, tabs, null, null);
+    }
+
+    public static AttributedString fromAnsi(String ansi, Terminal terminal) {
+        String alternateIn, alternateOut;
+        if (!DISABLE_ALTERNATE_CHARSET) {
+            alternateIn = Curses.tputs(terminal.getStringCapability(InfoCmp.Capability.enter_alt_charset_mode));
+            alternateOut = Curses.tputs(terminal.getStringCapability(InfoCmp.Capability.exit_alt_charset_mode));
+        } else {
+            alternateIn = null;
+            alternateOut = null;
+        }
+        return fromAnsi(ansi, Arrays.asList(0), alternateIn, alternateOut);
+    }
+
+    public static AttributedString fromAnsi(String ansi, List<Integer> tabs, String altIn, String altOut) {
         if (ansi == null) {
             return null;
         }
         return new AttributedStringBuilder(ansi.length())
                 .tabs(tabs)
+                .altCharset(altIn, altOut)
                 .ansiAppend(ansi)
                 .toAttributedString();
     }
@@ -116,9 +135,7 @@ public class AttributedString extends AttributedCharSequence {
         if (ansi == null) {
             return null;
         }
-        return new AttributedStringBuilder(ansi.length())
-                .ansiAppend(ansi)
-                .toString();
+        return new AttributedStringBuilder(ansi.length()).ansiAppend(ansi).toString();
     }
 
     @Override
@@ -162,7 +179,7 @@ public class AttributedString extends AttributedCharSequence {
                 }
                 result = matcher.find();
             } while (result);
-            return new AttributedString(buffer, newstyle, start , end);
+            return new AttributedString(buffer, newstyle, start, end);
         }
         return this;
     }
@@ -179,15 +196,16 @@ public class AttributedString extends AttributedCharSequence {
 
     private boolean arrEq(char[] a1, char[] a2, int s1, int s2, int l) {
         for (int i = 0; i < l; i++) {
-            if (a1[s1+i] != a2[s2+i]) {
+            if (a1[s1 + i] != a2[s2 + i]) {
                 return false;
             }
         }
         return true;
     }
+
     private boolean arrEq(long[] a1, long[] a2, int s1, int s2, int l) {
         for (int i = 0; i < l; i++) {
-            if (a1[s1+i] != a2[s2+i]) {
+            if (a1[s1 + i] != a2[s2 + i]) {
                 return false;
             }
         }
@@ -221,5 +239,4 @@ public class AttributedString extends AttributedCharSequence {
         }
         return sb.toAttributedString();
     }
-
 }

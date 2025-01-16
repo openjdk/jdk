@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,6 @@ public class TestNewSizeFlags {
                 (maxNewSize >= 0 ? "-XX:MaxNewSize=" + maxNewSize : ""),
                 "-Xmx" + maxHeapSize,
                 "-Xms" + heapSize,
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-XX:-UseLargePages",
                 NewSizeVerifier.class.getName(),
                 Long.toString(expectedNewSize),

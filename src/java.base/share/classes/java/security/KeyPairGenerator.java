@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,12 +113,16 @@ import sun.security.util.Debug;
  * supply their own implementations of key pair generators.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code KeyPairGenerator} algorithms and keysizes in
- * parentheses:
+ * following standard {@code KeyPairGenerator} algorithms. For the "EC"
+ * algorithm, implementations must support the curves in parentheses. For other
+ * algorithms, implementations must support the key sizes in parentheses.
  * <ul>
- * <li>{@code DiffieHellman} (1024, 2048, 4096)</li>
+ * <li>{@code DiffieHellman} (1024, 2048, 3072, 4096)</li>
  * <li>{@code DSA} (1024, 2048)</li>
- * <li>{@code RSA} (1024, 2048, 4096)</li>
+ * <li>{@code EC} (secp256r1, secp384r1)</li>
+ * <li>{@code RSA} (1024, 2048, 3072, 4096)</li>
+ * <li>{@code RSASSA-PSS} (2048, 3072, 4096)</li>
+ * <li>{@code X25519}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#keypairgenerator-algorithms">
@@ -230,9 +234,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     public static KeyPairGenerator getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        List<Service> list =
-                GetInstance.getServices("KeyPairGenerator", algorithm);
-        Iterator<Service> t = list.iterator();
+        Iterator<Service> t = GetInstance.getServices("KeyPairGenerator", algorithm);
         if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " KeyPairGenerator not available");

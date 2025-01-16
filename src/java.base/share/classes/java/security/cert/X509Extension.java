@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,12 +161,12 @@ public interface X509Extension {
      * <th scope="col">Extension Name</th></tr>
      * </thead>
      * <tbody style="text-align:left">
+     * <tr><th scope="row">1.3.6.1.5.5.7.1.1</th>
+     * <td>AuthorityInformationAccess</td></tr>
      * <tr><th scope="row">2.5.29.14</th>
      * <td>SubjectKeyIdentifier</td></tr>
      * <tr><th scope="row">2.5.29.15</th>
      * <td>KeyUsage</td></tr>
-     * <tr><th scope="row">2.5.29.16</th>
-     * <td>PrivateKeyUsage</td></tr>
      * <tr><th scope="row">2.5.29.17</th>
      * <td>SubjectAlternativeName</td></tr>
      * <tr><th scope="row">2.5.29.18</th>
@@ -175,12 +175,18 @@ public interface X509Extension {
      * <td>BasicConstraints</td></tr>
      * <tr><th scope="row">2.5.29.30</th>
      * <td>NameConstraints</td></tr>
+     * <tr><th scope="row">2.5.29.31</th>
+     * <td>CRLDistributionPoints</td></tr>
+     * <tr><th scope="row">2.5.29.32</th>
+     * <td>CertificatePolicies</td></tr>
      * <tr><th scope="row">2.5.29.33</th>
      * <td>PolicyMappings</td></tr>
      * <tr><th scope="row">2.5.29.35</th>
      * <td>AuthorityKeyIdentifier</td></tr>
      * <tr><th scope="row">2.5.29.36</th>
      * <td>PolicyConstraints</td></tr>
+     * <tr><th scope="row">2.5.29.37</th>
+     * <td>ExtendedKeyUsage</td></tr>
      * </tbody>
      * </table>
      *

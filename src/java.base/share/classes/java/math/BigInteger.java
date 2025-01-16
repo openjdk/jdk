@@ -1831,6 +1831,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static int[] multiplyToLen(int[] x, int xlen, int[] y, int ylen, int[] z) {
         multiplyToLenCheck(x, xlen);
         multiplyToLenCheck(y, ylen);
+
+        if (z == null || z.length < (xlen + ylen))
+            z = new int[xlen + ylen];
+
         return implMultiplyToLen(x, xlen, y, ylen, z);
     }
 
@@ -1838,9 +1842,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static int[] implMultiplyToLen(int[] x, int xlen, int[] y, int ylen, int[] z) {
         int xstart = xlen - 1;
         int ystart = ylen - 1;
-
-        if (z == null || z.length < (xlen+ ylen))
-             z = new int[xlen+ylen];
 
         long carry = 0;
         for (int j=ystart, k=ystart+1+xstart; j >= 0; j--, k--) {
@@ -2722,7 +2723,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             throw new ArithmeticException("Negative BigInteger");
         }
 
-        return new MutableBigInteger(this.mag).sqrt().toBigInteger();
+        return new MutableBigInteger(this.mag).sqrtRem(false)[0].toBigInteger();
     }
 
     /**
@@ -2741,10 +2742,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @since  9
      */
     public BigInteger[] sqrtAndRemainder() {
-        BigInteger s = sqrt();
-        BigInteger r = this.subtract(s.square());
-        assert r.compareTo(BigInteger.ZERO) >= 0;
-        return new BigInteger[] {s, r};
+        if (this.signum < 0) {
+            throw new ArithmeticException("Negative BigInteger");
+        }
+
+        MutableBigInteger[] sqrtRem = new MutableBigInteger(this.mag).sqrtRem(true);
+        return new BigInteger[] { sqrtRem[0].toBigInteger(), sqrtRem[1].toBigInteger() };
     }
 
     /**
@@ -2774,6 +2777,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     static int bitLengthForInt(int n) {
         return 32 - Integer.numberOfLeadingZeros(n);
+    }
+
+    /**
+     * Package private method to return bit length for a long.
+     */
+    static int bitLengthForLong(long n) {
+        return 64 - Long.numberOfLeadingZeros(n);
     }
 
     /**
@@ -4097,8 +4107,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     @Override
     public int hashCode() {
-        return ArraysSupport.vectorizedHashCode(mag, 0, mag.length, 0,
-                ArraysSupport.T_INT) * signum;
+        return ArraysSupport.hashCode(mag, 0, mag.length, 0) * signum;
     }
 
     /**
@@ -4843,7 +4852,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         0x40000000, 0x4cfa3cc1, 0x5c13d840, 0x6d91b519, 0x39aa400
     };
 
-    /**
+    /*
      * These routines provide access to the two's complement representation
      * of BigIntegers.
      */

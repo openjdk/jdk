@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,16 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A transformation on streams of {@link FieldElement}.
  *
  * @see ClassFileTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface FieldTransform
         extends ClassFileTransform<FieldTransform, FieldElement, FieldBuilder> {
@@ -62,7 +62,7 @@ public non-sealed interface FieldTransform
      * @return the stateful field transform
      */
     static FieldTransform ofStateful(Supplier<FieldTransform> supplier) {
-        return new TransformImpl.SupplierFieldTransform(supplier);
+        return new TransformImpl.SupplierFieldTransform(requireNonNull(supplier));
     }
 
     /**
@@ -73,6 +73,7 @@ public non-sealed interface FieldTransform
      * @return the field transform
      */
     static FieldTransform endHandler(Consumer<FieldBuilder> finisher) {
+        requireNonNull(finisher);
         return new FieldTransform() {
             @Override
             public void accept(FieldBuilder builder, FieldElement element) {
@@ -94,6 +95,7 @@ public non-sealed interface FieldTransform
      * @return the field transform
      */
     static FieldTransform dropping(Predicate<FieldElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -109,17 +111,6 @@ public non-sealed interface FieldTransform
      */
     @Override
     default FieldTransform andThen(FieldTransform t) {
-        return new TransformImpl.ChainedFieldTransform(this, t);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given field builder.
-     */
-    @Override
-    default ResolvedTransform<FieldElement> resolve(FieldBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
+        return new TransformImpl.ChainedFieldTransform(this, requireNonNull(t));
     }
 }

@@ -43,11 +43,6 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler *masm) {
   Register tmp2 = _tmp2->as_register();
   Register result = result_opr()->as_register();
 
-  if (ShenandoahIUBarrier) {
-    ShenandoahBarrierSet::assembler()->iu_barrier(masm->masm(), new_val, tmp1, tmp2,
-                                                  MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS);
-  }
-
   if (UseCompressedOops) {
     __ encode_heap_oop(cmp_val, cmp_val);
     __ encode_heap_oop(new_val, new_val);
@@ -107,6 +102,10 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess &access, LI
 
       __ append(new LIR_OpShenandoahCompareAndSwap(addr, cmp_value.result(), new_value.result(), t1, t2, result));
 
+      if (ShenandoahCardBarrier) {
+        post_barrier(access, access.resolved_addr(), new_value.result());
+      }
+
       return result;
     }
   }
@@ -122,10 +121,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRIt
   value.load_item();
   LIR_Opr value_opr = value.result();
 
-  if (access.is_oop()) {
-    value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
-  }
-
   assert(type == T_INT || is_reference_type(type) LP64_ONLY( || type == T_LONG ), "unexpected type");
   LIR_Opr tmp_xchg = gen->new_register(T_INT);
   __ xchg(access.resolved_addr(), value_opr, result, tmp_xchg);
@@ -140,6 +135,10 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess &access, LIRIt
 
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), LIR_OprFact::illegalOpr, result);
+    }
+
+    if (ShenandoahCardBarrier) {
+      post_barrier(access, access.resolved_addr(), result);
     }
   }
 

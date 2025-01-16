@@ -40,7 +40,7 @@ import java.util.Set;
 public class CheckExecutable {
 
     // The bin directory may contain non-executable files (see 8132704)
-    private static final String IGNORE = "glob:{*.diz,jmc.ini}";
+    private static final String IGNORE = "glob:{*.diz,jmc.ini,*.debuginfo}";
 
     public static void main(String args[]) throws IOException {
         String JAVA_HOME = System.getProperty("java.home");

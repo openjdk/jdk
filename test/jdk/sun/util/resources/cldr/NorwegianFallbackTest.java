@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,12 @@
 
 /*
  * @test
- * @bug 8282227
+ * @bug 8282227 8174269
  * @modules jdk.localedata
  * @summary Checks Norwegian locale fallback retrieves resource bundles correctly.
- * @run main/othervm -Djava.locale.providers=COMPAT NorwegianFallbackTest nb
- * @run main/othervm -Djava.locale.providers=COMPAT NorwegianFallbackTest nn
- * @run main/othervm -Djava.locale.providers=COMPAT NorwegianFallbackTest no
- * @run main/othervm -Djava.locale.providers=CLDR NorwegianFallbackTest nb
- * @run main/othervm -Djava.locale.providers=CLDR NorwegianFallbackTest nn
- * @run main/othervm -Djava.locale.providers=CLDR NorwegianFallbackTest no
+ * @run main NorwegianFallbackTest nb
+ * @run main NorwegianFallbackTest nn
+ * @run main NorwegianFallbackTest no
  */
 
 import java.text.DateFormatSymbols;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <jni.h>
 #include <jvmti.h>
-#include <aod.h>
-#include <jvmti_aod.h>
+#include <aod.hpp>
+#include <jvmti_aod.hpp>
 
 extern "C" {
 
@@ -41,7 +41,7 @@ extern "C" {
  *
  */
 
-static Options* options = NULL;
+static Options* options = nullptr;
 static const char* agentName;
 
 static jvmtiEvent testEvents[] = { JVMTI_EVENT_GARBAGE_COLLECTION_START, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH };
@@ -116,10 +116,10 @@ int startAuxiliaryThread(jvmtiEnv* jvmti, JNIEnv* jni) {
     jthread thread;
 
     thread = nsk_jvmti_aod_createThread(jni);
-    if (!NSK_VERIFY(thread != NULL))
+    if (!NSK_VERIFY(thread != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, auxiliaryThreadFunction, NULL, JVMTI_THREAD_NORM_PRIORITY))) {
+    if (!NSK_JVMTI_VERIFY(jvmti->RunAgentThread(thread, auxiliaryThreadFunction, nullptr, JVMTI_THREAD_NORM_PRIORITY))) {
         return NSK_FALSE;
     }
 
@@ -147,17 +147,17 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     JNIEnv* jni;
 
     options = (Options*) nsk_aod_createOptions(optionsString);
-    if (!NSK_VERIFY(options != NULL))
+    if (!NSK_VERIFY(options != nullptr))
         return JNI_ERR;
 
     agentName = nsk_aod_getOptionValue(options, NSK_AOD_AGENT_NAME_OPTION);
 
     jni = (JNIEnv*) nsk_aod_createJNIEnv(vm);
-    if (jni == NULL)
+    if (jni == nullptr)
         return JNI_ERR;
 
     jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("GCFinishMonitor", &gcFinishMonitor))) {

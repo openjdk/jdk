@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,56 +21,96 @@
  * questions.
  */
 
-/**
- * @bug 4186119: setting orientation does not affect printer
+/*
+ * @test
+ * @key printer
+ * @bug 4186119
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @summary Confirm that the clip and transform of the Graphics2D is
  *          affected by the landscape orientation of the PageFormat.
- * @run applet/manual=yesno SetOrient.html
+ * @run main/manual SetOrient
  */
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.print.*;
-import java.applet.Applet;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
+import java.awt.print.Book;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 
-public class SetOrient extends Applet implements Printable {
-    PrinterJob pjob;
+import javax.swing.JButton;
 
-    public void init() {
-        pjob = PrinterJob.getPrinterJob();
+public class SetOrient {
+    private static final String INSTRUCTIONS =
+            """
+             This test prints two pages and sends them to the printer.
+             One page is in PORTRAIT orientation and the other is in LANDSCAPE
+             orientation. On each page it draws an ellipse inscribed in the clip
+             boundary established by the PrinterJob. The ellipse should fill the
+             page within the bounds established by the default margins and not
+             extend off any end or side of the page. Also, the string "Portrait"
+             or "Landscape" should be oriented correctly.
+            """;
 
-        Book book = new Book();
-        PageFormat pf = pjob.defaultPage();
-        pf.setOrientation(PageFormat.PORTRAIT);
-        book.append(this, pf);
-        pf = pjob.defaultPage();
-        pf.setOrientation(PageFormat.LANDSCAPE);
-        book.append(this, pf);
-        pjob.setPageable(book);
-
-        try {
-            pjob.print();
-        } catch (PrinterException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame
+                .builder()
+                .title("SetOrient Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(40)
+                .splitUIBottom(SetOrient::createAndShowGUI)
+                .build()
+                .awaitAndCheck();
     }
 
-    public int print(Graphics g, PageFormat pf, int pageIndex) {
-        Graphics2D g2d = (Graphics2D)g;
-        drawGraphics(g2d, pf);
-        return Printable.PAGE_EXISTS;
-    }
+    public static JButton createAndShowGUI() {
+        JButton btn = new JButton("PRINT");
+        btn.addActionListener(e -> {
+            PrinterJob pjob = PrinterJob.getPrinterJob();
 
-    void drawGraphics(Graphics2D g, PageFormat pf) {
-        double ix = pf.getImageableX();
-        double iy = pf.getImageableY();
-        double iw = pf.getImageableWidth();
-        double ih = pf.getImageableHeight();
+            Printable p = new Printable() {
+                public int print(Graphics g, PageFormat pf, int pageIndex) {
+                    Graphics2D g2d = (Graphics2D)g;
+                    drawGraphics(g2d, pf);
+                    return Printable.PAGE_EXISTS;
+                }
 
-        g.setColor(Color.black);
-        g.drawString(((pf.getOrientation() == PageFormat.PORTRAIT)
-                      ? "Portrait" : "Landscape"),
-                     (int) (ix+iw/2), (int) (iy+ih/2));
-        g.draw(new Ellipse2D.Double(ix, iy, iw, ih));
+                void drawGraphics(Graphics2D g, PageFormat pf) {
+                    double ix = pf.getImageableX();
+                    double iy = pf.getImageableY();
+                    double iw = pf.getImageableWidth();
+                    double ih = pf.getImageableHeight();
+
+                    g.setColor(Color.black);
+                    g.drawString(((pf.getOrientation() == PageFormat.PORTRAIT)
+                                    ? "Portrait" : "Landscape"),
+                            (int) (ix + iw / 2), (int) (iy + ih / 2));
+                    g.draw(new Ellipse2D.Double(ix, iy, iw, ih));
+                }
+            };
+
+            Book book = new Book();
+            PageFormat pf = pjob.defaultPage();
+            pf.setOrientation(PageFormat.PORTRAIT);
+            book.append(p, pf);
+            pf = pjob.defaultPage();
+            pf.setOrientation(PageFormat.LANDSCAPE);
+            book.append(p, pf);
+            pjob.setPageable(book);
+
+            try {
+                pjob.print();
+            } catch (PrinterException ex) {
+                ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                PassFailJFrame.forceFail(msg);
+            }
+        });
+        return btn;
     }
 }

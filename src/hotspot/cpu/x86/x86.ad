@@ -1187,8 +1187,8 @@ class HandlerImpl {
 
  public:
 
-  static int emit_exception_handler(CodeBuffer &cbuf);
-  static int emit_deopt_handler(CodeBuffer& cbuf);
+  static int emit_exception_handler(C2_MacroAssembler *masm);
+  static int emit_deopt_handler(C2_MacroAssembler* masm);
 
   static uint size_exception_handler() {
     // NativeCall instruction size is the same as NativeJump.
@@ -1306,13 +1306,12 @@ int MachNode::compute_padding(int current_offset) const {
 
 // Emit exception handler code.
 // Stuff framesize into a register and call a VM stub routine.
-int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -1324,13 +1323,12 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
 }
 
 // Emit deopt handler code.
-int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
-  C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -1358,7 +1356,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   return offset;
 }
 
-Assembler::Width widthForType(BasicType bt) {
+static Assembler::Width widthForType(BasicType bt) {
   if (bt == T_BYTE) {
     return Assembler::B;
   } else if (bt == T_SHORT) {
@@ -1425,6 +1423,8 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_CompressV:
+    case Op_ExpandV:
     case Op_PopCountVL:
       if (UseAVX < 2) {
         return false;
@@ -1569,6 +1569,7 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_LoadVectorGather:
+    case Op_LoadVectorGatherMasked:
       if (UseAVX < 2) {
         return false;
       }
@@ -1659,12 +1660,6 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
-    case Op_CompressV:
-    case Op_ExpandV:
-      if (!VM_Version::supports_avx512vl()) {
-        return false;
-      }
-      break;
     case Op_SqrtF:
       if (UseSSE < 1) {
         return false;
@@ -1703,7 +1698,7 @@ static inline bool is_pop_count_instr_target(BasicType bt) {
          (is_non_subword_integral_type(bt) && VM_Version::supports_avx512_vpopcntdq());
 }
 
-bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
@@ -1767,6 +1762,12 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     case Op_LoadVectorMasked:
     case Op_StoreVectorMasked:
       if (!VM_Version::supports_avx512bw() && (is_subword_type(bt) || UseAVX < 1)) {
+        return false;
+      }
+      break;
+    case Op_UMinV:
+    case Op_UMaxV:
+      if (UseAVX == 0) {
         return false;
       }
       break;
@@ -1913,6 +1914,17 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       }
       break;
     case Op_LoadVectorGatherMasked:
+      if (!is_subword_type(bt) && size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      }
+      if (is_subword_type(bt) &&
+         (!is_LP64                                                ||
+         (size_in_bits > 256 && !VM_Version::supports_avx512bw()) ||
+         (size_in_bits < 64)                                      ||
+         (bt == T_SHORT && !VM_Version::supports_bmi2()))) {
+        return false;
+      }
+      break;
     case Op_StoreVectorScatterMasked:
     case Op_StoreVectorScatter:
       if (is_subword_type(bt)) {
@@ -1922,10 +1934,36 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       }
       // fallthrough
     case Op_LoadVectorGather:
-      if (size_in_bits == 64 ) {
+      if (!is_subword_type(bt) && size_in_bits == 64) {
+        return false;
+      }
+      if (is_subword_type(bt) && size_in_bits < 64) {
         return false;
       }
       break;
+    case Op_SaturatingAddV:
+    case Op_SaturatingSubV:
+      if (UseAVX < 1) {
+        return false; // Implementation limitation
+      }
+      if (is_subword_type(bt) && size_in_bits == 512 && !VM_Version::supports_avx512bw()) {
+        return false;
+      }
+      break;
+    case Op_SelectFromTwoVector:
+       if (size_in_bits < 128 || (size_in_bits < 512 && !VM_Version::supports_avx512vl())) {
+         return false;
+       }
+       if (bt == T_SHORT && !VM_Version::supports_avx512bw()) {
+         return false;
+       }
+       if (bt == T_BYTE && !VM_Version::supports_avx512_vbmi()) {
+         return false;
+       }
+       if ((bt == T_INT || bt == T_FLOAT || bt == T_DOUBLE) && !VM_Version::supports_evex()) {
+         return false;
+       }
+       break;
     case Op_MaskAll:
       if (!VM_Version::supports_evex()) {
         return false;
@@ -1952,13 +1990,12 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (is_subword_type(bt) && !VM_Version::supports_avx512_vbmi2()) {
         return false;
       }
+      if (!is_LP64 && !VM_Version::supports_avx512vl() && size_in_bits < 512) {
+        return false;
+      }
       if (size_in_bits < 128 ) {
         return false;
       }
-      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
-        return false;
-      }
-      break;
     case Op_VectorLongToMask:
       if (UseAVX < 1 || !is_LP64) {
         return false;
@@ -2101,12 +2138,26 @@ bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType
     case Op_StoreVectorScatterMasked:
       return true;
 
+    case Op_UMinV:
+    case Op_UMaxV:
+      if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
+        return false;
+      } // fallthrough
     case Op_MaxV:
     case Op_MinV:
       if (is_subword_type(bt) && !VM_Version::supports_avx512bw()) {
         return false; // Implementation limitation
       }
       if (is_floating_point_type(bt)) {
+        return false; // Implementation limitation
+      }
+      return true;
+    case Op_SaturatingAddV:
+    case Op_SaturatingSubV:
+      if (!is_subword_type(bt)) {
+        return false;
+      }
+      if (size_in_bits < 128 || !VM_Version::supports_avx512bw()) {
         return false; // Implementation limitation
       }
       return true;
@@ -2160,6 +2211,19 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
+// Return true if Vector::rearrange needs preparation of the shuffle argument
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  switch (elem_bt) {
+    case T_BYTE:  return false;
+    case T_SHORT: return !VM_Version::supports_avx512bw();
+    case T_INT:   return !VM_Version::supports_avx();
+    case T_LONG:  return vlen < 8 && !VM_Version::supports_avx512vl();
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+}
+
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, uint ideal_reg, bool is_temp) {
   assert(Matcher::is_generic_vector(generic_opnd), "not generic");
   bool legacy = (generic_opnd->opcode() == LEGVEC);
@@ -2186,7 +2250,7 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, 
     }
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -2221,10 +2285,6 @@ bool Matcher::is_generic_vector(MachOper* opnd) {
 
 const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
-}
-
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
 }
 
 // Max vector size in bytes. 0 if not supported.
@@ -2285,7 +2345,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
   // Limit the max vector size for auto vectorization to 256 bits (32 bytes)
   // by default on Cascade Lake
   if (VM_Version::is_default_intel_cascade_lake()) {
@@ -2355,7 +2415,7 @@ class FusedPatternMatcher {
   int _con_op;
 
   static int match_next(Node* n, int next_op, int next_op_idx) {
-    if (n->in(1) == NULL || n->in(2) == NULL) {
+    if (n->in(1) == nullptr || n->in(2) == nullptr) {
       return -1;
     }
 
@@ -2422,7 +2482,7 @@ class FusedPatternMatcher {
 
 static bool is_bmi_pattern(Node* n, Node* m) {
   assert(UseBMI1Instructions, "sanity");
-  if (n != NULL && m != NULL) {
+  if (n != nullptr && m != nullptr) {
     if (m->Opcode() == Op_LoadI) {
       FusedPatternMatcher<TypeInt> bmii(n, m, Op_ConI);
       return bmii.match(Op_AndI, -1, Op_SubI,  1,  0)  ||
@@ -2449,6 +2509,10 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
     mstack.push(m, Visit);           // m = ShiftCntV
     return true;
   }
+  if (is_encode_and_store_pattern(n, m)) {
+    mstack.push(m, Visit);
+    return true;
+  }
   return false;
 }
 
@@ -2461,11 +2525,12 @@ bool Matcher::pd_clone_address_expressions(AddPNode* m, Matcher::MStack& mstack,
     address_visited.test_set(m->_idx); // Flag as address_visited
     Node *adr = m->in(AddPNode::Address);
 
-    // Intel can handle 2 adds in addressing mode
+    // Intel can handle 2 adds in addressing mode, with one of them using an immediate offset.
     // AtomicAdd is not an addressing expression.
     // Cheap to find it by looking for screwy base.
     if (adr->is_AddP() &&
         !adr->in(AddPNode::Base)->is_top() &&
+        !adr->in(AddPNode::Offset)->is_Con() &&
         LP64_ONLY( off->get_long() == (int) (off->get_long()) && ) // immL32
         // Are there other uses besides address expressions?
         !is_visited(adr)) {
@@ -2529,14 +2594,13 @@ static inline Assembler::ComparisonPredicateFP booltest_pred_to_comparison_pred_
 }
 
 // Helper methods for MachSpillCopyNode::implementation().
-static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
+static void vec_mov_helper(C2_MacroAssembler *masm, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st) {
   assert(ireg == Op_VecS || // 32bit vector
          ((src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
           (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi),
          "no non-adjacent vector moves" );
-  if (cbuf) {
-    C2_MacroAssembler _masm(cbuf);
+  if (masm) {
     switch (ireg) {
     case Op_VecS: // copy whole register
     case Op_VecD:
@@ -2587,10 +2651,9 @@ static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
   }
 }
 
-void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
+void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
                      int stack_offset, int reg, uint ireg, outputStream* st) {
-  if (cbuf) {
-    C2_MacroAssembler _masm(cbuf);
+  if (masm) {
     if (is_load) {
       switch (ireg) {
       case Op_VecS:
@@ -2712,20 +2775,40 @@ void vec_spill_helper(CodeBuffer *cbuf, bool is_load,
 }
 
 template <class T>
-static inline GrowableArray<jvalue>* vreplicate_imm(BasicType bt, T con, int len) {
-  GrowableArray<jvalue>* val = new GrowableArray<jvalue>(len);
-  jvalue ele;
-  switch (bt) {
-    case T_BYTE:   ele.b = con; break;
-    case T_SHORT:  ele.s = con; break;
-    case T_INT:    ele.i = con; break;
-    case T_LONG:   ele.j = con; break;
-    case T_FLOAT:  ele.f = con; break;
-    case T_DOUBLE: ele.d = con; break;
-    default: ShouldNotReachHere();
-  }
+static inline GrowableArray<jbyte>* vreplicate_imm(BasicType bt, T con, int len) {
+  int size = type2aelembytes(bt) * len;
+  GrowableArray<jbyte>* val = new GrowableArray<jbyte>(size, size, 0);
   for (int i = 0; i < len; i++) {
-    val->append(ele);
+    int offset = i * type2aelembytes(bt);
+    switch (bt) {
+      case T_BYTE: val->at(i) = con; break;
+      case T_SHORT: {
+        jshort c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jshort));
+        break;
+      }
+      case T_INT: {
+        jint c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jint));
+        break;
+      }
+      case T_LONG: {
+        jlong c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jlong));
+        break;
+      }
+      case T_FLOAT: {
+        jfloat c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jfloat));
+        break;
+      }
+      case T_DOUBLE: {
+        jdouble c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jdouble));
+        break;
+      }
+      default: assert(false, "%s", type2name(bt));
+    }
   }
   return val;
 }
@@ -2748,8 +2831,7 @@ static inline jlong high_bit_set(BasicType bt) {
   }
 #endif
 
-  void MachNopNode::emit(CodeBuffer &cbuf, PhaseRegAlloc*) const {
-    C2_MacroAssembler _masm(&cbuf);
+  void MachNopNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc*) const {
     __ nop(_count);
   }
 
@@ -2763,8 +2845,7 @@ static inline jlong high_bit_set(BasicType bt) {
   }
 #endif
 
-  void MachBreakpointNode::emit(CodeBuffer &cbuf, PhaseRegAlloc* ra_) const {
-    C2_MacroAssembler _masm(&cbuf);
+  void MachBreakpointNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const {
     __ int3();
   }
 
@@ -2777,7 +2858,6 @@ static inline jlong high_bit_set(BasicType bt) {
 encode %{
 
   enc_class call_epilog %{
-    C2_MacroAssembler _masm(&cbuf);
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
       int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
@@ -3669,6 +3749,7 @@ instruct vconvF2HF(vec dst, vec src) %{
 %}
 
 instruct vconvF2HF_mem_reg(memory mem, vec src) %{
+  predicate(n->as_StoreVector()->memory_size() >= 16);
   match(Set mem (StoreVector mem (VectorCastF2HF src)));
   format %{ "vcvtps2ph $mem,$src" %}
   ins_encode %{
@@ -3879,18 +3960,10 @@ instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
   ins_cost(150);
   ins_encode %{
     assert(UseSSE >= 4, "required");
+    if ((UseAVX == 0) && ($dst$$XMMRegister != $src$$XMMRegister)) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ roundsd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct roundD_mem(legRegD dst, memory src, immU8 rmode) %{
-  match(Set dst (RoundDoubleMode (LoadD src) rmode));
-  format %{ "roundsd $dst,$src" %}
-  ins_cost(150);
-  ins_encode %{
-    assert(UseSSE >= 4, "required");
-    __ roundsd($dst$$XMMRegister, $src$$Address, $rmode$$constant);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4020,7 +4093,8 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ load_vector(bt, $dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4045,10 +4119,11 @@ instruct storeV(memory mem, vec src) %{
 
 // ---------------------------------------- Gather ------------------------------------
 
-// Gather INT, LONG, FLOAT, DOUBLE
+// Gather BYTE, SHORT, INT, LONG, FLOAT, DOUBLE
 
 instruct gather(legVec dst, memory mem, legVec idx, rRegP tmp, legVec mask) %{
-  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  predicate(!VM_Version::supports_avx512vl() && !is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            Matcher::vector_length_in_bytes(n) <= 32);
   match(Set dst (LoadVectorGather mem idx));
   effect(TEMP dst, TEMP tmp, TEMP mask);
   format %{ "load_vector_gather $dst, $mem, $idx\t! using $tmp and $mask as TEMP" %}
@@ -4065,7 +4140,8 @@ instruct gather(legVec dst, memory mem, legVec idx, rRegP tmp, legVec mask) %{
 
 
 instruct evgather(vec dst, memory mem, vec idx, rRegP tmp, kReg ktmp) %{
-  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
+  predicate((VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64) &&
+            !is_subword_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (LoadVectorGather mem idx));
   effect(TEMP dst, TEMP tmp, TEMP ktmp);
   format %{ "load_vector_gather $dst, $mem, $idx\t! using $tmp and ktmp as TEMP" %}
@@ -4080,7 +4156,8 @@ instruct evgather(vec dst, memory mem, vec idx, rRegP tmp, kReg ktmp) %{
 %}
 
 instruct evgather_masked(vec dst, memory mem, vec idx, kReg mask, kReg ktmp, rRegP tmp) %{
-  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
+  predicate((VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64) &&
+            !is_subword_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (LoadVectorGatherMasked mem (Binary idx mask)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp);
   format %{ "load_vector_gather_masked $dst, $mem, $idx, $mask\t! using $tmp and ktmp as TEMP" %}
@@ -4098,6 +4175,238 @@ instruct evgather_masked(vec dst, memory mem, vec idx, kReg mask, kReg ktmp, rRe
   %}
   ins_pipe( pipe_slow );
 %}
+
+instruct vgather_subwordLE8B(vec dst, memory mem, rRegP idx_base, immI_0 offset, rRegP tmp, rRegI rtmp) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
+  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
+  effect(TEMP tmp, TEMP rtmp);
+  format %{ "vector_gatherLE8 $dst, $mem, $idx_base\t! using $tmp and $rtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ vgather8b_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, noreg, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_subwordGT8B(vec dst, memory mem, rRegP idx_base, immI_0 offset, rRegP tmp, rRegP idx_base_temp,
+                             vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI length, rFlagsReg cr) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP length, KILL cr);
+  format %{ "vector_gatherGT8 $dst, $mem, $idx_base\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp and $length as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, noreg, noreg, $xtmp1$$XMMRegister,
+                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, noreg, $length$$Register, vector_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_subwordLE8B_off(vec dst, memory mem, rRegP idx_base, rRegI offset, rRegP tmp, rRegI rtmp, rFlagsReg cr) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
+  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
+  effect(TEMP tmp, TEMP rtmp, KILL cr);
+  format %{ "vector_gatherLE8_off $dst, $mem, $idx_base, $offset\t! using $tmp and $rtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ vgather8b_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $offset$$Register, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+instruct vgather_subwordGT8B_off(vec dst, memory mem, rRegP idx_base, rRegI offset, rRegP tmp, rRegP idx_base_temp,
+                                 vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI length, rFlagsReg cr) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (LoadVectorGather mem (Binary idx_base offset)));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP length, KILL cr);
+  format %{ "vector_gatherGT8_off $dst, $mem, $idx_base, $offset\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp and $length as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $offset$$Register, noreg, $xtmp1$$XMMRegister,
+                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, noreg, $length$$Register, vector_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+
+#ifdef _LP64
+instruct vgather_masked_subwordLE8B_avx3(vec dst, memory mem, rRegP idx_base, immI_0 offset, kReg mask, rRegL mask_idx, rRegP tmp, rRegI rtmp, rRegL rtmp2, rFlagsReg cr) %{
+  predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
+  format %{ "vector_masked_gatherLE8 $dst, $mem, $idx_base, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ xorq($mask_idx$$Register, $mask_idx$$Register);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ kmovql($rtmp2$$Register, $mask$$KRegister);
+    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, noreg, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_masked_subwordGT8B_avx3(vec dst, memory mem, rRegP idx_base, immI_0 offset, kReg mask, rRegP tmp, rRegP idx_base_temp,
+                                         vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegL rtmp2, rRegL mask_idx, rRegI length, rFlagsReg cr) %{
+  predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
+  format %{ "vector_gatherGT8_masked $dst, $mem, $idx_base, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ xorq($mask_idx$$Register, $mask_idx$$Register);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
+    __ kmovql($rtmp2$$Register, $mask$$KRegister);
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, noreg, $rtmp2$$Register, $xtmp1$$XMMRegister,
+                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_masked_subwordLE8B_off_avx3(vec dst, memory mem, rRegP idx_base, rRegI offset, kReg mask, rRegL mask_idx, rRegP tmp, rRegI rtmp, rRegL rtmp2, rFlagsReg cr) %{
+  predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
+  format %{ "vector_masked_gatherLE8_off $dst, $mem, $idx_base, $offset, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ xorq($mask_idx$$Register, $mask_idx$$Register);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ kmovql($rtmp2$$Register, $mask$$KRegister);
+    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $offset$$Register,
+                                $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_masked_subwordGT8B_off_avx3(vec dst, memory mem, rRegP idx_base, rRegI offset, kReg mask, rRegP tmp, rRegP idx_base_temp,
+                                             vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegL rtmp2, rRegL mask_idx, rRegI length, rFlagsReg cr) %{
+  predicate(VM_Version::supports_avx512bw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
+  format %{ "vector_gatherGT8_masked_off $dst, $mem, $idx_base, $offset, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ xorq($mask_idx$$Register, $mask_idx$$Register);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
+    __ kmovql($rtmp2$$Register, $mask$$KRegister);
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $offset$$Register, $rtmp2$$Register, $xtmp1$$XMMRegister,
+                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_masked_subwordLE8B_avx2(vec dst, memory mem, rRegP idx_base, immI_0 offset, vec mask, rRegI mask_idx, rRegP tmp, rRegI rtmp, rRegI rtmp2, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
+  format %{ "vector_masked_gatherLE8 $dst, $mem, $idx_base, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ vpmovmskb($rtmp2$$Register, $mask$$XMMRegister, vlen_enc);
+    if (elem_bt == T_SHORT) {
+      __ movl($mask_idx$$Register, 0x55555555);
+      __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
+    }
+    __ xorl($mask_idx$$Register, $mask_idx$$Register);
+    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, noreg, $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_masked_subwordGT8B_avx2(vec dst, memory mem, rRegP idx_base, immI_0 offset, vec mask, rRegP tmp, rRegP idx_base_temp,
+                                         vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI rtmp2, rRegI mask_idx, rRegI length, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
+  format %{ "vector_gatherGT8_masked $dst, $mem, $idx_base, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
+    __ vpmovmskb($rtmp2$$Register, $mask$$XMMRegister, vlen_enc);
+    if (elem_bt == T_SHORT) {
+      __ movl($mask_idx$$Register, 0x55555555);
+      __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
+    }
+    __ xorl($mask_idx$$Register, $mask_idx$$Register);
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, noreg, $rtmp2$$Register, $xtmp1$$XMMRegister,
+                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_masked_subwordLE8B_off_avx2(vec dst, memory mem, rRegP idx_base, rRegI offset, vec mask, rRegI mask_idx, rRegP tmp, rRegI rtmp, rRegI rtmp2, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) <= 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP mask_idx, TEMP tmp, TEMP rtmp, TEMP rtmp2, KILL cr);
+  format %{ "vector_masked_gatherLE8_off $dst, $mem, $idx_base, $offset, $mask\t! using $mask_idx, $tmp, $rtmp and $rtmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ vpmovmskb($rtmp2$$Register, $mask$$XMMRegister, vlen_enc);
+    if (elem_bt == T_SHORT) {
+      __ movl($mask_idx$$Register, 0x55555555);
+      __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
+    }
+    __ xorl($mask_idx$$Register, $mask_idx$$Register);
+    __ vgather8b_masked_offset(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base$$Register, $offset$$Register,
+                                $rtmp2$$Register, $mask_idx$$Register, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vgather_masked_subwordGT8B_off_avx2(vec dst, memory mem, rRegP idx_base, rRegI offset, vec mask, rRegP tmp, rRegP idx_base_temp,
+                                             vec xtmp1, vec xtmp2, vec xtmp3, rRegI rtmp, rRegI rtmp2, rRegI mask_idx, rRegI length, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vlbw() && is_subword_type(Matcher::vector_element_basic_type(n)) && Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (LoadVectorGatherMasked mem (Binary idx_base (Binary mask offset))));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP idx_base_temp, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP rtmp, TEMP rtmp2, TEMP mask_idx, TEMP length, KILL cr);
+  format %{ "vector_gatherGT8_masked_off $dst, $mem, $idx_base, $offset, $mask\t! using $tmp, $idx_base_temp, $xtmp1, $xtmp2, $xtmp3, $rtmp, $rtmp2, $mask_idx and $length as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int vector_len = Matcher::vector_length(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ xorl($mask_idx$$Register, $mask_idx$$Register);
+    __ lea($tmp$$Register, $mem$$Address);
+    __ movptr($idx_base_temp$$Register, $idx_base$$Register);
+    __ vpmovmskb($rtmp2$$Register, $mask$$XMMRegister, vlen_enc);
+    if (elem_bt == T_SHORT) {
+      __ movl($mask_idx$$Register, 0x55555555);
+      __ pextl($rtmp2$$Register, $rtmp2$$Register, $mask_idx$$Register);
+    }
+    __ xorl($mask_idx$$Register, $mask_idx$$Register);
+    __ vgather_subword(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx_base_temp$$Register, $offset$$Register, $rtmp2$$Register, $xtmp1$$XMMRegister,
+                       $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $rtmp$$Register, $mask_idx$$Register, $length$$Register, vector_len, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif
+
 // ====================Scatter=======================================
 
 // Scatter INT, LONG, FLOAT, DOUBLE
@@ -4268,10 +4577,9 @@ instruct ReplI_imm(vec dst, immI con) %{
   match(Set dst (Replicate con));
   format %{ "replicateI $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(Matcher::vector_element_basic_type(this),
-        vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
-            (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 8) /
-                type2aelembytes(Matcher::vector_element_basic_type(this))));
+    InternalAddress addr = $constantaddress(vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
+                                                           (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 16) /
+                                                                   type2aelembytes(Matcher::vector_element_basic_type(this))));
     BasicType bt = Matcher::vector_element_basic_type(this);
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(bt, $dst$$XMMRegister, addr, vlen);
@@ -4409,7 +4717,7 @@ instruct ReplL_imm(vec dst, immL con) %{
   match(Set dst (Replicate con));
   format %{ "replicateL $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, $con$$constant, 1));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_LONG, $con$$constant, VM_Version::supports_sse3() ? 1 : 2));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_LONG, $dst$$XMMRegister, addr, vlen);
   %}
@@ -4491,8 +4799,8 @@ instruct ReplF_imm(vec dst, immF con) %{
   match(Set dst (Replicate con));
   format %{ "replicateF $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_FLOAT, vreplicate_imm(T_FLOAT, $con$$constant,
-        VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 2));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_FLOAT, $con$$constant,
+                                                           VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 4));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_FLOAT, $dst$$XMMRegister, addr, vlen);
   %}
@@ -4568,7 +4876,7 @@ instruct ReplD_imm(vec dst, immD con) %{
   match(Set dst (Replicate con));
   format %{ "replicateD $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_DOUBLE, vreplicate_imm(T_DOUBLE, $con$$constant, 1));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_DOUBLE, $con$$constant, VM_Version::supports_sse3() ? 1 : 2));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_DOUBLE, $dst$$XMMRegister, addr, vlen);
   %}
@@ -4879,7 +5187,7 @@ instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtm
 // =======================Float Reduction==========================================
 
 instruct reductionF128(regF dst, vec src, vec vtmp) %{
-  predicate(Matcher::vector_length(n->in(2)) <= 4); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) <= 4); // src
   match(Set dst (AddReductionVF dst src));
   match(Set dst (MulReductionVF dst src));
   effect(TEMP dst, TEMP vtmp);
@@ -4893,7 +5201,7 @@ instruct reductionF128(regF dst, vec src, vec vtmp) %{
 %}
 
 instruct reduction8F(regF dst, vec src, vec vtmp1, vec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 8); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src
   match(Set dst (AddReductionVF dst src));
   match(Set dst (MulReductionVF dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -4907,7 +5215,7 @@ instruct reduction8F(regF dst, vec src, vec vtmp1, vec vtmp2) %{
 %}
 
 instruct reduction16F(regF dst, legVec src, legVec vtmp1, legVec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 16); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 16); // src
   match(Set dst (AddReductionVF dst src));
   match(Set dst (MulReductionVF dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -4920,10 +5228,79 @@ instruct reduction16F(regF dst, legVec src, legVec vtmp1, legVec vtmp2) %{
   ins_pipe( pipe_slow );
 %}
 
+
+instruct unordered_reduction2F(regF dst, regF src1, vec src2) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 2); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst);
+  format %{ "vector_reduction_float  $dst,$src1,$src2 ;" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction4F(regF dst, regF src1, vec src2, vec vtmp) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 4); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst, TEMP vtmp);
+  format %{ "vector_reduction_float  $dst,$src1,$src2 ; using $vtmp as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction8F(regF dst, regF src1, vec src2, vec vtmp1, vec vtmp2) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vector_reduction_float $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction16F(regF dst, regF src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 16); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vector_reduction_float $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // =======================Double Reduction==========================================
 
 instruct reduction2D(regD dst, vec src, vec vtmp) %{
-  predicate(Matcher::vector_length(n->in(2)) == 2); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 2); // src
   match(Set dst (AddReductionVD dst src));
   match(Set dst (MulReductionVD dst src));
   effect(TEMP dst, TEMP vtmp);
@@ -4937,7 +5314,7 @@ instruct reduction2D(regD dst, vec src, vec vtmp) %{
 %}
 
 instruct reduction4D(regD dst, vec src, vec vtmp1, vec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 4); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 4); // src
   match(Set dst (AddReductionVD dst src));
   match(Set dst (MulReductionVD dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -4951,7 +5328,7 @@ instruct reduction4D(regD dst, vec src, vec vtmp1, vec vtmp2) %{
 %}
 
 instruct reduction8D(regD dst, legVec src, legVec vtmp1, legVec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 8); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src
   match(Set dst (AddReductionVD dst src));
   match(Set dst (MulReductionVD dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -4960,6 +5337,57 @@ instruct reduction8D(regD dst, legVec src, legVec vtmp1, legVec vtmp2) %{
     int opcode = this->ideal_Opcode();
     int vlen = Matcher::vector_length(this, $src);
     __ reduce_fp(opcode, vlen, $dst$$XMMRegister, $src$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction2D(regD dst, regD src1, vec src2) %{
+  // Non-strictly ordered floating-point add/mul reduction for doubles. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 2); // src2
+  match(Set dst (AddReductionVD src1 src2));
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP dst);
+  format %{ "vector_reduction_double $dst,$src1,$src2 ;" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister);
+%}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction4D(regD dst, regD src1, vec src2, vec vtmp) %{
+  // Non-strictly ordered floating-point add/mul reduction for doubles. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 4); // src2
+  match(Set dst (AddReductionVD src1 src2));
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP dst, TEMP vtmp);
+  format %{ "vector_reduction_double $dst,$src1,$src2 ; using $vtmp as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction8D(regD dst, regD src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  // Non-strictly ordered floating-point add/mul reduction for doubles. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src2
+  match(Set dst (AddReductionVD src1 src2));
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vector_reduction_double $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -5784,6 +6212,7 @@ instruct evmulL_reg(vec dst, vec src1, vec src2) %{
              VM_Version::supports_avx512dq()) ||
             VM_Version::supports_avx512vldq());
   match(Set dst (MulVL src1 src2));
+  ins_cost(500);
   format %{ "evpmullq $dst,$src1,$src2\t! mul packedL" %}
   ins_encode %{
     assert(UseAVX > 2, "required");
@@ -5800,6 +6229,7 @@ instruct evmulL_mem(vec dst, vec src, memory mem) %{
              VM_Version::supports_avx512vldq()));
   match(Set dst (MulVL src (LoadVector mem)));
   format %{ "evpmullq $dst,$src,$mem\t! mul packedL" %}
+  ins_cost(500);
   ins_encode %{
     assert(UseAVX > 2, "required");
     int vlen_enc = vector_length_encoding(this);
@@ -5811,6 +6241,7 @@ instruct evmulL_mem(vec dst, vec src, memory mem) %{
 instruct vmulL(vec dst, vec src1, vec src2, vec xtmp) %{
   predicate(UseAVX == 0);
   match(Set dst (MulVL src1 src2));
+  ins_cost(500);
   effect(TEMP dst, TEMP xtmp);
   format %{ "mulVL   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
   ins_encode %{
@@ -5837,6 +6268,7 @@ instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
               !VM_Version::supports_avx512vldq())));
   match(Set dst (MulVL src1 src2));
   effect(TEMP xtmp1, TEMP xtmp2);
+  ins_cost(500);
   format %{ "vmulVL  $dst, $src1, $src2\t! using $xtmp1, $xtmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
@@ -5849,6 +6281,30 @@ instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
     // Get the lo-lo products
     __ vpmuludq($xtmp1$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
     __ vpaddq($dst$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuludq_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0 && n->as_MulVL()->has_uint_inputs());
+  match(Set dst (MulVL src1 src2));
+  ins_cost(100);
+  format %{ "vpmuludq $dst,$src1,$src2\t! muludq packedL" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmuludq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuldq_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0 && n->as_MulVL()->has_int_inputs());
+  match(Set dst (MulVL src1 src2));
+  ins_cost(100);
+  format %{ "vpmuldq $dst,$src1,$src2\t! muldq packedL" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmuldq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -6123,6 +6579,80 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
     __ evminmax_fp(opcode, elem_bt,
                    $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister,
                    $ktmp$$KRegister, $atmp$$XMMRegister , $btmp$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// ------------------------------ Unsigned vector Min/Max ----------------------
+
+instruct vector_uminmax_reg(vec dst, vec a, vec b) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_LONG);
+  match(Set dst (UMinV a b));
+  match(Set dst (UMaxV a b));
+  format %{ "vector_uminmax $dst,$a,$b\t!" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(elem_bt), "");
+    __ vpuminmax(opcode, elem_bt, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_uminmax_mem(vec dst, vec a, memory b) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_LONG);
+  match(Set dst (UMinV a (LoadVector b)));
+  match(Set dst (UMaxV a (LoadVector b)));
+  format %{ "vector_uminmax $dst,$a,$b\t!" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    assert(is_integral_type(elem_bt), "");
+    __ vpuminmax(opcode, elem_bt, $dst$$XMMRegister, $a$$XMMRegister, $b$$Address, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_uminmaxq_reg(vec dst, vec a, vec b, vec xtmp1, vec xtmp2) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (UMinV a b));
+  match(Set dst (UMaxV a b));
+  effect(TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_uminmaxq $dst,$a,$b\t! using xtmp1 and xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    __ vpuminmaxq(opcode, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_uminmax_reg_masked(vec dst, vec src2, kReg mask) %{
+  match(Set dst (UMinV (Binary dst src2) mask));
+  match(Set dst (UMaxV (Binary dst src2) mask));
+  format %{ "vector_uminmax_masked $dst, $dst, $src2, $mask\t! umin/max masked operation" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_uminmax_mem_masked(vec dst, memory src2, kReg mask) %{
+  match(Set dst (UMinV (Binary dst (LoadVector src2)) mask));
+  match(Set dst (UMaxV (Binary dst (LoadVector src2)) mask));
+  format %{ "vector_uminmax_masked $dst, $dst, $src2, $mask\t! umin/max masked operation" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    int opc = this->ideal_Opcode();
+    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
+                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7006,14 +7536,24 @@ instruct vxor_mem(vec dst, vec src, memory mem) %{
 // --------------------------------- VectorCast --------------------------------------
 
 instruct vcastBtoX(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_DOUBLE);
   match(Set dst (VectorCastB2X src));
   format %{ "vector_cast_b2x $dst,$src\t!" %}
   ins_encode %{
-    assert(UseAVX > 0, "required");
-
     BasicType to_elem_bt = Matcher::vector_element_basic_type(this);
     int vlen_enc = vector_length_encoding(this);
     __ vconvert_b2x(to_elem_bt, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcastBtoD(legVec dst, legVec src) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (VectorCastB2X src));
+  format %{ "vector_cast_b2x $dst,$src\t!" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vconvert_b2x(T_DOUBLE, $dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -7446,7 +7986,7 @@ instruct vround_reg_evex(vec dst, vec src, rRegP tmp, vec xtmp1, vec xtmp2, kReg
 // --------------------------------- VectorMaskCmp --------------------------------------
 
 instruct vcmpFD(legVec dst, legVec src1, legVec src2, immI8 cond) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  8 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
             is_floating_point_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1 T_FLOAT, T_DOUBLE
@@ -7466,7 +8006,7 @@ instruct vcmpFD(legVec dst, legVec src1, legVec src2, immI8 cond) %{
 
 instruct evcmpFD64(vec dst, vec src1, vec src2, immI8 cond, kReg ktmp) %{
   predicate(Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 64 && // src1
-            n->bottom_type()->isa_vectmask() == NULL &&
+            n->bottom_type()->isa_vectmask() == nullptr &&
             is_floating_point_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1 T_FLOAT, T_DOUBLE
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
   effect(TEMP ktmp);
@@ -7506,7 +8046,7 @@ instruct evcmpFD(kReg dst, vec src1, vec src2, immI8 cond) %{
 %}
 
 instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             !Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
@@ -7526,7 +8066,7 @@ instruct vcmp_direct(legVec dst, legVec src1, legVec src2, immI8 cond) %{
 %}
 
 instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             !Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
@@ -7547,7 +8087,7 @@ instruct vcmp_negate(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xt
 %}
 
 instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL &&
+  predicate(n->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::is_unsigned_booltest_pred(n->in(2)->get_int()) &&
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) >=  4 && // src1
             Matcher::vector_length_in_bytes(n->in(1)->in(1)) <= 32 && // src1
@@ -7574,7 +8114,7 @@ instruct vcmpu(legVec dst, legVec src1, legVec src2, immI8 cond, legVec xtmp) %{
 %}
 
 instruct vcmp64(vec dst, vec src1, vec src2, immI8 cond, kReg ktmp) %{
-  predicate((n->bottom_type()->isa_vectmask() == NULL &&
+  predicate((n->bottom_type()->isa_vectmask() == nullptr &&
              Matcher::vector_length_in_bytes(n->in(1)->in(1)) == 64) && // src1
              is_integral_type(Matcher::vector_element_basic_type(n->in(1)->in(1)))); // src1
   match(Set dst (VectorMaskCmp (Binary src1 src2) cond));
@@ -7790,7 +8330,7 @@ instruct blendvp(vec dst, vec src, vec mask, rxmm0 tmp) %{
 
 instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
   predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorBlend (Binary src1 src2) mask));
@@ -7804,7 +8344,7 @@ instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
 
 instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
   predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             !is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorBlend (Binary src1 src2) mask));
@@ -7818,7 +8358,7 @@ instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
 
 instruct vblendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp) %{
   predicate(UseAVX > 0 && EnableX86ECoreOpts &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
             Matcher::vector_length_in_bytes(n) <= 32);
   match(Set dst (VectorBlend (Binary src1 src2) mask));
   format %{ "vector_blend  $dst,$src1,$src2,$mask\t! using $vtmp as TEMP" %}
@@ -7834,7 +8374,7 @@ instruct vblendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp
 
 instruct evblendvp64(vec dst, vec src1, vec src2, vec mask, kReg ktmp) %{
   predicate(Matcher::vector_length_in_bytes(n) == 64 &&
-            n->in(2)->bottom_type()->isa_vectmask() == NULL);
+            n->in(2)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorBlend (Binary src1 src2) mask));
   format %{ "vector_blend  $dst,$src1,$src2,$mask\t! using k2 as TEMP" %}
   effect(TEMP ktmp);
@@ -8051,7 +8591,7 @@ instruct ktest_ge8(rFlagsRegU cr, kReg src1, kReg src2) %{
 //------------------------------------- LoadMask --------------------------------------------
 
 instruct loadMask(legVec dst, legVec src) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL && !VM_Version::supports_avx512vlbw());
+  predicate(n->bottom_type()->isa_vectmask() == nullptr && !VM_Version::supports_avx512vlbw());
   match(Set dst (VectorLoadMask src));
   effect(TEMP dst);
   format %{ "vector_loadmask_byte $dst, $src\n\t" %}
@@ -8091,7 +8631,7 @@ instruct loadMask_evex(kReg dst, vec src,  vec xtmp) %{
 //------------------------------------- StoreMask --------------------------------------------
 
 instruct vstoreMask1B(vec dst, vec src, immI_1 size) %{
-  predicate(Matcher::vector_length(n) < 64 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(Matcher::vector_length(n) < 64 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
@@ -8109,7 +8649,7 @@ instruct vstoreMask1B(vec dst, vec src, immI_1 size) %{
 %}
 
 instruct vstoreMask2B(vec dst, vec src, vec xtmp, immI_2 size) %{
-  predicate(Matcher::vector_length(n) <= 16 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(Matcher::vector_length(n) <= 16 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   effect(TEMP_DEF dst, TEMP xtmp);
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
@@ -8132,7 +8672,7 @@ instruct vstoreMask2B(vec dst, vec src, vec xtmp, immI_2 size) %{
 %}
 
 instruct vstoreMask4B(vec dst, vec src, vec xtmp, immI_4 size) %{
-  predicate(UseAVX <= 2 && Matcher::vector_length(n) <= 8 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(UseAVX <= 2 && Matcher::vector_length(n) <= 8 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   effect(TEMP_DEF dst, TEMP xtmp);
@@ -8192,7 +8732,7 @@ instruct storeMask8B_avx(vec dst, vec src, immI_8 size, vec vtmp) %{
 %}
 
 instruct vstoreMask4B_evex_novectmask(vec dst, vec src, immI_4 size) %{
-  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
@@ -8208,7 +8748,7 @@ instruct vstoreMask4B_evex_novectmask(vec dst, vec src, immI_4 size) %{
 %}
 
 instruct vstoreMask8B_evex_novectmask(vec dst, vec src, immI_8 size) %{
-  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(UseAVX > 2 && n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorStoreMask src size));
   format %{ "vector_store_mask $dst, $src \t! elem size is $size byte[s]" %}
   ins_encode %{
@@ -8333,17 +8873,6 @@ instruct VectorPopulateLIndex(vec dst, rRegL src1, immI_1 src2, vec vtmp) %{
 //-------------------------------- Rearrange ----------------------------------
 
 // LoadShuffle/Rearrange for Byte
-
-instruct loadShuffleB(vec dst) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
-  match(Set dst (VectorLoadShuffle dst));
-  format %{ "vector_load_shuffle $dst, $dst" %}
-  ins_encode %{
-    // empty
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct rearrangeB(vec dst, vec shuffle) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE &&
             Matcher::vector_length(n) < 32);
@@ -8410,7 +8939,7 @@ instruct rearrangeB_evex_vbmi(vec dst, vec src, vec shuffle) %{
 
 instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
-            Matcher::vector_length(n) <= 16 && !VM_Version::supports_avx512bw()); // NB! aligned with rearrangeS
+            !VM_Version::supports_avx512bw());
   match(Set dst (VectorLoadShuffle src));
   effect(TEMP dst, TEMP vtmp);
   format %{ "vector_load_shuffle $dst, $src\t! using $vtmp as TEMP" %}
@@ -8421,7 +8950,7 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
     if (UseAVX == 0) {
       assert(vlen_in_bytes <= 16, "required");
       // Multiply each shuffle by two to get byte index
-      __ pmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister);
+      __ movdqu($vtmp$$XMMRegister, $src$$XMMRegister);
       __ psllw($vtmp$$XMMRegister, 1);
 
       // Duplicate to create 2 copies of byte index
@@ -8436,8 +8965,7 @@ instruct loadShuffleS(vec dst, vec src, vec vtmp) %{
       assert(UseAVX > 1 || vlen_in_bytes <= 16, "required");
       int vlen_enc = vector_length_encoding(this);
       // Multiply each shuffle by two to get byte index
-      __ vpmovzxbw($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
-      __ vpsllw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
+      __ vpsllw($vtmp$$XMMRegister, $src$$XMMRegister, 1, vlen_enc);
 
       // Duplicate to create 2 copies of byte index
       __ vpsllw($dst$$XMMRegister, $vtmp$$XMMRegister,  8, vlen_enc);
@@ -8484,21 +9012,6 @@ instruct rearrangeS_avx(legVec dst, legVec src, vec shuffle, legVec vtmp1, legVe
   ins_pipe( pipe_slow );
 %}
 
-instruct loadShuffleS_evex(vec dst, vec src) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
-            VM_Version::supports_avx512bw());
-  match(Set dst (VectorLoadShuffle src));
-  format %{ "vector_load_shuffle $dst, $src" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    if (!VM_Version::supports_avx512vl()) {
-      vlen_enc = Assembler::AVX_512bit;
-    }
-    __ vpmovzxbw($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct rearrangeS_evex(vec dst, vec src, vec shuffle) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT &&
             VM_Version::supports_avx512bw());
@@ -8529,7 +9042,7 @@ instruct loadShuffleI(vec dst, vec src, vec vtmp) %{
     // only byte shuffle instruction available on these platforms
 
     // Duplicate and multiply each shuffle by 4
-    __ pmovzxbd($vtmp$$XMMRegister, $src$$XMMRegister);
+    __ movdqu($vtmp$$XMMRegister, $src$$XMMRegister);
     __ pshuflw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 0xA0);
     __ pshufhw($vtmp$$XMMRegister, $vtmp$$XMMRegister, 0xA0);
     __ psllw($vtmp$$XMMRegister, 2);
@@ -8554,18 +9067,6 @@ instruct rearrangeI(vec dst, vec shuffle) %{
   ins_encode %{
     assert(UseSSE >= 4, "required");
     __ pshufb($dst$$XMMRegister, $shuffle$$XMMRegister);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct loadShuffleI_avx(vec dst, vec src) %{
-  predicate((Matcher::vector_element_basic_type(n) == T_INT || Matcher::vector_element_basic_type(n) == T_FLOAT) &&
-            UseAVX > 0);
-  match(Set dst (VectorLoadShuffle src));
-  format %{ "vector_load_shuffle $dst, $src" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    __ vpmovzxbd($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -8599,8 +9100,7 @@ instruct loadShuffleL(vec dst, vec src, vec vtmp) %{
     // only double word shuffle instruction available on these platforms
 
     // Multiply each shuffle by two to get double word index
-    __ vpmovzxbq($vtmp$$XMMRegister, $src$$XMMRegister, vlen_enc);
-    __ vpsllq($vtmp$$XMMRegister, $vtmp$$XMMRegister, 1, vlen_enc);
+    __ vpsllq($vtmp$$XMMRegister, $src$$XMMRegister, 1, vlen_enc);
 
     // Duplicate each double word shuffle
     __ vpsllq($dst$$XMMRegister, $vtmp$$XMMRegister, 32, vlen_enc);
@@ -8622,20 +9122,6 @@ instruct rearrangeL(vec dst, vec src, vec shuffle) %{
 
     int vlen_enc = vector_length_encoding(this);
     __ vpermd($dst$$XMMRegister, $shuffle$$XMMRegister, $src$$XMMRegister, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct loadShuffleL_evex(vec dst, vec src) %{
-  predicate(is_double_word_type(Matcher::vector_element_basic_type(n)) && // T_LONG, T_DOUBLE
-            (Matcher::vector_length(n) == 8 || VM_Version::supports_avx512vl()));
-  match(Set dst (VectorLoadShuffle src));
-  format %{ "vector_load_shuffle $dst, $src" %}
-  ins_encode %{
-    assert(UseAVX > 2, "required");
-
-    int vlen_enc = vector_length_encoding(this);
-    __ vpmovzxbq($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9045,7 +9531,7 @@ instruct vmask_tolong_evex(rRegL dst, kReg mask, rFlagsReg cr) %{
 %}
 
 instruct vmask_tolong_bool(rRegL dst, vec mask, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskToLong mask));
   format %{ "vector_tolong_bool $dst, $mask \t! using $xtmp as TEMP" %}
   effect(TEMP_DEF dst, TEMP xtmp, KILL cr);
@@ -9061,7 +9547,7 @@ instruct vmask_tolong_bool(rRegL dst, vec mask, vec xtmp, rFlagsReg cr) %{
 %}
 
 instruct vmask_tolong_avx(rRegL dst, vec mask, immI size, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskToLong (VectorStoreMask mask size)));
   format %{ "vector_tolong_avx $dst, $mask \t! using $xtmp as TEMP" %}
   effect(TEMP_DEF dst, TEMP xtmp, KILL cr);
@@ -9094,7 +9580,7 @@ instruct vmask_truecount_evex(rRegI dst, kReg mask, rRegL tmp, rFlagsReg cr) %{
 %}
 
 instruct vmask_truecount_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskTrueCount mask));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
   format %{ "vector_truecount_bool $dst, $mask \t! using $tmp, $xtmp as TEMP" %}
@@ -9110,7 +9596,7 @@ instruct vmask_truecount_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp, rFlagsRe
 %}
 
 instruct vmask_truecount_avx(rRegI dst, vec mask, immI size, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskTrueCount (VectorStoreMask mask size)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
   format %{ "vector_truecount_avx $dst, $mask \t! using $tmp, $xtmp as TEMP" %}
@@ -9144,7 +9630,7 @@ instruct vmask_first_or_last_true_evex(rRegI dst, kReg mask, rRegL tmp, rFlagsRe
 %}
 
 instruct vmask_first_or_last_true_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskFirstTrue mask));
   match(Set dst (VectorMaskLastTrue mask));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
@@ -9161,7 +9647,7 @@ instruct vmask_first_or_last_true_bool(rRegI dst, vec mask, rRegL tmp, vec xtmp,
 %}
 
 instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, immI size, rRegL tmp, vec xtmp, rFlagsReg cr) %{
-  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == NULL);
+  predicate(n->in(1)->in(1)->bottom_type()->isa_vectmask() == nullptr);
   match(Set dst (VectorMaskFirstTrue (VectorStoreMask mask size)));
   match(Set dst (VectorMaskLastTrue (VectorStoreMask mask size)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP xtmp, KILL cr);
@@ -9178,8 +9664,26 @@ instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, immI size, rRegL tmp,
 %}
 
 // --------------------------------- Compress/Expand Operations ---------------------------
+#ifdef _LP64
+instruct vcompress_reg_avx(vec dst, vec src, vec mask, rRegI rtmp, rRegL rscratch, vec perm, vec xtmp, rFlagsReg cr) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (CompressV src mask));
+  match(Set dst (ExpandV src mask));
+  effect(TEMP_DEF dst, TEMP perm, TEMP xtmp, TEMP rtmp, TEMP rscratch, KILL cr);
+  format %{ "vector_compress $dst, $src, $mask \t!using $xtmp, $rtmp, $rscratch and $perm as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt  = Matcher::vector_element_basic_type(this);
+    __ vector_compress_expand_avx2(opcode, $dst$$XMMRegister, $src$$XMMRegister, $mask$$XMMRegister, $rtmp$$Register,
+                                   $rscratch$$Register, $perm$$XMMRegister, $xtmp$$XMMRegister, bt, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+#endif
 
 instruct vcompress_expand_reg_evex(vec dst, vec src, kReg mask) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
   match(Set dst (CompressV src mask));
   match(Set dst (ExpandV src mask));
   format %{ "vector_compress_expand $dst, $src, $mask" %}
@@ -9230,7 +9734,7 @@ instruct vreverse_reg_gfni(vec dst, vec src, vec xtmp) %{
   ins_encode %{
     int vec_enc = vector_length_encoding(this);
     BasicType bt  = Matcher::vector_element_basic_type(this);
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, 0x8040201008040201L, 1));
+    InternalAddress addr = $constantaddress(jlong(0x8040201008040201));
     __ vector_reverse_bit_gfni(bt, $dst$$XMMRegister, $src$$XMMRegister, addr, vec_enc,
                                $xtmp$$XMMRegister);
   %}
@@ -9660,21 +10164,6 @@ instruct vlshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vlshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (LShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (LShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (LShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vplshift_masked $dst, $dst, $src2, $mask\t! lshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vrshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
   match(Set dst (RShiftVS (Binary dst (RShiftCntV shift)) mask));
   match(Set dst (RShiftVI (Binary dst (RShiftCntV shift)) mask));
@@ -9722,21 +10211,6 @@ instruct vrshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct vrshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (RShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (RShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (RShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vprshift_masked $dst, $dst, $src2, $mask\t! rshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct vurshift_imm_masked(vec dst, immI8 shift, kReg mask) %{
   match(Set dst (URShiftVS (Binary dst (RShiftCntV shift)) mask));
   match(Set dst (URShiftVI (Binary dst (RShiftCntV shift)) mask));
@@ -9780,21 +10254,6 @@ instruct vurshiftv_reg_masked(vec dst, vec src2, kReg mask) %{
     int opc = this->ideal_Opcode();
     __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
                    $dst$$XMMRegister, $src2$$XMMRegister, true, vlen_enc, true);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct vurshift_mem_masked(vec dst, memory src2, kReg mask) %{
-  match(Set dst (URShiftVS (Binary dst (LoadVector src2)) mask));
-  match(Set dst (URShiftVI (Binary dst (LoadVector src2)) mask));
-  match(Set dst (URShiftVL (Binary dst (LoadVector src2)) mask));
-  format %{ "vpurshift_masked $dst, $dst, $src2, $mask\t! urshift masked operation" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int opc = this->ideal_Opcode();
-    __ evmasked_op(opc, bt, $mask$$KRegister, $dst$$XMMRegister,
-                   $dst$$XMMRegister, $src2$$Address, true, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -9998,7 +10457,7 @@ instruct mask_not_imm(kReg dst, kReg src, immI_M1 cnt) %{
 %}
 
 instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL && Matcher::vector_length(n) <= 8);
+  predicate(n->bottom_type()->isa_vectmask() == nullptr && Matcher::vector_length(n) <= 8);
   match(Set dst (VectorLongToMask src));
   effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp);
   format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp as TEMP" %}
@@ -10013,7 +10472,7 @@ instruct long_to_maskLE8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec x
 
 
 instruct long_to_maskGT8_avx(vec dst, rRegL src, rRegL rtmp1, rRegL rtmp2, vec xtmp1, rFlagsReg cr) %{
-  predicate(n->bottom_type()->isa_vectmask() == NULL && Matcher::vector_length(n) > 8);
+  predicate(n->bottom_type()->isa_vectmask() == nullptr && Matcher::vector_length(n) > 8);
   match(Set dst (VectorLongToMask src));
   effect(TEMP dst, TEMP rtmp1, TEMP rtmp2, TEMP xtmp1, KILL cr);
   format %{ "long_to_mask_avx $dst, $src\t! using $rtmp1, $rtmp2, $xtmp1, as TEMP" %}
@@ -10047,7 +10506,7 @@ instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
   ins_encode %{
     const MachNode* mask1 = static_cast<const MachNode*>(this->in(this->operand_index($src1)));
     const MachNode* mask2 = static_cast<const MachNode*>(this->in(this->operand_index($src2)));
-    assert(0 == Type::cmp(mask1->bottom_type(), mask2->bottom_type()), "");
+    assert(Type::equals(mask1->bottom_type(), mask2->bottom_type()), "Mask types must be equal");
     uint masklen = Matcher::vector_length(this);
     masklen = (masklen < 16 && !VM_Version::supports_avx512dq()) ? 16 : masklen;
     __ masked_op(this->ideal_Opcode(), masklen, $dst$$KRegister, $src1$$KRegister, $src2$$KRegister);
@@ -10132,6 +10591,249 @@ instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlag
   ins_encode %{
     __ vfpclasssd($ktmp$$KRegister, $src$$XMMRegister, 0x18);
     __ kmovbl($dst$$Register, $ktmp$$KRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_addsub_saturating_subword_reg(vec dst, vec src1, vec src2)
+%{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 src2));
+  match(Set dst (SaturatingSubV src1 src2));
+  format %{ "vector_addsub_saturating_subword $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_saturating_op(this->ideal_Opcode(), elem_bt, $dst$$XMMRegister,
+                            $src1$$XMMRegister, $src2$$XMMRegister, false, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_addsub_saturating_unsigned_subword_reg(vec dst, vec src1, vec src2)
+%{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 src2));
+  match(Set dst (SaturatingSubV src1 src2));
+  format %{ "vector_addsub_saturating_unsigned_subword $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_saturating_op(this->ideal_Opcode(), elem_bt, $dst$$XMMRegister,
+                            $src1$$XMMRegister, $src2$$XMMRegister, true, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_addsub_saturating_reg_evex(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2, kReg ktmp1, kReg ktmp2)
+%{
+  predicate(!is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned() &&
+            (Matcher::vector_length_in_bytes(n) == 64 || VM_Version::supports_avx512vl()));
+  match(Set dst (SaturatingAddV src1 src2));
+  match(Set dst (SaturatingSubV src1 src2));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp1, TEMP ktmp2);
+  format %{ "vector_addsub_saturating_evex $dst, $src1, $src2 \t! using $xtmp1, $xtmp2, $ktmp1 and $ktmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_addsub_dq_saturating_evex(this->ideal_Opcode(), elem_bt, $dst$$XMMRegister,
+                                        $src1$$XMMRegister, $src2$$XMMRegister,
+                                        $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                                        $ktmp1$$KRegister, $ktmp2$$KRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_addsub_saturating_reg_avx(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4)
+%{
+  predicate(!is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned() &&
+            Matcher::vector_length_in_bytes(n) <= 32 && !VM_Version::supports_avx512vl());
+  match(Set dst (SaturatingAddV src1 src2));
+  match(Set dst (SaturatingSubV src1 src2));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4);
+  format %{ "vector_addsub_saturating_avx $dst, $src1, $src2 \t! using $xtmp1, $xtmp2, $xtmp3 and $xtmp4 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_addsub_dq_saturating_avx(this->ideal_Opcode(), elem_bt, $dst$$XMMRegister, $src1$$XMMRegister,
+                                       $src2$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister,
+                                       $xtmp3$$XMMRegister, $xtmp4$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_add_saturating_unsigned_reg_evex(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2, kReg ktmp)
+%{
+  predicate(!is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned() &&
+            (Matcher::vector_length_in_bytes(n) == 64 || VM_Version::supports_avx512vl()));
+  match(Set dst (SaturatingAddV src1 src2));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP ktmp);
+  format %{ "vector_add_saturating_unsigned_evex $dst, $src1, $src2 \t! using $xtmp1, $xtmp2 and $ktmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_add_dq_saturating_unsigned_evex(elem_bt, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                                              $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $ktmp$$KRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_add_saturating_unsigned_reg_avx(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2, vec xtmp3)
+%{
+  predicate(!is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned() &&
+            Matcher::vector_length_in_bytes(n) <= 32 && !VM_Version::supports_avx512vl());
+  match(Set dst (SaturatingAddV src1 src2));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3);
+  format %{ "vector_add_saturating_unsigned_avx $dst, $src1, $src2 \t! using $xtmp1, $xtmp2 and $xtmp3 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_add_dq_saturating_unsigned_avx(elem_bt, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                                             $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_sub_saturating_unsigned_reg_evex(vec dst, vec src1, vec src2, kReg ktmp)
+%{
+  predicate(!is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned() &&
+            (Matcher::vector_length_in_bytes(n) == 64 || VM_Version::supports_avx512vl()));
+  match(Set dst (SaturatingSubV src1 src2));
+  effect(TEMP ktmp);
+  format %{ "vector_sub_saturating_unsigned_evex $dst, $src1, $src2 \t! using $ktmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_sub_dq_saturating_unsigned_evex(elem_bt, $dst$$XMMRegister, $src1$$XMMRegister,
+                                              $src2$$XMMRegister, $ktmp$$KRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_sub_saturating_unsigned_reg_avx(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2)
+%{
+  predicate(!is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned() &&
+            Matcher::vector_length_in_bytes(n) <= 32 && !VM_Version::supports_avx512vl());
+  match(Set dst (SaturatingSubV src1 src2));
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_sub_saturating_unsigned_avx $dst, $src1, $src2 \t! using $xtmp1 and $xtmp2 as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_sub_dq_saturating_unsigned_avx(elem_bt, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister,
+                                             $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_addsub_saturating_subword_mem(vec dst, vec src1, memory src2)
+%{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 (LoadVector src2)));
+  match(Set dst (SaturatingSubV src1 (LoadVector src2)));
+  format %{ "vector_addsub_saturating_subword $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_saturating_op(this->ideal_Opcode(), elem_bt, $dst$$XMMRegister,
+                            $src1$$XMMRegister, $src2$$Address, false, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_addsub_saturating_unsigned_subword_mem(vec dst, vec src1, memory src2)
+%{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV src1 (LoadVector src2)));
+  match(Set dst (SaturatingSubV src1 (LoadVector src2)));
+  format %{ "vector_addsub_saturating_unsigned_subword $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ vector_saturating_op(this->ideal_Opcode(), elem_bt, $dst$$XMMRegister,
+                            $src1$$XMMRegister, $src2$$Address, true, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_addsub_saturating_subword_masked_reg(vec dst, vec src, kReg mask) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV (Binary dst src) mask));
+  match(Set dst (SaturatingSubV (Binary dst src) mask));
+  format %{ "vector_addsub_saturating_subword_masked $dst, $mask, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ evmasked_saturating_op(this->ideal_Opcode(), elem_bt, $mask$$KRegister, $dst$$XMMRegister,
+                              $dst$$XMMRegister, $src$$XMMRegister, false, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_addsub_saturating_unsigned_subword_masked_reg(vec dst, vec src, kReg mask) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV (Binary dst src) mask));
+  match(Set dst (SaturatingSubV (Binary dst src) mask));
+  format %{ "vector_addsub_saturating_unsigned_subword_masked $dst, $mask, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ evmasked_saturating_op(this->ideal_Opcode(), elem_bt, $mask$$KRegister, $dst$$XMMRegister,
+                              $dst$$XMMRegister, $src$$XMMRegister, true, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_addsub_saturating_subword_masked_mem(vec dst, memory src, kReg mask) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV (Binary dst (LoadVector src)) mask));
+  match(Set dst (SaturatingSubV (Binary dst (LoadVector src)) mask));
+  format %{ "vector_addsub_saturating_subword_masked $dst, $mask, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ evmasked_saturating_op(this->ideal_Opcode(), elem_bt, $mask$$KRegister, $dst$$XMMRegister,
+                              $dst$$XMMRegister, $src$$Address, false, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_addsub_saturating_unsigned_subword_masked_mem(vec dst, memory src, kReg mask) %{
+  predicate(is_subword_type(Matcher::vector_element_basic_type(n)) &&
+            n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
+  match(Set dst (SaturatingAddV (Binary dst (LoadVector src)) mask));
+  match(Set dst (SaturatingSubV (Binary dst (LoadVector src)) mask));
+  format %{ "vector_addsub_saturating_unsigned_subword_masked $dst, $mask, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType elem_bt = Matcher::vector_element_basic_type(this);
+    __ evmasked_saturating_op(this->ideal_Opcode(), elem_bt, $mask$$KRegister, $dst$$XMMRegister,
+                              $dst$$XMMRegister, $src$$Address, true, true, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
+%{
+  match(Set index (SelectFromTwoVector (Binary index src1) src2));
+  format %{ "select_from_two_vector $index, $src1, $src2 \t!" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ select_from_two_vectors_evex(bt, $index$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe(pipe_slow);
 %}

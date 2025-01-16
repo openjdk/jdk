@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,14 +57,9 @@ ZPage::ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& 
 }
 
 ZPage* ZPage::clone_limited() const {
-  // Only copy type and memory layouts. Let the rest be lazily reconstructed when needed.
-  return new ZPage(_type, _virtual, _physical);
-}
-
-ZPage* ZPage::clone_limited_promote_flipped() const {
+  // Only copy type and memory layouts, and also update _top. Let the rest be
+  // lazily reconstructed when needed.
   ZPage* const page = new ZPage(_type, _virtual, _physical);
-
-  // The page is still filled with the same objects, need to retain the top pointer.
   page->_top = _top;
 
   return page;
@@ -83,63 +78,19 @@ void ZPage::reset_seqnum() {
   Atomic::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
-void ZPage::remset_clear() {
-  _remembered_set.clear_all();
+void ZPage::remset_alloc() {
+  // Remsets should only be allocated/initialized once and only for old pages.
+  assert(!_remembered_set.is_initialized(), "Should not be initialized");
+  assert(is_old(), "Only old pages need a remset");
+
+  _remembered_set.initialize(size());
 }
 
-void ZPage::verify_remset_after_reset(ZPageAge prev_age, ZPageResetType type) {
-  // Young-to-old reset
-  if (prev_age != ZPageAge::old) {
-    verify_remset_cleared_previous();
-    verify_remset_cleared_current();
-    return;
-  }
-
-  // Old-to-old reset
-  switch (type) {
-  case ZPageResetType::Splitting:
-    // Page is on the way to be destroyed or reused, delay
-    // clearing until the page is reset for Allocation.
-    break;
-
-  case ZPageResetType::InPlaceRelocation:
-    // Relocation failed and page is being compacted in-place.
-    // The remset bits are flipped each young mark start, so
-    // the verification code below needs to use the right remset.
-    if (ZGeneration::old()->active_remset_is_current()) {
-      verify_remset_cleared_previous();
-    } else {
-      verify_remset_cleared_current();
-    }
-    break;
-
-  case ZPageResetType::FlipAging:
-    fatal("Should not have called this for old-to-old flipping");
-    break;
-
-  case ZPageResetType::Allocation:
-    verify_remset_cleared_previous();
-    verify_remset_cleared_current();
-    break;
-  };
+void ZPage::remset_delete() {
+  _remembered_set.delete_all();
 }
 
-void ZPage::reset_remembered_set() {
-  if (is_young()) {
-    // Remset not needed
-    return;
-  }
-
-  // Clearing of remsets is done when freeing a page, so this code only
-  // needs to ensure the remset is initialized the first time a page
-  // becomes old.
-  if (!_remembered_set.is_initialized()) {
-    _remembered_set.initialize(size());
-  }
-}
-
-void ZPage::reset(ZPageAge age, ZPageResetType type) {
-  const ZPageAge prev_age = _age;
+void ZPage::reset(ZPageAge age) {
   _age = age;
   _last_used = 0;
 
@@ -148,31 +99,19 @@ void ZPage::reset(ZPageAge age, ZPageResetType type) {
       : ZGenerationId::young;
 
   reset_seqnum();
-
-  // Flip aged pages are still filled with the same objects, need to retain the top pointer.
-  if (type != ZPageResetType::FlipAging) {
-    _top = to_zoffset_end(start());
-  }
-
-  reset_remembered_set();
-  verify_remset_after_reset(prev_age, type);
-
-  if (type != ZPageResetType::InPlaceRelocation || (prev_age != ZPageAge::old && age == ZPageAge::old)) {
-    // Promoted in-place relocations reset the live map,
-    // because they clone the page.
-    _livemap.reset();
-  }
 }
 
-void ZPage::finalize_reset_for_in_place_relocation() {
-  // Now we're done iterating over the livemaps
+void ZPage::reset_livemap() {
   _livemap.reset();
+}
+
+void ZPage::reset_top_for_allocation() {
+  _top = to_zoffset_end(start());
 }
 
 void ZPage::reset_type_and_size(ZPageType type) {
   _type = type;
   _livemap.resize(object_max_count());
-  _remembered_set.resize(size());
 }
 
 ZPage* ZPage::retype(ZPageType type) {
@@ -188,11 +127,9 @@ ZPage* ZPage::split(size_t split_of_size) {
 ZPage* ZPage::split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem) {
   // Resize this page
   const ZVirtualMemory vmem = _virtual.split(pmem.size());
+  assert(vmem.end() == _virtual.start(), "Should be consecutive");
 
   reset_type_and_size(type_from_size(_virtual.size()));
-  reset(_age, ZPageResetType::Splitting);
-
-  assert(vmem.end() == _virtual.start(), "Should be consecutive");
 
   log_trace(gc, page)("Split page [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
       untype(vmem.start()),
@@ -267,12 +204,8 @@ void ZPage::verify_remset_cleared_previous() const {
   }
 }
 
-void ZPage::clear_remset_current() {
- _remembered_set.clear_current();
-}
-
 void ZPage::clear_remset_previous() {
- _remembered_set.clear_previous();
+  _remembered_set.clear_previous();
 }
 
 void ZPage::swap_remset_bitmaps() {

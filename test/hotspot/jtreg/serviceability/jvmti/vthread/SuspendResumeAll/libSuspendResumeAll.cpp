@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
-#include "jvmti_thread.h"
+#include "jvmti_common.hpp"
+#include "jvmti_thread.hpp"
 
 extern "C" {
 
@@ -35,21 +35,21 @@ extern "C" {
 static const char* CTHREAD_NAME_START = "ForkJoinPool";
 static const int CTHREAD_NAME_START_LEN = (int)strlen("ForkJoinPool");
 
-static jvmtiEnv *jvmti = NULL;
-static jrawMonitorID agent_event_lock = NULL;
-static volatile jthread agent_thread = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jrawMonitorID agent_event_lock = nullptr;
+static volatile jthread agent_thread = nullptr;
 static jthread tested_vthreads[VTHREAD_CNT];
 static int vthread_no = 0;
 
-static jmethodID *test_methods = NULL;
+static jmethodID *test_methods = nullptr;
 jint test_method_count = 0;
-jclass test_class = NULL;
+jclass test_class = nullptr;
 
 static void
 set_or_clear_breakpoint(JNIEnv *jni, jboolean set, const char *methodName,
                      jclass klass, jmethodID methods[], int method_count) {
   jlocation location = (jlocation)0L;
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jvmtiError err;
 
   // Find the jmethodID of the specified method
@@ -63,7 +63,7 @@ set_or_clear_breakpoint(JNIEnv *jni, jboolean set, const char *methodName,
     }
     deallocate(jvmti, jni, (void*)mname);
   }
-  if (method == NULL) {
+  if (method == nullptr) {
      LOG("setupBreakpoint: not found method %s() to %s a breakpoint\n",
              methodName, set ? "set" : "clear");
       jni->FatalError("Error in setupBreakpoint: not found method");
@@ -109,7 +109,7 @@ Java_SuspendResumeAll_setBreakpoint(JNIEnv *jni, jclass klass, jclass testKlass)
 
 static jint
 get_cthreads(JNIEnv* jni, jthread** cthreads_p) {
-  jthread* tested_cthreads = NULL;
+  jthread* tested_cthreads = nullptr;
   jint all_cnt = 0;
   jint ct_cnt = 0;
 
@@ -171,7 +171,7 @@ test_vthread_suspend_all(JNIEnv* jni, const jthread* thread_list, int suspend_ma
   LOG("\n## Agent: test_vthread_suspend_all started\n");
 
   const jint EXCLUDE_CNT = 2;
-  jthread exclude_list[EXCLUDE_CNT] = { NULL, NULL };
+  jthread exclude_list[EXCLUDE_CNT] = { nullptr, nullptr };
   for (int idx = 0; idx < EXCLUDE_CNT; idx++) {
     exclude_list[idx] = thread_list[idx];
   }
@@ -204,7 +204,7 @@ test_vthread_resume_all(JNIEnv* jni, const jthread* thread_list, int suspend_mas
   LOG("\n## Agent: test_vthread_resume_all started\n");
 
   const jint EXCLUDE_CNT = 2;
-  jthread exclude_list[EXCLUDE_CNT] = { NULL, NULL };
+  jthread exclude_list[EXCLUDE_CNT] = { nullptr, nullptr };
   for (int idx = 0; idx < EXCLUDE_CNT; idx++) {
     exclude_list[idx] = thread_list[idx];
     // Enable Breakpoint events on excluded thread
@@ -216,11 +216,7 @@ test_vthread_resume_all(JNIEnv* jni, const jthread* thread_list, int suspend_mas
   check_jvmti_status(jni, err, "test_vthread_resume_all: error in JVMTI ResumeAllVirtualThreads");
 
   // wait a second to give the breakpoints a chance to be hit.
-#ifdef WINDOWS
-  Sleep(1000);
-#else
-  sleep(1);
-#endif
+  sleep_sec(1);
 
   for (int idx = 0; idx < EXCLUDE_CNT; idx++) {
     // Disable Breakpoint events on excluded thread
@@ -264,7 +260,7 @@ check_threads_resumed_state(JNIEnv* jni, const jthread* thread_list, int thread_
 
 JNIEXPORT void JNICALL
 Java_SuspendResumeAll_TestSuspendResume(JNIEnv* jni, jclass cls) {
-  jthread* tested_cthreads = NULL;
+  jthread* tested_cthreads = nullptr;
   jint cthread_cnt = get_cthreads(jni, &tested_cthreads);
 
   LOG("\n## TestSuspendResume: started\n");
@@ -368,7 +364,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                                        JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+                                        JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n",
            TranslateError(err), err);

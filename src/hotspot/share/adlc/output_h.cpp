@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1629,7 +1629,7 @@ void ArchDesc::declareClasses(FILE *fp) {
         fprintf(fp,"  virtual bool           requires_postalloc_expand() const { return true; }\n");
         fprintf(fp,"  virtual void           postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_);\n");
       } else {
-        fprintf(fp,"  virtual void           emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;\n");
+        fprintf(fp,"  virtual void           emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;\n");
       }
     }
 

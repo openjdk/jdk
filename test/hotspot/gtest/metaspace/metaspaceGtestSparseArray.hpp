@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -68,8 +68,8 @@ class SparseArray : public StackObj {
   // Helper for next_matching_slot
   bool slot_matches(int slot, condition_t c) const {
     switch(c) {
-    case cond_null:     return _slots[slot] == NULL;
-    case cond_non_null: return _slots[slot] != NULL;
+    case cond_null:     return _slots[slot] == nullptr;
+    case cond_non_null: return _slots[slot] != nullptr;
     case cond_dontcare: return true;
     }
     ShouldNotReachHere();
@@ -95,7 +95,7 @@ public:
     _index_range(num)
   {
     for (int i = 0; i < _num; i++) {
-      _slots[i] = NULL;
+      _slots[i] = nullptr;
     }
   }
 
@@ -109,7 +109,7 @@ public:
 
   int size() const         { return _num; }
 
-  bool slot_is_null(int i) const                      { check_index(i); return _slots[i] == NULL; }
+  bool slot_is_null(int i) const                      { check_index(i); return _slots[i] == nullptr; }
 
   DEBUG_ONLY(void check_slot_is_null(int i) const     { assert(slot_is_null(i), "Slot %d is not null", i); })
   DEBUG_ONLY(void check_slot_is_not_null(int i) const { assert(!slot_is_null(i), "Slot %d is null", i); })

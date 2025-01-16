@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.print.PrinterJob;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -69,6 +68,7 @@ import java.awt.event.KeyEvent;
 import java.net.URISyntaxException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import sun.awt.OSInfo;
 
 /**
  * A class which implements a cross-platform print dialog.
@@ -169,10 +169,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
              * on top property
              */
             if ((getOwner() == null) || (owner.getOwner() != getOwner())) {
-                try {
-                    setAlwaysOnTop(true);
-                } catch (SecurityException e) {
-                }
+                setAlwaysOnTop(true);
             }
         }
         Container c = getContentPane();
@@ -255,10 +252,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             /* See comments in same block in initPrintDialog */
             DialogOwner owner = (DialogOwner)attributes.get(DialogOwner.class);
             if ((getOwner() == null) || (owner.getOwner() != getOwner())) {
-                try {
-                    setAlwaysOnTop(true);
-                } catch (SecurityException e) {
-                }
+                setAlwaysOnTop(true);
             }
         }
 
@@ -295,7 +289,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Performs Cancel when Esc key is pressed.
      */
     private void handleEscKey(JButton btnCancel) {
-        @SuppressWarnings("serial") // anonymous class
         Action cancelKeyAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 dispose(CANCEL);
@@ -448,21 +441,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
     /**
      * Initialize ResourceBundle
      */
-    @SuppressWarnings("removal")
     public static void initResource() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
-                public Object run() {
-                    try {
-                        messageRB = ResourceBundle.getBundle(strBundle);
-                        return null;
-                    } catch (java.util.MissingResourceException e) {
-                        throw new Error("Fatal: Resource for ServiceUI " +
-                                        "is missing");
-                    }
-                }
-            }
-        );
+        try {
+            messageRB = ResourceBundle.getBundle(strBundle);
+        } catch (java.util.MissingResourceException e) {
+            throw new Error("Fatal: Resource for ServiceUI " +
+                            "is missing");
+        }
     }
 
     /**
@@ -542,15 +527,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Returns URL for image resource
      */
     private static URL getImageResource(final String key) {
-        @SuppressWarnings("removal")
-        URL url = java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction<URL>() {
-                public URL run() {
-                    URL url = ServiceDialog.class.getResource(
-                                                  "resources/" + key);
-                    return url;
-                }
-        });
+        URL url = ServiceDialog.class.getResource("resources/" + key);
 
         if (url == null) {
             throw new Error("Fatal: Resource for ServiceUI is broken; " +
@@ -696,14 +673,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
         implements ActionListener, ItemListener, PopupMenuListener
     {
         private final String strTitle = getMsg("border.printservice");
-        private FilePermission printToFilePermission;
         private JButton btnProperties;
         private JCheckBox cbPrintToFile;
         private JComboBox<String> cbName;
         private JLabel lblType, lblStatus, lblInfo;
         private ServiceUIFactory uiFactory;
         private boolean changedService = false;
-        private boolean filePermission;
 
         public PrintServicePanel() {
             super();
@@ -760,8 +735,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
             c.gridwidth = GridBagConstraints.REMAINDER;
             cbPrintToFile = createCheckBox("checkbox.printtofile", this);
             addToGB(cbPrintToFile, this, gridbag, c);
-
-            filePermission = allowedToPrintToFile();
         }
 
         public boolean isPrintToFileSelected() {
@@ -889,37 +862,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
          * We disable the "Print To File" checkbox if this returns false
          */
         private boolean allowedToPrintToFile() {
-            try {
-                throwPrintToFile();
-                return true;
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
-
-        /**
-         * Break this out as it may be useful when we allow API to
-         * specify printing to a file. In that case its probably right
-         * to throw a SecurityException if the permission is not granted.
-         */
-        private void throwPrintToFile() {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                if (printToFilePermission == null) {
-                    printToFilePermission =
-                        new FilePermission("<<ALL FILES>>", "read,write");
-                }
-                security.checkPermission(printToFilePermission);
-            }
+            return true;
         }
 
         public void updateInfo() {
             Class<Destination> dstCategory = Destination.class;
             boolean dstSupported = false;
             boolean dstSelected = false;
-            boolean dstAllowed = filePermission ?
-                allowedToPrintToFile() : false;
 
             // setup Destination (print-to-file) widgets
             Destination dst = (Destination)asCurrent.get(dstCategory);
@@ -939,9 +888,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     dstSupported = true;
                 }
             }
-            cbPrintToFile.setEnabled(dstSupported && dstAllowed);
-            cbPrintToFile.setSelected(dstSelected && dstAllowed
-                                      && dstSupported);
+            cbPrintToFile.setEnabled(dstSupported);
+            cbPrintToFile.setSelected(dstSelected && dstSupported);
 
             // setup PrintService information widgets
             Attribute type = psCurrent.getAttribute(PrinterMakeAndModel.class);
@@ -2300,6 +2248,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         private QualityPanel pnlQuality;
         private JobAttributesPanel pnlJobAttributes;
         private SidesPanel pnlSides;
+        private OutputPanel pnlOutput;
 
         public AppearancePanel() {
             super();
@@ -2330,6 +2279,11 @@ public class ServiceDialog extends JDialog implements ActionListener {
             pnlJobAttributes = new JobAttributesPanel();
             addToGB(pnlJobAttributes, this, gridbag, c);
 
+            if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+                c.gridwidth = GridBagConstraints.REMAINDER;
+                pnlOutput = new OutputPanel();
+                addToGB(pnlOutput, this, gridbag, c);
+            }
         }
 
         public void updateInfo() {
@@ -2337,6 +2291,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
             pnlQuality.updateInfo();
             pnlSides.updateInfo();
             pnlJobAttributes.updateInfo();
+            if (pnlOutput != null) {
+                pnlOutput.updateInfo();
+            }
         }
     }
 
@@ -2818,8 +2775,106 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
+    private class OutputPanel extends JPanel implements ItemListener {
 
+        private final String strTitle = getMsg("border.output");
+        private JLabel lblOutput;
+        private JComboBox<Object> cbOutput;
+        private Vector<OutputBin> outputs = new Vector<>();
 
+        public OutputPanel() {
+            super();
+
+            GridBagLayout gridbag = new GridBagLayout();
+            GridBagConstraints c = new GridBagConstraints();
+
+            setLayout(gridbag);
+            setBorder(BorderFactory.createTitledBorder(strTitle));
+
+            cbOutput = new JComboBox<>();
+
+            c.fill = GridBagConstraints.BOTH;
+            c.insets = compInsets;
+            c.weighty = 1.0;
+
+            c.weightx = 0.0;
+            lblOutput = new JLabel(getMsg("label.outputbins"), JLabel.TRAILING);
+            lblOutput.setDisplayedMnemonic(getMnemonic("label.outputbins"));
+            lblOutput.setLabelFor(cbOutput);
+            addToGB(lblOutput, this, gridbag, c);
+            c.weightx = 1.0;
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            addToGB(cbOutput, this, gridbag, c);
+        }
+
+        public void itemStateChanged(ItemEvent e) {
+
+            Object source = e.getSource();
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                if (source == cbOutput) {
+                    int index = cbOutput.getSelectedIndex();
+                    if ((index >= 0) && (index < outputs.size())) {
+                        asCurrent.add(outputs.get(index));
+                    } else if (index == cbOutput.getItemCount() - 1) {
+                        asCurrent.remove(OutputBin.class);
+                    }
+                }
+            }
+        }
+
+        public void updateInfo() {
+
+            Class<OutputBin> obCategory = OutputBin.class;
+
+            cbOutput.removeItemListener(this);
+            cbOutput.removeAllItems();
+
+            outputs.clear();
+
+            boolean outputEnabled = false;
+
+            if (psCurrent.isAttributeCategorySupported(obCategory)) {
+
+                Object values =
+                        psCurrent.getSupportedAttributeValues(obCategory,
+                                docFlavor,
+                                asCurrent);
+
+                if (values instanceof OutputBin[]) {
+                    OutputBin[] outputBins = (OutputBin[])values;
+
+                    for (OutputBin outputBin: outputBins) {
+                        outputs.add(outputBin);
+                        cbOutput.addItem(outputBin.toString());
+                    }
+
+                    cbOutput.addItem("");
+                    cbOutput.setSelectedIndex(cbOutput.getItemCount() - 1);
+
+                    OutputBin current = (OutputBin) asCurrent.get(obCategory);
+                    if (current != null) {
+                        for (int i = 0; i < outputs.size(); i++) {
+                            if (current.equals(outputs.get(i))) {
+                                cbOutput.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    } else if (outputBins.length == 1) {
+                        cbOutput.setSelectedIndex(0);
+                    }
+
+                    outputEnabled = outputBins.length > 1;
+                }
+            }
+
+            cbOutput.setEnabled(outputEnabled);
+            lblOutput.setEnabled(outputEnabled);
+            if (outputEnabled) {
+                cbOutput.addItemListener(this);
+            }
+        }
+    }
 
     /**
      * A special widget that groups a JRadioButton with an associated icon,
@@ -2836,14 +2891,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         {
             super(new FlowLayout(FlowLayout.LEADING));
             final URL imgURL = getImageResource(img);
-            @SuppressWarnings("removal")
-            Icon icon = java.security.AccessController.doPrivileged(
-                                 new java.security.PrivilegedAction<Icon>() {
-                public Icon run() {
-                    Icon icon = new ImageIcon(imgURL);
-                    return icon;
-                }
-            });
+            Icon icon = new ImageIcon(imgURL);
             lbl = new JLabel(icon);
             add(lbl);
 
@@ -2883,13 +2931,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
     private static class ValidatingFileChooser extends JFileChooser {
         public void approveSelection() {
             File selected = getSelectedFile();
-            boolean exists;
-
-            try {
-                exists = selected.exists();
-            } catch (SecurityException e) {
-                exists = false;
-            }
+            boolean exists = selected.exists();
 
             if (exists) {
                 int val;
@@ -2912,11 +2954,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                    getMsg("dialog.owtitle"),
                                    JOptionPane.WARNING_MESSAGE);
                 return;
-            } catch (SecurityException se) {
-                //There is already file read/write access so at this point
-                // only delete access is denied.  Just ignore it because in
-                // most cases the file created in createNewFile gets
-                // overwritten anyway.
             }
             File pFile = selected.getParentFile();
             if ((selected.exists() &&

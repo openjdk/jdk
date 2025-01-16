@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +26,6 @@
 
 package java.io;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +33,11 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 import jdk.internal.util.ByteArray;
-import sun.reflect.misc.ReflectUtil;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utfLen;
 
 /**
  * An ObjectOutputStream writes primitive data types and graphs of Java objects
@@ -169,6 +172,7 @@ import sun.reflect.misc.ReflectUtil;
 public class ObjectOutputStream
     extends OutputStream implements ObjectOutput, ObjectStreamConstants
 {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static class Caches {
         /** cache of subclass security audit results */
@@ -217,11 +221,8 @@ public class ObjectOutputStream
      * value of "sun.io.serialization.extendedDebugInfo" property,
      * as true or false for extended information about exception's place
      */
-    @SuppressWarnings("removal")
     private static final boolean extendedDebugInfo =
-        java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction(
-                "sun.io.serialization.extendedDebugInfo")).booleanValue();
+            Boolean.getBoolean("sun.io.serialization.extendedDebugInfo");
 
     /**
      * Creates an ObjectOutputStream that writes to the specified OutputStream.
@@ -230,24 +231,16 @@ public class ObjectOutputStream
      * ensure that constructors for receiving ObjectInputStreams will not block
      * when reading the header.
      *
-     * <p>If a security manager is installed, this constructor will check for
-     * the "enableSubclassImplementation" SerializablePermission when invoked
-     * directly or indirectly by the constructor of a subclass which overrides
-     * the ObjectOutputStream.putFields or ObjectOutputStream.writeUnshared
-     * methods.
-     *
      * @param   out output stream to write to
      * @throws  IOException if an I/O error occurs while writing stream header
-     * @throws  SecurityException if untrusted subclass illegally overrides
-     *          security-sensitive methods
      * @throws  NullPointerException if {@code out} is {@code null}
      * @since   1.4
      * @see     ObjectOutputStream#ObjectOutputStream()
      * @see     ObjectOutputStream#putFields()
      * @see     ObjectInputStream#ObjectInputStream(InputStream)
      */
+    @SuppressWarnings("this-escape")
     public ObjectOutputStream(OutputStream out) throws IOException {
-        verifySubclass();
         bout = new BlockDataOutputStream(out);
         handles = new HandleTable(10, (float) 3.00);
         subs = new ReplaceTable(10, (float) 3.00);
@@ -266,24 +259,9 @@ public class ObjectOutputStream
      * ObjectOutputStream to not have to allocate private data just used by
      * this implementation of ObjectOutputStream.
      *
-     * <p>If there is a security manager installed, this method first calls the
-     * security manager's {@code checkPermission} method with a
-     * {@code SerializablePermission("enableSubclassImplementation")}
-     * permission to ensure it's ok to enable subclassing.
-     *
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling
-     *          subclassing.
      * @throws  IOException if an I/O error occurs while creating this stream
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected ObjectOutputStream() throws IOException, SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
+    protected ObjectOutputStream() throws IOException {
         bout = null;
         handles = null;
         subs = null;
@@ -405,12 +383,6 @@ public class ObjectOutputStream
      * rules described above only apply to the base-level object written with
      * writeUnshared, and not to any transitively referenced sub-objects in the
      * object graph to be serialized.
-     *
-     * <p>ObjectOutputStream subclasses which override this method can only be
-     * constructed in security contexts possessing the
-     * "enableSubclassImplementation" SerializablePermission; any attempt to
-     * instantiate such a subclass without this permission will cause a
-     * SecurityException to be thrown.
      *
      * @param   obj object to write to stream
      * @throws  NotSerializableException if an object in the graph to be
@@ -603,35 +575,13 @@ public class ObjectOutputStream
      * enabled, the {@link #replaceObject} method is called for every object being
      * serialized.
      *
-     * <p>If object replacement is currently not enabled, and
-     * {@code enable} is true, and there is a security manager installed,
-     * this method first calls the security manager's
-     * {@code checkPermission} method with the
-     * {@code SerializablePermission("enableSubstitution")} permission to
-     * ensure that the caller is permitted to enable the stream to do replacement
-     * of objects written to the stream.
-     *
      * @param   enable true for enabling use of {@code replaceObject} for
      *          every object being serialized
      * @return  the previous setting before this method was invoked
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method denies enabling the stream
-     *          to do replacement of objects written to the stream.
-     * @see SecurityManager#checkPermission
-     * @see java.io.SerializablePermission
      */
-    protected boolean enableReplaceObject(boolean enable)
-        throws SecurityException
-    {
+    protected boolean enableReplaceObject(boolean enable) {
         if (enable == enableReplace) {
             return enable;
-        }
-        if (enable) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SUBSTITUTION_PERMISSION);
-            }
         }
         enableReplace = enable;
         return !enableReplace;
@@ -656,8 +606,8 @@ public class ObjectOutputStream
      * stream.  Subclasses of ObjectOutputStream may override this method to
      * customize the way in which class descriptors are written to the
      * serialization stream.  The corresponding method in ObjectInputStream,
-     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be overridden to
-     * reconstitute the class descriptor from its custom stream representation.
+     * {@link ObjectInputStream#readClassDescriptor readClassDescriptor}, should then be
+     * overridden to reconstitute the class descriptor from its custom stream representation.
      * By default, this method writes class descriptors according to the format
      * defined in the <a href="{@docRoot}/../specs/serialization/index.html">
      * <cite>Java Object Serialization Specification</cite></a>.
@@ -884,7 +834,7 @@ public class ObjectOutputStream
      *          stream
      */
     public void writeUTF(String str) throws IOException {
-        bout.writeUTF(str);
+        bout.writeUTFInternal(str, false);
     }
 
     /**
@@ -1026,7 +976,7 @@ public class ObjectOutputStream
          *         calling the {@link java.io.ObjectOutputStream#writeFields()}
          *         method.
          */
-        @Deprecated
+        @Deprecated(forRemoval = true, since = "1.4")
         public abstract void write(ObjectOutput out) throws IOException;
     }
 
@@ -1054,57 +1004,28 @@ public class ObjectOutputStream
     }
 
     /**
-     * Verifies that this (possibly subclass) instance can be constructed
-     * without violating security constraints: the subclass must not override
-     * security-sensitive non-final methods, or else the
-     * "enableSubclassImplementation" SerializablePermission is checked.
-     */
-    private void verifySubclass() {
-        Class<?> cl = getClass();
-        if (cl == ObjectOutputStream.class) {
-            return;
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return;
-        }
-        boolean result = Caches.subclassAudits.get(cl);
-        if (!result) {
-            sm.checkPermission(SUBCLASS_IMPLEMENTATION_PERMISSION);
-        }
-    }
-
-    /**
      * Performs reflective checks on given subclass to verify that it doesn't
      * override security-sensitive non-final methods.  Returns TRUE if subclass
      * is "safe", FALSE otherwise.
      */
-    @SuppressWarnings("removal")
     private static Boolean auditSubclass(Class<?> subcl) {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Boolean run() {
-                    for (Class<?> cl = subcl;
-                         cl != ObjectOutputStream.class;
-                         cl = cl.getSuperclass())
-                    {
-                        try {
-                            cl.getDeclaredMethod(
-                                "writeUnshared", new Class<?>[] { Object.class });
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                        try {
-                            cl.getDeclaredMethod("putFields", (Class<?>[]) null);
-                            return Boolean.FALSE;
-                        } catch (NoSuchMethodException ex) {
-                        }
-                    }
-                    return Boolean.TRUE;
-                }
+        for (Class<?> cl = subcl;
+             cl != ObjectOutputStream.class;
+             cl = cl.getSuperclass())
+        {
+            try {
+                cl.getDeclaredMethod(
+                    "writeUnshared", new Class<?>[] { Object.class });
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
             }
-        );
+            try {
+                cl.getDeclaredMethod("putFields", (Class<?>[]) null);
+                return Boolean.FALSE;
+            } catch (NoSuchMethodException ex) {
+            }
+        }
+        return Boolean.TRUE;
     }
 
     /**
@@ -1248,12 +1169,6 @@ public class ObjectOutputStream
         }
     }
 
-    private boolean isCustomSubclass() {
-        // Return true if this class is a custom subclass of ObjectOutputStream
-        return getClass().getClassLoader()
-                   != ObjectOutputStream.class.getClassLoader();
-    }
-
     /**
      * Writes class descriptor representing a dynamic proxy class to stream.
      */
@@ -1271,9 +1186,6 @@ public class ObjectOutputStream
         }
 
         bout.setBlockDataMode(true);
-        if (cl != null && isCustomSubclass()) {
-            ReflectUtil.checkPackageAccess(cl);
-        }
         annotateProxyClass(cl);
         bout.setBlockDataMode(false);
         bout.writeByte(TC_ENDBLOCKDATA);
@@ -1300,9 +1212,6 @@ public class ObjectOutputStream
 
         Class<?> cl = desc.forClass();
         bout.setBlockDataMode(true);
-        if (cl != null && isCustomSubclass()) {
-            ReflectUtil.checkPackageAccess(cl);
-        }
         annotateClass(cl);
         bout.setBlockDataMode(false);
         bout.writeByte(TC_ENDBLOCKDATA);
@@ -1316,14 +1225,7 @@ public class ObjectOutputStream
      */
     private void writeString(String str, boolean unshared) throws IOException {
         handles.assign(unshared ? null : str);
-        long utflen = bout.getUTFLength(str);
-        if (utflen <= 0xFFFF) {
-            bout.writeByte(TC_STRING);
-            bout.writeUTF(str, utflen);
-        } else {
-            bout.writeByte(TC_LONGSTRING);
-            bout.writeLongUTF(str, utflen);
-        }
+        bout.writeUTFInternal(str, true);
     }
 
     /**
@@ -1993,26 +1895,27 @@ public class ObjectOutputStream
             }
         }
 
-        public void writeBytes(String s) throws IOException {
-            int endoff = s.length();
-            int cpos = 0;
-            int csize = 0;
-            for (int off = 0; off < endoff; ) {
-                if (cpos >= csize) {
-                    cpos = 0;
-                    csize = Math.min(endoff - off, CHAR_BUF_SIZE);
-                    s.getChars(off, off + csize, cbuf, 0);
-                }
-                if (pos >= MAX_BLOCK_SIZE) {
+        @SuppressWarnings("deprecation")
+        void writeBytes(String s, int len) throws IOException {
+            int pos = this.pos;
+            for (int strpos = 0; strpos < len;) {
+                int rem = MAX_BLOCK_SIZE - pos;
+                int csize = Math.min(len - strpos, rem);
+                s.getBytes(strpos, strpos + csize, buf, pos);
+                pos += csize;
+                strpos += csize;
+
+                if (pos == MAX_BLOCK_SIZE) {
+                    this.pos = pos;
                     drain();
+                    pos = 0;
                 }
-                int n = Math.min(csize - cpos, MAX_BLOCK_SIZE - pos);
-                int stop = pos + n;
-                while (pos < stop) {
-                    buf[pos++] = (byte) cbuf[cpos++];
-                }
-                off += n;
             }
+            this.pos = pos;
+        }
+
+        public void writeBytes(String s) throws IOException {
+            writeBytes(s, s.length());
         }
 
         public void writeChars(String s) throws IOException {
@@ -2025,8 +1928,47 @@ public class ObjectOutputStream
             }
         }
 
-        public void writeUTF(String s) throws IOException {
-            writeUTF(s, getUTFLength(s));
+        public void writeUTF(String str) throws IOException {
+            writeUTFInternal(str, false);
+        }
+
+        private void writeUTFInternal(String str, boolean writeHeader) throws IOException {
+            int strlen = str.length();
+            int countNonZeroAscii = JLA.countNonZeroAscii(str);
+            int utflen = utfLen(str, countNonZeroAscii);
+            if (utflen <= 0xFFFF) {
+                if(writeHeader) {
+                    writeByte(TC_STRING);
+                }
+                writeShort(utflen);
+            } else {
+                if(writeHeader) {
+                    writeByte(TC_LONGSTRING);
+                }
+                writeLong(utflen);
+            }
+
+            if (countNonZeroAscii != 0) {
+                writeBytes(str, countNonZeroAscii);
+            }
+            if (countNonZeroAscii != strlen) {
+                writeMoreUTF(str, countNonZeroAscii);
+            }
+        }
+
+        private void writeMoreUTF(String str, int stroff) throws IOException {
+            int pos = this.pos;
+            for (int strlen = str.length(); stroff < strlen;) {
+                char c = str.charAt(stroff++);
+                int csize = c != 0 && c < 0x80 ? 1 : c >= 0x800 ? 3 : 2;
+                if (pos + csize >= MAX_BLOCK_SIZE) {
+                    this.pos = pos;
+                    drain();
+                    pos = 0;
+                }
+                pos = putChar(buf, pos, c);
+            }
+            this.pos = pos;
         }
 
 
@@ -2150,112 +2092,6 @@ public class ObjectOutputStream
                 } else {
                     dout.writeDouble(v[off++]);
                 }
-            }
-        }
-
-        /**
-         * Returns the length in bytes of the UTF encoding of the given string.
-         */
-        long getUTFLength(String s) {
-            int len = s.length();
-            long utflen = 0;
-            for (int off = 0; off < len; ) {
-                int csize = Math.min(len - off, CHAR_BUF_SIZE);
-                s.getChars(off, off + csize, cbuf, 0);
-                for (int cpos = 0; cpos < csize; cpos++) {
-                    char c = cbuf[cpos];
-                    if (c >= 0x0001 && c <= 0x007F) {
-                        utflen++;
-                    } else if (c > 0x07FF) {
-                        utflen += 3;
-                    } else {
-                        utflen += 2;
-                    }
-                }
-                off += csize;
-            }
-            return utflen;
-        }
-
-        /**
-         * Writes the given string in UTF format.  This method is used in
-         * situations where the UTF encoding length of the string is already
-         * known; specifying it explicitly avoids a prescan of the string to
-         * determine its UTF length.
-         */
-        void writeUTF(String s, long utflen) throws IOException {
-            if (utflen > 0xFFFFL) {
-                throw new UTFDataFormatException();
-            }
-            writeShort((int) utflen);
-            if (utflen == (long) s.length()) {
-                writeBytes(s);
-            } else {
-                writeUTFBody(s);
-            }
-        }
-
-        /**
-         * Writes given string in "long" UTF format.  "Long" UTF format is
-         * identical to standard UTF, except that it uses an 8 byte header
-         * (instead of the standard 2 bytes) to convey the UTF encoding length.
-         */
-        void writeLongUTF(String s) throws IOException {
-            writeLongUTF(s, getUTFLength(s));
-        }
-
-        /**
-         * Writes given string in "long" UTF format, where the UTF encoding
-         * length of the string is already known.
-         */
-        void writeLongUTF(String s, long utflen) throws IOException {
-            writeLong(utflen);
-            if (utflen == (long) s.length()) {
-                writeBytes(s);
-            } else {
-                writeUTFBody(s);
-            }
-        }
-
-        /**
-         * Writes the "body" (i.e., the UTF representation minus the 2-byte or
-         * 8-byte length header) of the UTF encoding for the given string.
-         */
-        private void writeUTFBody(String s) throws IOException {
-            int limit = MAX_BLOCK_SIZE - 3;
-            int len = s.length();
-            for (int off = 0; off < len; ) {
-                int csize = Math.min(len - off, CHAR_BUF_SIZE);
-                s.getChars(off, off + csize, cbuf, 0);
-                for (int cpos = 0; cpos < csize; cpos++) {
-                    char c = cbuf[cpos];
-                    if (pos <= limit) {
-                        if (c <= 0x007F && c != 0) {
-                            buf[pos++] = (byte) c;
-                        } else if (c > 0x07FF) {
-                            buf[pos + 2] = (byte) (0x80 | ((c >> 0) & 0x3F));
-                            buf[pos + 1] = (byte) (0x80 | ((c >> 6) & 0x3F));
-                            buf[pos + 0] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                            pos += 3;
-                        } else {
-                            buf[pos + 1] = (byte) (0x80 | ((c >> 0) & 0x3F));
-                            buf[pos + 0] = (byte) (0xC0 | ((c >> 6) & 0x1F));
-                            pos += 2;
-                        }
-                    } else {    // write one byte at a time to normalize block
-                        if (c <= 0x007F && c != 0) {
-                            write(c);
-                        } else if (c > 0x07FF) {
-                            write(0xE0 | ((c >> 12) & 0x0F));
-                            write(0x80 | ((c >> 6) & 0x3F));
-                            write(0x80 | ((c >> 0) & 0x3F));
-                        } else {
-                            write(0xC0 | ((c >> 6) & 0x1F));
-                            write(0x80 | ((c >> 0) & 0x3F));
-                        }
-                    }
-                }
-                off += csize;
             }
         }
     }

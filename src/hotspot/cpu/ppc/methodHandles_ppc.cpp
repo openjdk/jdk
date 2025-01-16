@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ bctr();
 
   __ bind(L_no_such_method);
-  assert(StubRoutines::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
-  __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
+  assert(SharedRuntime::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
+  __ load_const_optimized(target, SharedRuntime::throw_AbstractMethodError_entry());
   __ mtctr(target);
   __ bctr();
 }
@@ -489,7 +489,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ BIND(L_incompatible_class_change_error);
-      __ load_const_optimized(temp1, StubRoutines::throw_IncompatibleClassChangeError_entry());
+      __ load_const_optimized(temp1, SharedRuntime::throw_IncompatibleClassChangeError_entry());
       __ mtctr(temp1);
       __ bctr();
     }
@@ -581,7 +581,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   const Register tmp = R11; // Will be preserved.
   const int nbytes_save = MacroAssembler::num_volatile_regs * 8;
   __ save_volatile_gprs(R1_SP, -nbytes_save); // except R0
-  __ save_LR_CR(tmp); // save in old frame
+  __ save_LR(tmp); // save in old frame
 
   __ mr(R5_ARG3, R1_SP);     // saved_sp
   __ push_frame_reg_args(nbytes_save, tmp);
@@ -592,7 +592,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, trace_method_handle_stub));
 
   __ pop_frame();
-  __ restore_LR_CR(tmp);
+  __ restore_LR(tmp);
   __ restore_volatile_gprs(R1_SP, -nbytes_save); // except R0
 
   BLOCK_COMMENT("} trace_method_handle");

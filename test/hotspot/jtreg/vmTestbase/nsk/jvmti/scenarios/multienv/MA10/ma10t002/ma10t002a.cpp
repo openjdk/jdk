@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "jni_tools.h"
-#include "agent_common.h"
-#include "jvmti_tools.h"
+#include "jni_tools.hpp"
+#include "agent_common.hpp"
+#include "jvmti_tools.hpp"
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -47,18 +47,18 @@ static int MethodEntryEventsCount = 0;
 static void JNICALL
 MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
         jthread thread, jmethodID method) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     MethodEntryEventsCount++;
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY2("MethodEntry event: %s%s\n", name, signature);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
@@ -101,7 +101,7 @@ JNIEXPORT jint JNI_OnLoad_ma10t002a(JavaVM *jvm, char *options, void *reserved) 
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -113,10 +113,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(caps));

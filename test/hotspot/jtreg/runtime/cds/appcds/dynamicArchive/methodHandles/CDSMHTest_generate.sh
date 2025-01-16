@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ do
     fname="$i$name_suffix"
     cat << EOF > $fname
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ import org.junit.Test;
 import java.io.File;
 import java.nio.file.Path;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class $i extends DynamicArchiveTestBase {
     @Test
@@ -98,6 +99,12 @@ public class $i extends DynamicArchiveTestBase {
     private static final String lambdaLoadedFromArchive =
         ".class.load. test.java.lang.invoke.$i[$][$]Lambda.*/0x.*source:.*shared.*objects.*file.*(top)";
 
+    static void checkError(OutputAnalyzer output) throws Exception {
+        if (testClassName.equals("MethodHandlesInvokersTest")) {
+            output.shouldNotContain("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
+        }
+    }
+
     static void testImpl() throws Exception {
         String topArchiveName = getNewArchiveName();
         String appJar = JarBuilder.build("MH", new File(classDir), null);
@@ -111,6 +118,7 @@ public class $i extends DynamicArchiveTestBase {
         String className = testPackageName + "." + testClassName;
 
         dump(topArchiveName, loggingOpts, "-cp", jars, verifyOpt, mainClass, className)
+            .assertNormalExit(output -> checkError(output))
             .assertNormalExit(output -> {
                     output.shouldContain("Written dynamic archive 0x");
                 });

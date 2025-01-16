@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2130,8 +2130,8 @@ void TemplateTable::_return(TosState state) {
 
     // Load klass of this obj.
     __ load_klass(Rklass, R17_tos);
-    __ lwz(Rklass_flags, in_bytes(Klass::access_flags_offset()), Rklass);
-    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ lbz(Rklass_flags, in_bytes(Klass::misc_flags_offset()), Rklass);
+    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(KlassFlags::_misc_has_finalizer));
     __ bfalse(CCR0, Lskip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R17_tos /* obj */);
@@ -2615,7 +2615,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   address pc_before_fence = __ pc();
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
   assert(__ pc() - pc_before_fence == (ptrdiff_t)BytesPerInstWord, "must be single instruction");
-  assert(branch_table[vtos] == 0, "can't compute twice");
+  assert(branch_table[vtos] == nullptr, "can't compute twice");
   branch_table[vtos] = __ pc(); // non-volatile_entry point
   __ stop("vtos unexpected");
 #endif
@@ -2623,7 +2623,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Ldtos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[dtos] == 0, "can't compute twice");
+  assert(branch_table[dtos] == nullptr, "can't compute twice");
   branch_table[dtos] = __ pc(); // non-volatile_entry point
   __ lfdx(F15_ftos, Rclass_or_obj, Roffset);
   __ push(dtos);
@@ -2644,7 +2644,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Lftos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ftos] == 0, "can't compute twice");
+  assert(branch_table[ftos] == nullptr, "can't compute twice");
   branch_table[ftos] = __ pc(); // non-volatile_entry point
   __ lfsx(F15_ftos, Rclass_or_obj, Roffset);
   __ push(ftos);
@@ -2665,7 +2665,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Litos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[itos] == 0, "can't compute twice");
+  assert(branch_table[itos] == nullptr, "can't compute twice");
   branch_table[itos] = __ pc(); // non-volatile_entry point
   __ lwax(R17_tos, Rclass_or_obj, Roffset);
   __ push(itos);
@@ -2678,7 +2678,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Lltos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ltos] == 0, "can't compute twice");
+  assert(branch_table[ltos] == nullptr, "can't compute twice");
   branch_table[ltos] = __ pc(); // non-volatile_entry point
   __ ldx(R17_tos, Rclass_or_obj, Roffset);
   __ push(ltos);
@@ -2691,7 +2691,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Lbtos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[btos] == 0, "can't compute twice");
+  assert(branch_table[btos] == nullptr, "can't compute twice");
   branch_table[btos] = __ pc(); // non-volatile_entry point
   __ lbzx(R17_tos, Rclass_or_obj, Roffset);
   __ extsb(R17_tos, R17_tos);
@@ -2705,7 +2705,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Lztos); (same code as btos)
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ztos] == 0, "can't compute twice");
+  assert(branch_table[ztos] == nullptr, "can't compute twice");
   branch_table[ztos] = __ pc(); // non-volatile_entry point
   __ lbzx(R17_tos, Rclass_or_obj, Roffset);
   __ push(ztos);
@@ -2719,7 +2719,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Lctos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ctos] == 0, "can't compute twice");
+  assert(branch_table[ctos] == nullptr, "can't compute twice");
   branch_table[ctos] = __ pc(); // non-volatile_entry point
   __ lhzx(R17_tos, Rclass_or_obj, Roffset);
   __ push(ctos);
@@ -2732,7 +2732,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Lstos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[stos] == 0, "can't compute twice");
+  assert(branch_table[stos] == nullptr, "can't compute twice");
   branch_table[stos] = __ pc(); // non-volatile_entry point
   __ lhax(R17_tos, Rclass_or_obj, Roffset);
   __ push(stos);
@@ -2745,7 +2745,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align load.
   // __ bind(Latos);
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[atos] == 0, "can't compute twice");
+  assert(branch_table[atos] == nullptr, "can't compute twice");
   branch_table[atos] = __ pc(); // non-volatile_entry point
   do_oop_load(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, /* nv temp */ Rflags, IN_HEAP);
   __ verify_oop(R17_tos);
@@ -2932,7 +2932,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   address pc_before_release = __ pc();
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
   assert(__ pc() - pc_before_release == (ptrdiff_t)BytesPerInstWord, "must be single instruction");
-  assert(branch_table[vtos] == 0, "can't compute twice");
+  assert(branch_table[vtos] == nullptr, "can't compute twice");
   branch_table[vtos] = __ pc(); // non-volatile_entry point
   __ stop("vtos unexpected");
 #endif
@@ -2940,7 +2940,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Ldtos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[dtos] == 0, "can't compute twice");
+  assert(branch_table[dtos] == nullptr, "can't compute twice");
   branch_table[dtos] = __ pc(); // non-volatile_entry point
   __ pop(dtos);
   if (!is_static) {
@@ -2958,7 +2958,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Lftos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ftos] == 0, "can't compute twice");
+  assert(branch_table[ftos] == nullptr, "can't compute twice");
   branch_table[ftos] = __ pc(); // non-volatile_entry point
   __ pop(ftos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
@@ -2974,7 +2974,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Litos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[itos] == 0, "can't compute twice");
+  assert(branch_table[itos] == nullptr, "can't compute twice");
   branch_table[itos] = __ pc(); // non-volatile_entry point
   __ pop(itos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
@@ -2990,7 +2990,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Lltos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ltos] == 0, "can't compute twice");
+  assert(branch_table[ltos] == nullptr, "can't compute twice");
   branch_table[ltos] = __ pc(); // non-volatile_entry point
   __ pop(ltos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
@@ -3006,7 +3006,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Lbtos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[btos] == 0, "can't compute twice");
+  assert(branch_table[btos] == nullptr, "can't compute twice");
   branch_table[btos] = __ pc(); // non-volatile_entry point
   __ pop(btos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
@@ -3022,7 +3022,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Lztos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ztos] == 0, "can't compute twice");
+  assert(branch_table[ztos] == nullptr, "can't compute twice");
   branch_table[ztos] = __ pc(); // non-volatile_entry point
   __ pop(ztos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
@@ -3039,7 +3039,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Lctos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[ctos] == 0, "can't compute twice");
+  assert(branch_table[ctos] == nullptr, "can't compute twice");
   branch_table[ctos] = __ pc(); // non-volatile_entry point
   __ pop(ctos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1..
@@ -3055,7 +3055,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Lstos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[stos] == 0, "can't compute twice");
+  assert(branch_table[stos] == nullptr, "can't compute twice");
   branch_table[stos] = __ pc(); // non-volatile_entry point
   __ pop(stos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // Kills R11_scratch1.
@@ -3071,7 +3071,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ align(32, 28, 28); // Align pop.
   // __ bind(Latos);
   __ release(); // Volatile entry point (one instruction before non-volatile_entry point).
-  assert(branch_table[atos] == 0, "can't compute twice");
+  assert(branch_table[atos] == nullptr, "can't compute twice");
   branch_table[atos] = __ pc(); // non-volatile_entry point
   __ pop(atos);
   if (!is_static) { pop_and_check_object(Rclass_or_obj); } // kills R11_scratch1
@@ -3484,7 +3484,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ testbitdi(CCR0, R0, Rflags, ResolvedMethodEntry::is_vfinal_shift);
   __ bfalse(CCR0, LnotFinal);
 
-  if (RewriteBytecodes && !UseSharedSpaces && !CDSConfig::is_dumping_static_archive()) {
+  if (RewriteBytecodes && !CDSConfig::is_using_archive() && !CDSConfig::is_dumping_static_archive()) {
     patch_bytecode(Bytecodes::_fast_invokevfinal, Rnew_bc, R12_scratch2);
   }
   invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, Rflags /* tmp */, Rrecv /* tmp */);
@@ -3803,16 +3803,15 @@ void TemplateTable::_new() {
     __ sldi(Roffset, Rindex, LogBytesPerWord);
     __ load_resolved_klass_at_offset(Rcpool, Roffset, RinstanceKlass);
 
-    // Make sure klass is fully initialized and get instance_size.
-    __ lbz(Rscratch, in_bytes(InstanceKlass::init_state_offset()), RinstanceKlass);
+    // Make sure klass is initialized.
+    assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
+    __ clinit_barrier(RinstanceKlass, R16_thread, nullptr /*L_fast_path*/, &Lslow_case);
+
     __ lwz(Rinstance_size, in_bytes(Klass::layout_helper_offset()), RinstanceKlass);
 
-    __ cmpdi(CCR1, Rscratch, InstanceKlass::fully_initialized);
-    // Make sure klass does not have has_finalizer, or is abstract, or interface or java/lang/Class.
+    // Make sure klass is not abstract, or interface or java/lang/Class.
     __ andi_(R0, Rinstance_size, Klass::_lh_instance_slow_path_bit); // slow path bit equals 0?
-
-    __ crnand(CCR0, Assembler::equal, CCR1, Assembler::equal); // slow path bit set or not fully initialized?
-    __ beq(CCR0, Lslow_case);
+    __ bne(CCR0, Lslow_case);
 
     // --------------------------------------------------------------------------
     // Fast case:
@@ -3841,8 +3840,9 @@ void TemplateTable::_new() {
       // Init1: Zero out newly allocated memory.
       // Initialize remaining object fields.
       Register Rbase = Rtags;
-      __ addi(Rinstance_size, Rinstance_size, 7 - (int)sizeof(oopDesc));
-      __ addi(Rbase, RallocatedObject, sizeof(oopDesc));
+      int header_size = oopDesc::header_size() * HeapWordSize;
+      __ addi(Rinstance_size, Rinstance_size, 7 - header_size);
+      __ addi(Rbase, RallocatedObject, header_size);
       __ srdi(Rinstance_size, Rinstance_size, 3);
 
       // Clear out object skipping header. Takes also care of the zero length case.
@@ -3852,18 +3852,22 @@ void TemplateTable::_new() {
     // --------------------------------------------------------------------------
     // Init2: Initialize the header: mark, klass
     // Init mark.
-    __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
-    __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
-
-    // Init klass.
-    __ store_klass_gap(RallocatedObject);
-    __ store_klass(RallocatedObject, RinstanceKlass, Rscratch); // klass (last for cms)
+    if (UseCompactObjectHeaders) {
+      __ ld(Rscratch, in_bytes(Klass::prototype_header_offset()), RinstanceKlass);
+      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+    } else {
+      __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
+      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+      __ store_klass_gap(RallocatedObject);
+      __ store_klass(RallocatedObject, RinstanceKlass, Rscratch);
+    }
 
     // Check and trigger dtrace event.
-    SkipIfEqualZero::skip_to_label_if_equal_zero(_masm, Rscratch, &DTraceAllocProbes, Ldone);
-    __ push(atos);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
-    __ pop(atos);
+    if (DTraceAllocProbes) {
+      __ push(atos);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
+      __ pop(atos);
+    }
 
     __ b(Ldone);
   }

@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/generation.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/space.hpp"
 
 ContiguousSpacePool::ContiguousSpacePool(ContiguousSpace* space,
@@ -72,18 +72,18 @@ MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
 
-GenerationPool::GenerationPool(Generation* gen,
-                               const char* name,
-                               bool support_usage_threshold) :
+TenuredGenerationPool::TenuredGenerationPool(TenuredGeneration* gen,
+                                             const char* name,
+                                             bool support_usage_threshold) :
   CollectedMemoryPool(name, gen->capacity(), gen->max_capacity(),
                       support_usage_threshold), _gen(gen) {
 }
 
-size_t GenerationPool::used_in_bytes() {
+size_t TenuredGenerationPool::used_in_bytes() {
   return _gen->used();
 }
 
-MemoryUsage GenerationPool::get_memory_usage() {
+MemoryUsage TenuredGenerationPool::get_memory_usage() {
   size_t used      = used_in_bytes();
   size_t committed = _gen->capacity();
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,7 +75,8 @@ bool EscapeBarrier::deoptimize_objects(int d1, int d2) {
     // These frames are about to be removed. We must not interfere with that and signal failure.
     return false;
   }
-  if (deoptee_thread()->has_last_Java_frame()) {
+  if (deoptee_thread()->has_last_Java_frame() &&
+      deoptee_thread()->last_continuation() == nullptr) {
     assert(calling_thread() == Thread::current(), "should be");
     KeepStackGCProcessedMark ksgcpm(deoptee_thread());
     ResourceMark rm(calling_thread());

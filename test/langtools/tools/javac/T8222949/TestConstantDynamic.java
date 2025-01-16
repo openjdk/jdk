@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
  * @bug 8222949
  * @summary add condy support to javac's pool API
  * @library /tools/javac/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.jvm
@@ -186,7 +184,7 @@ public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
                 fail("Test method not found");
                 return;
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
@@ -216,7 +214,7 @@ public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
                 return;
             }
 
-            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             if (bsm_attr.bootstrapMethods().size() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");
@@ -251,7 +249,7 @@ public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
                 return;
             }
 
-            LineNumberTableAttribute lnt = ea.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null);
+            LineNumberTableAttribute lnt = ea.findAttribute(Attributes.lineNumberTable()).orElse(null);
 
             if (lnt == null) {
                 fail("No LineNumberTable attribute");

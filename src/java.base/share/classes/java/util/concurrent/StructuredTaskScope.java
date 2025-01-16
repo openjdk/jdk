@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package java.util.concurrent;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -37,6 +35,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.ThreadFlock;
+import jdk.internal.invoke.MhUtil;
 
 /**
  * A basic API for <em>structured concurrency</em>. {@code StructuredTaskScope} supports
@@ -260,8 +259,8 @@ import jdk.internal.misc.ThreadFlock;
  * {@snippet lang=java :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
  *
- *     // @link substring="runWhere" target="ScopedValue#runWhere(ScopedValue, Object, Runnable)" :
- *     ScopedValue.runWhere(USERNAME, "duke", () -> {
+ *     // @link substring="run" target="ScopedValue.Carrier#run(Runnable)" :
+ *     ScopedValue.where(USERNAME, "duke").run(() -> {
  *         try (var scope = new StructuredTaskScope<String>()) {
  *
  *             scope.fork(() -> childTask());           // @highlight substring="fork"
@@ -413,6 +412,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * @param name the name of the task scope, can be null
      * @param factory the thread factory
      */
+    @SuppressWarnings("this-escape")
     public StructuredTaskScope(String name, ThreadFactory factory) {
         this.factory = Objects.requireNonNull(factory, "'factory' is null");
         if (name == null)
@@ -686,7 +686,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     /**
      * Interrupt all unfinished threads.
      */
-    private void implInterruptAll() {
+    private void interruptAll() {
         flock.threads()
             .filter(t -> t != Thread.currentThread())
             .forEach(t -> {
@@ -694,19 +694,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                     t.interrupt();
                 } catch (Throwable ignore) { }
             });
-    }
-
-    @SuppressWarnings("removal")
-    private void interruptAll() {
-        if (System.getSecurityManager() == null) {
-            implInterruptAll();
-        } else {
-            PrivilegedAction<Void> pa = () -> {
-                implInterruptAll();
-                return null;
-            };
-            AccessController.doPrivileged(pa);
-        }
     }
 
     /**
@@ -989,13 +976,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         private static final VarHandle FIRST_RESULT;
         private static final VarHandle FIRST_EXCEPTION;
         static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                FIRST_RESULT = l.findVarHandle(ShutdownOnSuccess.class, "firstResult", Object.class);
-                FIRST_EXCEPTION = l.findVarHandle(ShutdownOnSuccess.class, "firstException", Throwable.class);
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-            }
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            FIRST_RESULT = MhUtil.findVarHandle(l, "firstResult", Object.class);
+            FIRST_EXCEPTION = MhUtil.findVarHandle(l, "firstException", Throwable.class);
         }
         private volatile Object firstResult;
         private volatile Throwable firstException;
@@ -1009,9 +992,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
-         * details how parent-child relations are established implicitly for the purpose
-         * of inheritance of scoped value bindings.
+         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section
+         * in the class description details how parent-child relations are established
+         * implicitly for the purpose of inheritance of scoped value bindings.
          *
          * @param name the name of the task scope, can be null
          * @param factory the thread factory
@@ -1176,15 +1159,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     public static final class ShutdownOnFailure extends StructuredTaskScope<Object> {
-        private static final VarHandle FIRST_EXCEPTION;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                FIRST_EXCEPTION = l.findVarHandle(ShutdownOnFailure.class, "firstException", Throwable.class);
-            } catch (Exception e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        private static final VarHandle FIRST_EXCEPTION =
+                MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
         private volatile Throwable firstException;
 
         /**
@@ -1196,7 +1172,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
+         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section in the class description
          * details how parent-child relations are established implicitly for the purpose
          * of inheritance of scoped value bindings.
          *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
  * @clean nsk.jdi.StackFrame.setValue.setvalue005.setvalue005t
  * @compile -g:lines,source,vars setvalue005t.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.StackFrame.setValue.setvalue005.setvalue005
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -129,7 +129,10 @@ public class setvalue005 {
     private volatile boolean gotEvent = false;
 
     public static void main (String argv[]) {
-        System.exit(run(argv,System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -87,13 +87,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignInit
 
     rv = (*ckpFunctions->C_SignInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_SignInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_SignInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif
@@ -310,13 +306,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignRecoverIni
 
     rv = (*ckpFunctions->C_SignRecoverInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_SignRecoverInit, stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_SignRecoverInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif
@@ -420,13 +412,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyInit
 
     rv = (*ckpFunctions->C_VerifyInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_VerifyInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_VerifyInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif
@@ -608,13 +596,9 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1VerifyRecoverI
 
     rv = (*ckpFunctions->C_VerifyRecoverInit)(ckSessionHandle, ckpMechanism, ckKeyHandle);
 
-    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK ||
-            (ckpMechanism->pParameter == NULL)) {
-        freeCKMechanismPtr(ckpMechanism);
-    } else {
-        (*env)->SetLongField(env, jMechanism, mech_pHandleID, ptr_to_jlong(ckpMechanism));
-        TRACE1("DEBUG C_VerifyRecoverInit: stored pMech = 0x%lX\n", ptr_to_jlong(ckpMechanism));
-    }
+    TRACE1("DEBUG C_VerifyRecoverInit: freed pMech = %p\n", ckpMechanism);
+    freeCKMechanismPtr(ckpMechanism);
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
     TRACE0("FINISHED\n");
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ TEST_VM(PlaceholderTable, supername) {
   {
     MutexLocker ml(THREAD, SystemDictionary_lock);
 
-    PlaceholderTable::classloadAction super_action = PlaceholderTable::LOAD_SUPER;
+    PlaceholderTable::classloadAction super_action = PlaceholderTable::DETECT_CIRCULARITY;
     PlaceholderTable::classloadAction define_action = PlaceholderTable::DEFINE_CLASS;
 
     // DefineClass A and D
@@ -71,7 +71,7 @@ TEST_VM(PlaceholderTable, supername) {
 
     // Another thread comes in and finds A loading Super
     PlaceholderEntry* placeholder = PlaceholderTable::get_entry(A, loader_data);
-    SymbolHandle supername = placeholder->supername();
+    SymbolHandle supername = placeholder->next_klass_name();
 
     // Other thread is done before handle_parallel_super_load
     PlaceholderTable::find_and_remove(A, loader_data, super_action, THREAD);
@@ -86,7 +86,7 @@ TEST_VM(PlaceholderTable, supername) {
     // Refcount should be 3: one in table for class A, one in table for class D
     // and one locally with SymbolHandle keeping it alive
     placeholder = PlaceholderTable::get_entry(A, loader_data);
-    supername = placeholder->supername();
+    supername = placeholder->next_klass_name();
     EXPECT_EQ(super->refcount(), 3) << "super class name refcount should be 3";
 
     // Second thread's done too

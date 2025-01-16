@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class SunCommandLineLauncher extends AbstractLauncher {
     private static final String ARG_QUOTE = "quote";
     private static final String ARG_VM_EXEC = "vmexec";
 
-    static private final String ARG_VM_INCLUDE_VTHREADS = "includevirtualthreads";
+    private static final String ARG_VM_INCLUDE_VTHREADS = "includevirtualthreads";
 
     TransportService transportService;
     Transport transport;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_
   _first_nmethod(nullptr),
   _claimed_nmethod(nullptr) {
   // Get first alive nmethod
-  CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
+  NMethodIterator iter(NMethodIterator::all);
   if(iter.next()) {
     _first_nmethod = iter.method();
   }
@@ -47,18 +47,17 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_
 
 CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
   CodeCache::verify_clean_inline_caches();
-  CodeCache::verify_icholder_relocations();
 }
 
-void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods) {
-  CompiledMethod* first;
-  CompiledMethodIterator last(CompiledMethodIterator::all_blobs);
+void CodeCacheUnloadingTask::claim_nmethods(nmethod** claimed_nmethods, int *num_claimed_nmethods) {
+  nmethod* first;
+  NMethodIterator last(NMethodIterator::all);
 
   do {
     *num_claimed_nmethods = 0;
 
     first = _claimed_nmethod;
-    last = CompiledMethodIterator(CompiledMethodIterator::all_blobs, first);
+    last = NMethodIterator(NMethodIterator::all, first);
 
     if (first != nullptr) {
 
@@ -82,7 +81,7 @@ void CodeCacheUnloadingTask::work(uint worker_id) {
   }
 
   int num_claimed_nmethods;
-  CompiledMethod* claimed_nmethods[MaxClaimNmethods];
+  nmethod* claimed_nmethods[MaxClaimNmethods];
 
   while (true) {
     claim_nmethods(claimed_nmethods, &num_claimed_nmethods);

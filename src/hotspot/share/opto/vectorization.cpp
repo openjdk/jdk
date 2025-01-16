@@ -26,27 +26,403 @@
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/matcher.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
 #ifndef PRODUCT
+void VPointer::print_con_or_idx(const Node* n) {
+  if (n == nullptr) {
+    tty->print("(   0)");
+  } else if (n->is_ConI()) {
+    jint val = n->as_ConI()->get_int();
+    tty->print("(%4d)", val);
+  } else {
+    tty->print("[%4d]", n->_idx);
+  }
+}
+#endif
+
+bool VLoop::check_preconditions() {
+#ifndef PRODUCT
+  if (is_trace_preconditions()) {
+    tty->print_cr("\nVLoop::check_preconditions");
+    lpt()->dump_head();
+    lpt()->head()->dump();
+  }
+#endif
+
+  VStatus status = check_preconditions_helper();
+  if (!status.is_success()) {
+#ifndef PRODUCT
+    if (is_trace_preconditions()) {
+      tty->print_cr("VLoop::check_preconditions: failed: %s", status.failure_reason());
+    }
+#endif
+    return false; // failure
+  }
+  return true; // success
+}
+
+VStatus VLoop::check_preconditions_helper() {
+  // Only accept vector width that is power of 2
+  int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
+  if (vector_width < 2 || !is_power_of_2(vector_width)) {
+    return VStatus::make_failure(VLoop::FAILURE_VECTOR_WIDTH);
+  }
+
+  // Only accept valid counted loops (int)
+  if (!_lpt->_head->as_Loop()->is_valid_counted_loop(T_INT)) {
+    return VStatus::make_failure(VLoop::FAILURE_VALID_COUNTED_LOOP);
+  }
+  _cl = _lpt->_head->as_CountedLoop();
+  _iv = _cl->phi()->as_Phi();
+
+  if (_cl->is_vectorized_loop()) {
+    return VStatus::make_failure(VLoop::FAILURE_ALREADY_VECTORIZED);
+  }
+
+  if (_cl->is_unroll_only()) {
+    return VStatus::make_failure(VLoop::FAILURE_UNROLL_ONLY);
+  }
+
+  // Check for control flow in the body
+  _cl_exit = _cl->loopexit();
+  bool has_cfg = _cl_exit->in(0) != _cl;
+  if (has_cfg && !is_allow_cfg()) {
+#ifndef PRODUCT
+    if (is_trace_preconditions()) {
+      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
+      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
+      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
+      _lpt->dump_head();
+    }
+#endif
+    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
+  }
+
+  // Make sure the are no extra control users of the loop backedge
+  if (_cl->back_control()->outcnt() != 1) {
+    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
+  }
+
+  // To align vector memory accesses in the main-loop, we will have to adjust
+  // the pre-loop limit.
+  if (_cl->is_main_loop()) {
+    CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
+    if (pre_end == nullptr) {
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
+    }
+    Node* pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) {
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
+    }
+    _pre_loop_end = pre_end;
+  }
+
+  return VStatus::make_success();
+}
+
+// Return true iff all submodules are loaded successfully
+bool VLoopAnalyzer::setup_submodules() {
+#ifndef PRODUCT
+  if (_vloop.is_trace_loop_analyzer()) {
+    tty->print_cr("\nVLoopAnalyzer::setup_submodules");
+    _vloop.lpt()->dump_head();
+    _vloop.cl()->dump();
+  }
+#endif
+
+  VStatus status = setup_submodules_helper();
+  if (!status.is_success()) {
+#ifndef PRODUCT
+    if (_vloop.is_trace_loop_analyzer()) {
+      tty->print_cr("\nVLoopAnalyze::setup_submodules: failed: %s", status.failure_reason());
+    }
+#endif
+    return false; // failed
+  }
+  return true; // success
+}
+
+VStatus VLoopAnalyzer::setup_submodules_helper() {
+  // Skip any loop that has not been assigned max unroll by analysis.
+  if (SuperWordLoopUnrollAnalysis && _vloop.cl()->slp_max_unroll() == 0) {
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_MAX_UNROLL);
+  }
+
+  if (SuperWordReductions) {
+    _reductions.mark_reductions();
+  }
+
+  _memory_slices.find_memory_slices();
+
+  // If there is no memory slice detected, it means there is no store.
+  // If there is no reduction and no store, then we give up, because
+  // vectorization is not possible anyway (given current limitations).
+  if (!_reductions.is_marked_reduction_loop() &&
+      _memory_slices.heads().is_empty()) {
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
+  }
+
+  VStatus body_status = _body.construct();
+  if (!body_status.is_success()) {
+    return body_status;
+  }
+
+  _types.compute_vector_element_type();
+
+  _vpointers.compute_vpointers();
+
+  _dependency_graph.construct();
+
+  return VStatus::make_success();
+}
+
+void VLoopVPointers::compute_vpointers() {
+  count_vpointers();
+  allocate_vpointers_array();
+  compute_and_cache_vpointers();
+  NOT_PRODUCT( if (_vloop.is_trace_vpointers()) { print(); } )
+}
+
+void VLoopVPointers::count_vpointers() {
+  _vpointers_length = 0;
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    _vpointers_length++;
+  });
+}
+
+void VLoopVPointers::allocate_vpointers_array() {
+  uint bytes = _vpointers_length * sizeof(VPointer);
+  _vpointers = (VPointer*)_arena->Amalloc(bytes);
+}
+
+void VLoopVPointers::compute_and_cache_vpointers() {
+  int pointers_idx = 0;
+  _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
+    // Placement new: construct directly into the array.
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
+    pointers_idx++;
+  });
+}
+
+const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
+  assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
+  int bb_idx = _body.bb_idx(mem);
+  int pointers_idx = _bb_idx_to_vpointer.at(bb_idx);
+  assert(0 <= pointers_idx && pointers_idx < _vpointers_length, "valid range");
+  return _vpointers[pointers_idx];
+}
+
+#ifndef PRODUCT
+void VLoopVPointers::print() const {
+  tty->print_cr("\nVLoopVPointers::print:");
+
+  _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
+    const VPointer& p = vpointer(mem);
+    tty->print("  ");
+    p.print();
+  });
+}
+#endif
+
+// Construct the dependency graph:
+//  - Data-dependencies: implicit (taken from C2 node inputs).
+//  - Memory-dependencies:
+//    - No edges between different slices.
+//    - No Load-Load edges.
+//    - Inside a slice, add all Store-Load, Load-Store, Store-Store edges,
+//      except if we can prove that the memory does not overlap.
+void VLoopDependencyGraph::construct() {
+  const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
+  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
+
+  ResourceMark rm;
+  GrowableArray<MemNode*> slice_nodes;
+  GrowableArray<int> memory_pred_edges;
+
+  // For each memory slice, create the memory subgraph
+  for (int i = 0; i < mem_slice_heads.length(); i++) {
+    PhiNode* head = mem_slice_heads.at(i);
+    MemNode* tail = mem_slice_tails.at(i);
+
+    _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
+
+    // In forward order (reverse of reverse), visit all memory nodes in the slice.
+    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+      MemNode* n1 = slice_nodes.at(j);
+      memory_pred_edges.clear();
+
+      const VPointer& p1 = _vpointers.vpointer(n1);
+      // For all memory nodes before it, check if we need to add a memory edge.
+      for (int k = slice_nodes.length() - 1; k > j; k--) {
+        MemNode* n2 = slice_nodes.at(k);
+
+        // Ignore Load-Load dependencies:
+        if (n1->is_Load() && n2->is_Load()) { continue; }
+
+        const VPointer& p2 = _vpointers.vpointer(n2);
+        if (!VPointer::not_equal(p1.cmp(p2))) {
+          // Possibly overlapping memory
+          memory_pred_edges.append(_body.bb_idx(n2));
+        }
+      }
+      if (memory_pred_edges.is_nonempty()) {
+        // Data edges are taken implicitly from the C2 graph, thus we only add
+        // a dependency node if we have memory edges.
+        add_node(n1, memory_pred_edges);
+      }
+    }
+    slice_nodes.clear();
+  }
+
+  compute_depth();
+
+  NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
+}
+
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_edges) {
+  assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
+  assert(!memory_pred_edges.is_empty(), "no need to create a node without edges");
+  DependencyNode* dn = new (_arena) DependencyNode(n, memory_pred_edges, _arena);
+  _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
+}
+
+int VLoopDependencyGraph::find_max_pred_depth(const Node* n) const {
+  int max_pred_depth = 0;
+  if (!n->is_Phi()) { // ignore backedge
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      if (_vloop.in_bb(pred)) {
+        max_pred_depth = MAX2(max_pred_depth, depth(pred));
+      }
+    }
+  }
+  return max_pred_depth;
+}
+
+// We iterate over the body, which is already ordered by the dependencies, i.e. pred comes
+// before use. With a single pass, we can compute the depth of every node, since we can
+// assume that the depth of all preds is already computed when we compute the depth of use.
+void VLoopDependencyGraph::compute_depth() {
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    set_depth(n, find_max_pred_depth(n) + 1);
+  }
+
+#ifdef ASSERT
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    int max_pred_depth = find_max_pred_depth(n);
+    if (depth(n) != max_pred_depth + 1) {
+      print();
+      tty->print_cr("Incorrect depth: %d vs %d", depth(n), max_pred_depth + 1);
+      n->dump();
+    }
+    assert(depth(n) == max_pred_depth + 1, "must have correct depth");
+  }
+#endif
+}
+
+#ifndef PRODUCT
+void VLoopDependencyGraph::print() const {
+  tty->print_cr("\nVLoopDependencyGraph::print:");
+
+  tty->print_cr(" Memory pred edges:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    const DependencyNode* dn = dependency_node(n);
+    if (dn != nullptr) {
+      tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
+      for (uint j = 0; j < dn->memory_pred_edges_length(); j++) {
+        Node* pred = _body.body().at(dn->memory_pred_edge(j));
+        tty->print("  %d %s", pred->_idx, pred->Name());
+      }
+      tty->print_cr("]");
+    }
+  }
+  tty->cr();
+
+  tty->print_cr(" Complete dependency graph:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      tty->print("  %d %s", pred->_idx, pred->Name());
+    }
+    tty->print_cr("]");
+  }
+}
+#endif
+
+VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
+                                                     GrowableArray<int>& memory_pred_edges,
+                                                     Arena* arena) :
+    _node(n),
+    _memory_pred_edges_length(memory_pred_edges.length()),
+    _memory_pred_edges(nullptr)
+{
+  assert(memory_pred_edges.is_nonempty(), "not empty");
+  uint bytes = memory_pred_edges.length() * sizeof(int);
+  _memory_pred_edges = (int*)arena->Amalloc(bytes);
+  memcpy(_memory_pred_edges, memory_pred_edges.adr_at(0), bytes);
+}
+
+VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
+                                                   const Node* node) :
+    _dependency_graph(dependency_graph),
+    _node(node),
+    _dependency_node(dependency_graph.dependency_node(node)),
+    _current(nullptr),
+    _next_pred(0),
+    _end_pred(node->req()),
+    _next_memory_pred(0),
+    _end_memory_pred((_dependency_node != nullptr) ? _dependency_node->memory_pred_edges_length() : 0)
+{
+  if (_node->is_Store() || _node->is_Load()) {
+    // Load: address
+    // Store: address, value
+    _next_pred = MemNode::Address;
+  } else {
+    assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
+    _next_pred = 1; // skip control
+  }
+  next();
+}
+
+void VLoopDependencyGraph::PredsIterator::next() {
+  if (_next_pred < _end_pred) {
+    _current = _node->in(_next_pred++);
+  } else if (_next_memory_pred < _end_memory_pred) {
+    int pred_bb_idx = _dependency_node->memory_pred_edge(_next_memory_pred++);
+    _current = _dependency_graph._body.body().at(pred_bb_idx);
+  } else {
+    _current = nullptr; // done
+  }
+}
+
+#ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(const MemNode* mem,
-                   PhaseIdealLoop* phase, IdealLoopTree* lpt,
+VPointer::VPointer(MemNode* const mem, const VLoop& vloop,
                    Node_Stack* nstack, bool analyze_only) :
-  _mem(mem), _phase(phase), _lpt(lpt),
-  _iv(lpt->_head->as_CountedLoop()->phi()->as_Phi()),
+  _mem(mem), _vloop(vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
 #endif
+  _has_int_index_after_convI2L(false),
+  _int_index_after_convI2L_offset(0),
+  _int_index_after_convI2L_invar(nullptr),
+  _int_index_after_convI2L_scale(0),
   _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
 #ifndef PRODUCT
-  , _tracer((phase->C->directive()->VectorizeDebugOption & 2) > 0)
+  , _tracer(vloop.is_trace_pointer_analysis())
 #endif
 {
   NOT_PRODUCT(_tracer.ctor_1(mem);)
@@ -88,7 +464,10 @@ VPointer::VPointer(const MemNode* mem,
       break; // stop looking at addp's
     }
   }
-  if (is_loop_member(adr)) {
+  if (!invariant(adr)) {
+    // The address must be invariant for the current loop. But if we are in a main-loop,
+    // it must also be invariant of the pre-loop, otherwise we cannot use this address
+    // for the pre-loop limit adjustment required for main-loop alignment.
     assert(!valid(), "adr is loop variant");
     return;
   }
@@ -101,6 +480,30 @@ VPointer::VPointer(const MemNode* mem,
   NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.restore_depth();)
   NOT_PRODUCT(_tracer.ctor_6(mem);)
 
+  // In the pointer analysis, and especially the AlignVector, analysis we assume that
+  // stride and scale are not too large. For example, we multiply "scale * stride",
+  // and assume that this does not overflow the int range. We also take "abs(scale)"
+  // and "abs(stride)", which would overflow for min_int = -(2^31). Still, we want
+  // to at least allow small and moderately large stride and scale. Therefore, we
+  // allow values up to 2^30, which is only a factor 2 smaller than the max/min int.
+  // Normal performance relevant code will have much lower values. And the restriction
+  // allows us to keep the rest of the autovectorization code much simpler, since we
+  // do not have to deal with overflows.
+  jlong long_scale  = _scale;
+  jlong long_stride = _vloop.iv_stride();
+  jlong max_val = 1 << 30;
+  if (abs(long_scale) >= max_val ||
+      abs(long_stride) >= max_val ||
+      abs(long_scale * long_stride) >= max_val) {
+    assert(!valid(), "adr stride*scale is too large");
+    return;
+  }
+
+  if (!is_safe_to_use_as_simple_form(base, adr)) {
+    assert(!valid(), "does not have simple form");
+    return;
+  }
+
   _base = base;
   _adr  = adr;
   assert(valid(), "Usable");
@@ -109,11 +512,15 @@ VPointer::VPointer(const MemNode* mem,
 // Following is used to create a temporary object during
 // the pattern match of an address expression.
 VPointer::VPointer(VPointer* p) :
-  _mem(p->_mem), _phase(p->_phase), _lpt(p->_lpt), _iv(p->_iv),
+  _mem(p->_mem), _vloop(p->_vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
 #endif
+  _has_int_index_after_convI2L(false),
+  _int_index_after_convI2L_offset(0),
+  _int_index_after_convI2L_invar(nullptr),
+  _int_index_after_convI2L_scale(0),
   _nstack(p->_nstack), _analyze_only(p->_analyze_only), _stack_idx(p->_stack_idx)
 #ifndef PRODUCT
   , _tracer(p->_tracer._is_trace_alignment)
@@ -136,6 +543,354 @@ int VPointer::invar_factor() const {
   return 1;
 }
 
+// We would like to make decisions about aliasing (i.e. removing memory edges) and adjacency
+// (i.e. which loads/stores can be packed) based on the simple form:
+//
+//   s_pointer = adr + offset + invar + scale * ConvI2L(iv)
+//
+// However, we parse the compound-long-int form:
+//
+//   c_pointer = adr + long_offset + long_invar + long_scale * ConvI2L(int_index)
+//   int_index =       int_offset  + int_invar  + int_scale  * iv
+//
+// In general, the simple and the compound-long-int form do not always compute the same pointer
+// at runtime. For example, the simple form would give a different result due to an overflow
+// in the int_index.
+//
+// Example:
+//   For both forms, we have:
+//     iv = 0
+//     scale = 1
+//
+//   We now account the offset and invar once to the long part and once to the int part:
+//     Pointer 1 (long offset and long invar):
+//       long_offset = min_int
+//       long_invar  = min_int
+//       int_offset  = 0
+//       int_invar   = 0
+//
+//     Pointer 2 (int offset and int invar):
+//       long_offset = 0
+//       long_invar  = 0
+//       int_offset  = min_int
+//       int_invar   = min_int
+//
+//   This gives us the following pointers:
+//     Compound-long-int form pointers:
+//       Form:
+//         c_pointer   = adr + long_offset + long_invar + long_scale * ConvI2L(int_offset + int_invar + int_scale * iv)
+//
+//       Pointers:
+//         c_pointer1  = adr + min_int     + min_int    + 1          * ConvI2L(0          + 0         + 1         * 0)
+//                     = adr + min_int + min_int
+//                     = adr - 2^32
+//
+//         c_pointer2  = adr + 0           + 0          + 1          * ConvI2L(min_int    + min_int   + 1         * 0)
+//                     = adr + ConvI2L(min_int + min_int)
+//                     = adr + 0
+//                     = adr
+//
+//     Simple form pointers:
+//       Form:
+//         s_pointer  = adr + offset                     + invar                     + scale                    * ConvI2L(iv)
+//         s_pointer  = adr + (long_offset + int_offset) + (long_invar  + int_invar) + (long_scale * int_scale) * ConvI2L(iv)
+//
+//       Pointers:
+//         s_pointer1 = adr + (min_int     + 0         ) + (min_int     + 0        ) + 1                        * 0
+//                    = adr + min_int + min_int
+//                    = adr - 2^32
+//         s_pointer2 = adr + (0           + min_int   ) + (0           + min_int  ) + 1                        * 0
+//                    = adr + min_int + min_int
+//                    = adr - 2^32
+//
+//   We see that the two addresses are actually 2^32 bytes apart (derived from the c_pointers), but their simple form look identical.
+//
+// Hence, we need to determine in which cases it is safe to make decisions based on the simple
+// form, rather than the compound-long-int form. If we cannot prove that using the simple form
+// is safe (i.e. equivalent to the compound-long-int form), then we do not get a valid VPointer,
+// and the associated memop cannot be vectorized.
+bool VPointer::is_safe_to_use_as_simple_form(Node* base, Node* adr) const {
+#ifndef _LP64
+  // On 32-bit platforms, there is never an explicit int_index with ConvI2L for the iv. Thus, the
+  // parsed pointer form is always the simple form, with int operations:
+  //
+  //   pointer = adr + offset + invar + scale * iv
+  //
+  assert(!_has_int_index_after_convI2L, "32-bit never has an int_index with ConvI2L for the iv");
+  return true;
+#else
+
+  // Array accesses that are not Unsafe always have a RangeCheck which ensures that there is no
+  // int_index overflow. This implies that the conversion to long can be done separately:
+  //
+  //   ConvI2L(int_index) = ConvI2L(int_offset) + ConvI2L(int_invar) + ConvI2L(scale) * ConvI2L(iv)
+  //
+  // And hence, the simple form is guaranteed to be identical to the compound-long-int form at
+  // runtime and the VPointer is safe/valid to be used.
+  const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
+  if (ary_ptr_t != nullptr) {
+    if (!_mem->is_unsafe_access()) {
+      return true;
+    }
+  }
+
+  // We did not find the int_index. Just to be safe, reject this VPointer.
+  if (!_has_int_index_after_convI2L) {
+    return false;
+  }
+
+  int int_offset  = _int_index_after_convI2L_offset;
+  Node* int_invar = _int_index_after_convI2L_invar;
+  int int_scale   = _int_index_after_convI2L_scale;
+  int long_scale  = _scale / int_scale;
+
+  // If "int_index = iv", then the simple form is identical to the compound-long-int form.
+  //
+  //   int_index = int_offset + int_invar + int_scale * iv
+  //             = 0            0           1         * iv
+  //             =                                      iv
+  if (int_offset == 0 && int_invar == nullptr && int_scale == 1) {
+    return true;
+  }
+
+  // Intuition: What happens if the int_index overflows? Let us look at two pointers on the "overflow edge":
+  //
+  //              pointer1 = adr + ConvI2L(int_index1)
+  //              pointer2 = adr + ConvI2L(int_index2)
+  //
+  //              int_index1 = max_int + 0 = max_int  -> very close to but before the overflow
+  //              int_index2 = max_int + 1 = min_int  -> just enough to get the overflow
+  //
+  //            When looking at the difference of pointer1 and pointer2, we notice that it is very large
+  //            (almost 2^32). Since arrays have at most 2^31 elements, chances are high that pointer2 is
+  //            an actual out-of-bounds access at runtime. These would normally be prevented by range checks
+  //            at runtime. However, if the access was done by using Unsafe, where range checks are omitted,
+  //            then an out-of-bounds access constitutes undefined behavior. This means that we are allowed to
+  //            do anything, including changing the behavior.
+  //
+  //            If we can set the right conditions, we have a guarantee that an overflow is either impossible
+  //            (no overflow or range checks preventing that) or undefined behavior. In both cases, we are
+  //            safe to do a vectorization.
+  //
+  // Approach:  We want to prove a lower bound for the distance between these two pointers, and an
+  //            upper bound for the size of a memory object. We can derive such an upper bound for
+  //            arrays. We know they have at most 2^31 elements. If we know the size of the elements
+  //            in bytes, we have:
+  //
+  //              array_element_size_in_bytes * 2^31 >= max_possible_array_size_in_bytes
+  //                                                 >= array_size_in_bytes                      (ARR)
+  //
+  //            If some small difference "delta" leads to an int_index overflow, we know that the
+  //            int_index1 before overflow must have been close to max_int, and the int_index2 after
+  //            the overflow must be close to min_int:
+  //
+  //              pointer1 =        adr + long_offset + long_invar + long_scale * ConvI2L(int_index1)
+  //                       =approx  adr + long_offset + long_invar + long_scale * max_int
+  //
+  //              pointer2 =        adr + long_offset + long_invar + long_scale * ConvI2L(int_index2)
+  //                       =approx  adr + long_offset + long_invar + long_scale * min_int
+  //
+  //            We realize that the pointer difference is very large:
+  //
+  //              difference =approx  long_scale * 2^32
+  //
+  //            Hence, if we set the right condition for long_scale and array_element_size_in_bytes,
+  //            we can prove that an overflow is impossible (or would imply undefined behaviour).
+  //
+  // We must now take this intuition, and develop a rigorous proof. We start by stating the problem
+  // more precisely, with the help of some definitions and the Statement we are going to prove.
+  //
+  // Definition:
+  //   Two VPointers are "comparable" (i.e. VPointer::comparable is true, set with VPointer::cmp()),
+  //   iff all of these conditions apply for the simple form:
+  //     1) Both VPointers are valid.
+  //     2) The adr are identical, or both are array bases of different arrays.
+  //     3) They have identical scale.
+  //     4) They have identical invar.
+  //     5) The difference in offsets is limited: abs(offset1 - offset2) < 2^31.                 (DIFF)
+  //
+  // For the Vectorization Optimization, we pair-wise compare VPointers and determine if they are:
+  //   1) "not comparable":
+  //        We do not optimize them (assume they alias, not assume adjacency).
+  //
+  //        Whenever we chose this option based on the simple form, it is also correct based on the
+  //        compound-long-int form, since we make no optimizations based on it.
+  //
+  //   2) "comparable" with different array bases at runtime:
+  //        We assume they do not alias (remove memory edges), but not assume adjacency.
+  //
+  //        Whenever we have two different array bases for the simple form, we also have different
+  //        array bases for the compound-long-form. Since VPointers provably point to different
+  //        memory objects, they can never alias.
+  //
+  //   3) "comparable" with the same base address:
+  //        We compute the relative pointer difference, and based on the load/store size we can
+  //        compute aliasing and adjacency.
+  //
+  //        We must find a condition under which the pointer difference of the simple form is
+  //        identical to the pointer difference of the compound-long-form. We do this with the
+  //        Statement below, which we then proceed to prove.
+  //
+  // Statement:
+  //   If two VPointers satisfy these 3 conditions:
+  //     1) They are "comparable".
+  //     2) They have the same base address.
+  //     3) Their long_scale is a multiple of the array element size in bytes:
+  //
+  //          abs(long_scale) % array_element_size_in_bytes = 0                                     (A)
+  //
+  //   Then their pointer difference of the simple form is identical to the pointer difference
+  //   of the compound-long-int form.
+  //
+  //   More precisely:
+  //     Such two VPointers by definition have identical adr, invar, and scale.
+  //     Their simple form is:
+  //
+  //       s_pointer1 = adr + offset1 + invar + scale * ConvI2L(iv)                                 (B1)
+  //       s_pointer2 = adr + offset2 + invar + scale * ConvI2L(iv)                                 (B2)
+  //
+  //     Thus, the pointer difference of the simple forms collapses to the difference in offsets:
+  //
+  //       s_difference = s_pointer1 - s_pointer2 = offset1 - offset2                               (C)
+  //
+  //     Their compound-long-int form for these VPointer is:
+  //
+  //       c_pointer1 = adr + long_offset1 + long_invar1 + long_scale1 * ConvI2L(int_index1)        (D1)
+  //       int_index1 = int_offset1 + int_invar1 + int_scale1 * iv                                  (D2)
+  //
+  //       c_pointer2 = adr + long_offset2 + long_invar2 + long_scale2 * ConvI2L(int_index2)        (D3)
+  //       int_index2 = int_offset2 + int_invar2 + int_scale2 * iv                                  (D4)
+  //
+  //     And these are the offset1, offset2, invar and scale from the simple form (B1) and (B2):
+  //
+  //       offset1 = long_offset1 + long_scale1 * ConvI2L(int_offset1)                              (D5)
+  //       offset2 = long_offset2 + long_scale2 * ConvI2L(int_offset2)                              (D6)
+  //
+  //       invar   = long_invar1 + long_scale1 * ConvI2L(int_invar1)
+  //               = long_invar2 + long_scale2 * ConvI2L(int_invar2)                                (D7)
+  //
+  //       scale   = long_scale1 * ConvI2L(int_scale1)
+  //               = long_scale2 * ConvI2L(int_scale2)                                              (D8)
+  //
+  //     The pointer difference of the compound-long-int form is defined as:
+  //
+  //       c_difference = c_pointer1 - c_pointer2
+  //
+  //   Thus, the statement claims that for the two VPointer we have:
+  //
+  //     s_difference = c_difference                                                                (Statement)
+  //
+  // We prove the Statement with the help of a Lemma:
+  //
+  // Lemma:
+  //   There is some integer x, such that:
+  //
+  //     c_difference = s_difference + array_element_size_in_bytes * x * 2^32                       (Lemma)
+  //
+  // From condition (DIFF), we can derive:
+  //
+  //   abs(s_difference) < 2^31                                                                     (E)
+  //
+  // Assuming the Lemma, we prove the Statement:
+  //   If "x = 0" (intuitively: the int_index does not overflow), then:
+  //     c_difference = s_difference
+  //     and hence the simple form computes the same pointer difference as the compound-long-int form.
+  //   If "x != 0" (intuitively: the int_index overflows), then:
+  //     abs(c_difference) >= abs(s_difference + array_element_size_in_bytes * x * 2^32)
+  //                       >= array_element_size_in_bytes * 2^32 - abs(s_difference)
+  //                                                               --  apply (E)  --
+  //                       >  array_element_size_in_bytes * 2^32 - 2^31
+  //                       >= array_element_size_in_bytes * 2^31
+  //                              --  apply (ARR)  --
+  //                       >= max_possible_array_size_in_bytes
+  //                       >= array_size_in_bytes
+  //
+  //     This shows that c_pointer1 and c_pointer2 have a distance that exceeds the maximum array size.
+  //     Thus, at least one of the two pointers must be outside of the array bounds. But we can assume
+  //     that out-of-bounds accesses do not happen. If they still do, it is undefined behavior. Hence,
+  //     we are allowed to do anything. We can also "safely" use the simple form in this case even though
+  //     it might not match the compound-long-int form at runtime.
+  // QED Statement.
+  //
+  // We must now prove the Lemma.
+  //
+  // ConvI2L always truncates by some power of 2^32, i.e. there is some integer y such that:
+  //
+  //   ConvI2L(y1 + y2) = ConvI2L(y1) + ConvI2L(y2) + 2^32 * y                                  (F)
+  //
+  // It follows, that there is an integer y1 such that:
+  //
+  //   ConvI2L(int_index1) =  ConvI2L(int_offset1 + int_invar1 + int_scale1 * iv)
+  //                          -- apply (F) --
+  //                       =  ConvI2L(int_offset1)
+  //                        + ConvI2L(int_invar1)
+  //                        + ConvI2L(int_scale1) * ConvI2L(iv)
+  //                        + y1 * 2^32                                                         (G)
+  //
+  // Thus, we can write the compound-long-int form (D1) as:
+  //
+  //   c_pointer1 =   adr + long_offset1 + long_invar1 + long_scale1 * ConvI2L(int_index1)
+  //                  -- apply (G) --
+  //              =   adr
+  //                + long_offset1
+  //                + long_invar1
+  //                + long_scale1 * ConvI2L(int_offset1)
+  //                + long_scale1 * ConvI2L(int_invar1)
+  //                + long_scale1 * ConvI2L(int_scale1) * ConvI2L(iv)
+  //                + long_scale1 * y1 * 2^32                                                    (H)
+  //
+  // And we can write the simple form as:
+  //
+  //   s_pointer1 =   adr + offset1 + invar + scale * ConvI2L(iv)
+  //                  -- apply (D5, D7, D8) --
+  //              =   adr
+  //                + long_offset1
+  //                + long_scale1 * ConvI2L(int_offset1)
+  //                + long_invar1
+  //                + long_scale1 * ConvI2L(int_invar1)
+  //                + long_scale1 * ConvI2L(int_scale1) * ConvI2L(iv)                            (K)
+  //
+  // We now compute the pointer difference between the simple (K) and compound-long-int form (H).
+  // Most terms cancel out immediately:
+  //
+  //   sc_difference1 = c_pointer1 - s_pointer1 = long_scale1 * y1 * 2^32                        (L)
+  //
+  // Rearranging the equation (L), we get:
+  //
+  //   c_pointer1 = s_pointer1 + long_scale1 * y1 * 2^32                                         (M)
+  //
+  // And since long_scale1 is a multiple of array_element_size_in_bytes, there is some integer
+  // x1, such that (M) implies:
+  //
+  //   c_pointer1 = s_pointer1 + array_element_size_in_bytes * x1 * 2^32                         (N)
+  //
+  // With an analogue equation for c_pointer2, we can now compute the pointer difference for
+  // the compound-long-int form:
+  //
+  //   c_difference =  c_pointer1 - c_pointer2
+  //                   -- apply (N) --
+  //                =  s_pointer1 + array_element_size_in_bytes * x1 * 2^32
+  //                 -(s_pointer2 + array_element_size_in_bytes * x2 * 2^32)
+  //                   -- where "x = x1 - x2" --
+  //                =  s_pointer1 - s_pointer2 + array_element_size_in_bytes * x * 2^32
+  //                   -- apply (C) --
+  //                =  s_difference            + array_element_size_in_bytes * x * 2^32
+  // QED Lemma.
+  if (ary_ptr_t != nullptr) {
+    BasicType array_element_bt = ary_ptr_t->elem()->array_element_basic_type();
+    if (is_java_primitive(array_element_bt)) {
+      int array_element_size_in_bytes = type2aelembytes(array_element_bt);
+      if (abs(long_scale) % array_element_size_in_bytes == 0) {
+        return true;
+      }
+    }
+  }
+
+  // General case: we do not know if it is safe to use the simple form.
+  return false;
+#endif
+}
+
 bool VPointer::is_loop_member(Node* n) const {
   Node* n_c = phase()->get_ctrl(n);
   return lpt()->is_member(phase()->get_loop(n_c));
@@ -153,7 +908,7 @@ bool VPointer::invariant(Node* n) const {
       // main loop (Illegal invariant happens when n_c is a CastII node that
       // prevents data nodes to flow above the main loop).
       Node* n_c = phase()->get_ctrl(n);
-      return phase()->is_dominator(n_c, cl->pre_loop_head());
+      return phase()->is_dominator(n_c, _vloop.pre_loop_head());
     }
   }
   return is_not_member;
@@ -188,11 +943,40 @@ bool VPointer::scaled_iv_plus_offset(Node* n) {
     }
   } else if (opc == Op_SubI || opc == Op_SubL) {
     if (offset_plus_k(n->in(2), true) && scaled_iv_plus_offset(n->in(1))) {
+      // (offset1 + invar1 + scale * iv) - (offset2 + invar2)
+      // Subtraction handled via "negate" flag of "offset_plus_k".
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_6(n);)
       return true;
     }
-    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
-      _scale *= -1;
+    VPointer tmp(this);
+    if (offset_plus_k(n->in(1)) && tmp.scaled_iv_plus_offset(n->in(2))) {
+      // (offset1 + invar1) - (offset2 + invar2 + scale * iv)
+      // Subtraction handled explicitly below.
+      assert(_scale == 0, "shouldn't be set yet");
+      // _scale = -tmp._scale
+      if (!try_MulI_no_overflow(-1, tmp._scale, _scale)) {
+        return false; // mul overflow.
+      }
+      // _offset -= tmp._offset
+      if (!try_SubI_no_overflow(_offset, tmp._offset, _offset)) {
+        return false; // sub overflow.
+      }
+      // _invar -= tmp._invar
+      if (tmp._invar != nullptr) {
+        maybe_add_to_invar(tmp._invar, true);
+#ifdef ASSERT
+        _debug_invar_scale = tmp._debug_invar_scale;
+        _debug_negate_invar = !tmp._debug_negate_invar;
+#endif
+      }
+
+      // Forward info about the int_index:
+      assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
+      _has_int_index_after_convI2L = tmp._has_int_index_after_convI2L;
+      _int_index_after_convI2L_offset = tmp._int_index_after_convI2L_offset;
+      _int_index_after_convI2L_invar  = tmp._int_index_after_convI2L_invar;
+      _int_index_after_convI2L_scale  = tmp._int_index_after_convI2L_scale;
+
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_7(n);)
       return true;
     }
@@ -234,8 +1018,50 @@ bool VPointer::scaled_iv(Node* n) {
     }
   } else if (opc == Op_LShiftI) {
     if (n->in(1) == iv() && n->in(2)->is_Con()) {
-      _scale = 1 << n->in(2)->get_int();
+      if (!try_LShiftI_no_overflow(1, n->in(2)->get_int(), _scale)) {
+        return false; // shift overflow.
+      }
       NOT_PRODUCT(_tracer.scaled_iv_6(n, _scale);)
+      return true;
+    }
+  } else if (opc == Op_ConvI2L && !has_iv()) {
+    // So far we have not found the iv yet, and are about to enter a ConvI2L subgraph,
+    // which may be the int index (that might overflow) for the memory access, of the form:
+    //
+    //   int_index = int_offset + int_invar + int_scale * iv
+    //
+    // If we simply continue parsing with the current VPointer, then the int_offset and
+    // int_invar simply get added to the long offset and invar. But for the checks in
+    // VPointer::is_safe_to_use_as_simple_form() we need to have explicit access to the
+    // int_index. Thus, we must parse it explicitly here. For this, we use a temporary
+    // VPointer, to pattern match the int_index sub-expression of the address.
+
+    NOT_PRODUCT(Tracer::Depth dddd;)
+    VPointer tmp(this);
+    NOT_PRODUCT(_tracer.scaled_iv_8(n, &tmp);)
+
+    if (tmp.scaled_iv_plus_offset(n->in(1)) && tmp.has_iv()) {
+      // We successfully matched an integer index, of the form:
+      //   int_index = int_offset + int_invar + int_scale * iv
+      // Forward scale.
+      assert(_scale == 0 && tmp._scale != 0, "iv only found just now");
+      _scale = tmp._scale;
+      // Accumulate offset.
+      if (!try_AddI_no_overflow(_offset, tmp._offset, _offset)) {
+        return false; // add overflow.
+      }
+      // Accumulate invar.
+      if (tmp._invar != nullptr) {
+        maybe_add_to_invar(tmp._invar, false);
+      }
+      // Set info about the int_index:
+      assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
+      _has_int_index_after_convI2L = true;
+      _int_index_after_convI2L_offset = tmp._offset;
+      _int_index_after_convI2L_invar  = tmp._invar;
+      _int_index_after_convI2L_scale  = tmp._scale;
+
+      NOT_PRODUCT(_tracer.scaled_iv_7(n);)
       return true;
     }
   } else if (opc == Op_ConvI2L || opc == Op_CastII) {
@@ -253,9 +1079,20 @@ bool VPointer::scaled_iv(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_8(n, &tmp);)
 
       if (tmp.scaled_iv_plus_offset(n->in(1))) {
-        int scale = n->in(2)->get_int();
-        _scale   = tmp._scale  << scale;
-        _offset += tmp._offset << scale;
+        int shift = n->in(2)->get_int();
+        // Accumulate scale.
+        if (!try_LShiftI_no_overflow(tmp._scale, shift, _scale)) {
+          return false; // shift overflow.
+        }
+        // Accumulate offset.
+        int shifted_offset = 0;
+        if (!try_LShiftI_no_overflow(tmp._offset, shift, shifted_offset)) {
+          return false; // shift overflow.
+        }
+        if (!try_AddI_no_overflow(_offset, shifted_offset, _offset)) {
+          return false; // add overflow.
+        }
+        // Accumulate invar.
         if (tmp._invar != nullptr) {
           BasicType bt = tmp._invar->bottom_type()->basic_type();
           assert(bt == T_INT || bt == T_LONG, "");
@@ -264,6 +1101,14 @@ bool VPointer::scaled_iv(Node* n) {
           _debug_invar_scale = n->in(2);
 #endif
         }
+
+        // Forward info about the int_index:
+        assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
+        _has_int_index_after_convI2L = tmp._has_int_index_after_convI2L;
+        _int_index_after_convI2L_offset = tmp._int_index_after_convI2L_offset;
+        _int_index_after_convI2L_invar  = tmp._int_index_after_convI2L_invar;
+        _int_index_after_convI2L_scale  = tmp._int_index_after_convI2L_scale;
+
         NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar);)
         return true;
       }
@@ -281,7 +1126,9 @@ bool VPointer::offset_plus_k(Node* n, bool negate) {
 
   int opc = n->Opcode();
   if (opc == Op_ConI) {
-    _offset += negate ? -(n->get_int()) : n->get_int();
+    if (!try_AddSubI_no_overflow(_offset, n->get_int(), negate, _offset)) {
+      return false; // add/sub overflow.
+    }
     NOT_PRODUCT(_tracer.offset_plus_k_2(n, _offset);)
     return true;
   } else if (opc == Op_ConL) {
@@ -290,7 +1137,9 @@ bool VPointer::offset_plus_k(Node* n, bool negate) {
     if (t->higher_equal(TypeLong::INT)) {
       jlong loff = n->get_long();
       jint  off  = (jint)loff;
-      _offset += negate ? -off : loff;
+      if (!try_AddSubI_no_overflow(_offset, off, negate, _offset)) {
+        return false; // add/sub overflow.
+      }
       NOT_PRODUCT(_tracer.offset_plus_k_3(n, _offset);)
       return true;
     }
@@ -305,11 +1154,15 @@ bool VPointer::offset_plus_k(Node* n, bool negate) {
   if (opc == Op_AddI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
       maybe_add_to_invar(n->in(1), negate);
-      _offset += negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
+      if (!try_AddSubI_no_overflow(_offset, n->in(2)->get_int(), negate, _offset)) {
+        return false; // add/sub overflow.
+      }
       NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
-      _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
+      if (!try_AddSubI_no_overflow(_offset, n->in(1)->get_int(), negate, _offset)) {
+        return false; // add/sub overflow.
+      }
       maybe_add_to_invar(n->in(2), negate);
       NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, negate, _offset);)
       return true;
@@ -318,11 +1171,15 @@ bool VPointer::offset_plus_k(Node* n, bool negate) {
   if (opc == Op_SubI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
       maybe_add_to_invar(n->in(1), negate);
-      _offset += !negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
+      if (!try_AddSubI_no_overflow(_offset, n->in(2)->get_int(), !negate, _offset)) {
+        return false; // add/sub overflow.
+      }
       NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
-      _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
+      if (!try_AddSubI_no_overflow(_offset, n->in(1)->get_int(), negate, _offset)) {
+        return false; // add/sub overflow.
+      }
       maybe_add_to_invar(n->in(2), !negate);
       NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, !negate, _offset);)
       return true;
@@ -358,9 +1215,7 @@ Node* VPointer::maybe_negate_invar(bool negate, Node* invar) {
   if (negate) {
     BasicType bt = invar->bottom_type()->basic_type();
     assert(bt == T_INT || bt == T_LONG, "");
-    PhaseIterGVN& igvn = phase()->igvn();
-    Node* zero = igvn.zerocon(bt);
-    phase()->set_ctrl(zero, phase()->C->root());
+    Node* zero = phase()->zerocon(bt);
     Node* sub = SubNode::make(zero, invar, bt);
     invar = register_if_new(sub);
   }
@@ -412,19 +1267,116 @@ void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   _invar = register_if_new(add);
 }
 
-// Function for printing the fields of a VPointer
-void VPointer::print() {
-#ifndef PRODUCT
-  tty->print("base: [%d]  adr: [%d]  scale: %d  offset: %d",
-             _base != nullptr ? _base->_idx : 0,
-             _adr  != nullptr ? _adr->_idx  : 0,
-             _scale, _offset);
-  if (_invar != nullptr) {
-    tty->print("  invar: [%d]", _invar->_idx);
+bool VPointer::try_AddI_no_overflow(int offset1, int offset2, int& result) {
+  jlong long_offset = java_add((jlong)(offset1), (jlong)(offset2));
+  jint  int_offset  = java_add(        offset1,          offset2);
+  if (long_offset != int_offset) {
+    return false;
   }
-  tty->cr();
-#endif
+  result = int_offset;
+  return true;
 }
+
+bool VPointer::try_SubI_no_overflow(int offset1, int offset2, int& result) {
+  jlong long_offset = java_subtract((jlong)(offset1), (jlong)(offset2));
+  jint  int_offset  = java_subtract(        offset1,          offset2);
+  if (long_offset != int_offset) {
+    return false;
+  }
+  result = int_offset;
+  return true;
+}
+
+bool VPointer::try_AddSubI_no_overflow(int offset1, int offset2, bool is_sub, int& result) {
+  if (is_sub) {
+    return try_SubI_no_overflow(offset1, offset2, result);
+  } else {
+    return try_AddI_no_overflow(offset1, offset2, result);
+  }
+}
+
+bool VPointer::try_LShiftI_no_overflow(int offset, int shift, int& result) {
+  if (shift < 0 || shift > 31) {
+    return false;
+  }
+  jlong long_offset = java_shift_left((jlong)(offset), shift);
+  jint  int_offset  = java_shift_left(        offset,  shift);
+  if (long_offset != int_offset) {
+    return false;
+  }
+  result = int_offset;
+  return true;
+}
+
+bool VPointer::try_MulI_no_overflow(int offset1, int offset2, int& result) {
+  jlong long_offset = java_multiply((jlong)(offset1), (jlong)(offset2));
+  jint  int_offset  = java_multiply(        offset1,          offset2);
+  if (long_offset != int_offset) {
+    return false;
+  }
+  result = int_offset;
+  return true;
+}
+
+// We use two comparisons, because a subtraction could underflow.
+#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
+  if (a < b) { return -1; }                 \
+  if (a > b) { return  1; }
+
+// To be in the same group, two VPointers must be the same,
+// except for the offset.
+int VPointer::cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2) {
+  const VPointer* a = *p1;
+  const VPointer* b = *p2;
+
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->base()->_idx,     b->base()->_idx);
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->scale_in_bytes(), b->scale_in_bytes());
+
+  int a_inva_idx = a->invar() == nullptr ? 0 : a->invar()->_idx;
+  int b_inva_idx = b->invar() == nullptr ? 0 : b->invar()->_idx;
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a_inva_idx,          b_inva_idx);
+
+  return 0; // equal
+}
+
+// We compare by group, then by offset, and finally by node idx.
+int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
+  int cmp_group = cmp_for_sort_by_group(p1, p2);
+  if (cmp_group != 0) { return cmp_group; }
+
+  const VPointer* a = *p1;
+  const VPointer* b = *p2;
+
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->offset_in_bytes(), b->offset_in_bytes());
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->_idx,       b->mem()->_idx);
+  return 0; // equal
+}
+
+#ifndef PRODUCT
+// Function for printing the fields of a VPointer
+void VPointer::print() const {
+  tty->print("VPointer[mem: %4d %10s, ", _mem->_idx, _mem->Name());
+
+  if (!valid()) {
+    tty->print_cr("invalid]");
+    return;
+  }
+
+  tty->print("base: %4d, ", _base != nullptr ? _base->_idx : 0);
+  tty->print("adr: %4d, ", _adr != nullptr ? _adr->_idx : 0);
+
+  tty->print(" base");
+  VPointer::print_con_or_idx(_base);
+
+  tty->print(" + offset(%4d)", _offset);
+
+  tty->print(" + invar");
+  VPointer::print_con_or_idx(_invar);
+
+  tty->print_cr(" + scale(%4d) * iv]", _scale);
+}
+#endif
 
 // Following are functions for tracing VPointer match
 #ifndef PRODUCT
@@ -1191,17 +2143,6 @@ AlignmentSolution* AlignmentSolver::solve() const {
 }
 
 #ifdef ASSERT
-void print_con_or_idx(const Node* n) {
-  if (n == nullptr) {
-    tty->print("(0)");
-  } else if (n->is_ConI()) {
-    jint val = n->as_ConI()->get_int();
-    tty->print("(%d)", val);
-  } else {
-    tty->print("[%d]", n->_idx);
-  }
-}
-
 void AlignmentSolver::trace_start_solve() const {
   if (is_trace()) {
     tty->print(" vector mem_ref:");
@@ -1225,15 +2166,15 @@ void AlignmentSolver::trace_start_solve() const {
 
     // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
-    print_con_or_idx(_init_node);
+    VPointer::print_con_or_idx(_init_node);
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
 
     // adr = base + offset + invar + scale * iv
     tty->print("  adr = base");
-    print_con_or_idx(_base);
+    VPointer::print_con_or_idx(_base);
     tty->print(" + offset(%d) + invar", _offset);
-    print_con_or_idx(_invar);
+    VPointer::print_con_or_idx(_invar);
     tty->print_cr(" + scale(%d) * iv", _scale);
   }
 }

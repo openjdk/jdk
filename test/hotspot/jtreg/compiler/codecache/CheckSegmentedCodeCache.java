@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,36 @@ public class CheckSegmentedCodeCache {
         out.shouldHaveExitValue(1);
     }
 
+    private static void verifyCodeHeapSize(ProcessBuilder pb, String heapName, long heapSize) throws Exception {
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
+
+        long actualHeapSize = Long.parseLong(out.firstMatch(heapName + "\\s+=\\s(\\d+)", 1));
+        if (heapSize != actualHeapSize) {
+            throw new RuntimeException("Unexpected " + heapName + " size: " + actualHeapSize + " != " + heapSize);
+        }
+
+        // Sanity checks:
+        // - segment sizes are aligned to at least 1KB
+        // - sum of segment sizes equals ReservedCodeCacheSize
+
+        long nonNMethodCodeHeapSize = Long.parseLong(out.firstMatch("NonNMethodCodeHeapSize\\s+=\\s(\\d+)", 1));
+        long nonProfiledCodeHeapSize = Long.parseLong(out.firstMatch("NonProfiledCodeHeapSize\\s+=\\s(\\d+)", 1));
+        long profiledCodeHeapSize = Long.parseLong(out.firstMatch(" ProfiledCodeHeapSize\\s+=\\s(\\d+)", 1));
+        long reservedCodeCacheSize = Long.parseLong(out.firstMatch("ReservedCodeCacheSize\\s+=\\s(\\d+)", 1));
+
+        if (reservedCodeCacheSize != nonNMethodCodeHeapSize + nonProfiledCodeHeapSize + profiledCodeHeapSize) {
+            throw new RuntimeException("Unexpected segments size sum: " + reservedCodeCacheSize + " != " +
+                    nonNMethodCodeHeapSize + "+" + nonProfiledCodeHeapSize + "+" + profiledCodeHeapSize);
+        }
+
+        if ((reservedCodeCacheSize % 1024 != 0) || (nonNMethodCodeHeapSize % 1024 != 0) ||
+            (nonProfiledCodeHeapSize % 1024 != 0) || (profiledCodeHeapSize % 1024 != 0)) {
+            throw new RuntimeException("Unexpected segments size alignment: " + reservedCodeCacheSize + ", " +
+                    nonNMethodCodeHeapSize + ", " + nonProfiledCodeHeapSize + ", " + profiledCodeHeapSize);
+        }
+    }
+
     /**
     * Check the result of segmented code cache related VM options.
     */
@@ -149,7 +179,9 @@ public class CheckSegmentedCodeCache {
         // Fails if code heap sizes do not add up
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                               "-XX:ReservedCodeCacheSize=10M",
-                                                              "-XX:NonNMethodCodeHeapSize=5M",
+                                                              // After fixing a round_down issue with large page sizes (JDK-8334564),
+                                                              // 5M is a bit too small for NonNMethodCodeHeap
+                                                              "-XX:NonNMethodCodeHeapSize=6M",
                                                               "-XX:ProfiledCodeHeapSize=5M",
                                                               "-XX:NonProfiledCodeHeapSize=5M",
                                                               "-version");
@@ -160,9 +192,60 @@ public class CheckSegmentedCodeCache {
         // minimum size: CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)
         long minSize = (Platform.isDebugBuild() ? 3 : 1) * minUseSpace;
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                              "-XX:NonNMethodCodeHeapSize=" + minSize,
                                                               "-XX:ReservedCodeCacheSize=" + minSize,
                                                               "-XX:InitialCodeCacheSize=100K",
                                                               "-version");
         failsWith(pb, "Not enough space in non-nmethod code heap to run VM");
+
+        // Try different combination of Segment Sizes
+
+        // Fails if there is not enough space for code cache.
+        // All segments are set to minimum allowed value, but VM still fails
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                              "-XX:ReservedCodeCacheSize=" + minSize,
+                                                              "-XX:InitialCodeCacheSize=100K",
+                                                              "-version");
+        failsWith(pb, "Invalid code heap sizes");
+
+
+        // Reserved code cache is set but not equal to the sum of other segments
+        // that are explicitly specified - fails
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                              "-XX:ReservedCodeCacheSize=100M",
+                                                              "-XX:NonNMethodCodeHeapSize=10M",
+                                                              "-XX:ProfiledCodeHeapSize=10M",
+                                                              "-XX:NonProfiledCodeHeapSize=10M",
+                                                              "-version");
+        failsWith(pb, "Invalid code heap sizes");
+
+        // Reserved code cache is not set - it's automatically adjusted to the sum of other segments
+        // that are explicitly specified
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                              "-XX:NonNMethodCodeHeapSize=10M",
+                                                              "-XX:ProfiledCodeHeapSize=10M",
+                                                              "-XX:NonProfiledCodeHeapSize=10M",
+                                                              "-XX:+PrintFlagsFinal",
+                                                              "-version");
+        verifyCodeHeapSize(pb, "ReservedCodeCacheSize", 31457280);
+
+        // Reserved code cache is set, NonNmethod segment size is set, two other segments is automatically
+        // adjusted to half of the remaining space
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                              "-XX:ReservedCodeCacheSize=100M",
+                                                              "-XX:NonNMethodCodeHeapSize=10M",
+                                                              "-XX:+PrintFlagsFinal",
+                                                              "-version");
+        verifyCodeHeapSize(pb, " ProfiledCodeHeapSize", 47185920);
+
+        // Reserved code cache is set but NonNmethodCodeHeapSize is not set.
+        // It's calculated based on the number of compiler threads
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
+                                                              "-XX:ReservedCodeCacheSize=100M",
+                                                              "-XX:ProfiledCodeHeapSize=10M",
+                                                              "-XX:NonProfiledCodeHeapSize=10M",
+                                                              "-XX:+PrintFlagsFinal",
+                                                              "-version");
+        verifyCodeHeapSize(pb, "NonNMethodCodeHeapSize", 83886080);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,10 @@
 package javax.naming.ldap;
 
 import java.util.Iterator;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import javax.naming.ConfigurationException;
 import javax.naming.NamingException;
 import com.sun.naming.internal.VersionHelper;
 import java.util.ServiceLoader;
-import java.util.ServiceConfigurationError;
 
 /**
  * This class implements the LDAPv3 Extended Request for StartTLS as
@@ -181,10 +178,10 @@ public class StartTlsRequest implements ExtendedRequest {
         StartTlsResponse resp = null;
 
         ServiceLoader<StartTlsResponse> sl = ServiceLoader.load(
-                StartTlsResponse.class, getContextClassLoader());
+                StartTlsResponse.class, Thread.currentThread().getContextClassLoader());
         Iterator<StartTlsResponse> iter = sl.iterator();
 
-        while (resp == null && privilegedHasNext(iter)) {
+        while (resp == null && iter.hasNext()) {
             resp = iter.next();
         }
         if (resp != null) {
@@ -214,21 +211,6 @@ public class StartTlsRequest implements ExtendedRequest {
 
         ce.setRootCause(e);
         return ce;
-    }
-
-    /*
-     * Acquire the class loader associated with this thread.
-     */
-    @SuppressWarnings("removal")
-    private final ClassLoader getContextClassLoader() {
-        PrivilegedAction<ClassLoader> pa = Thread.currentThread()::getContextClassLoader;
-        return AccessController.doPrivileged(pa);
-    }
-
-    @SuppressWarnings("removal")
-    private static final boolean privilegedHasNext(final Iterator<StartTlsResponse> iter) {
-        PrivilegedAction<Boolean> pa = iter::hasNext;
-        return AccessController.doPrivileged(pa);
     }
 
     private static final long serialVersionUID = 4441679576360753397L;

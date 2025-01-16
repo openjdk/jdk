@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import sun.security.jca.GetInstance.Instance;
  * of which are <i>key recovery</i>, <i>key weakening</i>, and
  * <i>key escrow</i>.
  *
- * <p>Applications or applets that use an exemption mechanism may be granted
+ * <p>Applications that use an exemption mechanism may be granted
  * stronger encryption capabilities than those which don't.
  *
  * @since 1.4

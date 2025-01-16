@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class TestHtmlTableStyles extends JavadocTester {
         checkOutput(Output.OUT, true,
                 "attribute not supported in HTML5: summary",
                 """
-                    attribute "border" for table only accepts "" or "1": BORDER""",
+                    attribute "border" for table only accepts "" or "1": border""",
                 "attribute not supported in HTML5: cellpadding",
                 "attribute not supported in HTML5: cellspacing",
                 "attribute not supported in HTML5: align");
@@ -65,7 +65,7 @@ public class TestHtmlTableStyles extends JavadocTester {
                     <div class="caption"><span>Constructors</span></div>
                     <div class="summary-table two-column-summary">""",
                 """
-                    <div class="summary-table three-column-summary" aria-labelledby="method-summary-table-tab0">""");
+                    <div class="summary-table three-column-summary">""");
 
         checkOutput("pkg1/package-summary.html", true,
                 """

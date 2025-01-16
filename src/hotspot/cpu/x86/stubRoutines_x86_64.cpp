@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,4 +44,3 @@ address StubRoutines::x86::_float_sign_mask = nullptr;
 address StubRoutines::x86::_float_sign_flip = nullptr;
 address StubRoutines::x86::_double_sign_mask = nullptr;
 address StubRoutines::x86::_double_sign_flip = nullptr;
-

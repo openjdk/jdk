@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
 
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
@@ -194,7 +195,7 @@ public abstract sealed class MappedByteBuffer
         if (fd == null) {
             return true;
         }
-        return SCOPED_MEMORY_ACCESS.isLoaded(session(), address, isSync, capacity());
+        return SCOPED_MEMORY_ACCESS.isLoaded(session(), MappedMemoryUtils.PROXY, address, isSync, capacity());
     }
 
     /**
@@ -212,7 +213,7 @@ public abstract sealed class MappedByteBuffer
             return this;
         }
         try {
-            SCOPED_MEMORY_ACCESS.load(session(), address, isSync, capacity());
+            SCOPED_MEMORY_ACCESS.load(session(), MappedMemoryUtils.PROXY, address, isSync, capacity());
         } finally {
             Reference.reachabilityFence(this);
         }
@@ -312,7 +313,7 @@ public abstract sealed class MappedByteBuffer
         if ((address != 0) && (capacity != 0)) {
             // check inputs
             Objects.checkFromIndexSize(index, length, capacity);
-            SCOPED_MEMORY_ACCESS.force(session(), fd, address, isSync, index, length);
+            SCOPED_MEMORY_ACCESS.force(session(), MappedMemoryUtils.PROXY, fd, address, isSync, index, length);
         }
         return this;
     }
@@ -397,6 +398,8 @@ public abstract sealed class MappedByteBuffer
      * {@code force()} on the returned buffer, will only act on the sub-range
      * of this buffer that the returned buffer represents, namely
      * {@code [position(),limit())}.
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer slice();
@@ -410,18 +413,25 @@ public abstract sealed class MappedByteBuffer
      * of this buffer that the returned buffer represents, namely
      * {@code [index,index+length)}, where {@code index} and {@code length} are
      * assumed to satisfy the preconditions.
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer slice(int index, int length);
 
     /**
      * {@inheritDoc}
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer duplicate();
 
     /**
      * {@inheritDoc}
+     * @throws  ReadOnlyBufferException {@inheritDoc}
+     *
+     * @since 17
      */
     @Override
     public abstract MappedByteBuffer compact();

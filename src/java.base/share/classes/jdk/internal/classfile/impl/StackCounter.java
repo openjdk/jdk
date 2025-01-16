@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,38 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.nio.ByteBuffer;
-import java.util.BitSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.lang.classfile.Attributes;
 import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
-import static java.lang.classfile.ClassFile.*;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.util.ArrayDeque;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Queue;
+import java.util.stream.Collectors;
 
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.classfile.constantpool.PoolEntry.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class StackCounter {
+
+    private record Target(int bci, int stack) {}
 
     static StackCounter of(DirectCodeBuilder dcb, BufWriterImpl buf) {
         return new StackCounter(
                 dcb,
+                dcb.attributes.get(Attributes.stackMapTable()),
                 buf.thisClass().asSymbol(),
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
+                dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
                 dcb.handlers);
     }
@@ -56,15 +64,17 @@ public final class StackCounter {
     private int stack, maxStack, maxLocals, rets;
 
     private final RawBytecodeHelper bcs;
+    private final ClassDesc thisClass;
     private final String methodName;
     private final MethodTypeDesc methodDesc;
+    private final boolean isStatic;
     private final SplitConstantPool cp;
-    private final LinkedHashMap<Integer, Integer> map;
+    private final Queue<Target> targets;
     private final BitSet visited;
 
     private void jump(int targetBci) {
         if (!visited.get(targetBci)) {
-            map.put(targetBci, stack);
+            targets.add(new Target(targetBci, stack));
         }
     }
 
@@ -78,46 +88,56 @@ public final class StackCounter {
     }
 
     private boolean next() {
-        var it = map.entrySet().iterator();
-        while (it.hasNext()) {
-            var en = it.next();
-            it.remove();
-            if (!visited.get(en.getKey())) {
-                bcs.nextBci = en.getKey();
-                stack = en.getValue();
+        Target en;
+        while ((en = targets.poll()) != null) {
+            if (!visited.get(en.bci)) {
+                bcs.reset(en.bci);
+                stack = en.stack;
                 return true;
             }
         }
-        bcs.nextBci = bcs.endBci;
+        bcs.reset(bcs.endBci());
         return false;
     }
 
     public StackCounter(LabelContext labelContext,
+                     StackMapTableAttribute smta,
                      ClassDesc thisClass,
                      String methodName,
                      MethodTypeDesc methodDesc,
                      boolean isStatic,
-                     ByteBuffer bytecode,
+                     RawBytecodeHelper.CodeRange bytecode,
                      SplitConstantPool cp,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
+        this.thisClass = thisClass;
         this.methodName = methodName;
         this.methodDesc = methodDesc;
+        this.isStatic = isStatic;
         this.cp = cp;
-        map = new LinkedHashMap<>();
-        maxStack = stack = rets = 0;
-        for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
-        maxLocals = isStatic ? 0 : 1;
-        for (var cd : methodDesc.parameterList()) {
-            maxLocals += Util.slotSize(cd);
+        targets = new ArrayDeque<>();
+        stack = rets = 0;
+        maxStack = handlers.isEmpty() ? 0 : 1;
+        for (var h : handlers) targets.add(new Target(labelContext.labelToBci(h.handler), 1));
+        if (smta != null) {
+            for (var smfi : smta.entries()) {
+                int frameStack = smfi.stack().size();
+                for (var vti : smfi.stack()) {
+                    if (vti == StackMapFrameInfo.SimpleVerificationTypeInfo.LONG
+                     || vti == StackMapFrameInfo.SimpleVerificationTypeInfo.DOUBLE) frameStack++;
+                }
+                if (maxStack < frameStack) maxStack = frameStack;
+                targets.add(new Target(labelContext.labelToBci(smfi.target()), frameStack));
+            }
         }
-        bcs = new RawBytecodeHelper(bytecode);
-        visited = new BitSet(bcs.endBci);
-        map.put(0, 0);
+        maxLocals = isStatic ? 0 : 1;
+        maxLocals += Util.parameterSlots(methodDesc);
+        bcs = bytecode.start();
+        visited = new BitSet(bcs.endBci());
+        targets.add(new Target(0, 0));
         while (next()) {
-            while (!bcs.isLastBytecode()) {
-                bcs.rawNext();
-                int opcode = bcs.rawCode;
-                int bci = bcs.bci;
+            while (bcs.next()) {
+                int opcode = bcs.opcode();
+                int bci = bcs.bci();
                 visited.set(bci);
                 switch (opcode) {
                     case NOP, LALOAD, DALOAD, SWAP, INEG, ARRAYLENGTH, INSTANCEOF, LNEG, FNEG, DNEG, I2F, L2D, F2I, D2L, I2B, I2C, I2S,
@@ -245,39 +265,38 @@ public final class StackCounter {
                     }
                     case TABLESWITCH, LOOKUPSWITCH -> {
                         int alignedBci = RawBytecodeHelper.align(bci + 1);
-                        int defaultOfset = bcs.getInt(alignedBci);
+                        int defaultOffset = bcs.getIntUnchecked(alignedBci);
                         int keys, delta;
                         addStackSlot(-1);
-                        if (bcs.rawCode == TABLESWITCH) {
-                            int low = bcs.getInt(alignedBci + 4);
-                            int high = bcs.getInt(alignedBci + 2 * 4);
+                        if (bcs.opcode() == TABLESWITCH) {
+                            int low = bcs.getIntUnchecked(alignedBci + 4);
+                            int high = bcs.getIntUnchecked(alignedBci + 2 * 4);
                             if (low > high) {
-                                error("low must be less than or equal to high in tableswitch");
+                                throw error("low must be less than or equal to high in tableswitch");
                             }
                             keys = high - low + 1;
                             if (keys < 0) {
-                                error("too many keys in tableswitch");
+                                throw error("too many keys in tableswitch");
                             }
                             delta = 1;
                         } else {
-                            keys = bcs.getInt(alignedBci + 4);
+                            keys = bcs.getIntUnchecked(alignedBci + 4);
                             if (keys < 0) {
-                                error("number of keys in lookupswitch less than 0");
+                                throw error("number of keys in lookupswitch less than 0");
                             }
                             delta = 2;
                             for (int i = 0; i < (keys - 1); i++) {
-                                int this_key = bcs.getInt(alignedBci + (2 + 2 * i) * 4);
-                                int next_key = bcs.getInt(alignedBci + (2 + 2 * i + 2) * 4);
+                                int this_key = bcs.getIntUnchecked(alignedBci + (2 + 2 * i) * 4);
+                                int next_key = bcs.getIntUnchecked(alignedBci + (2 + 2 * i + 2) * 4);
                                 if (this_key >= next_key) {
-                                    error("Bad lookupswitch instruction");
+                                    throw error("Bad lookupswitch instruction");
                                 }
                             }
                         }
-                        int target = bci + defaultOfset;
+                        int target = bci + defaultOffset;
                         jump(target);
                         for (int i = 0; i < keys; i++) {
-                            alignedBci = RawBytecodeHelper.align(bcs.bci + 1);
-                            target = bci + bcs.getInt(alignedBci + (3 + i * delta) * 4);
+                            target = bci + bcs.getIntUnchecked(alignedBci + (3 + i * delta) * 4);
                             jump(target);
                         }
                         next();
@@ -291,8 +310,8 @@ public final class StackCounter {
                         next();
                     }
                     case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD -> {
-                        var tk = TypeKind.fromDescriptor(((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType().type().stringValue());
-                        switch (bcs.rawCode) {
+                        var tk = TypeKind.fromDescriptor(cp.entryByIndex(bcs.getIndexU2(), MemberRefEntry.class).nameAndType().type());
+                        switch (bcs.opcode()) {
                             case GETSTATIC ->
                                 addStackSlot(tk.slotSize());
                             case PUTSTATIC ->
@@ -307,17 +326,15 @@ public final class StackCounter {
                     case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC -> {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
-                        var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
-                        for (var arg : mDesc.parameterList()) {
-                            addStackSlot(-TypeKind.from(arg).slotSize());
-                        }
+                        var mtd = Util.methodTypeSymbol(nameAndType.type());
+                        var delta = Util.slotSize(mtd.returnType()) - Util.parameterSlots(mtd);
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
-                            addStackSlot(-1);
+                            delta--;
                         }
-                        addStackSlot(TypeKind.from(mDesc.returnType()).slotSize());
+                        addStackSlot(delta);
                     }
                     case MULTIANEWARRAY ->
-                        addStackSlot (1 - bcs.getU1(bcs.bci + 3));
+                        addStackSlot(1 - bcs.getU1Unchecked(bcs.bci() + 3));
                     case JSR -> {
                         addStackSlot(+1);
                         jump(bcs.dest()); //here we lost track of the exact stack size after return from subroutine
@@ -334,7 +351,7 @@ public final class StackCounter {
                         next();
                     }
                     default ->
-                        error(String.format("Bad instruction: %02x", opcode));
+                        throw error(String.format("Bad instruction: %02x", opcode));
                 }
             }
         }
@@ -361,22 +378,24 @@ public final class StackCounter {
 
     private void processLdc(int index) {
         switch (cp.entryByIndex(index).tag()) {
-            case TAG_UTF8, TAG_STRING, TAG_CLASS, TAG_INTEGER, TAG_FLOAT, TAG_METHODHANDLE, TAG_METHODTYPE ->
+            case TAG_UTF8, TAG_STRING, TAG_CLASS, TAG_INTEGER, TAG_FLOAT, TAG_METHOD_HANDLE, TAG_METHOD_TYPE ->
                 addStackSlot(+1);
             case TAG_DOUBLE, TAG_LONG ->
                 addStackSlot(+2);
-            case TAG_CONSTANTDYNAMIC ->
-                addStackSlot(((ConstantDynamicEntry)cp.entryByIndex(index)).typeKind().slotSize());
+            case TAG_DYNAMIC ->
+                addStackSlot(cp.entryByIndex(index, ConstantDynamicEntry.class).typeKind().slotSize());
             default ->
-                error("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
+                throw error("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
         }
     }
 
-    private void error(String msg) {
-        throw new IllegalArgumentException("%s at bytecode offset %d of method %s(%s)".formatted(
+    private IllegalArgumentException error(String msg) {
+        var sb = new StringBuilder("%s at bytecode offset %d of method %s(%s)".formatted(
                 msg,
-                bcs.bci,
+                bcs.bci(),
                 methodName,
-                methodDesc.displayDescriptor()));
+                methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
+        Util.dumpMethod(cp, thisClass, methodName, methodDesc, isStatic ? ACC_STATIC : 0, bcs.code, sb::append);
+        return new IllegalArgumentException(sb.toString());
     }
 }

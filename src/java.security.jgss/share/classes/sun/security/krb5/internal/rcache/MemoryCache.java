@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import sun.security.krb5.internal.KerberosTime;
 import sun.security.krb5.internal.KrbApErrException;
 import sun.security.krb5.internal.ReplayCache;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This class stores replay caches. AuthTimeWithHash objects are categorized
  * into AuthLists keyed by the names of client and server.
@@ -48,7 +50,6 @@ public class MemoryCache extends ReplayCache {
 
     // TODO: One day we'll need to read dynamic krb5.conf.
     private static final int lifespan = KerberosTime.getDefaultSkew();
-    private static final boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     private final Map<String,AuthList> content = new ConcurrentHashMap<>();
 
@@ -58,8 +59,8 @@ public class MemoryCache extends ReplayCache {
         String key = time.client + "|" + time.server;
         content.computeIfAbsent(key, k -> new AuthList(lifespan))
                 .put(time, currTime);
-        if (DEBUG) {
-            System.out.println("MemoryCache: add " + time + " to " + key);
+        if (DEBUG != null) {
+            DEBUG.println("MemoryCache: add " + time + " to " + key);
         }
         // TODO: clean up AuthList entries with only expired AuthTimeWithHash objects.
     }

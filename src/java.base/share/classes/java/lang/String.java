@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,7 +549,6 @@ public final class String
      * Important: parameter order of this method is deliberately changed in order to
      * disambiguate it against other similar methods of this class.
      */
-    @SuppressWarnings("removal")
     private String(Charset charset, byte[] bytes, int offset, int length) {
         if (length == 0) {
             this.value = "".value;
@@ -685,12 +684,6 @@ public final class String
             cd.onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
             char[] ca = new char[en];
-            if (charset.getClass().getClassLoader0() != null &&
-                    System.getSecurityManager() != null) {
-                bytes = Arrays.copyOfRange(bytes, offset, offset + length);
-                offset = 0;
-            }
-
             int caLen;
             try {
                 caLen = decodeWithDecoder(cd, ca, bytes, offset, length);
@@ -793,7 +786,6 @@ public final class String
         }
     }
 
-    @SuppressWarnings("removal")
     private static String newStringNoRepl1(byte[] src, Charset cs) {
         int len = src.length;
         if (len == 0) {
@@ -828,10 +820,6 @@ public final class String
         }
         int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
-        if (cs.getClass().getClassLoader0() != null &&
-                System.getSecurityManager() != null) {
-            src = Arrays.copyOf(src, len);
-        }
         int caLen;
         try {
             caLen = decodeWithDecoder(cd, ca, src, 0, src.length);
@@ -841,7 +829,7 @@ public final class String
         }
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(ca, 0, caLen);
-            int coder = StringUTF16.coderFromArrayLen(val, len);
+            byte coder = StringUTF16.coderFromArrayLen(val, caLen);
             return new String(val, coder);
         }
         return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
@@ -850,9 +838,8 @@ public final class String
     private static final char REPL = '\ufffd';
 
     // Trim the given byte array to the given length
-    @SuppressWarnings("removal")
-    private static byte[] safeTrim(byte[] ba, int len, boolean isTrusted) {
-        if (len == ba.length && (isTrusted || System.getSecurityManager() == null)) {
+    private static byte[] trimArray(byte[] ba, int len) {
+        if (len == ba.length) {
             return ba;
         } else {
             return Arrays.copyOf(ba, len);
@@ -907,7 +894,7 @@ public final class String
             int blen = (coder == LATIN1) ? ae.encodeFromLatin1(val, 0, len, ba)
                     : ae.encodeFromUTF16(val, 0, len, ba);
             if (blen != -1) {
-                return safeTrim(ba, blen, true);
+                return trimArray(ba, blen);
             }
         }
 
@@ -937,7 +924,7 @@ public final class String
                 throw new Error(x);
             }
         }
-        return safeTrim(ba, bb.position(), cs.getClass().getClassLoader0() == null);
+        return trimArray(ba, bb.position());
     }
 
     /*
@@ -1068,7 +1055,7 @@ public final class String
         return Arrays.copyOf(dst, dp);
     }
 
-    //////////////////////////////// utf8 ////////////////////////////////////
+    //------------------------------ utf8 ------------------------------------
 
     /**
      * Decodes ASCII from the source byte array into the destination
@@ -1335,7 +1322,13 @@ public final class String
         int dp = 0;
         int sp = 0;
         int sl = val.length >> 1;
-        byte[] dst = new byte[sl * 3];
+        // UTF-8 encoded can be as much as 3 times the string length
+        // For very large estimate, (as in overflow of 32 bit int), precompute the exact size
+        long allocLen = (sl * 3 < 0) ? computeSizeUTF8_UTF16(val, doReplace) : sl * 3;
+        if (allocLen > (long)Integer.MAX_VALUE) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        byte[] dst = new byte[(int) allocLen];
         while (sp < sl) {
             // ascii fast loop;
             char c = StringUTF16.getChar(val, sp);
@@ -1383,6 +1376,47 @@ public final class String
             return dst;
         }
         return Arrays.copyOf(dst, dp);
+    }
+
+    /**
+     * {@return the exact size required to UTF_8 encode this UTF16 string}
+     * @param val UTF16 encoded byte array
+     * @param doReplace true to replace unmappable characters
+     */
+    private static long computeSizeUTF8_UTF16(byte[] val, boolean doReplace) {
+        long dp = 0L;
+        int sp = 0;
+        int sl = val.length >> 1;
+
+        while (sp < sl) {
+            char c = StringUTF16.getChar(val, sp++);
+            if (c < 0x80) {
+                dp++;
+            } else if (c < 0x800) {
+                dp += 2;
+            } else if (Character.isSurrogate(c)) {
+                int uc = -1;
+                char c2;
+                if (Character.isHighSurrogate(c) && sp < sl &&
+                        Character.isLowSurrogate(c2 = StringUTF16.getChar(val, sp))) {
+                    uc = Character.toCodePoint(c, c2);
+                }
+                if (uc < 0) {
+                    if (doReplace) {
+                        dp++;
+                    } else {
+                        throwUnmappable(sp - 1);
+                    }
+                } else {
+                    dp += 4;
+                    sp++;  // 2 chars
+                }
+            } else {
+                // 3 bytes, 16 bits
+                dp += 3;
+            }
+        }
+        return dp;
     }
 
     /**
@@ -2444,7 +2478,8 @@ public final class String
      *          {@code -1} if the character does not occur.
      */
     public int indexOf(int ch) {
-        return indexOf(ch, 0);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, 0, value.length)
+                : StringUTF16.indexOf(value, ch, 0, value.length >> 1);
     }
 
     /**
@@ -2500,8 +2535,9 @@ public final class String
      * {@code fromIndex} were larger than the string length, or were negative.
      */
     public int indexOf(int ch, int fromIndex) {
-        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, length())
-                : StringUTF16.indexOf(value, ch, fromIndex, length());
+        fromIndex = Math.max(fromIndex, 0);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, Math.min(fromIndex, value.length), value.length)
+                : StringUTF16.indexOf(value, ch, Math.min(fromIndex, value.length >> 1), value.length >> 1);
     }
 
     /**
@@ -2938,7 +2974,7 @@ public final class String
         if (str.isEmpty()) {
             return this;
         }
-        return StringConcatHelper.simpleConcat(this, str);
+        return StringConcatHelper.doConcat(this, str);
     }
 
     /**
@@ -4757,7 +4793,7 @@ public final class String
         System.arraycopy(buffer, offset, buffer, offset + copied, limit - copied);
     }
 
-    ////////////////////////////////////////////////////////////////
+    //--------------------------------------------------------------
 
     /**
      * Copy character bytes from this string into dst starting at dstBegin.

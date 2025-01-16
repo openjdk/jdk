@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,7 @@ template <class T>
 class JvmtiDeallocator {
  public:
   JvmtiDeallocator() {
-    elem_ = NULL;
+    elem_ = nullptr;
   }
 
   ~JvmtiDeallocator() {
@@ -100,7 +100,7 @@ extern "C" {
 static
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -129,13 +129,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     fprintf(stderr, "AgentInitialize: Error in SetEventNotificationMode for CLASS_LOAD: %d\n", err);
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     fprintf(stderr,
             "AgentInitialize: Error in SetEventNotificationMode for CLASS_PREPARE: %d\n",
@@ -143,7 +143,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     fprintf(
         stderr, "AgentInitialize: Error in SetEventNotificationMode for VM_INIT: %d\n",
@@ -194,12 +194,12 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
   trace.env_id = env;
   trace.num_frames = 0;
 
-  if (agct == NULL) {
+  if (agct == nullptr) {
     fprintf(stderr, "AsyncGetCallTrace not found.\n");
     return false;
   }
 
-  agct(&trace, MAX_DEPTH, NULL);
+  agct(&trace, MAX_DEPTH, nullptr);
 
   // For now, just check that the first frame is (-3, checkAsyncGetCallTraceCall).
   if (trace.num_frames <= 0) {
@@ -214,19 +214,19 @@ Java_MyPackage_ASGCTBaseTest_checkAsyncGetCallTraceCall(JNIEnv* env, jclass cls)
   }
 
   JvmtiDeallocator<char*> name;
-  if (trace.frames[0].method_id == NULL) {
-    fprintf(stderr, "First frame method_id is NULL\n");
+  if (trace.frames[0].method_id == nullptr) {
+    fprintf(stderr, "First frame method_id is null\n");
     return false;
   }
 
-  jvmtiError err = jvmti->GetMethodName(trace.frames[0].method_id, name.get_addr(), NULL, NULL);
+  jvmtiError err = jvmti->GetMethodName(trace.frames[0].method_id, name.get_addr(), nullptr, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     fprintf(stderr, "checkAsyncGetCallTrace: Error in GetMethodName: %d\n", err);
     return false;
   }
 
-  if (name.get() == NULL) {
-    fprintf(stderr, "Name is NULL\n");
+  if (name.get() == nullptr) {
+    fprintf(stderr, "Name is null\n");
     return false;
   }
 

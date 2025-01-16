@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ inline bool StackChunkFrameStream<frame_kind>::is_in_frame(void* p0) const {
   assert(!is_done(), "");
   assert(is_compiled(), "");
   intptr_t* p = (intptr_t*)p0;
-  int argsize = (_cb->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  int argsize = (_cb->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
   int frame_size = _cb->frame_size() + (argsize > 0 ? argsize + frame::metadata_words_at_top : 0);
   return (p - unextended_sp()) >= 0 && (p - unextended_sp()) < frame_size;
 }
@@ -184,8 +184,9 @@ inline int StackChunkFrameStream<frame_kind>::interpreter_frame_num_oops() const
   f.interpreted_frame_oop_map(&mask);
   return  mask.num_oops()
           + 1 // for the mirror oop
-          + ((intptr_t*)f.interpreter_frame_monitor_begin()
-             - (intptr_t*)f.interpreter_frame_monitor_end())/BasicObjectLock::size();
+          + (f.interpreter_frame_method()->is_native() ? 1 : 0) // temp oop slot
+          + pointer_delta_as_int((intptr_t*)f.interpreter_frame_monitor_begin(),
+                                 (intptr_t*)f.interpreter_frame_monitor_end())/BasicObjectLock::size();
 }
 
 template<>

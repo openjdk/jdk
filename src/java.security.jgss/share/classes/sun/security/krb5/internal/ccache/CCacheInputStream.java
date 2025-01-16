@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.util.KrbDataInputStream;
 import sun.security.util.IOUtils;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This class extends KrbDataInputStream. It is used for parsing FCC-format
  * data from file to memory.
@@ -66,8 +68,6 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
      * init_ctx.c).
      */
     /* V4 of the credentials cache format allows for header tags */
-
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     public CCacheInputStream(InputStream is){
         super(is);
@@ -212,8 +212,8 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
                 addrType = read(2);
                 addrLength = readLength4();
                 if (!(addrLength == 4 || addrLength == 16)) {
-                    if (DEBUG) {
-                        System.out.println("Incorrect address format.");
+                    if (DEBUG != null) {
+                        DEBUG.println("Incorrect address format.");
                     }
                     return null;
                 }
@@ -280,7 +280,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         flags[10] = true;
         if ((ticketFlags & 0x00100000) == TKT_FLG_HW_AUTH)
         flags[11] = true;
-        if (DEBUG) {
+        if (DEBUG != null) {
             String msg = ">>> CCacheInputStream: readFlags() ";
             if (flags[1] == true) {
                 msg += " FORWARDABLE;";
@@ -316,7 +316,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             if (flags[11] == true) {
                 msg += " HW_AUTH;";
             }
-            System.out.println(msg);
+            DEBUG.println(msg);
         }
         return flags;
     }
@@ -336,8 +336,8 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             // Do not return here. All data for this cred should be fully
             // consumed so that we can read the next one.
         }
-        if (DEBUG) {
-            System.out.println(">>>DEBUG <CCacheInputStream>  client principal is " + cpname);
+        if (DEBUG != null) {
+            DEBUG.println(">>>DEBUG <CCacheInputStream>  client principal is " + cpname);
         }
         PrincipalName spname = null;
         try {
@@ -345,12 +345,12 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         } catch (Exception e) {
             // same as above
         }
-        if (DEBUG) {
-            System.out.println(">>>DEBUG <CCacheInputStream> server principal is " + spname);
+        if (DEBUG != null) {
+            DEBUG.println(">>>DEBUG <CCacheInputStream> server principal is " + spname);
         }
         EncryptionKey key = readKey(version);
-        if (DEBUG) {
-            System.out.println(">>>DEBUG <CCacheInputStream> key type: " + key.getEType());
+        if (DEBUG != null) {
+            DEBUG.println(">>>DEBUG <CCacheInputStream> key type: " + key.getEType());
         }
         long[] times = readTimes();
         KerberosTime authtime = new KerberosTime(times[0]);
@@ -360,12 +360,12 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         KerberosTime renewTill =
                 (times[3]==0) ? null : new KerberosTime(times[3]);
 
-        if (DEBUG) {
-            System.out.println(">>>DEBUG <CCacheInputStream> auth time: " + authtime.toDate().toString());
-            System.out.println(">>>DEBUG <CCacheInputStream> start time: " +
+        if (DEBUG != null) {
+            DEBUG.println(">>>DEBUG <CCacheInputStream> auth time: " + authtime.toDate().toString());
+            DEBUG.println(">>>DEBUG <CCacheInputStream> start time: " +
                     ((starttime==null)?"null":starttime.toDate().toString()));
-            System.out.println(">>>DEBUG <CCacheInputStream> end time: " + endtime.toDate().toString());
-            System.out.println(">>>DEBUG <CCacheInputStream> renew_till time: " +
+            DEBUG.println(">>>DEBUG <CCacheInputStream> end time: " + endtime.toDate().toString());
+            DEBUG.println(">>>DEBUG <CCacheInputStream> renew_till time: " +
                     ((renewTill==null)?"null":renewTill.toDate().toString()));
         }
         boolean skey = readskey();
@@ -404,8 +404,8 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
                     ticketData != null ? new Ticket(ticketData) : null,
                     ticketData2 != null ? new Ticket(ticketData2) : null);
         } catch (Exception e) {     // If any of new Ticket(*) fails.
-            if (DEBUG) {
-                e.printStackTrace(System.out);
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
             return null;
         }

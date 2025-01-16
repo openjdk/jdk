@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,6 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "net_util.h"
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 
 /**
  * Creates a SDP socket.
@@ -113,7 +106,7 @@ Java_sun_net_sdp_SdpSupport_convert0(JNIEnv *env, jclass cls, int fd)
         if (res < 0)
             JNU_ThrowIOExceptionWithLastError(env, "dup2");
         res = close(s);
-        if (res < 0 && !(*env)->ExceptionOccurred(env))
+        if (res < 0 && !(*env)->ExceptionCheck(env))
             JNU_ThrowIOExceptionWithLastError(env, "close");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,12 +107,10 @@ constexpr JVMTypedFlagLimit<int> limit_dummy
            FLAG_LIMIT_DEFINE_DUMMY,
            FLAG_LIMIT_DEFINE,
            FLAG_LIMIT_DEFINE,
-           FLAG_LIMIT_DEFINE_DUMMY,
            APPLY_FLAG_RANGE,
            APPLY_FLAG_CONSTRAINT)
 #else
  ALL_FLAGS(FLAG_LIMIT_DEFINE,
-           FLAG_LIMIT_DEFINE,
            FLAG_LIMIT_DEFINE,
            FLAG_LIMIT_DEFINE,
            FLAG_LIMIT_DEFINE,
@@ -130,12 +128,10 @@ static constexpr const JVMFlagLimit* const flagLimitTable[1 + NUM_JVMFlagsEnum] 
             FLAG_LIMIT_PTR_NONE,
             FLAG_LIMIT_PTR,
             FLAG_LIMIT_PTR,
-            FLAG_LIMIT_PTR_NONE,
             APPLY_FLAG_RANGE,
             APPLY_FLAG_CONSTRAINT)
 #else
   ALL_FLAGS(FLAG_LIMIT_PTR,
-            FLAG_LIMIT_PTR,
             FLAG_LIMIT_PTR,
             FLAG_LIMIT_PTR,
             FLAG_LIMIT_PTR,

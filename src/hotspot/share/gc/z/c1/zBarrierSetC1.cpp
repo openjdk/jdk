@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,7 +507,7 @@ public:
 
 static address generate_c1_load_runtime_stub(BufferBlob* blob, DecoratorSet decorators, const char* name) {
   ZLoadBarrierRuntimeStubCodeGenClosure cl(decorators);
-  CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
+  CodeBlob* const code_blob = Runtime1::generate_blob(blob, C1StubId::NO_STUBID /* stub_id */, name, false /* expect_oop_map*/, &cl);
   return code_blob->code_begin();
 }
 
@@ -527,7 +527,7 @@ public:
 
 static address generate_c1_store_runtime_stub(BufferBlob* blob, bool self_healing, const char* name) {
   ZStoreBarrierRuntimeStubCodeGenClosure cl(self_healing);
-  CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
+  CodeBlob* const code_blob = Runtime1::generate_blob(blob, C1StubId::NO_STUBID /* stub_id */, name, false /* expect_oop_map*/, &cl);
   return code_blob->code_begin();
 }
 

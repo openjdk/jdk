@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
 #ifndef SHARE_GC_SERIAL_SERIAL_GLOBALS_HPP
 #define SHARE_GC_SERIAL_SERIAL_GLOBALS_HPP
 
-#define GC_SERIAL_FLAGS(develop,     \
-                        develop_pd,  \
-                        product,     \
-                        product_pd,  \
-                        notproduct,  \
-                        range,       \
-                        constraint)
+#define GC_SERIAL_FLAGS(develop,                                            \
+                        develop_pd,                                         \
+                        product,                                            \
+                        product_pd,                                         \
+                        range,                                              \
+                        constraint)                                         \
+  product(bool, ShrinkHeapInSteps, true,                                    \
+          "When disabled, informs the GC to shrink the java heap directly"  \
+          " to the target size at the next full GC rather than requiring"   \
+          " smaller steps during multiple full GCs.")                       \
 
 // end of GC_SERIAL_FLAGS
 

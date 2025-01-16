@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.classfile.*;
-import java.lang.classfile.components.CodeStackTracker;
+import jdk.internal.classfile.components.CodeStackTracker;
 import static java.lang.classfile.TypeKind.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,29 +45,29 @@ class StackTrackerTest {
     void testStackTracker() {
         ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
-                var stackTracker = CodeStackTracker.of(DoubleType, FloatType); //initial stack tracker pre-set
+                var stackTracker = CodeStackTracker.of(DOUBLE, FLOAT); //initial stack tracker pre-set
                 cob.transforming(stackTracker, stcb -> {
-                    assertIterableEquals(stackTracker.stack().get(), List.of(DoubleType, FloatType));
+                    assertIterableEquals(stackTracker.stack().get(), List.of(DOUBLE, FLOAT));
                     stcb.aload(0);
-                    assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType, DoubleType, FloatType));
+                    assertIterableEquals(stackTracker.stack().get(), List.of(REFERENCE, DOUBLE, FLOAT));
                     stcb.lconst_0();
-                    assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
+                    assertIterableEquals(stackTracker.stack().get(), List.of(LONG, REFERENCE, DOUBLE, FLOAT));
                     stcb.trying(tryb -> {
-                        assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(LONG, REFERENCE, DOUBLE, FLOAT));
                         tryb.iconst_1();
-                        assertIterableEquals(stackTracker.stack().get(), List.of(IntType, LongType, ReferenceType, DoubleType, FloatType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(INT, LONG, REFERENCE, DOUBLE, FLOAT));
                         tryb.ifThen(thb -> {
-                            assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
-                            thb.constantInstruction(ClassDesc.of("Phee"));
-                            assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType, LongType, ReferenceType, DoubleType, FloatType));
+                            assertIterableEquals(stackTracker.stack().get(), List.of(LONG, REFERENCE, DOUBLE, FLOAT));
+                            thb.loadConstant(ClassDesc.of("Phee"));
+                            assertIterableEquals(stackTracker.stack().get(), List.of(REFERENCE, LONG, REFERENCE, DOUBLE, FLOAT));
                             thb.athrow();
                             assertFalse(stackTracker.stack().isPresent());
                         });
-                        assertIterableEquals(stackTracker.stack().get(), List.of(LongType, ReferenceType, DoubleType, FloatType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(LONG, REFERENCE, DOUBLE, FLOAT));
                         tryb.return_();
                         assertFalse(stackTracker.stack().isPresent());
                     }, catchb -> catchb.catching(ClassDesc.of("Phee"), cb -> {
-                        assertIterableEquals(stackTracker.stack().get(), List.of(ReferenceType));
+                        assertIterableEquals(stackTracker.stack().get(), List.of(REFERENCE));
                         cb.athrow();
                         assertFalse(stackTracker.stack().isPresent());
                     }));
@@ -91,7 +91,7 @@ class StackTrackerTest {
                     var l2 = stcb.newBoundLabel(); //back jump target
                     assertFalse(stackTracker.stack().isPresent()); //no stack
                     assertTrue(stackTracker.maxStackSize().isPresent()); //however still tracking
-                    stcb.constantInstruction(ClassDesc.of("Phee")); //stack instruction on unknown stack cause tracking lost
+                    stcb.loadConstant(ClassDesc.of("Phee")); //stack instruction on unknown stack cause tracking lost
                     assertFalse(stackTracker.stack().isPresent()); //no stack
                     assertFalse(stackTracker.maxStackSize().isPresent()); //because tracking lost
                     stcb.athrow();

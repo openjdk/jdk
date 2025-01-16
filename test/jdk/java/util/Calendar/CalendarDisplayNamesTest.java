@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@ import java.util.Map;
 
 /**
  * @test
- * @bug 8262108
+ * @bug 8262108 8174269
  * @summary Verify the results returned by Calendar.getDisplayNames() API
- * @comment Locale providers: COMPAT,SPI
- * @run testng/othervm -Djava.locale.providers=COMPAT,SPI CalendarDisplayNamesTest
- * @comment Locale providers: CLDR
- * @run testng/othervm -Djava.locale.providers=CLDR CalendarDisplayNamesTest
+ * @comment Locale providers: CLDR,SPI
+ * @run testng/othervm -Djava.locale.providers=CLDR,SPI CalendarDisplayNamesTest
+ * @comment Locale providers: default
+ * @run testng CalendarDisplayNamesTest
  */
 public class CalendarDisplayNamesTest {
 

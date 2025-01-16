@@ -44,7 +44,7 @@ instruct compareAndSwapP_shenandoah(iRegIdst res, indirect mem, iRegPsrc oldval,
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         false, $res$$Register
@@ -65,7 +65,7 @@ instruct compareAndSwapN_shenandoah(iRegIdst res, indirect mem, iRegNsrc oldval,
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         false, $res$$Register
@@ -86,7 +86,7 @@ instruct compareAndSwapP_acq_shenandoah(iRegIdst res, indirect mem, iRegPsrc old
   format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         false, $res$$Register
@@ -112,7 +112,7 @@ instruct compareAndSwapN_acq_shenandoah(iRegIdst res, indirect mem, iRegNsrc old
   format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as bool; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         false, $res$$Register
@@ -137,7 +137,7 @@ instruct compareAndExchangeP_shenandoah(iRegPdst res, indirect mem, iRegPsrc old
   format %{ "CMPXCHGD $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         true, $res$$Register
@@ -157,7 +157,7 @@ instruct compareAndExchangeN_shenandoah(iRegNdst res, indirect mem, iRegNsrc old
   format %{ "CMPXCHGD $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         true, $res$$Register
@@ -177,7 +177,7 @@ instruct compareAndExchangePAcq_shenandoah(iRegPdst res, indirect mem, iRegPsrc 
   format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         true, $res$$Register
@@ -202,7 +202,7 @@ instruct compareAndExchangeNAcq_shenandoah(iRegNdst res, indirect mem, iRegNsrc 
   format %{ "CMPXCHGD acq $res, $mem, $oldval, $newval; as ptr; ptr" %}
   ins_encode %{
     ShenandoahBarrierSet::assembler()->cmpxchg_oop(
-        &_masm,
+        masm,
         $mem$$Register, $oldval$$Register, $newval$$Register,
         $tmp1$$Register, $tmp2$$Register,
         true, $res$$Register

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.io.InputStream;
 // without the need to load classes or have an impact on security
 // related events, like SecureRandom::getAlgorithm("NativePRNGNonBlocking") does
 public final class EventWriterKey {
-    private final static long KEY = createKey();
+    private static final long KEY = createKey();
     private static boolean loaded;
     private static boolean logged;
 

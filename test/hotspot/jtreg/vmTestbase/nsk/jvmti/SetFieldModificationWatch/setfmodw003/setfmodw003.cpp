@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -47,14 +47,14 @@ static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jfieldID actual_fid = NULL;
+static jfieldID actual_fid = nullptr;
 static char actual_sig = '\0';
 static jint actual_val = 0;
 static field flds[] = {
-    { "fld0", 'I', JNI_TRUE, 42, NULL },
-    { "fld1", 'I', JNI_TRUE, 43, NULL },
-    { "fld2", 'I', JNI_FALSE, 44, NULL },
-    { "fld3", 'I', JNI_FALSE, 45, NULL }
+    { "fld0", 'I', JNI_TRUE, 42, nullptr },
+    { "fld1", 'I', JNI_TRUE, 43, nullptr },
+    { "fld2", 'I', JNI_FALSE, 44, nullptr },
+    { "fld3", 'I', JNI_FALSE, 45, nullptr }
 };
 
 void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -84,12 +84,12 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -146,7 +146,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw003_getReady(JNIEnv *env,
         } else {
             flds[i].fid = env->GetFieldID(cls, flds[i].name, "I");
         }
-        if (flds[i].fid == NULL) {
+        if (flds[i].fid == nullptr) {
             printf("Unable to set field modif. watch on fld%" PRIuPTR ", fieldID=0", i);
         } else {
             if (printdump == JNI_TRUE) {
@@ -162,7 +162,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw003_getReady(JNIEnv *env,
         }
     }
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_FIELD_MODIFICATION, NULL);
+        JVMTI_EVENT_FIELD_MODIFICATION, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("(SetEventNotificationMode) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -195,7 +195,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw003_check(JNIEnv *env,
         printf("Field %s: thrown new value expected=%d, actual=%d\n",
                flds[ind].name, flds[ind].val, actual_val);
     }
-    actual_fid = NULL;
+    actual_fid = nullptr;
     actual_sig = '\0';
     actual_val = 0;
 }

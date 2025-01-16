@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,19 +81,6 @@ if (rasline) \
     (*env)->ReleasePrimitiveArrayCritical(env, raslineh, rasline, 0); \
 if (block) \
     (*env)->ReleasePrimitiveArrayCritical(env, blockh, block, 0)
-
-/* Place holders for the old native interface. */
-
-long
-sun_awt_image_GifImageDecoder_parseImage()
-{
-  return 0;
-}
-
-void
-sun_awt_image_GifImageDecoder_initIDs()
-{
-}
 
 static jmethodID readID;
 static jmethodID sendID;
@@ -250,7 +237,7 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                 len = (*env)->CallIntMethod(env, this, readID,
                                             blockh, remain, blockLength + 1);
                 if (len > blockLength + 1) len = blockLength + 1;
-                if ((*env)->ExceptionOccurred(env)) {
+                if ((*env)->ExceptionCheck(env)) {
                     return 0;
                 }
                 GET_ARRAYS();
@@ -327,10 +314,10 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                 }
                 if ((*env)->CallIntMethod(env, this, readID,
                                           blockh, 0, blockLength + 1) != 0
-                    || (*env)->ExceptionOccurred(env))
+                    || (*env)->ExceptionCheck(env))
                 {
                     /* quietly accept truncated GIF images */
-                    return (!(*env)->ExceptionOccurred(env));
+                    return (!(*env)->ExceptionCheck(env));
                 }
                 GET_ARRAYS();
                 blockLength = block[blockLength];
@@ -425,7 +412,7 @@ Java_sun_awt_image_GifImageDecoder_parseImage(JNIEnv *env,
                                               relx, rely + y,
                                               width, passht,
                                               raslineh, cmh);
-                if (count <= 0 || (*env)->ExceptionOccurred(env)) {
+                if (count <= 0 || (*env)->ExceptionCheck(env)) {
                     /* Nobody is listening any more. */
                     if (verbose) {
                         fprintf(stdout, "Orphan gif decoder quitting\n");

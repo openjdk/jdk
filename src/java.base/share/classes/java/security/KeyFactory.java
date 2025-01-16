@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,10 @@ import sun.security.jca.GetInstance.Instance;
  * <ul>
  * <li>{@code DiffieHellman}</li>
  * <li>{@code DSA}</li>
+ * <li>{@code EC}</li>
  * <li>{@code RSA}</li>
+ * <li>{@code RSASSA-PSS}</li>
+ * <li>{@code X25519}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
@@ -131,8 +134,7 @@ public class KeyFactory {
 
     private KeyFactory(String algorithm) throws NoSuchAlgorithmException {
         this.algorithm = algorithm;
-        List<Service> list = GetInstance.getServices("KeyFactory", algorithm);
-        serviceIterator = list.iterator();
+        serviceIterator = GetInstance.getServices("KeyFactory", algorithm);
         // fetch and instantiate initial spi
         if (nextSpi(null) == null) {
             throw new NoSuchAlgorithmException

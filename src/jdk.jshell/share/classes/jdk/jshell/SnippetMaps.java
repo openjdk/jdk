@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,6 +158,15 @@ final class SnippetMaps {
         if (mat.lookingAt()) {
             return full.substring(mat.end());
         }
+        String simpleName = full.substring(full.lastIndexOf(".") + 1);
+        Stream<String> declaredInSnippets = state.keyMap.typeDeclKeys()
+                .map(key -> (TypeDeclSnippet) getSnippet(key))
+                .map(decl -> decl.name());
+        if (declaredInSnippets.anyMatch(clazz -> simpleName.equals(clazz))) {
+            //simple name of full clashes with a name of a user-defined class,
+            //use the fully-qualified name:
+            return full;
+        }
         state.debug(DBG_DEP, "SM %s %s\n", full, pkg);
         List<String> klasses = importSnippets()
                                .filter(isi -> !isi.isStar)
@@ -165,7 +174,7 @@ final class SnippetMaps {
                                .toList();
         for (String k : klasses) {
             if (k.equals(full)) {
-                return full.substring(full.lastIndexOf(".")+1);
+                return simpleName;
             }
         }
         if (pkg.isEmpty()) {

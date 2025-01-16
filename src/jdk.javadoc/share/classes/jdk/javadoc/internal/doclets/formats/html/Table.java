@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * An HTML container used to display summary tables for various kinds of elements
@@ -84,7 +86,6 @@ public class Table<T> extends Content {
     private HtmlStyle gridStyle;
     private final List<Content> bodyRows;
     private HtmlId id;
-    private boolean alwaysShowDefaultTab = false;
 
     /**
      * A record containing the data for a table tab.
@@ -144,16 +145,6 @@ public class Table<T> extends Content {
      */
     public Table<T> setDefaultTab(Content label) {
         defaultTab = label;
-        return this;
-    }
-
-    /**
-     * Sets whether to display the default tab even if tabs are empty or only contain a single tab.
-     * @param showDefaultTab true if default tab should always be shown
-     * @return this object
-     */
-    public Table<T> setAlwaysShowDefaultTab(boolean showDefaultTab) {
-        this.alwaysShowDefaultTab = showDefaultTab;
         return this;
     }
 
@@ -314,7 +305,7 @@ public class Table<T> extends Content {
         Content row = new ContentBuilder();
 
         int rowIndex = bodyRows.size();
-        HtmlStyle rowStyle = rowIndex % 2 == 0 ? HtmlStyle.evenRowColor : HtmlStyle.oddRowColor;
+        HtmlStyle rowStyle = rowIndex % 2 == 0 ? HtmlStyles.evenRowColor : HtmlStyles.oddRowColor;
 
         List<String> tabClasses = new ArrayList<>();
         if (tabs != null) {
@@ -370,22 +361,22 @@ public class Table<T> extends Content {
     private Content toContent() {
         Content main;
         if (id != null) {
-            main = new HtmlTree(TagName.DIV).setId(id);
+            main = HtmlTree.DIV(id);
         } else {
             main = new ContentBuilder();
         }
         // If no grid style is set use on of the default styles
         if (gridStyle == null) {
             gridStyle = switch (columnStyles.size()) {
-                case 2 -> HtmlStyle.twoColumnSummary;
-                case 3 -> HtmlStyle.threeColumnSummary;
-                case 4 -> HtmlStyle.fourColumnSummary;
+                case 2 -> HtmlStyles.twoColumnSummary;
+                case 3 -> HtmlStyles.threeColumnSummary;
+                case 4 -> HtmlStyles.fourColumnSummary;
                 default -> throw new IllegalStateException();
             };
         }
 
         var table = HtmlTree.DIV(tableStyle).addStyle(gridStyle);
-        if ((tabs == null || occurringTabs.size() == 1) && !alwaysShowDefaultTab) {
+        if ((tabs == null || occurringTabs.size() == 1) && renderTabs) {
             if (tabs == null) {
                 main.add(caption);
             } else {
@@ -394,30 +385,27 @@ public class Table<T> extends Content {
             table.add(getTableBody());
             main.add(table);
         } else {
-            var tablist = HtmlTree.DIV(HtmlStyle.tableTabs)
+            var tablist = HtmlTree.DIV(HtmlStyles.tableTabs)
                     .put(HtmlAttr.ROLE, "tablist")
                     .put(HtmlAttr.ARIA_ORIENTATION, "horizontal");
 
             HtmlId defaultTabId = HtmlIds.forTab(id, 0);
             if (renderTabs) {
-                tablist.add(createTab(defaultTabId, HtmlStyle.activeTableTab, true, defaultTab));
-            } else {
-                tablist.add(getCaption(defaultTab));
-            }
-            table.put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
-            if (renderTabs) {
+                tablist.add(createTab(defaultTabId, HtmlStyles.activeTableTab, true, defaultTab));
                 for (var tab : tabs) {
                     if (occurringTabs.contains(tab)) {
-                        tablist.add(createTab(HtmlIds.forTab(id, tab.index()), HtmlStyle.tableTab, false, tab.label()));
+                        tablist.add(createTab(HtmlIds.forTab(id, tab.index()), HtmlStyles.tableTab, false, tab.label()));
                     }
                 }
+            } else {
+                tablist.add(getCaption(defaultTab));
             }
             if (id == null) {
                 throw new IllegalStateException("no id set for table");
             }
-            var tabpanel = new HtmlTree(TagName.DIV)
-                    .setId(HtmlIds.forTabPanel(id))
-                    .put(HtmlAttr.ROLE, "tabpanel");
+            var tabpanel = HtmlTree.DIV(HtmlIds.forTabPanel(id))
+                    .put(HtmlAttr.ROLE, "tabpanel")
+                    .put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
             table.add(getTableBody());
             tabpanel.add(table);
             main.add(tablist);
@@ -427,8 +415,7 @@ public class Table<T> extends Content {
     }
 
     private HtmlTree createTab(HtmlId tabId, HtmlStyle style, boolean defaultTab, Content tabLabel) {
-        var tab = new HtmlTree(TagName.BUTTON)
-                .setId(tabId)
+        var tab = HtmlTree.BUTTON(tabId)
                 .put(HtmlAttr.ROLE, "tab")
                 .put(HtmlAttr.ARIA_SELECTED, defaultTab ? "true" : "false")
                 .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.forTabPanel(id).name())
@@ -449,6 +436,6 @@ public class Table<T> extends Content {
     }
 
     private HtmlTree getCaption(Content title) {
-        return HtmlTree.DIV(HtmlStyle.caption, HtmlTree.SPAN(title));
+        return HtmlTree.DIV(HtmlStyles.caption, HtmlTree.SPAN(title));
     }
 }

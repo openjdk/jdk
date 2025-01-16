@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,9 @@ package java.lang;
 import jdk.internal.util.ArraysSupport;
 
 import java.io.DataInputStream;
-import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.zip.InflaterInputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 class CharacterName {
 
@@ -49,12 +46,9 @@ class CharacterName {
     private final int[] hsIndices;   // chain heads, hash indices into "cps"
 
     private CharacterName()  {
-        try (@SuppressWarnings("removal") DataInputStream dis = new DataInputStream(new InflaterInputStream(
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public InputStream run() {
-                    return getClass().getResourceAsStream("uniName.dat");
-                }
-            })))) {
+        try (DataInputStream dis = new DataInputStream(
+                new InflaterInputStream(CharacterName.class
+                        .getResourceAsStream("uniName.dat")))) {
 
             int total = dis.readInt();
             int bkNum = dis.readInt();
@@ -113,7 +107,7 @@ class CharacterName {
     }
 
     private static int hashN(byte[] a, int off, int len) {
-        return ArraysSupport.vectorizedHashCode(a, off, len, 1, ArraysSupport.T_BYTE);
+        return ArraysSupport.hashCode(a, off, len, 1);
     }
 
     private int addCp(int idx, int hash, int next, int cp) {

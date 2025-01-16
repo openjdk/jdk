@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,8 @@ public interface ProcessingEnvironment {
      * {@code false}.
      *
      * @since 13
+     * @see <a href="https://openjdk.org/jeps/12">
+     * JEP 12: Preview Features</a>
      */
     default boolean isPreviewEnabled() {
         return false;

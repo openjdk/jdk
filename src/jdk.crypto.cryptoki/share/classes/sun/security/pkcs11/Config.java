@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import java.security.*;
-
 import sun.security.util.PropertyExpander;
 
 import sun.security.pkcs11.wrapper.*;
@@ -58,31 +56,16 @@ final class Config {
     // will accept single threaded modules regardless of the setting in their
     // config files.
     private static final boolean staticAllowSingleThreadedModules;
-    private static final String osName;
-    private static final String osArch;
 
     static {
-        @SuppressWarnings("removal")
-        List<String> props = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public List<String> run() {
-                    return List.of(
-                        System.getProperty(
-                            "sun.security.pkcs11.allowSingleThreadedModules",
-                            "true"),
-                        System.getProperty("os.name"),
-                        System.getProperty("os.arch"));
-                }
-            }
-        );
-        if ("false".equalsIgnoreCase(props.get(0))) {
+        String allowSingleThreadedModules =
+            System.getProperty(
+                "sun.security.pkcs11.allowSingleThreadedModules", "true");
+        if ("false".equalsIgnoreCase(allowSingleThreadedModules)) {
             staticAllowSingleThreadedModules = false;
         } else {
             staticAllowSingleThreadedModules = true;
         }
-        osName = props.get(1);
-        osArch = props.get(2);
     }
 
     private static final boolean DEBUG = false;
@@ -120,6 +103,9 @@ final class Config {
 
     // whether to print debug info during startup
     private boolean showInfo = false;
+
+    // whether to allow legacy mechanisms
+    private boolean allowLegacy = false;
 
     // template manager, initialized from parsed attributes
     private TemplateManager templateManager;
@@ -160,6 +146,11 @@ final class Config {
     // This option primarily exists for the deprecated
     // Secmod.Module.getProvider() method.
     private String functionList = null;
+
+    // CTS mode variant used by the token, as described in Addendum to NIST
+    // Special Publication 800-38A, "Recommendation for Block Cipher Modes
+    // of Operation: Three Variants of Ciphertext Stealing for CBC Mode".
+    private Token.CTSVariant ctsVariant = null;
 
     // whether to use NSS secmod mode. Implicitly set if nssLibraryDirectory,
     // nssSecmodDirectory, or nssModule is specified.
@@ -251,6 +242,10 @@ final class Config {
         return (SunPKCS11.debug != null) || showInfo;
     }
 
+    boolean getAllowLegacy() {
+        return allowLegacy;
+    }
+
     TemplateManager getTemplateManager() {
         if (templateManager == null) {
             templateManager = new TemplateManager();
@@ -312,6 +307,10 @@ final class Config {
             }
         }
         return functionList;
+    }
+
+    Token.CTSVariant getCTSVariant() {
+        return ctsVariant;
     }
 
     boolean getNssUseSecmod() {
@@ -453,6 +452,8 @@ final class Config {
                 destroyTokenAfterLogout = parseBooleanEntry(st.sval);
             case "showInfo"->
                 showInfo = parseBooleanEntry(st.sval);
+            case "allowLegacy"->
+                allowLegacy = parseBooleanEntry(st.sval);
             case "keyStoreCompatibilityMode"->
                 keyStoreCompatibilityMode = parseBooleanEntry(st.sval);
             case "explicitCancel"->
@@ -463,6 +464,8 @@ final class Config {
                 allowSingleThreadedModules = parseBooleanEntry(st.sval);
             case "functionList"->
                 functionList = parseStringEntry(st.sval);
+            case "cipherTextStealingVariant"->
+                ctsVariant = parseEnumEntry(Token.CTSVariant.class, st.sval);
             case "nssUseSecmod"->
                 nssUseSecmod = parseBooleanEntry(st.sval);
             case "nssLibraryDirectory"-> {
@@ -616,6 +619,17 @@ final class Config {
             System.out.println(keyword + ": " + value);
         }
         return value;
+    }
+
+    private <E extends Enum<E>> E parseEnumEntry(Class<E> enumClass,
+            String keyword) throws IOException {
+        String value = parseStringEntry(keyword);
+        try {
+            return Enum.valueOf(enumClass, value);
+        } catch (IllegalArgumentException ignored) {
+            throw excToken(keyword + " must be one of " +
+                    Arrays.toString(enumClass.getEnumConstants()) + ", read:");
+        }
     }
 
     private boolean parseBoolean() throws IOException {

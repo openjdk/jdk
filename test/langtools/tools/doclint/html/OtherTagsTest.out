@@ -13,9 +13,6 @@ OtherTagsTest.java:17: error: element not allowed in documentation comments: <he
 OtherTagsTest.java:18: error: attribute not supported in HTML5: width
      *  <hr width="50%">
             ^
-OtherTagsTest.java:19: error: element not allowed in documentation comments: <link>
-     *  <link>
-        ^
 OtherTagsTest.java:20: error: element not allowed in documentation comments: <meta>
      *  <meta>
         ^
@@ -25,4 +22,4 @@ OtherTagsTest.java:21: error: tag not supported in HTML5: noframes
 OtherTagsTest.java:23: error: element not allowed in documentation comments: <title>
      *  <title> </title>
         ^
-9 errors
+8 errors

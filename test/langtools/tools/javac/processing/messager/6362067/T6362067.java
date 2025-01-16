@@ -21,7 +21,7 @@ public class T6362067 extends JavacTestingAbstractProcessor {
                            RoundEnvironment roundEnv) {
 
         for (Element e: roundEnv.getRootElements()) {
-            messager.printMessage(NOTE, "note:elem", e);
+            messager.printNote("note:elem", e);
             for (AnnotationMirror a: e.getAnnotationMirrors()) {
                 messager.printMessage(NOTE, "note:anno", e, a);
                 for (AnnotationValue v: a.getElementValues().values()) {

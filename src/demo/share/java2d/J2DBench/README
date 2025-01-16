@@ -23,6 +23,9 @@ The benchmark requires at least jdk1.4 to compile and run. Note that
 source/target is set to 1.7 in the makefile and build.xml, because of
 support in jdk 14 compiler. To check compatibility with jdk1.4 you can
 use "-source 1.4 -target 1.4" options and jdk1.7.
+Yo can use TARGET/SOURCE of makefile and -Dtarget/surce to set them up for your convinience.
+Similarly you can set JAVA/JAVAC/JAR and -Djava/javac to select diffferent java/javac then is on yoru PATH
+Unluckily in ant, you can not set jar, but ant should honor JAVA_HOME
 
 -----------------------------------------------------------------------
 How To Compile

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,11 @@ final class Connections implements PoolCallback {
         com.sun.jndi.ldap.LdapPoolManager.trace;
     private static final int DEFAULT_SIZE = 10;
 
-    final private int initSize;
+    private final int initSize;
     private final int maxSize;
     private final int prefSize;
     private final List<ConnectionDesc> conns;
-    final private PooledConnectionFactory factory;
+    private final PooledConnectionFactory factory;
 
     private boolean closed = false;   // Closed for business
     private Reference<Object> ref; // maintains reference to id to prevent premature GC

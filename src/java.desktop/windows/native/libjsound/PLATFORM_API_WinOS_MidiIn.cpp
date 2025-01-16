@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ protected:
     } static data;
 
     /* StartThread function */
-    static DWORD WINAPI __stdcall ThreadProc(void *param);
+    static DWORD WINAPI ThreadProc(void *param);
 };
 
 /* MidiIn_OpenHelper class implementation
@@ -195,7 +195,7 @@ MidiIn_OpenHelper::Data::~Data() {
     // - Windows will do during process shutdown
 }
 
-DWORD WINAPI __stdcall MidiIn_OpenHelper::ThreadProc(void *param) {
+DWORD WINAPI MidiIn_OpenHelper::ThreadProc(void *param) {
     while (1) {
         // wait for something to do
         ::WaitForSingleObject(data.doEvent, INFINITE);

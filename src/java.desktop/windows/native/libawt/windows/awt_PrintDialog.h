@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@
 
 class AwtPrintDialog {
 public:
-    static jfieldID AwtPrintDialog::controlID;
-    static jfieldID AwtPrintDialog::parentID;
-    static jfieldID AwtPrintDialog::pageID;
-    static jmethodID AwtPrintDialog::setHWndMID;
+    static jfieldID controlID;
+    static jfieldID parentID;
+    static jfieldID pageID;
+    static jmethodID setHWndMID;
 
     static BOOL PrintDlg(LPPRINTDLG);
 

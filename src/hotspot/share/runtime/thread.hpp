@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,13 +26,14 @@
 #ifndef SHARE_RUNTIME_THREAD_HPP
 #define SHARE_RUNTIME_THREAD_HPP
 
-#include "jni.h"
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "jni.h"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -46,9 +47,10 @@
 class CompilerThread;
 class HandleArea;
 class HandleMark;
-class ICRefillVerifier;
 class JvmtiRawMonitor;
+class NMethodClosure;
 class Metadata;
+class OopClosure;
 class OSThread;
 class ParkEvent;
 class ResourceArea;
@@ -58,8 +60,6 @@ class ThreadsList;
 class ThreadsSMRSupport;
 class VMErrorCallback;
 
-class OopClosure;
-class CodeBlobClosure;
 
 DEBUG_ONLY(class ResourceMark;)
 
@@ -110,6 +110,7 @@ class Thread: public ThreadShadow {
   friend class VMErrorCallbackMark;
   friend class VMStructs;
   friend class JVMCIVMStructs;
+  friend class JavaThread;
  private:
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
@@ -136,6 +137,11 @@ class Thread: public ThreadShadow {
   }
 
  private:
+  // Poll data is used in generated code for safepoint polls.
+  // It is important for performance to put this at lower offset
+  // in Thread. The accessors are in JavaThread.
+  SafepointMechanism::ThreadData _poll_data;
+
   // Thread local data area available to the GC. The internal
   // structure and contents of this data area is GC-specific.
   // Only GC and GC barrier code should access this data area.
@@ -157,9 +163,6 @@ class Thread: public ThreadShadow {
   // const char* _exception_file;                   // file information for exception (debugging only)
   // int         _exception_line;                   // line information for exception (debugging only)
  protected:
-
-  DEBUG_ONLY(static Thread* _starting_thread;)
-
   // JavaThread lifecycle support:
   friend class SafeThreadsListPtr;  // for _threads_list_ptr, cmpxchg_threads_hazard_ptr(), {dec_,inc_,}nested_threads_hazard_ptr_cnt(), {g,s}et_threads_hazard_ptr(), inc_nested_handle_cnt(), tag_hazard_ptr() access
   friend class ScanHazardPtrGatherProtectedThreadsClosure;  // for cmpxchg_threads_hazard_ptr(), get_threads_hazard_ptr(), is_hazard_ptr_tagged() access
@@ -205,20 +208,15 @@ class Thread: public ThreadShadow {
   static bool is_JavaThread_protected_by_TLH(const JavaThread* target);
 
  private:
+  DEBUG_ONLY(static Thread* _starting_thread;)
   DEBUG_ONLY(bool _suspendible_thread;)
   DEBUG_ONLY(bool _indirectly_suspendible_thread;)
   DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
-  // Determines if a heap allocation failure will be retried
-  // (e.g., by deoptimizing and re-executing in the interpreter).
-  // In this case, the failed allocation must raise
-  // Universe::out_of_memory_error_retry() and omit side effects
-  // such as JVMTI events and handling -XX:+HeapDumpOnOutOfMemoryError
-  // and -XX:OnOutOfMemoryError.
-  virtual bool in_retryable_allocation() const { return false; }
-
 #ifdef ASSERT
+  static bool is_starting_thread(const Thread* t);
+
   void set_suspendible_thread()   { _suspendible_thread = true; }
   void clear_suspendible_thread() { _suspendible_thread = false; }
   bool is_suspendible_thread()    { return _suspendible_thread; }
@@ -250,20 +248,6 @@ class Thread: public ThreadShadow {
  public:
   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
- private:
-
-#ifdef ASSERT
-  ICRefillVerifier* _missed_ic_stub_refill_verifier;
-
- public:
-  ICRefillVerifier* missed_ic_stub_refill_verifier() {
-    return _missed_ic_stub_refill_verifier;
-  }
-
-  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
-    _missed_ic_stub_refill_verifier = verifier;
-  }
-#endif // ASSERT
 
  private:
   // Used by SkipGCALot class.
@@ -285,7 +269,7 @@ class Thread: public ThreadShadow {
                                                  // is waiting to lock
  public:
   // Constructor
-  Thread();
+  Thread(MemTag mem_tag = mtThread);
   virtual ~Thread() = 0;        // Thread is abstract.
 
   // Manage Thread::current()
@@ -443,10 +427,10 @@ class Thread: public ThreadShadow {
   // GC support
   // Apply "f->do_oop" to all root oops in "this".
   //   Used by JavaThread::oops_do.
-  // Apply "cf->do_code_blob" (if !nullptr) to all code blobs active in frames
-  virtual void oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf);
-  virtual void oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {}
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  // Apply "cf->do_nmethod" (if !nullptr) to all nmethods active in frames
+  virtual void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);
+  virtual void oops_do_frames(OopClosure* f, NMethodClosure* cf) {}
+  void oops_do(OopClosure* f, NMethodClosure* cf);
 
   // Handles the parallel case for claim_threads_do.
  private:
@@ -483,9 +467,6 @@ class Thread: public ThreadShadow {
   }
 
  public:
-  // Used by fast lock support
-  virtual bool is_lock_owned(address adr) const;
-
   // Check if address is within the given range of this thread's
   // stack:  stack_base() > adr >= limit
   bool is_in_stack_range_incl(address adr, address limit) const {
@@ -519,9 +500,9 @@ class Thread: public ThreadShadow {
     return is_in_stack_range_incl(adr, os::current_stack_pointer());
   }
 
-  // Sets this thread as starting thread. Returns failure if thread
+  // Sets the argument thread as starting thread. Returns failure if thread
   // creation fails due to lack of memory, too many threads etc.
-  bool set_as_starting_thread();
+  static bool set_as_starting_thread(JavaThread* jt);
 
 protected:
   // OS data associated with the thread
@@ -543,7 +524,9 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
+  address stack_base() const DEBUG_ONLY(;) NOT_DEBUG({ return _stack_base; })
+  // Needed for code that can query a new thread before the stack has been set.
+  address stack_base_or_null() const   { return _stack_base; }
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
@@ -604,8 +587,6 @@ protected:
   static ByteSize tlab_top_offset()              { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::top_offset(); }
   static ByteSize tlab_pf_top_offset()           { return byte_offset_of(Thread, _tlab) + ThreadLocalAllocBuffer::pf_top_offset(); }
 
-  static ByteSize allocated_bytes_offset()       { return byte_offset_of(Thread, _allocated_bytes); }
-
   JFR_ONLY(DEFINE_THREAD_LOCAL_OFFSET_JFR;)
 
  public:
@@ -657,15 +638,17 @@ protected:
 class ThreadInAsgct {
  private:
   Thread* _thread;
+  bool _saved_in_asgct;
  public:
   ThreadInAsgct(Thread* thread) : _thread(thread) {
     assert(thread != nullptr, "invariant");
-    assert(!thread->in_asgct(), "invariant");
+    // Allow AsyncGetCallTrace to be reentrant - save the previous state.
+    _saved_in_asgct = thread->in_asgct();
     thread->set_in_asgct(true);
   }
   ~ThreadInAsgct() {
     assert(_thread->in_asgct(), "invariant");
-    _thread->set_in_asgct(false);
+    _thread->set_in_asgct(_saved_in_asgct);
   }
 };
 

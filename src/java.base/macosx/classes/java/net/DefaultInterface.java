@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package java.net;
 
+import java.util.Enumeration;
+import java.io.IOException;
+
 /**
  * Choose a network interface to be the default for
  * outgoing IPv6 traffic that does not specify a scope_id (and which needs one).
@@ -36,11 +39,6 @@ package java.net;
  * Platforms that do not require a default interface implement a dummy
  * that returns null.
  */
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Enumeration;
-import java.io.IOException;
 
 class DefaultInterface {
 
@@ -105,9 +103,7 @@ class DefaultInterface {
                     continue;
 
                 boolean ip4 = false, ip6 = false, isNonLinkLocal = false;
-                PrivilegedAction<Enumeration<InetAddress>> pa = ni::getInetAddresses;
-                @SuppressWarnings("removal")
-                Enumeration<InetAddress> addrs = AccessController.doPrivileged(pa);
+                Enumeration<InetAddress> addrs = ni.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = addrs.nextElement();
                     if (!addr.isAnyLocalAddress()) {

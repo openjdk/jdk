@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,15 +78,6 @@ public class TestStylesheet extends JavadocTester {
                         width:100%;
                     }""",
                 """
-                    iframe {
-                        margin:0;
-                        padding:0;
-                        height:100%;
-                        width:100%;
-                        overflow-y:scroll;
-                        border:none;
-                    }""",
-                """
                     ul {
                         list-style-type:disc;
                     }""",
@@ -147,7 +138,7 @@ public class TestStylesheet extends JavadocTester {
                         background-color:var(--search-tag-highlight-color);
                     }""",
                 """
-                    a[href]:hover, a[href]:focus {
+                    a[href]:hover, a[href]:active {
                         text-decoration:none;
                         color:var(--link-color-active);
                     }""",
@@ -173,7 +164,7 @@ public class TestStylesheet extends JavadocTester {
                         display:inline-block;
                     }""",
                 """
-                    #reset-button {
+                    input#reset-search, input.reset-filter {
                         background-color: transparent;
                         background-image:url('x.png');
                         background-repeat:no-repeat;
@@ -182,10 +173,8 @@ public class TestStylesheet extends JavadocTester {
                         border-radius:0;
                         width:12px;
                         height:12px;
-                        position:absolute;
-                        right:12px;
-                        top:10px;
                         font-size:0;
+                        display:none;
                     }""",
                 """
                     ::placeholder {
@@ -352,7 +341,6 @@ public class TestStylesheet extends JavadocTester {
                 "packages",
                 "return-type",
                 // and others...
-                "help-section",     // part of the help page
                 "hierarchy",        // for the hierarchy on a tree page
                 "index"             // on the index page
         );

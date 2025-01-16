@@ -36,11 +36,12 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
-#include "gc/g1/g1HRPrinter.hpp"
+#include "gc/g1/g1HeapRegionPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1Trace.hpp"
@@ -48,11 +49,10 @@
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
-#include "gc/g1/g1_globals.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/preservedMarks.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -215,10 +215,6 @@ G1GCPhaseTimes* G1YoungCollector::phase_times() const {
   return _g1h->phase_times();
 }
 
-G1HRPrinter* G1YoungCollector::hr_printer() const {
-  return _g1h->hr_printer();
-}
-
 G1MonitoringSupport* G1YoungCollector::monitoring_support() const {
   return _g1h->monitoring_support();
 }
@@ -262,14 +258,10 @@ void G1YoungCollector::wait_for_root_region_scanning() {
   phase_times()->record_root_region_scan_wait_time(wait_time.seconds() * MILLIUNITS);
 }
 
-class G1PrintCollectionSetClosure : public HeapRegionClosure {
-private:
-  G1HRPrinter* _hr_printer;
+class G1PrintCollectionSetClosure : public G1HeapRegionClosure {
 public:
-  G1PrintCollectionSetClosure(G1HRPrinter* hr_printer) : HeapRegionClosure(), _hr_printer(hr_printer) { }
-
-  virtual bool do_heap_region(HeapRegion* r) {
-    _hr_printer->cset(r);
+  virtual bool do_heap_region(G1HeapRegion* r) {
+    G1HeapRegionPrinter::cset(r);
     return false;
   }
 };
@@ -285,15 +277,15 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
 
   concurrent_mark()->verify_no_collection_set_oops();
 
-  if (hr_printer()->is_active()) {
-    G1PrintCollectionSetClosure cl(hr_printer());
+  if (G1HeapRegionPrinter::is_active()) {
+    G1PrintCollectionSetClosure cl;
     collection_set()->iterate(&cl);
     collection_set()->iterate_optional(&cl);
   }
 }
 
 class G1PrepareEvacuationTask : public WorkerTask {
-  class G1PrepareRegionsClosure : public HeapRegionClosure {
+  class G1PrepareRegionsClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1PrepareEvacuationTask* _parent_task;
     uint _worker_humongous_total;
@@ -301,16 +293,15 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
     G1MonotonicArenaMemoryStats _card_set_stats;
 
-    void sample_card_set_size(HeapRegion* hr) {
-      // Sample card set sizes for young gen and humongous before GC: this makes
-      // the policy to give back memory to the OS keep the most recent amount of
-      // memory for these regions.
-      if (hr->is_young() || hr->is_starts_humongous()) {
+    void sample_card_set_size(G1HeapRegion* hr) {
+      // Sample card set sizes for humongous before GC: this makes the policy to give
+      // back memory to the OS keep the most recent amount of memory for these regions.
+      if (hr->is_starts_humongous()) {
         _card_set_stats.add(hr->rem_set()->card_set_memory_stats());
       }
     }
 
-    bool humongous_region_is_candidate(HeapRegion* region) const {
+    bool humongous_region_is_candidate(G1HeapRegion* region) const {
       assert(region->is_starts_humongous(), "Must start a humongous object");
 
       oop obj = cast_to_oop(region->bottom());
@@ -382,7 +373,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       _parent_task->add_humongous_total(_worker_humongous_total);
     }
 
-    virtual bool do_heap_region(HeapRegion* hr) {
+    virtual bool do_heap_region(G1HeapRegion* hr) {
       // First prepare the region for scanning
       _g1h->rem_set()->prepare_region_for_scan(hr);
 
@@ -425,7 +416,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   };
 
   G1CollectedHeap* _g1h;
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
@@ -483,13 +474,8 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
 }
 
 void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
-
-  // Must be before collection set calculation, requires collection set to not
-  // be calculated yet.
-  if (collector_state()->in_concurrent_start_gc()) {
-    concurrent_mark()->pre_concurrent_start(_gc_cause);
-  }
-
+  // Flush various data in thread-local buffers to be able to determine the collection
+  // set
   {
     Ticks start = Ticks::now();
     G1PreEvacuateCollectionSetBatchTask cl;
@@ -499,6 +485,10 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 
   // Needs log buffers flushed.
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
+
+  if (collector_state()->in_concurrent_start_gc()) {
+    concurrent_mark()->pre_concurrent_start(_gc_cause);
+  }
 
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
@@ -515,6 +505,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   {
     Ticks start = Ticks::now();
     rem_set()->prepare_for_scan_heap_roots();
+
+    _g1h->prepare_group_cardsets_for_scan();
+
     phase_times()->record_prepare_heap_roots_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
@@ -522,7 +515,10 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     G1PrepareEvacuationTask g1_prep_task(_g1h);
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
-    _g1h->set_young_gen_card_set_stats(g1_prep_task.all_card_set_stats());
+    G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
+    sampled_card_set_stats.add(_g1h->young_regions_card_set_mm()->memory_stats());
+    _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
+
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0);
@@ -595,8 +591,10 @@ class G1EvacuateRegionsBaseTask : public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
+
   G1ScannerTasksQueueSet* _task_queues;
   TaskTerminator _terminator;
+
   uint _num_workers;
 
   void evacuate_live_objects(G1ParScanThreadState* pss,
@@ -671,7 +669,22 @@ class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
     _root_processor->evacuate_roots(pss, worker_id);
     _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy, _has_optional_evacuation_work);
-    _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
+    _g1h->rem_set()->scan_collection_set_code_roots(pss, worker_id, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
+    // There are no optional roots to scan right now.
+#ifdef ASSERT
+    class VerifyOptionalCollectionSetRootsEmptyClosure : public G1HeapRegionClosure {
+      G1ParScanThreadState* _pss;
+
+    public:
+      VerifyOptionalCollectionSetRootsEmptyClosure(G1ParScanThreadState* pss) : _pss(pss) { }
+
+      bool do_heap_region(G1HeapRegion* r) override {
+        assert(!r->has_index_in_opt_cset(), "must be");
+        return false;
+      }
+    } cl(pss);
+    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+#endif
   }
 
   void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) {
@@ -740,7 +753,8 @@ class G1EvacuateOptionalRegionsTask : public G1EvacuateRegionsBaseTask {
 
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
     _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptObjCopy, true /* remember_already_scanned_cards */);
-    _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::OptObjCopy);
+    _g1h->rem_set()->scan_collection_set_code_roots(pss, worker_id, G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::OptObjCopy);
+    _g1h->rem_set()->scan_collection_set_optional_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ObjCopy);
   }
 
   void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) {
@@ -976,7 +990,7 @@ void G1YoungCollector::enqueue_candidates_as_root_regions() {
   assert(collector_state()->in_concurrent_start_gc(), "must be");
 
   G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  for (HeapRegion* r : *candidates) {
+  for (G1HeapRegion* r : *candidates) {
     _g1h->concurrent_mark()->add_root_region(r);
   }
 }
@@ -998,6 +1012,12 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive, p->weak_phase_times());
 
   allocator()->release_gc_alloc_regions(evacuation_info);
+
+#if TASKQUEUE_STATS
+  // Logging uses thread states, which are deleted by cleanup, so this must
+  // be done before cleanup.
+  per_thread_states->print_partial_array_task_stats();
+#endif // TASKQUEUE_STATS
 
   post_evacuate_cleanup_1(per_thread_states);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,12 @@
 package java.lang.classfile;
 
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.reflect.AccessFlag;
+import java.util.function.Consumer;
+
+import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedFieldBuilder;
 import jdk.internal.classfile.impl.TerminalFieldBuilder;
-import java.lang.reflect.AccessFlag;
-
-import java.util.Optional;
-import java.util.function.Consumer;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for fields.  Builders are not created directly; they are passed
@@ -43,9 +42,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see FieldTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldBuilder
         extends ClassFileBuilder<FieldElement, FieldBuilder>
         permits TerminalFieldBuilder, ChainedFieldBuilder {
@@ -56,7 +54,7 @@ public sealed interface FieldBuilder
      * @return this builder
      */
     default FieldBuilder withFlags(int flags) {
-        return with(AccessFlags.ofField(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.FIELD, flags));
     }
 
     /**
@@ -65,12 +63,7 @@ public sealed interface FieldBuilder
      * @return this builder
      */
     default FieldBuilder withFlags(AccessFlag... flags) {
-        return with(AccessFlags.ofField(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.FIELD, flags));
     }
 
-    /**
-     * {@return the {@link FieldModel} representing the field being transformed,
-     * if this field builder represents the transformation of some {@link FieldModel}}
-     */
-    Optional<FieldModel> original();
 }

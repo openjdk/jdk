@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Objects;
 import sun.security.jgss.spi.*;
 import sun.security.jgss.wrapper.NativeGSSFactory;
 import sun.security.jgss.wrapper.SunNativeProvider;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This class stores the list of providers that this
@@ -102,8 +101,7 @@ public final class ProviderList {
          * with a valid OID value
          */
         Oid defOid = null;
-        String defaultOidStr = GetPropertyAction
-                .privilegedGetProperty("sun.security.jgss.mechanism");
+        String defaultOidStr = System.getProperty("sun.security.jgss.mechanism");
         if (defaultOidStr != null) {
             defOid = GSSUtil.createOid(defaultOidStr);
         }
@@ -135,7 +133,7 @@ public final class ProviderList {
                 addProviderAtEnd(prov, null);
             } catch (GSSException ge) {
                 // Move on to the next provider
-                if (GSSUtil.DEBUG) {
+                if (GSSUtil.DEBUG != null) {
                     GSSUtil.debug("Error in adding provider " +
                             prov.getName() + ": " + ge);
                 }
@@ -420,7 +418,7 @@ public final class ProviderList {
                     retVal = true;
                 } catch (GSSException e) {
                     // Skip to next property
-                    if (GSSUtil.DEBUG) {
+                    if (GSSUtil.DEBUG != null) {
                         GSSUtil.debug("Ignore the invalid property " +
                                 prop + " from provider " + p.getName());
                     }

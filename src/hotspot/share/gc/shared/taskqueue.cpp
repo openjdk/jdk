@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,9 @@ void TaskQueueStats::print_header(unsigned int line, outputStream* const stream,
 
 void TaskQueueStats::print(outputStream* stream, unsigned int width) const
 {
-  #define FMT SIZE_FORMAT_W(*)
-  stream->print(FMT, width, _stats[0]);
+  stream->print("%*zu", width, _stats[0]);
   for (unsigned int i = 1; i < last_stat_id; ++i) {
-    stream->print(" " FMT, width, _stats[i]);
+    stream->print(" %*zu", width, _stats[i]);
   }
   #undef FMT
 }

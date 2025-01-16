@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import com.sun.management.GarbageCollectionNotificationInfo;
 import java.lang.reflect.*;
 import java.lang.management.*;
 import java.util.*;
+import java.util.stream.Collectors;
+
 import javax.management.*;
 import javax.management.openmbean.*;
 import jdk.test.lib.process.ProcessTools;
@@ -55,7 +57,6 @@ class TestStringDeduplicationTools {
     private static byte[] dummy;
 
     private static String selectedGC = null;
-    private static String selectedGCMode = null;
 
     static {
         try {
@@ -72,9 +73,6 @@ class TestStringDeduplicationTools {
 
     public static void selectGC(String[] args) {
         selectedGC = args[0];
-        if (args.length > 1) {
-            selectedGCMode = args[1];
-        }
     }
 
     private static Object getValue(String string) {
@@ -83,6 +81,32 @@ class TestStringDeduplicationTools {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Get system load.
+     *
+     * <dl>
+     *   <dt>load() ~=   1 </dt><dd> fully loaded system, all cores are used 100%</dd>
+     *   <dt>load() &lt; 1 </dt><dd> some cpu resources are available</dd>
+     *   <dt>load() &gt; 1 </dt><dd> system is overloaded</dd>
+     * </dl>
+     *
+     * @return the load of the system or Optional.empty() if the load can not be determined.
+     */
+    private static Optional<Double> systemLoad() {
+        OperatingSystemMXBean bean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
+        double average = bean.getSystemLoadAverage() / bean.getAvailableProcessors();
+        return (average < 0)
+            ? Optional.empty()
+            : Optional.of(average);
+    }
+
+    private static String minMax(List<Optional<Double>> l) {
+        DoubleSummaryStatistics minmax = l.stream().flatMap(Optional::stream).collect(Collectors.summarizingDouble(d -> d));
+        return minmax.getCount() != 0
+            ? "min: " + minmax.getMin() + ", max: " + minmax.getMax()
+            : "could not gather load statistics from system";
     }
 
     private static void doFullGc(int numberOfTimes) {
@@ -109,14 +133,8 @@ class TestStringDeduplicationTools {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("ZGC")) {
-                    // Generational ZGC only triggers string deduplications from major collections
+                    // ZGC only triggers string deduplications from major collections
                     if (info.getGcName().startsWith("ZGC Major") && "end of GC cycle".equals(info.getGcAction())) {
-                        gcCount++;
-                    }
-
-                    // Single-gen ZGC
-                    if (!info.getGcName().startsWith("ZGC Major") && !info.getGcName().startsWith("ZGC Minor") &&
-                            "end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("G1")) {
@@ -179,13 +197,15 @@ class TestStringDeduplicationTools {
         }
     }
 
-    private static boolean waitForDeduplication(String s1, String s2) {
+    private static void waitForDeduplication(String s1, String s2) {
         boolean first = true;
         int timeout = 10000;     // 10sec in ms
         int iterationWait = 100; // 100ms
+        List<Optional<Double>> loadHistory = new ArrayList<>();
         for (int attempts = 0; attempts < (timeout / iterationWait); attempts++) {
+            loadHistory.add(systemLoad());
             if (getValue(s1) == getValue(s2)) {
-                return true;
+                return;
             }
             if (first) {
                 System.out.println("Waiting for deduplication...");
@@ -194,10 +214,10 @@ class TestStringDeduplicationTools {
             try {
                 Thread.sleep(iterationWait);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Deduplication has not occurred: Thread.sleep() threw", e);
             }
         }
-        return false;
+        throw new RuntimeException("Deduplication has not occurred, load history: " + minMax(loadHistory));
     }
 
     private static String generateString(int id) {
@@ -240,7 +260,9 @@ class TestStringDeduplicationTools {
      */
     private static void verifyStrings(ArrayList<String> list, int uniqueExpected) {
         boolean passed = false;
+        List<Optional<Double>> loadHistory = new ArrayList<>();
         for (int attempts = 0; attempts < 10; attempts++) {
+            loadHistory.add(systemLoad());
             // Check number of deduplicated strings
             ArrayList<Object> unique = new ArrayList<Object>(uniqueExpected);
             for (String string: list) {
@@ -277,7 +299,7 @@ class TestStringDeduplicationTools {
             }
         }
         if (!passed) {
-            throw new RuntimeException("String verification failed");
+            throw new RuntimeException("String verification failed, load history: " + minMax(loadHistory));
         }
     }
 
@@ -293,9 +315,6 @@ class TestStringDeduplicationTools {
 
         ArrayList<String> args = new ArrayList<String>();
         args.add("-XX:+Use" + selectedGC + "GC");
-        if (selectedGCMode != null) {
-            args.add(selectedGCMode);
-        }
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 
@@ -361,9 +380,7 @@ class TestStringDeduplicationTools {
             // and be inserted into the deduplication hashtable.
             forceDeduplication(ageThreshold, FullGC);
 
-            if (!waitForDeduplication(dupString1, baseString)) {
-                throw new RuntimeException("Deduplication has not occurred");
-            }
+            waitForDeduplication(dupString1, baseString);
 
             // Create a new duplicate of baseString
             StringBuilder sb2 = new StringBuilder(baseString);
@@ -398,9 +415,7 @@ class TestStringDeduplicationTools {
 
             forceDeduplication(ageThreshold, FullGC);
 
-            if (!waitForDeduplication(dupString3, internedString)) {
-                throw new RuntimeException("Deduplication has not occurred for string 3");
-            }
+            waitForDeduplication(dupString3, internedString);
 
             if (afterInternedValue != getValue(dupString2)) {
                 throw new RuntimeException("Interned string value changed");

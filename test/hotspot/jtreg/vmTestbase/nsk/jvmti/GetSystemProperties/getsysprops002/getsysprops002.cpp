@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -52,7 +52,7 @@ static PropertyDesc propDescList[PROPERTIES_COUNT] = {
 static int checkProperties (jvmtiEnv* jvmti, const char phase[]) {
     int success = NSK_TRUE;
     jint count = 0;
-    char** properties = NULL;
+    char** properties = nullptr;
 
     NSK_DISPLAY0("Get system properties list\n");
     if (!NSK_JVMTI_VERIFY(
@@ -61,7 +61,7 @@ static int checkProperties (jvmtiEnv* jvmti, const char phase[]) {
     }
     NSK_DISPLAY1("  ... got properties: %d\n", (int)count);
 
-    if (!NSK_VERIFY(properties != NULL)) {
+    if (!NSK_VERIFY(properties != nullptr)) {
         return NSK_FALSE;
     }
 
@@ -77,7 +77,7 @@ static int checkProperties (jvmtiEnv* jvmti, const char phase[]) {
 
         for (i = 0; i < count; i++) {
             NSK_DISPLAY2("    property #%d: [%s]\n", i, nsk_null_string(properties[i]));
-            if (properties[i] != NULL) {
+            if (properties[i] != nullptr) {
                 for (j = 0; j < PROPERTIES_COUNT; j++) {
                     if (strcmp(properties[i], propDescList[j].name) == 0) {
                         NSK_DISPLAY1("SUCCESS: found tested property: %s\n",
@@ -150,7 +150,7 @@ JNIEXPORT jint JNI_OnLoad_getsysprops002(JavaVM *jvm, char *options, void *reser
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -158,7 +158,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Check system properties in OnLoad phase\n");
@@ -166,7 +166,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

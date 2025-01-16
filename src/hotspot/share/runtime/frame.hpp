@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@
 typedef class BytecodeInterpreter* interpreterState;
 
 class CodeBlob;
-class CompiledMethod;
 class FrameValues;
 class InterpreterOopMap;
 class JavaCallWrapper;
@@ -122,6 +121,11 @@ class frame {
   // is deoptimization. It likely no one else should ever use it.
   address raw_pc() const;
 
+  // Return the original PC for the given PC if:
+  // (a) the given PC belongs to an nmethod and
+  // (b) it is a deopt PC
+  address get_deopt_original_pc() const;
+
   void set_pc(address newpc);
 
   intptr_t* sp() const           { assert_absolute(); return _sp; }
@@ -160,10 +164,9 @@ class frame {
   void   patch_pc(Thread* thread, address pc);
 
   // Every frame needs to return a unique id which distinguishes it from all other frames.
-  // For sparc and ia32 use sp. ia64 can have memory frames that are empty so multiple frames
-  // will have identical sp values. For ia64 the bsp (fp) value will serve. No real frame
-  // should have an id() of null so it is a distinguishing value for an unmatchable frame.
-  // We also have relationals which allow comparing a frame to anoth frame's id() allow
+  // For sparc and ia32 use sp.
+  // No real frame should have an id() of null so it is a distinguishing value for an unmatchable frame.
+  // We also have relationals which allow comparing a frame to another frame's id() allowing
   // us to distinguish younger (more recent activation) from older (less recent activations)
   // A null id is only valid when comparing for equality.
 
@@ -333,8 +336,8 @@ class frame {
   // Return the monitor owner and BasicLock for compiled synchronized
   // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
-  BasicLock* get_native_monitor();
-  oop        get_native_receiver();
+  BasicLock* get_native_monitor() const;
+  oop        get_native_receiver() const;
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is
   // not setup)
@@ -383,7 +386,9 @@ class frame {
   static int interpreter_frame_monitor_size();
   static int interpreter_frame_monitor_size_in_bytes();
 
+#ifdef ASSERT
   void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
+#endif
 
   // Return/result value from this interpreter frame
   // If the method return type is T_OBJECT or T_ARRAY populates oop_result
@@ -420,6 +425,8 @@ class frame {
   oop saved_oop_result(RegisterMap* map) const;
   void set_saved_oop_result(RegisterMap* map, oop obj);
 
+  static JavaThread** saved_thread_address(const frame& f);
+
   // For debugging
  private:
   const char* print_name() const;
@@ -427,15 +434,18 @@ class frame {
   void describe_pd(FrameValues& values, int frame_no);
 
  public:
-  void print_value() const { print_value_on(tty,nullptr); }
-  void print_value_on(outputStream* st, JavaThread *thread) const;
+  void print_value() const { print_value_on(tty); }
+  void print_value_on(outputStream* st) const;
   void print_on(outputStream* st) const;
   void interpreter_frame_print_on(outputStream* st) const;
   void print_on_error(outputStream* st, char* buf, int buflen, bool verbose = false) const;
   static void print_C_frame(outputStream* st, char* buf, int buflen, address pc);
+  static frame next_frame(frame fr, Thread* t); // For native stack walking
 
+#ifndef PRODUCT
   // Add annotated descriptions of memory locations belonging to this frame to values
-  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr);
+  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr, bool top = false);
+#endif
 
   // Conversion from a VMReg to physical stack location
   template <typename RegisterMapT>
@@ -451,17 +461,18 @@ class frame {
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;
 
   // Iteration of oops
-  void oops_do_internal(OopClosure* f, CodeBlobClosure* cf,
+  void oops_do_internal(OopClosure* f, NMethodClosure* cf,
                         DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                         const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
 
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
-  void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf,
-                         DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
-                         const RegisterMap* map) const;
+  void oops_upcall_do(OopClosure* f, const RegisterMap* map) const;
+  void oops_nmethod_do(OopClosure* f, NMethodClosure* cf,
+                       DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
+                       const RegisterMap* map) const;
  public:
   // Memory management
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) {
+  void oops_do(OopClosure* f, NMethodClosure* cf, const RegisterMap* map) {
 #if COMPILER2_OR_JVMCI
     DerivedPointerIterationMode dpim = DerivedPointerTable::is_active() ?
                                        DerivedPointerIterationMode::_with_table :
@@ -472,25 +483,27 @@ class frame {
     oops_do_internal(f, cf, nullptr, dpim, map, true);
   }
 
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, DerivedOopClosure* df, const RegisterMap* map) {
+  void oops_do(OopClosure* f, NMethodClosure* cf, DerivedOopClosure* df, const RegisterMap* map) {
     oops_do_internal(f, cf, df, DerivedPointerIterationMode::_ignore, map, true);
   }
 
-  void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map,
+  void oops_do(OopClosure* f, NMethodClosure* cf, const RegisterMap* map,
                DerivedPointerIterationMode derived_mode) const {
     oops_do_internal(f, cf, nullptr, derived_mode, map, true);
   }
 
-  void nmethods_do(CodeBlobClosure* cf) const;
+  void nmethod_do(NMethodClosure* cf) const;
 
   // RedefineClasses support for finding live interpreted methods on the stack
   void metadata_do(MetadataClosure* f) const;
 
   // Verification
   void verify(const RegisterMap* map) const;
+#ifdef ASSERT
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
+#endif
 
 #include CPU_HEADER(frame)
 

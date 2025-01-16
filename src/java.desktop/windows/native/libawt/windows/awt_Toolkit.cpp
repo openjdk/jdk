@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -911,20 +911,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
      * the main thread, a widget can always be properly disposed.
      */
     switch (message) {
-      case WM_AWT_EXECUTE_SYNC: {
-          jobject peerObject = (jobject)wParam;
-          AwtObject* object = (AwtObject *)JNI_GET_PDATA(peerObject);
-          DASSERT( !IsBadReadPtr(object, sizeof(AwtObject)));
-          AwtObject::ExecuteArgs *args = (AwtObject::ExecuteArgs *)lParam;
-          DASSERT(!IsBadReadPtr(args, sizeof(AwtObject::ExecuteArgs)));
-          LRESULT result = 0;
-          if (object != NULL)
-          {
-              result = object->WinThreadExecProc(args);
-          }
-          env->DeleteGlobalRef(peerObject);
-          return result;
-      }
       case WM_AWT_COMPONENT_CREATE: {
           ComponentCreatePacket* ccp = (ComponentCreatePacket*)lParam;
           DASSERT(ccp->factory != NULL);
@@ -1280,10 +1266,6 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           ::PostMessage(HWND_BROADCAST, WM_PALETTEISCHANGING, NULL, NULL);
           break;
       }
-      case WM_AWT_SETCURSOR: {
-          ::SetCursor((HCURSOR)wParam);
-          return TRUE;
-      }
       /* Session management */
       case WM_QUERYENDSESSION: {
           /* Shut down cleanly */
@@ -1456,24 +1438,6 @@ LRESULT CALLBACK AwtToolkit::MouseLowLevelHook(int code,
             }
 
             tk.m_lastWindowUnderMouse = hwnd;
-
-            if (fw) {
-                fw->UpdateSecurityWarningVisibility();
-            }
-            // ... however, because we use GA_ROOT, we may find the warningIcon
-            // which is not a Java windows.
-            if (AwtWindow::IsWarningWindow(hwnd)) {
-                hwnd = ::GetParent(hwnd);
-                if (hwnd) {
-                    tw = (AwtWindow*)AwtComponent::GetComponent(hwnd);
-                }
-                tk.m_lastWindowUnderMouse = hwnd;
-            }
-            if (tw) {
-                tw->UpdateSecurityWarningVisibility();
-            }
-
-
         }
     }
 
@@ -1927,54 +1891,6 @@ HICON AwtToolkit::GetAwtIconSm()
     return defaultIconSm;
 }
 
-// The icon at index 0 must be gray. See AwtWindow::GetSecurityWarningIcon()
-HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
-{
-    //Note: should not exceed 10 because of the current implementation.
-    static const int securityWarningIconCounter = 3;
-
-    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};
-    static UINT securityWarningIconWidth[securityWarningIconCounter]  = {0, 0, 0};
-    static UINT securityWarningIconHeight[securityWarningIconCounter] = {0, 0, 0};
-
-    index = AwtToolkit::CalculateWave(index, securityWarningIconCounter);
-
-    if (securityWarningIcon[index] == NULL ||
-            w != securityWarningIconWidth[index] ||
-            h != securityWarningIconHeight[index])
-    {
-        if (securityWarningIcon[index] != NULL)
-        {
-            ::DestroyIcon(securityWarningIcon[index]);
-        }
-
-        static const wchar_t securityWarningIconName[] = L"SECURITY_WARNING_";
-        wchar_t iconResourceName[sizeof(securityWarningIconName) + 2];
-        ::ZeroMemory(iconResourceName, sizeof(iconResourceName));
-        wcscpy(iconResourceName, securityWarningIconName);
-
-        wchar_t strIndex[2];
-        ::ZeroMemory(strIndex, sizeof(strIndex));
-        strIndex[0] = L'0' + index;
-
-        wcscat(iconResourceName, strIndex);
-
-        securityWarningIcon[index] = (HICON)::LoadImage(GetModuleHandle(),
-                iconResourceName,
-                IMAGE_ICON, w, h, LR_DEFAULTCOLOR);
-        securityWarningIconWidth[index] = w;
-        securityWarningIconHeight[index] = h;
-    }
-
-    return securityWarningIcon[index];
-}
-
-void AwtToolkit::SetHeapCheck(long flag) {
-    if (flag) {
-        printf("heap checking not supported with this build\n");
-    }
-}
-
 void throw_if_shutdown(void)
 {
     AwtToolkit::GetInstance().VerifyActive();
@@ -2219,7 +2135,7 @@ bool AwtToolkit::PreloadThread::Terminate(bool wrongThread)
     return true;
 }
 
-bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(_cdecl *fn)(void *), void *param)
+bool AwtToolkit::PreloadThread::InvokeAndTerminate(void(*fn)(void *), void *param)
 {
     CriticalSection::Lock lock(threadLock);
 
@@ -2249,7 +2165,7 @@ unsigned WINAPI AwtToolkit::PreloadThread::StaticThreadProc(void *param)
 
 unsigned AwtToolkit::PreloadThread::ThreadProc()
 {
-    void(_cdecl *_execFunc)(void *) = NULL;
+    void(*_execFunc)(void *) = NULL;
     void *_execParam = NULL;
     bool _wrongThread = false;
 

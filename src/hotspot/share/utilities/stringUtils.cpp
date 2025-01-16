@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm_io.h"
+#include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -121,4 +122,24 @@ bool StringUtils::is_star_match(const char* star_pattern, const char* str) {
     pattern_idx += match_len + (pattern_part_end == nullptr ? 0 : 1);
   }
   return true; // all parts of pattern matched
+}
+
+StringUtils::CommaSeparatedStringIterator::~CommaSeparatedStringIterator() {
+  FREE_C_HEAP_ARRAY(char, _list);
+}
+
+ccstrlist StringUtils::CommaSeparatedStringIterator::canonicalize(ccstrlist option_value) {
+  char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
+  int i = 0;
+  char current;
+  while ((current = option_value[i]) != '\0') {
+    if (current == '\n' || current == ' ') {
+      canonicalized_list[i] = ',';
+    } else {
+      canonicalized_list[i] = current;
+    }
+    i++;
+  }
+  canonicalized_list[i] = '\0';
+  return canonicalized_list;
 }

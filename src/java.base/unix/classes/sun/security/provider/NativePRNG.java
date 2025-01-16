@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,75 +126,68 @@ public final class NativePRNG extends SecureRandomSpi {
     /**
      * Create a RandomIO object for all I/O of this Variant type.
      */
-    @SuppressWarnings("removal")
     private static RandomIO initIO(final Variant v) {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public RandomIO run() {
 
-                    File seedFile;
-                    File nextFile;
+        File seedFile;
+        File nextFile;
 
-                    switch(v) {
-                    case MIXED:
-                        URL egdUrl;
-                        File egdFile = null;
+        switch(v) {
+        case MIXED:
+            URL egdUrl;
+            File egdFile = null;
 
-                        if ((egdUrl = getEgdUrl()) != null) {
-                            try {
-                                egdFile = SunEntries.getDeviceFile(egdUrl);
-                            } catch (IOException e) {
-                                // Swallow, seedFile is still null
-                            }
-                        }
-
-                        // Try egd first.
-                        if ((egdFile != null) && egdFile.canRead()) {
-                            seedFile = egdFile;
-                        } else {
-                            // fall back to /dev/random.
-                            seedFile = new File(NAME_RANDOM);
-                        }
-                        nextFile = new File(NAME_URANDOM);
-                        break;
-
-                    case BLOCKING:
-                        seedFile = new File(NAME_RANDOM);
-                        nextFile = new File(NAME_RANDOM);
-                        break;
-
-                    case NONBLOCKING:
-                        seedFile = new File(NAME_URANDOM);
-                        nextFile = new File(NAME_URANDOM);
-                        break;
-
-                    default:
-                        // Shouldn't happen!
-                        return null;
-                    }
-
-                    if (debug != null) {
-                        debug.println("NativePRNG." + v +
-                            " seedFile: " + seedFile +
-                            " nextFile: " + nextFile);
-                    }
-
-                    if (!seedFile.canRead() || !nextFile.canRead()) {
-                        if (debug != null) {
-                            debug.println("NativePRNG." + v +
-                                " Couldn't read Files.");
-                        }
-                        return null;
-                    }
-
-                    try {
-                        return new RandomIO(seedFile, nextFile);
-                    } catch (Exception e) {
-                        return null;
-                    }
+            if ((egdUrl = getEgdUrl()) != null) {
+                try {
+                    egdFile = SunEntries.getDeviceFile(egdUrl);
+                } catch (IOException e) {
+                    // Swallow, seedFile is still null
                 }
-        });
+            }
+
+            // Try egd first.
+            if ((egdFile != null) && egdFile.canRead()) {
+                seedFile = egdFile;
+            } else {
+                // fall back to /dev/random.
+                seedFile = new File(NAME_RANDOM);
+            }
+            nextFile = new File(NAME_URANDOM);
+            break;
+
+        case BLOCKING:
+            seedFile = new File(NAME_RANDOM);
+            nextFile = new File(NAME_RANDOM);
+            break;
+
+        case NONBLOCKING:
+            seedFile = new File(NAME_URANDOM);
+            nextFile = new File(NAME_URANDOM);
+            break;
+
+        default:
+            // Shouldn't happen!
+            return null;
+        }
+
+        if (debug != null) {
+            debug.println("NativePRNG." + v +
+                " seedFile: " + seedFile +
+                " nextFile: " + nextFile);
+        }
+
+        if (!seedFile.canRead() || !nextFile.canRead()) {
+            if (debug != null) {
+                debug.println("NativePRNG." + v +
+                    " Couldn't read Files.");
+            }
+            return null;
+        }
+
+        try {
+            return new RandomIO(seedFile, nextFile);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // return whether the NativePRNG is available
@@ -203,10 +196,12 @@ public final class NativePRNG extends SecureRandomSpi {
     }
 
     // constructor, called by the JCA framework
-    public NativePRNG() {
-        super();
+    public NativePRNG(SecureRandomParameters params) {
         if (INSTANCE == null) {
             throw new AssertionError("NativePRNG not available");
+        }
+        if (params != null) {
+            throw new IllegalArgumentException("Unsupported params: " + params.getClass());
         }
     }
 
@@ -251,10 +246,12 @@ public final class NativePRNG extends SecureRandomSpi {
         }
 
         // constructor, called by the JCA framework
-        public Blocking() {
-            super();
+        public Blocking(SecureRandomParameters params) {
             if (INSTANCE == null) {
                 throw new AssertionError("NativePRNG$Blocking not available");
+            }
+            if (params != null) {
+                throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
         }
 
@@ -300,11 +297,13 @@ public final class NativePRNG extends SecureRandomSpi {
         }
 
         // constructor, called by the JCA framework
-        public NonBlocking() {
-            super();
+        public NonBlocking(SecureRandomParameters params) {
             if (INSTANCE == null) {
                 throw new AssertionError(
                     "NativePRNG$NonBlocking not available");
+            }
+            if (params != null) {
+                throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
         }
 
@@ -451,22 +450,15 @@ public final class NativePRNG extends SecureRandomSpi {
         // supply random bytes to the OS
         // write to "seed" if possible
         // always add the seed to our mixing random
-        @SuppressWarnings("removal")
         private void implSetSeed(byte[] seed) {
             synchronized (LOCK_SET_SEED) {
                 if (seedOutInitialized == false) {
                     seedOutInitialized = true;
-                    seedOut = AccessController.doPrivileged(
-                            new PrivilegedAction<>() {
-                        @Override
-                        public OutputStream run() {
-                            try {
-                                return new FileOutputStream(seedFile, true);
-                            } catch (Exception e) {
-                                return null;
-                            }
-                        }
-                    });
+                    try {
+                        seedOut = new FileOutputStream(seedFile, true);
+                    } catch (Exception e) {
+                        seedOut = null;
+                    }
                 }
                 if (seedOut != null) {
                     try {

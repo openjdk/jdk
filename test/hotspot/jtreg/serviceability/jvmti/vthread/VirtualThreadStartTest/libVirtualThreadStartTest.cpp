@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <jvmti.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
 static jvmtiEnv *jvmti;
 static int started_thread_cnt = 0;
-static jrawMonitorID agent_event_lock = NULL;
+static jrawMonitorID agent_event_lock = nullptr;
 static const char* TESTED_TNAME_START = "Tested-VT";
 static const size_t TESTED_TNAME_START_LEN = strlen(TESTED_TNAME_START);
 static bool can_support_vt_enabled = false;
@@ -40,7 +40,7 @@ void JNICALL ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
   RawMonitorLocker agent_start_locker(jvmti, jni, agent_event_lock);
 
-  if (tname != NULL && strncmp(tname, TESTED_TNAME_START, TESTED_TNAME_START_LEN) == 0) {
+  if (tname != nullptr && strncmp(tname, TESTED_TNAME_START, TESTED_TNAME_START_LEN) == 0) {
     jboolean is_virtual = jni->IsVirtualThread(thread);
     if (!is_virtual) {
       fatal(jni, "Failed: tested thread expected to be virtual");
@@ -59,7 +59,7 @@ void JNICALL VirtualThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
   RawMonitorLocker agent_start_locker(jvmti, jni, agent_event_lock);
 
-  if (tname != NULL && strncmp(tname, TESTED_TNAME_START, TESTED_TNAME_START_LEN) == 0) {
+  if (tname != nullptr && strncmp(tname, TESTED_TNAME_START, TESTED_TNAME_START_LEN) == 0) {
     jboolean is_virtual = jni->IsVirtualThread(thread);
     if (!is_virtual) {
       fatal(jni, "Failed: tested thread expected to be virtual");
@@ -101,7 +101,7 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
   callbacks.ThreadStart = &ThreadStart;
   callbacks.VirtualThreadStart = &VirtualThreadStart;
 
-  if (options != NULL && strcmp(options, "can_support_virtual_threads") == 0) {
+  if (options != nullptr && strcmp(options, "can_support_virtual_threads") == 0) {
     can_support_vt_enabled = true;
     caps.can_support_virtual_threads = 1;
 
@@ -110,13 +110,13 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
       LOG("Agent init: error in JVMTI AddCapabilities: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
   } else {
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "jvmti_common.h"
-#include "jvmti_thread.h"
+#include "jvmti_common.hpp"
+#include "jvmti_thread.hpp"
 
 
 extern "C" {
 
 /* scaffold objects */
-static JNIEnv *jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv *jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* test objects */
-static jthread expected_thread = NULL;
-static jobject expected_object = NULL;
+static jthread expected_thread = nullptr;
+static jobject expected_object = nullptr;
 static volatile int eventsCount = 0;
 
 void JNICALL
@@ -47,12 +47,12 @@ MonitorWait(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj, jlong tout) 
 
   print_thread_info(jvmti, jni, thr);
 
-  if (expected_thread == NULL) {
-    jni->FatalError("expected_thread is NULL.");
+  if (expected_thread == nullptr) {
+    jni->FatalError("expected_thread is null.");
   }
 
-  if (expected_object == NULL) {
-    jni->FatalError("expected_object is NULL.");
+  if (expected_object == nullptr) {
+    jni->FatalError("expected_object is null.");
   }
 
 /* check if event is for tested thread and for tested object */
@@ -70,7 +70,7 @@ MonitorWait(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jobject obj, jlong tout) 
 
 static int prepare() {
   /* enable MonitorWait event */
-  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL);
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Prepare: 11\n");
     return JNI_FALSE;
@@ -80,7 +80,7 @@ static int prepare() {
 
 static int clean() {
   /* disable MonitorWait event */
-  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAIT, NULL);
+  jvmtiError err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_MONITOR_WAIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     set_agent_fail_status();
   }
@@ -135,7 +135,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   LOG("Timeout: %d msc\n", (int) timeout);
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -173,7 +173,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   /* register agent proc and arg */
-  set_agent_proc(agentProc, NULL);
+  set_agent_proc(agentProc, nullptr);
 
   return JNI_OK;
 }
@@ -182,13 +182,13 @@ JNIEXPORT void JNICALL Java_monitorwait01_setExpected(JNIEnv *jni, jobject clz, 
   LOG("Remembering global reference for monitor object is %p\n", obj);
   /* make object accessible for a long time */
   expected_object = jni->NewGlobalRef(obj);
-  if (expected_object == NULL) {
+  if (expected_object == nullptr) {
     jni->FatalError("Error saving global reference to monitor.\n");
   }
 
   /* make thread accessable for a long time */
   expected_thread = jni->NewGlobalRef(thread);
-  if (thread == NULL) {
+  if (thread == nullptr) {
     jni->FatalError("Error saving global reference to thread.\n");
   }
 

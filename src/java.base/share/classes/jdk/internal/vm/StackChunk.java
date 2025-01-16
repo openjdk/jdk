@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ public final class StackChunk {
     private StackChunk parent;
     private int size;    // in words
     private int sp;      // in words
-    private int argsize; // bottom stack-passed arguments, in words
+    private int bottom;  // in words
 
     // The stack itself is appended here by the VM, as well as some injected fields
 
     public StackChunk parent() { return parent; }
-    public boolean isEmpty()   { return sp >= (size - argsize); }
+    public boolean isEmpty()   { return sp == bottom; }
 }

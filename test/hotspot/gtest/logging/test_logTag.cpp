@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,16 +72,16 @@ TEST(LogTag, list_tags) {
 
   bool listed_tags[LogTag::Count] = { false };
 
-  char* last_tag = NULL;
+  char* last_tag = nullptr;
   for (char* tag = buf; *tag != '\0';) {
     char* end = strpbrk(tag, ",\n");
-    ASSERT_TRUE(end != NULL) <<  "line should end with newline";
+    ASSERT_TRUE(end != nullptr) <<  "line should end with newline";
     *end = '\0';
     if (*tag == ' ') {
       tag++;
     }
 
-    EXPECT_TRUE(last_tag == NULL || strcmp(last_tag, tag) < 0) << tag << " should be listed before " << last_tag;
+    EXPECT_TRUE(last_tag == nullptr || strcmp(last_tag, tag) < 0) << tag << " should be listed before " << last_tag;
     listed_tags[LogTag::from_string(tag)] = true;
 
     last_tag = tag;

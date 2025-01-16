@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,6 @@ struct G1RegionMarkStats {
   // are updated by the atomic mark. We do not remark objects after overflow.
   void clear_during_overflow() {
   }
-
-  bool is_clear() const { return _live_words == 0; }
 };
 
 // Per-marking thread cache for the region mark statistics.

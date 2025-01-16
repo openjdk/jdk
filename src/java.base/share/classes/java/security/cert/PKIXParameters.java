@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,7 @@ public class PKIXParameters implements CertPathParameters {
      * @throws ClassCastException if any of the elements in the {@code Set}
      * are not of type {@code java.security.cert.TrustAnchor}
      */
+    @SuppressWarnings("this-escape")
     public PKIXParameters(Set<TrustAnchor> trustAnchors)
         throws InvalidAlgorithmParameterException
     {
@@ -138,6 +139,7 @@ public class PKIXParameters implements CertPathParameters {
      * not contain at least one trusted certificate entry
      * @throws NullPointerException if the keystore is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public PKIXParameters(KeyStore keystore)
         throws KeyStoreException, InvalidAlgorithmParameterException
     {

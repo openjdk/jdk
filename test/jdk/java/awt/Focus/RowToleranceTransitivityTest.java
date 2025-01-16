@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
   @summary   Tests for a transitivity problem with ROW_TOLERANCE in SortingFTP.
   @run       main RowToleranceTransitivityTest
 */
-import java.awt.BorderLayout;
+
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -36,7 +36,6 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.KeyboardFocusManager;
-import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.FocusAdapter;
@@ -49,8 +48,6 @@ import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RowToleranceTransitivityTest {
     static JFrame frame;
@@ -60,7 +57,7 @@ public class RowToleranceTransitivityTest {
     static GridBagConstraints gc;
     static Robot robot;
 
-    static AtomicBoolean focusGained = new AtomicBoolean(false);
+    static final AtomicBoolean focusGained = new AtomicBoolean(false);
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -121,6 +118,7 @@ public class RowToleranceTransitivityTest {
             robot.delay(1000);
             test();
         } finally {
+            robot.keyRelease(KeyEvent.VK_TAB);
             if (frame != null) {
                 frame.dispose();
             }

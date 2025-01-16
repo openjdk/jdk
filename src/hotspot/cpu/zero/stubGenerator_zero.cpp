@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010, 2015 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -148,6 +148,9 @@ class StubGenerator: public StubCodeGenerator {
     // Shared code tests for "null" to discover the stub is not generated.
     StubRoutines::_unsafe_arraycopy          = nullptr;
 
+    // Shared code tests for "null" to discover the stub is not generated.
+    StubRoutines::_unsafe_setmemory          = nullptr;
+
     // We don't generate specialized code for HeapWord-aligned source
     // arrays, so just use the code we've already generated
     StubRoutines::_arrayof_jbyte_disjoint_arraycopy =
@@ -199,22 +202,6 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
-
-    // These entry points require SharedInfo::stack0 to be set up in
-    // non-core builds and need to be relocatable, so they each
-    // fabricate a RuntimeStub internally.
-    StubRoutines::_throw_AbstractMethodError_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_NullPointerException_at_call_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_StackOverflowError_entry =
-      ShouldNotCallThisStub();
-
-    // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry =
-      ShouldNotCallThisStub();
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();

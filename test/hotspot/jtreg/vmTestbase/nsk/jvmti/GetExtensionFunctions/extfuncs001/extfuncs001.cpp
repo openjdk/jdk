@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -49,7 +49,7 @@ static jlong timeout = 0;
 static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
     int success = NSK_TRUE;
     jint extCount = 0;
-    jvmtiExtensionFunctionInfo* extList = NULL;
+    jvmtiExtensionFunctionInfo* extList = nullptr;
     int i;
 
     NSK_DISPLAY0("Get extension functions list\n");
@@ -60,8 +60,8 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
     NSK_DISPLAY1("  ... got list:  0x%p\n", (void*)extList);
 
     if (extCount > 0) {
-        if (extList == NULL) {
-            NSK_COMPLAIN3("In %s phase GetExtensionFunctions() returned NULL pointer:\n"
+        if (extList == nullptr) {
+            NSK_COMPLAIN3("In %s phase GetExtensionFunctions() returned null pointer:\n"
                           "#   extensions pointer: 0x%p\n"
                           "#   extensions count:   %d\n",
                             phase, (void*)extList, (int)extCount);
@@ -79,7 +79,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
             NSK_DISPLAY1("    param_count: %d\n", (int)extList[i].param_count);
             NSK_DISPLAY1("    params:      0x%p\n", (void*)extList[i].params);
 
-            if (extList[i].params != NULL) {
+            if (extList[i].params != nullptr) {
                 for (j = 0; j < extList[i].param_count; j++) {
                     NSK_DISPLAY1("      param #%d:\n", j);
                     NSK_DISPLAY1("        name:      \"%s\"\n",
@@ -96,19 +96,19 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
             NSK_DISPLAY1("    error_count: %d\n", (int)extList[i].error_count);
             NSK_DISPLAY1("    errors:      0x%p\n", (void*)extList[i].errors);
 
-            if (extList[i].errors != NULL) {
+            if (extList[i].errors != nullptr) {
                 for (j = 0; j < extList[i].error_count; j++) {
                     NSK_DISPLAY2("      error #%d: %d\n",
                                             j, (int)extList[i].errors[j]);
                 }
             }
 
-            if (extList[i].func == NULL
-                    || extList[i].id == NULL
-                    || extList[i].short_description == NULL
-                    || (extList[i].params == NULL && extList[i].param_count > 0)
-                    || (extList[i].errors == NULL && extList[i].error_count > 0)) {
-                NSK_COMPLAIN9("In %s phase GetExtensionFunctions() returned function #%d with NULL attribute(s):\n"
+            if (extList[i].func == nullptr
+                    || extList[i].id == nullptr
+                    || extList[i].short_description == nullptr
+                    || (extList[i].params == nullptr && extList[i].param_count > 0)
+                    || (extList[i].errors == nullptr && extList[i].error_count > 0)) {
+                NSK_COMPLAIN9("In %s phase GetExtensionFunctions() returned function #%d with null attribute(s):\n"
                               "#   func:        0x%p\n"
                               "#   id:          0x%p (%s)\n"
                               "#   short_desc:  0x%p (%s)\n"
@@ -122,7 +122,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
                 success = NSK_FALSE;
             }
 
-            if (extList[i].id != NULL && strlen(extList[i].id) <= 0) {
+            if (extList[i].id != nullptr && strlen(extList[i].id) <= 0) {
                 NSK_COMPLAIN6("In %s phase GetExtensionFunctions() returned function #%d with empty id:\n"
                               "#   func:        0x%p\n"
                               "#   id:          \"%s\"\n"
@@ -134,7 +134,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
                                 nsk_null_string(extList[i].short_description),
                                 (int)extList[i].param_count);
                 success = NSK_FALSE;
-            } else if (strstr(extList[i].id, NAME_PREFIX) == NULL) {
+            } else if (strstr(extList[i].id, NAME_PREFIX) == nullptr) {
                 NSK_COMPLAIN6("In %s phase GetExtensionFunctions() returned function #%d with unexpected id:\n"
                               "#   func:        0x%p\n"
                               "#   id:          \"%s\"\n"
@@ -148,7 +148,7 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
                 success = NSK_FALSE;
             }
 
-            if (extList[i].short_description != NULL && strlen(extList[i].short_description) <= 0) {
+            if (extList[i].short_description != nullptr && strlen(extList[i].short_description) <= 0) {
                 NSK_COMPLAIN6("In %s phase GetExtensionFunctions() returned function #%d with empty desc:\n"
                               "#   func:        0x%p\n"
                               "#   id:          \"%s\"\n"
@@ -162,9 +162,9 @@ static int checkExtensions(jvmtiEnv* jvmti, const char phase[]) {
                 success = NSK_FALSE;
             }
 
-            if (extList[i].param_count > 0 && extList[i].params != NULL) {
+            if (extList[i].param_count > 0 && extList[i].params != nullptr) {
                 for (j = 0; j < extList[i].param_count; j++) {
-                    if (extList[i].params[j].name == NULL
+                    if (extList[i].params[j].name == nullptr
                             || strlen(extList[i].params[j].name) <= 0) {
                         NSK_COMPLAIN9("In %s phase GetExtensionFunctions() returned function #%d with empty desc:\n"
                                       "#   func:        0x%p\n"
@@ -273,7 +273,7 @@ JNIEXPORT jint JNI_OnLoad_extfuncs001(JavaVM *jvm, char *options, void *reserved
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -281,7 +281,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Testcase #1: Check extension functions in OnLoad phase\n");
@@ -291,7 +291,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

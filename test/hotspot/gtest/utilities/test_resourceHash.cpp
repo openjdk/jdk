@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/symbolTable.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbolHandle.hpp"
@@ -35,7 +36,7 @@ class CommonResourceHashtableTest : public ::testing::Test {
  protected:
   typedef void* K;
   typedef uintx V;
-  const static MEMFLAGS MEM_TYPE = mtInternal;
+  const static MemTag MEM_TAG = mtInternal;
 
   static unsigned identity_hash(const K& k) {
     return (unsigned) (uintptr_t) k;
@@ -93,7 +94,7 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
 
     static void test(V step) {
       EqualityTestIter et;
-      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> rh;
+      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> rh;
 
       ASSERT_FALSE(rh.contains(as_K(step)));
 
@@ -225,7 +226,7 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
 
     static void test(unsigned num_elements = SIZE) {
       EqualityTestIter et;
-      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> rh;
+      ResourceHashtable<K, V, SIZE, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> rh;
 
       for (uintptr_t i = 0; i < num_elements; ++i) {
         ASSERT_TRUE(rh.put(as_K(i), i));

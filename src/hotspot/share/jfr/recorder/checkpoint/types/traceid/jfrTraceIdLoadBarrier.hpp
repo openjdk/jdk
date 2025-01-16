@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ class JfrTraceIdLoadBarrier : AllStatic {
   static traceid load(const Method* method);
   static traceid load(const ModuleEntry* module);
   static traceid load(const PackageEntry* package);
+  static traceid load_leakp(const Klass* klass); // leak profiler
   static traceid load_leakp(const Klass* klass, const Method* method); // leak profiler
   static traceid load_leakp_previuos_epoch(const Klass* klass, const Method* method); // leak profiler
   static void do_klasses(void f(Klass*), bool previous_epoch = false);

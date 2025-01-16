@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package gc.arguments;
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
  * @key flag-sensitive
- * @requires vm.gc.Serial & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null & vm.opt.OldSize == null & vm.opt.x.Xms == null & vm.opt.x.Xmx == null
+ * @requires vm.gc.Serial & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -44,7 +44,7 @@ package gc.arguments;
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
  * @key flag-sensitive
- * @requires vm.gc.Parallel & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null & vm.opt.OldSize == null & vm.opt.x.Xms == null & vm.opt.x.Xmx == null
+ * @requires vm.gc.Parallel & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -59,7 +59,7 @@ package gc.arguments;
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
  * @key flag-sensitive
- * @requires vm.gc.G1 & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null & vm.opt.OldSize == null & vm.opt.x.Xms == null & vm.opt.x.Xmx == null
+ * @requires vm.gc.G1 & vm.opt.MaxNewSize == null & vm.opt.NewRatio == null & vm.opt.NewSize == null
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -116,7 +116,6 @@ public class TestMaxNewSize {
     checkMaxNewSize(new String[] { gcName, "-Xmx128M" }, 128 * M);
     checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewRatio=5" }, 128 * M);
     checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewSize=32M" }, 128 * M);
-    checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:OldSize=96M" }, 128 * M);
     checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:MaxNewSize=32M" }, 32 * M);
     checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewSize=32M", "-XX:MaxNewSize=32M" }, 32 * M);
     checkMaxNewSize(new String[] { gcName, "-Xmx128M", "-XX:NewRatio=6", "-XX:MaxNewSize=32M" }, 32 * M);

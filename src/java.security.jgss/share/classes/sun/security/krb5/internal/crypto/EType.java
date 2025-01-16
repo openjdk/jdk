@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 //only needed if dataSize() implementation changes back to spec;
 //see dataSize() below
 
 public abstract class EType {
-
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     // etypes supported by JDK, including weak ones
     private static int[] supportedETypes;
@@ -83,8 +83,8 @@ public abstract class EType {
             allowWeakCrypto = cfg.getBooleanObject("libdefaults", "allow_weak_crypto")
                     == Boolean.TRUE;
         } catch (Exception exc) {
-            if (DEBUG) {
-                System.out.println ("Exception in getting allow_weak_crypto, " +
+            if (DEBUG != null) {
+                DEBUG.println ("Exception in getting allow_weak_crypto, " +
                                     "using default value: " +
                                     exc.getMessage());
             }
@@ -160,8 +160,8 @@ public abstract class EType {
                 + " ("  + eTypeConst + ")";
             throw new KdcErrException(Krb5.KDC_ERR_ETYPE_NOSUPP, msg);
         }
-        if (DEBUG) {
-            System.out.println(">>> EType: " + eTypeName);
+        if (DEBUG != null) {
+            DEBUG.println(">>> EType: " + eTypeName);
         }
         return eType;
     }
@@ -245,10 +245,10 @@ public abstract class EType {
         try {
             config = Config.getInstance();
         } catch (KrbException exc) {
-            if (DEBUG) {
-                System.out.println("Exception while getting " +
+            if (DEBUG != null) {
+                DEBUG.println("Exception while getting " +
                     configName + ": " + exc.getMessage());
-                System.out.println("Using default builtin etypes");
+                DEBUG.println("Using default builtin etypes");
             }
             return getBuiltInDefaults();
         }

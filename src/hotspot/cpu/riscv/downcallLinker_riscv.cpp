@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -278,6 +278,9 @@ void DowncallLinker::StubGenerator::generate() {
   Label L_reguard;
   Label L_after_reguard;
   if (_needs_transition) {
+    // Restore cpu control state after JNI call
+    __ restore_cpu_control_state_after_jni(t0);
+
     __ block_comment("{ thread native2java");
     __ mv(t0, _thread_in_native_trans);
     __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));

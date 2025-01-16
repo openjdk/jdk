@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,11 +78,11 @@ public class TestPackagePage extends JavadocTester {
         checkExit(Exit.OK);
 
         //With multiple packages, there is no package link in general pages.
-        checkOutput("deprecated-list.html", true,
+        checkOutput("deprecated-list.html", false,
             "<li>Package</li>");
-        checkOutput("index-all.html", true,
+        checkOutput("index-all.html", false,
             "<li>Package</li>");
-        checkOutput("help-doc.html", true,
+        checkOutput("help-doc.html", false,
             "<li>Package</li>");
         checkOutput("allclasses-index.html", true,
                 """

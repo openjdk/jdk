@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,18 +40,22 @@ public class TestPopCountVector {
 
     public static void main(String args[]) {
         TestPopCountVector test = new TestPopCountVector();
+        int err = 0;
 
         for (int i = 0; i < 10_000; ++i) {
           test.vectorizeBitCount();
         }
         System.out.println("Checking popcount result");
-        test.checkResult();
+        err += test.checkResult();
 
         for (int i = 0; i < 10_000; ++i) {
           test.vectorizeBitCount();
         }
         System.out.println("Checking popcount result");
-        test.checkResult();
+        err += test.checkResult();
+        if (err > 0) {
+            throw new RuntimeException("Error!");
+        }
     }
 
     public TestPopCountVector() {
@@ -68,13 +72,17 @@ public class TestPopCountVector {
         }
     }
 
-    public void checkResult() {
+    public int checkResult() {
+        int err = 0;
         for (int i = 0; i < LEN; ++i) {
             int expected = Integer.bitCount(input[i]);
             if (output[i] != expected) {
-                throw new RuntimeException("Invalid result: output[" + i + "] = " + output[i] + " != " + expected);
+                err++;
+                System.err.println("Invalid result: output[" + i + "] = " + output[i] + " != " + expected +
+                                   ", input[" + i + "] == " + Integer.toBinaryString(input[i]));
             }
         }
+        return err;
     }
 }
 

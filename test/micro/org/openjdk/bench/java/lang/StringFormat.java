@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.math.BigDecimal;
 import java.util.concurrent.TimeUnit;
 
 /*
@@ -47,6 +48,12 @@ public class StringFormat {
 
     public String s = "str";
     public int i = 17;
+    public static final BigDecimal pi = new BigDecimal(Math.PI);
+
+    @Benchmark
+    public String decimalFormat() {
+        return "%010.3f".formatted(pi);
+    }
 
     @Benchmark
     public String stringFormat() {

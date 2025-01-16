@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Set;
+import java.util.List;
 
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
@@ -122,10 +124,9 @@ public class InitExceptionUnloadTest {
             }
         }
         cl = null;
-        ClassUnloadCommon.triggerUnloading();  // should unload these classes
-        for (String className : classNames) {
-          ClassUnloadCommon.failIf(wb.isClassAlive(className), "should be unloaded");
-        }
+
+        Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(classNames));
+        ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should be unloaded: " + aliveClasses);
     }
     public static void main(java.lang.String[] unused) throws Throwable {
         test();

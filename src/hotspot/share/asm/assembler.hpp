@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,8 @@ class AbstractAssembler : public ResourceObj  {
   bool isByte(int x) const             { return 0 <= x && x < 0x100; }
   bool isShiftCount(int x) const       { return 0 <= x && x < 32; }
 
-  // Instruction boundaries (required when emitting relocatable values).
+  // Mark instruction boundaries, this is required when emitting relocatable values.
+  // Basically, all instructions that directly or indirectly use Assembler::emit_data* methods.
   class InstructionMark: public StackObj {
    private:
     AbstractAssembler* _assm;
@@ -359,12 +360,14 @@ class AbstractAssembler : public ResourceObj  {
   }
 
   static bool is_uimm12(uint64_t x) { return is_uimm(x, 12); }
+  static bool is_uimm32(uint64_t x) { return is_uimm(x, 32); }
 
   // Accessors
   CodeSection*  code_section() const   { return _code_section; }
   CodeBuffer*   code()         const   { return code_section()->outer(); }
   int           sect()         const   { return code_section()->index(); }
   address       pc()           const   { return code_section()->end();   }
+  address       begin()        const   { return code_section()->start(); }
   int           offset()       const   { return code_section()->size();  }
   int           locator()      const   { return CodeBuffer::locator(offset(), sect()); }
 
@@ -373,10 +376,11 @@ class AbstractAssembler : public ResourceObj  {
 
   void   register_skipped(int size) { code_section()->register_skipped(size); }
 
-  address       inst_mark() const { return code_section()->mark();       }
-  void      set_inst_mark()       {        code_section()->set_mark();   }
-  void    clear_inst_mark()       {        code_section()->clear_mark(); }
-
+  address       inst_mark() const         { return code_section()->mark();          }
+  void      set_inst_mark()               {        code_section()->set_mark();      }
+  void      set_inst_mark(address addr)   {        code_section()->set_mark(addr);  }
+  void    clear_inst_mark()               {        code_section()->clear_mark();    }
+  void set_inst_end(address addr)         {        code_section()->set_end(addr);   }
 
   // Constants in code
   void relocate(RelocationHolder const& rspec, int format = 0) {
@@ -387,6 +391,12 @@ class AbstractAssembler : public ResourceObj  {
   }
   void relocate(   relocInfo::relocType rtype, int format = 0) {
     code_section()->relocate(code_section()->end(), rtype, format);
+  }
+  void relocate(address addr, relocInfo::relocType rtype, int format = 0) {
+    code_section()->relocate(addr, rtype, format);
+  }
+  void relocate(address addr, RelocationHolder const& rspec, int format = 0) {
+    code_section()->relocate(addr, rspec, format);
   }
 
   static int code_fill_byte();         // used to pad out odd-sized code buffers
@@ -470,26 +480,12 @@ class AbstractAssembler : public ResourceObj  {
     }
     return ptr;
   }
-  address array_constant(BasicType bt, GrowableArray<jvalue>* c, int alignment) {
+  address array_constant(const GrowableArray<jbyte>* c, int alignment) {
     CodeSection* c1 = _code_section;
-    int len = c->length();
-    int size = type2aelembytes(bt) * len;
-    address ptr = start_a_const(size, alignment);
+    address ptr = start_a_const(c->length(), alignment);
     if (ptr != nullptr) {
-      for (int i = 0; i < len; i++) {
-        jvalue e = c->at(i);
-        switch(bt) {
-          case T_BOOLEAN: emit_int8(e.z);   break;
-          case T_BYTE:    emit_int8(e.b);   break;
-          case T_CHAR:    emit_int16(e.c);  break;
-          case T_SHORT:   emit_int16(e.s);  break;
-          case T_INT:     emit_int32(e.i);  break;
-          case T_LONG:    emit_int64(e.j);  break;
-          case T_FLOAT:   emit_float(e.f);  break;
-          case T_DOUBLE:  emit_double(e.d); break;
-          default:
-            ShouldNotReachHere();
-        }
+      for (int i = 0; i < c->length(); i++) {
+        emit_int8(c->at(i));
       }
       end_a_const(c1);
     }

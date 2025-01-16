@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ public final class CStrike extends PhysicalStrike {
         getGlyphImageBounds(glyphCode, pt.x, pt.y, floatRect);
 
         if (floatRect.width == 0 && floatRect.height == 0) {
-            result.setRect(0, 0, -1, -1);
+            result.setRect(0, 0, 0, 0);
             return;
         }
 

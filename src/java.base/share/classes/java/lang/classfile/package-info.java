@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,18 @@
 /**
  * <h2>Provides classfile parsing, generation, and transformation library.</h2>
  * The {@code java.lang.classfile} package contains classes for reading, writing, and
- * modifying Java class files, as specified in Chapter {@jvms 4} of the <cite>Java
- * Java Virtual Machine Specification</cite>.
+ * modifying Java class files, as specified in Chapter {@jvms 4} of the
+ * <cite>Java Virtual Machine Specification</cite>.
  *
  * <h2>Reading classfiles</h2>
  * The main class for reading classfiles is {@link java.lang.classfile.ClassModel}; we
  * convert bytes into a {@link java.lang.classfile.ClassModel} with {@link
  * java.lang.classfile.ClassFile#parse(byte[])}:
- * <p>
+ *
  * {@snippet lang=java :
  * ClassModel cm = ClassFile.of().parse(bytes);
  * }
- * <p>
+ *
  * There are several additional overloads of {@code parse} that let you specify
  * various processing options.
  * <p>
@@ -147,7 +147,7 @@
  * ClassReader, int)} method for mapping from the classfile format
  * to an attribute instance, and the
  * {@link java.lang.classfile.AttributeMapper#writeAttribute(java.lang.classfile.BufWriter,
- * java.lang.Object)} method for mapping back to the classfile format.  It also
+ * java.lang.classfile.Attribute)} method for mapping back to the classfile format.  It also
  * contains metadata including the attribute name, the set of classfile entities
  * where the attribute is applicable, and whether multiple attributes of the
  * same kind are allowed on a single entity.
@@ -174,20 +174,26 @@
  * for some statically enumerated options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link java.lang.classfile.ClassFile.StackMapsOption}
- * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}
+ * -- specify format of custom attributes</li>
+ *   <li>{@link java.lang.classfile.ClassFile.AttributesProcessingOption}
+ * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
+ * -- specify a custom class hierarchy resolver used by stack map generation</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ConstantPoolSharingOption}}
+ * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.DeadCodeOption}}
+ * -- patch out unreachable code (default is {@code PATCH_DEAD_CODE})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.DeadLabelsOption}}
+ * -- filter unresolved labels (default is {@code FAIL_ON_DEAD_LABELS})</li>
  *   <li>{@link java.lang.classfile.ClassFile.DebugElementsOption}
  * -- processing of debug information, such as local variable metadata (default is {@code PASS_DEBUG}) </li>
  *   <li>{@link java.lang.classfile.ClassFile.LineNumbersOption}
  * -- processing of line numbers (default is {@code PASS_LINE_NUMBERS}) </li>
- *   <li>{@link java.lang.classfile.ClassFile.AttributesProcessingOption}
- * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
- *   <li>{@link java.lang.classfile.ClassFile.ConstantPoolSharingOption}}
- * -- share constant pool when transforming (default is {@code SHARED_POOL})</li>
- *   <li>{@link java.lang.classfile.ClassFile.ClassHierarchyResolverOption#of(java.lang.classfile.ClassHierarchyResolver)}
- * -- specify a custom class hierarchy resolver used by stack map generation</li>
- *   <li>{@link java.lang.classfile.ClassFile.AttributeMapperOption#of(java.util.function.Function)}
- * -- specify format of custom attributes</li>
+ *   <li>{@link java.lang.classfile.ClassFile.ShortJumpsOption}
+ * -- automatically rewrite short jumps to long when necessary (default is {@code FIX_SHORT_JUMPS})</li>
+ *   <li>{@link java.lang.classfile.ClassFile.StackMapsOption}
+ * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
  * </ul>
  * <p>
  * Most options allow you to request that certain parts of the classfile be
@@ -222,7 +228,7 @@
  * instruction invoking {@code println} could have been generated with {@link
  * java.lang.classfile.CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
  * java.lang.String, java.lang.constant.MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
- * java.lang.classfile.CodeBuilder#invokeInstruction(java.lang.classfile.Opcode,
+ * java.lang.classfile.CodeBuilder#invoke(java.lang.classfile.Opcode,
  * java.lang.constant.ClassDesc, java.lang.String, java.lang.constant.MethodTypeDesc,
  * boolean) CodeBuilder.invokeInstruction}, or {@link
  * java.lang.classfile.CodeBuilder#with(java.lang.classfile.ClassFileElement)
@@ -232,6 +238,12 @@
  * the convenience method {@code CodeBuilder.invokeInstruction}, which in turn behaves
  * as if it calls method {@code CodeBuilder.with}. This composing of method calls on the
  * builder enables the composing of transforms (as described later).
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method of any Class-File API class or interface will cause a {@link
+ * java.lang.NullPointerException NullPointerException} to be thrown. Additionally,
+ * invoking a method with an array or collection containing a {@code null} element
+ * will cause a {@code NullPointerException}, unless otherwise specified. </p>
  *
  * <h3>Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the
@@ -365,7 +377,7 @@
  * <p>
  * Then we can compose {@code fooToBar} and {@code instrumentCalls} with {@link
  * java.lang.classfile.CodeTransform#andThen(java.lang.classfile.CodeTransform)}:
- * <p>
+ *
  * {@snippet lang=java :
  * var cc = ClassFile.of();
  * byte[] newBytes = cc.transform(cc.parse(bytes),
@@ -431,7 +443,7 @@
  * or more, zero or one, exactly one), and a list of components.  The elements
  * of a class are fields, methods, and the attributes that can appear on
  * classes:
- * <p>
+ *
  * {@snippet lang="text" :
  * ClassElement =
  *     FieldModel*(UtfEntry name, Utf8Entry descriptor)
@@ -456,7 +468,7 @@
  *     | PermittedSubclassesAttribute?(List<ClassEntry> permittedSubclasses)
  *     | DeclarationElement*
  * }
- *<p>
+ *
  * where {@code DeclarationElement} are the elements that are common to all declarations
  * (classes,  methods, fields) and so are factored out:
  *
@@ -534,9 +546,6 @@
  *     | CharacterRange(int rangeStart, int rangeEnd, int flags, Label startScope, Label endScope)
  * }
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile;
-
-import jdk.internal.javac.PreviewFeature;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
@@ -34,6 +35,7 @@ const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Versio
 
 uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
+uint64_t Abstract_VM_Version::_cpu_features = 0;
 
 #ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
@@ -135,9 +137,9 @@ const char* Abstract_VM_Version::vm_vendor() {
 const char* Abstract_VM_Version::vm_info_string() {
   switch (Arguments::mode()) {
     case Arguments::_int:
-      return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
+      return CDSConfig::is_using_archive() ? "interpreted mode, sharing" : "interpreted mode";
     case Arguments::_mixed:
-      if (UseSharedSpaces) {
+      if (CDSConfig::is_using_archive()) {
         if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client, sharing";
         } else {
@@ -152,9 +154,9 @@ const char* Abstract_VM_Version::vm_info_string() {
       }
     case Arguments::_comp:
       if (CompilationModeFlag::quick_only()) {
-         return UseSharedSpaces ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
+         return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
       }
-      return UseSharedSpaces ? "compiled mode, sharing" : "compiled mode";
+      return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
   }
   ShouldNotReachHere();
   return "";
@@ -185,7 +187,6 @@ const char* Abstract_VM_Version::vm_release() {
 #define CPU      AARCH64_ONLY("aarch64")         \
                  AMD64_ONLY("amd64")             \
                  IA32_ONLY("x86")                \
-                 IA64_ONLY("ia64")               \
                  S390_ONLY("s390")               \
                  RISCV64_ONLY("riscv64")
 #endif // !ZERO
@@ -196,10 +197,6 @@ const char *Abstract_VM_Version::vm_platform_string() {
 }
 
 const char* Abstract_VM_Version::internal_vm_info_string() {
-  #ifndef HOTSPOT_BUILD_USER
-    #define HOTSPOT_BUILD_USER unknown
-  #endif
-
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
       #if _MSC_VER == 1911
@@ -283,7 +280,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
   #define INTERNAL_VERSION_SUFFIX VM_RELEASE ")" \
          " for " OS "-" CPU FLOAT_ARCH_STR LIBC_STR \
          " JRE (" VERSION_STRING "), built on " HOTSPOT_BUILD_TIME \
-         " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER
+         " with " HOTSPOT_BUILD_COMPILER
 
   return strcmp(DEBUG_LEVEL, "release") == 0
       ? VMNAME " (" INTERNAL_VERSION_SUFFIX

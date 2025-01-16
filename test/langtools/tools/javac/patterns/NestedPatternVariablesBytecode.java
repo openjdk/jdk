@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@
  * @bug 8268748
  * @summary Javac generates error opcodes when using nest pattern variables
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NestedPatternVariablesBytecode
  */
@@ -85,7 +83,7 @@ public class NestedPatternVariablesBytecode extends TestRunner {
                                   .filter(this::isTestMethod)
                                   .findAny()
                                   .orElseThrow();
-        CodeAttribute code_attribute = testMethod.findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute code_attribute = testMethod.findAttribute(Attributes.code()).orElseThrow();
 
         List<String> actualCode = getCodeInstructions(code_attribute);
         List<String> expectedCode = Arrays.asList(

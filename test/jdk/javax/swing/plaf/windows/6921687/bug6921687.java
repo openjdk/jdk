@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,13 @@
 /**
  * @test
  * @key headful
- * @bug 6921687 8079428
+ * @bug 6921687 8079428 8155030
  * @summary Mnemonic disappears after repeated attempts to open menu items using
  *          mnemonics
- * @author Semyon Sadetsky
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires (os.family == "windows")
- * @modules java.desktop/com.sun.java.swing.plaf.windows
+ * @modules java.desktop/sun.swing
  * @run main bug6921687
  */
 
@@ -44,6 +43,8 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import jdk.test.lib.Platform;
+
+import sun.swing.MnemonicHandler;
 
 public class bug6921687 {
 
@@ -91,7 +92,7 @@ public class bug6921687 {
     }
 
     private static void checkMnemonics() throws Exception {
-        if ((Boolean) lafClass.getMethod("isMnemonicHidden").invoke(lafClass)) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             throw new RuntimeException("Mnemonics are hidden");
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,8 @@ public class TestGCMKeyAndIvCheck {
     }
 
     public void test() throws Exception {
-        Cipher c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+        Cipher c = Cipher.getInstance("AES/GCM/NoPadding",
+                System.getProperty("test.provider.name", "SunJCE"));
 
         SecretKey key = new SecretKeySpec(new byte[16], "AES");
         // First try parameter-less init.

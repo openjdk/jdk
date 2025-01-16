@@ -39,9 +39,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -251,7 +249,7 @@ public final class ProcessTools {
                                        TimeUnit unit)
             throws IOException, InterruptedException, TimeoutException {
         System.out.println("[" + name + "]:" + String.join(" ", processBuilder.command()));
-        Process p = privilegedStart(processBuilder);
+        Process p = processBuilder.start();
         StreamPumper stdout = new StreamPumper(p.getInputStream());
         StreamPumper stderr = new StreamPumper(p.getErrorStream());
 
@@ -391,7 +389,7 @@ public final class ProcessTools {
                 "--dry-run", "--list-modules","--validate-modules", "-m", "--module", "-version");
 
         final List<String> doubleWordArgs = List.of(
-                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports",
+                "--add-opens", "--upgrade-module-path", "--add-modules", "--add-exports", "--enable-native-access",
                 "--limit-modules", "--add-reads", "--patch-module", "--module-path", "-p");
 
         ArrayList<String> args = new ArrayList<>();
@@ -715,7 +713,7 @@ public final class ProcessTools {
         Process p = null;
         boolean failed = false;
         try {
-            p = privilegedStart(pb);
+            p = pb.start();
             if (input != null) {
                 try (PrintStream ps = new PrintStream(p.getOutputStream())) {
                     ps.print(input);
@@ -731,10 +729,7 @@ public final class ProcessTools {
             {   // Dumping the process output to a separate file
                 var fileName = String.format("pid-%d-output.log", p.pid());
                 var processOutput = getProcessLog(pb, output);
-                AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                    Files.writeString(Path.of(fileName), processOutput);
-                    return null;
-                });
+                Files.writeString(Path.of(fileName), processOutput);
                 System.out.printf(
                         "Output and diagnostic info for process %d " +
                                 "was saved into '%s'%n", p.pid(), fileName);
@@ -882,16 +877,6 @@ public final class ProcessTools {
         return pb;
     }
 
-    @SuppressWarnings("removal")
-    private static Process privilegedStart(ProcessBuilder pb) throws IOException {
-        try {
-            return AccessController.doPrivileged(
-                    (PrivilegedExceptionAction<Process>) pb::start);
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getException();
-        }
-    }
-
     private static class ProcessImpl extends Process {
 
         private final InputStream stdOut;
@@ -959,6 +944,15 @@ public final class ProcessTools {
         @Override
         public boolean waitFor(long timeout, TimeUnit unit) throws InterruptedException {
             boolean rslt = p.waitFor(timeout, unit);
+            if (rslt) {
+                waitForStreams();
+            }
+            return rslt;
+        }
+
+        @Override
+        public boolean waitFor(Duration duration) throws InterruptedException {
+            boolean rslt = p.waitFor(duration);
             if (rslt) {
                 waitForStreams();
             }

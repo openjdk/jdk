@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ class MetaspaceIsMetaspaceObjTest {
 
 public:
 
-  MetaspaceIsMetaspaceObjTest() : _lock(NULL), _ms(NULL) {}
+  MetaspaceIsMetaspaceObjTest() : _lock(nullptr), _ms(nullptr) {}
   ~MetaspaceIsMetaspaceObjTest() {
     delete _ms;
     delete _lock;
@@ -75,7 +75,7 @@ public:
     ASSERT_TRUE(vslist->contains((MetaWord*)((address)p) + 1));
 
     // Now for some bogus values
-    ASSERT_FALSE(MetaspaceObj::is_valid((MetaspaceObj*)NULL));
+    ASSERT_FALSE(MetaspaceObj::is_valid((MetaspaceObj*)nullptr));
 
     // Should exercise various paths in MetaspaceObj::is_valid()
     ASSERT_FALSE(MetaspaceObj::is_valid((MetaspaceObj*)1024));
@@ -93,9 +93,9 @@ public:
     ASSERT_TRUE(Metaspace::contains_non_shared(p));
 
     delete _ms;
-    _ms = NULL;
+    _ms = nullptr;
     delete _lock;
-    _lock = NULL;
+    _lock = nullptr;
   }
 
 };

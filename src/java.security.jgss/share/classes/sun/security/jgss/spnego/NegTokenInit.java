@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import sun.security.jgss.GSSUtil;
 import sun.security.util.*;
 
 import java.io.IOException;
+
+import static sun.security.jgss.spnego.SpNegoContext.DEBUG;
 
 /**
  * Implements the SPNEGO NegTokenInit token
@@ -116,8 +118,8 @@ public class NegTokenInit extends SpNegoToken {
 
         // mechListMIC with CONTEXT 03
         if (mechListMIC != null) {
-            if (DEBUG) {
-                System.out.println("SpNegoToken NegTokenInit: " +
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoToken NegTokenInit: " +
                         "sending MechListMIC");
             }
             DerOutputStream mic = new DerOutputStream();
@@ -163,8 +165,8 @@ public class NegTokenInit extends SpNegoToken {
                     ObjectIdentifier mech;
                     for (int i = 0; i < mList.length; i++) {
                         mech = mList[i].getOID();
-                        if (DEBUG) {
-                            System.out.println("SpNegoToken NegTokenInit: " +
+                        if (DEBUG != null) {
+                            DEBUG.println("SpNegoToken NegTokenInit: " +
                                     "reading Mechanism Oid = " + mech);
                         }
                         mechTypeList[i] = new Oid(mech.toString());
@@ -174,8 +176,8 @@ public class NegTokenInit extends SpNegoToken {
                     // received reqFlags, skip it
                 } else if (tmp2.isContextSpecific((byte)0x02)) {
                     lastField = checkNextField(lastField, 2);
-                    if (DEBUG) {
-                        System.out.println("SpNegoToken NegTokenInit: " +
+                    if (DEBUG != null) {
+                        DEBUG.println("SpNegoToken NegTokenInit: " +
                                             "reading Mech Token");
                     }
                     mechToken = tmp2.data.getOctetString();
@@ -183,8 +185,8 @@ public class NegTokenInit extends SpNegoToken {
                     lastField = checkNextField(lastField, 3);
                     if (!GSSUtil.useMSInterop()) {
                         mechListMIC = tmp2.data.getOctetString();
-                        if (DEBUG) {
-                            System.out.println("SpNegoToken NegTokenInit: " +
+                        if (DEBUG != null) {
+                            DEBUG.println("SpNegoToken NegTokenInit: " +
                                     "MechListMIC Token = " +
                                     getHexBytes(mechListMIC));
                         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,7 @@ public:
 
 class ZIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool has_dead_oop(CompiledMethod* method) const {
-    nmethod* const nm = method->as_nmethod();
+  virtual bool has_dead_oop(nmethod* nm) const {
     ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
     ZLocker<ZReentrantLock> locker(lock);
     if (!ZNMethod::is_armed(nm)) {
@@ -90,26 +89,23 @@ public:
 
 class ZCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
-  virtual bool lock(CompiledMethod* method) {
-    nmethod* const nm = method->as_nmethod();
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+  virtual bool lock(nmethod* nm) {
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     lock->lock();
     return true;
   }
 
-  virtual void unlock(CompiledMethod* method) {
-    nmethod* const nm = method->as_nmethod();
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+  virtual void unlock(nmethod* nm) {
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     lock->unlock();
   }
 
-  virtual bool is_safe(CompiledMethod* method) {
-    if (SafepointSynchronize::is_at_safepoint()) {
+  virtual bool is_safe(nmethod* nm) {
+    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
       return true;
     }
 
-    nmethod* const nm = method->as_nmethod();
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     return lock->is_owned();
   }
 };

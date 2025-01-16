@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,19 @@
 
 #include "gc/serial/serialBlockOffsetTable.hpp"
 
-inline size_t SerialBlockOffsetSharedArray::index_for(const void* p) const {
-  char* pc = (char*)p;
-  assert(pc >= (char*)_reserved.start() &&
-         pc <  (char*)_reserved.end(),
-         "p not in range.");
-  size_t delta = pointer_delta(pc, _reserved.start(), sizeof(char));
-  size_t result = delta >> BOTConstants::log_card_size();
-  assert(result < _vs.committed_size(), "bad index from address");
+inline uint8_t* SerialBlockOffsetTable::entry_for_addr(const void* const p) const {
+  assert(_reserved.contains(p),
+         "out of bounds access to block offset array");
+  uint8_t* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
   return result;
 }
 
-inline HeapWord* SerialBlockOffsetSharedArray::address_for_index(size_t index) const {
-  assert(index < _vs.committed_size(), "bad index");
-  HeapWord* result = _reserved.start() + (index << BOTConstants::log_card_size_in_words());
-  assert(result >= _reserved.start() && result < _reserved.end(),
-         "bad address from index");
+inline HeapWord* SerialBlockOffsetTable::addr_for_entry(const uint8_t* const p) const {
+  // _offset_base can be "negative", so can't use pointer_delta().
+  size_t delta = p - _offset_base;
+  HeapWord* result = (HeapWord*) (delta << CardTable::card_shift());
+  assert(_reserved.contains(result),
+         "out of bounds accessor from block offset array");
   return result;
 }
 

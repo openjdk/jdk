@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,9 @@ package jdk.jfr.event.gc.stacktrace;
  *
  * @requires vm.gc == "null" | vm.gc == "G1"
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseG1GC -Xlog:gc* -Xmx64M -XX:InitiatingHeapOccupancyPercent=100 jdk.jfr.event.gc.stacktrace.TestG1HumongousAllocationPendingStackTrace
+ * @run main/othervm -XX:+UseG1GC -Xlog:gc* -Xmx64M -XX:InitiatingHeapOccupancyPercent=100
+ *                   -XX:FlightRecorderOptions:stackdepth=256
+ *                   jdk.jfr.event.gc.stacktrace.TestG1HumongousAllocationPendingStackTrace
  */
 public class TestG1HumongousAllocationPendingStackTrace {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
 
 /*
  * @test
+ * @bug 8323552
  * @run testng TestMismatch
  */
 
 import java.lang.foreign.Arena;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
 import java.lang.foreign.MemorySegment;
@@ -44,7 +47,7 @@ import static org.testng.Assert.assertThrows;
 
 public class TestMismatch {
 
-    // stores a increasing sequence of values into the memory of the given segment
+    // stores an increasing sequence of values into the memory of the given segment
     static MemorySegment initializeSegment(MemorySegment segment) {
         for (int i = 0 ; i < segment.byteSize() ; i++) {
             segment.set(ValueLayout.JAVA_BYTE, i, (byte)i);
@@ -119,6 +122,68 @@ public class TestMismatch {
                     -1 : Long.min(ss2.size, bytes);
             assertEquals(MemorySegment.mismatch(ss2.segment, ss2.offset, ss2.endOffset(), ss1.segment, ss1.offset, i), expected);
         }
+    }
+
+    @Test
+    public void random() {
+        try (var arena = Arena.ofConfined()) {
+            var rnd = new Random(42);
+            for (int size = 1; size < 64; size++) {
+                // Repeat a fair number of rounds
+                for (int i = 0; i < 147; i++) {
+                    var src = arena.allocate(size);
+                    // The dst segment might be zero to eight bytes longer
+                    var dst = arena.allocate(size + rnd.nextInt(8 + 1));
+                    // Fill the src with random data
+                    for (int j = 0; j < size; j++) {
+                        src.set(ValueLayout.JAVA_BYTE, j, randomByte(rnd));
+                    }
+                    // copy the random data from src to dst
+                    dst.copyFrom(src);
+                    // Fill the rest (if any) of the dst with random data
+                    for (long j = src.byteSize(); j < dst.byteSize(); j++) {
+                        dst.set(ValueLayout.JAVA_BYTE, j, randomByte(rnd));
+                    }
+
+                    if (rnd.nextBoolean()) {
+                        // In this branch, we inject one or more deviating bytes
+                        int beginDiff = rnd.nextInt(size);
+                        int endDiff = rnd.nextInt(beginDiff, size);
+                        for (int d = beginDiff; d <= endDiff; d++) {
+                            byte existing = dst.get(ValueLayout.JAVA_BYTE, d);
+                            // Make sure we never get back the same value
+                            byte mutatedValue;
+                            do {
+                                mutatedValue = randomByte(rnd);
+                            } while (existing == mutatedValue);
+                            dst.set(ValueLayout.JAVA_BYTE, d, mutatedValue);
+                        }
+
+                        // They are not equal and differs in position beginDiff
+                        assertEquals(src.mismatch(dst), beginDiff);
+                        assertEquals(dst.mismatch(src), beginDiff);
+                    } else {
+                        // In this branch, there is no injection
+
+                        if (src.byteSize() == dst.byteSize()) {
+                            // The content matches and they are of equal size
+                            assertEquals(src.mismatch(dst), -1);
+                            assertEquals(dst.mismatch(src), -1);
+                        } else {
+                            // The content matches but they are of different length
+                            // Remember, the size of src is always smaller or equal
+                            // to the size of dst.
+                            assertEquals(src.mismatch(dst), src.byteSize());
+                            assertEquals(dst.mismatch(src), src.byteSize());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    static byte randomByte(Random rnd) {
+        return (byte) rnd.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE + 1);
     }
 
     @Test(dataProvider = "slices")
@@ -276,6 +341,32 @@ public class TestMismatch {
                 }
             }
         }
+    }
+
+    @Test
+    public void testSameSegment() {
+        var segment = MemorySegment.ofArray(new byte[]{
+                1,2,3,4,  1,2,3,4,  1,4});
+
+        long match = MemorySegment.mismatch(
+                segment, 0L, 4L,
+                segment, 4L, 8L);
+        assertEquals(match, -1);
+
+        long noMatch = MemorySegment.mismatch(
+                segment, 0L, 4L,
+                segment, 1L, 5L);
+        assertEquals(noMatch, 0);
+
+        long noMatchEnd = MemorySegment.mismatch(
+                segment, 0L, 2L,
+                segment, 8L, 10L);
+        assertEquals(noMatchEnd, 1);
+
+        long same = MemorySegment.mismatch(
+                segment, 0L, 8L,
+                segment, 0L, 8L);
+        assertEquals(same, -1);
     }
 
     enum SegmentKind {

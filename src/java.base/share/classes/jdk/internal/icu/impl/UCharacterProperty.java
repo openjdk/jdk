@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.internal.icu.lang.UCharacter.HangulSyllableType;
 import jdk.internal.icu.lang.UCharacter.NumericType;
 import jdk.internal.icu.text.UTF16;
 import jdk.internal.icu.text.UnicodeSet;
+import jdk.internal.icu.util.CodePointTrie;
 import jdk.internal.icu.util.VersionInfo;
 
 /**
@@ -136,10 +137,8 @@ public final class UCharacterProperty
      */
     public VersionInfo getAge(int codepoint)
     {
-        int version = getAdditional(codepoint, 0) >> AGE_SHIFT_;
-        return VersionInfo.getInstance(
-                           (version >> FIRST_NIBBLE_SHIFT_) & LAST_NIBBLE_MASK_,
-                           version & LAST_NIBBLE_MASK_, 0, 0);
+        int version = getAdditional(codepoint, 0) >>> AGE_SHIFT_;
+        return VersionInfo.getInstance(version >> 2, version & 3, 0, 0);
     }
 
     // int-value and enumerated properties --------------------------------- ***
@@ -150,7 +149,11 @@ public final class UCharacterProperty
 
     /*
      * Map some of the Grapheme Cluster Break values to Hangul Syllable Types.
-     * Hangul_Syllable_Type is fully redundant with a subset of Grapheme_Cluster_Break.
+     * Hangul_Syllable_Type used to be fully redundant with a subset of Grapheme_Cluster_Break.
+     *
+     * Starting with Unicode 16, this is no longer true for HST=V vs. GCB=V in some cases:
+     * Some Kirat Rai vowels are given GCB=V for proper grapheme clustering, but
+     * they are of course not related to Hangul syllables.
      */
     private static final int /* UHangulSyllableType */ gcbToHst[]={
         HangulSyllableType.NOT_APPLICABLE,   /* U_GCB_OTHER */
@@ -310,10 +313,15 @@ public final class UCharacterProperty
      * 0
      */
      int m_maxJTGValue_;
+    /** maximum values for other code values */
+    int m_maxValuesOther_;
+
     /**
      * Script_Extensions data
      */
     public char[] m_scriptExtensions_;
+
+    CodePointTrie m_blockTrie_;
 
     // private variables -------------------------------------------------
 
@@ -534,12 +542,13 @@ public final class UCharacterProperty
         int additionalVectorsOffset = bytes.getInt();
         m_additionalColumnsCount_ = bytes.getInt();
         int scriptExtensionsOffset = bytes.getInt();
-        int reservedOffset7 = bytes.getInt();
-        /* reservedOffset8 = */ bytes.getInt();
+        int blockTrieOffset = bytes.getInt();
+        int reservedOffset8 = bytes.getInt();
         /* dataTopOffset = */ bytes.getInt();
         m_maxBlockScriptValue_ = bytes.getInt();
         m_maxJTGValue_ = bytes.getInt();
-        ICUBinary.skipBytes(bytes, (16 - 12) << 2);
+        m_maxValuesOther_ = bytes.getInt();
+        ICUBinary.skipBytes(bytes, (16 - 13) << 2);
 
         // read the main properties trie
         m_trie_ = Trie2_16.createFromSerialized(bytes);
@@ -574,19 +583,29 @@ public final class UCharacterProperty
         }
 
         // Script_Extensions
-        int numChars = (reservedOffset7 - scriptExtensionsOffset) * 2;
+        int numChars = (blockTrieOffset - scriptExtensionsOffset) * 2;
         if(numChars > 0) {
             m_scriptExtensions_ = new char[numChars];
             for(int i = 0; i < numChars; ++i) {
                 m_scriptExtensions_[i] = bytes.getChar();
             }
         }
+
+        // Read the blockTrie.
+        int partLength = (reservedOffset8 - blockTrieOffset) * 4;
+        int triePosition = bytes.position();
+        m_blockTrie_ = CodePointTrie.fromBinary(null, CodePointTrie.ValueWidth.BITS_16, bytes);
+        trieLength = bytes.position() - triePosition;
+        if (trieLength > partLength) {
+            throw new IOException("uprops.icu: not enough bytes for blockTrie");
+        }
+        ICUBinary.skipBytes(bytes, partLength - trieLength);  // skip padding after trie bytes
     }
 
     private static final class IsAcceptable implements ICUBinary.Authenticate {
         // @Override when we switch to Java 6
         public boolean isDataVersionAcceptable(byte version[]) {
-            return version[0] == 7;
+            return version[0] == 9;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,8 @@ public class GetInstanceTest {
                     + "'securerandom.strongAlgorithms'.");
         }
         try {
-            Security.setProperty(STRONG_ALG_SEC_PROP, "DRBG:SUN");
+            Security.setProperty(STRONG_ALG_SEC_PROP, "DRBG:" +
+                    System.getProperty("test.provider.name", SUN_PROVIDER));
             sr = matchExc(() -> SecureRandom.getInstanceStrong(),
                     PASS, NoSuchAlgorithmException.class,
                     "PASS - Undefined security Property "
@@ -123,7 +124,8 @@ public class GetInstanceTest {
         // Test for getInstance(algorithm, provider) method.
         checkAttributes(
                 matchExc(() -> SecureRandom.getInstance(srAlgo,
-                                Security.getProvider(SUN_PROVIDER)),
+                                Security.getProvider(
+                                        System.getProperty("test.provider.name", SUN_PROVIDER))),
                         !(nsa(mech)),
                         NoSuchAlgorithmException.class,
                         String.format("PASS - It is expected to fail for"
@@ -132,7 +134,8 @@ public class GetInstanceTest {
                 mech);
         // Test for getInstance(algorithm, providerName) method.
         checkAttributes(
-                matchExc(() -> SecureRandom.getInstance(srAlgo, SUN_PROVIDER),
+                matchExc(() -> SecureRandom.getInstance(srAlgo,
+                                System.getProperty("test.provider.name", SUN_PROVIDER)),
                         !(nsa(mech)), NoSuchAlgorithmException.class,
                         String.format("PASS - It is expected to fail for "
                                 + "getInstance(algorithm, providerName) when "
@@ -175,7 +178,8 @@ public class GetInstanceTest {
             // Test for getInstance(algorithm, params, provider) method.
             checkAttributes(
                     matchExc(() -> SecureRandom.getInstance(srAlgo, param,
-                                    Security.getProvider(SUN_PROVIDER)),
+                                    Security.getProvider(System.getProperty(
+                                            "test.provider.name", SUN_PROVIDER))),
                             (isDRBG(mech)) && (isValidDRBGParam(param)),
                             getExcType(mech, param),
                             String.format("PASS - It is expected to fail "
@@ -186,7 +190,7 @@ public class GetInstanceTest {
             // Test for getInstance(algorithm, params, providerName) method.
             checkAttributes(
                     matchExc(() -> SecureRandom.getInstance(srAlgo, param,
-                                    SUN_PROVIDER),
+                                    System.getProperty("test.provider.name", SUN_PROVIDER)),
                             (isDRBG(mech)) && (isValidDRBGParam(param)),
                             getExcType(mech, param),
                             String.format("PASS - It is expected to fail "
@@ -306,7 +310,8 @@ public class GetInstanceTest {
             return;
         }
         Asserts.assertEquals(sr.getAlgorithm(), (isDRBG(mech) ? "DRBG" : mech));
-        Asserts.assertEquals(sr.getProvider().getName(), SUN_PROVIDER);
+        String expectedProviderName = System.getProperty("test.provider.name", SUN_PROVIDER);
+        Asserts.assertEquals(sr.getProvider().getName(), expectedProviderName);
     }
 
 }

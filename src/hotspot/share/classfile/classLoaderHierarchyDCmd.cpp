@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ ClassLoaderHierarchyDCmd::ClassLoaderHierarchyDCmd(outputStream* output, bool he
   : DCmdWithParser(output, heap),
    _show_classes("show-classes", "Print loaded classes.", "BOOLEAN", false, "false"),
   _verbose("verbose", "Print detailed information.", "BOOLEAN", false, "false"),
-  _fold("fold", "Show loaders of the same name and class as one.", "BOOLEAN", true, "true") {
+  _fold("fold", "Show loaders of the same name and class as one.", "BOOLEAN", false, "true") {
   _dcmdparser.add_dcmd_option(&_show_classes);
   _dcmdparser.add_dcmd_option(&_verbose);
   _dcmdparser.add_dcmd_option(&_fold);

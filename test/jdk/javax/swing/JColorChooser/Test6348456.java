@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,43 +21,67 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6348456
- * @summary Tests model changing
- * @author Sergey Malenkov
- * @run applet/manual=yesno Test6348456.html
- */
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
+import javax.swing.JFrame;
 import javax.swing.colorchooser.DefaultColorSelectionModel;
 
-public final class Test6348456 extends JApplet implements ActionListener {
+/*
+ * @test
+ * @bug 6348456
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Tests model changing
+ * @run main/manual Test6348456
+ */
 
-    private static final DefaultColorSelectionModel WHITE = new DefaultColorSelectionModel(Color.WHITE);
-    private static final DefaultColorSelectionModel BLACK = new DefaultColorSelectionModel(Color.BLACK);
+public final class Test6348456 {
 
-    private JColorChooser chooser;
+    private static final DefaultColorSelectionModel WHITE =
+            new DefaultColorSelectionModel(Color.WHITE);
+    private static final DefaultColorSelectionModel BLACK =
+            new DefaultColorSelectionModel(Color.BLACK);
 
-    @Override
-    public void init() {
-        JButton button = new JButton("Swap models");
-        button.addActionListener(this);
+    private static JColorChooser chooser;
 
-        this.chooser = new JColorChooser(Color.RED);
-        this.chooser.setSelectionModel(WHITE);
+    public static void main(String[] args) throws Exception {
+        String instructions = "When test starts, you'll see that the preview is white.\n" +
+                "When you swap models, you'll see that the preview color is changed.\n" +
+                "Click pass if so, otherwise fail.";
 
-        add(BorderLayout.NORTH, button);
-        add(BorderLayout.CENTER, this.chooser);
+        PassFailJFrame.builder()
+                .title("Test6348456")
+                .instructions(instructions)
+                .rows(5)
+                .columns(40)
+                .testTimeOut(10)
+                .testUI(Test6348456::test)
+                .build()
+                .awaitAndCheck();
     }
 
-    public void actionPerformed(ActionEvent event){
-        this.chooser.setSelectionModel(this.chooser.getSelectionModel() == BLACK ? WHITE : BLACK);
+    public static JFrame test() {
+        JFrame frame = new JFrame("JColor Swap Models Test");
+        JButton button = new JButton("Swap models");
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                chooser.setSelectionModel(chooser.getSelectionModel() == BLACK ? WHITE : BLACK);
+
+            }
+        });
+
+        chooser = new JColorChooser(Color.RED);
+        chooser.setSelectionModel(WHITE);
+
+        frame.add(BorderLayout.NORTH, button);
+        frame.add(BorderLayout.CENTER, chooser);
+        frame.pack();
+
+        return frame;
     }
 }

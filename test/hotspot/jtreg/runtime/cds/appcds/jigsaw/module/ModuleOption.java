@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,10 @@ public class ModuleOption {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String incubatorModule = "jdk.incubator.vector";
         final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
-        final String versionPattern = "java.[0-9][0-9][-].*";
+        // Pattern of a module version string.
+        // e.g. JDK 22:     "java 22"
+        //      JDK 22.0.1: "java 22.0.1"
+        final String versionPattern = "java.[0-9][0-9].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         String archiveName = TestCommon.getNewArchiveName("module-option");
         TestCommon.setCurrentArchiveName(archiveName);
@@ -67,7 +70,7 @@ public class ModuleOption {
             "-m", "jdk.compiler/com.sun.tools.javac.Main",
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Mismatched modules: runtime jdk.compiler dump time jdk.httpserver")
+          .shouldContain("Mismatched values for property jdk.module.main: runtime jdk.compiler dump time jdk.httpserver")
           .shouldContain(subgraphCannotBeUsed);
 
         // no module specified during runtime
@@ -75,7 +78,7 @@ public class ModuleOption {
             loggingOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Module jdk.httpserver specified during dump time but not during runtime")
+          .shouldContain("Mismatched values for property jdk.module.main: jdk.httpserver specified during dump time but not during runtime")
           .shouldContain(subgraphCannotBeUsed);
 
         // dump an archive without the module option
@@ -93,7 +96,7 @@ public class ModuleOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Module jdk.httpserver specified during runtime but not during dump time")
+          .shouldContain("Mismatched values for property jdk.module.main: jdk.httpserver specified during runtime but not during dump time")
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern)
           .shouldContain(subgraphCannotBeUsed);

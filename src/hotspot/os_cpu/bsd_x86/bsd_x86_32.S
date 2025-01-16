@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,7 @@
 # questions.
 #
 
-
-#ifdef __APPLE__
-# Darwin uses _ prefixed global symbols
-#define SYMBOL(s) _ ## s
-#define ELF_TYPE(name, description)
-#else
-#define SYMBOL(s) s
-#define ELF_TYPE(name, description) .type name,description
-#endif
-
-        .globl SYMBOL(fixcw)
+#include "defs.S.inc"
 
         # NOTE WELL!  The _Copy functions are called directly
         # from server-compiler-generated code via CallLeafNoFP,
@@ -39,33 +29,18 @@
         # point or use it in the same manner as does the server
         # compiler.
 
-        .globl SYMBOL(_Copy_arrayof_conjoint_bytes)
-        .globl SYMBOL(_Copy_conjoint_jshorts_atomic)
-        .globl SYMBOL(_Copy_arrayof_conjoint_jshorts)
-        .globl SYMBOL(_Copy_conjoint_jints_atomic)
-        .globl SYMBOL(_Copy_arrayof_conjoint_jints)
-        .globl SYMBOL(_Copy_conjoint_jlongs_atomic)
-        .globl SYMBOL(_mmx_Copy_arrayof_conjoint_jshorts)
-
-        .globl SYMBOL(_Atomic_cmpxchg_long)
-        .globl SYMBOL(_Atomic_move_long)
-
         .text
 
-# Support for void os::Solaris::init_thread_fpu_state() in os_solaris_i486.cpp
 # Set fpu to 53 bit precision.  This happens too early to use a stub.
-# ported from solaris_x86_32.s
         .p2align 4,,15
-SYMBOL(fixcw):
+DECLARE_FUNC(fixcw):
         pushl    $0x27f
         fldcw    0(%esp)
         popl     %eax
         ret
 
-        .globl  SYMBOL(SpinPause)
-        ELF_TYPE(SpinPause,@function)
         .p2align 4,,15
-SYMBOL(SpinPause):
+DECLARE_FUNC(SpinPause):
         rep
         nop
         movl    $1, %eax
@@ -76,8 +51,7 @@ SYMBOL(SpinPause):
         #                                               size_t count)
         #
         .p2align 4,,15
-        ELF_TYPE(_Copy_arrayof_conjoint_bytes,@function)
-SYMBOL(_Copy_arrayof_conjoint_bytes):
+DECLARE_FUNC(_Copy_arrayof_conjoint_bytes):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
         pushl    %edi
@@ -164,8 +138,7 @@ acb_CopyLeft:
         #                                                void* to,
         #                                                size_t count)
         .p2align 4,,15
-        ELF_TYPE(_Copy_conjoint_jshorts_atomic,@function)
-SYMBOL(_Copy_conjoint_jshorts_atomic):
+DECLARE_FUNC(_Copy_conjoint_jshorts_atomic):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
         pushl    %edi
@@ -251,8 +224,7 @@ cs_CopyLeft:
         #                                                 void* to,
         #                                                 size_t count)
         .p2align 4,,15
-        ELF_TYPE(_Copy_arrayof_conjoint_jshorts,@function)
-SYMBOL(_Copy_arrayof_conjoint_jshorts):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jshorts):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
         pushl    %edi
@@ -328,10 +300,8 @@ acs_CopyLeft:
         # Equivalent to
         #   arrayof_conjoint_jints
         .p2align 4,,15
-        ELF_TYPE(_Copy_conjoint_jints_atomic,@function)
-        ELF_TYPE(_Copy_arrayof_conjoint_jints,@function)
-SYMBOL(_Copy_conjoint_jints_atomic):
-SYMBOL(_Copy_arrayof_conjoint_jints):
+DECLARE_FUNC(_Copy_conjoint_jints_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jints):
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
         pushl    %edi
@@ -403,8 +373,7 @@ ci_CopyLeft:
         #   }
         # }
         .p2align 4,,15
-        ELF_TYPE(_Copy_conjoint_jlongs_atomic,@function)
-SYMBOL(_Copy_conjoint_jlongs_atomic):
+DECLARE_FUNC(_Copy_conjoint_jlongs_atomic):
         movl     4+8(%esp),%ecx       # count
         movl     4+0(%esp),%eax       # from
         movl     4+4(%esp),%edx       # to
@@ -432,8 +401,7 @@ cla_CopyLeft:
         #                                                 void* to,
         #                                                 size_t count)
         .p2align 4,,15
-        ELF_TYPE(_mmx_Copy_arrayof_conjoint_jshorts,@function)
-SYMBOL(_mmx_Copy_arrayof_conjoint_jshorts):
+DECLARE_FUNC(_mmx_Copy_arrayof_conjoint_jshorts):
         pushl    %esi
         movl     4+12(%esp),%ecx
         pushl    %edi
@@ -530,8 +498,7 @@ mmx_acs_CopyLeft:
         #                                     int64_t exchange_value)
         #
         .p2align 4,,15
-        ELF_TYPE(_Atomic_cmpxchg_long,@function)
-SYMBOL(_Atomic_cmpxchg_long):
+DECLARE_FUNC(_Atomic_cmpxchg_long):
                                    #  8(%esp) : return PC
         pushl    %ebx              #  4(%esp) : old %ebx
         pushl    %edi              #  0(%esp) : old %edi
@@ -550,8 +517,7 @@ SYMBOL(_Atomic_cmpxchg_long):
         # Support for int64_t Atomic::load and Atomic::store.
         # void _Atomic_move_long(const volatile int64_t* src, volatile int64_t* dst)
         .p2align 4,,15
-        ELF_TYPE(_Atomic_move_long,@function)
-SYMBOL(_Atomic_move_long):
+DECLARE_FUNC(_Atomic_move_long):
         movl     4(%esp), %eax   # src
         fildll    (%eax)
         movl     8(%esp), %eax   # dest

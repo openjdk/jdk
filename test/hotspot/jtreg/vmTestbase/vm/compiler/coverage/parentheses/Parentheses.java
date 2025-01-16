@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class Parentheses {
 
     public void run() throws IOException, ReflectiveOperationException {
 
-        log = new Log(System.out, verbose);
+        log = new Log(System.out);
 
         InstructionSequence instructionSequence = null;
         for (int i = 0; i < iterations * stressOptions.getIterationsFactor(); i++) {

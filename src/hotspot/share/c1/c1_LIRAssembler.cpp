@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_ValueStack.hpp"
-#include "ci/ciInstance.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "runtime/os.hpp"
@@ -527,6 +526,17 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       break;
     }
 
+    case lir_abs:
+    case lir_sqrt:
+    case lir_f2hf:
+    case lir_hf2f:
+      intrinsic_op(op->code(), op->in_opr(), op->tmp_opr(), op->result_opr(), op);
+      break;
+
+    case lir_neg:
+      negate(op->in_opr(), op->result_opr(), op->tmp_opr());
+      break;
+
     case lir_return: {
       assert(op->as_OpReturn() != nullptr, "sanity");
       LIR_OpReturn *ret_op = (LIR_OpReturn*)op;
@@ -606,13 +616,14 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       Unimplemented();
       break;
 
-    case lir_std_entry:
+    case lir_std_entry: {
       // init offsets
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
-      _masm->align(CodeEntryAlignment);
       if (needs_icache(compilation()->method())) {
-        check_icache();
+        int offset = check_icache();
+        offsets()->set_value(CodeOffsets::Entry, offset);
       }
+      _masm->align(CodeEntryAlignment);
       offsets()->set_value(CodeOffsets::Verified_Entry, _masm->offset());
       _masm->verified_entry(compilation()->directive()->BreakAtExecuteOption);
       if (needs_clinit_barrier_on_entry(compilation()->method())) {
@@ -621,6 +632,7 @@ void LIR_Assembler::emit_op0(LIR_Op0* op) {
       build_frame();
       offsets()->set_value(CodeOffsets::Frame_Complete, _masm->offset());
       break;
+    }
 
     case lir_osr_entry:
       offsets()->set_value(CodeOffsets::OSR_Entry, _masm->offset());
@@ -720,19 +732,6 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
         op->result_opr(),
         op->info(),
         op->fpu_pop_count() == 1);
-      break;
-
-    case lir_abs:
-    case lir_sqrt:
-    case lir_tan:
-    case lir_log10:
-    case lir_f2hf:
-    case lir_hf2f:
-      intrinsic_op(op->code(), op->in_opr1(), op->in_opr2(), op->result_opr(), op);
-      break;
-
-    case lir_neg:
-      negate(op->in_opr1(), op->result_opr(), op->in_opr2());
       break;
 
     case lir_logic_and:
@@ -841,8 +840,6 @@ void LIR_Assembler::verify_oop_map(CodeEmitInfo* info) {
       if (v.is_oop()) {
         VMReg r = v.reg();
         if (!r->is_stack()) {
-          stringStream st;
-          st.print("bad oop %s at %d", r->as_Register()->name(), _masm->offset());
           _masm->verify_oop(r->as_Register());
         } else {
           _masm->verify_stack_oop(r->reg2stack() * VMRegImpl::stack_slot_size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,18 +83,10 @@ public class Type1Font extends FileFont {
             fileName = name;
         }
 
-        @SuppressWarnings("removal")
         public synchronized void dispose() {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Object>() {
-                    public Object run() {
-
-                        if (fileName != null) {
-                            (new java.io.File(fileName)).delete();
-                        }
-                        return null;
-                    }
-             });
+            if (fileName != null) {
+                (new java.io.File(fileName)).delete();
+            }
         }
     }
 
@@ -187,20 +179,15 @@ public class Type1Font extends FileFont {
     private synchronized ByteBuffer getBuffer() throws FontFormatException {
         ByteBuffer bbuf = bufferRef.get();
         if (bbuf == null) {
-          //System.out.println("open T1 " + platName);
+            if (FontUtilities.isLogging()) {
+                FontUtilities.logInfo("open Type 1 font: " + platName);
+            }
             try {
-                @SuppressWarnings("removal")
-                RandomAccessFile raf = (RandomAccessFile)
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Object>() {
-                        public Object run() {
-                            try {
-                                return new RandomAccessFile(platName, "r");
-                            } catch (FileNotFoundException ffne) {
-                            }
-                            return null;
-                    }
-                });
+                RandomAccessFile raf = null;
+                try {
+                    raf = new RandomAccessFile(platName, "r");
+                } catch (FileNotFoundException ffne) {
+                }
                 FileChannel fc = raf.getChannel();
                 fileSize = (int)fc.size();
                 bbuf = ByteBuffer.allocate(fileSize);
@@ -225,22 +212,17 @@ public class Type1Font extends FileFont {
     }
 
     /* called from native code to read file into a direct byte buffer */
-    @SuppressWarnings("removal")
     void readFile(ByteBuffer buffer) {
         RandomAccessFile raf = null;
         FileChannel fc;
+        if (FontUtilities.isLogging()) {
+            FontUtilities.logInfo("open Type 1 font: " + platName);
+        }
         try {
-            raf = (RandomAccessFile)
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Object>() {
-                        public Object run() {
-                            try {
-                                return new RandomAccessFile(platName, "r");
-                            } catch (FileNotFoundException fnfe) {
-                            }
-                            return null;
-                    }
-            });
+            try {
+                raf = new RandomAccessFile(platName, "r");
+            } catch (FileNotFoundException fnfe) {
+            }
             fc = raf.getChannel();
             while (buffer.remaining() > 0 && fc.read(buffer) != -1) {}
         } catch (ClosedChannelException e) {

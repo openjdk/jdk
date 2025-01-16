@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,16 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A transformation on streams of {@link MethodElement}.
  *
  * @see ClassFileTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface MethodTransform
         extends ClassFileTransform<MethodTransform, MethodElement, MethodBuilder> {
@@ -62,6 +62,7 @@ public non-sealed interface MethodTransform
      * @return the stateful method transform
      */
     static MethodTransform ofStateful(Supplier<MethodTransform> supplier) {
+        requireNonNull(supplier);
         return new TransformImpl.SupplierMethodTransform(supplier);
     }
 
@@ -73,6 +74,7 @@ public non-sealed interface MethodTransform
      * @return the method transform
      */
     static MethodTransform endHandler(Consumer<MethodBuilder> finisher) {
+        requireNonNull(finisher);
         return new MethodTransform() {
             @Override
             public void accept(MethodBuilder builder, MethodElement element) {
@@ -94,6 +96,7 @@ public non-sealed interface MethodTransform
      * @return the method transform
      */
     static MethodTransform dropping(Predicate<MethodElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -108,18 +111,7 @@ public non-sealed interface MethodTransform
      * @return the class transform
      */
     static MethodTransform transformingCode(CodeTransform xform) {
-        return new TransformImpl.MethodCodeTransform(xform);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given method builder.
-     */
-    @Override
-    default ResolvedTransform<MethodElement> resolve(MethodBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
+        return new TransformImpl.MethodCodeTransform(requireNonNull(xform));
     }
 
     /**
@@ -131,6 +123,6 @@ public non-sealed interface MethodTransform
      */
     @Override
     default MethodTransform andThen(MethodTransform t) {
-        return new TransformImpl.ChainedMethodTransform(this, t);
+        return new TransformImpl.ChainedMethodTransform(this, requireNonNull(t));
     }
 }

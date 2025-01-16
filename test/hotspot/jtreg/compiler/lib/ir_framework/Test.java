@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ import java.lang.annotation.RetentionPolicy;
  * </ul>
  *
  * <p>
- * Examples on how to write base tests can be found in {@link ir_framework.examples.BaseTestExample}
+ * Examples on how to write base tests can be found in {@link ir_framework.examples.NormalTestExample}
  * and also as part of the internal testing in the package {@link ir_framework.tests}.
  *
  * @see Arguments

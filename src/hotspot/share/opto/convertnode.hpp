@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ class RoundDoubleModeNode: public Node {
     rmode_floor = 1,
     rmode_ceil  = 2
   };
-  RoundDoubleModeNode(Node *in1, Node * rmode): Node(0, in1, rmode) {}
+  RoundDoubleModeNode(Node *in1, Node * rmode): Node(nullptr, in1, rmode) {}
   static RoundDoubleModeNode* make(PhaseGVN& gvn, Node* arg, RoundDoubleModeNode::RoundingMode rmode);
   virtual int   Opcode() const;
   virtual const Type *bottom_type() const { return Type::DOUBLE; }

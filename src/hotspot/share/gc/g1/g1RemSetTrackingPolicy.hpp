@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP
 #define SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP
 
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionType.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 #include "memory/allocation.hpp"
 
 // The remembered set tracking policy determines for a given region the state of
@@ -34,24 +34,21 @@
 // set is complete.
 class G1RemSetTrackingPolicy : public CHeapObj<mtGC> {
 public:
-  // Do we need to scan the given region to get all outgoing references for remembered
-  // set rebuild?
-  bool needs_scan_for_rebuild(HeapRegion* r) const;
   // Update remembered set tracking state at allocation of the region. May be
   // called at any time. The caller makes sure that the changes to the remembered
   // set state are visible to other threads.
-  void update_at_allocate(HeapRegion* r);
+  void update_at_allocate(G1HeapRegion* r);
   // Update remembered set tracking state for humongous regions before we are going to
   // rebuild remembered sets. Called at safepoint in the remark pause.
-  bool update_humongous_before_rebuild(HeapRegion* r, bool is_live);
-  // Update remembered set tracking state before we are going to rebuild remembered
-  // sets. Called at safepoint in the remark pause.
-  bool update_before_rebuild(HeapRegion* r, size_t live_bytes_below_tams);
+  bool update_humongous_before_rebuild(G1HeapRegion* r);
+  // Update remembered set tracking state for old regions before we are going
+  // to rebuild remembered sets. Called at safepoint in the remark pause.
+  bool update_old_before_rebuild(G1HeapRegion* r);
   // Update remembered set tracking state after rebuild is complete, i.e. the cleanup
   // pause. Called at safepoint.
-  void update_after_rebuild(HeapRegion* r);
+  void update_after_rebuild(G1HeapRegion* r);
   // Update remembered set tracking state when the region is freed.
-  void update_at_free(HeapRegion* r);
+  void update_at_free(G1HeapRegion* r);
 };
 
 #endif // SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP

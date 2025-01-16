@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
@@ -51,12 +51,12 @@ JNIEXPORT jint JNI_OnLoad_methname002(JavaVM *jvm, char *options, void *reserved
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -70,13 +70,13 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
     jmethodID mid;
     char *name, *sig, *generic;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
 
     mid = env->GetMethodID(cls, "<init>", "()V");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -84,7 +84,7 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> invalid method check ...\n");
     }
-    err = jvmti->GetMethodName(NULL, &name, &sig, &generic);
+    err = jvmti->GetMethodName(nullptr, &name, &sig, &generic);
     if (err != JVMTI_ERROR_INVALID_METHODID) {
         printf("Error expected: JVMTI_ERROR_INVALID_METHODID,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);
@@ -94,7 +94,7 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> (namePtr) null pointer check ...\n");
     }
-    err = jvmti->GetMethodName(mid, NULL, &sig, &generic);
+    err = jvmti->GetMethodName(mid, nullptr, &sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(namePtr) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -103,7 +103,7 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
         if (printdump == JNI_TRUE) {
             printf(">>> sig = \"%s\", generic = \"%s\"\n", sig, generic);
         }
-        if (sig == NULL || strcmp(sig, "()V") != 0) {
+        if (sig == nullptr || strcmp(sig, "()V") != 0) {
             printf("Wrong field sig: \"%s\", expected: \"I\"\n", sig);
             result = STATUS_FAILED;
         }
@@ -112,7 +112,7 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> (signaturePtr) null pointer check ...\n");
     }
-    err = jvmti->GetMethodName(mid, &name, NULL, &generic);
+    err = jvmti->GetMethodName(mid, &name, nullptr, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(signaturePtr) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -121,7 +121,7 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
         if (printdump == JNI_TRUE) {
             printf(">>> name = \"%s\", generic = \"%s\"\n", name, generic);
         }
-        if (name == NULL || strcmp(name, "<init>") != 0) {
+        if (name == nullptr || strcmp(name, "<init>") != 0) {
             printf("Wrong field name: \"%s\", expected: \"fld\"\n", name);
             result = STATUS_FAILED;
         }
@@ -130,7 +130,7 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> (genericPtr) null pointer check ...\n");
     }
-    err = jvmti->GetMethodName(mid, &name, &sig, NULL);
+    err = jvmti->GetMethodName(mid, &name, &sig, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("(signaturePtr) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -139,11 +139,11 @@ Java_nsk_jvmti_GetMethodName_methname002_check(JNIEnv *env, jclass cls) {
         if (printdump == JNI_TRUE) {
             printf(">>> name = \"%s\", sig = \"%s\"\n", name, sig);
         }
-        if (name == NULL || strcmp(name, "<init>") != 0) {
+        if (name == nullptr || strcmp(name, "<init>") != 0) {
             printf("Wrong field name: \"%s\", expected: \"fld\"\n", name);
             result = STATUS_FAILED;
         }
-        if (sig == NULL || strcmp(sig, "()V") != 0) {
+        if (sig == nullptr || strcmp(sig, "()V") != 0) {
             printf("Wrong field sig: \"%s\", expected: \"I\"\n", sig);
             result = STATUS_FAILED;
         }

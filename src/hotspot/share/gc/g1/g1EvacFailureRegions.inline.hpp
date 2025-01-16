@@ -60,7 +60,7 @@ bool G1EvacFailureRegions::record(uint worker_id, uint region_idx, bool cause_pi
     _evac_failed_regions[offset] = region_idx;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    HeapRegion* hr = g1h->region_at(region_idx);
+    G1HeapRegion* hr = g1h->region_at(region_idx);
     hr->note_evacuation_failure();
   }
 

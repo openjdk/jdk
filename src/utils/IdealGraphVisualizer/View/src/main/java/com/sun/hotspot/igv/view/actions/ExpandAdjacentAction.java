@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
 
 
-abstract public class ExpandAdjacentAction extends CallableSystemAction {
+public abstract class ExpandAdjacentAction extends CallableSystemAction {
 
     protected void expandFigures(Function<Figure, List<Figure>> getAdjacentFigures) {
         EditorTopComponent editor = EditorTopComponent.getActive();
@@ -47,9 +47,9 @@ abstract public class ExpandAdjacentAction extends CallableSystemAction {
         }
     }
 
-    abstract public void performAction();
+    public abstract void performAction();
 
-    abstract public String getName();
+    public abstract String getName();
 
     @Override
     public HelpCtx getHelpCtx() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test TestBasicLogOutput
  * @bug 8203370
- * @summary Ensure -XX:-JVMCIPrintProperties can be enabled and successfully prints expected output to stdout.
+ * @summary Ensure -XX:+JVMCIPrintProperties successfully prints expected output to stdout.
  * @requires vm.flagless
  * @requires vm.jvmci
  * @library /test/lib
@@ -49,9 +49,7 @@ public class TestJVMCIPrintProperties {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("[JVMCI properties]"); // expected message
         output.shouldContain("jvmci.Compiler := \"null\""); // expected message
-        output.shouldContain("jvmci.InitTimer = false"); // expected message
         output.shouldContain("jvmci.PrintConfig = false"); // expected message
-        output.shouldContain("jvmci.TraceMethodDataFilter = null"); // expected message
         output.shouldHaveExitValue(0);
     }
 }

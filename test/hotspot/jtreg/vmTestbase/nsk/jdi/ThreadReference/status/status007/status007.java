@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
  *          /test/lib
  * @build nsk.jdi.ThreadReference.status.status007.status007
  *        nsk.jdi.ThreadReference.status.status007.status007a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ThreadReference.status.status007.status007
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -111,7 +111,10 @@ public class status007 {
     //------------------------------------------------------- immutable common methods
 
     public static void main(String argv[]) {
-        System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     private static void display(String msg) {

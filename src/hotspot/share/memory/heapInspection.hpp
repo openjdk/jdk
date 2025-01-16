@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,8 @@ class KlassInfoTable: public StackObj {
   size_t _size_of_instances_in_words;
 
   // An aligned reference address (typically the least
-  // address in the perm gen) used for hashing klass
-  // objects.
-  HeapWord* _ref;
+  // address in the metaspace) used for hashing klasses.
+  uintptr_t _ref;
 
   KlassInfoBucket* _buckets;
   uint hash(const Klass* p);

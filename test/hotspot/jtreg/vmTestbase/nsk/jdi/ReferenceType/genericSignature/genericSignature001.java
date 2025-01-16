@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,13 +124,12 @@ public class genericSignature001 {
     };
 
 
-    /**
-     * Re-call to <code>run(args,out)</code>, and exit with
-     * either status 95 or 97 (JCK-like exit status).
-     */
+
     public static void main (String argv[]) {
-        int result = run(argv, System.out);
-        System.exit(result + STATUS_TEMP);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     /**
@@ -159,7 +158,6 @@ public class genericSignature001 {
         argsHandler = new ArgumentHandler(argv);
         verboseMode = argsHandler.verbose();
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/ReferenceType/genericSignature/genericSignature001 test...");
         logOnVerbose

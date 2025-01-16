@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ class OSContainer: AllStatic {
 
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();
+  static jlong memory_and_swap_usage_in_bytes();
   static jlong memory_soft_limit_in_bytes();
   static jlong memory_usage_in_bytes();
   static jlong memory_max_usage_in_bytes();

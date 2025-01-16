@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -705,6 +705,11 @@ public class HypotTests {
             {0x0.0000000000001p-1022, 0x0.0000000000001p-1022, 0x0.0000000000001p-1022},
             {0x0.0000000000002p-1022, 0x0.0000000000001p-1022, 0x0.0000000000002p-1022},
             {0x0.0000000000003p-1022, 0x0.0000000000002p-1022, 0x0.0000000000004p-1022},
+
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {0x0.fffffffffffffp-1022, 0x0.0000000000001p-1022, 0x0.fffffffffffffp-1022},
+            {0x1.41fcfeeb2e246p+420,  0x1.8d4d41eacdeccp+420,  0x1.ff65325de5517p420},
         };
 
         for (double[] testCase: testCases)

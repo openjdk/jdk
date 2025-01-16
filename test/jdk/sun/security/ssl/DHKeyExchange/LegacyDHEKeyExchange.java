@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
             throw new Exception("Legacy DH keys (< 1024) should be restricted");
         } catch (SSLHandshakeException she) {
             String expectedExMsg = "Received fatal alert: insufficient_security";
-            if (!expectedExMsg.equals(she.getMessage())) {
+            if (!she.getMessage().endsWith(expectedExMsg)) {
                 throw she;
             }
             System.out.println("Expected exception thrown in server");
@@ -77,7 +77,7 @@ public class LegacyDHEKeyExchange extends SSLSocketTemplate{
         } catch (SSLHandshakeException she) {
             String expectedExMsg = "DH ServerKeyExchange does not comply to" +
                     " algorithm constraints";
-            if (!expectedExMsg.equals(she.getMessage())) {
+            if (!she.getMessage().endsWith(expectedExMsg)) {
                 throw she;
             }
             System.out.println("Expected exception thrown in client");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ class ImmutableCollections {
      * Null argument or null elements in the argument will result in NPE.
      *
      * @param <E> the List's element type
-     * @param input the input array
+     * @param coll the input collection
      * @return the new list
      */
     @SuppressWarnings("unchecked")
@@ -258,6 +258,8 @@ class ImmutableCollections {
         @Override public void    add(int index, E element) { throw uoe(); }
         @Override public boolean addAll(int index, Collection<? extends E> c) { throw uoe(); }
         @Override public E       remove(int index) { throw uoe(); }
+        @Override public E       removeFirst() { throw uoe(); }
+        @Override public E       removeLast() { throw uoe(); }
         @Override public void    replaceAll(UnaryOperator<E> operator) { throw uoe(); }
         @Override public E       set(int index, E element) { throw uoe(); }
         @Override public void    sort(Comparator<? super E> c) { throw uoe(); }

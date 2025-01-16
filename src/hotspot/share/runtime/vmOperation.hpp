@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
 #define VM_OPS_DO(template)                       \
   template(Halt)                                  \
   template(SafepointALot)                         \
-  template(Cleanup)                               \
   template(ThreadDump)                            \
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \
@@ -48,14 +47,13 @@
   template(ZombieAll)                             \
   template(Verify)                                \
   template(HeapDumper)                            \
-  template(HeapDumpMerge)                         \
   template(CollectForMetadataAllocation)          \
   template(CollectForCodeCacheAllocation)         \
   template(GC_HeapInspection)                     \
-  template(GenCollectFull)                        \
-  template(GenCollectForAllocation)               \
-  template(ParallelGCFailedAllocation)            \
-  template(ParallelGCSystemGC)                    \
+  template(SerialCollectForAllocation)            \
+  template(SerialGCCollect)                       \
+  template(ParallelCollectForAllocation)          \
+  template(ParallelGCCollect)                     \
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
   template(G1PauseRemark)                         \
@@ -84,13 +82,13 @@
   template(ChangeBreakpoints)                     \
   template(GetOrSetLocal)                         \
   template(VirtualThreadGetOrSetLocal)            \
-  template(VirtualThreadGetCurrentLocation)       \
   template(ChangeSingleStep)                      \
   template(SetNotifyJvmtiEventsMode)              \
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
   template(ReportJavaOutOfMemory)                 \
-  template(JFRCheckpoint)                         \
+  template(JFRSafepointClear)                     \
+  template(JFRSafepointWrite)                     \
   template(ShenandoahFullGC)                      \
   template(ShenandoahInitMark)                    \
   template(ShenandoahFinalMarkStartEvac)          \
@@ -106,16 +104,18 @@
   template(ClassLoaderHierarchyOperation)         \
   template(DumpHashtable)                         \
   template(CleanClassLoaderDataMetaspaces)        \
+  template(RehashStringTable)                     \
+  template(RehashSymbolTable)                     \
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(PrintClasses)                          \
-  template(ICBufferFull)                          \
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
   template(JvmtiPostObjectFree)                   \
-  template(RendezvousGCThreads)
+  template(RendezvousGCThreads)                   \
+  template(ReinitializeMDO)
 
 class Thread;
 class outputStream;

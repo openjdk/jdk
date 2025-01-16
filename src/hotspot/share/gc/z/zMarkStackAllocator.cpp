@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
@@ -43,7 +43,7 @@ ZMarkStackSpace::ZMarkStackSpace()
   const size_t size = ZMarkStackSpaceLimit;
   const uintptr_t addr = (uintptr_t)os::reserve_memory(size, !ExecMem, mtGC);
   if (addr == 0) {
-    log_error_pd(gc, marking)("Failed to reserve address space for mark stacks");
+    ZInitialize::error_d("Failed to reserve address space for mark stacks");
     return;
   }
 

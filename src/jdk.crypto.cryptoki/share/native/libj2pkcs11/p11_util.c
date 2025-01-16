@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -327,14 +327,14 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
              tmp = mechPtr->pParameter;
              switch (mechPtr->mechanism) {
                  case CKM_AES_GCM:
-                     if (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS_NO_IVBITS)) {
-                         TRACE0("[ GCM_PARAMS w/o ulIvBits ]\n");
-                         free(((CK_GCM_PARAMS_NO_IVBITS*)tmp)->pIv);
-                         free(((CK_GCM_PARAMS_NO_IVBITS*)tmp)->pAAD);
-                     } else if (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS)) {
+                     if (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS)) {
                          TRACE0("[ GCM_PARAMS ]\n");
                          free(((CK_GCM_PARAMS*)tmp)->pIv);
                          free(((CK_GCM_PARAMS*)tmp)->pAAD);
+                     } else if (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS_NO_IVBITS)) {
+                         TRACE0("[ GCM_PARAMS w/o ulIvBits ]\n");
+                         free(((CK_GCM_PARAMS_NO_IVBITS*)tmp)->pIv);
+                         free(((CK_GCM_PARAMS_NO_IVBITS*)tmp)->pAAD);
                      }
                      break;
                  case CKM_AES_CCM:
@@ -451,43 +451,54 @@ void freeCKMechanismPtr(CK_MECHANISM_PTR mechPtr) {
      }
 }
 
-/* This function replaces the CK_GCM_PARAMS_NO_IVBITS structure associated
- * with the specified CK_MECHANISM structure with CK_GCM_PARAMS
- * structure.
+/* This function updates the specified CK_MECHANISM structure
+ * and its GCM parameter structure switching between CK_GCM_PARAMS and
+ * CK_GCM_PARAMS_NO_IVBITS.
  *
  * @param mechPtr pointer to the CK_MECHANISM structure containing
- * the to-be-converted CK_GCM_PARAMS_NO_IVBITS structure.
+ * the to-be-converted CK_GCM_PARAMS / CK_GCM_PARAMS_NO_IVBITS structure.
  * @return pointer to the CK_MECHANISM structure containing the
- * converted CK_GCM_PARAMS structure or NULL if no conversion took place.
+ * converted structure or NULL if no conversion is done.
  */
 CK_MECHANISM_PTR updateGCMParams(JNIEnv *env, CK_MECHANISM_PTR mechPtr) {
-    CK_GCM_PARAMS* pGcmParams2 = NULL;
-    CK_GCM_PARAMS_NO_IVBITS* pParams = NULL;
-    if ((mechPtr->mechanism == CKM_AES_GCM) &&
-            (mechPtr->pParameter != NULL_PTR) &&
-            (mechPtr->ulParameterLen == sizeof(CK_GCM_PARAMS_NO_IVBITS))) {
-        pGcmParams2 = calloc(1, sizeof(CK_GCM_PARAMS));
-        if (pGcmParams2 == NULL) {
-            p11ThrowOutOfMemoryError(env, 0);
-            return NULL;
+    CK_GCM_PARAMS_PTR pParams;
+    CK_GCM_PARAMS_NO_IVBITS_PTR pParamsNoIvBits;
+    CK_ULONG paramLen;
+
+    if (mechPtr != NULL) {
+        paramLen = mechPtr->ulParameterLen;
+        if (paramLen == sizeof(CK_GCM_PARAMS)) {
+            // CK_GCM_PARAMS => CK_GCM_PARAMS_NO_IVBITS
+            pParams = (CK_GCM_PARAMS*) mechPtr->pParameter;
+            pParamsNoIvBits = calloc(1, sizeof(CK_GCM_PARAMS_NO_IVBITS));
+            pParamsNoIvBits->pIv = pParams->pIv;
+            pParamsNoIvBits->ulIvLen = pParams->ulIvLen;
+            pParamsNoIvBits->pAAD = pParams->pAAD;
+            pParamsNoIvBits->ulAADLen = pParams->ulAADLen;
+            pParamsNoIvBits->ulTagBits = pParams->ulTagBits;
+            mechPtr->pParameter = pParamsNoIvBits;
+            mechPtr->ulParameterLen = sizeof(CK_GCM_PARAMS_NO_IVBITS);
+            free(pParams);
+            TRACE0("DEBUG update CK_GCM_PARAMS to CK_GCM_PARAMS_NO_IVBITS\n");
+            return mechPtr;
+        } else if (paramLen == sizeof(CK_GCM_PARAMS_NO_IVBITS)) {
+            // CK_GCM_PARAMS_NO_IVBITS => CK_GCM_PARAMS
+            pParamsNoIvBits = (CK_GCM_PARAMS_NO_IVBITS*) mechPtr->pParameter;
+            pParams = calloc(1, sizeof(CK_GCM_PARAMS));
+            pParams->pIv = pParamsNoIvBits->pIv;
+            pParams->ulIvLen = pParamsNoIvBits->ulIvLen;
+            pParams->ulIvBits = pParamsNoIvBits->ulIvLen << 3;
+            pParams->pAAD = pParamsNoIvBits->pAAD;
+            pParams->ulAADLen = pParamsNoIvBits->ulAADLen;
+            pParams->ulTagBits = pParamsNoIvBits->ulTagBits;
+            mechPtr->pParameter = pParams;
+            mechPtr->ulParameterLen = sizeof(CK_GCM_PARAMS);
+            free(pParamsNoIvBits);
+            TRACE0("DEBUG update CK_GCM_PARAMS_NO_IVBITS to CK_GCM_PARAMS\n");
+            return mechPtr;
         }
-        pParams = (CK_GCM_PARAMS_NO_IVBITS*) mechPtr->pParameter;
-        pGcmParams2->pIv = pParams->pIv;
-        pGcmParams2->ulIvLen = pParams->ulIvLen;
-        pGcmParams2->ulIvBits = (pGcmParams2->ulIvLen << 3);
-        pGcmParams2->pAAD = pParams->pAAD;
-        pGcmParams2->ulAADLen = pParams->ulAADLen;
-        pGcmParams2->ulTagBits = pParams->ulTagBits;
-        TRACE1("DEBUG updateGCMParams: pMech %p\n", mechPtr);
-        TRACE2("\t=> GCM param w/o ulIvBits %p => GCM param %p\n", pParams,
-                pGcmParams2);
-        free(pParams);
-        mechPtr->pParameter = pGcmParams2;
-        mechPtr->ulParameterLen = sizeof(CK_GCM_PARAMS);
-        return mechPtr;
-    } else {
-        TRACE0("DEBUG updateGCMParams: no conversion done\n");
     }
+    TRACE0("DEBUG updateGCMParams: no conversion done\n");
     return NULL;
 }
 

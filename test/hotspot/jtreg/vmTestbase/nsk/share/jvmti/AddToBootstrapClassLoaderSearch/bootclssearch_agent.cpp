@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "agent_common.h"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "agent_common.hpp"
 
 extern "C" {
 
@@ -156,16 +156,16 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiEnv* jvmti;
     const char *p_segment1, *p_segment2, *phase_to_check;
 
-    jvmti = NULL;
-    p_segment1 = p_segment2 = phase_to_check = NULL;
+    jvmti = nullptr;
+    p_segment1 = p_segment2 = phase_to_check = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
-    p_segment1 = nsk_jvmti_findOptionStringValue("segment1", NULL);
-    if (!NSK_VERIFY(p_segment1 != NULL)) {
+    p_segment1 = nsk_jvmti_findOptionStringValue("segment1", nullptr);
+    if (!NSK_VERIFY(p_segment1 != nullptr)) {
         return JNI_ERR;
     } else {
         strncpy(segment1, p_segment1, (size_t) sizeof(segment1)/sizeof(char));
@@ -173,20 +173,20 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     // 'segment2' parameter is not mandatory
-    p_segment2 = nsk_jvmti_findOptionStringValue("segment2", NULL);
-    if (p_segment2 != NULL) {
+    p_segment2 = nsk_jvmti_findOptionStringValue("segment2", nullptr);
+    if (p_segment2 != nullptr) {
         strncpy(segment2, p_segment2, (size_t) sizeof(segment2)/sizeof(char));
         segment2[(size_t) sizeof(segment2)/sizeof(char) - 1] = 0;
         use_segment2 = JNI_TRUE;
     }
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     // Check what phase(s) we are going to test
-    phase_to_check = nsk_jvmti_findOptionStringValue("phasetocheck", NULL);
-    if (!NSK_VERIFY(phase_to_check != NULL)) {
+    phase_to_check = nsk_jvmti_findOptionStringValue("phasetocheck", nullptr);
+    if (!NSK_VERIFY(phase_to_check != nullptr)) {
         return JNI_ERR;
     } else if (strcmp(phase_to_check, "onload") == 0) {
         jvmti_phase_to_check = JVMTI_PHASE_ONLOAD;
@@ -227,7 +227,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         jvmtiEvent eventsList[] = { JVMTI_EVENT_VM_INIT, JVMTI_EVENT_VM_DEATH };
         if (!NSK_VERIFY(nsk_jvmti_enableEvents(
-                     JVMTI_ENABLE, sizeof(eventsList)/sizeof(jvmtiEvent), eventsList, NULL))) {
+                     JVMTI_ENABLE, sizeof(eventsList)/sizeof(jvmtiEvent), eventsList, nullptr))) {
             return JNI_ERR;
         }
     }

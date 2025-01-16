@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
     _page_size(page_size),
     _object_size_limit(object_size_limit),
     _fragmentation_limit(fragmentation_limit),
-    _page_fragmentation_limit(page_size * (fragmentation_limit / 100)),
+    _page_fragmentation_limit((size_t)(page_size * (fragmentation_limit / 100))),
     _live_pages(),
     _not_selected_pages(),
     _forwarding_entries(0),
@@ -72,7 +72,7 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   const size_t npartitions_shift = 11;
   const size_t npartitions = (size_t)1 << npartitions_shift;
   const size_t partition_size = _page_size >> npartitions_shift;
-  const size_t partition_size_shift = exact_log2(partition_size);
+  const int partition_size_shift = log2i_exact(partition_size);
 
   // Partition slots/fingers
   int partitions[npartitions] = { /* zero initialize */ };
@@ -135,7 +135,7 @@ void ZRelocationSetSelectorGroup::select_inner() {
     // By subtracting the object size limit from the pages size we get the maximum
     // number of pages that the relocation set is guaranteed to fit in, regardless
     // of in which order the objects are relocated.
-    const int to = ceil((double)(from_live_bytes) / (double)(_page_size - _object_size_limit));
+    const int to = (int)ceil(from_live_bytes / (double)(_page_size - _object_size_limit));
 
     // Calculate the relative difference in reclaimable space compared to our
     // currently selected final relocation set. If this number is larger than the

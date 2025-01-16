@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2017, the original author or authors.
+ * Copyright (c) 2002-2017, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -35,9 +35,11 @@ public class WriterOutputStream extends OutputStream {
     private final CharBuffer decoderOut = CharBuffer.allocate(128);
 
     public WriterOutputStream(Writer out, Charset charset) {
-        this(out, charset.newDecoder()
-                .onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE));
+        this(
+                out,
+                charset.newDecoder()
+                        .onMalformedInput(CodingErrorAction.REPLACE)
+                        .onUnmappableCharacter(CodingErrorAction.REPLACE));
     }
 
     public WriterOutputStream(Writer out, CharsetDecoder decoder) {
@@ -47,7 +49,7 @@ public class WriterOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        write(new byte[] { (byte)b }, 0, 1);
+        write(new byte[] {(byte) b}, 0, 1);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.cant.type.annotate.scoping.1
+// key: compiler.err.type.annotation.inadmissible
+// key: compiler.misc.type.annotation.1
 
 import java.lang.annotation.*;
 

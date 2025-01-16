@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,7 +59,7 @@ RootChunkArea::~RootChunkArea() {
 // root chunk header. It will be partly initialized.
 // Note: this just allocates a memory-less header; memory itself is allocated inside VirtualSpaceNode.
 Metachunk* RootChunkArea::alloc_root_chunk_header(VirtualSpaceNode* node) {
-  assert(_first_chunk == 0, "already have a root");
+  assert(_first_chunk == nullptr, "already have a root");
   Metachunk* c = ChunkHeaderPool::pool()->allocate_chunk_header();
   c->initialize(node, const_cast<MetaWord*>(_base), chunklevel::ROOT_CHUNK_LEVEL);
   _first_chunk = c;

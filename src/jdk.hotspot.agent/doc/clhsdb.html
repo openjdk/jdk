@@ -53,7 +53,7 @@ Available commands:
   intConstant [ name [ value ] ] <font color="red">print out hotspot integer constant(s)</font>
   jdis address <font color="red">show bytecode disassembly of a given Method*</font>
   jhisto <font color="red">show Java heap histogram</font>
-  jstack [-v] <font color="red">show Java stack trace of all Java threads. -v is verbose mode</font>
+  jstack [-v] [-l] <font color="red">show Java stack trace of all Java threads. -v is verbose mode. -l includes info on owned java.util.concurrent locks.</font>
   livenmethods <font color="red">show all live nmethods</font>
   longConstant [ name [ value ] ] <font color="red">print out hotspot long constant(s)s</font>
   mem [ -v ] { address[/count] | address,address } <font color="red">show contents of memory range. -v adds "findpc" info for addresses</font>
@@ -62,7 +62,7 @@ Available commands:
   printas type expression <font color="red">print given address as given HotSpot type. eg. print JavaThread &lt;address&gt;</font>
   printmdo -a | expression <font color="red">print method data oop</font>
   printstatics [ type ] <font color="red">print static fields of given HotSpot type (or all types if none specified)</font>
-  pstack [-v] <font color="red">show mixed mode stack trace for all Java, non-Java threads. -v is verbose mode</font>
+  pstack [-v] [-l] <font color="red">show mixed mode stack trace for all Java, non-Java threads. -v is verbose mode. -l includes info on owned java.util.concurrent locks.</font>
   quit <font color="red">quit CLHSDB tool</font>
   reattach <font color="red">detach and re-attach SA to current target</font>
   revptrs  <font color="red">find liveness of oops</font>

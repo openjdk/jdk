@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,21 +54,22 @@ class VM_SafepointALot: public VM_EmptyOperation {
   VMOp_Type type() const { return VMOp_SafepointALot; }
 };
 
-class VM_Cleanup: public VM_EmptyOperation {
- public:
-  VMOp_Type type() const { return VMOp_Cleanup; }
-};
-
 // empty vm op, evaluated just to force a safepoint
 class VM_ForceSafepoint: public VM_EmptyOperation {
  public:
   VMOp_Type type() const { return VMOp_ForceSafepoint; }
 };
 
-// empty vm op, when forcing a safepoint due to inline cache buffers being full
-class VM_ICBufferFull: public VM_EmptyOperation {
- public:
-  VMOp_Type type() const { return VMOp_ICBufferFull; }
+// used by whitebox API to emulate VM issues
+// when VM can't operate and doesn't respond to jcmd
+class VM_HangInSafepoint: public VM_Operation {
+public:
+  VMOp_Type type() const { return VMOp_ForceSafepoint; }
+  void doit() {
+    while(true) {
+      os::naked_short_sleep(10);
+    }
+  }
 };
 
 class VM_ClearICs: public VM_Operation {
@@ -95,6 +96,20 @@ class VM_CleanClassLoaderDataMetaspaces : public VM_Operation {
  public:
   VM_CleanClassLoaderDataMetaspaces() {}
   VMOp_Type type() const                         { return VMOp_CleanClassLoaderDataMetaspaces; }
+  void doit();
+};
+
+class VM_RehashStringTable : public VM_Operation {
+ public:
+  VM_RehashStringTable() {}
+  VMOp_Type type() const                         { return VMOp_RehashStringTable; }
+  void doit();
+};
+
+class VM_RehashSymbolTable : public VM_Operation {
+ public:
+  VM_RehashSymbolTable() {}
+  VMOp_Type type() const                         { return VMOp_RehashSymbolTable; }
   void doit();
 };
 

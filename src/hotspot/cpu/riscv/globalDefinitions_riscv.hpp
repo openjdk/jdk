@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -49,6 +49,9 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define SUPPORT_RESERVED_STACK_AREA
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
+// auipc useable for all cc -> cc calls and jumps
+#define CODE_CACHE_SIZE_LIMIT ((2*G)-(2*K))
 
 // The expected size in bytes of a cache line.
 #define DEFAULT_CACHE_LINE_SIZE 64

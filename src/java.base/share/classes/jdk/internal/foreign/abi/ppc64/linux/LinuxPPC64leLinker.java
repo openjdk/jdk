@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi.ppc64.linux;
 
 import jdk.internal.foreign.abi.AbstractLinker;
@@ -35,7 +36,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.nio.ByteOrder;
 import java.util.Map;
 
 public final class LinuxPPC64leLinker extends AbstractLinker {
@@ -63,11 +63,6 @@ public final class LinuxPPC64leLinker extends AbstractLinker {
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
         return CallArranger.ABIv2.arrangeUpcall(targetType, function, options);
-    }
-
-    @Override
-    protected ByteOrder linkerByteOrder() {
-        return ByteOrder.LITTLE_ENDIAN;
     }
 
     @Override

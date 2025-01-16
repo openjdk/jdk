@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class TestIterativeEA {
     }
 
     @Test
-    @Arguments({ Argument.RANDOM_EACH })
+    @Arguments(values = { Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     public static int testSlow(int val) {
         MyClass obj = new MyClass(val);
@@ -88,7 +88,7 @@ public class TestIterativeEA {
     }
 
     @Test
-    @Arguments({ Argument.RANDOM_EACH })
+    @Arguments(values = { Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     public static int testFast(int val) {
         MyClass obj = new MyClass(val);
@@ -119,7 +119,7 @@ public class TestIterativeEA {
     }
 
     @Test
-    @Arguments({ Argument.RANDOM_EACH })
+    @Arguments(values = { Argument.RANDOM_EACH })
     @IR(failOn = { IRNode.ALLOC })
     static int testNested(int i) {
         C c = new C(new B(new A(i)));

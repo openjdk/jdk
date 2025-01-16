@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 8062588 8165804 8210406 8291660
+ * @bug 4052440 8062588 8165804 8210406 8291660 8174269
  * @summary BreakIteratorProvider tests
  * @library providersrc/foobarutils
  *          providersrc/fooprovider
@@ -31,10 +31,11 @@
  *          java.base/sun.util.resources
  * @build com.foobar.Utils
  *        com.foo.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI BreakIteratorProviderTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI BreakIteratorProviderTest
  */
 
 import java.text.BreakIterator;
+import java.text.Collator;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -52,8 +53,8 @@ public class BreakIteratorProviderTest extends ProviderTest {
     BreakIteratorProviderImpl bip = new BreakIteratorProviderImpl();
     List<Locale> availloc = Arrays.asList(BreakIterator.getAvailableLocales());
     List<Locale> providerloc = Arrays.asList(bip.getAvailableLocales());
-    List<Locale> jreloc = Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales());
-    List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getBreakIteratorProvider().getAvailableLocales());
+    List<Locale> fallbackloc = Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getAvailableLocales());
+    List<Locale> fallbackimplloc = Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK).getCollatorProvider().getAvailableLocales());
 
     public static void main(String[] s) {
         new BreakIteratorProviderTest();
@@ -66,7 +67,7 @@ public class BreakIteratorProviderTest extends ProviderTest {
 
     void availableLocalesTest() {
         Set<Locale> localesFromAPI = new HashSet<>(availloc);
-        Set<Locale> localesExpected = new HashSet<>(jreloc);
+        Set<Locale> localesExpected = new HashSet<>(fallbackloc);
         localesExpected.addAll(providerloc);
         if (localesFromAPI.equals(localesExpected)) {
             System.out.println("availableLocalesTest passed.");
@@ -78,10 +79,10 @@ public class BreakIteratorProviderTest extends ProviderTest {
     void objectValidityTest() {
 
         for (Locale target: availloc) {
-            // pure JRE implementation
-            ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getBreakIteratorInfo(target);
+            // pure FALLBACK implementation
+            ResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.FALLBACK)).getLocaleData().getBreakIteratorInfo(target);
             String[] classNames = rb.getStringArray("BreakIteratorClasses");
-            boolean jreSupportsLocale = jreimplloc.contains(target);
+            boolean fbSupportsLocale = fallbackimplloc.contains(target);
 
             // result object
             String[] result = new String[4];
@@ -101,7 +102,7 @@ public class BreakIteratorProviderTest extends ProviderTest {
 
             // JRE
             String[] jresResult = new String[4];
-            if (jreSupportsLocale) {
+            if (fbSupportsLocale) {
                 jresResult[0] = "sun.util.locale.provider.BreakIteratorProviderImpl$GraphemeBreakIterator";
                 for (int i = 1; i < 4; i++) {
                     jresResult[i] = "sun.text." + classNames[i - 1];
@@ -109,7 +110,7 @@ public class BreakIteratorProviderTest extends ProviderTest {
             }
 
             for (int i = 0; i < 4; i++) {
-                checkValidity(target, jresResult[i], providersResult[i], result[i], jreSupportsLocale);
+                checkValidity(target, jresResult[i], providersResult[i], result[i], fbSupportsLocale);
             }
         }
     }

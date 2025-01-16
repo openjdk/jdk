@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.AccessController;
 import java.util.EventListener;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.DragSourceContextAccessor;
 import sun.awt.dnd.SunDragSourceContextPeer;
-import sun.security.action.GetIntegerAction;
 
 /**
  * The {@code DragSource} is the entity responsible
@@ -230,14 +228,12 @@ public class DragSource implements Serializable {
     }
 
     /**
-     * Reports
-     * whether or not drag
-     * {@code Image} support
-     * is available on the underlying platform.
+     * Reports whether or not drag {@code Image} support is available on the
+     * underlying platform.
      *
-     * @return if the Drag Image support is available on this platform
+     * @return {@code true} if the Drag Image support is available on this
+     *         platform, otherwise {@code false}
      */
-
     public static boolean isDragImageSupported() {
         Toolkit t = Toolkit.getDefaultToolkit();
 
@@ -501,8 +497,8 @@ public class DragSource implements Serializable {
      *
      * @param <T> the type of {@code DragGestureRecognizer} to create
      * @param recognizerAbstractClass the requested abstract type
-     * @param actions                 the permitted source drag actions
      * @param c                       the {@code Component} target
+     * @param actions                 the permitted source drag actions
      * @param dgl        the {@code DragGestureListener} to notify
      *
      * @return the new {@code DragGestureRecognizer} or {@code null}
@@ -909,9 +905,7 @@ public class DragSource implements Serializable {
      * @since 1.5
      */
     public static int getDragThreshold() {
-        @SuppressWarnings("removal")
-        int ts = AccessController.doPrivileged(
-                new GetIntegerAction("awt.dnd.drag.threshold", 0)).intValue();
+        int ts = Integer.getInteger("awt.dnd.drag.threshold", 0);
         if (ts > 0) {
             return ts;
         } else {

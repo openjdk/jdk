@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,6 @@ public class AdHocAdapt extends AbstractCorpusBenchmark {
     public void transform(Blackhole bh) {
         var cc = ClassFile.of();
         for (byte[] bytes : classes)
-            bh.consume(cc.transform(cc.parse(bytes), transform.transform));
+            bh.consume(cc.transformClass(cc.parse(bytes), transform.transform));
     }
 }

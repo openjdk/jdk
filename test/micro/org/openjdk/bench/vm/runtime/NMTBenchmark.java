@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 2, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 public abstract class NMTBenchmark {
@@ -85,10 +85,12 @@ public abstract class NMTBenchmark {
       if (i % 3 == 1) alloc1(i);
       if (i % 3 == 2) alloc2(i);
     }
+
     private void alloc0(int i) {
       if (unsafe == null) return;
       addresses[i] = unsafe.allocateMemory(S);
     }
+
     private void alloc1(int i) { alloc0(i); }
     private void alloc2(int i) { alloc1(i); }
 
@@ -241,12 +243,12 @@ public abstract class NMTBenchmark {
   public static final String ADD_EXPORTS = "--add-exports";
   public static final String MISC_PACKAGE = "java.base/jdk.internal.misc=ALL-UNNAMED"; // used for Unsafe API
 
-  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=off", ADD_EXPORTS, MISC_PACKAGE})
+  @Fork(value = 2, jvmArgs = { "-XX:NativeMemoryTracking=off", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTOff extends NMTBenchmark { }
 
-  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=summary", ADD_EXPORTS, MISC_PACKAGE})
+  @Fork(value = 2, jvmArgs = { "-XX:NativeMemoryTracking=summary", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTSummary extends NMTBenchmark { }
 
-  @Fork(value = 2, jvmArgsPrepend = { "-XX:NativeMemoryTracking=detail", ADD_EXPORTS, MISC_PACKAGE})
+  @Fork(value = 2, jvmArgs = { "-XX:NativeMemoryTracking=detail", ADD_EXPORTS, MISC_PACKAGE})
   public static class NMTDetail extends NMTBenchmark { }
 }

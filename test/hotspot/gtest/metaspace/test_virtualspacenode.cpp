@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,6 +34,7 @@
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "sanitizers/address.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/debug.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -91,7 +92,7 @@ class VirtualSpaceNodeTest {
     verify();
 
     const bool node_is_full = _node->used_words() == _node->word_size();
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     {
       MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       c = _node->allocate_root_chunk();
@@ -155,6 +156,11 @@ class VirtualSpaceNodeTest {
 
       // The chunk should be as far committed as was requested
       EXPECT_GE(c->committed_words(), request_commit_words);
+
+      // At the VirtualSpaceNode level, all memory is still poisoned.
+      // Since we bypass the normal way of allocating chunks (ChunkManager::get_chunk), we
+      // need to unpoison this chunk.
+      ASAN_UNPOISON_MEMORY_REGION(c->base(), c->committed_words() * BytesPerWord);
 
       // Zap committed portion.
       DEBUG_ONLY(zap_range(c->base(), c->committed_words());)
@@ -258,7 +264,7 @@ class VirtualSpaceNodeTest {
 
     //freelist->print_on(tty);
 
-    Metachunk* result = NULL;
+    Metachunk* result = nullptr;
     {
       MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
       result = _node->merge(c, freelist);
@@ -293,7 +299,7 @@ public:
     _counter_reserved_words(),
     _counter_committed_words(),
     _commit_limiter(commit_limit),
-    _node(NULL),
+    _node(nullptr),
     _vs_word_size(vs_word_size),
     _commit_limit(commit_limit)
   {
@@ -327,14 +333,14 @@ public:
   }
 
   void test_exhaust_node() {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     bool rc = true;
     do {
       c = alloc_root_chunk();
-      if (c != NULL) {
+      if (c != nullptr) {
         rc = commit_root_chunk(c, c->word_size());
       }
-    } while (c != NULL && rc);
+    } while (c != nullptr && rc);
   }
 
   void test_arbitrary_commits() {

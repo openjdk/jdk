@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,10 @@ import jdk.test.lib.Utils;
  */
 public class SerialExecutionDebugger extends TestDebuggerType2 {
     static public void main(String[] args) {
-        System.exit(Consts.JCK_STATUS_BASE + new SerialExecutionDebugger().runIt(args, System.out));
+        int result = new SerialExecutionDebugger().runIt(args, System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public String debuggeeClassName() {

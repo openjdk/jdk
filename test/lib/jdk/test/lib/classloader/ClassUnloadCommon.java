@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,9 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class ClassUnloadCommon {
@@ -65,6 +68,41 @@ public class ClassUnloadCommon {
     public static void triggerUnloading() {
         WhiteBox wb = WhiteBox.getWhiteBox();
         wb.fullGC();  // will do class unloading
+    }
+
+    /**
+     * Calls triggerUnloading() in a retry loop for 2 seconds or until WhiteBox.isClassAlive
+     * determines that no classes named in classNames are alive.
+     *
+     * This variant of triggerUnloading() accommodates the inherent raciness
+     * of class unloading. For example, it's possible for a JIT compilation to hold
+     * strong roots to types (e.g. in virtual call or instanceof profiles) that
+     * are not released or converted to weak roots until the compilation completes.
+     *
+     * @param classNames the set of classes that are expected to be unloaded
+     * @return the set of classes that have not been unloaded after exiting the retry loop
+     */
+    public static Set<String> triggerUnloading(List<String> classNames) {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        Set<String> aliveClasses = new HashSet<>(classNames);
+        int attempt = 0;
+        while (!aliveClasses.isEmpty() && attempt < 20) {
+            ClassUnloadCommon.triggerUnloading();
+            for (String className : classNames) {
+                if (aliveClasses.contains(className)) {
+                    if (wb.isClassAlive(className)) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException ex) {
+                        }
+                    } else {
+                        aliveClasses.remove(className);
+                    }
+                }
+            }
+            attempt++;
+        }
+        return aliveClasses;
     }
 
     /**

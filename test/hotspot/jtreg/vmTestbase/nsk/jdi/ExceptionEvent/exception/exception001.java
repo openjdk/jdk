@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,8 +98,11 @@ public class exception001 {
     static private volatile boolean exceptionsThrown;
 
     // execute test from command line
-    public static void main (String args[]) {
-        System.exit(run(args, System.out) + JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+         int result = run(argv,System.out);
+         if (result != 0) {
+             throw new RuntimeException("TEST FAILED with result " + result);
+         }
     }
 
     // execute test from JCK-compatible harness
@@ -450,8 +453,11 @@ public class exception001 {
 
     static private boolean testFailed;
 
-    public static void main (String args[]) {
-          System.exit(run(args, System.out) + JCK_STATUS_BASE);
+    public static void main (String argv[]) {
+         int result = run(argv,System.out);
+         if (result != 0) {
+             throw new RuntimeException("TEST FAILED with result " + result);
+         }
     }
 
     public static int run(final String args[], final PrintStream out) {

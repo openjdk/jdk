@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,13 +95,24 @@ public enum CompilePhase {
     CCP1("PhaseCCP 1"),
     ITER_GVN2("Iter GVN 2"),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),
-    MACRO_EXPANSION("Macro expand"),
+    BEFORE_MACRO_EXPANSION("Before Macro Expansion"),
+    AFTER_MACRO_EXPANSION_STEP("After Macro Expansion Step"),
+    AFTER_MACRO_EXPANSION("After Macro Expansion"),
     BARRIER_EXPANSION("Barrier expand"),
     OPTIMIZE_FINISHED("Optimize finished"),
     PRINT_IDEAL("PrintIdeal"),
     BEFORE_MATCHING("Before matching"),
     MATCHING("After matching", RegexType.MACH),
     GLOBAL_CODE_MOTION("Global code motion", RegexType.MACH),
+    INITIAL_LIVENESS("Initial liveness", RegexType.MACH),
+    AGGRESSIVE_COALESCING("Aggressive coalescing", RegexType.MACH),
+    INITIAL_SPILLING("Initial spilling", RegexType.MACH),
+    CONSERVATIVE_COALESCING("Conservative coalescing", RegexType.MACH, ActionOnRepeat.KEEP_FIRST),
+    ITERATIVE_SPILLING("Iterative spilling", RegexType.MACH, ActionOnRepeat.KEEP_FIRST),
+    AFTER_ITERATIVE_SPILLING("After iterative spilling", RegexType.MACH),
+    POST_ALLOCATION_COPY_REMOVAL("Post-allocation copy removal", RegexType.MACH),
+    MERGE_MULTI_DEFS("Merge multiple definitions", RegexType.MACH),
+    FIX_UP_SPILLS("Fix up spills", RegexType.MACH),
     REGISTER_ALLOCATION("Register Allocation", RegexType.MACH),
     BLOCK_ORDERING("Block Ordering", RegexType.MACH),
     PEEPHOLE("Peephole", RegexType.MACH),

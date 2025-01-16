@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
  * @test
  * @bug 8004727
  * @summary javac should generate method parameters correctly.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.code
+ * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
@@ -175,8 +173,8 @@ public class MethodParametersTest {
         if (!baz.methods().get(0).methodName().equalsString("<init>"))
             throw new Exception("Classfile Baz badly formed: method has name " +
                                 baz.methods().get(0).methodName().stringValue());
-        MethodParametersAttribute mpattr = baz.methods().get(0).findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
-        CodeAttribute cattr = baz.methods().get(0).findAttribute(Attributes.CODE).orElse(null);;
+        MethodParametersAttribute mpattr = baz.methods().get(0).findAttribute(Attributes.methodParameters()).orElse(null);
+        CodeAttribute cattr = baz.methods().get(0).findAttribute(Attributes.code()).orElse(null);;
         if (null == mpattr)
             throw new Exception("Classfile Baz badly formed: no method parameters info");
         if (null == cattr)
@@ -184,7 +182,7 @@ public class MethodParametersTest {
 
         // Alter the MethodParameters attribute, changing the name of
         // the parameter from i to baz.
-        byte[] bazBytes = ClassFile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
+        byte[] bazBytes = ClassFile.of().transformClass(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
             if (methodElement instanceof MethodParametersAttribute a) {
                 List<MethodParameterInfo> newParameterInfos = new ArrayList<>();
                 for (MethodParameterInfo info : a.parameters()) {
@@ -200,7 +198,7 @@ public class MethodParametersTest {
         // Flip the code and method attributes().  This is for checking
         // that order doesn't matter.
         if (flip) {
-            bazBytes = ClassFile.of().transform(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
+            bazBytes = ClassFile.of().transformClass(baz, ClassTransform.transformingMethods((methodBuilder, methodElement) -> {
                 if (methodElement instanceof MethodParametersAttribute) {
                     methodBuilder.with(cattr);
                 } else if (methodElement instanceof CodeAttribute){

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 
 package sun.security.krb5;
 
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Locale;
 import sun.security.krb5.internal.Krb5;
@@ -39,15 +38,14 @@ import sun.security.krb5.internal.NetClient;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.StringTokenizer;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
 import sun.security.krb5.internal.KRBError;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * KDC-REQ/KDC-REP communication. No more base class for KrbAsReq and
@@ -60,19 +58,20 @@ public final class KdcComm {
     // them can also be defined in a realm, which overrides value here.
 
     /**
-     * max retry time for a single KDC, default Krb5.KDC_RETRY_LIMIT (3)
+     * max retry time for a single KDC, default Krb5.KDC_RETRY_LIMIT (3),
+     * Must be > 0.
      */
     private static int defaultKdcRetryLimit;
     /**
-     * timeout requesting a ticket from KDC, in millisec, default 30 sec
+     * timeout requesting a ticket from KDC, in millisec, default
+     * Krb5.KDC_TIMEOUT (30000). Must be > 0.
      */
     private static int defaultKdcTimeout;
     /**
-     * max UDP packet size, default unlimited (-1)
+     * max UDP packet size, default Krb5.KDC_DEFAULT_UDP_PREF_LIMIT (1465).
+     * Must be >= 0 and <= Krb5.KDC_HARD_UDP_LIMIT (32700).
      */
     private static int defaultUdpPrefLimit;
-
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     /**
      * What to do when a KDC is unavailable, specified in the
@@ -95,13 +94,7 @@ public final class KdcComm {
      * Read global settings
      */
     public static void initStatic() {
-        @SuppressWarnings("removal")
-        String value = AccessController.doPrivileged(
-        new PrivilegedAction<String>() {
-            public String run() {
-                return Security.getProperty("krb5.kdc.bad.policy");
-            }
-        });
+        String value = Security.getProperty("krb5.kdc.bad.policy");
         if (value != null) {
             value = value.toLowerCase(Locale.ENGLISH);
             String[] ss = value.split(":");
@@ -118,8 +111,8 @@ public final class KdcComm {
                     } catch (NumberFormatException nfe) {
                         // Ignored. Please note that tryLess is recognized and
                         // used, parameters using default values
-                        if (DEBUG) {
-                            System.out.println("Invalid krb5.kdc.bad.policy" +
+                        if (DEBUG != null) {
+                            DEBUG.println("Invalid krb5.kdc.bad.policy" +
                                     " parameter for tryLess: " +
                                     value + ", use default");
                         }
@@ -146,18 +139,18 @@ public final class KdcComm {
             timeout = parseTimeString(temp);
 
             temp = cfg.get("libdefaults", "max_retries");
-            max_retries = parsePositiveIntString(temp);
+            max_retries = parseNonNegativeIntString(temp);
             temp = cfg.get("libdefaults", "udp_preference_limit");
-            udp_pref_limit = parsePositiveIntString(temp);
+            udp_pref_limit = parseNonNegativeIntString(temp);
         } catch (Exception exc) {
            // ignore any exceptions; use default values
-           if (DEBUG) {
-                System.out.println ("Exception in getting KDC communication " +
+           if (DEBUG != null) {
+                DEBUG.println ("Exception in getting KDC communication " +
                                     "settings, using default value " +
                                     exc.getMessage());
            }
         }
-        defaultKdcTimeout = timeout > 0 ? timeout : 30*1000; // 30 seconds
+        defaultKdcTimeout = timeout > 0 ? timeout : Krb5.KDC_TIMEOUT;
         defaultKdcRetryLimit =
                 max_retries > 0 ? max_retries : Krb5.KDC_RETRY_LIMIT;
 
@@ -175,11 +168,11 @@ public final class KdcComm {
     /**
      * The instance fields
      */
-    private String realm;
+    private final String realm;
 
     public KdcComm(String realm) throws KrbException {
         if (realm == null) {
-           realm = Config.getInstance().getDefaultRealm();
+            realm = Config.getInstance().getDefaultRealm();
             if (realm == null) {
                 throw new KrbException(Krb5.KRB_ERR_GENERIC,
                                        "Cannot find default realm");
@@ -191,11 +184,10 @@ public final class KdcComm {
     public byte[] send(KrbKdcReq req)
         throws IOException, KrbException {
         int udpPrefLimit = getRealmSpecificValue(
-                realm, "udp_preference_limit", defaultUdpPrefLimit);
+                realm, "udp_preference_limit", defaultUdpPrefLimit, false);
 
         byte[] obuf = req.encoding();
-        boolean useTCP = (udpPrefLimit > 0 &&
-             (obuf != null && obuf.length > udpPrefLimit));
+        boolean useTCP = obuf != null && obuf.length > udpPrefLimit;
 
         return send(req, useTCP);
     }
@@ -206,14 +198,6 @@ public final class KdcComm {
         if (req == null)
             return null;
         Config cfg = Config.getInstance();
-
-        if (realm == null) {
-            realm = cfg.getDefaultRealm();
-            if (realm == null) {
-                throw new KrbException(Krb5.KRB_ERR_GENERIC,
-                                       "Cannot find default realm");
-            }
-        }
 
         String kdcList = cfg.getKDCList(realm);
         if (kdcList == null) {
@@ -276,10 +260,10 @@ public final class KdcComm {
             KdcAccessibility.removeBad(tempKdc);
             return ibuf;
         } catch(Exception e) {
-            if (DEBUG) {
-                System.out.println(">>> KrbKdcReq send: error trying " +
+            if (DEBUG != null) {
+                DEBUG.println(">>> KrbKdcReq send: error trying " +
                         tempKdc);
-                e.printStackTrace(System.out);
+                e.printStackTrace(DEBUG.getPrintStream());
             }
             KdcAccessibility.addBad(tempKdc);
             throw e;
@@ -296,9 +280,9 @@ public final class KdcComm {
 
         int port = Krb5.KDC_INET_DEFAULT_PORT;
         int retries = getRealmSpecificValue(
-                realm, "max_retries", defaultKdcRetryLimit);
+                realm, "max_retries", defaultKdcRetryLimit, true);
         int timeout = getRealmSpecificValue(
-                realm, "kdc_timeout", defaultKdcTimeout);
+                realm, "kdc_timeout", defaultKdcTimeout, true);
         if (badPolicy == BpType.TRY_LESS &&
                 KdcAccessibility.isBad(tempKdc)) {
             if (retries > tryLessMaxRetries) {
@@ -339,14 +323,14 @@ public final class KdcComm {
             }
         }
         if (portStr != null) {
-            int tempPort = parsePositiveIntString(portStr);
+            int tempPort = parseNonNegativeIntString(portStr);
             if (tempPort > 0)
                 port = tempPort;
         }
 
         byte[] obuf = req.encoding();
-        if (DEBUG) {
-            System.out.println(">>> KrbKdcReq send: kdc=" + kdc
+        if (DEBUG != null) {
+            DEBUG.println(">>> KrbKdcReq send: kdc=" + kdc
                                + (useTCP ? " TCP:":" UDP:")
                                +  port +  ", timeout="
                                + timeout
@@ -355,81 +339,39 @@ public final class KdcComm {
                                + ", #bytes=" + obuf.length);
         }
 
-        KdcCommunication kdcCommunication =
-            new KdcCommunication(kdc, port, useTCP, timeout, retries, obuf);
-        try {
-            @SuppressWarnings("removal")
-            byte[] ibuf = AccessController.doPrivileged(kdcCommunication);
-            if (DEBUG) {
-                System.out.println(">>> KrbKdcReq send: #bytes read="
-                        + (ibuf != null ? ibuf.length : 0));
+        byte[] ibuf = null;
+
+        for (int i=1; i <= retries; i++) {
+            String proto = useTCP?"TCP":"UDP";
+            if (DEBUG != null) {
+                DEBUG.println(">>> KDCCommunication: kdc=" + kdc
+                        + " " + proto + ":"
+                        + port + ", timeout="
+                        + timeout
+                        + ",Attempt =" + i
+                        + ", #bytes=" + obuf.length);
             }
-            return ibuf;
-        } catch (PrivilegedActionException e) {
-            Exception wrappedException = e.getException();
-            if (wrappedException instanceof IOException) {
-                throw (IOException) wrappedException;
-            } else {
-                throw (KrbException) wrappedException;
-            }
-        }
-    }
-
-    private static class KdcCommunication
-        implements PrivilegedExceptionAction<byte[]> {
-
-        private String kdc;
-        private int port;
-        private boolean useTCP;
-        private int timeout;
-        private int retries;
-        private byte[] obuf;
-
-        public KdcCommunication(String kdc, int port, boolean useTCP,
-                                int timeout, int retries, byte[] obuf) {
-            this.kdc = kdc;
-            this.port = port;
-            this.useTCP = useTCP;
-            this.timeout = timeout;
-            this.retries = retries;
-            this.obuf = obuf;
-        }
-
-        // The caller only casts IOException and KrbException so don't
-        // add any new ones!
-
-        public byte[] run() throws IOException, KrbException {
-
-            byte[] ibuf = null;
-
-            for (int i=1; i <= retries; i++) {
-                String proto = useTCP?"TCP":"UDP";
-                if (DEBUG) {
-                    System.out.println(">>> KDCCommunication: kdc=" + kdc
-                            + " " + proto + ":"
-                            +  port +  ", timeout="
-                            + timeout
-                            + ",Attempt =" + i
-                            + ", #bytes=" + obuf.length);
+            try (NetClient kdcClient = NetClient.getInstance(
+                    proto, kdc, port, timeout)) {
+                kdcClient.send(obuf);
+                ibuf = kdcClient.receive();
+                break;
+            } catch (SocketTimeoutException se) {
+                if (DEBUG != null) {
+                    DEBUG.println ("SocketTimeOutException with " +
+                            "attempt: " + i);
                 }
-                try (NetClient kdcClient = NetClient.getInstance(
-                        proto, kdc, port, timeout)) {
-                    kdcClient.send(obuf);
-                    ibuf = kdcClient.receive();
-                    break;
-                } catch (SocketTimeoutException se) {
-                    if (DEBUG) {
-                        System.out.println ("SocketTimeOutException with " +
-                                "attempt: " + i);
-                    }
-                    if (i == retries) {
-                        ibuf = null;
-                        throw se;
-                    }
+                if (i == retries) {
+                    ibuf = null;
+                    throw se;
                 }
             }
-            return ibuf;
         }
+        if (DEBUG != null) {
+            DEBUG.println(">>> KrbKdcReq send: #bytes read="
+                    + (ibuf != null ? ibuf.length : 0));
+        }
+        return ibuf;
     }
 
     /**
@@ -444,10 +386,10 @@ public final class KdcComm {
             return -1;
         }
         if (s.endsWith("s")) {
-            int seconds = parsePositiveIntString(s.substring(0, s.length()-1));
+            int seconds = parseNonNegativeIntString(s.substring(0, s.length()-1));
             return (seconds < 0) ? -1 : (seconds*1000);
         } else {
-            return parsePositiveIntString(s);
+            return parseNonNegativeIntString(s);
         }
     }
 
@@ -461,9 +403,11 @@ public final class KdcComm {
      * the global setting if null
      * @param key the key for the setting
      * @param defValue default value
+     * @param mustBePositive true if value must be >0, false if value must be >=0
      * @return a value for the key
      */
-    private int getRealmSpecificValue(String realm, String key, int defValue) {
+    private int getRealmSpecificValue(String realm, String key, int defValue,
+            boolean mustBePositive) {
         int v = defValue;
 
         if (realm == null) return v;
@@ -475,18 +419,22 @@ public final class KdcComm {
             if (key.equals("kdc_timeout")) {
                 temp = parseTimeString(value);
             } else {
-                temp = parsePositiveIntString(value);
+                temp = parseNonNegativeIntString(value);
             }
         } catch (Exception exc) {
             // Ignored, defValue will be picked up
         }
 
-        if (temp > 0) v = temp;
+        if (mustBePositive) {
+            if (temp > 0) v = temp;
+        } else {
+            if (temp >= 0) v = temp;
+        }
 
         return v;
     }
 
-    private static int parsePositiveIntString(String intString) {
+    private static int parseNonNegativeIntString(String intString) {
         if (intString == null)
             return -1;
 
@@ -518,15 +466,15 @@ public final class KdcComm {
         private static Set<String> bads = new HashSet<>();
 
         private static synchronized void addBad(String kdc) {
-            if (DEBUG) {
-                System.out.println(">>> KdcAccessibility: add " + kdc);
+            if (DEBUG != null) {
+                DEBUG.println(">>> KdcAccessibility: add " + kdc);
             }
             bads.add(kdc);
         }
 
         private static synchronized void removeBad(String kdc) {
-            if (DEBUG) {
-                System.out.println(">>> KdcAccessibility: remove " + kdc);
+            if (DEBUG != null) {
+                DEBUG.println(">>> KdcAccessibility: remove " + kdc);
             }
             bads.remove(kdc);
         }
@@ -536,8 +484,8 @@ public final class KdcComm {
         }
 
         private static synchronized void reset() {
-            if (DEBUG) {
-                System.out.println(">>> KdcAccessibility: reset");
+            if (DEBUG != null) {
+                DEBUG.println(">>> KdcAccessibility: reset");
             }
             bads.clear();
         }

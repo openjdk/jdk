@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -431,7 +431,7 @@ OptoRegPair c2::return_value(int ideal_reg) {
 //       will point.
 
 int MachCallStaticJavaNode::ret_addr_offset() {
-  bool far = (_method == NULL) ? maybe_far_call(this) : !cache_reachable();
+  bool far = (_method == nullptr) ? maybe_far_call(this) : !cache_reachable();
   return ((far ? 3 : 1) + (_method_handle_invoke ? 1 : 0)) *
     NativeInstruction::instruction_size;
 }
@@ -501,31 +501,6 @@ operand immIRotn() %{
   interface(CONST_INTER);
 %}
 
-operand immIRotneg() %{
-  // if AsmOperand::is_rotated_imm() is true for this constant, it is
-  // a immIRot and an optimal instruction combination exists to handle the
-  // constant as an immIRot
-  predicate(!AsmOperand::is_rotated_imm(n->get_int()) && AsmOperand::is_rotated_imm(-n->get_int()));
-  match(ConI);
-
-  op_cost(0);
-  // formats are generated automatically for constants and base registers
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Non-negative integer immediate that is encodable using the rotation scheme,
-// and that when expanded fits in 31 bits.
-operand immU31Rot() %{
-  predicate((0 <= n->get_int()) && AsmOperand::is_rotated_imm(n->get_int()));
-  match(ConI);
-
-  op_cost(0);
-  // formats are generated automatically for constants and base registers
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immPRot() %{
   predicate(n->get_ptr() == 0 || (AsmOperand::is_rotated_imm(n->get_ptr()) && ((ConPNode*)n)->type()->reloc() == relocInfo::none));
 
@@ -546,15 +521,15 @@ operand immLlowRot() %{
   interface(CONST_INTER);
 %}
 
-operand immLRot2() %{
-  predicate(AsmOperand::is_rotated_imm((int)(n->get_long() >> 32)) &&
-            AsmOperand::is_rotated_imm((int)(n->get_long())));
-  match(ConL);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
+//operand immLRot2() %{
+//  predicate(AsmOperand::is_rotated_imm((int)(n->get_long() >> 32)) &&
+//            AsmOperand::is_rotated_imm((int)(n->get_long())));
+//  match(ConL);
+//  op_cost(0);
+//
+//  format %{ %}
+//  interface(CONST_INTER);
+//%}
 
 // Integer Immediate: 12-bit - for addressing mode
 operand immI12() %{

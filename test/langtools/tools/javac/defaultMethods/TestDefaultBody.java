@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
  * @test
  * @bug 7192246
  * @summary  check that code attributed for default methods is correctly generated
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.classfile.*;
@@ -67,7 +65,7 @@ public class TestDefaultBody {
             MethodModel testMethod = null;
             CodeAttribute codeAttr = null;
             for (MethodModel m : cf.methods()) {
-                codeAttr = m.findAttribute(Attributes.CODE).orElse(null);
+                codeAttr = m.findAttribute(Attributes.code()).orElse(null);
                 String mname = m.methodName().stringValue();
                 if (mname.equals(TEST_METHOD_NAME)) {
                     testMethod = m;

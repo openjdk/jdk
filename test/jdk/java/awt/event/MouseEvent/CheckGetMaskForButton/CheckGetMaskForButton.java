@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.lang.reflect.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 public class CheckGetMaskForButton{
     static Robot robot;
@@ -50,22 +48,17 @@ public class CheckGetMaskForButton{
         }
 
         //get same array via reflection
-        Object obj = AccessController.doPrivileged(
-                new PrivilegedAction() {
-            public Object run() {
-                try {
-                    Class clazz = Class.forName("java.awt.event.InputEvent");
-                    Method method  = clazz.getDeclaredMethod("getButtonDownMasks",new Class [] {});
-                    if (method != null) {
-                        method.setAccessible(true);
-                        return method.invoke(null, (Object[])null);
-                    }
-                }catch (Exception e){
-                    throw new RuntimeException("Test failed. Exception occured:", e);
-                }
-                return null;
+        Object obj = null;
+        try {
+            Class clazz = Class.forName("java.awt.event.InputEvent");
+            Method method  = clazz.getDeclaredMethod("getButtonDownMasks",new Class [] {});
+            if (method != null) {
+                method.setAccessible(true);
+                obj = method.invoke(null, (Object[])null);
             }
-        });
+        } catch (Exception e) {
+            throw new RuntimeException("Test failed. Exception occured:", e);
+        }
 
         if (obj == null){
             throw new RuntimeException("Test failed. The value obtained via reflection is "+obj);

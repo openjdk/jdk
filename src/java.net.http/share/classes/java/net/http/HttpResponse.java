@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,6 +296,13 @@ public interface HttpResponse<T> {
      *   HttpResponse<Void> response = client
      *     .send(request, BodyHandlers.discarding());  }
      *
+     *  @apiNote
+     *  Some {@linkplain HttpResponse#body() body implementations} created by
+     *  {@linkplain BodySubscribers##streaming-body body subscribers} may need to be
+     *  properly closed, read, or cancelled for the associated resources to
+     *  be reclaimed and for the associated request to {@linkplain HttpClient##closing
+     *  run to completion}.
+     *
      * @since 11
      */
     public static class BodyHandlers {
@@ -518,24 +525,11 @@ public interface HttpResponse<T> {
          * been completely written to the file, and {@link #body()} returns a
          * reference to its {@link Path}.
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodyHandler} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodyHandler} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @param  openOptions any options to use when opening/creating the file
          * @return a response body handler
          * @throws IllegalArgumentException if an invalid set of open options
          *         are specified
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodyHandler<Path> ofFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
@@ -553,21 +547,8 @@ public interface HttpResponse<T> {
          *
          * <p> Equivalent to: {@code ofFile(file, CREATE, WRITE)}
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodyHandler} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodyHandler} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @return a response body handler
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodyHandler<Path> ofFile(Path file) {
             return BodyHandlers.ofFile(file, CREATE, WRITE);
@@ -590,10 +571,6 @@ public interface HttpResponse<T> {
          * by the server. If the destination directory does not exist or cannot
          * be written to, then the response will fail with an {@link IOException}.
          *
-         * <p> Security manager permission checks are performed in this factory
-         * method, when the {@code BodyHandler} is created. Care must be taken
-         * that the {@code BodyHandler} is not shared with untrusted code.
-         *
          * @param  directory the directory to store the file in
          * @param  openOptions open options used when opening the file
          * @return a response body handler
@@ -601,15 +578,6 @@ public interface HttpResponse<T> {
          *         is not of the default file system, is not a directory,
          *         is not writable, or if an invalid set of open options
          *         are specified
-         * @throws SecurityException in the case of the default file system
-         *         provider and a security manager has been installed,
-         *         and it denies
-         *         {@linkplain SecurityManager#checkRead(String) read access}
-         *         to the directory, or it denies
-         *         {@linkplain SecurityManager#checkWrite(String) write access}
-         *         to the directory, or it denies
-         *         {@linkplain SecurityManager#checkWrite(String) write access}
-         *         to the files within the directory.
          */
         public static BodyHandler<Path> ofFileDownload(Path directory,
                                                        OpenOption... openOptions) {
@@ -633,8 +601,14 @@ public interface HttpResponse<T> {
          *
          * @apiNote See {@link BodySubscribers#ofInputStream()} for more
          * information.
+         * <p>
+         * To ensure that all resources associated with the
+         * corresponding exchange are properly released the caller must
+         * eventually obtain and close the {@linkplain BodySubscribers#ofInputStream()
+         * returned stream}.
          *
-         * @return a response body handler
+         * @return a {@linkplain HttpClient##streaming streaming} response body handler
+         *
          */
         public static BodyHandler<InputStream> ofInputStream() {
             return (responseInfo) -> BodySubscribers.ofInputStream();
@@ -651,7 +625,14 @@ public interface HttpResponse<T> {
          * <p> When the {@code HttpResponse} object is returned, the body may
          * not have been completely received.
          *
-         * @return a response body handler
+         * @apiNote
+         * To ensure that all resources associated with the
+         * corresponding exchange are properly released the caller must
+         * eventually obtain and close the {@linkplain BodySubscribers#ofLines(Charset)
+         * returned stream}.
+         *
+         * @return a {@linkplain HttpClient##streaming streaming} response body handler
+         *
          */
         public static BodyHandler<Stream<String>> ofLines() {
             return (responseInfo) ->
@@ -726,10 +707,17 @@ public interface HttpResponse<T> {
          * response bytes can be obtained as they are received. The publisher
          * can and must be subscribed to only once.
          *
-         * @apiNote See {@link BodySubscribers#ofPublisher()} for more
+         * @apiNote
+         * See {@link BodySubscribers#ofPublisher()} for more
          * information.
+         * <p>
+         * To ensure that all resources associated with the
+         * corresponding exchange are properly released the caller must
+         * subscribe to the publisher and conform to the rules outlined in
+         * {@linkplain BodySubscribers#ofPublisher()}
          *
-         * @return a response body handler
+         * @return a {@linkplain HttpClient##streaming publishing} response body handler
+         *
          */
         public static BodyHandler<Publisher<List<ByteBuffer>>> ofPublisher() {
             return (responseInfo) -> BodySubscribers.ofPublisher();
@@ -840,7 +828,7 @@ public interface HttpResponse<T> {
          * already be completed at this point.
          *
          * @param <T> the push promise response body type
-         * @param pushPromiseHandler t he body handler to use for push promises
+         * @param pushPromiseHandler the body handler to use for push promises
          * @param pushPromisesMap a map to accumulate push promises into
          * @return a push promise handler
          */
@@ -936,6 +924,20 @@ public interface HttpResponse<T> {
      *   HttpResponse<byte[]> response = client
      *     .send(request, responseInfo ->
      *        BodySubscribers.mapping(BodySubscribers.ofString(UTF_8), String::getBytes)); }
+     *
+     *  @apiNote
+     *  <p id="streaming-body">
+     *  Some {@linkplain HttpResponse#body() body implementations} created by
+     *  {@linkplain BodySubscriber#getBody() body subscribers} may allow response bytes
+     *  to be streamed to the caller. These implementations are typically
+     *  {@link AutoCloseable} and may need to be explicitly closed in order for
+     *  the resources associated with the request and the client to be {@linkplain
+     *  HttpClient##closing eventually reclaimed}.
+     *  Some other implementations are {@linkplain  Publisher publishers} which need to be
+     *  {@link BodySubscribers#ofPublisher() subscribed} in order for their associated
+     *  resources to be released and for the associated request to {@linkplain
+     *  HttpClient##closing run to completion}.
+     *
      *
      * @since 11
      */
@@ -1096,24 +1098,11 @@ public interface HttpResponse<T> {
          * <p> The {@link HttpResponse} using this subscriber is available after
          * the entire response has been read.
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodySubscriber} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodySubscriber} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @param  openOptions the list of options to open the file with
          * @return a body subscriber
          * @throws IllegalArgumentException if an invalid set of open options
          *         are specified
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodySubscriber<Path> ofFile(Path file, OpenOption... openOptions) {
             Objects.requireNonNull(file);
@@ -1131,21 +1120,8 @@ public interface HttpResponse<T> {
          *
          * <p> Equivalent to: {@code ofFile(file, CREATE, WRITE)}
          *
-         * <p> In the case of the default file system provider, security manager
-         * permission checks are performed in this factory method, when the
-         * {@code BodySubscriber} is created. Otherwise,
-         * {@linkplain FileChannel#open(Path, OpenOption...) permission checks}
-         * may be performed asynchronously against the caller's context
-         * at file access time.
-         * Care must be taken that the {@code BodySubscriber} is not shared with
-         * untrusted code.
-         *
          * @param  file the file to store the body in
          * @return a body subscriber
-         * @throws SecurityException in the case of the default file system
-         *         provider, and a security manager is installed,
-         *         {@link SecurityManager#checkWrite(String) checkWrite}
-         *         is invoked to check write access to the given file
          */
         public static BodySubscriber<Path> ofFile(Path file) {
             return ofFile(file, CREATE, WRITE);
@@ -1168,7 +1144,7 @@ public interface HttpResponse<T> {
          * amount of data is delivered in a timely fashion.
          *
          * @param consumer a Consumer of byte arrays
-         * @return a BodySubscriber
+         * @return a body subscriber
          */
         public static BodySubscriber<Void>
         ofByteArrayConsumer(Consumer<Optional<byte[]>> consumer) {
@@ -1199,8 +1175,8 @@ public interface HttpResponse<T> {
          * while blocking on read. In that case, the request will also be
          * cancelled and the {@code InputStream} will be closed.
          *
-         * @return a body subscriber that streams the response body as an
-         *         {@link InputStream}.
+         * @return a {@linkplain HttpClient##streaming streaming body subscriber}
+         *         which streams the response body as an {@link InputStream}.
          */
         public static BodySubscriber<InputStream> ofInputStream() {
             return new ResponseSubscribers.HttpResponseInputStream();
@@ -1225,8 +1201,8 @@ public interface HttpResponse<T> {
          * from being reused for subsequent operations.
          *
          * @param charset the character set to use when converting bytes to characters
-         * @return a body subscriber that streams the response body as a
-         *         {@link Stream Stream}{@code <String>}.
+         * @return a {@linkplain HttpClient##streaming streaming body subscriber} which streams
+         *          the response body as a {@link Stream Stream}{@code <String>}.
          *
          * @see BufferedReader#lines()
          */
@@ -1268,8 +1244,10 @@ public interface HttpResponse<T> {
          * HTTP connection to be closed and prevent it from being reused for
          * subsequent operations.
          *
-         * @return A {@code BodySubscriber} which publishes the response body
+         * @return A {@linkplain HttpClient##streaming publishing body subscriber}
+         *         which publishes the response body
          *         through a {@code Publisher<List<ByteBuffer>>}.
+         *
          */
         public static BodySubscriber<Publisher<List<ByteBuffer>>> ofPublisher() {
             return ResponseSubscribers.createPublisher();
@@ -1282,7 +1260,7 @@ public interface HttpResponse<T> {
          *
          * @param <U> the type of the response body
          * @param value the value to return from HttpResponse.body(), may be {@code null}
-         * @return a {@code BodySubscriber}
+         * @return a body subscriber
          */
         public static <U> BodySubscriber<U> replacing(U value) {
             return new ResponseSubscribers.NullSubscriber<>(Optional.ofNullable(value));

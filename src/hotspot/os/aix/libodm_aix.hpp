@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,8 @@
 
 #include <odmi.h>
 
-
 // The purpose of this code is to dynamically load the libodm library
 // instead of statically linking against it. The library is AIX-specific.
-// It only exists on AIX, not on PASE. In order to share binaries
-// between AIX and PASE, we can't directly link against it.
 
 typedef int          (*fun_odm_initialize )(void);
 typedef char*        (*fun_odm_set_path   )(char*);

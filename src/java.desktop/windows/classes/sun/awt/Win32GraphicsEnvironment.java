@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
         WToolkit.loadLibraries();
         // setup flags before initializing native layer
         WindowsFlags.initFlags();
-        initDisplayWrapper();
+
+        initDisplay();
 
         // Install correct surface manager factory.
         SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
@@ -82,19 +83,11 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     /**
-     * Initializes native components of the graphics environment.  This
+     * Initializes native components of the graphics environment. This
      * includes everything from the native GraphicsDevice elements to
      * the DirectX rendering layer.
      */
     private static native void initDisplay();
-
-    private static boolean displayInitialized;      // = false;
-    public static void initDisplayWrapper() {
-        if (!displayInitialized) {
-            displayInitialized = true;
-            initDisplay();
-        }
-    }
 
     public Win32GraphicsEnvironment() {
     }

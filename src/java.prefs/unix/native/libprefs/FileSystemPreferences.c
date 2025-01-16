@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,6 @@ Java_java_util_prefs_FileSystemPreferences_chmod(JNIEnv *env,
     return (jint) result;
 }
 
-#if defined(_ALLBSD_SOURCE)
-typedef struct flock FLOCK;
-#else
-typedef struct flock64 FLOCK;
-#endif
-
 /**
  * Try to open a named lock file.
  * The result is a cookie that can be used later to unlock the file.
@@ -74,7 +68,7 @@ Java_java_util_prefs_FileSystemPreferences_lockFile0(JNIEnv *env,
     int result[2] = {0, 0};
     jintArray javaResult = NULL;
     int old_umask;
-    FLOCK fl;
+    struct flock fl;
 
     if (!fname)
         return javaResult;
@@ -101,11 +95,7 @@ Java_java_util_prefs_FileSystemPreferences_lockFile0(JNIEnv *env,
     if (fd < 0) {
         result[0] = 0;
     } else {
-#if defined(_ALLBSD_SOURCE)
         rc = fcntl(fd, F_SETLK, &fl);
-#else
-        rc = fcntl(fd, F_SETLK64, &fl);
-#endif
         result[1] = errno;
         if (rc < 0) {
             result[0]= 0;
@@ -130,18 +120,13 @@ Java_java_util_prefs_FileSystemPreferences_unlockFile0(JNIEnv *env,
                                       jclass thisclass, jint fd) {
 
     int rc;
-    FLOCK fl;
+    struct flock fl;
     fl.l_whence = SEEK_SET;
     fl.l_len = 0;
     fl.l_start = 0;
     fl.l_type = F_UNLCK;
 
-#if defined(_ALLBSD_SOURCE)
     rc = fcntl(fd, F_SETLK, &fl);
-#else
-    rc = fcntl(fd, F_SETLK64, &fl);
-#endif
-
     if (rc < 0) {
         close(fd);
         return (jint)errno;

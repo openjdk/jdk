@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
-    static abstract sealed class PBEKeyInfo extends KeyInfo
+    abstract static sealed class PBEKeyInfo extends KeyInfo
             permits AESPBEKeyInfo, PBKDF2KeyInfo, P12MacPBEKeyInfo {
         public static final long INVALID_PRF = -1;
         public final long kdfMech;

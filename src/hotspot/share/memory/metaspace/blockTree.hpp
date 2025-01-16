@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,13 +29,14 @@
 #include "memory/allocation.hpp"
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 namespace metaspace {
 
 // BlockTree is a rather simple binary search tree. It is used to
-//  manage small to medium free memory blocks (see class FreeBlocks).
+//  manage medium to large free memory blocks.
 //
 // There is no separation between payload (managed blocks) and nodes: the
 //  memory blocks themselves are the nodes, with the block size being the key.
@@ -80,8 +81,7 @@ class BlockTree: public CHeapObj<mtMetaspace> {
         NOT_LP64(0x4e4f4445) LP64_ONLY(0x4e4f44454e4f4445ULL); // "NODE" resp "NODENODE"
 
     // Note: we afford us the luxury of an always-there canary value.
-    //  The space for that is there (these nodes are only used to manage larger blocks,
-    //  see FreeBlocks::MaxSmallBlocksWordSize).
+    //  The space for that is there (these nodes are only used to manage larger blocks).
     //  It is initialized in debug and release, but only automatically tested
     //  in debug.
     const intptr_t _canary;
@@ -335,7 +335,7 @@ private:
   }
 
 #ifdef ASSERT
-  void zap_range(MetaWord* p, size_t word_size);
+  void zap_block(MetaBlock block);
   // Helper for verify()
   void verify_node_pointer(const Node* n) const;
 #endif // ASSERT
@@ -345,10 +345,11 @@ public:
   BlockTree() : _root(nullptr) {}
 
   // Add a memory block to the tree. Its content will be overwritten.
-  void add_block(MetaWord* p, size_t word_size) {
-    DEBUG_ONLY(zap_range(p, word_size));
+  void add_block(MetaBlock block) {
+    DEBUG_ONLY(zap_block(block);)
+    const size_t word_size = block.word_size();
     assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
-    Node* n = new(p) Node(word_size);
+    Node* n = new(block.base()) Node(word_size);
     if (_root == nullptr) {
       _root = n;
     } else {
@@ -358,11 +359,11 @@ public:
   }
 
   // Given a word_size, search and return the smallest block that is equal or
-  //  larger than that size. Upon return, *p_real_word_size contains the actual
-  //  block size.
-  MetaWord* remove_block(size_t word_size, size_t* p_real_word_size) {
+  //  larger than that size.
+  MetaBlock remove_block(size_t word_size) {
     assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
 
+    MetaBlock result;
     Node* n = find_closest_fit(word_size);
 
     if (n != nullptr) {
@@ -379,15 +380,13 @@ public:
         remove_node_from_tree(n);
       }
 
-      MetaWord* p = (MetaWord*)n;
-      *p_real_word_size = n->_word_size;
+      result = MetaBlock((MetaWord*)n, n->_word_size);
 
       _counter.sub(n->_word_size);
 
-      DEBUG_ONLY(zap_range(p, n->_word_size));
-      return p;
+      DEBUG_ONLY(zap_block(result);)
     }
-    return nullptr;
+    return result;
   }
 
   // Returns number of blocks in this structure

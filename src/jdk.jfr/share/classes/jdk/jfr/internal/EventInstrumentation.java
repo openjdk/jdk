@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,6 @@ final class EventInstrumentation {
     private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
     private static final ClassDesc TYPE_ISE = Bytecode.classDesc(IllegalStateException.class);
     private static final ClassDesc TYPE_EVENT_WRITER = classDesc(EventWriter.class);
-    private static final ClassDesc TYPE_EVENT_WRITER_FACTORY = ClassDesc.of("jdk.jfr.internal.event.EventWriterFactory");
-    private static final ClassDesc TYPE_MIRROR_EVENT = Bytecode.classDesc(MirrorEvent.class);
     private static final ClassDesc TYPE_OBJECT = Bytecode.classDesc(Object.class);
     private static final ClassDesc TYPE_SETTING_DEFINITION = Bytecode.classDesc(SettingDefinition.class);
     private static final MethodDesc METHOD_BEGIN = MethodDesc.of("begin", "()V");
@@ -101,7 +99,7 @@ final class EventInstrumentation {
     private static final MethodDesc METHOD_EVENT_CONFIGURATION_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "(J)Z");
     private static final MethodDesc METHOD_EVENT_CONFIGURATION_GET_SETTING = MethodDesc.of("getSetting", SettingControl.class, int.class);
     private static final MethodDesc METHOD_EVENT_SHOULD_COMMIT = MethodDesc.of("shouldCommit", "()Z");
-    private static final MethodDesc METHOD_GET_EVENT_WRITER_KEY = MethodDesc.of("getEventWriter", "(J)" + TYPE_EVENT_WRITER.descriptorString());
+    private static final MethodDesc METHOD_GET_EVENT_WRITER = MethodDesc.of("getEventWriter", "()" + TYPE_EVENT_WRITER.descriptorString());
     private static final MethodDesc METHOD_IS_ENABLED = MethodDesc.of("isEnabled", "()Z");
     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
     private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
@@ -144,9 +142,7 @@ final class EventInstrumentation {
 
     private ImplicitFields determineImplicitFields() {
         if (isJDK) {
-            // For now, only support mirror events in java.base
-            String fullName = "java.base:" + className;
-            Class<?> eventClass = MirrorEvents.find(fullName);
+            Class<?> eventClass = MirrorEvents.find(isJDK, className);
             if (eventClass != null) {
                 return new ImplicitFields(eventClass);
             }
@@ -221,25 +217,11 @@ final class EventInstrumentation {
         return true;
     }
 
-    boolean isMirrorEvent() {
-        String typeDescriptor = TYPE_MIRROR_EVENT.descriptorString();
-        for (ClassElement ce : classModel.elements()) {
-            if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
-                for (var annotation : rvaa.annotations()) {
-                    if (annotation.className().equalsString(typeDescriptor)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     @SuppressWarnings("unchecked")
     // Only supports String, String[] and Boolean values
     private static <T> T annotationValue(ClassModel classModel, ClassDesc classDesc, Class<T> type) {
         String typeDescriptor = classDesc.descriptorString();
-        for (ClassElement ce : classModel.elements()) {
+        for (ClassElement ce : classModel) {
             if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                 for (Annotation a : rvaa.annotations()) {
                     if (a.className().equalsString(typeDescriptor)) {
@@ -277,7 +259,7 @@ final class EventInstrumentation {
         Set<String> methodSet = new HashSet<>();
         List<SettingDesc> settingDescs = new ArrayList<>();
         for (MethodModel m : classModel.methods()) {
-            for (var me : m.elements()) {
+            for (var me : m) {
                 if (me instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                     for (Annotation a : rvaa.annotations()) {
                         // We can't really validate the method at this
@@ -478,7 +460,7 @@ final class EventInstrumentation {
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
                     Label rethrow = catchAllHandler.newLabel();
-                    catchAllHandler.if_null(rethrow);
+                    catchAllHandler.ifnull(rethrow);
                     // stack: [ex] [EW]
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
@@ -487,7 +469,7 @@ final class EventInstrumentation {
                     // stack:[ex] [EW]
                     catchAllHandler.pop();
                     // stack:[ex]
-                    catchAllHandler.throwInstruction();
+                    catchAllHandler.athrow();
                 });
             });
             codeBuilder.labelBinding(excluded);
@@ -503,7 +485,7 @@ final class EventInstrumentation {
             Label fail = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.if_null(fail);
+                codeBuilder.ifnull(fail);
             }
             // if (!eventConfiguration.shouldCommit(duration) goto fail;
             getEventConfiguration(codeBuilder);
@@ -516,7 +498,7 @@ final class EventInstrumentation {
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 codeBuilder.aload(0);
                 getEventConfiguration(codeBuilder);
-                codeBuilder.ldc(index);
+                codeBuilder.loadConstant(index);
                 invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_GET_SETTING);
                 MethodTypeDesc mdesc = MethodTypeDesc.ofDescriptor("(" + sd.paramType().descriptorString() + ")Z");
                 codeBuilder.checkcast(sd.paramType());
@@ -542,7 +524,7 @@ final class EventInstrumentation {
                 if (guardEventConfiguration) {
                     // if (eventConfiguration == null) goto fail;
                     getEventConfiguration(codeBuilder);
-                    codeBuilder.if_null(fail);
+                    codeBuilder.ifnull(fail);
                 }
                 // return eventConfiguration.shouldCommit(duration);
                 getEventConfiguration(codeBuilder);
@@ -579,7 +561,7 @@ final class EventInstrumentation {
         // write begin event
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW], [EW], [EventConfiguration]
-        blockCodeBuilder.constantInstruction(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         // stack: [EW], [EW], [EventConfiguration] [long]
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW], [integer]
@@ -589,7 +571,7 @@ final class EventInstrumentation {
         blockCodeBuilder.dup();
         // stack: [EW], [EW]
         tk = TypeKind.from(argumentTypes[argIndex++]);
-        blockCodeBuilder.loadInstruction(tk, slotIndex);
+        blockCodeBuilder.loadLocal(tk, slotIndex);
         // stack: [EW], [EW], [long]
         slotIndex += tk.slotSize();
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
@@ -600,7 +582,7 @@ final class EventInstrumentation {
             blockCodeBuilder.dup();
             // stack: [EW], [EW]
             tk = TypeKind.from(argumentTypes[argIndex++]);
-            blockCodeBuilder.loadInstruction(tk, slotIndex);
+            blockCodeBuilder.loadLocal(tk, slotIndex);
             // stack: [EW], [EW], [long]
             slotIndex += tk.slotSize();
             invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
@@ -626,7 +608,7 @@ final class EventInstrumentation {
             blockCodeBuilder.dup();
             // stack: [EW], [EW]
             tk = TypeKind.from(argumentTypes[argIndex++]);
-            blockCodeBuilder.loadInstruction(tk, slotIndex);
+            blockCodeBuilder.loadLocal(tk, slotIndex);
             // stack:[EW], [EW], [field]
             slotIndex += tk.slotSize();
             FieldDesc field = fieldDescs.get(fieldIndex);
@@ -693,7 +675,7 @@ final class EventInstrumentation {
         // stack: [EW] [EW]
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW] [EW] [EC]
-        blockCodeBuilder.constantInstruction(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW] [int]
         blockCodeBuilder.ifeq(excluded);
@@ -755,7 +737,7 @@ final class EventInstrumentation {
             Label nullLabel = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.branchInstruction(Opcode.IFNULL, nullLabel);
+                codeBuilder.ifnull(nullLabel);
             }
             getEventConfiguration(codeBuilder);
             invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);
@@ -784,8 +766,7 @@ final class EventInstrumentation {
     }
 
     private void getEventWriter(CodeBuilder codeBuilder) {
-        codeBuilder.ldc(EventWriterKey.getKey());
-        invokestatic(codeBuilder, TYPE_EVENT_WRITER_FACTORY, METHOD_GET_EVENT_WRITER_KEY);
+        invokestatic(codeBuilder, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER);
     }
 
     private void getEventConfiguration(CodeBuilder codeBuilder) {

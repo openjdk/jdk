@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,6 +243,15 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 ((SunGraphics2D)bsg).constrain(xOffset + cx, yOffset + cy,
                                                x + w, y + h);
                 bsg.setClip(x, y, w, h);
+
+                if (!bufferComponent.isOpaque()) {
+                    final SunGraphics2D g2d = (SunGraphics2D) bsg;
+                    final Color oldBg = g2d.getBackground();
+                    g2d.setBackground(paintingComponent.getBackground());
+                    g2d.clearRect(x, y, w, h);
+                    g2d.setBackground(oldBg);
+                }
+
                 paintingComponent.paintToOffscreen(bsg, x, y, w, h,
                                                    x + w, y + h);
                 accumulate(xOffset + x, yOffset + y, w, h);
