@@ -1692,6 +1692,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
       return;
     }
   }
+  // The jtiows does nothing for non-interruptible.
   JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
 
   // create a node to be put into the queue
