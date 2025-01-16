@@ -97,6 +97,14 @@ final class TestCaptureStateUtil {
     }
 
     @Test
+    void successfulIntPerHandle() throws Throwable {
+        MethodHandle handle = CaptureStateUtil
+                .adaptSystemCall(CaptureStateUtil.Pooling.PER_HANDLE, INT_DUMMY_HANDLE, ERRNO_NAME);
+        int r = (int) handle.invokeExact(1, 0);
+        assertEquals(1, r);
+    }
+
+    @Test
     void invariants() throws Throwable {
         MethodHandle noSegment = MethodHandles.lookup()
                 .findStatic(TestCaptureStateUtil.class, "wrongType",
