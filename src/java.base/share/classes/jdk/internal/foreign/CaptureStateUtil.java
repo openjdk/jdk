@@ -29,6 +29,7 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.util.SingleElementPool;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -328,11 +329,17 @@ public final class CaptureStateUtil {
         // Used reflectively
         @ForceInline
         private static SegmentPool acquirePool() {
-            SegmentPool cache = TL_POOLS.get();
-            if (cache == null) {
-                TL_POOLS.set(cache = new SegmentPool());
+            SegmentPool pool = TL_POOLS.get();
+            // Todo: Replace with StableValue
+            if (pool == null) {
+                synchronized (CaptureStateUtil.class) {
+                    pool = TL_POOLS.get();
+                    if (pool != null) {
+                        TL_POOLS.set(pool = new SegmentPool());
+                    }
+                }
             }
-            return cache;
+            return pool;
         }
     }
 

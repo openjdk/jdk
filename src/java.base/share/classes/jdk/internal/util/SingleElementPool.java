@@ -94,10 +94,8 @@ public sealed interface SingleElementPool<T> extends AutoCloseable {
         public SingleElementPoolImpl(T pooledElement,
                                      Supplier<? extends T> factory,
                                      Consumer<? super T> recycler) {
-            Objects.requireNonNull(factory);
-            Objects.requireNonNull(recycler);
-            this.factory = factory;
-            this.recycler = recycler;
+            this.factory = Objects.requireNonNull(factory);
+            this.recycler = Objects.requireNonNull(recycler);
             this.pooledElement = pooledElement;
         }
 
