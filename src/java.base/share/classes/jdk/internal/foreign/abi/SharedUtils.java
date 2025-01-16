@@ -397,16 +397,16 @@ public final class SharedUtils {
             segment = arena.allocate(Math.max(size, CACHED_SIZE));
         }
 
-        boolean supports(long size) {
-            return segment.byteSize() > size;
-        }
-
         private SegmentAllocator slicingAllocator() {
             return SegmentAllocator.slicingAllocator(segment);
         }
 
         private Scope scope() {
             return segment.scope();
+        }
+
+        static boolean isCacheable(long size) {
+            return size <= CACHED_SIZE;
         }
 
         boolean isCacheable() {
@@ -431,13 +431,15 @@ public final class SharedUtils {
 
             @Override
             protected void threadTerminated(Holder holder) {
-                if (holder.element != null) holder.element.close();
+                if (holder.element != null) {
+                    holder.element.close();
+                }
             }
         };
 
-        static CallBuffer acquire(long size) {
-            Holder cache = tl.get();
-            if (cache.element == null || !cache.element.supports(size)) {
+        static CallBuffer acquireOrAllocate(long size) {
+            Holder cache;
+            if (!isCacheable(size) || (cache = tl.get()).element == null) {
                 return new CallBuffer(size);
             }
             CallBuffer result = cache.element;
@@ -445,16 +447,19 @@ public final class SharedUtils {
             return result;
         }
 
-        static void release(CallBuffer released) {
-            Holder cache = tl.get();
-            if (cache.element == null && released.isCacheable()) cache.element = released;
-            else released.close();
+        static void cacheOrClose(CallBuffer released) {
+            Holder cache;
+            if (released.isCacheable() && (cache = tl.get()).element == null) {
+                cache.element = released;
+            } else {
+                released.close();
+            }
         }
     }
 
     public static Arena newBoundedArena(long size) {
         return new Arena() {
-            final CallBuffer buffer = CallBuffer.acquire(size);
+            final CallBuffer buffer = CallBuffer.acquireOrAllocate(size);
             final SegmentAllocator allocator = buffer.slicingAllocator();
 
             @Override
@@ -471,7 +476,7 @@ public final class SharedUtils {
             public void close() {
                 // Caveat: this may be a carrier thread different from
                 // where the allocation happened.
-                CallBuffer.release(buffer);
+                CallBuffer.cacheOrClose(buffer);
             }
         };
     }
@@ -514,8 +519,8 @@ public final class SharedUtils {
         } else if (type == double.class) {
             ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
         } else if (type == boolean.class) {
-            boolean b = (boolean)o;
-            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long)1 : (long)0);
+            boolean b = (boolean) o;
+            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long) 1 : (long) 0);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
