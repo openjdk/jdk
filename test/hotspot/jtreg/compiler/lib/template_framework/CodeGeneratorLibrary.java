@@ -261,7 +261,7 @@ public final class CodeGeneratorLibrary {
                 int lo = parameters.getIntOrDefault("lo", Integer.MIN_VALUE, scope);
                 int hi = parameters.getIntOrDefault("hi", Integer.MAX_VALUE, scope);
 
-                int v = Generators.G.safeRestrictInt(intGenerator, lo, hi).next();
+                int v = Generators.G.safeRestrict(intGenerator, lo, hi).next();
                 scope.stream.addCodeToLine(String.valueOf(v));
         }, 0));
 
@@ -278,7 +278,7 @@ public final class CodeGeneratorLibrary {
                 long lo = parameters.getLongOrDefault("lo", Long.MIN_VALUE, scope);
                 long hi = parameters.getLongOrDefault("hi", Long.MAX_VALUE, scope);
 
-                long v = Generators.G.safeRestrictLong(longGenerator, lo, hi).next();
+                long v = Generators.G.safeRestrict(longGenerator, lo, hi).next();
                 scope.stream.addCodeToLine(String.valueOf(v) + "L");
         }, 0));
 
@@ -290,7 +290,7 @@ public final class CodeGeneratorLibrary {
         codeGenerators.add(new ProgrammaticCodeGenerator("boolean_con",
             (Scope scope, Parameters parameters) -> {
                 parameters.checkOnlyHas(scope);
-                int v = Generators.G.safeRestrictInt(intGenerator, 0, 1).next();
+                int v = Generators.G.safeRestrict(intGenerator, 0, 1).next();
                 String bool = (v == 0) ? "false" : "true";
                 scope.stream.addCodeToLine(bool);
         }, 0));
