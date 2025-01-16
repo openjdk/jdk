@@ -43,16 +43,8 @@ import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.Arena;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 import java.lang.foreign.MemorySegment.Scope;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -383,13 +375,17 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
-    static class Segment {
+    // Intermediate buffer needed for a stub call handle. Small buffers may be reused across calls.
+    static class CallBuffer {
+        // Size for cached buffers.
         private static final int CACHED_SIZE = 256;
 
+        // Not confined: cached buffers may float between threads.
         private final Arena arena = Arena.ofShared();
         private final MemorySegment segment;
 
-        public Segment(long size) {
+        public CallBuffer(long size) {
+            // Allocate at least CACHED_SIZE in case we want to reuse this buffer.
             segment = arena.allocate(Math.max(size, CACHED_SIZE));
         }
 
@@ -405,57 +401,53 @@ public final class SharedUtils {
             return segment.scope();
         }
 
-        boolean canCache() {
+        boolean isCacheable() {
+            // Don't cache larger buffers.
             return segment.byteSize() == CACHED_SIZE;
         }
 
         void close() {
             arena.close();
         }
-    }
 
-    static class SegmentCache {
-        private Segment segment = null;
+        // A one-element cache.
+        static class Holder {
+            private CallBuffer element = null;
+        }
 
-        Segment acquire(long size) {
-            if (segment == null || !segment.supports(size)) {
-                return new Segment(size);
+        private static final TerminatingThreadLocal<SharedUtils.CallBuffer.Holder> tl = new TerminatingThreadLocal<SharedUtils.CallBuffer.Holder>() {
+            @Override
+            protected SharedUtils.CallBuffer.Holder initialValue() {
+                return new SharedUtils.CallBuffer.Holder();
             }
-            Segment result = segment;
-            segment = null;
+
+            @Override
+            protected void threadTerminated(SharedUtils.CallBuffer.Holder holder) {
+                if (holder.element != null) holder.element.close();
+            }
+        };
+
+        static CallBuffer acquire(long size) {
+            SharedUtils.CallBuffer.Holder cache = tl.get();
+            if (cache.element == null || !cache.element.supports(size)) {
+                return new CallBuffer(size);
+            }
+            CallBuffer result = cache.element;
+            cache.element = null;
             return result;
         }
 
-        private boolean canCache(Segment released) {
-            return this.segment == null && released.canCache();
-        }
-
-        void release(Segment released) {
-            if (canCache(released)) this.segment = released;
+        static void release(CallBuffer released) {
+            SharedUtils.CallBuffer.Holder cache = tl.get();
+            if (cache.element == null && released.isCacheable()) cache.element = released;
             else released.close();
-        }
-
-        void close() {
-            if (this.segment != null) this.segment.close();
         }
     }
 
-    private static final TerminatingThreadLocal<SegmentCache> segmentCache = new TerminatingThreadLocal<SegmentCache>() {
-        @Override
-        protected SegmentCache initialValue() {
-            return new SegmentCache();
-        }
-
-        @Override
-        protected void threadTerminated(SegmentCache cache) {
-            cache.close();
-        }
-    };
-
     public static Arena newBoundedArena(long size) {
         return new Arena() {
-            final Segment segment = SharedUtils.segmentCache.get().acquire(size);
-            final SegmentAllocator allocator = segment.slicingAllocator();
+            final CallBuffer buffer = SharedUtils.CallBuffer.acquire(size);
+            final SegmentAllocator allocator = buffer.slicingAllocator();
 
             @Override
             public MemorySegment allocate(long byteSize, long byteAlignment) {
@@ -464,12 +456,14 @@ public final class SharedUtils {
 
             @Override
             public Scope scope() {
-                return segment.scope();
+                return buffer.scope();
             }
 
             @Override
             public void close() {
-                SharedUtils.segmentCache.get().release(segment);
+                // Caveat: this may be a carrier thread different from
+                // where the allocation happened.
+                SharedUtils.CallBuffer.release(buffer);
             }
         };
     }
