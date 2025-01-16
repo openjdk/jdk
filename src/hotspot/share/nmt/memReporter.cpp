@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,7 +554,7 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
     out->print(" #" SIZE_FORMAT "", current_count);
     const ssize_t delta_count = counter_diff(current_count, early_count);
     if (delta_count != 0) {
-      out->print(" " SSIZE_PLUS_FORMAT, delta_count);
+      out->print(" %+zd", delta_count);
     }
   }
 }
@@ -572,7 +572,7 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
   out->print(" #" SIZE_FORMAT "", current_count);
   const ssize_t delta_count = counter_diff(current_count, early_count);
   if (delta_count != 0) {
-    out->print(" " SSIZE_PLUS_FORMAT, delta_count);
+    out->print(" %+zd", delta_count);
   }
 }
 
@@ -650,7 +650,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
       const ssize_t class_count_diff =
           counter_diff(_current_baseline.class_count(), _early_baseline.class_count());
       if (class_count_diff != 0) {
-        out->print(" " SSIZE_PLUS_FORMAT, class_count_diff);
+        out->print(" %+zd", class_count_diff);
       }
       out->print_cr(")");
 
@@ -658,13 +658,13 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
       const ssize_t instance_class_count_diff =
           counter_diff(_current_baseline.instance_class_count(), _early_baseline.instance_class_count());
       if (instance_class_count_diff != 0) {
-        out->print(" " SSIZE_PLUS_FORMAT, instance_class_count_diff);
+        out->print(" %+zd", instance_class_count_diff);
       }
       out->print(", array classes #" SIZE_FORMAT, _current_baseline.array_class_count());
       const ssize_t array_class_count_diff =
           counter_diff(_current_baseline.array_class_count(), _early_baseline.array_class_count());
       if (array_class_count_diff != 0) {
-        out->print(" " SSIZE_PLUS_FORMAT, array_class_count_diff);
+        out->print(" %+zd", array_class_count_diff);
       }
       out->print_cr(")");
 
@@ -673,7 +673,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
       out->print("(threads #" SIZE_FORMAT, _current_baseline.thread_count());
       const ssize_t thread_count_diff = counter_diff(_current_baseline.thread_count(), _early_baseline.thread_count());
       if (thread_count_diff != 0) {
-        out->print(" " SSIZE_PLUS_FORMAT, thread_count_diff);
+        out->print(" %+zd", thread_count_diff);
       }
       out->print_cr(")");
 

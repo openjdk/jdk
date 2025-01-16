@@ -363,18 +363,35 @@ private:
 
   size_t _gc_no_progress_count;
 
-  // This updates the singlular, global gc state. This must happen on a safepoint.
-  void set_gc_state(uint mask, bool value);
+  // This updates the singular, global gc state. This call must happen on a safepoint.
+  void set_gc_state_at_safepoint(uint mask, bool value);
+
+  // This also updates the global gc state, but does not need to be called on a safepoint.
+  // Critically, this method will _not_ flag that the global gc state has changed and threads
+  // will continue to use their thread local copy. This is expected to be used in conjunction
+  // with a handshake operation to propagate the new gc state.
+  void set_gc_state_concurrent(uint mask, bool value);
 
 public:
+  // This returns the raw value of the singular, global gc state.
   char gc_state() const;
 
-  // This copies the global gc state into a thread local variable for java threads.
-  // It is primarily intended to support quick access at barriers.
-  void propagate_gc_state_to_java_threads();
+  // Compares the given state against either the global gc state, or the thread local state.
+  // The global gc state may change on a safepoint and is the correct value to use until
+  // the global gc state has been propagated to all threads (after which, this method will
+  // compare against the thread local state). The thread local gc state may also be changed
+  // by a handshake operation, in which case, this function continues using the updated thread
+  // local value.
+  bool is_gc_state(GCState state) const;
+
+  // This copies the global gc state into a thread local variable for all threads.
+  // The thread local gc state is primarily intended to support quick access at barriers.
+  // All threads are updated because in some cases the control thread or the vm thread may
+  // need to execute the load reference barrier.
+  void propagate_gc_state_to_all_threads();
 
   // This is public to support assertions that the state hasn't been changed off of
-  // a safepoint and that any changes were propagated to java threads after the safepoint.
+  // a safepoint and that any changes were propagated to threads after the safepoint.
   bool has_gc_state_changed() const { return _gc_state_changed; }
 
   // Returns true if allocations have occurred in new regions or if regions have been
@@ -394,9 +411,7 @@ public:
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
 
-  inline bool is_stable() const;
   inline bool is_idle() const;
-
   inline bool is_concurrent_mark_in_progress() const;
   inline bool is_concurrent_young_mark_in_progress() const;
   inline bool is_concurrent_old_mark_in_progress() const;
@@ -464,6 +479,10 @@ private:
   void do_class_unloading();
   // Reference updating
   void prepare_update_heap_references(bool concurrent);
+
+  // Retires LABs used for evacuation
+  void concurrent_prepare_for_update_refs();
+
   virtual void update_heap_references(bool concurrent);
   // Final update region states
   void update_heap_region_states(bool concurrent);

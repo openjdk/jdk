@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import jdk.test.lib.classloader.ClassUnloadCommon;
 
 import java.lang.reflect.Array;
 import java.lang.ref.Reference;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Test that verifies that liveness of classes is correctly tracked.
@@ -108,9 +110,9 @@ public class UnloadTest {
         // Don't let `o` get prematurely reclaimed by the GC.
         Reference.reachabilityFence(o);
         o = null;
-        ClassUnloadCommon.triggerUnloading();
 
-        ClassUnloadCommon.failIf(wb.isClassAlive(className), "should have been unloaded");
+        Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(className));
+        ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should have been unloaded: " + aliveClasses);
 
         int unloadedRefcount = wb.getSymbolRefcount(loaderName);
         System.out.println("Refcount of symbol " + loaderName + " is " + unloadedRefcount);

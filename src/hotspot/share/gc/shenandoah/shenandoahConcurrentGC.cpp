@@ -192,8 +192,14 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
       return false;
     }
 
+    // Evacuation is complete, retire gc labs
+    heap->concurrent_prepare_for_update_refs();
+
     // Perform update-refs phase.
-    vmop_entry_init_updaterefs();
+    if (ShenandoahVerify || ShenandoahPacing) {
+      vmop_entry_init_updaterefs();
+    }
+
     entry_updaterefs();
     if (check_cancellation_and_abort(ShenandoahDegenPoint::_degenerated_updaterefs)) {
       return false;
@@ -748,10 +754,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
           heap->verifier()->verify_after_concmark();
         }
       }
-
-      if (VerifyAfterGC) {
-        Universe::verify();
-      }
     }
   }
 }
@@ -920,8 +922,8 @@ public:
     }
 
     // If we are going to perform concurrent class unloading later on, we need to
-    // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
-    // can cleanup immediate garbage sooner.
+    // clean up the weak oops in CLD and determine nmethod's unloading state, so that we
+    // can clean up immediate garbage sooner.
     if (ShenandoahHeap::heap()->unload_classes()) {
       // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either null the
       // CLD's holder or evacuate it.
@@ -947,21 +949,10 @@ void ShenandoahConcurrentGC::op_weak_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_weak_root_in_progress(), "Only during this phase");
   // Concurrent weak root processing
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
-    heap->workers()->run_task(&task);
-  }
-
-  // Perform handshake to flush out dead oops
-  {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-    heap->rendezvous_threads("Shenandoah Concurrent Weak Roots");
-  }
-  // We can only toggle concurrent_weak_root_in_progress flag
-  // at a safepoint, so that mutators see a consistent
-  // value. The flag will be cleared at the next safepoint.
+  ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
+  ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
+  ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
+  heap->workers()->run_task(&task);
 }
 
 void ShenandoahConcurrentGC::op_class_unloading() {
@@ -1058,10 +1049,6 @@ void ShenandoahConcurrentGC::op_evacuate() {
 
 void ShenandoahConcurrentGC::op_init_updaterefs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->set_evacuation_in_progress(false);
-  heap->set_concurrent_weak_root_in_progress(false);
-  heap->prepare_update_heap_references(true /*concurrent*/);
-  heap->set_update_refs_in_progress(true);
   if (ShenandoahVerify) {
     heap->verifier()->verify_before_updaterefs();
   }
@@ -1177,6 +1164,10 @@ void ShenandoahConcurrentGC::op_final_roots() {
     if (!_generation->is_old()) {
       ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
     }
+  }
+
+  if (VerifyAfterGC) {
+    Universe::verify();
   }
 }
 

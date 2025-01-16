@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1656,12 +1656,12 @@ public class TreeMap<K,V>
         @java.io.Serial
         private static final long serialVersionUID = -2102997345730753016L;
         /**
-         * The backing map.
+         * @serial The backing map.
          */
         final TreeMap<K,V> m;
 
         /**
-         * Endpoints are represented as triples (fromStart, lo,
+         * @serial Endpoints are represented as triples (fromStart, lo,
          * loInclusive) and (toEnd, hi, hiInclusive). If fromStart is
          * true, then the low (absolute) bound is the start of the
          * backing map, and the other values are ignored. Otherwise,
@@ -1670,9 +1670,12 @@ public class TreeMap<K,V>
          */
         @SuppressWarnings("serial") // Conditionally serializable
         final K lo;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         final K hi;
+        /** @serial */
         final boolean fromStart, toEnd;
+        /** @serial */
         final boolean loInclusive, hiInclusive;
 
         NavigableSubMap(TreeMap<K,V> m,
@@ -2288,6 +2291,7 @@ public class TreeMap<K,V>
             super(m, fromStart, lo, loInclusive, toEnd, hi, hiInclusive);
         }
 
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final Comparator<? super K> reverseComparator =
             Collections.reverseOrder(m.comparator);
@@ -2376,9 +2380,12 @@ public class TreeMap<K,V>
         implements SortedMap<K,V>, java.io.Serializable {
         @java.io.Serial
         private static final long serialVersionUID = -6520786458950516097L;
+        /** @serial */
         private boolean fromStart = false, toEnd = false;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private K fromKey;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private K toKey;
         @java.io.Serial

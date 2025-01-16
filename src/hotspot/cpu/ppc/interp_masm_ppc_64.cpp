@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -681,14 +681,14 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     // Check if synchronized method or unlocking prevented by
     // JavaThread::do_not_unlock_if_synchronized flag.
     lbz(Rdo_not_unlock_flag, in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()), R16_thread);
-    lwz(Raccess_flags, in_bytes(Method::access_flags_offset()), R19_method);
+    lhz(Raccess_flags, in_bytes(Method::access_flags_offset()), R19_method);
     li(R0, 0);
     stb(R0, in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()), R16_thread); // reset flag
 
     push(state);
 
     // Skip if we don't have to unlock.
-    rldicl_(R0, Raccess_flags, 64-JVM_ACC_SYNCHRONIZED_BIT, 63); // Extract bit and compare to 0.
+    testbitdi(CCR0, R0, Raccess_flags, JVM_ACC_SYNCHRONIZED_BIT);
     beq(CCR0, Lunlocked);
 
     cmpwi(CCR0, Rdo_not_unlock_flag, 0);
