@@ -169,7 +169,7 @@ JVMFlag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
   if (CodeCacheSegmentSize < sizeof(jdouble)) {
     JVMFlag::printError(verbose,
                         "CodeCacheSegmentSize  (%zu) must be "
-                        "at least " SIZE_FORMAT " to align constants\n",
+                        "at least %zu to align constants\n",
                         CodeCacheSegmentSize, sizeof(jdouble));
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

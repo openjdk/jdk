@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
- Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -1244,7 +1244,7 @@ static jvmtiError JNICALL
   <xsl:param name="name"/>
   <xsl:text> </xsl:text>
   <xsl:value-of select="$name"/>
-  <xsl:text>=" SIZE_FORMAT_X "</xsl:text>
+  <xsl:text>=0x%zx</xsl:text>
 </xsl:template>
 
 <xsl:template match="jfloat|jdouble" mode="traceInFormat">

@@ -549,7 +549,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in module %s) cannot access class %s (in unnamed module @" SIZE_FORMAT_X ") because module %s does not read unnamed module @" SIZE_FORMAT_X,
+          "class %s (in module %s) cannot access class %s (in unnamed module @0x%zx) because module %s does not read unnamed module @0x%zx",
           current_class_name, module_from_name, new_class_name, uintx(identity_hash),
           module_from_name, uintx(identity_hash));
       }
@@ -576,7 +576,7 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
         jio_snprintf(msg, len - 1,
-          "class %s (in unnamed module @" SIZE_FORMAT_X ") cannot access class %s (in module %s) because module %s does not export %s to unnamed module @" SIZE_FORMAT_X,
+          "class %s (in unnamed module @0x%zx) cannot access class %s (in module %s) because module %s does not export %s to unnamed module @0x%zx",
           current_class_name, uintx(identity_hash), new_class_name, module_to_name,
           module_to_name, package_name, uintx(identity_hash));
       }

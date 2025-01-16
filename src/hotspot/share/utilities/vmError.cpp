@@ -216,8 +216,8 @@ void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
     const size_t available_headroom   = stack_pointer - unguarded_stack_end;
     const size_t allocation_size      = available_headroom - _reattempt_required_stack_headroom + K;
 
-    st->print_cr("Current Stack Pointer: " PTR_FORMAT " alloca " SIZE_FORMAT
-                 " of " SIZE_FORMAT " bytes available unguarded stack space",
+    st->print_cr("Current Stack Pointer: " PTR_FORMAT " alloca %zu"
+                 " of %zu bytes available unguarded stack space",
                  p2i(stack_pointer), allocation_size, available_headroom);
 
     // Allocate byte blob on the stack. Make pointer volatile to avoid having
@@ -934,7 +934,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     if (fr.sp()) {
       st->print(",  sp=" PTR_FORMAT, p2i(fr.sp()));
       size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
-      st->print(",  free space=" SIZE_FORMAT "k", free_stack_size);
+      st->print(",  free space=%zuk", free_stack_size);
     }
 
     st->cr();

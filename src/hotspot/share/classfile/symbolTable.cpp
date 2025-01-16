@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ private:
 void SymbolTable::create_table ()  {
   size_t start_size_log_2 = log2i_ceil(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
-  log_trace(symboltable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_trace(symboltable)("Start size: %zu (%zu)",
                          _current_size, start_size_log_2);
   _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
 
@@ -749,7 +749,7 @@ void SymbolTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_debug(symboltable)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_debug(symboltable)("Grown to size:%zu", _current_size);
 }
 
 struct SymbolTableDoDelete : StackObj {
@@ -798,7 +798,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 
   Atomic::add(&_symbols_counted, stdc._processed);
 
-  log_debug(symboltable)("Cleaned " SIZE_FORMAT " of " SIZE_FORMAT,
+  log_debug(symboltable)("Cleaned %zu of %zu",
                          stdd._deleted, stdc._processed);
 }
 

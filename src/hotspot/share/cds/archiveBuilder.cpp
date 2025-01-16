@@ -312,14 +312,14 @@ address ArchiveBuilder::reserve_buffer() {
                                              MetaspaceShared::core_region_alignment(),
                                              os::vm_page_size());
   if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
+    log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
+  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
                 p2i(buffer_bottom), buffer_size);
   _shared_rs = rs;
 
@@ -1184,7 +1184,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
-      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data " SIZE_FORMAT " bytes",
+      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
       log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
@@ -1245,7 +1245,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
         // Example:
         // 0x00000007ffc3ffd8: @@ Object filler 40 bytes
-        st.print_cr("filler " SIZE_FORMAT " bytes", byte_size);
+        st.print_cr("filler %zu bytes", byte_size);
       } else {
         ShouldNotReachHere();
       }
@@ -1348,7 +1348,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           print_oop_info_cr(&st, obj);
         }
       } else {
-        st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
+        st.print_cr(" - fields (%zu words):", source_oop->size());
         ArchivedFieldPrinter print_field(heap_info, &st, source_oop, buffered_addr);
         InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
 

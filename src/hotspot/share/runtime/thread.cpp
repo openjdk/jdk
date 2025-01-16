@@ -219,7 +219,7 @@ void Thread::call_run() {
   JFR_ONLY(Jfr::on_thread_start(this);)
 
   log_debug(os, thread)("Thread %zu stack dimensions: "
-    PTR_FORMAT "-" PTR_FORMAT " (" SIZE_FORMAT "k).",
+    PTR_FORMAT "-" PTR_FORMAT " (%zuk).",
     os::current_thread_id(), p2i(stack_end()),
     p2i(stack_base()), stack_size()/1024);
 
@@ -475,7 +475,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
               );
     if (is_Java_thread() && (PrintExtendedThreadInfo || print_extended_info)) {
       size_t allocated_bytes = (size_t) const_cast<Thread*>(this)->cooked_allocated_bytes();
-      st->print("allocated=" SIZE_FORMAT "%s ",
+      st->print("allocated=%zu%s ",
                 byte_size_in_proper_unit(allocated_bytes),
                 proper_unit_for_byte_size(allocated_bytes)
                 );
