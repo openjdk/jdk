@@ -107,7 +107,7 @@ void ShenandoahPacer::setup_for_evac() {
                      tax);
 }
 
-void ShenandoahPacer::setup_for_updaterefs() {
+void ShenandoahPacer::setup_for_update_refs() {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
 
   size_t used = _heap->used();
