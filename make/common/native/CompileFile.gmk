@@ -253,7 +253,8 @@ define CreatePrecompiledHeader
         $$(eval $$(call CreateCompiledNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
             FILE := $$($1_GENERATED_PCH_SRC), \
             BASE := $1, \
-            EXTRA_CXXFLAGS := -I$$(dir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
+            EXTRA_CXXFLAGS := -I$$(dir $$($1_PRECOMPILED_HEADER)) -Fp$$($1_PCH_FILE) \
+                -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
         ))
 
         $1_USE_PCH_FLAGS := \
