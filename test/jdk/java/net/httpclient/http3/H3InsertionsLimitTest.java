@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,15 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
 
 import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
 import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
@@ -76,16 +78,18 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
     private HttpTestServer h3Server;
     private String requestURIBase;
     public static final long MAX_LITERALS_WITH_INDEXING = 32L;
+    private static final CountDownLatch WAIT_FOR_FAILURE = new CountDownLatch(1);
 
     private static void handle(HttpTestExchange exchange) throws IOException {
+        String handlerMsg = "Server handler: " + exchange.getRequestURI();
+        System.out.println(handlerMsg);
+        System.err.println(handlerMsg);
         Encoder encoder = exchange.qpackEncoder();
         long unusedStreamID = 1111;
-        exchange.getResponseHeaders().addHeader("n" + (MAX_LITERALS_WITH_INDEXING),
-                                                "v" + (MAX_LITERALS_WITH_INDEXING));
         // Mimic entry insertions on server-side
         try (Encoder.EncodingContext context =
                      encoder.newEncodingContext(unusedStreamID, 0, encoder.newHeaderFrameWriter())) {
-            for (int i = 0; i < MAX_LITERALS_WITH_INDEXING; i++) {
+            for (int i = 0; i <= MAX_LITERALS_WITH_INDEXING; i++) {
                 var entry = new TableEntry("n" + i, "v" + i);
                 var insertedEntry = context.tryInsertEntry(entry);
                 if (insertedEntry.index() == -1L) {
@@ -94,17 +98,11 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
                 }
             }
         }
-        // await insertion ACKs before proceeding with a response
-        // If the ACKs are not received the test can timeout, and
-        // that is an issue with how decoder ACKs insertions.
-        while (encoder.knownReceiveCount() < MAX_LITERALS_WITH_INDEXING) {
-            try {
-                TimeUnit.MILLISECONDS.sleep(1);
-            } catch (InterruptedException e) {
-                System.err.println("Interrupted waiting for insertion ACKs");
-            }
+        try {
+            WAIT_FOR_FAILURE.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Test Issue: handler interrupted", e);
         }
-        System.err.println("Got all ACKs: " + encoder.knownReceiveCount());
         // Send a response
         exchange.sendResponseHeaders(200, 0);
     }
@@ -116,6 +114,7 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
             throw new AssertionError("Unexpected null sslContext");
         }
         final QuicServer quicServer = Http3TestServer.quicServerBuilder()
+                .bindAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0))
                 .sslContext(sslContext)
                 .build();
         var http3TestServer = new Http3TestServer(quicServer)
@@ -160,6 +159,8 @@ public class H3InsertionsLimitTest implements HttpServerAdapters {
             System.out.println("Got IOException: " + ioe);
             Assert.assertTrue(ioe.getMessage()
                                  .contains("Too many literal with indexing"));
+        } finally {
+            WAIT_FOR_FAILURE.countDown();
         }
     }
 }
