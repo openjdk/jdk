@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -194,9 +194,20 @@ void FrameMap::initialize() {
   map_register(i, r25); r25_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, r26); r26_opr = LIR_OprFact::single_cpu(i); i++;
 
+  if(!PreserveFramePointer) {
+    map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++;
+  }
+
+  // r27 is allocated conditionally. With compressed oops it holds
+  // the heapbase value and is not visible to the allocator.
   map_register(i, r27); r27_opr = LIR_OprFact::single_cpu(i); i++; // rheapbase
+
+  // The unallocatable registers are at the end
+
   map_register(i, r28); r28_opr = LIR_OprFact::single_cpu(i); i++; // rthread
-  map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++; // rfp
+  if(PreserveFramePointer) {
+    map_register(i, r29); r29_opr = LIR_OprFact::single_cpu(i); i++; // rfp
+  }
   map_register(i, r30); r30_opr = LIR_OprFact::single_cpu(i); i++; // lr
   map_register(i, r31_sp); sp_opr = LIR_OprFact::single_cpu(i); i++; // sp
   map_register(i, r8); r8_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch1
@@ -239,6 +250,26 @@ void FrameMap::initialize() {
   // See comment in register_aarch64.hpp
   _caller_save_cpu_regs[16] = r18_opr;
 #endif
+
+  _caller_save_cpu_regs[17 R18_RESERVED_ONLY(-1)] = r19_opr;
+  _caller_save_cpu_regs[18 R18_RESERVED_ONLY(-1)] = r20_opr;
+  _caller_save_cpu_regs[19 R18_RESERVED_ONLY(-1)] = r21_opr;
+  _caller_save_cpu_regs[20 R18_RESERVED_ONLY(-1)] = r22_opr;
+  _caller_save_cpu_regs[21 R18_RESERVED_ONLY(-1)] = r23_opr;
+  _caller_save_cpu_regs[22 R18_RESERVED_ONLY(-1)] = r24_opr;
+  _caller_save_cpu_regs[23 R18_RESERVED_ONLY(-1)] = r25_opr;
+  _caller_save_cpu_regs[24 R18_RESERVED_ONLY(-1)] = r26_opr;
+
+  if (PreserveFramePointer) {
+    if (nof_caller_save_cpu_regs() >= 26 R18_RESERVED_ONLY(-1)) {
+      _caller_save_cpu_regs[25 R18_RESERVED_ONLY(-1)] = r27_opr;
+    }
+  } else {
+    _caller_save_cpu_regs[25 R18_RESERVED_ONLY(-1)] = r29_opr;
+    if (nof_caller_save_cpu_regs() >= 27 R18_RESERVED_ONLY(-1)) {
+      _caller_save_cpu_regs[26 R18_RESERVED_ONLY(-1)] = r27_opr;
+    }
+  }
 
   for (int i = 0; i < 8; i++) {
     _caller_save_fpu_regs[i] = LIR_OprFact::single_fpu(i);

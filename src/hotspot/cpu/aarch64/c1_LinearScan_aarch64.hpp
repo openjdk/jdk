@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,7 +66,7 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
     return true;
   } else if (cur->type() == T_INT || cur->type() == T_LONG || cur->type() == T_OBJECT || cur->type() == T_ADDRESS || cur->type() == T_METADATA) {
     _first_reg = pd_first_cpu_reg;
-    _last_reg = pd_last_allocatable_cpu_reg;
+    _last_reg = FrameMap::last_cpu_reg();
     return true;
   }
   return false;
