@@ -974,51 +974,6 @@ private:
   }
 };
 
-// Vector element size statistics for loop vectorization with vector masks
-class VectorElementSizeStats {
- private:
-  static const int NO_SIZE = -1;
-  static const int MIXED_SIZE = -2;
-  int* _stats;
-
- public:
-  VectorElementSizeStats(Arena* a) : _stats(NEW_ARENA_ARRAY(a, int, 4)) {
-    clear();
-  }
-
-  void clear() { memset(_stats, 0, sizeof(int) * 4); }
-
-  void record_size(int size) {
-    assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
-    _stats[exact_log2(size)]++;
-  }
-
-  int count_size(int size) {
-    assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
-    return _stats[exact_log2(size)];
-  }
-
-  int smallest_size() {
-    for (int i = 0; i <= 3; i++) {
-      if (_stats[i] > 0) return (1 << i);
-    }
-    return NO_SIZE;
-  }
-
-  int largest_size() {
-    for (int i = 3; i >= 0; i--) {
-      if (_stats[i] > 0) return (1 << i);
-    }
-    return NO_SIZE;
-  }
-
-  int unique_size() {
-    int small = smallest_size();
-    int large = largest_size();
-    return (small == large) ? small : MIXED_SIZE;
-  }
-};
-
 // When alignment is required, we must adjust the pre-loop iteration count pre_iter,
 // such that the address is aligned for any main_iter >= 0:
 //
