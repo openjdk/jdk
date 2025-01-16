@@ -843,8 +843,8 @@ public:
 
   // Greatest common factor among the scales of the invar_summands.
   // Out of simplicity, we only factor out positive powers-of-2,
-  // between 1 and ObjectAlignmentInBytes. If the invar is empty,
-  // i.e. there is no summand in invar_summands, we return 0.
+  // between (inclusive) 1 and ObjectAlignmentInBytes. If the invar
+  // is empty, i.e. there is no summand in invar_summands, we return 0.
   jint compute_invar_factor() const {
     jint factor = ObjectAlignmentInBytes;
     int invar_count = 0;
@@ -865,12 +865,15 @@ public:
     return invar_count;
   }
 
+  // If we have the same invar_summands, and the same iv summand with the same iv_scale,
+  // then all summands except the base must be the same.
   bool has_same_invar_and_iv_scale_as(const VPointer& other) const {
-    // If we have the same invar_summands, and the same iv summand with the same iv_scale,
-    // then all summands except the base must be the same.
     return mem_pointer().has_same_non_base_summands_as(other.mem_pointer());
   }
 
+
+  // Delegate to MemPointer::is_adjacent_to_and_before, but guard for invalid cases
+  // where we must return a conservative answer: unknown adjacency, return false.
   bool is_adjacent_to_and_before(const VPointer& other) const {
     if (!is_valid() || !other.is_valid()) {
 #ifndef PRODUCT
@@ -883,6 +886,8 @@ public:
     return mem_pointer().is_adjacent_to_and_before(other.mem_pointer());
   }
 
+  // Delegate to MemPointer::never_overlaps_with, but guard for invalid cases
+  // where we must return a conservative answer: unknown overlap, return false.
   bool never_overlaps_with(const VPointer& other) const {
     if (!is_valid() || !other.is_valid()) {
 #ifndef PRODUCT

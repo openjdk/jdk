@@ -538,6 +538,21 @@ bool MemPointer::has_different_object_base_but_otherwise_same_summands_as(const 
   return has_same_summands_as(other, 1);
 }
 
+// Examples:
+//   p1 = MemPointer[size=1, base + i + 16]
+//   p2 = MemPointer[size=1, base + i + 17]
+//   -> Always at distance 1
+//   -> p1 always adjacent and before p2 -> return true
+//
+//   p1 = MemPointer[size=4, x + y + z + 4L * i + 16]
+//   p2 = MemPointer[size=4, x + y + z + 4L * i + 20]
+//   -> Always at distance 4
+//   -> p1 always adjacent and before p2 -> return true
+//
+//   p1 = MemPointer[size=4, base1 + 4L * i1 + 16]
+//   p2 = MemPointer[size=4, base2 + 4L * i2 + 20]
+//   -> Have differing summands, distance is unknown
+//   -> Unknown if adjacent at runtime -> return false
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
   const MemPointerAliasing aliasing = get_aliasing_with(other NOT_PRODUCT( COMMA _trace ));
   const bool is_adjacent = aliasing.is_always_at_distance(_size);
@@ -554,6 +569,31 @@ bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
   return is_adjacent;
 }
 
+// Examples:
+//   p1 = MemPointer[size=1, base + i + 16]
+//   p2 = MemPointer[size=1, base + i + 17]
+//   -> Always at distance 1
+//   -> Can never overlap -> return true
+//
+//   p1 = MemPointer[size=1, base + i + 16]
+//   p2 = MemPointer[size=1, base + i + 16]
+//   -> Always at distance 0
+//   -> Always have exact overlap -> return false
+//
+//   p1 = MemPointer[size=4, x + y + z + 4L * i + 16]
+//   p2 = MemPointer[size=4, x + y + z + 4L * i + 56]
+//   -> Always at distance 40
+//   -> Can never overlap -> return true
+//
+//   p1 = MemPointer[size=8, x + y + z + 4L * i + 16]
+//   p2 = MemPointer[size=8, x + y + z + 4L * i + 20]
+//   -> Always at distance 4
+//   -> Always have partial overlap -> return false
+//
+//   p1 = MemPointer[size=4, base1 + 4L * i1 + 16]
+//   p2 = MemPointer[size=4, base2 + 4L * i2 + 20]
+//   -> Have differing summands, distance is unknown
+//   -> Unknown if overlap at runtime -> return false
 bool MemPointer::never_overlaps_with(const MemPointer& other) const {
   const MemPointerAliasing aliasing = get_aliasing_with(other NOT_PRODUCT( COMMA _trace ));
 

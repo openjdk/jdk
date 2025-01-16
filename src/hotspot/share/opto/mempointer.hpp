@@ -558,13 +558,25 @@ public:
   static MemPointerParserCallback& empty() { return _empty; }
 };
 
-// Decomposed form of the pointer sub-expression of "pointer".
+// A MemPointer points to a region in memory, starting at a "pointer", and extending
+// for "size" bytes:
+//
+//   [pointer, pointer + size)
+//
+// Where the "pointer" is decomposed into the following form:
 //
 //   pointer = SUM(summands) + con
+//   pointer = SUM(scale_i * variable_i) + con
+//
+// Where SUM() adds all "scale_i * variable_i" for each i together.
 //
 // Node: if the base is known, then it is in the 0th summand. A base can be:
 //       - on-heap  / object: base().object()
 //       - off-heap / native: base().native()
+//
+//   pointer = scale_0 * variable_0 + scale_1 * scale_1 + ... + con
+//   pointer =       1 * base       + scale_1 * scale_1 + ... + con
+//
 class MemPointer : public StackObj {
 public:
   // We limit the number of summands to 10. This is just a best guess, and not at this
