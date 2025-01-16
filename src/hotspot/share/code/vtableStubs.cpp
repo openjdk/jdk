@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
 
 void VtableStub::print_on(outputStream* st) const {
-  st->print("vtable stub (index = %d, receiver_location = " INTX_FORMAT ", code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
+  st->print("vtable stub (index = %d, receiver_location = %zd, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
              index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
 }
 
@@ -226,7 +226,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
 
       enter(is_vtable_stub, vtable_index, s);
       if (PrintAdapterHandlers) {
-        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (" SIZE_FORMAT " bytes)",
+        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (%zu bytes)",
                       is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()),
                       p2i(s->code_begin()), p2i(s->code_end()), pointer_delta(s->code_end(), s->code_begin(), 1));
         Disassembler::decode(s->code_begin(), s->code_end());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,9 +227,9 @@ static traceid method_id(KlassPtr klass, MethodPtr method) {
 }
 
 template <typename T>
-static s4 get_flags(const T* ptr) {
+static u2 get_flags(const T* ptr) {
   assert(ptr != nullptr, "invariant");
-  return ptr->access_flags().get_flags();
+  return ptr->access_flags().as_unsigned_short();
 }
 
 // Same as JVM_GetClassModifiers
@@ -968,7 +968,7 @@ static int write_method(JfrCheckpointWriter* writer, MethodPtr method, bool leak
   writer->write(artifact_id(klass));
   writer->write(mark_symbol(method->name(), leakp));
   writer->write(mark_symbol(method->signature(), leakp));
-  writer->write(static_cast<u2>(get_flags(method)));
+  writer->write(get_flags(method));
   writer->write(get_visibility(method));
   return 1;
 }
