@@ -1680,6 +1680,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     return;
   }
 
+  current->set_current_waiting_monitor(this);
+
   freeze_result result;
   ContinuationEntry* ce = current->last_continuation();
   if (ce != nullptr && ce->is_virtual_thread()) {
@@ -1691,8 +1693,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     }
   }
   JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
-
-  current->set_current_waiting_monitor(this);
 
   // create a node to be put into the queue
   // Critically, after we reset() the event but prior to park(), we must check
