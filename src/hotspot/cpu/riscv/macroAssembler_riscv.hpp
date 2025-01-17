@@ -323,21 +323,55 @@ class MacroAssembler: public Assembler {
                                      Register tmp1_reg,
                                      Register tmp2_reg,
                                      Label* L_success,
-                                     Label* L_failure);
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register tmp1_reg,
+                                            Register tmp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register tmp1_reg,
+                                           Register tmp2_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
+
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register result,
+                                         Register tmp1,
+                                         Register tmp2,
+                                         Register tmp3,
+                                         Register tmp4,
+                                         Label *L_success);
 
   void population_count(Register dst, Register src, Register tmp1, Register tmp2);
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  bool lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register result,
-                                     Register tmp1,
-                                     Register tmp2,
-                                     Register tmp3,
-                                     Register tmp4,
-                                     u1 super_klass_slot,
-                                     bool stub_is_near = false);
+  bool lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register result,
+                                           Register tmp1,
+                                           Register tmp2,
+                                           Register tmp3,
+                                           Register tmp4,
+                                           u1 super_klass_slot,
+                                           bool stub_is_near = false);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -351,7 +385,8 @@ class MacroAssembler: public Assembler {
                                                Register r_array_index,
                                                Register r_bitmap,
                                                Register result,
-                                               Register tmp1);
+                                               Register tmp,
+                                               bool is_stub = true);
 
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
@@ -926,6 +961,7 @@ public:
   void revbw(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in lower word, sign-extend
   void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);  // reverse bytes in doubleword
 
+  void ror(Register dst, Register src, Register shift, Register tmp = t0);
   void ror(Register dst, Register src, uint32_t shift, Register tmp = t0);
   void rolw(Register dst, Register src, uint32_t shift, Register tmp = t0);
 
