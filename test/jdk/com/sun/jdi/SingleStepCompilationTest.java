@@ -203,7 +203,7 @@ public class SingleStepCompilationTest extends TestScaffold {
         targetClass = (ClassType)bpe.location().declaringType();
         mainThread = bpe.thread();
         erm = vm().eventRequestManager();
-        
+
         // The BKPT_LINE is the line we will STEP_OVER
         Location loc1 = findLocation(targetClass, TestTarg.BKPT_LINE);
         bkptRequest = erm.createBreakpointRequest(loc1);
