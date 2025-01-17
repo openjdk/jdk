@@ -74,7 +74,7 @@ protected:
     assert(is_aligned(left, sizeof(T)), "Must be");
 
     size_t elements = left / sizeof(T);
-    assert(elements <= (size_t)INT_MAX, "number of elements %zudoesn't fit into an int.", elements);
+    assert(elements <= (size_t)INT_MAX, "number of elements %zu doesn't fit into an int.", elements);
 
     int length = (int)elements;
 
