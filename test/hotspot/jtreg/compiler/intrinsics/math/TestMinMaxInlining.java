@@ -73,7 +73,7 @@ public class TestMinMaxInlining {
         }
     }
 
-    // JDK-8307513 does not changes the way MinL/MaxL nodes intrinsified in backend.
+    // JDK-8307513 does not change the way MinL/MaxL nodes intrinsified in backend.
     // So they are still transformed into CmpL + CMoveL nodes after macro expansion.
     // This is the reason for the different before/after macro expansion assertions below.
 
