@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ static const char* phase_to_explanatory_string(G1NUMAStats::NodeDataItems phase)
   }
 }
 
-#define RATE_TOTAL_FORMAT "%0.0f%% " SIZE_FORMAT "/" SIZE_FORMAT
+#define RATE_TOTAL_FORMAT "%0.0f%% %zu/%zu"
 
 void G1NUMAStats::print_info(G1NUMAStats::NodeDataItems phase) {
   LogTarget(Info, gc, heap, numa) lt;
@@ -206,18 +206,18 @@ void G1NUMAStats::print_mutator_alloc_stat_debug() {
     for (uint req = 0; req < array_width; req++) {
       ls.print("%3d ", _node_ids[req]);
       for (uint alloc = 0; alloc < array_width; alloc++) {
-        ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->get(req, alloc));
+        ls.print("%8zu", _node_data[NewRegionAlloc]->get(req, alloc));
       }
-      ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->sum(req));
+      ls.print("%8zu",  _node_data[NewRegionAlloc]->sum(req));
       ls.print_cr("");
       // Add padding to align with the string 'Requested NUMA id'.
       ls.print("                  ");
     }
     ls.print("Any ");
     for (uint alloc = 0; alloc < array_width; alloc++) {
-      ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->get(array_width, alloc));
+      ls.print("%8zu", _node_data[NewRegionAlloc]->get(array_width, alloc));
     }
-    ls.print(SIZE_FORMAT_W(8), _node_data[NewRegionAlloc]->sum(array_width));
+    ls.print("%8zu", _node_data[NewRegionAlloc]->sum(array_width));
     ls.print_cr("");
   }
 }

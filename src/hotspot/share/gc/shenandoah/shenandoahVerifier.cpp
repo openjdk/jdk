@@ -384,7 +384,7 @@ public:
       _trashed_regions++;
     }
     _regions++;
-    log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding " SIZE_FORMAT " for %s Region " SIZE_FORMAT ", yielding: " SIZE_FORMAT,
+    log_debug(gc)("ShenandoahCalculateRegionStatsClosure: adding %zu for %s Region %zu, yielding: %zu",
             r->used(), (r->is_humongous() ? "humongous" : "regular"), r->index(), _used);
   }
 
@@ -423,7 +423,7 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
   }
 
   static void log_usage(ShenandoahGeneration* generation, ShenandoahCalculateRegionStatsClosure& stats) {
-    log_debug(gc)("Safepoint verification: %s verified usage: " SIZE_FORMAT "%s, recorded usage: " SIZE_FORMAT "%s",
+    log_debug(gc)("Safepoint verification: %s verified usage: %zu%s, recorded usage: %zu%s",
                   generation->name(),
                   byte_size_in_proper_unit(generation->used()), proper_unit_for_byte_size(generation->used()),
                   byte_size_in_proper_unit(stats.used()),       proper_unit_for_byte_size(stats.used()));
@@ -444,12 +444,12 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
               label, generation->name(), PROPERFMTARGS(generation_used), PROPERFMTARGS(stats.used()));
 
     guarantee(stats.regions() == generation_used_regions,
-              "%s: generation (%s) used regions (" SIZE_FORMAT ") must equal regions that are in use (" SIZE_FORMAT ")",
+              "%s: generation (%s) used regions (%zu) must equal regions that are in use (%zu)",
               label, generation->name(), generation->used_regions(), stats.regions());
 
     size_t generation_capacity = generation->max_capacity();
     guarantee(stats.non_trashed_span() <= generation_capacity,
-              "%s: generation (%s) size spanned by regions (" SIZE_FORMAT ") * region size (" PROPERFMT
+              "%s: generation (%s) size spanned by regions (%zu) * region size (" PROPERFMT
               ") must not exceed current capacity (" PROPERFMT ")",
               label, generation->name(), stats.regions(), PROPERFMTARGS(ShenandoahHeapRegion::region_size_bytes()),
               PROPERFMTARGS(generation_capacity));
@@ -818,7 +818,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
         break;
       case _verify_gcstate_updating:
         enabled = true;
-        expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::UPDATEREFS;
+        expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::UPDATE_REFS;
         break;
       case _verify_gcstate_stable:
         enabled = true;
@@ -872,14 +872,14 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
     }
     if (sizeness != _verify_size_disable) {
       guarantee(cl.used() == heap_used,
-                "%s: heap used size must be consistent: heap-used = " SIZE_FORMAT "%s, regions-used = " SIZE_FORMAT "%s",
+                "%s: heap used size must be consistent: heap-used = %zu%s, regions-used = %zu%s",
                 label,
                 byte_size_in_proper_unit(heap_used), proper_unit_for_byte_size(heap_used),
                 byte_size_in_proper_unit(cl.used()), proper_unit_for_byte_size(cl.used()));
     }
     size_t heap_committed = _heap->committed();
     guarantee(cl.committed() == heap_committed,
-              "%s: heap committed size must be consistent: heap-committed = " SIZE_FORMAT "%s, regions-committed = " SIZE_FORMAT "%s",
+              "%s: heap committed size must be consistent: heap-committed = %zu%s, regions-committed = %zu%s",
               label,
               byte_size_in_proper_unit(heap_committed), proper_unit_for_byte_size(heap_committed),
               byte_size_in_proper_unit(cl.committed()), proper_unit_for_byte_size(cl.committed()));
@@ -1026,7 +1026,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       if (reg_live != verf_live) {
         stringStream ss;
         r->print_on(&ss);
-        fatal("%s: Live data should match: region-live = " SIZE_FORMAT ", verifier-live = " UINT32_FORMAT "\n%s",
+        fatal("%s: Live data should match: region-live = %zu, verifier-live = " UINT32_FORMAT "\n%s",
               label, reg_live, verf_live, ss.freeze());
       }
     }
@@ -1035,7 +1035,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
   log_debug(gc)("Safepoint verification finished accumulation of liveness data");
 
 
-  log_info(gc)("Verify %s, Level %zd (" SIZE_FORMAT " reachable, " SIZE_FORMAT " marked)",
+  log_info(gc)("Verify %s, Level %zd (%zu reachable, %zu marked)",
                label, ShenandoahVerifyLevel, count_reachable, count_marked);
 
   FREE_C_HEAP_ARRAY(ShenandoahLivenessData, ld);
@@ -1114,7 +1114,7 @@ void ShenandoahVerifier::verify_before_evacuation() {
   );
 }
 
-void ShenandoahVerifier::verify_before_updaterefs() {
+void ShenandoahVerifier::verify_before_update_refs() {
   verify_at_safepoint(
           "Before Updating References",
           _verify_remembered_before_updating_references,  // verify read-write remembered set
@@ -1129,7 +1129,7 @@ void ShenandoahVerifier::verify_before_updaterefs() {
 }
 
 // We have not yet cleanup (reclaimed) the collection set
-void ShenandoahVerifier::verify_after_updaterefs() {
+void ShenandoahVerifier::verify_after_update_refs() {
   verify_at_safepoint(
           "After Updating References",
           _verify_remembered_disable,  // do not verify remembered set

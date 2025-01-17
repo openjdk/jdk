@@ -329,7 +329,7 @@ public:
     EVACUATION_BITPOS = 2,
 
     // Heap is under updating: needs no additional barriers.
-    UPDATEREFS_BITPOS = 3,
+    UPDATE_REFS_BITPOS = 3,
 
     // Heap is under weak-reference/roots processing: needs weak-LRB barriers.
     WEAK_ROOTS_BITPOS  = 4,
@@ -346,7 +346,7 @@ public:
     HAS_FORWARDED = 1 << HAS_FORWARDED_BITPOS,
     MARKING       = 1 << MARKING_BITPOS,
     EVACUATION    = 1 << EVACUATION_BITPOS,
-    UPDATEREFS    = 1 << UPDATEREFS_BITPOS,
+    UPDATE_REFS   = 1 << UPDATE_REFS_BITPOS,
     WEAK_ROOTS    = 1 << WEAK_ROOTS_BITPOS,
     YOUNG_MARKING = 1 << YOUNG_MARKING_BITPOS,
     OLD_MARKING   = 1 << OLD_MARKING_BITPOS
