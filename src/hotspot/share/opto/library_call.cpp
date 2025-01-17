@@ -2140,18 +2140,18 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   Node* arg = argument(0);
   Node* n = nullptr;
   switch (id) {
-  case vmIntrinsics::_numberOfLeadingZeros_i:   n = new CountLeadingZerosINode( arg);  break;
-  case vmIntrinsics::_numberOfLeadingZeros_l:   n = new CountLeadingZerosLNode( arg);  break;
-  case vmIntrinsics::_numberOfTrailingZeros_i:  n = new CountTrailingZerosINode(arg);  break;
-  case vmIntrinsics::_numberOfTrailingZeros_l:  n = new CountTrailingZerosLNode(arg);  break;
-  case vmIntrinsics::_bitCount_i:               n = new PopCountINode(          arg);  break;
-  case vmIntrinsics::_bitCount_l:               n = new PopCountLNode(          arg);  break;
-  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(nullptr, arg);  break;
-  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( nullptr, arg);  break;
-  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( nullptr, arg);  break;
-  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( nullptr, arg);  break;
-  case vmIntrinsics::_reverse_i:                n = new ReverseINode(nullptr, arg); break;
-  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(nullptr, arg); break;
+  case vmIntrinsics::_numberOfLeadingZeros_i:   n = new CountLeadingZerosINode( arg); break;
+  case vmIntrinsics::_numberOfLeadingZeros_l:   n = new CountLeadingZerosLNode( arg); break;
+  case vmIntrinsics::_numberOfTrailingZeros_i:  n = new CountTrailingZerosINode(arg); break;
+  case vmIntrinsics::_numberOfTrailingZeros_l:  n = new CountTrailingZerosLNode(arg); break;
+  case vmIntrinsics::_bitCount_i:               n = new PopCountINode(          arg); break;
+  case vmIntrinsics::_bitCount_l:               n = new PopCountLNode(          arg); break;
+  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(     arg); break;
+  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode(      arg); break;
+  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode(      arg); break;
+  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode(      arg); break;
+  case vmIntrinsics::_reverse_i:                n = new ReverseINode(           arg); break;
+  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(           arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -8271,14 +8271,14 @@ bool LibraryCallKit::inline_fma(vmIntrinsics::ID id) {
     a = round_double_node(argument(0));
     b = round_double_node(argument(2));
     c = round_double_node(argument(4));
-    result = _gvn.transform(new FmaDNode(control(), a, b, c));
+    result = _gvn.transform(new FmaDNode(a, b, c));
     break;
   case vmIntrinsics::_fmaF:
     assert(callee()->signature()->size() == 3, "fma has 3 parameters of size 1 each.");
     a = argument(0);
     b = argument(1);
     c = argument(2);
-    result = _gvn.transform(new FmaFNode(control(), a, b, c));
+    result = _gvn.transform(new FmaFNode(a, b, c));
     break;
   default:
     fatal_unexpected_iid(id);  break;
