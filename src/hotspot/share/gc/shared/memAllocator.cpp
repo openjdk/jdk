@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,13 +294,13 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
   mem = Universe::heap()->allocate_new_tlab(min_tlab_size, new_tlab_size, &allocation._allocated_tlab_size);
   if (mem == nullptr) {
     assert(allocation._allocated_tlab_size == 0,
-           "Allocation failed, but actual size was updated. min: " SIZE_FORMAT
-           ", desired: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
+           "Allocation failed, but actual size was updated. min: %zu"
+           ", desired: %zu, actual: %zu",
            min_tlab_size, new_tlab_size, allocation._allocated_tlab_size);
     return nullptr;
   }
   assert(allocation._allocated_tlab_size != 0, "Allocation succeeded but actual size not updated. mem at: "
-         PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
+         PTR_FORMAT " min: %zu, desired: %zu",
          p2i(mem), min_tlab_size, new_tlab_size);
 
   // ...and clear or zap just allocated TLAB, if needed.

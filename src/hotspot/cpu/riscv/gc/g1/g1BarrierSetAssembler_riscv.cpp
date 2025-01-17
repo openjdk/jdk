@@ -106,7 +106,7 @@ static void generate_queue_test_and_insertion(MacroAssembler* masm, ByteSize ind
   __ ld(tmp1, Address(thread, in_bytes(index_offset)));   // tmp1 := *(index address)
   __ beqz(tmp1, runtime);                                 // jump to runtime if index == 0 (full buffer)
   // The buffer is not full, store value into it.
-  __ sub(tmp1, tmp1, wordSize);                           // tmp1 := next index
+  __ subi(tmp1, tmp1, wordSize);                           // tmp1 := next index
   __ sd(tmp1, Address(thread, in_bytes(index_offset)));   // *(index address) := next index
   __ ld(tmp2, Address(thread, in_bytes(buffer_offset)));  // tmp2 := buffer address
   __ add(tmp2, tmp2, tmp1);
@@ -490,7 +490,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ ld(tmp, queue_index);
   __ beqz(tmp, runtime);
 
-  __ sub(tmp, tmp, wordSize);
+  __ subi(tmp, tmp, wordSize);
   __ sd(tmp, queue_index);
   __ ld(t1, buffer);
   __ add(tmp, tmp, t1);
@@ -557,7 +557,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
 
   __ ld(t0, queue_index);
   __ beqz(t0, runtime);
-  __ sub(t0, t0, wordSize);
+  __ subi(t0, t0, wordSize);
   __ sd(t0, queue_index);
 
   // Reuse RA to hold buffer_addr

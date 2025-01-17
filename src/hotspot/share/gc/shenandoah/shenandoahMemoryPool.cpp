@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,15 +55,15 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   size_t committed = _heap->committed();
 
   // These asserts can never fail: max is stable, and all updates to other values never overflow max.
-  assert(initial <= max,    "initial: "   SIZE_FORMAT ", max: "       SIZE_FORMAT, initial,   max);
-  assert(used <= max,       "used: "      SIZE_FORMAT ", max: "       SIZE_FORMAT, used,      max);
-  assert(committed <= max,  "committed: " SIZE_FORMAT ", max: "       SIZE_FORMAT, committed, max);
+  assert(initial <= max,    "initial: %zu, max: %zu",   initial,   max);
+  assert(used <= max,       "used: %zu, max: %zu",      used,      max);
+  assert(committed <= max,  "committed: %zu, max: %zu", committed, max);
 
   // Committed and used are updated concurrently and independently. They can momentarily break
   // the assert below, which would also fail in downstream code. To avoid that, adjust values
   // to make sense under the race. See JDK-8207200.
   committed = MAX2(used, committed);
-  assert(used <= committed, "used: "      SIZE_FORMAT ", committed: " SIZE_FORMAT, used,      committed);
+  assert(used <= committed, "used: %zu, committed: %zu", used,      committed);
 
   return MemoryUsage(initial, used, committed, max);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,12 +285,12 @@ void G1MonitoringSupport::recalculate_sizes() {
   _eden_space_used = MIN2(_eden_space_used, _eden_space_committed);
   // _survivor_space_used is calculated during a safepoint and _survivor_space_committed
   // is calculated from survivor region count * heap region size.
-  assert(_survivor_space_used <= _survivor_space_committed, "Survivor used bytes(" SIZE_FORMAT
-         ") should be less than or equal to survivor committed(" SIZE_FORMAT ")",
+  assert(_survivor_space_used <= _survivor_space_committed, "Survivor used bytes(%zu)"
+         " should be less than or equal to survivor committed(%zu)",
          _survivor_space_used, _survivor_space_committed);
   // _old_gen_committed is calculated in terms of _old_gen_used value.
-  assert(_old_gen_used <= _old_gen_committed, "Old gen used bytes(" SIZE_FORMAT
-         ") should be less than or equal to old gen committed(" SIZE_FORMAT ")",
+  assert(_old_gen_used <= _old_gen_committed, "Old gen used bytes(%zu)"
+         " should be less than or equal to old gen committed(%zu)",
          _old_gen_used, _old_gen_committed);
 }
 

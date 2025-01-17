@@ -96,7 +96,8 @@ import sun.security.util.Debug;
  * following standard {@code KeyGenerator} algorithms with the keysizes in
  * parentheses:
  * <ul>
- * <li>{@code AES} (128)</li>
+ * <li>{@code AES} (128, 256)</li>
+ * <li>{@code ChaCha20}</li>
  * <li>{@code DESede} (168)</li>
  * <li>{@code HmacSHA1}</li>
  * <li>{@code HmacSHA256}</li>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,7 +455,7 @@ void CompilationPolicy::initialize() {
       c2_size = C2Compiler::initial_code_buffer_size();
 #endif
       size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
-      int max_count = (ReservedCodeCacheSize - (int)CompilerConfig::min_code_cache_size()) / (int)buffer_size;
+      int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
       if (count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
         count = MAX2(max_count, c1_only ? 1 : 2);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -503,7 +503,7 @@ void InterpreterMacroAssembler::remove_activation(
 
  // get method access flags
   ldr(r1, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
-  ldr(r2, Address(r1, Method::access_flags_offset()));
+  ldrh(r2, Address(r1, Method::access_flags_offset()));
   tbz(r2, exact_log2(JVM_ACC_SYNCHRONIZED), unlocked);
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
