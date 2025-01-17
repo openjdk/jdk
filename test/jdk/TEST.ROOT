@@ -1,6 +1,10 @@
+#
+# Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
 # This file identifies the root of the test-suite hierarchy.
 # It also contains test-suite configuration information.
-
+#
 # The list of keywords supported in the entire test suite.  The
 # "intermittent" keyword marks tests known to fail intermittently.
 # The "randomness" keyword marks tests using randomness with test
