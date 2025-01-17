@@ -122,6 +122,7 @@ import sun.security.util.KnownOIDs;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Benjamin Renaud
  * @since 1.1
  *
@@ -206,6 +207,7 @@ public abstract class Signature extends SignatureSpi {
      * "{@docRoot}/../specs/security/standard-names.html#signature-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected Signature(String algorithm) {
         this.algorithm = algorithm;
@@ -376,6 +378,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code Signature} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -429,6 +432,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code Signature} object
      *
      * @throws IllegalArgumentException if the provider is {@code null}
