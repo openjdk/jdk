@@ -100,11 +100,6 @@ public class RegistryContext implements Context, Referenceable {
         reference = ctx.reference;
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        close();
-    }
-
     public Object lookup(Name name) throws NamingException {
         if (name.isEmpty()) {
             return (new RegistryContext(this));
