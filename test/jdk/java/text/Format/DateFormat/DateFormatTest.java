@@ -187,7 +187,7 @@ public class DateFormatTest
         //logln(fmt.format(date)); // This shows what the current locale format is
         //logln(((SimpleDateFormat)fmt).toPattern());
         TimeZone save = TimeZone.getDefault();
-        TimeZone PST  = TimeZone.getTimeZone("America/Los_Angeles");
+        TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
         String s = "03-Apr-04 2:20:47 o'clock AM PST";
         int hour = 2;
         try {
@@ -279,7 +279,7 @@ public class DateFormatTest
             "0034", "0012", "0513", "Pacific Daylight Time",
         };
         Date someDate = new Date(871508052513L);
-        TimeZone PST  = TimeZone.getTimeZone("America/Los_Angeles");
+        TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
         for (int j = 0, exp = 0; j < dateFormats.length; ++j) {
             DateFormat df = dateFormats[j];
             if (!(df instanceof SimpleDateFormat)) {
