@@ -29,7 +29,6 @@
  * @author Dan Xu
  */
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -42,8 +41,12 @@ import jdk.internal.util.StaticProperty;
 public class SpecialTempFile {
     private static final int WINDOWS_11_MINIMUM_BUILD = 22000;
 
+    //
+    // If exceptionExpected == null, then any IOException thrown by
+    // File.createTempFile is ignored.
+    //
     private static void test(String name, String[] prefix, String[] suffix,
-                             boolean exceptionExpected) throws IOException
+                             Boolean exceptionExpected) throws IOException
     {
         if (prefix == null || suffix == null
             || prefix.length != suffix.length)
@@ -70,45 +73,23 @@ public class SpecialTempFile {
                     f = File.createTempFile(prefix[i], suffix[i],
                         tempDir.toFile());
                 } catch (IOException e) {
-                    if (exceptionExpected) {
-                        if (e.getMessage().startsWith(exceptionMsg))
-                            exceptionThrown = true;
-                        else
-                            System.out.println("Wrong error message:" +
-                                               e.getMessage());
-                    } else {
-                        throw e;
+                    if (exceptionExpected != null) {
+                        if (exceptionExpected) {
+                            if (e.getMessage().startsWith(exceptionMsg))
+                                exceptionThrown = true;
+                            else
+                                System.out.println("Wrong error message:" +
+                                                   e.getMessage());
+                        } else {
+                            throw e;
+                        }
+
+                        if (exceptionExpected && (!exceptionThrown || f != null))
+                            throw new RuntimeException("IOException expected");
                     }
                 }
-
-                if (exceptionExpected && (!exceptionThrown || f != null))
-                    throw new RuntimeException("IOException is expected");
             }
         }
-    }
-
-    private static int windowsBuild() throws IOException {
-        if (!OperatingSystem.isWindows())
-            throw new UnsupportedOperationException();
-
-        String cmd = "Systeminfo";
-        Process p = Runtime.getRuntime().exec(new String[] {cmd});
-        int build = 0;
-        try (BufferedReader in = p.inputReader()) {
-            String s;
-            int i = 0;
-            while ((s = in.readLine()) != null) {
-                // skip header
-                if (i++ == 0) continue;
-                if (s.startsWith("OS Version")) {
-                    String[] elts = s.trim().split(" ");
-                    String buildString = elts[elts.length - 1];
-                    build = Integer.valueOf(buildString);
-                    break;
-                }
-            }
-        }
-        return build;
     }
 
     public static void main(String[] args) throws Exception {
@@ -136,12 +117,11 @@ public class SpecialTempFile {
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
 
-        int osBuild = windowsBuild();
         System.out.println("OS name:    " + StaticProperty.osName() + "\n" +
-                           "OS version: " + OSVersion.current() + "\n" +
-                           "OS build:   " + osBuild);
-        boolean exceptionExpected = osBuild < WINDOWS_11_MINIMUM_BUILD;
+                           "OS version: " + OSVersion.current());
 
-        test("ReservedName", resvPre, resvSuf, exceptionExpected);
+        // Here the test is for whether File.createTempFile hangs, so whether
+        // an exception is thrown is ignored: expectedException == null
+        test("ReservedName", resvPre, resvSuf, null);
     }
 }
