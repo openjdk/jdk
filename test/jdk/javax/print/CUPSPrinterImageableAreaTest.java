@@ -69,7 +69,7 @@ public class CUPSPrinterImageableAreaTest {
                 Press the '<b>Print sample</b>' button to print a test page.<br>
                 A passing test will print the page with a black rectangle along the printable area.
                 Ensure that all sides of the rectangle are printed.<br>
-                Expected margins: 
+                Expected margins:
                 <ul>
                     <li>left: %.1f mm.</li>
                     <li>bottom: %.1f mm.</li>
