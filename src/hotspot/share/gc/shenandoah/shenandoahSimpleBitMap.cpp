@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +96,7 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
 
 bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(idx_t start_idx, idx_t count) const {
   while (count > 0) {
-    assert((start_idx >= 0) && (start_idx < _num_bits), "precondition: start_idx: " SSIZE_FORMAT ", count: " SSIZE_FORMAT,
+    assert((start_idx >= 0) && (start_idx < _num_bits), "precondition: start_idx: %zd, count: %zd",
            start_idx, count);
     assert(start_idx + count <= (idx_t) _num_bits, "precondition");
     size_t array_idx = start_idx >> LogBitsPerWord;

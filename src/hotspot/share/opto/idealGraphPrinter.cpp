@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ void IdealGraphPrinter::end_head() {
 
 void IdealGraphPrinter::print_attr(const char *name, intptr_t val) {
   stringStream stream;
-  stream.print(INTX_FORMAT, val);
+  stream.print("%zd", val);
   print_attr(name, stream.freeze());
 }
 
@@ -945,7 +945,7 @@ void IdealGraphPrinter::init_network_stream() {
   } else {
     // It would be nice if we could shut down cleanly but it should
     // be an error if we can't connect to the visualizer.
-    fatal("Couldn't connect to visualizer at %s:" INTX_FORMAT,
+    fatal("Couldn't connect to visualizer at %s:%zd",
           PrintIdealGraphAddress, PrintIdealGraphPort);
   }
 }

@@ -67,10 +67,8 @@ else ifeq ($(call isTargetOs, windows), true)
   BROKEN_STATIC_LIBS += splashscreen
   # libsspi_bridge has name conflicts with sunmscapi
   BROKEN_STATIC_LIBS += sspi_bridge
-  # These libs define DllMain which conflict with Hotspot
-  BROKEN_STATIC_LIBS += awt dt_shmem dt_socket
-  # These libs are dependent on any of the above disabled libs
-  BROKEN_STATIC_LIBS += fontmanager jawt lcms net nio
+  # dt_shmem define jdwpTransport_OnLoad which conflict with dt_socket
+  BROKEN_STATIC_LIBS += dt_shmem
 endif
 
 $(foreach module, $(STATIC_LIB_MODULES), \

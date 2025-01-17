@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1586,7 +1586,7 @@ void nmethod::log_identity(xmlStream* log) const {
 
 #define LOG_OFFSET(log, name)                    \
   if (p2i(name##_end()) - p2i(name##_begin())) \
-    log->print(" " XSTR(name) "_offset='" INTX_FORMAT "'"    , \
+    log->print(" " XSTR(name) "_offset='%zd'"    , \
                p2i(name##_begin()) - p2i(this))
 
 
@@ -1962,7 +1962,7 @@ void nmethod::log_state_change() const {
   if (LogCompilation) {
     if (xtty != nullptr) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'",
+      xtty->begin_elem("make_not_entrant thread='%zu'",
                        os::current_thread_id());
       log_identity(xtty);
       xtty->stamp();
@@ -2110,7 +2110,7 @@ void nmethod::purge(bool unregister_nmethod) {
   // completely deallocate this method
   Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
   log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
-                       "/Free CodeCache:" SIZE_FORMAT "Kb",
+                       "/Free CodeCache:%zuKb",
                        is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
                        CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
 

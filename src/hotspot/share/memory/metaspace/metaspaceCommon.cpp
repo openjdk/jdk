@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -98,9 +98,9 @@ void print_human_readable_size(outputStream* st, size_t byte_size, size_t scale,
 
   if (width == -1) {
     if (scale == 1) {
-      st->print(SIZE_FORMAT " bytes", byte_size);
+      st->print("%zu bytes", byte_size);
     } else if (scale == BytesPerWord) {
-      st->print(SIZE_FORMAT " words", byte_size / BytesPerWord);
+      st->print("%zu words", byte_size / BytesPerWord);
     } else {
       const char* display_unit = display_unit_for_scale(scale);
       float display_value = (float) byte_size / (float)scale;
@@ -162,9 +162,9 @@ const char* classes_plural(uintx num) {
 }
 
 void print_number_of_classes(outputStream* out, uintx classes, uintx classes_shared) {
-  out->print(UINTX_FORMAT " %s", classes, classes_plural(classes));
+  out->print("%zu %s", classes, classes_plural(classes));
   if (classes_shared > 0) {
-    out->print(" (" UINTX_FORMAT " shared)", classes_shared);
+    out->print(" (%zu shared)", classes_shared);
   }
 }
 

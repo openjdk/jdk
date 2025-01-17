@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,74 @@ class OptoRuntime : public AllStatic {
 #undef C2_STUB_FIELD_DECLARE
 #undef C2_JVMTI_STUB_FIELD_DECLARE
 
+  // static TypeFunc* data members
+  static const TypeFunc* _new_instance_Type;
+  static const TypeFunc* _new_array_Type;
+  static const TypeFunc* _multianewarray2_Type;
+  static const TypeFunc* _multianewarray3_Type;
+  static const TypeFunc* _multianewarray4_Type;
+  static const TypeFunc* _multianewarray5_Type;
+  static const TypeFunc* _multianewarrayN_Type;
+  static const TypeFunc* _complete_monitor_enter_Type;
+  static const TypeFunc* _complete_monitor_exit_Type;
+  static const TypeFunc* _monitor_notify_Type;
+  static const TypeFunc* _uncommon_trap_Type;
+  static const TypeFunc* _athrow_Type;
+  static const TypeFunc* _rethrow_Type;
+  static const TypeFunc* _Math_D_D_Type;
+  static const TypeFunc* _Math_DD_D_Type;
+  static const TypeFunc* _modf_Type;
+  static const TypeFunc* _l2f_Type;
+  static const TypeFunc* _void_long_Type;
+  static const TypeFunc* _void_void_Type;
+  static const TypeFunc* _jfr_write_checkpoint_Type;
+  static const TypeFunc* _flush_windows_Type;
+  static const TypeFunc* _fast_arraycopy_Type;
+  static const TypeFunc* _checkcast_arraycopy_Type;
+  static const TypeFunc* _generic_arraycopy_Type;
+  static const TypeFunc* _slow_arraycopy_Type;
+  static const TypeFunc* _unsafe_setmemory_Type;
+  static const TypeFunc* _array_fill_Type;
+  static const TypeFunc* _array_sort_Type;
+  static const TypeFunc* _array_partition_Type;
+  static const TypeFunc* _aescrypt_block_Type;
+  static const TypeFunc* _cipherBlockChaining_aescrypt_Type;
+  static const TypeFunc* _electronicCodeBook_aescrypt_Type;
+  static const TypeFunc* _counterMode_aescrypt_Type;
+  static const TypeFunc* _galoisCounterMode_aescrypt_Type;
+  static const TypeFunc* _digestBase_implCompress_with_sha3_Type;
+  static const TypeFunc* _digestBase_implCompress_without_sha3_Type;
+  static const TypeFunc* _digestBase_implCompressMB_with_sha3_Type;
+  static const TypeFunc* _digestBase_implCompressMB_without_sha3_Type;
+  static const TypeFunc* _multiplyToLen_Type;
+  static const TypeFunc* _montgomeryMultiply_Type;
+  static const TypeFunc* _montgomerySquare_Type;
+  static const TypeFunc* _squareToLen_Type;
+  static const TypeFunc* _mulAdd_Type;
+  static const TypeFunc* _bigIntegerShift_Type;
+  static const TypeFunc* _vectorizedMismatch_Type;
+  static const TypeFunc* _ghash_processBlocks_Type;
+  static const TypeFunc* _chacha20Block_Type;
+  static const TypeFunc* _base64_encodeBlock_Type;
+  static const TypeFunc* _base64_decodeBlock_Type;
+  static const TypeFunc* _string_IndexOf_Type;
+  static const TypeFunc* _poly1305_processBlocks_Type;
+  static const TypeFunc* _intpoly_montgomeryMult_P256_Type;
+  static const TypeFunc* _intpoly_assign_Type;
+  static const TypeFunc* _updateBytesCRC32_Type;
+  static const TypeFunc* _updateBytesCRC32C_Type;
+  static const TypeFunc* _updateBytesAdler32_Type;
+  static const TypeFunc* _osr_end_Type;
+  static const TypeFunc* _register_finalizer_Type;
+#ifdef INCLUDE_JFR
+  static const TypeFunc* _class_id_load_barrier_Type;
+#endif // INCLUDE_JFR
+#ifdef INCLUDE_JVMTI
+  static const TypeFunc* _notify_jvmti_vthread_Type;
+#endif // INCLUDE_JVMTI
+  static const TypeFunc* _dtrace_method_entry_exit_Type;
+  static const TypeFunc* _dtrace_object_alloc_Type;
+
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
 
@@ -242,95 +310,365 @@ private:
   // Type functions
   // ======================================================
 
-  static const TypeFunc* new_instance_Type(); // object allocation (slow case)
-  static const TypeFunc* new_array_Type ();   // [a]newarray (slow case)
-  static const TypeFunc* new_array_nozero_Type ();   // [a]newarray (slow case)
+  static inline const TypeFunc* new_instance_Type() {
+    assert(_new_instance_Type != nullptr, "should be initialized");
+    return _new_instance_Type;
+  }
+
+  static inline const TypeFunc* new_array_Type() {
+    assert(_new_array_Type != nullptr, "should be initialized");
+    return _new_array_Type;
+  }
+
+  static inline const TypeFunc* new_array_nozero_Type() {
+    return new_array_Type();
+  }
+
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
-  static const TypeFunc* multianewarray2_Type(); // multianewarray
-  static const TypeFunc* multianewarray3_Type(); // multianewarray
-  static const TypeFunc* multianewarray4_Type(); // multianewarray
-  static const TypeFunc* multianewarray5_Type(); // multianewarray
-  static const TypeFunc* multianewarrayN_Type(); // multianewarray
-  static const TypeFunc* complete_monitor_enter_Type();
-  static const TypeFunc* complete_monitor_locking_Type();
-  static const TypeFunc* complete_monitor_exit_Type();
-  static const TypeFunc* monitor_notify_Type();
-  static const TypeFunc* monitor_notifyAll_Type();
-  static const TypeFunc* uncommon_trap_Type();
-  static const TypeFunc* athrow_Type();
-  static const TypeFunc* rethrow_Type();
-  static const TypeFunc* Math_D_D_Type();  // sin,cos & friends
-  static const TypeFunc* Math_DD_D_Type(); // mod,pow & friends
+
+  static inline const TypeFunc* multianewarray2_Type() {
+    assert(_multianewarray2_Type != nullptr, "should be initialized");
+    return _multianewarray2_Type;
+  }
+
+  static inline const TypeFunc* multianewarray3_Type() {
+    assert(_multianewarray3_Type != nullptr, "should be initialized");
+    return _multianewarray3_Type;
+  }
+
+  static inline const TypeFunc* multianewarray4_Type() {
+    assert(_multianewarray4_Type != nullptr, "should be initialized");
+    return _multianewarray4_Type;
+  }
+
+  static inline const TypeFunc* multianewarray5_Type() {
+    assert(_multianewarray5_Type != nullptr, "should be initialized");
+    return _multianewarray5_Type;
+  }
+
+  static inline const TypeFunc* multianewarrayN_Type() {
+    assert(_multianewarrayN_Type != nullptr, "should be initialized");
+    return _multianewarrayN_Type;
+  }
+
+  static inline const TypeFunc* complete_monitor_enter_Type() {
+    assert(_complete_monitor_enter_Type != nullptr, "should be initialized");
+    return _complete_monitor_enter_Type;
+  }
+
+  static inline const TypeFunc* complete_monitor_locking_Type() {
+    return complete_monitor_enter_Type();
+  }
+
+  static inline const TypeFunc* complete_monitor_exit_Type() {
+    assert(_complete_monitor_exit_Type != nullptr, "should be initialized");
+    return _complete_monitor_exit_Type;
+  }
+
+  static inline const TypeFunc* monitor_notify_Type() {
+    assert(_monitor_notify_Type != nullptr, "should be initialized");
+    return _monitor_notify_Type;
+  }
+
+  static inline const TypeFunc* monitor_notifyAll_Type() {
+    return monitor_notify_Type();
+  }
+
+  static inline const TypeFunc* uncommon_trap_Type() {
+    assert(_uncommon_trap_Type != nullptr, "should be initialized");
+    return _uncommon_trap_Type;
+  }
+
+  static inline const TypeFunc* athrow_Type() {
+    assert(_athrow_Type != nullptr, "should be initialized");
+    return _athrow_Type;
+  }
+
+  static inline const TypeFunc* rethrow_Type() {
+    assert(_rethrow_Type != nullptr, "should be initialized");
+    return _rethrow_Type;
+  }
+
+  static inline const TypeFunc* Math_D_D_Type() {
+    assert(_Math_D_D_Type != nullptr, "should be initialized");
+    return _Math_D_D_Type;
+  }
+
+  static inline const TypeFunc* Math_DD_D_Type() {
+    assert(_Math_DD_D_Type != nullptr, "should be initialized");
+    return _Math_DD_D_Type;
+  }
+
   static const TypeFunc* Math_Vector_Vector_Type(uint num_arg, const TypeVect* in_type, const TypeVect* out_type);
-  static const TypeFunc* modf_Type();
-  static const TypeFunc* l2f_Type();
-  static const TypeFunc* void_long_Type();
-  static const TypeFunc* void_void_Type();
 
-  static const TypeFunc* jfr_write_checkpoint_Type();
+  static inline const TypeFunc* modf_Type() {
+    assert(_modf_Type != nullptr, "should be initialized");
+    return _modf_Type;
+  }
 
-  static const TypeFunc* flush_windows_Type();
+  static inline const TypeFunc* l2f_Type() {
+    assert(_l2f_Type != nullptr, "should be initialized");
+    return _l2f_Type;
+  }
+
+  static inline const TypeFunc* void_long_Type() {
+    assert(_void_long_Type != nullptr, "should be initialized");
+    return _void_long_Type;
+  }
+
+  static inline const TypeFunc* void_void_Type() {
+    assert(_void_void_Type != nullptr, "should be initialized");
+    return _void_void_Type;
+  }
+
+  static const TypeFunc* jfr_write_checkpoint_Type() {
+    assert(_jfr_write_checkpoint_Type != nullptr, "should be initialized");
+    return _jfr_write_checkpoint_Type;
+  }
+
+  static const TypeFunc* flush_windows_Type() {
+    assert(_flush_windows_Type != nullptr, "should be initialized");
+    return _flush_windows_Type;
+  }
 
   // arraycopy routine types
-  static const TypeFunc* fast_arraycopy_Type(); // bit-blasters
-  static const TypeFunc* checkcast_arraycopy_Type();
-  static const TypeFunc* generic_arraycopy_Type();
-  static const TypeFunc* slow_arraycopy_Type();   // the full routine
+  static inline const TypeFunc* fast_arraycopy_Type() {
+    assert(_fast_arraycopy_Type != nullptr, "should be initialized");
+    // This signature is simple:  Two base pointers and a size_t.
+    return _fast_arraycopy_Type;
+  }
 
-  static const TypeFunc* make_setmemory_Type();
+  static inline const TypeFunc* checkcast_arraycopy_Type() {
+    assert(_checkcast_arraycopy_Type != nullptr, "should be initialized");
+    // An extension of fast_arraycopy_Type which adds type checking.
+    return _checkcast_arraycopy_Type;
+  }
 
-  static const TypeFunc* array_fill_Type();
+  static inline const TypeFunc* generic_arraycopy_Type() {
+    assert(_generic_arraycopy_Type != nullptr, "should be initialized");
+    // This signature is like System.arraycopy, except that it returns status.
+    return _generic_arraycopy_Type;
+  }
 
-  static const TypeFunc* array_sort_Type();
-  static const TypeFunc* array_partition_Type();
-  static const TypeFunc* aescrypt_block_Type();
-  static const TypeFunc* cipherBlockChaining_aescrypt_Type();
-  static const TypeFunc* electronicCodeBook_aescrypt_Type();
-  static const TypeFunc* counterMode_aescrypt_Type();
-  static const TypeFunc* galoisCounterMode_aescrypt_Type();
+  static inline const TypeFunc* slow_arraycopy_Type() {
+    assert(_slow_arraycopy_Type != nullptr, "should be initialized");
+    // This signature is exactly the same as System.arraycopy.
+    // There are no intptr_t (int/long) arguments.
+    return _slow_arraycopy_Type;
+  }   // the full routine
 
-  static const TypeFunc* digestBase_implCompress_Type(bool is_sha3);
-  static const TypeFunc* digestBase_implCompressMB_Type(bool is_sha3);
+  static inline const TypeFunc* unsafe_setmemory_Type() {
+    assert(_unsafe_setmemory_Type != nullptr, "should be initialized");
+    return _unsafe_setmemory_Type;
+  }
 
-  static const TypeFunc* multiplyToLen_Type();
-  static const TypeFunc* montgomeryMultiply_Type();
-  static const TypeFunc* montgomerySquare_Type();
+  static inline const TypeFunc* array_fill_Type() {
+    assert(_array_fill_Type != nullptr, "should be initialized");
+    return _array_fill_Type;
+  }
 
-  static const TypeFunc* squareToLen_Type();
+  static inline const TypeFunc* array_sort_Type() {
+    assert(_array_sort_Type != nullptr, "should be initialized");
+    return _array_sort_Type;
+  }
 
-  static const TypeFunc* mulAdd_Type();
+  static inline const TypeFunc* array_partition_Type() {
+    assert(_array_partition_Type != nullptr, "should be initialized");
+    return _array_partition_Type;
+  }
 
-  static const TypeFunc* bigIntegerShift_Type();
+  // for aescrypt encrypt/decrypt operations, just three pointers returning void (length is constant)
+  static inline const TypeFunc* aescrypt_block_Type() {
+    assert(_aescrypt_block_Type != nullptr, "should be initialized");
+    return _aescrypt_block_Type;
+  }
 
-  static const TypeFunc* vectorizedMismatch_Type();
+  // for cipherBlockChaining calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+  static inline const TypeFunc* cipherBlockChaining_aescrypt_Type() {
+    assert(_cipherBlockChaining_aescrypt_Type != nullptr, "should be initialized");
+    return _cipherBlockChaining_aescrypt_Type;
+  }
 
-  static const TypeFunc* ghash_processBlocks_Type();
-  static const TypeFunc* chacha20Block_Type();
-  static const TypeFunc* base64_encodeBlock_Type();
-  static const TypeFunc* base64_decodeBlock_Type();
-  static const TypeFunc* string_IndexOf_Type();
-  static const TypeFunc* poly1305_processBlocks_Type();
-  static const TypeFunc* intpoly_montgomeryMult_P256_Type();
-  static const TypeFunc* intpoly_assign_Type();
+  // for electronicCodeBook calls of aescrypt encrypt/decrypt, three pointers and a length, returning int
+  static inline const TypeFunc* electronicCodeBook_aescrypt_Type() {
+    assert(_electronicCodeBook_aescrypt_Type != nullptr, "should be initialized");
+    return _electronicCodeBook_aescrypt_Type;
+  }
 
-  static const TypeFunc* updateBytesCRC32_Type();
-  static const TypeFunc* updateBytesCRC32C_Type();
+  //for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+  static inline const TypeFunc* counterMode_aescrypt_Type() {
+    assert(_counterMode_aescrypt_Type != nullptr, "should be initialized");
+    return _counterMode_aescrypt_Type;
+  }
 
-  static const TypeFunc* updateBytesAdler32_Type();
+  //for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+  static inline const TypeFunc* galoisCounterMode_aescrypt_Type() {
+    assert(_galoisCounterMode_aescrypt_Type != nullptr, "should be initialized");
+    return _galoisCounterMode_aescrypt_Type;
+  }
+
+  /*
+   * void implCompress(byte[] buf, int ofs)
+   */
+  static inline const TypeFunc* digestBase_implCompress_Type(bool is_sha3) {
+    assert((_digestBase_implCompress_with_sha3_Type != nullptr) &&
+           (_digestBase_implCompress_without_sha3_Type != nullptr), "should be initialized");
+    return is_sha3 ? _digestBase_implCompress_with_sha3_Type : _digestBase_implCompress_without_sha3_Type;
+  }
+
+  /*
+   * int implCompressMultiBlock(byte[] b, int ofs, int limit)
+   */
+  static inline const TypeFunc* digestBase_implCompressMB_Type(bool is_sha3) {
+    assert((_digestBase_implCompressMB_with_sha3_Type != nullptr) &&
+           (_digestBase_implCompressMB_without_sha3_Type != nullptr), "should be initialized");
+    return is_sha3 ? _digestBase_implCompressMB_with_sha3_Type : _digestBase_implCompressMB_without_sha3_Type;
+  }
+
+  static inline const TypeFunc* multiplyToLen_Type() {
+    assert(_multiplyToLen_Type != nullptr, "should be initialized");
+    return _multiplyToLen_Type;
+  }
+
+  static inline const TypeFunc* montgomeryMultiply_Type() {
+    assert(_montgomeryMultiply_Type != nullptr, "should be initialized");
+    return _montgomeryMultiply_Type;
+  }
+
+  static inline const TypeFunc* montgomerySquare_Type() {
+    assert(_montgomerySquare_Type != nullptr, "should be initialized");
+    return _montgomerySquare_Type;
+  }
+
+  static inline const TypeFunc* squareToLen_Type() {
+    assert(_squareToLen_Type != nullptr, "should be initialized");
+    return _squareToLen_Type;
+  }
+
+  // for mulAdd calls, 2 pointers and 3 ints, returning int
+  static inline const TypeFunc* mulAdd_Type() {
+    assert(_mulAdd_Type != nullptr, "should be initialized");
+    return _mulAdd_Type;
+  }
+
+  static inline const TypeFunc* bigIntegerShift_Type() {
+    assert(_bigIntegerShift_Type != nullptr, "should be initialized");
+    return _bigIntegerShift_Type;
+  }
+
+  static inline const TypeFunc* vectorizedMismatch_Type() {
+    assert(_vectorizedMismatch_Type != nullptr, "should be initialized");
+    return _vectorizedMismatch_Type;
+  }
+
+  // GHASH block processing
+  static inline const TypeFunc* ghash_processBlocks_Type() {
+    assert(_ghash_processBlocks_Type != nullptr, "should be initialized");
+    return _ghash_processBlocks_Type;
+  }
+
+  // ChaCha20 Block function
+  static inline const TypeFunc* chacha20Block_Type() {
+    assert(_chacha20Block_Type != nullptr, "should be initialized");
+    return _chacha20Block_Type;
+  }
+
+  // Base64 encode function
+  static inline const TypeFunc* base64_encodeBlock_Type() {
+    assert(_base64_encodeBlock_Type != nullptr, "should be initialized");
+    return _base64_encodeBlock_Type;
+  }
+
+  // Base64 decode function
+  static inline const TypeFunc* base64_decodeBlock_Type() {
+    assert(_base64_decodeBlock_Type != nullptr, "should be initialized");
+    return _base64_decodeBlock_Type;
+  }
+
+  // String IndexOf function
+  static inline const TypeFunc* string_IndexOf_Type() {
+    assert(_string_IndexOf_Type != nullptr, "should be initialized");
+    return _string_IndexOf_Type;
+  }
+
+  // Poly1305 processMultipleBlocks function
+  static inline const TypeFunc* poly1305_processBlocks_Type() {
+    assert(_poly1305_processBlocks_Type != nullptr, "should be initialized");
+    return _poly1305_processBlocks_Type;
+  }
+
+  // MontgomeryIntegerPolynomialP256 multiply function
+  static inline const TypeFunc* intpoly_montgomeryMult_P256_Type() {
+    assert(_intpoly_montgomeryMult_P256_Type != nullptr, "should be initialized");
+    return _intpoly_montgomeryMult_P256_Type;
+  }
+
+  // IntegerPolynomial constant time assignment function
+  static inline const TypeFunc* intpoly_assign_Type() {
+    assert(_intpoly_assign_Type != nullptr, "should be initialized");
+    return _intpoly_assign_Type;
+  }
+
+  /**
+   * int updateBytesCRC32(int crc, byte* b, int len)
+   */
+  static inline const TypeFunc* updateBytesCRC32_Type() {
+    assert(_updateBytesCRC32_Type != nullptr, "should be initialized");
+    return _updateBytesCRC32_Type;
+  }
+
+  /**
+   * int updateBytesCRC32C(int crc, byte* buf, int len, int* table)
+   */
+  static inline const TypeFunc* updateBytesCRC32C_Type() {
+    assert(_updateBytesCRC32C_Type != nullptr, "should be initialized");
+    return _updateBytesCRC32C_Type;
+  }
+
+  /**
+   *  int updateBytesAdler32(int adler, bytes* b, int off, int len)
+   */
+  static inline const TypeFunc* updateBytesAdler32_Type() {
+    assert(_updateBytesAdler32_Type != nullptr, "should be initialized");
+    return _updateBytesAdler32_Type;
+  }
+
 
   // leaf on stack replacement interpreter accessor types
-  static const TypeFunc* osr_end_Type();
+  static inline const TypeFunc* osr_end_Type() {
+    assert(_osr_end_Type != nullptr, "should be initialized");
+    return _osr_end_Type;
+  }
 
-  static const TypeFunc* register_finalizer_Type();
+  static inline const TypeFunc* register_finalizer_Type() {
+    assert(_register_finalizer_Type != nullptr, "should be initialized");
+    return _register_finalizer_Type;
+  }
 
-  JFR_ONLY(static const TypeFunc* class_id_load_barrier_Type();)
+#ifdef INCLUDE_JFR
+  static inline const TypeFunc* class_id_load_barrier_Type() {
+    assert(_class_id_load_barrier_Type != nullptr, "should be initialized");
+    return _class_id_load_barrier_Type;
+  }
+#endif // INCLUDE_JFR
+
 #if INCLUDE_JVMTI
-  static const TypeFunc* notify_jvmti_vthread_Type();
+  static inline const TypeFunc* notify_jvmti_vthread_Type() {
+    assert(_notify_jvmti_vthread_Type != nullptr, "should be initialized");
+    return _notify_jvmti_vthread_Type;
+  }
 #endif
 
-  // Dtrace support
-  static const TypeFunc* dtrace_method_entry_exit_Type();
-  static const TypeFunc* dtrace_object_alloc_Type();
+  // Dtrace support. entry and exit probes have the same signature
+  static inline const TypeFunc* dtrace_method_entry_exit_Type() {
+    assert(_dtrace_method_entry_exit_Type != nullptr, "should be initialized");
+    return _dtrace_method_entry_exit_Type;
+  }
+
+  static inline const TypeFunc* dtrace_object_alloc_Type() {
+    assert(_dtrace_object_alloc_Type != nullptr, "should be initialized");
+    return _dtrace_object_alloc_Type;
+  }
 
  private:
  static NamedCounter * volatile _named_counters;
@@ -343,6 +681,7 @@ private:
  // dumps all the named counters
  static void          print_named_counters();
 
+ static void          initialize_types();
 };
 
 #endif // SHARE_OPTO_RUNTIME_HPP

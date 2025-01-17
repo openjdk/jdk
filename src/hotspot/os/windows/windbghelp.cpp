@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ namespace { // Do not export.
   };
 }
 
-// Called at DLL_PROCESS_ATTACH.
+// Called at DLL_PROCESS_ATTACH for dynamic builds, and from os::init() for static builds.
 void WindowsDbgHelp::pre_initialize() {
   ::InitializeCriticalSection(&g_cs);
 }

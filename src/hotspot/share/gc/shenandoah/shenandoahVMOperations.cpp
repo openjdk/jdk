@@ -82,47 +82,47 @@ void VM_ShenandoahInitMark::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Init Mark", SvcGCMarker::CONCURRENT);
   set_active_generation();
   _gc->entry_init_mark();
-  ShenandoahHeap::heap()->propagate_gc_state_to_java_threads();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void VM_ShenandoahFinalMarkStartEvac::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Mark", SvcGCMarker::CONCURRENT);
   set_active_generation();
   _gc->entry_final_mark();
-  ShenandoahHeap::heap()->propagate_gc_state_to_java_threads();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void VM_ShenandoahFullGC::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Full GC", SvcGCMarker::FULL);
   set_active_generation();
   _full_gc->entry_full(_gc_cause);
-  ShenandoahHeap::heap()->propagate_gc_state_to_java_threads();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void VM_ShenandoahDegeneratedGC::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Degenerated GC", SvcGCMarker::CONCURRENT);
   set_active_generation();
   _gc->entry_degenerated();
-  ShenandoahHeap::heap()->propagate_gc_state_to_java_threads();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void VM_ShenandoahInitUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Init Update Refs", SvcGCMarker::CONCURRENT);
   set_active_generation();
-  _gc->entry_init_updaterefs();
-  ShenandoahHeap::heap()->propagate_gc_state_to_java_threads();
+  _gc->entry_init_update_refs();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void VM_ShenandoahFinalUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Update Refs", SvcGCMarker::CONCURRENT);
   set_active_generation();
-  _gc->entry_final_updaterefs();
-  ShenandoahHeap::heap()->propagate_gc_state_to_java_threads();
+  _gc->entry_final_update_refs();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void VM_ShenandoahFinalRoots::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Roots", SvcGCMarker::CONCURRENT);
   set_active_generation();
   _gc->entry_final_roots();
-  ShenandoahHeap::heap()->propagate_gc_state_to_java_threads();
+  ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
     // JVM style warning that we did not succeed in using large pages.
     char msg[128];
     jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory using large pages. "
-                                   "req_addr: " PTR_FORMAT " bytes: " SIZE_FORMAT,
+                                   "req_addr: " PTR_FORMAT " bytes: %zu",
                                    req_addr, bytes);
     warning("%s", msg);
   }
@@ -89,7 +89,7 @@ static char* reserve_memory_inner(char* requested_address,
   // important.  If the reservation fails, return null.
   if (requested_address != nullptr) {
     assert(is_aligned(requested_address, alignment),
-           "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
+           "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
     return os::attempt_reserve_memory_at(requested_address, size, exec, mem_tag);
   }
@@ -131,8 +131,7 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
                                                      size_t alignment,
                                                      size_t page_size,
                                                      bool exec) {
-  log_trace(pagesize)("Attempt special mapping: size: " SIZE_FORMAT "%s, "
-                      "alignment: " SIZE_FORMAT "%s",
+  log_trace(pagesize)("Attempt special mapping: size: %zu%s, alignment: %zu%s",
                       byte_size_in_exact_unit(size), exact_unit_for_byte_size(size),
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
@@ -141,7 +140,7 @@ ReservedSpace MemoryReserver::reserve_memory_special(char* requested_address,
   if (base != nullptr) {
     assert(is_aligned(base, alignment),
            "reserve_memory_special() returned an unaligned address, "
-           "base: " PTR_FORMAT " alignment: " SIZE_FORMAT_X,
+           "base: " PTR_FORMAT " alignment: 0x%zx",
            p2i(base), alignment);
 
     return ReservedSpace(base, size, alignment, page_size, exec, true /* special */);
@@ -255,7 +254,7 @@ static char* map_memory_to_file(char* requested_address,
   // important.  If the reservation fails, return null.
   if (requested_address != nullptr) {
     assert(is_aligned(requested_address, alignment),
-           "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
+           "Requested address " PTR_FORMAT " must be aligned to %zu",
            p2i(requested_address), alignment);
     return os::attempt_map_memory_to_file_at(requested_address, size, fd, mem_tag);
   }
@@ -401,7 +400,7 @@ ReservedSpace HeapReserver::Instance::try_reserve_memory(size_t size,
                                                          char* requested_address) {
   // Try to reserve the memory for the heap.
   log_trace(gc, heap, coops)("Trying to allocate at address " PTR_FORMAT
-                             " heap of size " SIZE_FORMAT_X,
+                             " heap of size 0x%zx",
                              p2i(requested_address),
                              size);
 
@@ -516,7 +515,7 @@ static ReservedSpace establish_noaccess_prefix(const ReservedSpace& reserved, si
         fatal("cannot protect protection page");
       }
       log_debug(gc, heap, coops)("Protected page at the reserved heap base: "
-                                 PTR_FORMAT " / " INTX_FORMAT " bytes",
+                                 PTR_FORMAT " / %zd bytes",
                                  p2i(reserved.base()),
                                  noaccess_prefix);
       assert(CompressedOops::use_implicit_null_checks() == true, "not initialized?");
@@ -639,7 +638,7 @@ ReservedHeapSpace HeapReserver::Instance::reserve_compressed_oops_heap(const siz
 
     // Last, desperate try without any placement.
     if (!reserved.is_reserved()) {
-      log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
+      log_trace(gc, heap, coops)("Trying to allocate at address null heap of size 0x%zx", size + noaccess_prefix);
       assert(alignment >= os::vm_page_size(), "Unexpected");
       reserved = reserve_memory(size + noaccess_prefix, alignment, page_size);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -440,7 +440,7 @@ bool ObjectMonitor::spin_enter(JavaThread* current) {
   // we forgo posting JVMTI events and firing DTRACE probes.
   if (TrySpin(current)) {
     assert(has_owner(current), "must be current: owner=" INT64_FORMAT, owner_raw());
-    assert(_recursions == 0, "must be 0: recursions=" INTX_FORMAT, _recursions);
+    assert(_recursions == 0, "must be 0: recursions=%zd", _recursions);
     assert_mark_word_consistency();
     return true;
   }
@@ -2497,7 +2497,7 @@ void ObjectMonitor::Initialize2() {
 void ObjectMonitor::print_on(outputStream* st) const {
   // The minimal things to print for markWord printing, more can be added for debugging and logging.
   st->print("{contentions=0x%08x,waiters=0x%08x"
-            ",recursions=" INTX_FORMAT ",owner=" INT64_FORMAT "}",
+            ",recursions=%zd,owner=" INT64_FORMAT "}",
             contentions(), waiters(), recursions(),
             owner());
 }
@@ -2550,7 +2550,7 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf1) - 1);
   st->print_cr("  }");
   st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
-  st->print_cr("  _recursions = " INTX_FORMAT, _recursions);
+  st->print_cr("  _recursions = %zd", _recursions);
   st->print_cr("  _EntryList = " INTPTR_FORMAT, p2i(_EntryList));
   st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
   st->print_cr("  _succ = " INT64_FORMAT, successor());

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +53,7 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
   size_t threshold_available = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < threshold_available) {
-    log_trigger("Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+    log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
                  byte_size_in_proper_unit(available),           proper_unit_for_byte_size(available),
                  byte_size_in_proper_unit(threshold_available), proper_unit_for_byte_size(threshold_available));
     return true;
