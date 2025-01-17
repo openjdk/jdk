@@ -852,7 +852,7 @@ private:
       }
 
       if (region_progress && ShenandoahPacing) {
-        _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
+        _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
       }
 
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
@@ -912,7 +912,7 @@ private:
         }
 
         if (ShenandoahPacing) {
-          _heap->pacer()->report_updaterefs(pointer_delta(end_of_range, start_of_range));
+          _heap->pacer()->report_update_refs(pointer_delta(end_of_range, start_of_range));
         }
       }
     }
@@ -1072,7 +1072,7 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
   if (is_concurrent_old_mark_in_progress()) {
     // This is still necessary for degenerated cycles because the degeneration point may occur
-    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_updaterefs for
+    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
     // a more detailed explanation.
     old_generation()->transfer_pointers_from_satb();
   }

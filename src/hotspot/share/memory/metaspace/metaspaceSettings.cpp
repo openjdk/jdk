@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,9 +49,9 @@ void Settings::ergo_initialize() {
 }
 
 void Settings::print_on(outputStream* st) {
-  st->print_cr(" - commit_granule_bytes: " SIZE_FORMAT ".", commit_granule_bytes());
-  st->print_cr(" - commit_granule_words: " SIZE_FORMAT ".", commit_granule_words());
-  st->print_cr(" - virtual_space_node_default_size: " SIZE_FORMAT ".", virtual_space_node_default_word_size());
+  st->print_cr(" - commit_granule_bytes: %zu.", commit_granule_bytes());
+  st->print_cr(" - commit_granule_words: %zu.", commit_granule_words());
+  st->print_cr(" - virtual_space_node_default_size: %zu.", virtual_space_node_default_word_size());
   st->print_cr(" - enlarge_chunks_in_place: %d.", (int)enlarge_chunks_in_place());
 }
 
