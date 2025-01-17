@@ -36,29 +36,29 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::replace_child(
     _left = new_child;
   } else if (_right == old_child) {
     _right = new_child;
+  } else {
+    ShouldNotReachHere();
   }
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
 RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_left() {
-  // Move node down to the left, and right child up
+  // This node down, right child up
   RBNode* old_right = _right;
 
   _right = old_right->_left;
-  if (old_right->_left != nullptr) {
-    old_right->_left->_parent = this;
+  if (_right != nullptr) {
+    _right->set_parent(this);
   }
 
-  old_right->_parent = _parent;
-  if (is_left_child()) {
-    _parent->_left = old_right;
-  } else if (is_right_child()) {
-    _parent->_right = old_right;
+  old_right->set_parent(parent());
+  if (parent() != nullptr) {
+    parent()->replace_child(this, old_right);
   }
 
   old_right->_left = this;
-  _parent = old_right;
+  set_parent(old_right);
 
   return old_right;
 }
@@ -66,23 +66,21 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_left() {
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
 RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_right() {
-  // Move node down to the right, and left child up
+  // This node down, left child up
   RBNode* old_left = _left;
 
   _left = old_left->_right;
-  if (old_left->_right != nullptr) {
-    old_left->_right->_parent = this;
+  if (_left != nullptr) {
+    _left->set_parent(this);
   }
 
-  old_left->_parent = _parent;
-  if (is_left_child()) {
-    _parent->_left = old_left;
-  } else if (is_right_child()) {
-    _parent->_right = old_left;
+  old_left->set_parent(parent());
+  if (parent() != nullptr) {
+    parent()->replace_child(this, old_left);
   }
 
   old_left->_right = this;
-  _parent = old_left;
+  set_parent(old_left);
 
   return old_left;
 }
@@ -100,9 +98,9 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() {
   }
 
   while (node != nullptr && node->is_left_child()) {
-    node = node->_parent;
+    node = node->parent();
   }
-  return node->_parent;
+  return node->parent();
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
@@ -118,49 +116,70 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() {
   }
 
   while (node != nullptr && node->is_right_child()) {
-    node = node->_parent;
+    node = node->parent();
   }
-  return node->_parent;
+  return node->parent();
 }
 
 #ifdef ASSERT
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::is_correct(
-  unsigned int num_blacks, unsigned int maximum_depth, unsigned int current_depth) const {
-  if (current_depth > maximum_depth) {
-    return false;
-  }
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
+    size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
+    size_t& tree_depth, bool expect_visited) {
+  assert(expect_visited != _visited, "node already visited");
+  _visited = !_visited;
 
-  if (is_black()) {
-    num_blacks--;
-  }
+  size_t num_black_nodes_left = 0;
+  size_t shortest_leaf_path_left = 0;
+  size_t longest_leaf_path_left = 0;
+  size_t tree_depth_left = 0;
 
-  bool left_is_correct = num_blacks == 0;
-  bool right_is_correct = num_blacks == 0;
   if (_left != nullptr) {
-    if (COMPARATOR::cmp(_left->key(), _key) >= 0 || // left >= root, or
-        (is_red() && _left->is_red()) ||            // 2 red nodes, or
-        (_left->_parent != this)) {                 // Pointer mismatch,
-      return false;                                 // all incorrect.
+    if (_right == nullptr) {
+      assert(is_black() && _left->is_red(), "if one child it must be red and node black");
     }
-    left_is_correct = _left->is_correct(num_blacks, maximum_depth, current_depth++);
+    assert(COMPARATOR::cmp(_left->key(), _key) < 0, "left node must be less than parent");
+    assert(is_black() || _left->is_black(), "2 red nodes in a row");
+    assert(_left->parent() == this, "pointer mismatch");
+    _left->verify(num_nodes, num_black_nodes_left, shortest_leaf_path_left,
+                  longest_leaf_path_left, tree_depth_left, expect_visited);
   }
-  if (_right != nullptr) {
-    if (COMPARATOR::cmp(_right->key(), _key) <= 0 || // right <= root, or
-        (is_red() && _left->is_red()) ||             // 2 red nodes, or
-        (_right->_parent != this)) {                 // Pointer mismatch,
-      return false;                                  // all incorrect.
-    }
-    right_is_correct = _right->is_correct(num_blacks, maximum_depth, current_depth++);
-  }
-  return left_is_correct && right_is_correct;
-}
 
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline size_t RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::count_nodes() const {
-  size_t left_nodes = _left == nullptr ? 0 : _left->count_nodes();
-  size_t right_nodes = _right == nullptr ? 0 : _right->count_nodes();
-  return 1 + left_nodes + right_nodes;
+  size_t num_black_nodes_right = 0;
+  size_t shortest_leaf_path_right = 0;
+  size_t longest_leaf_path_right = 0;
+  size_t tree_depth_right = 0;
+
+  if (_right != nullptr) {
+    if (_left == nullptr) {
+      assert(is_black() && _right->is_red(), "if one child it must be red and node black");
+    }
+    assert(COMPARATOR::cmp(_right->key(), _key) > 0, "right node must be greater than parent");
+    assert(is_black() || _left->is_black(), "2 red nodes in a row");
+    assert(_right->parent() == this, "pointer mismatch");
+    _right->verify(num_nodes, num_black_nodes_right, shortest_leaf_path_right,
+                   longest_leaf_path_right, tree_depth_right, expect_visited);
+  }
+
+  shortest_leaf_path = MAX2(longest_leaf_path_left, longest_leaf_path_right);
+  longest_leaf_path = MAX2(longest_leaf_path_left, longest_leaf_path_right);
+
+  assert(shortest_leaf_path <= longest_leaf_path && longest_leaf_path <= shortest_leaf_path * 2,
+         "tree imbalanced, shortest path: " SIZE_FORMAT " longest: " SIZE_FORMAT, shortest_leaf_path, longest_leaf_path);
+  assert(num_black_nodes_left == num_black_nodes_right,
+         "number of black nodes in left/right subtree should match");
+
+  num_nodes++;
+  tree_depth = 1 + MAX2(tree_depth_left, tree_depth_right);
+
+  shortest_leaf_path++;
+  longest_leaf_path++;
+
+  black_nodes_until_leaf = num_black_nodes_left;
+  if (is_black()) {
+    black_nodes_until_leaf++;
+  }
+
 }
 
 #endif // ASSERT
@@ -211,7 +230,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& k, const V& v) {
 
   // Create and insert new node
   RBNode* node = allocate_node(k, v);
-  node->_parent = parent;
+  node->set_parent(parent);
 
   int key_cmp_k = COMPARATOR::cmp(k, parent->key());
   if (key_cmp_k < 0) {
@@ -229,11 +248,11 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::fix_insert_violations(RBNode* n
     return;               // Tree is already correct
   }
 
-  RBNode* parent = node->_parent;
+  RBNode* parent = node->parent();
   while (parent != nullptr && parent->is_red()) {
     // Node and parent are both red, creating a red-violation
 
-    RBNode* grandparent = parent->_parent;
+    RBNode* grandparent = parent->parent();
     if (grandparent == nullptr) { // Parent is the tree root
       assert(parent == _root, "parent must be root");
       parent->set_black(); // Color parent black to eliminate the red-violation
@@ -278,14 +297,14 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::fix_insert_violations(RBNode* n
 
     // Move up two levels to check for new potential red-violation
     node = grandparent;
-    parent = grandparent->_parent;
+    parent = grandparent->parent();
   }
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node) {
   // Black node removed, balancing needed
-  RBNode* parent = node->_parent;
+  RBNode* parent = node->parent();
   while (parent != nullptr) {
     // Sibling must exist. If it did not, node would need to be red to not break
     // tree properties, and could be trivially removed before reaching here
@@ -308,7 +327,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node)
       }
 
       if (_root == parent) {
-        _root = parent->_parent;
+        _root = parent->parent();
       }
       // Further balancing needed
     }
@@ -366,13 +385,13 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_black_leaf(RBNode* node)
     // Color sibling red and move up one level
     sibling->set_red();
     node = parent;
-    parent = node->_parent;
+    parent = node->parent();
   }
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) {
-  RBNode* parent = node->_parent;
+  RBNode* parent = node->parent();
   RBNode* left = node->_left;
   RBNode* right = node->_right;
   if (left != nullptr) { // node has a left only-child
@@ -382,7 +401,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) 
     assert(is_black(node), "node must be black");
     assert(is_red(left), "child must be red");
     left->set_black();
-    left->_parent = parent;
+    left->set_parent(parent);
     if (parent == nullptr) {
       assert(node == _root, "node must be root");
       _root = left;
@@ -396,7 +415,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) 
     assert(is_black(node), "node must be black");
     assert(is_red(right), "child must be red");
     right->set_black();
-    right->_parent = parent;
+    right->set_parent(parent);
     if (parent == nullptr) {
       assert(node == _root, "node must be root");
       _root = right;
@@ -430,26 +449,25 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
     if (_root == node) _root = curr;
 
     std::swap(curr->_left, node->_left);
-    std::swap(curr->_color, node->_color);
+    std::swap(curr->_parent, node->_parent); // Swaps parent and color
 
-    // If node is curr's parent, swapping right/parent severs the node connection
+    // If node is curr's parent, parent and right pointers become invalid
     if (node->_right == curr) {
       node->_right = curr->_right;
-      curr->_parent = node->_parent;
-      node->_parent = curr;
+      node->set_parent(curr);
       curr->_right = node;
     } else {
       std::swap(curr->_right, node->_right);
-      std::swap(curr->_parent, node->_parent);
-      node->_parent->replace_child(curr, node);
-      curr->_right->_parent = curr;
+      node->parent()->replace_child(curr, node);
+      curr->_right->set_parent(curr);
     }
 
-    if (curr->_parent != nullptr) curr->_parent->replace_child(node, curr);
-    curr->_left->_parent = curr;
+    if (curr->parent() != nullptr) curr->parent()->replace_child(node, curr);
+    curr->_left->set_parent(curr);
 
-    if (node->_left != nullptr) node->_left->_parent = node;
-    if (node->_right != nullptr) node->_right->_parent = node;
+
+    if (node->_left != nullptr) node->_left->set_parent(node);
+    if (node->_right != nullptr) node->_right->set_parent(node);
   }
 
   remove_from_tree(node);
@@ -495,28 +513,26 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
     return;
   }
 
-  assert(_root->_parent == nullptr, "root of rbtree has a parent");
+  assert(_root->parent() == nullptr, "root of rbtree has a parent");
 
-  unsigned int black_nodes = 0;
-  RBNode* node = _root;
-  while (node != nullptr) {
-    if (node->is_black()) {
-      black_nodes++;
-    }
-    node = node->_left;
-  }
+  size_t num_nodes = 0;
+  size_t black_depth = 0;
+  size_t tree_depth = 0;
+  size_t shortest_leaf_path = 0;
+  size_t longest_leaf_path = 0;
+  _expected_visited = !_expected_visited;
 
-  const size_t actual_num_nodes = _root->count_nodes();
-  const size_t expected_num_nodes = size();
+  _root->verify(num_nodes, black_depth, shortest_leaf_path, longest_leaf_path, tree_depth, _expected_visited);
+
   const unsigned int maximum_depth = log2i(size() + 1) * 2;
-
-  assert(expected_num_nodes == actual_num_nodes,
+  
+  assert(shortest_leaf_path <= longest_leaf_path && longest_leaf_path <= shortest_leaf_path * 2,
+         "tree imbalanced, shortest path: " SIZE_FORMAT " longest: " SIZE_FORMAT,
+         shortest_leaf_path, longest_leaf_path);
+  assert(tree_depth <= maximum_depth, "rbtree is too deep");
+  assert(size() == num_nodes,
          "unexpected number of nodes in rbtree. expected: " SIZE_FORMAT
-         ", actual: " SIZE_FORMAT, expected_num_nodes, actual_num_nodes);
-  assert(2 * black_nodes <= maximum_depth,
-         "rbtree is too deep for its number of nodes. can be at "
-         "most: " INT32_FORMAT ", but is: " UINT32_FORMAT, maximum_depth, 2 * black_nodes);
-  assert(_root->is_correct(black_nodes, maximum_depth, 1), "rbtree does not hold rb-properties");
+         ", actual: " SIZE_FORMAT, size(), num_nodes);
 }
 #endif // ASSERT
 

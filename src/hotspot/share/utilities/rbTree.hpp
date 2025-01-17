@@ -54,15 +54,14 @@ public:
     friend class RBTreeTest;
 
   private:
-    RBNode* _parent;
+    uintptr_t _parent; // LSB encodes color information. 0 = RED, 1 = BLACK
     RBNode* _left;
     RBNode* _right;
 
     const K _key;
     V _value;
 
-    enum Color : uint8_t { BLACK, RED };
-    Color _color;
+    DEBUG_ONLY(bool _visited);
 
   public:
     const K& key() const { return _key; }
@@ -70,30 +69,35 @@ public:
     const V& val() const { return _value; }
 
   private:
-    bool is_black() const { return _color == BLACK; }
-    bool is_red() const { return _color == RED; }
+    bool is_black() const { return (_parent & 0x1) != 0; }
+    bool is_red() const { return (_parent & 0x1) == 0; }
 
-    void set_black() { _color = BLACK; }
-    void set_red() { _color = RED; }
+    void set_black() { _parent = _parent | 0x1; }
+    void set_red() { _parent = _parent & ~0x1; }
 
-    RBNode(const K& k, const V& v)
-        : _parent(nullptr), _left(nullptr), _right(nullptr),
-          _key(k), _value(v), _color(RED) {}
+    RBNode* parent() const { return (RBNode*)(_parent & ~0x1); }
+    void set_parent(RBNode* new_parent) {_parent = (_parent & 0x1) | ((uintptr_t)new_parent & ~0x1); }
+
+    RBNode(const K& k, const V& v DEBUG_ONLY(COMMA bool visited))
+        : _parent(0), _left(nullptr), _right(nullptr),
+          _key(k), _value(v) DEBUG_ONLY(COMMA _visited(visited)) {}
 
     bool is_right_child() const {
-      return _parent != nullptr && _parent->_right == this;
+      return parent() != nullptr && parent()->_right == this;
     }
 
     bool is_left_child() const {
-      return _parent != nullptr && _parent->_left == this;
+      return parent() != nullptr && parent()->_left == this;
     }
 
     void replace_child(RBNode* old_child, RBNode* new_child);
 
-    // Move node down to the left, and right child up
+    // This node down, right child up
+    // Returns right child (now parent)
     RBNode* rotate_left();
 
-    // Move node down to the right, and left child up
+    // This node down, left child up
+    // Returns left child (now parent)
     RBNode* rotate_right();
 
     RBNode* prev();
@@ -101,19 +105,21 @@ public:
     RBNode* next();
 
   #ifdef ASSERT
-    bool is_correct(unsigned int num_blacks, unsigned int maximum_depth, unsigned int current_depth) const;
-    size_t count_nodes() const;
-  #endif // ASSERT
+    void verify(size_t& num_nodes, size_t& black_nodes_until_leaf,
+                size_t& shortest_leaf_path, size_t& longest_leaf_path,
+                size_t& tree_depth, bool expect_visited);
+#endif // ASSERT
   };
 
 private:
   RBNode* _root;
+  DEBUG_ONLY(bool _expected_visited);
 
   RBNode* allocate_node(const K& k, const V& v) {
     void* node_place = _allocator.allocate(sizeof(RBNode));
     assert(node_place != nullptr, "rb-tree allocator must exit on failure");
     _num_nodes++;
-    return new (node_place) RBNode(k, v);
+    return new (node_place) RBNode(k, v DEBUG_ONLY(COMMA _expected_visited));
   }
 
   void free_node(RBNode* node) {
@@ -145,7 +151,7 @@ private:
 public:
   NONCOPYABLE(RBTree);
 
-  RBTree() : _allocator(), _num_nodes(0), _root(nullptr) {
+  RBTree() : _allocator(), _num_nodes(0), _root(nullptr) DEBUG_ONLY(COMMA _expected_visited(false)) {
     static_assert(std::is_trivially_destructible<K>::value, "key type must be trivially destructable");
   }
   ~RBTree() { this->remove_all(); }

@@ -55,6 +55,25 @@ public:
     }
   };
 
+// Bump-pointer style allocator that can't free
+template <size_t AreaSize>
+struct ArrayAllocator {
+  uint8_t area[AreaSize];
+  size_t offset = 0;
+
+  void* allocate(size_t sz) {
+    if (offset + sz > AreaSize) {
+      vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR,
+                            "red-black tree failed allocation");
+    }
+    void* place = &area[offset];
+    offset += sz;
+    return place;
+  }
+
+  void free(void* ptr) { }
+};
+
 #ifdef ASSERT
   template<typename K, typename V, typename CMP, typename ALLOC>
   void verify_it(RBTree<K, V, CMP, ALLOC>& t) {
@@ -420,6 +439,37 @@ public:
     verify_it(rbtree);
     EXPECT_EQ(rbtree.size(), 0UL);
   }
+
+  void test_nodes_visited_once() {
+    constexpr size_t memory_size = 65536;
+    using Tree = RBTree<int, int, Cmp, ArrayAllocator<memory_size>>;
+    using Node = Tree::RBNode;
+
+    Tree tree;
+
+    int num_nodes = memory_size / sizeof(Node);
+    for (int i = 0; i < num_nodes; i++) {
+      tree.upsert(i, i);
+      Node* node = tree.find_node(tree._root, i);
+    }
+
+    Node* start = tree.find_node(tree._root, 0);
+
+    Node* node = start;
+    for (int i = 0; i < num_nodes; i++) {
+      EXPECT_EQ(tree._expected_visited, node->_visited);
+      node += 1;
+    }
+
+    tree.verify_self();
+
+    node = start;
+    for (int i = 0; i < num_nodes; i++) {
+      EXPECT_EQ(tree._expected_visited, node->_visited);
+      node += 1;
+    }
+
+  }
 #endif // ASSERT
 
 };
@@ -463,6 +513,10 @@ TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
 #ifdef ASSERT
 TEST_VM_F(RBTreeTest, FillAndVerify) {
   this->test_fill_verify();
+}
+
+TEST_VM_F(RBTreeTest, NodesVisitedOnce) {
+  this->test_nodes_visited_once();
 }
 
 TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
