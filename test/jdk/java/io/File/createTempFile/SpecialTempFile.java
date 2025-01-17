@@ -39,8 +39,6 @@ import jdk.internal.util.OSVersion;
 import jdk.internal.util.StaticProperty;
 
 public class SpecialTempFile {
-    private static final int WINDOWS_11_MINIMUM_BUILD = 22000;
-
     //
     // If exceptionExpected == null, then any IOException thrown by
     // File.createTempFile is ignored.
