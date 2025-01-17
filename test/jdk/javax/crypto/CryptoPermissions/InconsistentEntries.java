@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,16 @@
  * @run testng/othervm InconsistentEntries
  */
 
+import java.util.List;
+import jdk.test.lib.Utils;
+import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.process.ProcessTools;
 import org.testng.Assert;
-import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import javax.crypto.*;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,50 +47,45 @@ import java.security.Security;
 
 public class InconsistentEntries {
 
-    private static final String JDK_HOME = System.getProperty("test.jdk");
-    private static final String TEST_SRC = System.getProperty("test.src");
-    private static final Path POLICY_DIR = Paths.get(JDK_HOME, "conf", "security",
-            "policy", "testlimited");
+    private static final String JDK_HOME = System.getProperty("test.jdk", ".");
+    private static final Path TEMP_JDK_HOME = Path.of("java");
+    private static final String TEST_SRC = System.getProperty("test.src", ".");
+    private static final Path POLICY_DIR = TEMP_JDK_HOME.resolve(Path.of("conf", "security",
+            "policy", "testlimited"));
     private static final Path POLICY_FILE = Paths.get(TEST_SRC, "default_local.policy");
 
     Path targetFile = null;
 
     @BeforeTest
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
+        // Clone the tested JDK to the scratch directory
+        CDSTestUtils.clone(new File(JDK_HOME), new File(TEMP_JDK_HOME.toString()));
+
+        // create policy directory in the cloned JDK
         if (!POLICY_DIR.toFile().exists()) {
             Files.createDirectory(POLICY_DIR);
         }
 
+        // copy policy file into directory
         targetFile = POLICY_DIR.resolve(POLICY_FILE.getFileName());
         Files.copy(POLICY_FILE, targetFile, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    @AfterTest
-    public void cleanUp() throws IOException {
-        Files.delete(targetFile);
+    public static void main(String[] args) throws Throwable {
+        Security.setProperty("crypto.policy", "testlimited");
+        Assert.assertThrows(ExceptionInInitializerError.class,
+                () -> Cipher.getMaxAllowedKeyLength("AES"));
     }
 
     @Test
     public void test() throws Exception {
-        String JAVA_HOME = System.getProperty("java.home");
-        String FS = System.getProperty("file.separator");
-        Path testlimited = Path.of(JAVA_HOME + FS + "conf" + FS + "security" +
-                FS + "policy" + FS + "testlimited");
-        if (!Files.exists(testlimited)) {
-            throw new RuntimeException(
-                    "custom policy subdirectory: testlimited does not exist");
-        }
+        String tmpJava = TEMP_JDK_HOME.resolve("bin").resolve("java").toString();
+        String[] args = Utils.prependTestJavaOpts(InconsistentEntries.class.getName());
+        ProcessBuilder pb = new ProcessBuilder(tmpJava);
+        pb.command().addAll(List.of(args));
 
-        File testpolicy = new File(JAVA_HOME + FS + "conf" + FS + "security" +
-                FS + "policy" + FS + "testlimited" + FS + "default_local.policy");
-        if (testpolicy.length() == 0) {
-            throw new RuntimeException(
-                    "policy: default_local.policy does not exist or is empty");
-        }
-
-        Security.setProperty("crypto.policy", "testlimited");
-
-        Assert.assertThrows(ExceptionInInitializerError.class,
-                () -> Cipher.getMaxAllowedKeyLength("AES"));
+        ProcessTools
+            .executeProcess(pb)
+            .shouldHaveExitValue(0);
     }
 }
