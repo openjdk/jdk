@@ -3090,7 +3090,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 
     // If our stashed return pc was modified by the runtime we avoid touching it
     __ cmpptr(rbx, Address(rbp, wordSize));
-    __ jccb(Assembler::notEqual, no_adjust);
+    __ jcc(Assembler::notEqual, no_adjust);
 
     // Skip over the poll instruction.
     // See NativeInstruction::is_safepoint_poll()
@@ -3120,22 +3120,22 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     //  o  For safepoint polling instruction "test %eax,(%rax)", encoding of first register
     //     operand and base register of memory operand is b/w [0-8), hence we do not require
     //     additional REX prefix where REX.B bit stores MSB bit of register encoding, which
-    //     is why two byte encoding is sufficient here.
+    //     is why two bytes encoding is sufficient here.
     //  o  For safepoint polling instruction like "test %eax,(%r8)", register encoding of BASE
     //     register of memory operand is 1000, thus we need additional REX prefix in this case,
     //     there by adding additional byte to instruction encoding.
     //  o  In case BASE register is one of the 32 extended GPR registers available only on targets
-    //     supporting Intel APX extension, then we need to emit two byte REX2 prefix to hold
+    //     supporting Intel APX extension, then we need to emit two bytes REX2 prefix to hold
     //     most significant two bits of 5 bit register encoding.
 
     if (VM_Version::supports_apx_f()) {
       __ cmpb(Address(rbx, 0), Assembler::REX2);
-      __ jcc(Assembler::notEqual, check_rex_prefix);
+      __ jccb(Assembler::notEqual, check_rex_prefix);
       __ addptr(rbx, 2);
       __ bind(check_rex_prefix);
     }
     __ cmpb(Address(rbx, 0), NativeTstRegMem::instruction_rex_b_prefix);
-    __ jcc(Assembler::notEqual, no_prefix);
+    __ jccb(Assembler::notEqual, no_prefix);
     __ addptr(rbx, 1);
     __ bind(no_prefix);
 #ifdef ASSERT
@@ -3148,7 +3148,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     __ andptr(rcx, 0x07); // looking for 0x04 .. 0x05
     __ subptr(rcx, 4);    // looking for 0x00 .. 0x01
     __ cmpptr(rcx, 1);
-    __ jcc(Assembler::above, not_special);
+    __ jccb(Assembler::above, not_special);
     __ addptr(rbx, 1);
     __ bind(not_special);
 #ifdef ASSERT
