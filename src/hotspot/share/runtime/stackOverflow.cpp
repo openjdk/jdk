@@ -91,7 +91,7 @@ void StackOverflow::create_stack_guard_pages() {
   assert(is_aligned(len, os::vm_page_size()), "Stack size should be a multiple of page size");
 
   int must_commit = os::must_commit_stack_guard_pages();
-  // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
+  // warning("Guarding at " PTR_FORMAT " for len %zu\n", low_addr, len);
 
   if (must_commit && !os::create_stack_guard_pages((char *) low_addr, len)) {
     log_warning(os, thread)("Attempt to allocate stack guard pages failed.");
