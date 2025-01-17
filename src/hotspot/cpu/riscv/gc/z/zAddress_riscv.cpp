@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -84,7 +84,7 @@ static size_t probe_valid_max_address_bit() {
       munmap(result_addr, page_size);
     }
   }
-  log_info_p(gc, init)("Probing address space for the highest valid bit: " SIZE_FORMAT, max_address_bit);
+  log_info_p(gc, init)("Probing address space for the highest valid bit: %zu", max_address_bit);
   return MAX2(max_address_bit, MINIMUM_MAX_ADDRESS_BIT);
 #else // LINUX
   return DEFAULT_MAX_ADDRESS_BIT;

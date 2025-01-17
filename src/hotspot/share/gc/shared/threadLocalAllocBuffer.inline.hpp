@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,11 @@ inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
   // Make sure there's enough room for object and filler int[].
   if (new_tlab_size < compute_min_size(obj_size)) {
     // If there isn't enough room for the allocation, return failure.
-    log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(" SIZE_FORMAT ") returns failure",
+    log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(%zu) returns failure",
                         obj_size);
     return 0;
   }
-  log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(" SIZE_FORMAT ") returns " SIZE_FORMAT,
+  log_trace(gc, tlab)("ThreadLocalAllocBuffer::compute_size(%zu) returns %zu",
                       obj_size, new_tlab_size);
   return new_tlab_size;
 }
@@ -86,9 +86,9 @@ void ThreadLocalAllocBuffer::record_slow_allocation(size_t obj_size) {
   _slow_allocations++;
 
   log_develop_trace(gc, tlab)("TLAB: %s thread: " PTR_FORMAT " [id: %2d]"
-                              " obj: " SIZE_FORMAT
-                              " free: " SIZE_FORMAT
-                              " waste: " SIZE_FORMAT,
+                              " obj: %zu"
+                              " free: %zu"
+                              " waste: %zu",
                               "slow", p2i(thread()), thread()->osthread()->thread_id(),
                               obj_size, free(), refill_waste_limit());
 }

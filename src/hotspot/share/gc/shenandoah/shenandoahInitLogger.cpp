@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +41,7 @@ void ShenandoahInitLogger::print() {
 void ShenandoahInitLogger::print_heap() {
   GCInitLogger::print_heap();
 
-  log_info(gc, init)("Heap Region Count: " SIZE_FORMAT, ShenandoahHeapRegion::region_count());
+  log_info(gc, init)("Heap Region Count: %zu", ShenandoahHeapRegion::region_count());
   log_info(gc, init)("Heap Region Size: " EXACTFMT, EXACTFMTARGS(ShenandoahHeapRegion::region_size_bytes()));
   log_info(gc, init)("TLAB Size Max: " EXACTFMT, EXACTFMTARGS(ShenandoahHeapRegion::max_tlab_size_bytes()));
 }

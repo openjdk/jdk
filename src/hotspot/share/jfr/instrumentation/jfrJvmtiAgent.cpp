@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
   if (nullptr == classes) {
     char error_buffer[ERROR_MSG_BUFFER_SIZE];
     jio_snprintf(error_buffer, ERROR_MSG_BUFFER_SIZE,
-      "Thread local allocation (native) of " SIZE_FORMAT " bytes failed "
+      "Thread local allocation (native) of %zu bytes failed "
       "in retransform classes", sizeof(jclass) * classes_count);
     log_error(jfr, system)("%s", error_buffer);
     JfrJavaSupport::throw_out_of_memory_error(error_buffer, CHECK_NULL);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,19 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemorySegment;
+import jdk.internal.foreign.GlobalSession.HeapSession;
+import jdk.internal.invoke.MhUtil;
+import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
+
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.MemorySegment.Scope;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
 import java.util.Objects;
-
-import jdk.internal.foreign.GlobalSession.HeapSession;
-import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.invoke.MhUtil;
-import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ PLAB::PLAB(size_t desired_plab_sz_) :
   _end(nullptr), _hard_end(nullptr), _allocated(0), _wasted(0), _undo_wasted(0)
 {
   assert(min_size() > CollectedHeap::lab_alignment_reserve(),
-         "Minimum PLAB size " SIZE_FORMAT " must be larger than alignment reserve " SIZE_FORMAT " "
+         "Minimum PLAB size %zu must be larger than alignment reserve %zu "
          "to be able to contain objects", min_size(), CollectedHeap::lab_alignment_reserve());
 }
 

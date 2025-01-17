@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +49,7 @@ class ThreadTimeAccumulator : public ThreadClosure {
   size_t total_time;
   ThreadTimeAccumulator() : total_time(0) {}
   void do_thread(Thread* thread) override {
-    assert(!thread->has_terminated(), "Cannot get cpu time for terminated thread: " UINTX_FORMAT, thread->osthread()->thread_id_for_printing());
+    assert(!thread->has_terminated(), "Cannot get cpu time for terminated thread: %zu", thread->osthread()->thread_id_for_printing());
     total_time += os::thread_cpu_time(thread);
   }
 };

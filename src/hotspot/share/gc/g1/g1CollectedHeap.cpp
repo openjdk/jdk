@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,11 +179,11 @@ G1HeapRegion* G1CollectedHeap::new_region(size_t word_size,
     // safepoint.
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 
-    log_debug(gc, ergo, heap)("Attempt heap expansion (region allocation request failed). Allocation request: " SIZE_FORMAT "B",
+    log_debug(gc, ergo, heap)("Attempt heap expansion (region allocation request failed). Allocation request: %zuB",
                               word_size * HeapWordSize);
 
     assert(word_size * HeapWordSize < G1HeapRegion::GrainBytes,
-           "This kind of expansion should never be more than one region. Size: " SIZE_FORMAT,
+           "This kind of expansion should never be more than one region. Size: %zu",
            word_size * HeapWordSize);
     if (expand_single_region(node_index)) {
       // Given that expand_single_region() succeeded in expanding the heap, and we
@@ -335,7 +335,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(G1HeapRegion* first_h
 }
 
 size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
-  assert(is_humongous(word_size), "Object of size " SIZE_FORMAT " must be humongous here", word_size);
+  assert(is_humongous(word_size), "Object of size %zu must be humongous here", word_size);
   return align_up(word_size, G1HeapRegion::GrainWords) / G1HeapRegion::GrainWords;
 }
 
@@ -358,7 +358,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
     if (humongous_start != nullptr) {
       // We managed to find a region by expanding the heap.
-      log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: " SIZE_FORMAT "B",
+      log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
                                 word_size * HeapWordSize);
       policy()->record_new_heap_size(num_regions());
     } else {
@@ -444,7 +444,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
       return result;
     }
 
-    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating " SIZE_FORMAT " words",
+    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu words",
                          Thread::current()->name(), word_size);
 
     // We can reach here if we were unsuccessful in scheduling a collection (because
@@ -462,7 +462,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size) {
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
-      log_warning(gc, alloc)("%s:  Retried allocation %u times for " SIZE_FORMAT " words",
+      log_warning(gc, alloc)("%s:  Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
     }
   }
@@ -495,8 +495,8 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
   MemRegion reserved = _hrm.reserved();
 
   if (reserved.word_size() <= word_size) {
-    log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = " SIZE_FORMAT
-                       " bytes, heap = " SIZE_FORMAT " bytes", word_size, reserved.word_size());
+    log_info(gc, heap)("Unable to allocate regions as archive heap is too large; size requested = %zu"
+                       " bytes, heap = %zu bytes", word_size, reserved.word_size());
     return nullptr;
   }
 
@@ -514,7 +514,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size, HeapWord* pref
   }
   increase_used(word_size * HeapWordSize);
   if (commits != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: " SIZE_FORMAT "B",
+    log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
                               G1HeapRegion::GrainWords * HeapWordSize * commits);
   }
 
@@ -573,7 +573,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
   iterate_regions_in_range(range, dealloc_archive_region);
 
   if (shrink_count != 0) {
-    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: " SIZE_FORMAT "B",
+    log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB",
                               G1HeapRegion::GrainWords * HeapWordSize * shrink_count);
     // Explicit uncommit.
     uncommit_regions(shrink_count);
@@ -673,7 +673,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       return result;
     }
 
-    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating " SIZE_FORMAT "",
+    log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu",
                          Thread::current()->name(), word_size);
 
     // We can reach here if we were unsuccessful in scheduling a collection (because
@@ -978,7 +978,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   _verifier->verify_region_sets_optional();
 
   size_t expand_bytes = MAX2(word_size * HeapWordSize, MinHeapDeltaBytes);
-  log_debug(gc, ergo, heap)("Attempt heap expansion (allocation request failed). Allocation request: " SIZE_FORMAT "B",
+  log_debug(gc, ergo, heap)("Attempt heap expansion (allocation request failed). Allocation request: %zuB",
                             word_size * HeapWordSize);
 
 
@@ -995,7 +995,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
-  log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: " SIZE_FORMAT "B expansion amount: " SIZE_FORMAT "B",
+  log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: %zuB expansion amount: %zuB",
                             expand_bytes, aligned_expand_bytes);
 
   if (is_maximal_no_gc()) {
@@ -1042,7 +1042,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   uint num_regions_removed = _hrm.shrink_by(num_regions_to_remove);
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
 
-  log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: " SIZE_FORMAT "B aligned shrinking amount: " SIZE_FORMAT "B actual amount shrunk: " SIZE_FORMAT "B",
+  log_debug(gc, ergo, heap)("Shrink the heap. requested shrinking amount: %zuB aligned shrinking amount: %zuB actual amount shrunk: %zuB",
                             shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
   if (num_regions_removed > 0) {
     log_debug(gc, heap)("Uncommittable regions after shrink: %u", num_regions_removed);
@@ -2117,12 +2117,12 @@ void G1CollectedHeap::print_on(outputStream* st) const {
             p2i(_hrm.reserved().start()),
             p2i(_hrm.reserved().end()));
   st->cr();
-  st->print("  region size " SIZE_FORMAT "K, ", G1HeapRegion::GrainBytes / K);
+  st->print("  region size %zuK, ", G1HeapRegion::GrainBytes / K);
   uint young_regions = young_regions_count();
-  st->print("%u young (" SIZE_FORMAT "K), ", young_regions,
+  st->print("%u young (%zuK), ", young_regions,
             (size_t) young_regions * G1HeapRegion::GrainBytes / K);
   uint survivor_regions = survivor_regions_count();
-  st->print("%u survivors (" SIZE_FORMAT "K)", survivor_regions,
+  st->print("%u survivors (%zuK)", survivor_regions,
             (size_t) survivor_regions * G1HeapRegion::GrainBytes / K);
   st->cr();
   if (_numa->is_enabled()) {
@@ -2774,7 +2774,7 @@ void G1CollectedHeap::increase_used(size_t bytes) {
 
 void G1CollectedHeap::decrease_used(size_t bytes) {
   assert(_summary_bytes_used >= bytes,
-         "invariant: _summary_bytes_used: " SIZE_FORMAT " should be >= bytes: " SIZE_FORMAT,
+         "invariant: _summary_bytes_used: %zu should be >= bytes: %zu",
          _summary_bytes_used, bytes);
   _summary_bytes_used -= bytes;
 }
