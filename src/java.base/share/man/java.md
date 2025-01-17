@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3978,12 +3978,12 @@ The values for these options (if specified), should be identical when creating a
 CDS archive. Otherwise, if there is a mismatch of any of these options, the CDS archive may be
 partially or completely disabled, leading to lower performance.
 
-- If the -XX:+AOTClassLoading options *was* used during CDS archive creation, the CDS archive
+- If the -XX:+AOTClassLinking options *was* used during CDS archive creation, the CDS archive
   cannot be used, and the following error message is printed:
 
   `CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used`
 
-- If the -XX:+AOTClassLoading options *was not* used during CDS archive creation, the CDS archive
+- If the -XX:+AOTClassLinking options *was not* used during CDS archive creation, the CDS archive
   can be used, but the "archived module graph" feature will be disabled. This can lead to increased
   start-up time.
 
