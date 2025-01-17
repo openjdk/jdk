@@ -385,6 +385,53 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    @ForceInline
+    public static Arena newBoundedArena(long size) {
+        return new BoundedArena(size);
+    }
+
+    static final class BoundedArena implements Arena {
+        private final MemorySegment source;
+        private final SegmentAllocator allocator;
+        private final Arena scope;
+
+        @ForceInline
+        public BoundedArena(long size) {
+            // When here, works in fastdebug, but not scalar-replaced:
+            //  scope = Arena.ofConfined();
+
+            MemorySegment cached = size <= BufferCache.CACHED_BUFFER_SIZE ? BufferCache.acquire() : null;
+
+            // When here, works in release build, but fastdebug crashes:
+            // #  Internal Error (/Users/mernst/IdeaProjects/jdk/src/hotspot/share/opto/escape.cpp:4767), pid=85070, tid=26115
+            // #  assert(false) failed: EA: missing memory path
+            scope = Arena.ofConfined();
+
+            source = cached != null ? cached : BufferCache.allocate(size);
+            allocator = SegmentAllocator.slicingAllocator(source);
+        }
+
+        @SuppressWarnings("restricted")
+        @Override
+        @ForceInline
+        public MemorySegment allocate(long byteSize, long byteAlignment) {
+            return allocator.allocate(byteSize, byteAlignment).reinterpret(scope, null);
+        }
+
+        @Override
+        public Scope scope() {
+            return scope.scope();
+        }
+
+        @Override
+        @ForceInline
+        public void close() {
+            scope.close();
+            if (source.byteSize() != BufferCache.CACHED_BUFFER_SIZE || !BufferCache.release(source))
+                BufferCache.free(source);
+        }
+    }
+
     // Intermediate buffer needed for a stub call handle. Small buffers may be reused across calls.
     static final class BufferCache {
         private static final int CACHED_BUFFER_SIZE = 256;
@@ -455,53 +502,6 @@ public final class SharedUtils {
             } finally {
                 Continuation.unpin();
             }
-        }
-    }
-
-    @ForceInline
-    public static Arena newBoundedArena(long size) {
-        return new BoundedArena(size);
-    }
-
-    static final class BoundedArena implements Arena {
-        private final MemorySegment source;
-        private final SegmentAllocator allocator;
-        private final Arena scope;
-
-        @ForceInline
-        public BoundedArena(long size) {
-            // When here, works in fastdebug, but not scalar-replaced:
-           //  scope = Arena.ofConfined();
-
-            MemorySegment cached = size <= BufferCache.CACHED_BUFFER_SIZE ? BufferCache.acquire() : null;
-
-            // When here, works in release build, but fastdebug crashes:
-            // #  Internal Error (/Users/mernst/IdeaProjects/jdk/src/hotspot/share/opto/escape.cpp:4767), pid=85070, tid=26115
-            // #  assert(false) failed: EA: missing memory path
-            scope = Arena.ofConfined();
-
-            source = cached != null ? cached : BufferCache.allocate(size);
-            allocator = SegmentAllocator.slicingAllocator(source);
-        }
-
-        @SuppressWarnings("restricted")
-        @Override
-        @ForceInline
-        public MemorySegment allocate(long byteSize, long byteAlignment) {
-            return allocator.allocate(byteSize, byteAlignment).reinterpret(scope, null);
-        }
-
-        @Override
-        public Scope scope() {
-            return scope.scope();
-        }
-
-        @Override
-        @ForceInline
-        public void close() {
-            scope.close();
-            if (source.byteSize() != BufferCache.CACHED_BUFFER_SIZE || !BufferCache.release(source))
-                BufferCache.free(source);
         }
     }
 
