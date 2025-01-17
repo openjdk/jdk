@@ -752,9 +752,12 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // returns false.
   // The anti-dependence constraints apply only to the fringe of this tree.
   //
-  // In some cases, there are other relevant initial memory states besides
-  // initial_mem. In such cases, we are rather dealing with multiple trees and
-  // their fringes.
+  // In some cases, there are relevant memory state modifying nodes that we
+  // cannot discover by searching from initial_mem. In such cases, we need to
+  // expand our search with additional search roots. For details, see comments
+  // and code below related to the initialization of
+  // worklist_def_use_mem_states, which, prior to the main worklist loop below,
+  // contains the search roots.
 
   Node* initial_mem = load->in(MemNode::Memory);
 
@@ -772,25 +775,65 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       }
     }
   }
+
+  // initial_mem is always a search root
   worklist_def_use_mem_states.push(nullptr, initial_mem);
+
   Block* initial_mem_block = get_block_for_node(initial_mem);
   assert(initial_mem_block != nullptr, "sanity");
+  assert(initial_mem_block->dominates(early), "invariant");
+  // We sometimes need to add additional search roots to discover all relevant
+  // anti-dependent stores. The additional required search roots are alias
+  // memory nodes of initial_mem on the dominator tree path from the initial
+  // memory block (inclusive) to the early block (inclusive). Specifically, we
+  // must consider Phi memory nodes as search roots as they terminate
+  // anti-dependence searches reaching them from above.
+  //
+  // A situation where we need to add Phi search roots is the below.
+  //
+  //                    |
+  // initial_mem_block  |
+  //             +-------------+
+  //             |...          |
+  //             |initial_mem  |
+  //             |...          |
+  //             +-------------+
+  //                /        \
+  //               /          \
+  //              ...        ...
+  //               \          /
+  //                \        /
+  //               +----------+
+  //               |...       |
+  //               |Phi       |
+  //               |...       |
+  //               +----------+
+  //                    |
+  //                    |
+  //          early     |
+  //         +---------------------+
+  //         |...                  |
+  //         |anti-dependent store |
+  //         |...                  |
+  //         +---------------------+
+  //
+  // Here, there are multiple CFG paths from initial_mem_block to the early
+  // block. Importantly, there is a Phi memory node with initial_mem alive (not
+  // overwritten) on all of its inputs. If we only add initial_mem as our
+  // search root, our anti-dependence search will terminate at the Phi, and we
+  // will never discover the anti-dependent store in the early block.
+  //
+  // Observations indicate that extra search roots are only required if the
+  // load has an explicit control input (hence the load->in(0) != nullptr check
+  // below).
   if (load->in(0) != nullptr) {
-    assert(initial_mem_block->dominates(early), "invariant");
-    // If the load has an explicit control input, walk up the dominator tree
-    // from the early block (inclusive) to the initial memory block
-    // (inclusive). When traversing the blocks, we look for Phi(s) that can alias
-    // initial_mem; these are also potential initial memory states and there
-    // may be further required anti-dependences due to them. Stop searching
-    // when we step past the initial memory block. The loop below always
-    // terminates because the root block strictly dominates initial_mem_block.
     for(Block* b = early; b != initial_mem_block->_idom; b = b->_idom) {
       assert(b != nullptr, "sanity");
       if (b == initial_mem_block && !initial_mem->is_Phi()) {
-        // If we are in the initial memory block, and initial_mem is not itself
+        // If we are in initial_mem_block, and initial_mem is not itself
         // a Phi, it necessarily means that initial_mem is defined after all
-        // Phis in the block. Therefore, no Phis in the block can be initial
-        // memory states.
+        // Phis in the block. Therefore, no Phis in the block are relevant
+        // search roots.
         break;
       }
       // We need to process all memory Phi nodes in the block. We may not have
@@ -799,8 +842,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
       // block.
       for (uint i = 0; i < b->number_of_nodes(); ++i) {
         Node* n = b->get_node(i);
-        if (n->is_memory_phi() && C->can_alias(n->adr_type(), load_alias_idx) && n != initial_mem) {
-          // We have found a relevant Phi initial memory state
+        if (n->is_memory_phi() && C->can_alias(n->adr_type(), load_alias_idx)
+            && n != initial_mem) {
+          // We have found a relevant Phi search root
           worklist_def_use_mem_states.push(nullptr, n);
         }
       }
