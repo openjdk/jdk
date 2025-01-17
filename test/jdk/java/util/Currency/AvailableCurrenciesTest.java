@@ -41,6 +41,7 @@ public class AvailableCurrenciesTest {
     @Test
     public void streamEqualsSetTest() {
         var currencies = Currency.getAvailableCurrencies();
-        assertEquals(currencies, Currency.availableCurrencies().collect(Collectors.toSet()));
+        assertEquals(currencies, Currency.availableCurrencies().collect(Collectors.toSet()),
+                "availableCurrencies() and getAvailableCurrencies() do not have the same elements");
     }
 }
