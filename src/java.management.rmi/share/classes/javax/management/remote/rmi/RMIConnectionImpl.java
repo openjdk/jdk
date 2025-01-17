@@ -206,8 +206,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (NotCompliantMBeanException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -258,8 +256,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -322,8 +318,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (NotCompliantMBeanException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -393,8 +387,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -425,8 +417,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (MBeanRegistrationException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -459,8 +449,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -498,8 +486,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -537,8 +523,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -558,8 +542,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -583,8 +565,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -624,8 +604,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -660,8 +638,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -717,8 +693,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -767,8 +741,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -828,8 +800,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -853,8 +823,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -877,8 +845,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         } catch (Exception e) {
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -916,8 +882,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ReflectionException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -950,8 +914,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -1042,8 +1004,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             } else if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
-            } else if (e instanceof SecurityException) {
-                throw (SecurityException) e;
             } else if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             } else {
@@ -1107,8 +1067,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -1152,8 +1110,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ListenerNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -1192,8 +1148,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ListenerNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
@@ -1260,8 +1214,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (ListenerNotFoundException) e;
             if (e instanceof IOException)
                 throw (IOException) e;
-            if (e instanceof SecurityException)
-                throw (SecurityException) e;
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new IOException("Got unexpected server exception: " + e, e);
