@@ -1937,8 +1937,7 @@ JNIEnv* AwtToolkit::GetEnv() {
 BOOL AwtToolkit::GetScreenInsets(int screenNum, RECT * rect)
 {
 
-    MONITORINFO *miInfo;
-    miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
+    MONITORINFO *miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
     if (miInfo) {
         rect->top = miInfo->rcWork.top    - miInfo->rcMonitor.top;
         rect->left = miInfo->rcWork.left   - miInfo->rcMonitor.left;
