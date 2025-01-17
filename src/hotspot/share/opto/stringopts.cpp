@@ -477,7 +477,7 @@ PhaseStringOpts::ProcessAppendResult PhaseStringOpts::process_append_candidate(C
 //   .append("foo")
 //   .append("bar")
 //   .append(123)
-//   .toString(); // "foobar123"+
+//   .toString(); // "foobar123"
 //
 // Fluent-chains are recognized by walking upwards along the receivers, starting from toString().
 // Once the allocation of the StringBuilder has been reached, DU pairs are examined to find the
@@ -617,6 +617,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
           // - If we found an append, that's perfect. Nothing further to do.
           // - If this is a call to an unrelated method, validate_mem_flow() (and validate_control_flow())
           //   will later check if this call prevents the optimization. So nothing to do here.
+          // We will continue to look for the constructor (if not found already) and appends.
         }
       }
       if (constructor == nullptr) {

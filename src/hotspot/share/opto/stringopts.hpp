@@ -34,7 +34,7 @@ class IdealVariable;
 class PhaseStringOpts : public Phase {
   friend class StringConcat;
 
- private:
+private:
   PhaseGVN* _gvn;
 
   // List of dead nodes to clean up aggressively at the end
@@ -55,7 +55,7 @@ class PhaseStringOpts : public Phase {
 
   enum class ProcessAppendResult {
     // Indicates that the candidate was indeed an append and process_append_candidate processed it
-    // accordingly (added it to the StringCocat etc.)
+    // accordingly (added it to the StringConcat etc.)
     AppendWasAdded,
     // The candidate turned out not to be an append call. process_append_candidate did not do anything.
     CandidateIsNotAppend,
@@ -64,8 +64,11 @@ class PhaseStringOpts : public Phase {
     AbortOptimization
   };
 
-  // Called from build_candidate. Looks at an "append candidate", a call that might be a call to StringBuilder::append. If so, adds it to the StringConcat.
-  ProcessAppendResult process_append_candidate(CallStaticJavaNode* cnode, StringConcat* sc, ciMethod* m, ciSymbol* string_sig, ciSymbol* int_sig, ciSymbol* char_sig);
+  // Called from build_candidate. Looks at an "append candidate", a call that might be a call
+  // to StringBuilder::append. If so, adds it to the StringConcat.
+  ProcessAppendResult process_append_candidate(CallStaticJavaNode* cnode, StringConcat* sc,
+                                               ciMethod* m, ciSymbol* string_sig, ciSymbol* int_sig,
+                                               ciSymbol* char_sig);
 
   // Replace all the SB calls in concat with an optimization String allocation
   void replace_string_concat(StringConcat* concat);
@@ -119,12 +122,13 @@ class PhaseStringOpts : public Phase {
     unroll_string_copy_length = 6
   };
 
- public:
+public:
   PhaseStringOpts(PhaseGVN* gvn);
 
 #ifndef PRODUCT
   static void print_statistics();
- private:
+
+private:
   static uint _stropts_replaced;
   static uint _stropts_merged;
   static uint _stropts_total;
