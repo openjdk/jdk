@@ -402,13 +402,13 @@ void VMThread::inner_execute(VM_Operation* op) {
 
   const char* const cause = op->cause();
   stringStream ss;
-  ss.print("Executing%s%s VM operation: %s%s%s%s",
+  ss.print("Executing%s%s VM operation: %s",
            prev_vm_operation != nullptr ? " nested" : "",
            op->evaluate_at_safepoint() ? " safepoint" : " non-safepoint",
-           op->name(),
-           cause != nullptr ? " (" : "",
-           cause != nullptr ? cause : "",
-           cause != nullptr ? ")" : "");
+           op->name());
+  if (cause != nullptr) {
+    ss.print(" (%s)", cause);
+  }
 
   EventMarkVMOperation em("%s", ss.freeze());
   log_debug(vmthread)("%s", ss.freeze());
