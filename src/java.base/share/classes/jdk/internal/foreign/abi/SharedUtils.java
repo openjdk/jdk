@@ -396,6 +396,7 @@ public final class SharedUtils {
         private final Arena scope;
 
         @ForceInline
+        @SuppressWarnings("restricted")
         public BoundedArena(long size) {
             // When here, works in fastdebug, but not scalar-replaced:
             //  scope = Arena.ofConfined();
@@ -408,14 +409,13 @@ public final class SharedUtils {
             scope = Arena.ofConfined();
 
             source = cached != null ? cached : BufferCache.allocate(size);
-            allocator = SegmentAllocator.slicingAllocator(source);
+            allocator = SegmentAllocator.slicingAllocator(source.reinterpret(scope, null));
         }
 
-        @SuppressWarnings("restricted")
         @Override
         @ForceInline
         public MemorySegment allocate(long byteSize, long byteAlignment) {
-            return allocator.allocate(byteSize, byteAlignment).reinterpret(scope, null);
+            return allocator.allocate(byteSize, byteAlignment);
         }
 
         @Override
