@@ -25,37 +25,34 @@
 package jdk.internal.vm.vector;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import jdk.internal.vm.annotation.ForceInline;
-
-import static java.lang.Float.*;
 
 /**
  * The class {@code Float16Math} constains intrinsic entry points corresponding
  * to scalar numeric operations defined in Float16 class.
- * @since   24
+ * @since   25
  */
 public final class Float16Math {
     private Float16Math() {
     }
 
     public interface Float16UnaryMathOp {
-        short apply(short a);
+        Object apply(Object a);
     }
 
     public interface Float16TernaryMathOp {
-        short apply(short a, short b, short c);
+        Object apply(Object a, Object b, Object c);
     }
 
     @IntrinsicCandidate
-    public static short sqrt(short a, Float16UnaryMathOp defaultImpl) {
+    public static Object sqrt(Class<?> box_class, Object oa, Float16UnaryMathOp defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.apply(a);
+        return defaultImpl.apply(oa);
     }
 
     @IntrinsicCandidate
-    public static short fma(short a, short b, short c, Float16TernaryMathOp defaultImpl) {
+    public static Object fma(Class<?> box_class, Object oa, Object ob, Object oc, Float16TernaryMathOp defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.apply(a, b, c);
+        return defaultImpl.apply(oa, ob, oc);
     }
 
     public static boolean isNonCapturingLambda(Object o) {
