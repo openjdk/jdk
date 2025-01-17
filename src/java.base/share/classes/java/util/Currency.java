@@ -439,6 +439,9 @@ public final class Currency implements Serializable {
      * in the runtime, the returned set is empty. The set can be modified
      * without affecting the available currencies in the runtime.
      *
+     * @apiNote Consider using {@link #availableCurrencies()} which returns
+     * a stream of the available currencies.
+     * @see #availableCurrencies()
      * @since 1.7
      */
     public static Set<Currency> getAvailableCurrencies() {
@@ -454,6 +457,7 @@ public final class Currency implements Serializable {
      *
      * @implNote Unlike {@link #getAvailableCurrencies()}, this method does
      * not create a defensive copy of the {@code Currency} set.
+     * @see #getAvailableCurrencies()
      * @since 25
      */
     public static Stream<Currency> availableCurrencies() {
