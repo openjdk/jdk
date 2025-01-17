@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     EXCLUDE_FILES := $(JVM_EXCLUDE_FILES), \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
     DEFAULT_CFLAGS := false, \
-    CFLAGS := $(JVM_CFLAGS), \
+    CFLAGS := $(JVM_CFLAGS) $(JVM_CFLAGS_FEATURES_LTO), \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
@@ -221,7 +221,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     ASFLAGS := $(JVM_ASFLAGS), \
     LD_SET_ORIGIN := false, \
     DEFAULT_LDFLAGS := false, \
-    LDFLAGS := $(JVM_LDFLAGS), \
+    LDFLAGS := $(JVM_LDFLAGS) $(JVM_LDFLAGS_FEATURES_LTO), \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/objs, \
