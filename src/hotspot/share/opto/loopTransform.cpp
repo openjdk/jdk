@@ -1424,11 +1424,13 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   _igvn.hash_delete(outer_main_head);
   outer_main_head->set_req(LoopNode::EntryControl, min_taken);
   set_idom(outer_main_head, min_taken, dd_main_head);
+  assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
 
   VectorSet visited;
   Node_Stack clones(main_head->back_control()->outcnt());
   // Step B3: Make the fall-in values to the main-loop come from the
   // fall-out values of the pre-loop.
+  const uint last_node_index_in_pre_loop_body = Compile::current()->unique() - 1;
   for (DUIterator i2 = main_head->outs(); main_head->has_out(i2); i2++) {
     Node* main_phi = main_head->out(i2);
     if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
@@ -1441,13 +1443,13 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
       main_phi->set_req(LoopNode::EntryControl, fallpre);
     }
   }
+  DEBUG_ONLY(const uint last_node_index_from_backedge_goo = Compile::current()->unique() - 1);
 
-  const uint last_node_index_in_pre_loop_body = Compile::current()->unique() - 1;
-  assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
   DEBUG_ONLY(ensure_zero_trip_guard_proj(outer_main_head->in(LoopNode::EntryControl), true);)
   if (UseLoopPredicate) {
     initialize_assertion_predicates_for_main_loop(pre_head, main_head, first_node_index_in_pre_loop_body,
-                                                  last_node_index_in_pre_loop_body, old_new);
+                                                  last_node_index_in_pre_loop_body,
+                                                  DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
   }
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
@@ -1723,11 +1725,13 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNo
                                                                    CountedLoopNode* main_loop_head,
                                                                    const uint first_node_index_in_pre_loop_body,
                                                                    const uint last_node_index_in_pre_loop_body,
+                                                                   DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA)
                                                                    const Node_List& old_new) {
   assert(first_node_index_in_pre_loop_body < last_node_index_in_pre_loop_body, "cloned some nodes");
-  const NodeInMainLoopBody node_in_original_loop_body(first_node_index_in_pre_loop_body,
-                                                      last_node_index_in_pre_loop_body, old_new);
-  create_assertion_predicates_at_main_or_post_loop(pre_loop_head, main_loop_head, node_in_original_loop_body, true);
+  const NodeInMainLoopBody node_in_main_loop_body(first_node_index_in_pre_loop_body,
+                                                  last_node_index_in_pre_loop_body,
+                                                  DEBUG_ONLY(last_node_index_from_backedge_goo COMMA) old_new);
+  create_assertion_predicates_at_main_or_post_loop(pre_loop_head, main_loop_head, node_in_main_loop_body, true);
 }
 
 // Source Loop: Original - main_loop_head
@@ -1767,7 +1771,9 @@ void PhaseIdealLoop::create_assertion_predicates_at_main_or_post_loop(CountedLoo
 // Rewire any control dependent nodes on the old target loop entry before adding Assertion Predicate related nodes.
 // These have been added by PhaseIdealLoop::clone_up_backedge_goo() and assume to be ending up at the target loop entry
 // which is no longer the case when adding additional Assertion Predicates. Fix this by rewiring these nodes to the new
-// target loop entry which corresponds to the tail of the last Assertion Predicate before the target loop.
+// target loop entry which corresponds to the tail of the last Assertion Predicate before the target loop. This is safe
+// to do because these control dependent nodes on the old target loop entry created by clone_up_backedge_goo() were
+// pinned on the loop backedge before. The Assertion Predicates are not control dependent on these nodes in any way.
 void PhaseIdealLoop::rewire_old_target_loop_entry_dependency_to_new_entry(
     LoopNode* target_loop_head, const Node* old_target_loop_entry,
     const uint node_index_before_new_assertion_predicate_nodes) {
