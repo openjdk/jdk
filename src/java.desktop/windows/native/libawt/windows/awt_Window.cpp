@@ -2116,7 +2116,7 @@ void AwtWindow::SetIconData(JNIEnv* env, jintArray iconRaster, jint w, jint h,
     try {
         hNewIcon = CreateIconFromRaster(env, iconRaster, w, h);
         if (env->ExceptionCheck()) {
-            if (hNewIcon) {
+            if (hNewIcon != NULL) {
                 DestroyIcon(hNewIcon);
             }
             return;
