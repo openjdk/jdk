@@ -28,7 +28,6 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
-import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
@@ -466,7 +465,7 @@ public final class SharedUtils {
 
     static final class BoundedArena implements Arena {
         private final MemorySegment source;
-        private final SlicingAllocator allocator;
+        private final SegmentAllocator allocator;
         private final Arena scope;
 
         @ForceInline
@@ -482,7 +481,7 @@ public final class SharedUtils {
             scope = Arena.ofConfined();
 
             source = cached != null ? cached : BufferCache.allocate(size);
-            allocator = new SlicingAllocator(source);
+            allocator = SegmentAllocator.slicingAllocator(source);
         }
 
         @SuppressWarnings("restricted")
