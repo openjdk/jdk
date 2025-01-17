@@ -28,6 +28,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.CABI;
+import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
@@ -140,12 +141,12 @@ public final class SharedUtils {
      * Takes a MethodHandle that takes an input buffer as a first argument (a MemorySegment), and returns nothing,
      * and adapts it to return a MemorySegment, by allocating a MemorySegment for the input
      * buffer, calling the target MethodHandle, and then returning the allocated MemorySegment.
-     *
+     * <p>
      * This allows viewing a MethodHandle that makes use of in memory return (IMR) as a MethodHandle that just returns
      * a MemorySegment without requiring a pre-allocated buffer as an explicit input.
      *
      * @param handle the target handle to adapt
-     * @param cDesc the function descriptor of the native function (with actual return layout)
+     * @param cDesc  the function descriptor of the native function (with actual return layout)
      * @return the adapted handle
      */
     public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc, CallingSequence sequence) {
@@ -261,8 +262,8 @@ public final class SharedUtils {
 
     static Map<VMStorage, Integer> indexMap(Binding.Move[] moves) {
         return IntStream.range(0, moves.length)
-                        .boxed()
-                        .collect(Collectors.toMap(i -> moves[i].storage(), i -> i));
+                .boxed()
+                .collect(Collectors.toMap(i -> moves[i].storage(), i -> i));
     }
 
     static MethodHandle mergeArguments(MethodHandle mh, int sourceIndex, int destIndex) {
@@ -293,7 +294,7 @@ public final class SharedUtils {
         MethodType mtype = mh.type();
         int[] perms = new int[mtype.parameterCount()];
         MethodType swappedType = MethodType.methodType(mtype.returnType());
-        for (int i = 0 ; i < perms.length ; i++) {
+        for (int i = 0; i < perms.length; i++) {
             int dst = i;
             if (i == firstArg) dst = secondArg;
             if (i == secondArg) dst = firstArg;
@@ -387,10 +388,8 @@ public final class SharedUtils {
 
     // Intermediate buffer needed for a stub call handle. Small buffers may be reused across calls.
     static final class BufferCache {
+        private static final int CACHED_BUFFER_SIZE = 256;
         private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
-        // Size for cached buffers.
-        private static final int CACHED_SIZE = 256;
 
         // Two-element stack to support downcall + upcall (cached1 == null => cached2 == null).
         // Elements are unscoped.
@@ -420,23 +419,13 @@ public final class SharedUtils {
 
         @SuppressWarnings("restricted")
         static MemorySegment allocate(long size) {
-            long allocatedSize = Math.max(size, CACHED_SIZE);
-            return MemorySegment
-                    .ofAddress(UNSAFE.allocateMemory(allocatedSize))
+            long allocatedSize = Math.max(CACHED_BUFFER_SIZE, size);
+            return MemorySegment.ofAddress(UNSAFE.allocateMemory(allocatedSize))
                     .reinterpret(allocatedSize);
         }
 
         static void free(MemorySegment segment) {
             UNSAFE.freeMemory(segment.address());
-        }
-
-        static boolean couldBeSatisfiedFromCache(long size) {
-            return size <= CACHED_SIZE;
-        }
-
-        static boolean couldCache(MemorySegment released) {
-            // Don't cache larger buffers.
-            return released.byteSize() == CACHED_SIZE;
         }
 
         private static final TerminatingThreadLocal<BufferCache> tl = new TerminatingThreadLocal<>() {
@@ -451,26 +440,22 @@ public final class SharedUtils {
             }
         };
 
-        static MemorySegment acquireOrAllocate(long size) {
-            final MemorySegment result;
+        static MemorySegment acquire() {
             Continuation.pin();
             try {
-                result = couldBeSatisfiedFromCache(size) ? tl.get().pop() : null;
+                return tl.get().pop();
             } finally {
                 Continuation.unpin();
             }
-            return result == null ? allocate(size) : result;
         }
 
-        static void cacheOrClose(MemorySegment released) {
-            final boolean cached;
+        static boolean release(MemorySegment segment) {
             Continuation.pin();
             try {
-                cached = couldCache(released) && tl.get().push(released);
+                return tl.get().push(segment);
             } finally {
                 Continuation.unpin();
             }
-            if (!cached) free(released);
         }
     }
 
@@ -479,35 +464,45 @@ public final class SharedUtils {
         return new BoundedArena(size);
     }
 
-    private static class BoundedArena implements Arena {
-        final MemorySegment buffer;
-        // We'd ideally confine the segments returned from this arena with a
-        //   final Arena callScope = Arena.ofConfined();
-        // and close the scope after the call.
-        // However, the arena creates allocation pressure, without it the call is scalar-replaced.
-        @SuppressWarnings("restricted")
-        final SegmentAllocator allocator;
+    static final class BoundedArena implements Arena {
+        private final MemorySegment source;
+        private final SlicingAllocator allocator;
+        private final Arena scope;
 
         @ForceInline
         public BoundedArena(long size) {
-            buffer = BufferCache.acquireOrAllocate(size);
-            allocator = SegmentAllocator.slicingAllocator(buffer/*.reinterpret(callScope, null)*/);
+            // When here, works in fastdebug, but not scalar-replaced:
+           //  scope = Arena.ofConfined();
+
+            MemorySegment cached = size <= BufferCache.CACHED_BUFFER_SIZE ? BufferCache.acquire() : null;
+
+            // When here, works in release build, but fastdebug crashes:
+            // #  Internal Error (/Users/mernst/IdeaProjects/jdk/src/hotspot/share/opto/escape.cpp:4767), pid=85070, tid=26115
+            // #  assert(false) failed: EA: missing memory path
+            scope = Arena.ofConfined();
+
+            source = cached != null ? cached : BufferCache.allocate(size);
+            allocator = new SlicingAllocator(source);
         }
 
+        @SuppressWarnings("restricted")
         @Override
+        @ForceInline
         public MemorySegment allocate(long byteSize, long byteAlignment) {
-            return allocator.allocate(byteSize, byteAlignment);
+            return allocator.allocate(byteSize, byteAlignment).reinterpret(scope, null);
         }
 
         @Override
         public Scope scope() {
-            return Arena.global().scope();  // callScope;
+            return scope.scope();
         }
 
         @Override
+        @ForceInline
         public void close() {
-            // callScope.close();
-            BufferCache.cacheOrClose(buffer);
+            scope.close();
+            if (source.byteSize() != BufferCache.CACHED_BUFFER_SIZE || !BufferCache.release(source))
+                BufferCache.free(source);
         }
     }
 
@@ -549,8 +544,8 @@ public final class SharedUtils {
         } else if (type == double.class) {
             ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
         } else if (type == boolean.class) {
-            boolean b = (boolean)o;
-            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long)1 : (long)0);
+            boolean b = (boolean) o;
+            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long) 1 : (long) 0);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
