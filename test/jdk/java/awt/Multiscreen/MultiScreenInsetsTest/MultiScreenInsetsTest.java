@@ -106,8 +106,8 @@ public class MultiScreenInsetsTest {
 
             if (bounds.x + insets.left != frameBounds.x
                 || bounds.y + insets.top != frameBounds.y
-                || bounds.width - insets.right - insets.left + marginX!= frameBounds.width
-                || bounds.height - insets.bottom - insets.top + marginY!= frameBounds.height) {
+                || bounds.width - insets.right - insets.left + marginX != frameBounds.width
+                || bounds.height - insets.bottom - insets.top + marginY != frameBounds.height) {
                 throw new RuntimeException("Test FAILED! Wrong screen #" +
                                            screen + " insets: " + insets);
             }
