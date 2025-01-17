@@ -38,10 +38,6 @@ public final class SlicingAllocator implements SegmentAllocator {
         this.segment = segment;
     }
 
-    public MemorySegment segment() {
-        return segment;
-    }
-
     MemorySegment trySlice(long byteSize, long byteAlignment) {
         long min = segment.address();
         long start = Utils.alignUp(min + sp, byteAlignment) - min;
@@ -55,9 +51,5 @@ public final class SlicingAllocator implements SegmentAllocator {
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         // try to slice from current segment first...
         return trySlice(byteSize, byteAlignment);
-    }
-
-    public void reset() {
-        sp = 0L;
     }
 }
