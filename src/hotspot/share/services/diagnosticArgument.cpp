@@ -115,12 +115,13 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
       || sscanf(str, JLONG_FORMAT "%n", &_value, &scanned) != 1
       || (size_t)scanned != len)
   {
-    const int maxprint = 64;
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
-      "Integer parsing error in command argument '%s'. Could not parse: %.*s%s.\n", _name,
-      MIN2((int)len, maxprint),
-      (str == nullptr ? "<null>" : str),
-      (len > maxprint ? "..." : ""));
+                       "Integer parsing error in command argument '%.*s'. Could not parse: %.*s%s.\n",
+                       maxprint,
+                       _name,
+                       maxprint > len ? (int)len : maxprint,
+                       (str == nullptr ? "<null>" : str),
+                       (len > maxprint ? "..." : ""));
   }
 }
 
@@ -160,7 +161,11 @@ PRAGMA_DIAG_POP
 
       buf[len] = '\0';
       Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
-        "Boolean parsing error in command argument '%s'. Could not parse: %s.\n", _name, buf);
+                         "Boolean parsing error in command argument '%.*s'. Could not parse: %.*s.\n",
+                         maxprint,
+                         _name,
+                         maxprint,
+                         buf);
     }
   }
 }

@@ -31,10 +31,6 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
 import java.util.EventObject;
 
-import java.security.AccessController;
-
-import com.sun.jmx.mbeanserver.GetPropertyAction;
-
 /**
  * <p>The Notification class represents a notification emitted by an
  * MBean.  It contains a reference to the source MBean: if the
@@ -59,7 +55,7 @@ public class Notification extends EventObject {
     /**
      * @serialField type String The notification type.
      *              A string expressed in a dot notation similar to Java properties.
-     *              An example of a notification type is network.alarm.router
+     *              An example of a notification type is com.sun.management.gc.notification
      * @serialField sequenceNumber long The notification sequence number.
      *              A serial number which identify particular instance
      *              of notification in the context of the notification source.
@@ -83,7 +79,7 @@ public class Notification extends EventObject {
     /**
      * @serial The notification type.
      *         A string expressed in a dot notation similar to Java properties.
-     *         An example of a notification type is network.alarm.router
+     *         An example of a notification type is com.sun.management.gc.notification
      */
     private String type;
 
@@ -239,7 +235,7 @@ public class Notification extends EventObject {
      * @return The notification type. It's a string expressed in a dot notation
      * similar to Java properties. It is recommended that the notification type
      * should follow the reverse-domain-name convention used by Java package
-     * names.  An example of a notification type is com.example.alarm.router.
+     * names.  An example of a notification type is com.sun.management.gc.notification
      */
     public String getType() {
         return type ;

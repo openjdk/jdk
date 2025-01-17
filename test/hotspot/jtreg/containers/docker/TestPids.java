@@ -27,7 +27,7 @@
  * @test
  * @key cgroups
  * @summary Test JVM's awareness of pids controller
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

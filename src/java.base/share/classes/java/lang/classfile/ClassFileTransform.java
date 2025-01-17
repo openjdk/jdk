@@ -24,10 +24,8 @@
  */
 package java.lang.classfile;
 
-import java.util.function.Supplier;
-
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.javac.PreviewFeature;
+import java.util.function.Supplier;
 
 /**
  * A transformation on streams of elements. Transforms are used during
@@ -62,20 +60,14 @@ import jdk.internal.javac.PreviewFeature;
  * its state must be reset for each traversal; this will happen automatically if
  * the transform is created with {@link ClassTransform#ofStateful(Supplier)} (or
  * corresponding methods for other classfile locations.)
- * <p>
- * Class transformation sample where code transformation is stateful:
- * {@snippet lang="java" class="PackageSnippets" region="codeRelabeling"}
- * <p>
- * Complex class instrumentation sample chaining multiple transformations:
- * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
+ *
  * @param <C> the transform type
  * @param <E> the element type
  * @param <B> the builder type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileTransform<
         C extends ClassFileTransform<C, E, B>,
         E extends ClassFileElement,

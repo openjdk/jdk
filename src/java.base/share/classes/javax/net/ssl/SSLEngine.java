@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,14 +377,6 @@ import java.util.function.BiFunction;
  *     }
  * </pre></blockquote>
  *
- * <P>
- * Applications might choose to process delegated tasks in different
- * threads.  When an {@code SSLEngine}
- * is created, the current {@link java.security.AccessControlContext}
- * is saved.  All future delegated tasks will be processed using this
- * context:  that is, all access control decisions will be made using the
- * context captured at engine creation.
- *
  * <HR>
  *
  * <B>Concurrency Notes</B>:
@@ -413,6 +405,8 @@ import java.util.function.BiFunction;
  *      because there is no way to guarantee the eventual packet ordering.
  * </OL>
  *
+ * @spec https://www.rfc-editor.org/info/rfc2246
+ *      RFC 2246: The TLS Protocol Version 1.0
  * @see SSLContext
  * @see SSLSocket
  * @see SSLServerSocket
@@ -816,9 +810,6 @@ public abstract class SSLEngine {
      * {@code run} method returns, the {@code Runnable} object
      * is no longer needed and may be discarded.
      * <P>
-     * Delegated tasks run in the {@code AccessControlContext}
-     * in place when this object was created.
-     * <P>
      * A call to this method will return each outstanding task
      * exactly once.
      * <P>
@@ -859,6 +850,8 @@ public abstract class SSLEngine {
      *          if this engine has not received the proper SSL/TLS/DTLS close
      *          notification message from the peer.
      *
+     * @spec https://www.rfc-editor.org/info/rfc2246
+     *      RFC 2246: The TLS Protocol Version 1.0
      * @see     #isInboundDone()
      * @see     #isOutboundDone()
      */
@@ -1351,6 +1344,8 @@ public abstract class SSLEngine {
      * Application-Layer Protocol Negotiation (ALPN), can negotiate
      * application-level values between peers.
      *
+     * @spec https://www.rfc-editor.org/info/rfc7301
+     *      RFC 7301: Transport Layer Security (TLS) Application-Layer Protocol Negotiation Extension
      * @implSpec
      * The implementation in this class throws
      * {@code UnsupportedOperationException} and performs no other action.

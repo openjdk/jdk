@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public:
   virtual uint size_of() const;
   virtual uint hash() const;    // Check the type
   const Type* widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const;
+  Node* find_or_make_integer_cast(PhaseIterGVN* igvn, Node* parent, const TypeInteger* type) const;
 
   private:
   // PhiNode::Ideal() transforms a Phi that merges a single uncasted value into a single cast pinned at the region.
@@ -121,6 +122,7 @@ class CastIINode: public ConstraintCastNode {
   }
 
   CastIINode* pin_array_access_node() const;
+  void remove_range_check_cast(Compile* C);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;

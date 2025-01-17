@@ -25,16 +25,22 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
+import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleOpenInfo;
+import java.lang.classfile.attribute.ModuleProvideInfo;
+import java.lang.classfile.attribute.ModuleRequireInfo;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-
-import java.lang.constant.ClassDesc;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public final class ModuleAttributeBuilderImpl
         implements ModuleAttributeBuilder {

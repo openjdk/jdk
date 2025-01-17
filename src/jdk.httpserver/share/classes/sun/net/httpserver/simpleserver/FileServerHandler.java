@@ -25,7 +25,6 @@
 
 package sun.net.httpserver.simpleserver;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -67,12 +66,6 @@ public final class FileServerHandler implements HttpHandler {
 
     private FileServerHandler(Path root, UnaryOperator<String> mimeTable) {
         root = root.normalize();
-
-        @SuppressWarnings("removal")
-        var securityManager = System.getSecurityManager();
-        if (securityManager != null)
-            securityManager.checkRead(pathForSecurityCheck(root.toString()));
-
         if (!Files.exists(root))
             throw new IllegalArgumentException("Path does not exist: " + root);
         if (!root.isAbsolute())
@@ -84,11 +77,6 @@ public final class FileServerHandler implements HttpHandler {
         this.root = root;
         this.mimeTable = mimeTable;
         this.logger = System.getLogger("com.sun.net.httpserver");
-    }
-
-    private static String pathForSecurityCheck(String path) {
-        var separator = String.valueOf(File.separatorChar);
-        return path.endsWith(separator) ? (path + "-") : (path + separator + "-");
     }
 
     private static final HttpHandler NOT_IMPLEMENTED_HANDLER =

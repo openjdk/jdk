@@ -558,7 +558,9 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         return -1;
     }
     offset = copystrings(buf, 0, &c->argv[0]);
-    offset = copystrings(buf, offset, &c->envv[0]);
+    if (c->envv != NULL) {
+        offset = copystrings(buf, offset, &c->envv[0]);
+    }
     if (c->pdir != NULL) {
         if (sp.dirlen > 0) {
             memcpy(buf+offset, c->pdir, sp.dirlen);

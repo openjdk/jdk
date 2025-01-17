@@ -243,6 +243,8 @@ protected:
 
   virtual LIR_Opr atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value);
 
+  void post_barrier(LIRAccess& access, LIR_Opr addr, LIR_Opr new_val);
+
 public:
 
   virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);

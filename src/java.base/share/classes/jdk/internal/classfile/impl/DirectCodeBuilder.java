@@ -25,45 +25,22 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.Attributes;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
+import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodRefEntry;
+import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.CharacterRange;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.SwitchCase;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
@@ -147,7 +124,7 @@ public final class DirectCodeBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }
@@ -257,13 +234,17 @@ public final class DirectCodeBuilder
                                 }
                             } else {
                                 b.writeU2U2(start, end - 1);
-                                b.writeInt(cr.characterRangeStart());
-                                b.writeInt(cr.characterRangeEnd());
+                                b.writeIntInt(cr.characterRangeStart(), cr.characterRangeEnd());
                                 b.writeU2(cr.flags());
                             }
                         }
                         if (crSize < characterRangesCount)
                             b.patchU2(pos, crSize);
+                    }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return constantPool.utf8Entry(Attributes.NAME_CHARACTER_RANGE_TABLE);
                     }
                 };
                 attributes.withAttribute(a);
@@ -289,6 +270,11 @@ public final class DirectCodeBuilder
                         if (lvSize < localVariablesCount)
                             b.patchU2(pos, lvSize);
                     }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return constantPool.utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TABLE);
+                    }
                 };
                 attributes.withAttribute(a);
             }
@@ -312,6 +298,11 @@ public final class DirectCodeBuilder
                         }
                         if (lvtSize < localVariableTypesCount)
                             b.patchU2(pos, lvtSize);
+                    }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return constantPool.utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TYPE_TABLE);
                     }
                 };
                 attributes.withAttribute(a);
@@ -374,24 +365,19 @@ public final class DirectCodeBuilder
                             dcb.methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
 
+                boolean codeMatch = dcb.original != null && codeAndExceptionsMatch(codeLength);
                 var context = dcb.context;
-                if (dcb.original != null && codeAndExceptionsMatch(codeLength)) {
-                    if (context.stackMapsWhenRequired()) {
+                if (context.stackMapsWhenRequired()) {
+                    if (codeMatch) {
                         dcb.attributes.withAttribute(dcb.original.findAttribute(Attributes.stackMapTable()).orElse(null));
                         writeCounters(true, buf);
-                    } else if (context.generateStackMaps()) {
-                        generateStackMaps(buf);
-                    } else if (context.dropStackMaps()) {
-                        writeCounters(true, buf);
-                    }
-                } else {
-                    if (context.stackMapsWhenRequired()) {
+                    } else {
                         tryGenerateStackMaps(false, buf);
-                    } else if (context.generateStackMaps()) {
-                        generateStackMaps(buf);
-                    } else if (context.dropStackMaps()) {
-                        writeCounters(false, buf);
                     }
+                } else if (context.generateStackMaps()) {
+                    generateStackMaps(buf);
+                } else if (context.dropStackMaps()) {
+                    writeCounters(codeMatch, buf);
                 }
 
                 buf.writeInt(codeLength);
@@ -399,6 +385,11 @@ public final class DirectCodeBuilder
                 dcb.writeExceptionHandlers(buf);
                 dcb.attributes.writeTo(buf);
                 buf.setLabelContext(null);
+            }
+
+            @Override
+            public Utf8Entry attributeName() {
+                return constantPool.utf8Entry(Attributes.NAME_CODE);
             }
         };
     }
@@ -444,6 +435,11 @@ public final class DirectCodeBuilder
             b.writeInt(buf.size() + 2);
             b.writeU2(buf.size() / 4);
             b.writeBytes(buf);
+        }
+
+        @Override
+        public Utf8Entry attributeName() {
+            return buf.constantPool().utf8Entry(Attributes.NAME_LINE_NUMBER_TABLE);
         }
     }
 
@@ -640,8 +636,7 @@ public final class DirectCodeBuilder
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLongLabelOffset(instructionPc, defaultTarget);
-        bytecodesBufWriter.writeInt(low);
-        bytecodesBufWriter.writeInt(high);
+        bytecodesBufWriter.writeIntInt(low, high);
         var caseMap = new HashMap<Integer, Label>(cases.size());
         for (var c : cases) {
             caseMap.put(c.caseValue(), c.target());
@@ -668,8 +663,7 @@ public final class DirectCodeBuilder
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
-        bytecodesBufWriter.writeIndex(INVOKEDYNAMIC, ref);
-        bytecodesBufWriter.writeU2(0);
+        bytecodesBufWriter.writeU1U2U2(INVOKEDYNAMIC, bytecodesBufWriter.cpIndex(ref), 0);
     }
 
     public void writeNewObject(ClassEntry type) {
@@ -701,16 +695,22 @@ public final class DirectCodeBuilder
         }
     }
 
-    public void writeLoadConstant(Opcode opcode, LoadableConstantEntry value) {
-        // Make sure Long and Double have LDC2_W and
-        // rewrite to _W if index is >= 256
-        int index = AbstractPoolEntry.maybeClone(constantPool, value).index();
-        if (value instanceof LongEntry || value instanceof DoubleEntry) {
-            opcode = Opcode.LDC2_W;
-        } else if (index >= 256)
-            opcode = Opcode.LDC_W;
+    // value may not be writable to this constant pool
+    public void writeAdaptLoadConstant(Opcode opcode, LoadableConstantEntry value) {
+        var pe = AbstractPoolEntry.maybeClone(constantPool, value);
+        int index = pe.index();
+        if (pe != value && opcode != Opcode.LDC2_W) {
+            // rewrite ldc/ldc_w if external entry; ldc2_w never needs rewrites
+            opcode = index <= 0xFF ? Opcode.LDC : Opcode.LDC_W;
+        }
 
-        assert !opcode.isWide();
+        writeDirectLoadConstant(opcode, pe);
+    }
+
+    // the loadable entry is writable to this constant pool
+    public void writeDirectLoadConstant(Opcode opcode, LoadableConstantEntry pe) {
+        assert !opcode.isWide() && canWriteDirect(pe.constantPool());
+        int index = pe.index();
         if (opcode.sizeIfFixed() == 3) {
             bytecodesBufWriter.writeU1U2(opcode.bytecode(), index);
         } else {
@@ -1685,7 +1685,8 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder ldc(LoadableConstantEntry entry) {
-        writeLoadConstant(BytecodeHelpers.ldcOpcode(entry), entry);
+        var direct = AbstractPoolEntry.maybeClone(constantPool, entry);
+        writeDirectLoadConstant(BytecodeHelpers.ldcOpcode(direct), direct);
         return this;
     }
 

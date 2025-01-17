@@ -29,7 +29,6 @@
 #include "code/stubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/stubDeclarations.hpp"
 
 class StubAssembler;
@@ -134,6 +133,9 @@ public:
   // initialization
   static void initialize(BufferBlob* blob);
   static void initialize_pd();
+
+  // return offset in words
+  static uint runtime_blob_current_thread_offset(frame f);
 
   // stubs
   static CodeBlob* blob_for (C1StubId id);

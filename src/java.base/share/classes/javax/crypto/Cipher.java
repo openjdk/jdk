@@ -148,7 +148,8 @@ import sun.security.util.KnownOIDs;
  * <li>{@code AES/CBC/PKCS5Padding} (128)</li>
  * <li>{@code AES/ECB/NoPadding} (128)</li>
  * <li>{@code AES/ECB/PKCS5Padding} (128)</li>
- * <li>{@code AES/GCM/NoPadding} (128)</li>
+ * <li>{@code AES/GCM/NoPadding} (128, 256)</li>
+ * <li>{@code ChaCha20-Poly1305}</li>
  * <li>{@code DESede/CBC/NoPadding} (168)</li>
  * <li>{@code DESede/CBC/PKCS5Padding} (168)</li>
  * <li>{@code DESede/ECB/NoPadding} (168)</li>
@@ -164,6 +165,10 @@ import sun.security.util.KnownOIDs;
  * Consult the release documentation for your implementation to see if any
  * other transformations are supported.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5116
+ *      RFC 5116: An Interface and Algorithms for Authenticated Encryption
+ * @spec https://www.rfc-editor.org/info/rfc7539
+ *      RFC 7539: ChaCha20 and Poly1305 for IETF Protocols
  * @author Jan Luehe
  * @see KeyGenerator
  * @see SecretKey

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,17 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.constantpool.AnnotationConstantValueEntry;
-import java.lang.classfile.constantpool.DoubleEntry;
-import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
-import java.lang.classfile.constantpool.FloatEntry;
-import java.lang.classfile.constantpool.IntegerEntry;
-import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.AnnotationImpl;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
-
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.internal.classfile.impl.AnnotationImpl;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Models an {@code element_value} structure, or a value of an element-value
@@ -51,20 +45,19 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see Annotation
  * @see AnnotationElement
+ * @see java.lang.reflect.AnnotatedElement Annotations in core reflection
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationValue {
 
     /**
      * Models an annotation value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_ANNOTATION}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfAnnotation extends AnnotationValue
             permits AnnotationImpl.OfAnnotationImpl {
         /** {@return the annotation value} */
@@ -75,9 +68,8 @@ public sealed interface AnnotationValue {
      * Models an array value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_ARRAY}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfArray extends AnnotationValue
             permits AnnotationImpl.OfArrayImpl {
         /**
@@ -96,9 +88,8 @@ public sealed interface AnnotationValue {
      * Models a constant value of an element-value pair.
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfConstant extends AnnotationValue {
         /**
          * {@return the constant pool entry backing this constant element}
@@ -133,9 +124,8 @@ public sealed interface AnnotationValue {
      * Models a string value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_STRING}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfString extends OfConstant
             permits AnnotationImpl.OfStringImpl {
         /** {@return the backing UTF8 entry} */
@@ -161,9 +151,8 @@ public sealed interface AnnotationValue {
      * Models a double value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_DOUBLE}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfDouble extends OfConstant
             permits AnnotationImpl.OfDoubleImpl {
         /** {@return the backing double entry} */
@@ -189,9 +178,8 @@ public sealed interface AnnotationValue {
      * Models a float value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_FLOAT}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfFloat extends OfConstant
             permits AnnotationImpl.OfFloatImpl {
         /** {@return the backing float entry} */
@@ -217,9 +205,8 @@ public sealed interface AnnotationValue {
      * Models a long value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_LONG}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfLong extends OfConstant
             permits AnnotationImpl.OfLongImpl {
         /** {@return the backing long entry} */
@@ -245,9 +232,8 @@ public sealed interface AnnotationValue {
      * Models an int value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_INT}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfInt extends OfConstant
             permits AnnotationImpl.OfIntImpl {
         /** {@return the backing integer entry} */
@@ -273,9 +259,8 @@ public sealed interface AnnotationValue {
      * Models a short value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_SHORT}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfShort extends OfConstant
             permits AnnotationImpl.OfShortImpl {
         /** {@return the backing integer entry} */
@@ -304,9 +289,8 @@ public sealed interface AnnotationValue {
      * Models a char value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_CHAR}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfChar extends OfConstant
             permits AnnotationImpl.OfCharImpl {
         /** {@return the backing integer entry} */
@@ -335,9 +319,8 @@ public sealed interface AnnotationValue {
      * Models a byte value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_BYTE}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfByte extends OfConstant
             permits AnnotationImpl.OfByteImpl {
         /** {@return the backing integer entry} */
@@ -366,9 +349,8 @@ public sealed interface AnnotationValue {
      * Models a boolean value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_BOOLEAN}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfBoolean extends OfConstant
             permits AnnotationImpl.OfBooleanImpl {
         /** {@return the backing integer entry} */
@@ -397,9 +379,8 @@ public sealed interface AnnotationValue {
      * Models a class value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_CLASS}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfClass extends AnnotationValue
             permits AnnotationImpl.OfClassImpl {
         /** {@return the class descriptor string} */
@@ -415,9 +396,8 @@ public sealed interface AnnotationValue {
      * Models an enum value of an element-value pair.
      * The {@linkplain #tag tag} of this value is {@value TAG_ENUM}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfEnum extends AnnotationValue
             permits AnnotationImpl.OfEnumImpl {
         /** {@return the enum class descriptor string} */
@@ -477,9 +457,11 @@ public sealed interface AnnotationValue {
      *
      * @apiNote
      * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_INT},
-     * describe the possible return values of this method.
+     * describe the possible return values of this method.  The return type is
+     * {@code int} for consistency with union indicator items in other union
+     * structures in the {@code class} file format.
      */
-    char tag();
+    int tag();
 
     /**
      * {@return an enum value for an element-value pair}
@@ -488,6 +470,8 @@ public sealed interface AnnotationValue {
      */
     static OfEnum ofEnum(Utf8Entry className,
                          Utf8Entry constantName) {
+        requireNonNull(className);
+        requireNonNull(constantName);
         return new AnnotationImpl.OfEnumImpl(className, constantName);
     }
 
@@ -506,6 +490,7 @@ public sealed interface AnnotationValue {
      * @param className the descriptor string of the class
      */
     static OfClass ofClass(Utf8Entry className) {
+        requireNonNull(className);
         return new AnnotationImpl.OfClassImpl(className);
     }
 
@@ -522,6 +507,7 @@ public sealed interface AnnotationValue {
      * @param value the string
      */
     static OfString ofString(Utf8Entry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfStringImpl(value);
     }
 
@@ -538,6 +524,7 @@ public sealed interface AnnotationValue {
      * @param value the double value
      */
     static OfDouble ofDouble(DoubleEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfDoubleImpl(value);
     }
 
@@ -554,6 +541,7 @@ public sealed interface AnnotationValue {
      * @param value the float value
      */
     static OfFloat ofFloat(FloatEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfFloatImpl(value);
     }
 
@@ -570,6 +558,7 @@ public sealed interface AnnotationValue {
      * @param value the long value
      */
     static OfLong ofLong(LongEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfLongImpl(value);
     }
 
@@ -586,6 +575,7 @@ public sealed interface AnnotationValue {
      * @param value the int value
      */
     static OfInt ofInt(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfIntImpl(value);
     }
 
@@ -602,6 +592,7 @@ public sealed interface AnnotationValue {
      * @param value the short value
      */
     static OfShort ofShort(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfShortImpl(value);
     }
 
@@ -618,6 +609,7 @@ public sealed interface AnnotationValue {
      * @param value the char value
      */
     static OfChar ofChar(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfCharImpl(value);
     }
 
@@ -634,6 +626,7 @@ public sealed interface AnnotationValue {
      * @param value the byte value
      */
     static OfByte ofByte(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfByteImpl(value);
     }
 
@@ -650,6 +643,7 @@ public sealed interface AnnotationValue {
      * @param value the boolean value
      */
     static OfBoolean ofBoolean(IntegerEntry value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfBooleanImpl(value);
     }
 
@@ -667,6 +661,7 @@ public sealed interface AnnotationValue {
      * @param value the annotation
      */
     static OfAnnotation ofAnnotation(Annotation value) {
+        requireNonNull(value);
         return new AnnotationImpl.OfAnnotationImpl(value);
     }
 
@@ -784,6 +779,6 @@ public sealed interface AnnotationValue {
         } else if (value instanceof Enum<?> e) {
             return ofEnum(ClassDesc.ofDescriptor(e.getDeclaringClass().descriptorString()), e.name());
         }
-        throw new IllegalArgumentException("Illegal annotation constant value type " + (value == null ? null : value.getClass()));
+        throw new IllegalArgumentException("Illegal annotation constant value type " + requireNonNull(value).getClass());
     }
 }

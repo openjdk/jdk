@@ -887,7 +887,7 @@ void ShenandoahBarrierC2Support::test_gc_state(Node*& ctrl, Node* raw_mem, Node*
   phase->register_new_node(gc_state_cmp,  old_ctrl);
   phase->register_new_node(gc_state_bool, old_ctrl);
 
-  phase->set_ctrl(gc_state_offset, phase->C->root());
+  phase->set_root_as_ctrl(gc_state_offset);
 
   assert(is_gc_state_test(gc_state_iff, flags), "Should match the shape");
 }
@@ -945,7 +945,7 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   phase->register_control(ctrl,          loop, cset_iff);
   phase->register_control(not_cset_ctrl, loop, cset_iff);
 
-  phase->set_ctrl(cset_addr_ptr, phase->C->root());
+  phase->set_root_as_ctrl(cset_addr_ptr);
 
   phase->register_new_node(raw_val,        old_ctrl);
   phase->register_new_node(cset_idx,       old_ctrl);
@@ -1041,6 +1041,7 @@ void ShenandoahBarrierC2Support::fix_ctrl(Node* barrier, Node* region, const Mem
     Node* u = ctrl->fast_out(i);
     if (u->_idx < last &&
         u != barrier &&
+        !u->depends_only_on_test() && // preserve dependency on test
         !uses_to_ignore.member(u) &&
         (u->in(0) != ctrl || (!u->is_Region() && !u->is_Phi())) &&
         (ctrl->Opcode() != Op_CatchProj || u->Opcode() != Op_CreateEx)) {
@@ -1148,8 +1149,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
         }
       }
     }
+    // Load barrier on the control output of a call
     if ((ctrl->is_Proj() && ctrl->in(0)->is_CallJava()) || ctrl->is_CallJava()) {
-      CallNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_CallJava() : ctrl->as_CallJava();
+      CallJavaNode* call = ctrl->is_Proj() ? ctrl->in(0)->as_CallJava() : ctrl->as_CallJava();
       if (call->entry_point() == OptoRuntime::rethrow_stub()) {
         // The rethrow call may have too many projections to be
         // properly handled here. Given there's no reason for a
@@ -1185,6 +1187,14 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
       CallProjections projs;
       call->extract_projections(&projs, false, false);
 
+      // If this is a runtime call, it doesn't have an exception handling path
+      if (projs.fallthrough_catchproj == nullptr) {
+        assert(call->method() == nullptr, "should be runtime call");
+        assert(projs.catchall_catchproj == nullptr, "runtime call should not have catch all projection");
+        continue;
+      }
+
+      // Otherwise, clone the barrier so there's one for the fallthrough and one for the exception handling path
 #ifdef ASSERT
       VectorSet cloned;
 #endif

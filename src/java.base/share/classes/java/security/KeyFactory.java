@@ -72,7 +72,10 @@ import sun.security.jca.GetInstance.Instance;
  * <ul>
  * <li>{@code DiffieHellman}</li>
  * <li>{@code DSA}</li>
+ * <li>{@code EC}</li>
  * <li>{@code RSA}</li>
+ * <li>{@code RSASSA-PSS}</li>
+ * <li>{@code X25519}</li>
  * </ul>
  * These algorithms are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">

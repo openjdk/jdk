@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,6 +430,10 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
           return nullptr;
         }
         values.at_put(j, res);
+      } else if (val->is_top()) {
+        // This indicates that this path into the phi is dead. Top will eventually also propagate into the Region.
+        // IGVN will clean this up later.
+        values.at_put(j, val);
       } else {
         DEBUG_ONLY( val->dump(); )
         assert(false, "unknown node on this path");
@@ -1706,7 +1710,9 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   }
   rawmem = make_store(control, rawmem, object, oopDesc::mark_offset_in_bytes(), mark_node, TypeX_X->basic_type());
 
-  rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+  if (!UseCompactObjectHeaders) {
+    rawmem = make_store(control, rawmem, object, oopDesc::klass_offset_in_bytes(), klass_node, T_METADATA);
+  }
   int header_size = alloc->minimum_header_size();  // conservatively small
 
   // Array length
@@ -2428,7 +2434,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
-               n->is_Opaque4()             ||
+               n->is_OpaqueNotNull()       ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
                n->Opcode() == Op_MinL      ||
@@ -2480,17 +2486,14 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->is_Opaque1()) {
         _igvn.replace_node(n, n->in(1));
         success = true;
-      } else if (n->is_Opaque4()) {
-        // With Opaque4 nodes, the expectation is that the test of input 1
-        // is always equal to the constant value of input 2. So we can
-        // remove the Opaque4 and replace it by input 2. In debug builds,
-        // leave the non constant test in instead to sanity check that it
-        // never fails (if it does, that subgraph was constructed so, at
-        // runtime, a Halt node is executed).
+      } else if (n->is_OpaqueNotNull()) {
+        // Tests with OpaqueNotNull nodes are implicitly known to be true. Replace the node with true. In debug builds,
+        // we leave the test in the graph to have an additional sanity check at runtime. If the test fails (i.e. a bug),
+        // we will execute a Halt node.
 #ifdef ASSERT
         _igvn.replace_node(n, n->in(1));
 #else
-        _igvn.replace_node(n, n->in(2));
+        _igvn.replace_node(n, _igvn.intcon(1));
 #endif
         success = true;
       } else if (n->is_OpaqueInitializedAssertionPredicate()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,11 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * @test id=ZGenerational
+ * @test id=Z
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @requires vm.hasJFR & vm.gc.ZGenerational
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent Z
- */
-
-/**
- * @test id=ZSinglegen
- * @key jfr
- * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @requires vm.hasJFR & vm.gc.ZSinglegen
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent X
+ * @requires vm.hasJFR & vm.gc.Z
+ * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestGCPhaseConcurrent Z
  */
 
 /**

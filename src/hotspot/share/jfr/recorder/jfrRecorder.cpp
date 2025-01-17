@@ -210,7 +210,7 @@ bool JfrRecorder::on_create_vm_2() {
     return true;
   }
   JavaThread* const thread = JavaThread::current();
-  JfrThreadLocal::assign_thread_id(thread, thread->jfr_thread_local());
+  assert(JfrThreadLocal::jvm_thread_id(thread) != 0, "invariant");
 
   if (!JfrOptionSet::initialize(thread)) {
     return false;

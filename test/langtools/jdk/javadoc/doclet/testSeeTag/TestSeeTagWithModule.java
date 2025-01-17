@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,13 +79,13 @@ public class TestSeeTagWithModule extends JavadocTester {
                     <li><a href="../../../../m1/module-summary.html"><code>m1</code></a></li>
                     <li><a href="../../../../m1/com/m1/lib/package-summary.html"><code>com.m1.lib</code></a></li>
                     <li><a href="../../../../m1/com/m1/lib/Lib.html" title="class in com.m1.lib"><code>Lib</code></a></li>
-                    <li><a href="../../../../m1/com/m1/lib/Lib.html#method(java.lang.String)"><code>Lib.method(java.lang.String)</code></a></li>
+                    <li><a href="../../../../m1/com/m1/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a></li>
                     <li><a href="../../../../m1/com/m1/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a></li>
                     <li><a href="../../../../m2/module-summary.html"><code>m2</code></a></li>
                     <li><a href="../../../../m2/module-summary.html"><code>m2</code></a></li>
                     <li><a href="../../../../m2/com/m2/lib/package-summary.html"><code>com.m2.lib</code></a></li>
                     <li><a href="../../../../m2/com/m2/lib/Lib.html" title="class in com.m2.lib"><code>Lib</code></a></li>
-                    <li><a href="../../../../m2/com/m2/lib/Lib.html#method(java.lang.String)"><code>Lib.method(java.lang.String)</code></a></li>
+                    <li><a href="../../../../m2/com/m2/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a></li>
                     <li><a href="../../../../m2/com/m2/lib/Lib.html#method(java.lang.String)"><code>Lib.method(String)</code></a></li>
                     """);
     }
@@ -115,7 +115,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                     <li><a href="../../../../../out1/m1/com/m1/lib/package-summary.html" class="external-link"><code>m1/com.m1.lib</code></a></li>
                     <li><a href="../../../../../out1/m1/com/m1/lib/Lib.html" title="class or interface in com.m1.lib" class="external-link"><code>Lib</code></a></li>
                     <li><a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or \
-                    interface in com.m1.lib" class="external-link"><code>Lib.method(java.lang.String)</code></a></li>
+                    interface in com.m1.lib" class="external-link"><code>Lib.method(String)</code></a></li>
                     <li><a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or \
                     interface in com.m1.lib" class="external-link"><code>Lib.method(String)</code></a></li>
                     <li><a href="../../../../../out1/m2/module-summary.html" class="external-link"><code>m2</code></a></li>
@@ -123,7 +123,7 @@ public class TestSeeTagWithModule extends JavadocTester {
                     <li><a href="../../../../../out1/m2/com/m2/lib/package-summary.html" class="external-link"><code>m2/com.m2.lib</code></a></li>
                     <li><a href="../../../../../out1/m2/com/m2/lib/Lib.html" title="class or interface in com.m2.lib" class="external-link"><code>Lib</code></a></li>
                     <li><a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or \
-                    interface in com.m2.lib" class="external-link"><code>Lib.method(java.lang.String)</code></a></li>
+                    interface in com.m2.lib" class="external-link"><code>Lib.method(String)</code></a></li>
                     <li><a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or \
                     interface in com.m2.lib" class="external-link"><code>Lib.method(String)</code></a></li>
                     """);

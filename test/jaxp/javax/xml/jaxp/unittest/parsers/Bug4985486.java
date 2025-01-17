@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package parsers;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -35,11 +34,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 4985486
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4985486
  * @run testng/othervm parsers.Bug4985486
  * @summary Test SAXParser can parse large characters(more than 10000).
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4985486 {
 
     @Test

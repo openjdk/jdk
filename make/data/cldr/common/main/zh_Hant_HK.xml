@@ -22,7 +22,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="br">布里多尼文</language>
 			<language type="bs">波斯尼亞文</language>
 			<language type="ca">加泰隆尼亞文</language>
-			<language type="crh">克里米亞韃靼文</language>
 			<language type="crs">塞舌爾克里奧爾法文</language>
 			<language type="de_AT">奧地利德文</language>
 			<language type="de_CH">瑞士德語</language>
@@ -89,7 +88,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant">繁體字</script>
 			<script type="Knda">坎納達文</script>
 			<script type="Laoo">老撾文</script>
-			<script type="Latn">拉丁字母</script>
 			<script type="Mlym">馬拉雅拉姆文</script>
 			<script type="Newa">尼瓦爾文</script>
 			<script type="Orya">奧里雅文</script>
@@ -238,22 +236,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="Md">M-d</dateFormatItem>
 						<dateFormatItem id="MEd">M-d（E）</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="chinese">
@@ -367,66 +349,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="contributed">ah時至ah時 [v]</greatestDifference>
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="coptic">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="dangi">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="ethiopic">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
 							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
@@ -723,66 +645,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
-			<calendar type="hebrew">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="indian">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="islamic">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
 			<calendar type="japanese">
 				<dateTimeFormats>
 					<availableFormats>
@@ -790,42 +652,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="hm">ah:mm</dateFormatItem>
 						<dateFormatItem id="hms">ah:mm:ss</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
-				</dateTimeFormats>
-			</calendar>
-			<calendar type="persian">
-				<dateTimeFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="roc">
@@ -835,22 +661,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MEd">d-M（E）</dateFormatItem>
 						<dateFormatItem id="yyyyMEd">Gy/M/dE</dateFormatItem>
 					</availableFormats>
-					<intervalFormats>
-						<intervalFormatItem id="h">
-							<greatestDifference id="h" draft="contributed">ah時至h時</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-							<greatestDifference id="m" draft="contributed">ah:mm至h:mm [v]</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hv">
-							<greatestDifference id="h" draft="contributed">ah時至h時 [v]</greatestDifference>
-						</intervalFormatItem>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -1019,7 +829,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">這個小時</relative>
 			</field>
 			<field type="hour-narrow">
-				<displayName>時</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}小時後</relativeTimePattern>
 				</relativeTime>
@@ -1031,7 +840,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">這分鐘</relative>
 			</field>
 			<field type="minute-narrow">
-				<displayName>分</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0}分後</relativeTimePattern>
 				</relativeTime>
@@ -1940,7 +1748,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="STD">
 				<displayName>聖多美和普林西比多布拉 (1977–2017)</displayName>
-				<displayName count="other">聖多美和普林西比多布拉 (1977–2017)</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName>聖多美和普林西比多布拉</displayName>
@@ -1950,7 +1757,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="SZL">
 				<displayName>斯威士蘭里朗吉尼</displayName>
-				<displayName count="other">斯威士蘭里朗吉尼</displayName>
 			</currency>
 			<currency type="TOP">
 				<displayName>湯加潘加</displayName>
@@ -2158,10 +1964,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>英里每小時</displayName>
-			</unit>
-			<unit type="speed-beaufort">
-				<displayName>蒲福氏風級</displayName>
-				<unitPattern count="other">蒲福氏風級 {0} 級</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>攝氏度</displayName>
@@ -2574,9 +2376,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-candela">
 				<unitPattern count="other">{0}坎德拉</unitPattern>
 			</unit>
-			<unit type="mass-kilogram">
-				<unitPattern count="other">{0} 公斤</unitPattern>
-			</unit>
 			<unit type="mass-ounce">
 				<unitPattern count="other">{0} 安士</unitPattern>
 			</unit>
@@ -2596,7 +2395,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}mph</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
-				<displayName>蒲福氏風級</displayName>
 				<unitPattern count="other">蒲福氏風級 {0} 級</unitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -2616,6 +2414,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<unitPattern count="other">{0}英制甜品匙</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<unitPattern count="other">{0}夜</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>濃度/十億</displayName>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>

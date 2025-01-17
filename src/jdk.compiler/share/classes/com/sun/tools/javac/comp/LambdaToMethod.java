@@ -217,7 +217,7 @@ public class LambdaToMethod extends TreeTranslator {
         public int hashCode() {
             int hashCode = this.hashCode;
             if (hashCode == 0) {
-                this.hashCode = hashCode = TreeHasher.hash(tree, symbol.params());
+                this.hashCode = hashCode = TreeHasher.hash(types, tree, symbol.params());
             }
             return hashCode;
         }
@@ -226,7 +226,7 @@ public class LambdaToMethod extends TreeTranslator {
         public boolean equals(Object o) {
             return (o instanceof DedupedLambda dedupedLambda)
                     && types.isSameType(symbol.asType(), dedupedLambda.symbol.asType())
-                    && new TreeDiffer(symbol.params(), dedupedLambda.symbol.params()).scan(tree, dedupedLambda.tree);
+                    && new TreeDiffer(types, symbol.params(), dedupedLambda.symbol.params()).scan(tree, dedupedLambda.tree);
         }
     }
 

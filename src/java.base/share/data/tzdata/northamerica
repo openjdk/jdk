@@ -208,26 +208,6 @@ Rule	US	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
 Rule	US	2007	max	-	Mar	Sun>=8	2:00	1:00	D
 Rule	US	2007	max	-	Nov	Sun>=1	2:00	0	S
 
-# From Arthur David Olson, 2005-12-19
-# We generate the files specified below to guard against old files with
-# obsolete information being left in the time zone binary directory.
-# We limit the list to names that have appeared in previous versions of
-# this time zone package.
-# We do these as separate Zones rather than as Links to avoid problems if
-# a particular place changes whether it observes DST.
-# We put these specifications here in the northamerica file both to
-# increase the chances that they'll actually get compiled and to
-# avoid the need to duplicate the US rules in another file.
-
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	EST		 -5:00	-	EST
-Zone	MST		 -7:00	-	MST
-Zone	HST		-10:00	-	HST
-Zone	EST5EDT		 -5:00	US	E%sT
-Zone	CST6CDT		 -6:00	US	C%sT
-Zone	MST7MDT		 -7:00	US	M%sT
-Zone	PST8PDT		 -8:00	US	P%sT
-
 # From U. S. Naval Observatory (1989-01-19):
 # USA  EASTERN       5 H  BEHIND UTC    NEW YORK, WASHINGTON
 # USA  EASTERN       4 H  BEHIND UTC    APR 3 - OCT 30
@@ -2396,6 +2376,81 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # the researchers who prepared the Decrees page failed to find some of
 # the relevant documents.
 
+# From Heitor David Pinto (2024-08-04):
+# In 1931, the decree implementing DST specified that it would take
+# effect on 30 April....
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?cod_diario=192270&pagina=2&seccion=1
+#
+# In 1981, the decree changing Campeche, Yucatán and Quintana Roo to UTC-5
+# specified that it would enter into force on 26 December 1981 at 2:00....
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4705667&fecha=23/12/1981&cod_diario=202796
+#
+# In 1982, the decree returning Campeche and Yucatán to UTC-6 specified that
+# it would enter into force on 2 November 1982 at 2:00....
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?cod_diario=205689&pagina=3&seccion=0
+#
+# Quintana Roo changed to UTC-6 on 4 January 1983 at 0:00, and again
+# to UTC-5 on 26 October 1997 at 2:00....
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4787355&fecha=28/12/1982&cod_diario=206112
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?cod_diario=209559&pagina=15&seccion=0
+#
+# Durango, Coahuila, Nuevo León and Tamaulipas were set to UTC-7 on 1 January
+# 1922, and changed to UTC-6 on 10 June 1927.  Then Durango, Coahuila and
+# Nuevo León (but not Tamaulipas) returned to UTC-7 on 15 November 1930,
+# observed DST in 1931, and changed again to UTC-6 on 1 April 1932....
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4441846&fecha=29/12/1921&cod_diario=187468
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4541520&fecha=09/06/1927&cod_diario=193920
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4491963&fecha=15/11/1930&cod_diario=190835
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4418437&fecha=21/01/1932&cod_diario=185588
+#
+# ... the ... 10 June 1927 ... decree only said 10 June 1927, without
+# specifying a time, so I suppose that it should be considered at 0:00.
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4541520&fecha=09/06/1927&cod_diario=193920
+#
+# In 1942, the decree changing Baja California, Baja California Sur, Sonora,
+# Sinaloa and Nayarit to UTC-7 was published on 24 April, but it said that it
+# would apply from 1 April, so it's unclear when the change actually
+# occurred. The database currently shows 24 April 1942.
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?cod_diario=192203&pagina=2&seccion=1
+#
+# Baja California Sur, Sonora, Sinaloa and Nayarit never used UTC-8.  The ...
+# 14 January 1949 ... change [to UTC-8] only occurred in Baja California.
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4515613&fecha=13/01/1949&cod_diario=192309
+#
+# In 1945, the decree changing Baja California to UTC-8 specified that it
+# would take effect on the third day from its publication.
+# It was published on 12 November, so it would take effect on 15 November....
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4555049&fecha=12/11/1945&cod_diario=194763
+#
+# In 1948, the decree changing Baja California to UTC-7 specified that it
+# would take effect on "this date".  The decree was made on 13 March,
+# but published on 5 April, so it's unclear when the change actually occurred.
+# The database currently shows 5 April 1948.
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?cod_diario=188624&pagina=2&seccion=0
+#
+# In 1949, the decree changing Baja California to UTC-8 was published on 13
+# January, but it said that it would apply from 1 January, so it's unclear when
+# the change actually occurred.  The database currently shows 14 January 1949.
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4515613&fecha=13/01/1949&cod_diario=192309
+#
+# Baja California also observed UTC-7 from 1 May to 24 September 1950,
+# from 29 April to 30 September 1951 at 2:00,
+# and from 27 April to 28 September 1952 at 2:00....
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4600403&fecha=29/04/1950&cod_diario=197505
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4623553&fecha=23/09/1950&cod_diario=198805
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4469444&fecha=27/04/1951&cod_diario=189317
+# https://www.dof.gob.mx/nota_to_imagen_fs.php?codnota=4533868&fecha=10/03/1952&cod_diario=193465
+#
+# All changes in Baja California from 1948 to 1952 match those in California,
+# on the same dates or with a difference of one day.
+# So it may be easier to implement these changes as DST with rule CA
+# during this whole period.
+#
+# From Paul Eggert (2024-08-18):
+# For now, maintain the slightly-different history for Baja California,
+# as we have no information on whether 1948/1952 clocks in Tijuana followed
+# the decrees or followed San Diego.
+
 # From Alan Perry (1996-02-15):
 # A guy from our Mexico subsidiary finally found the Presidential Decree
 # outlining the timezone changes in Mexico.
@@ -2599,7 +2654,7 @@ Zone America/Dawson	-9:17:40 -	LMT	1900 Aug 20
 # http://puentelibre.mx/noticia/ciudad_juarez_cambio_horario_noviembre_2022/
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Mexico	1931	only	-	May	1	23:00	1:00	D
+Rule	Mexico	1931	only	-	April	30	0:00	1:00	D
 Rule	Mexico	1931	only	-	Oct	1	0:00	0	S
 Rule	Mexico	1939	only	-	Feb	5	0:00	1:00	D
 Rule	Mexico	1939	only	-	Jun	25	0:00	0	S
@@ -2618,14 +2673,16 @@ Rule	Mexico	2002	2022	-	Oct	lastSun	2:00	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Quintana Roo; represented by Cancún
 Zone America/Cancun	-5:47:04 -	LMT	1922 Jan  1  6:00u
-			-6:00	-	CST	1981 Dec 23
+			-6:00	-	CST	1981 Dec 26  2:00
+			-5:00	-	EST	1983 Jan  4  0:00
+			-6:00	Mexico	C%sT	1997 Oct 26  2:00
 			-5:00	Mexico	E%sT	1998 Aug  2  2:00
 			-6:00	Mexico	C%sT	2015 Feb  1  2:00
 			-5:00	-	EST
 # Campeche, Yucatán; represented by Mérida
 Zone America/Merida	-5:58:28 -	LMT	1922 Jan  1  6:00u
-			-6:00	-	CST	1981 Dec 23
-			-5:00	-	EST	1982 Dec  2
+			-6:00	-	CST	1981 Dec 26  2:00
+			-5:00	-	EST	1982 Nov  2  2:00
 			-6:00	Mexico	C%sT
 # Coahuila, Nuevo León, Tamaulipas (near US border)
 # This includes the following municipios:
@@ -2642,12 +2699,15 @@ Zone America/Matamoros	-6:30:00 -	LMT	1922 Jan  1  6:00u
 			-6:00	US	C%sT
 # Durango; Coahuila, Nuevo León, Tamaulipas (away from US border)
 Zone America/Monterrey	-6:41:16 -	LMT	1922 Jan  1  6:00u
+			-7:00	-	MST	1927 Jun 10
+			-6:00	-	CST	1930 Nov 15
+			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1988
 			-6:00	US	C%sT	1989
 			-6:00	Mexico	C%sT
 # Central Mexico
 Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
+			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
 			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	Mexico	C%sT	2001 Sep 30  2:00
@@ -2658,7 +2718,7 @@ Zone America/Mexico_City -6:36:36 -	LMT	1922 Jan  1  7:00u
 # Práxedis G Guerrero.
 # http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
 Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
+			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
 			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1996
@@ -2673,7 +2733,7 @@ Zone America/Ciudad_Juarez -7:05:56 -	LMT	1922 Jan  1  7:00u
 # Benavides.
 # http://gaceta.diputados.gob.mx/PDF/65/2a022/nov/20221124-VII.pdf
 Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
+			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
 			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1996
@@ -2685,7 +2745,7 @@ Zone America/Ojinaga	-6:57:40 -	LMT	1922 Jan  1  7:00u
 			-6:00	US	C%sT
 # Chihuahua (away from US border)
 Zone America/Chihuahua	-7:04:20 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
+			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
 			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1996
@@ -2695,23 +2755,21 @@ Zone America/Chihuahua	-7:04:20 -	LMT	1922 Jan  1  7:00u
 			-6:00	-	CST
 # Sonora
 Zone America/Hermosillo	-7:23:52 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
+			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
 			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1942 Apr 24
-			-7:00	-	MST	1949 Jan 14
-			-8:00	-	PST	1970
+			-7:00	-	MST	1996
 			-7:00	Mexico	M%sT	1999
 			-7:00	-	MST
 
 # Baja California Sur, Nayarit (except Bahía de Banderas), Sinaloa
 Zone America/Mazatlan	-7:05:40 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
+			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
 			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1942 Apr 24
-			-7:00	-	MST	1949 Jan 14
-			-8:00	-	PST	1970
+			-7:00	-	MST	1970
 			-7:00	Mexico	M%sT
 
 # Bahía de Banderas
@@ -2744,27 +2802,32 @@ Zone America/Mazatlan	-7:05:40 -	LMT	1922 Jan  1  7:00u
 # Use "Bahia_Banderas" to keep the name to fourteen characters.
 
 Zone America/Bahia_Banderas -7:01:00 -	LMT	1922 Jan  1  7:00u
-			-7:00	-	MST	1927 Jun 10 23:00
+			-7:00	-	MST	1927 Jun 10
 			-6:00	-	CST	1930 Nov 15
 			-7:00	Mexico	M%sT	1932 Apr  1
 			-6:00	-	CST	1942 Apr 24
-			-7:00	-	MST	1949 Jan 14
-			-8:00	-	PST	1970
+			-7:00	-	MST	1970
 			-7:00	Mexico	M%sT	2010 Apr  4  2:00
 			-6:00	Mexico	C%sT
 
 # Baja California
 Zone America/Tijuana	-7:48:04 -	LMT	1922 Jan  1  7:00u
 			-7:00	-	MST	1924
-			-8:00	-	PST	1927 Jun 10 23:00
+			-8:00	-	PST	1927 Jun 10
 			-7:00	-	MST	1930 Nov 15
 			-8:00	-	PST	1931 Apr  1
 			-8:00	1:00	PDT	1931 Sep 30
 			-8:00	-	PST	1942 Apr 24
 			-8:00	1:00	PWT	1945 Aug 14 23:00u
-			-8:00	1:00	PPT	1945 Nov 12 # Peace
+			-8:00	1:00	PPT	1945 Nov 15 # Peace
 			-8:00	-	PST	1948 Apr  5
 			-8:00	1:00	PDT	1949 Jan 14
+			-8:00	-	PST	1950 May  1
+			-8:00	1:00	PDT	1950 Sep 24
+			-8:00	-	PST	1951 Apr 29  2:00
+			-8:00	1:00	PDT	1951 Sep 30  2:00
+			-8:00	-	PST	1952 Apr 27  2:00
+			-8:00	1:00	PDT	1952 Sep 28  2:00
 			-8:00	-	PST	1954
 			-8:00	CA	P%sT	1961
 			-8:00	-	PST	1976
@@ -3573,8 +3636,8 @@ Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Miquelon	-3:44:40 -	LMT	1911 Jun 15 # St Pierre
 			-4:00	-	AST	1980 May
-			-3:00	-	-03	1987
-			-3:00	Canada	-03/-02
+			-3:00	-	%z	1987
+			-3:00	Canada	%z
 
 # Turks and Caicos
 #

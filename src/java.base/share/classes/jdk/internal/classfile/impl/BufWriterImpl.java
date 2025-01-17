@@ -25,14 +25,12 @@
  */
 package jdk.internal.classfile.impl;
 
-
-import java.util.Arrays;
-
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
+import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
@@ -168,6 +166,16 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = offset + 5;
     }
 
+    public void writeU2U1(int x1, int x2) {
+        reserveSpace(3);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 8);
+        elems[offset + 1] = (byte) x1;
+        elems[offset + 2] = (byte) x2;
+        this.offset = offset + 3;
+    }
+
     public void writeU2U2(int x1, int x2) {
         reserveSpace(4);
         byte[] elems = this.elems;
@@ -202,6 +210,21 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset + 2] = (byte) (x >> 8);
         elems[offset + 3] = (byte)  x;
         this.offset = offset + 4;
+    }
+
+    public void writeIntInt(int x1, int x2) {
+        reserveSpace(8);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 24);
+        elems[offset + 1] = (byte) (x1 >> 16);
+        elems[offset + 2] = (byte) (x1 >> 8);
+        elems[offset + 3] = (byte)  x1;
+        elems[offset + 4] = (byte) (x2 >> 24);
+        elems[offset + 5] = (byte) (x2 >> 16);
+        elems[offset + 6] = (byte) (x2 >> 8);
+        elems[offset + 7] = (byte)  x2;
+        this.offset = offset + 8;
     }
 
     @Override
@@ -355,6 +378,12 @@ public final class BufWriterImpl implements BufWriter {
         return idx;
     }
 
+    public int cpIndexOrZero(PoolEntry entry) {
+        if (entry == null || entry.index() == 0)
+            return 0;
+        return cpIndex(entry);
+    }
+
     @ForceInline
     @Override
     public void writeIndex(PoolEntry entry) {
@@ -371,10 +400,7 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeIndexOrZero(PoolEntry entry) {
-        if (entry == null || entry.index() == 0)
-            writeU2(0);
-        else
-            writeIndex(entry);
+        writeU2(cpIndexOrZero(entry));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public final class P11Util {
         return p;
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("deprecation")
     private static Provider getProvider(Provider p, String providerName,
             String className) {
         if (p != null) {
@@ -140,22 +140,8 @@ public final class P11Util {
         if (p == null) {
             try {
                 final Class<?> c = Class.forName(className);
-                p = AccessController.doPrivileged(
-                    new PrivilegedAction<Provider>() {
-                        public Provider run() {
-                            try {
-                                @SuppressWarnings("deprecation")
-                                Object o = c.newInstance();
-                                return (Provider) o;
-                            } catch (Exception e) {
-                                throw new ProviderException(
-                                        "Could not find provider " +
-                                                providerName, e);
-                            }
-                        }
-                    }, null, new RuntimePermission(
-                            "accessClassInPackage." + c.getPackageName()));
-            } catch (ClassNotFoundException e) {
+                p = (Provider) c.newInstance();
+            } catch (Exception e) {
                 // Unexpected, as className is not a user but a
                 // P11Util-internal value.
                 throw new ProviderException("Could not find provider " +

@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+// Copyright (c) 2012, 2024 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2077,6 +2077,9 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountI:
     case Op_PopCountL:
       return (UsePopCountInstruction && VM_Version::has_popcntw());
+    case Op_ConvF2HF:
+    case Op_ConvHF2F:
+      return VM_Version::supports_float16();
 
     case Op_AddVB:
     case Op_AddVS:
@@ -2150,11 +2153,11 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
-const RegMask* Matcher::predicate_reg_mask(void) {
-  return nullptr;
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
 
@@ -3339,7 +3342,7 @@ encode %{
       // The trampoline stub.
       // No entry point given, use the current pc.
       // Make sure branch fits into
-      if (entry_point == 0) entry_point = __ pc();
+      if (entry_point == nullptr) entry_point = __ pc();
 
       // Put the entry point as a constant into the constant pool.
       const address entry_point_toc_addr = __ address_constant(entry_point, RelocationHolder::none);
@@ -3378,7 +3381,7 @@ encode %{
   enc_class enc_java_dynamic_call_sched(method meth) %{
     if (!ra_->C->output()->in_scratch_emit_size()) {
       // Create a call trampoline stub for the given method.
-      const address entry_point = !($meth$$method) ? 0 : (address)$meth$$method;
+      const address entry_point = !($meth$$method) ? nullptr : (address)$meth$$method;
       const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
       if (entry_point_const == nullptr) {
         ciEnv::current()->record_out_of_memory_failure();
@@ -3611,7 +3614,7 @@ encode %{
     MachNode *mtctr = new CallLeafDirect_mtctrNode();
 
     assert(loadConLNodes_Entry._last != nullptr, "entry must exist");
-    mtctr->add_req(0, loadConLNodes_Entry._last);
+    mtctr->add_req(nullptr, loadConLNodes_Entry._last);
 
     mtctr->_opnds[0] = new iRegLdstOper();
     mtctr->_opnds[1] = new iRegLdstOper();
@@ -5500,11 +5503,26 @@ instruct loadP2X(iRegLdst dst, memoryAlg4 mem) %{
 // Load compressed klass pointer.
 instruct loadNKlass(iRegNdst dst, memory mem) %{
   match(Set dst (LoadNKlass mem));
+  predicate(!UseCompactObjectHeaders);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "LWZ     $dst, $mem \t// compressed klass ptr" %}
   size(4);
   ins_encode( enc_lwz(dst, mem) );
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNdst dst, memory mem) %{
+  match(Set dst (LoadNKlass mem));
+  predicate(UseCompactObjectHeaders);
+  ins_cost(MEMORY_REF_COST);
+
+  format %{ "load_narrow_klass_compact $dst, $mem \t// compressed class ptr" %}
+  size(8);
+  ins_encode %{
+    assert($mem$$index$$Register == R0, "must not have indexed address: %s[%s]", $mem$$base$$Register.name(), $mem$$index$$Register.name());
+    __ load_narrow_klass_compact_c2($dst$$Register, $mem$$base$$Register, $mem$$disp);
+  %}
   ins_pipe(pipe_class_memory);
 %}
 
@@ -6479,23 +6497,6 @@ instruct storeD(memory mem, regD src) %{
   format %{ "STFD    $src, $mem" %}
   size(4);
   ins_encode( enc_stfd(src, mem) );
-  ins_pipe(pipe_class_memory);
-%}
-
-//----------Store Instructions With Zeros--------------------------------------
-
-instruct storeCM(memory mem, immI_0 zero) %{
-  match(Set mem (StoreCM mem zero));
-  ins_cost(MEMORY_REF_COST);
-
-  format %{ "STB     #0, $mem \t// CMS card-mark byte store" %}
-  size(8);
-  ins_encode %{
-    __ li(R0, 0);
-    // No release barrier: Oops are allowed to get visible after marking.
-    guarantee($mem$$base$$Register != R1_SP, "use frame_slots_bias");
-    __ stb(R0, $mem$$disp, $mem$$base$$Register);
-  %}
   ins_pipe(pipe_class_memory);
 %}
 
@@ -11251,6 +11252,34 @@ instruct convF2D_reg(regD dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct convF2HF_reg_reg(iRegIdst dst, regF src, regF tmp) %{
+  match(Set dst (ConvF2HF src));
+  effect(TEMP tmp);
+  ins_cost(3 * DEFAULT_COST);
+  size(12);
+  format %{ "xscvdphp $tmp, $src\t# convert to half precision\n\t"
+            "mffprd $dst, $tmp\t# move result from $tmp to $dst\n\t"
+            "extsh $dst, $dst\t# make it a proper short"
+  %}
+  ins_encode %{
+    __ f2hf($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct convHF2F_reg_reg(regF dst, iRegIsrc src) %{
+  match(Set dst (ConvHF2F src));
+  ins_cost(2 * DEFAULT_COST);
+  size(8);
+  format %{ "mtfprd $dst, $src\t# move source from $src to $dst\n\t"
+            "xscvhpdp $dst, $dst\t# convert from half precision"
+  %}
+  ins_encode %{
+    __ hf2f($dst$$FloatRegister, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 //----------Control Flow Instructions------------------------------------------
 // Compare Instructions
 
@@ -12114,15 +12143,31 @@ instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, flagsRegCR1 cr1) %{
-  predicate(LockingMode == LM_LIGHTWEIGHT);
+instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT && !UseObjectMonitorTable);
   match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2, KILL cr1);
+  effect(TEMP tmp1, TEMP tmp2);
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0);
+                             $tmp1$$Register, $tmp2$$Register, noreg /*tmp3*/);
+    // If locking was successful, crx should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_locking_Java for the case where crx is 'NE'.
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmpFastLockMonitorTable(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, flagsRegCR1 cr1) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT && UseObjectMonitorTable);
+  match(Set crx (FastLock oop box));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr1);
+
+  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3" %}
+  ins_encode %{
+    __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
+                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
@@ -12289,7 +12334,7 @@ instruct string_equalsL(rarg1RegP str1, rarg2RegP str2, rarg3RegI cnt, iRegIdst 
 %}
 
 instruct array_equalsB(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
-                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR0 cr1) %{
+                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR1 cr1) %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP_DEF result, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0, KILL cr1);
@@ -12304,7 +12349,7 @@ instruct array_equalsB(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
 %}
 
 instruct array_equalsC(rarg1RegP ary1, rarg2RegP ary2, iRegIdst result,
-                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR0 cr1) %{
+                       iRegIdst tmp1, iRegIdst tmp2, regCTR ctr, flagsRegCR0 cr0, flagsRegCR1 cr1) %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP_DEF result, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, KILL ctr, KILL cr0, KILL cr1);

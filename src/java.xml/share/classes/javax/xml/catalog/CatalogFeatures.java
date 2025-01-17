@@ -597,7 +597,7 @@ public class CatalogFeatures {
      */
     private boolean getSystemProperty(Feature cf, String sysPropertyName) {
         if (cf.hasSystemProperty()) {
-            String value = SecuritySupport.getSystemProperty(sysPropertyName);
+            String value = System.getProperty(sysPropertyName);
             if (value != null && !value.isEmpty()) {
                 setProperty(cf, State.SYSTEMPROPERTY, value);
                 return true;

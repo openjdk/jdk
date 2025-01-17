@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ import sun.awt.AWTAccessor;
 public non-sealed class KeyEvent extends InputEvent {
 
     /**
-     * Stores the state of native event dispatching system
+     * @serial Stores the state of native event dispatching system
      * - true, if when the event was created event proxying
      *         mechanism was active
      * - false, if it was inactive
@@ -1229,7 +1229,7 @@ public non-sealed class KeyEvent extends InputEvent {
     private static native void initIDs();
 
     /**
-     * The original event source.
+     * @serial The original event source.
      *
      * Event source can be changed during processing, but in some cases
      * we need to be able to obtain original source.

@@ -27,7 +27,6 @@ package java.io;
 
 import java.util.Arrays;
 import java.util.Objects;
-import jdk.internal.misc.InternalLock;
 import jdk.internal.misc.VM;
 
 /**
@@ -162,27 +161,13 @@ public class BufferedWriter extends Writer {
      * may be invoked by PrintStream.
      */
     void flushBuffer() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implFlushBuffer();
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                implFlushBuffer();
-            }
+        synchronized (lock) {
+            ensureOpen();
+            if (nextChar == 0)
+                return;
+            out.write(cb, 0, nextChar);
+            nextChar = 0;
         }
-    }
-
-    private void implFlushBuffer() throws IOException {
-        ensureOpen();
-        if (nextChar == 0)
-            return;
-        out.write(cb, 0, nextChar);
-        nextChar = 0;
     }
 
     /**
@@ -191,27 +176,13 @@ public class BufferedWriter extends Writer {
      * @throws     IOException  If an I/O error occurs
      */
     public void write(int c) throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implWrite(c);
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                implWrite(c);
-            }
+        synchronized (lock) {
+            ensureOpen();
+            growIfNeeded(1);
+            if (nextChar >= nChars)
+                flushBuffer();
+            cb[nextChar++] = (char) c;
         }
-    }
-
-    private void implWrite(int c) throws IOException {
-        ensureOpen();
-        growIfNeeded(1);
-        if (nextChar >= nChars)
-            flushBuffer();
-        cb[nextChar++] = (char) c;
     }
 
     /**
@@ -245,46 +216,32 @@ public class BufferedWriter extends Writer {
      * @throws  IOException  If an I/O error occurs
      */
     public void write(char[] cbuf, int off, int len) throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implWrite(cbuf, off, len);
-            } finally {
-                locker.unlock();
+        synchronized (lock) {
+            ensureOpen();
+            Objects.checkFromIndexSize(off, len, cbuf.length);
+            if (len == 0) {
+                return;
             }
-        } else {
-            synchronized (lock) {
-                implWrite(cbuf, off, len);
-            }
-        }
-    }
 
-    private void implWrite(char[] cbuf, int off, int len) throws IOException {
-        ensureOpen();
-        Objects.checkFromIndexSize(off, len, cbuf.length);
-        if (len == 0) {
-            return;
-        }
-
-        if (len >= maxChars) {
-            /* If the request length exceeds the max size of the output buffer,
-               flush the buffer and then write the data directly.  In this
-               way buffered streams will cascade harmlessly. */
-            flushBuffer();
-            out.write(cbuf, off, len);
-            return;
-        }
-
-        growIfNeeded(len);
-        int b = off, t = off + len;
-        while (b < t) {
-            int d = min(nChars - nextChar, t - b);
-            System.arraycopy(cbuf, b, cb, nextChar, d);
-            b += d;
-            nextChar += d;
-            if (nextChar >= nChars) {
+            if (len >= maxChars) {
+                /* If the request length exceeds the max size of the output buffer,
+                   flush the buffer and then write the data directly.  In this
+                   way buffered streams will cascade harmlessly. */
                 flushBuffer();
+                out.write(cbuf, off, len);
+                return;
+            }
+
+            growIfNeeded(len);
+            int b = off, t = off + len;
+            while (b < t) {
+                int d = min(nChars - nextChar, t - b);
+                System.arraycopy(cbuf, b, cb, nextChar, d);
+                b += d;
+                nextChar += d;
+                if (nextChar >= nChars) {
+                    flushBuffer();
+                }
             }
         }
     }
@@ -312,32 +269,18 @@ public class BufferedWriter extends Writer {
      * @throws  IOException  If an I/O error occurs
      */
     public void write(String s, int off, int len) throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implWrite(s, off, len);
-            } finally {
-                locker.unlock();
+        synchronized (lock) {
+            ensureOpen();
+            growIfNeeded(len);
+            int b = off, t = off + len;
+            while (b < t) {
+                int d = min(nChars - nextChar, t - b);
+                s.getChars(b, b + d, cb, nextChar);
+                b += d;
+                nextChar += d;
+                if (nextChar >= nChars)
+                    flushBuffer();
             }
-        } else {
-            synchronized (lock) {
-                implWrite(s, off, len);
-            }
-        }
-    }
-
-    private void implWrite(String s, int off, int len) throws IOException {
-        ensureOpen();
-        growIfNeeded(len);
-        int b = off, t = off + len;
-        while (b < t) {
-            int d = min(nChars - nextChar, t - b);
-            s.getChars(b, b + d, cb, nextChar);
-            b += d;
-            nextChar += d;
-            if (nextChar >= nChars)
-                flushBuffer();
         }
     }
 
@@ -358,52 +301,24 @@ public class BufferedWriter extends Writer {
      * @throws     IOException  If an I/O error occurs
      */
     public void flush() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implFlush();
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                implFlush();
-            }
-        }
-    }
-
-    private void implFlush() throws IOException {
-        flushBuffer();
-        out.flush();
-    }
-
-    public void close() throws IOException {
-        Object lock = this.lock;
-        if (lock instanceof InternalLock locker) {
-            locker.lock();
-            try {
-                implClose();
-            } finally {
-                locker.unlock();
-            }
-        } else {
-            synchronized (lock) {
-                implClose();
-            }
+        synchronized (lock) {
+            flushBuffer();
+            out.flush();
         }
     }
 
     @SuppressWarnings("try")
-    private void implClose() throws IOException {
-        if (out == null) {
-            return;
-        }
-        try (Writer w = out) {
-            flushBuffer();
-        } finally {
-            out = null;
-            cb = null;
+    public void close() throws IOException {
+        synchronized (lock) {
+            if (out == null) {
+                return;
+            }
+            try (Writer w = out) {
+                flushBuffer();
+            } finally {
+                out = null;
+                cb = null;
+            }
         }
     }
 }

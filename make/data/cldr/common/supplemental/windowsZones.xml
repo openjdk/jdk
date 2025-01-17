@@ -59,7 +59,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Pacific Standard Time" territory="001" type="America/Los_Angeles"/>
 			<mapZone other="Pacific Standard Time" territory="CA" type="America/Vancouver"/>
 			<mapZone other="Pacific Standard Time" territory="US" type="America/Los_Angeles"/>
-			<mapZone other="Pacific Standard Time" territory="ZZ" type="PST8PDT"/>
 
 			<!-- (UTC-07:00) Arizona -->
 			<mapZone other="US Mountain Standard Time" territory="001" type="America/Phoenix"/>
@@ -77,7 +76,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Mountain Standard Time" territory="CA" type="America/Edmonton America/Cambridge_Bay America/Inuvik"/>
 			<mapZone other="Mountain Standard Time" territory="MX" type="America/Ciudad_Juarez"/>
 			<mapZone other="Mountain Standard Time" territory="US" type="America/Denver America/Boise"/>
-			<mapZone other="Mountain Standard Time" territory="ZZ" type="MST7MDT"/>
 
 			<!-- (UTC-07:00) Yukon -->
 			<mapZone other="Yukon Standard Time" territory="001" type="America/Whitehorse"/>
@@ -99,7 +97,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Central Standard Time" territory="CA" type="America/Winnipeg America/Rankin_Inlet America/Resolute"/>
 			<mapZone other="Central Standard Time" territory="MX" type="America/Matamoros America/Ojinaga"/>
 			<mapZone other="Central Standard Time" territory="US" type="America/Chicago America/Indiana/Knox America/Indiana/Tell_City America/Menominee America/North_Dakota/Beulah America/North_Dakota/Center America/North_Dakota/New_Salem"/>
-			<mapZone other="Central Standard Time" territory="ZZ" type="CST6CDT"/>
 
 			<!-- (UTC-06:00) Easter Island -->
 			<mapZone other="Easter Island Standard Time" territory="001" type="Pacific/Easter"/>
@@ -134,7 +131,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Eastern Standard Time" territory="BS" type="America/Nassau"/>
 			<mapZone other="Eastern Standard Time" territory="CA" type="America/Toronto America/Iqaluit"/>
 			<mapZone other="Eastern Standard Time" territory="US" type="America/New_York America/Detroit America/Indiana/Petersburg America/Indiana/Vincennes America/Indiana/Winamac America/Kentucky/Monticello America/Louisville"/>
-			<mapZone other="Eastern Standard Time" territory="ZZ" type="EST5EDT"/>
 
 			<!-- (UTC-05:00) Haiti -->
 			<mapZone other="Haiti Standard Time" territory="001" type="America/Port-au-Prince"/>
@@ -652,7 +648,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC+08:00) Ulaanbaatar -->
 			<mapZone other="Ulaanbaatar Standard Time" territory="001" type="Asia/Ulaanbaatar"/>
-			<mapZone other="Ulaanbaatar Standard Time" territory="MN" type="Asia/Ulaanbaatar Asia/Choibalsan"/>
+			<mapZone other="Ulaanbaatar Standard Time" territory="MN" type="Asia/Ulaanbaatar"/>
 
 			<!-- (UTC+08:45) Eucla -->
 			<mapZone other="Aus Central W. Standard Time" territory="001" type="Australia/Eucla"/>

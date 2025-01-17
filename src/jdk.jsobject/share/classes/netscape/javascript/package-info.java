@@ -25,6 +25,12 @@
 
 /**
  * <p>
+ * <b>Deprecated, for removal: This API element is subject to removal
+ * in a future version.</b><br>
+ * <em>The jdk.jsobject module will be delivered with JavaFX.</em>
+ * </p>
+ *
+ * <p>
  * Provides Java code the ability to access the JavaScript engine and the
  * HTML DOM in the web browser.
  * </p>

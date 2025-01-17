@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,21 @@
 #include "runtime/task.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
+  if (strcmp(value, "off") != 0 &&
+      strcmp(value, "record") != 0 &&
+      strcmp(value, "create") != 0 &&
+      strcmp(value, "auto") != 0 &&
+      strcmp(value, "on") != 0) {
+    JVMFlag::printError(verbose,
+                        "Unrecognized value %s for AOTMode. Must be one of the following: "
+                        "off, record, create, auto, on\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
 JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
@@ -81,8 +96,8 @@ JVMFlag::Error VMPageSizeConstraintFunc(uintx value, bool verbose) {
   uintx min = (uintx)os::vm_page_size();
   if (value < min) {
     JVMFlag::printError(verbose,
-                        "%s %s=" UINTX_FORMAT " is outside the allowed range [ " UINTX_FORMAT
-                        " ... " UINTX_FORMAT " ]\n",
+                        "%s %s=%zu is outside the allowed range [ %zu"
+                        " ... %zu ]\n",
                         JVMFlagLimit::last_checked_flag()->type_string(),
                         JVMFlagLimit::last_checked_flag()->name(),
                         value, min, max_uintx);
@@ -98,8 +113,8 @@ JVMFlag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbos
 
   if (value < min || value > max) {
     JVMFlag::printError(verbose,
-                        "size_t NUMAInterleaveGranularity=" UINTX_FORMAT " is outside the allowed range [ " UINTX_FORMAT
-                        " ... " UINTX_FORMAT " ]\n", value, min, max);
+                        "size_t NUMAInterleaveGranularity=%zu is outside the allowed range [ %zu"
+                        " ... %zu ]\n", value, min, max);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
 

@@ -103,7 +103,7 @@ More examples can be found in [IRExample](../../../testlibrary_tests/ir_framewor
 
 #### User-defined Regexes
 
-The user can also directly specify user-defined regexes in combination with a required compile phase (there is no default compile phase known by the framework for custom regexes). If such a user-defined regex represents a not yet supported C2 IR node, it is highly encouraged to directly add a new IR node placeholder string definition to [IRNode](./IRNode.java) for it instead together with a static regex mapping block.
+The user can also directly specify user-defined regexes in combination with a required compile phase (there is no default compile phase known by the framework for custom regexes). If a user-defined regex corresponds to a C2 IR node that is not yet supported, it is recommended to add a new placeholder string definition for the IR node to [IRNode](./IRNode.java), along with a corresponding static regex mapping block.
 
 #### Default Compile Phase
 When not specifying any compile phase with `phase` in [@IR](./IR.java) (or explicitly setting `CompilePhase.DEFAULT`), the framework will perform IR matching on a default compile phase which for most IR nodes is `CompilePhase.PRINT_IDEAL` (output of flag `-XX:+PrintIdeal`, the state of the machine independent ideal graph after applying optimizations). The default phase for each IR node is defined in the static regex mapping block below each IR node placeholder string in [IRNode](./IRNode.java).

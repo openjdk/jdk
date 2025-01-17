@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.plaf.basic.BasicToolBarUI;
 
 /*
  * @test
@@ -45,7 +46,7 @@ public class bug4529206 {
     static JButton jButton1;
 
     private static void test() {
-        frame = new JFrame();
+        frame = new JFrame("bug4529206");
         JPanel jPanFrame = (JPanel) frame.getContentPane();
         jPanFrame.setLayout(new BorderLayout());
         frame.setSize(new Dimension(200, 100));
@@ -64,7 +65,7 @@ public class bug4529206 {
     }
 
     private static void makeToolbarFloat() {
-        javax.swing.plaf.basic.BasicToolBarUI ui = (javax.swing.plaf.basic.BasicToolBarUI) jToolBar1.getUI();
+        BasicToolBarUI ui = (BasicToolBarUI) jToolBar1.getUI();
         if (!ui.isFloating()) {
             ui.setFloatingLocation(100, 100);
             ui.setFloating(true, jToolBar1.getLocation());
@@ -79,16 +80,17 @@ public class bug4529206 {
         try {
             SwingUtilities.invokeAndWait(() -> test());
             Robot robot = new Robot();
-            robot.setAutoWaitForIdle(true);
+            robot.waitForIdle();
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> makeToolbarFloat());
+            robot.waitForIdle();
             robot.delay(300);
 
             SwingUtilities.invokeAndWait(() -> {
                 if (frame.isFocused()) {
-                    throw
-                      new RuntimeException("setFloating does not work correctly");
+                    throw new RuntimeException(
+                        "setFloating does not work correctly");
                 }
             });
         } finally {

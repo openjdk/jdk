@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,6 @@ package sun.security.ssl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -1202,17 +1199,25 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                 }
 
                 try {
-                    @SuppressWarnings("removal")
-                    var dummy = AccessController.doPrivileged(
-                            new DelegatedAction(hc), engine.conContext.acc);
-                } catch (PrivilegedActionException pae) {
+                    while (!hc.delegatedActions.isEmpty()) {
+                        Map.Entry<Byte, ByteBuffer> me =
+                            hc.delegatedActions.poll();
+                        if (me != null) {
+                            try {
+                                hc.dispatch(me.getKey(), me.getValue());
+                            } catch (Exception e) {
+                                throw hc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                        "Unhandled exception", e);
+                            }
+                        }
+                    }
+                } catch (SSLException se) {
                     // Get the handshake context again in case the
                     // handshaking has completed.
-                    Exception reportedException = pae.getException();
 
                     // Report to both the TransportContext...
                     if (engine.conContext.delegatedThrown == null) {
-                        engine.conContext.delegatedThrown = reportedException;
+                        engine.conContext.delegatedThrown = se;
                     }
 
                     // ...and the HandshakeContext in case condition
@@ -1220,11 +1225,10 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     // around.
                     hc = engine.conContext.handshakeContext;
                     if (hc != null) {
-                        hc.delegatedThrown = reportedException;
+                        hc.delegatedThrown = se;
                     } else if (engine.conContext.closeReason != null) {
                         // Update the reason in case there was a previous.
-                        engine.conContext.closeReason =
-                                getTaskThrown(reportedException);
+                        engine.conContext.closeReason = getTaskThrown(se);
                     }
                 } catch (RuntimeException rte) {
                     // Get the handshake context again in case the
@@ -1255,31 +1259,6 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                 }
             } finally {
                 engine.engineLock.unlock();
-            }
-        }
-
-        private static class DelegatedAction
-                implements PrivilegedExceptionAction<Void> {
-            final HandshakeContext context;
-            DelegatedAction(HandshakeContext context) {
-                this.context = context;
-            }
-
-            @Override
-            public Void run() throws Exception {
-                while (!context.delegatedActions.isEmpty()) {
-                    Map.Entry<Byte, ByteBuffer> me =
-                            context.delegatedActions.poll();
-                    if (me != null) {
-                        try {
-                            context.dispatch(me.getKey(), me.getValue());
-                        } catch (Exception e) {
-                            throw context.conContext.fatal(Alert.INTERNAL_ERROR,
-                                    "Unhandled exception", e);
-                        }
-                    }
-                }
-                return null;
             }
         }
     }

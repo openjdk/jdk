@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,7 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
   bool need_store_barrier = !(tightly_coupled_alloc && use_ReduceInitialCardMarks()) && (in_heap || anonymous);
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
   if (access.is_oop() && need_store_barrier) {
     access.set_barrier_data(get_store_barrier(access));
     if (tightly_coupled_alloc) {
@@ -335,6 +336,10 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
       // Pre-barriers are unnecessary for tightly-coupled initialization stores.
       access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPre);
     }
+  }
+  if (no_keepalive) {
+    // No keep-alive means no need for the pre-barrier.
+    access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPre);
   }
   return BarrierSetC2::store_at_resolved(access, val);
 }

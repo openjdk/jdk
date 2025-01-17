@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import jdk.vm.ci.runtime.JVMCI;
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @compile PlaceholderEventWriter.java
- * @compile PlaceholderEventWriterFactory.java
  * @compile E.java
  * @compile NonEvent.java
  * @compile RegisteredTrueEvent.java
@@ -80,7 +79,6 @@ import jdk.vm.ci.runtime.JVMCI;
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @compile PlaceholderEventWriter.java
- * @compile PlaceholderEventWriterFactory.java
  * @compile E.java
  * @compile NonEvent.java
  * @compile RegisteredTrueEvent.java
@@ -105,10 +103,10 @@ public class TestGetEventWriter {
             InitializationEvent e  = new InitializationEvent();
             e.commit();
         }
-        // Make sure EventWriterFactory can be accessed.
-        Class<?> clazz = Class.forName("jdk.jfr.internal.event.EventWriterFactory");
+        // Make sure EventWriter class can be accessed.
+        Class<?> clazz = Class.forName("jdk.jfr.internal.event.EventWriter");
         if (clazz == null) {
-            throw new Exception("Test error, not able to access jdk.jfr.internal.event.EventWriterFactory class");
+            throw new Exception("Test error, not able to access jdk.jfr.internal.event.EventWriter class");
         }
         testRegisteredTrueEvent();
         testRegisteredFalseEvent();
@@ -122,7 +120,7 @@ public class TestGetEventWriter {
 
     // The class does not inherit jdk.jfr.Event and, as such, does not implement the
     // API. It has its own stand-alone "commit()V", which is not an override, that
-    // attempts to resolve and link against EventWriterFactory. This user implementation
+    // attempts to resolve and link against EventWriter. This user implementation
     // is not blessed for linkage.
     private static void testNonEvent() throws Throwable {
         Runnable e = newEventObject("NonEvent");
@@ -178,7 +176,7 @@ public class TestGetEventWriter {
     }
 
     // The user has implemented another method, "myCommit()V", not an override nor
-    // overload. that attempts to resolve and link EventWriterFactory. This will fail,
+    // overload. that attempts to resolve and link EventWriter. This will fail,
     // because "myCommit()V" is not blessed for linkage.
     private static void testMyCommitRegisteredTrue() throws Throwable {
         Runnable e = newEventObject("MyCommitRegisteredTrueEvent");
@@ -230,10 +228,9 @@ public class TestGetEventWriter {
         public void myCommit() throws Throwable {
             try {
                 Class<?> ew = Class.forName("jdk.jfr.internal.event.EventWriter");
-                MethodType t = MethodType.methodType(ew, List.of(long.class));
-                Class<?> factory = Class.forName("jdk.jfr.internal.event.EventWriterFactory");
-                MethodHandle mh = MethodHandles.lookup().findStatic(factory, "getEventWriter", t);
-                mh.invoke(Long.valueOf(4711)); // throws IllegalAccessException
+                MethodType t = MethodType.methodType(ew, List.of());
+                MethodHandle mh = MethodHandles.lookup().findStatic(ew, "getEventWriter", t);
+                mh.invoke(); // throws IllegalAccessException
             } catch (ClassNotFoundException | SecurityException e) {
                 throw new RuntimeException(e);
             }
@@ -262,8 +259,8 @@ public class TestGetEventWriter {
         public void myCommit() throws Throwable {
             Class<?> c;
             try {
-                c = Class.forName("jdk.jfr.internal.event.EventWriterFactory");
-                Method m = c.getMethod("getEventWriter", new Class[] {long.class});
+                c = Class.forName("jdk.jfr.internal.event.EventWriter");
+                Method m = c.getMethod("getEventWriter", new Class[0]);
                 m.invoke(null, Long.valueOf(4711)); // throws InternalError
             } catch (ClassNotFoundException | SecurityException e) {
                 throw new RuntimeException(e);
@@ -283,7 +280,7 @@ public class TestGetEventWriter {
         } catch (InternalError ie) {
             if (ie.getCause() instanceof IllegalAccessException iaex) {
                 if (iaex.getCause() instanceof IllegalAccessError iae) {
-                    if (iae.getMessage().contains("getEventWriter(long)")) {
+                    if (iae.getMessage().contains("getEventWriter()")) {
                         // OK, as expected
                         return;
                     }
@@ -345,7 +342,6 @@ public class TestGetEventWriter {
         byte[] bytes = is.readAllBytes();
         is.close();
         bytes = replace(bytes, "jdk/jfr/jvm/E", "jdk/jfr/Event");
-        bytes = replace(bytes, "jdk/jfr/jvm/PlaceholderEventWriterFactory", "jdk/jfr/internal/event/EventWriterFactory");
         bytes = replace(bytes, "jdk/jfr/jvm/PlaceholderEventWriter", "jdk/jfr/internal/event/EventWriter");
         BytesClassLoader bc = new BytesClassLoader(bytes, fullName);
         Class<?> clazz = bc.loadClass(fullName);
@@ -372,7 +368,7 @@ public class TestGetEventWriter {
     }
 
     /**
-     * Checks that JVMCI prevents unblessed access to {@code EventWriterFactory.getEventWriter(long)}.
+     * Checks that JVMCI prevents unblessed access to {@code EventWriter.getEventWriter()}.
      */
     private static void checkJVMCI(Class<?> eventClass, String commitName) throws Throwable {
         MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
@@ -380,7 +376,7 @@ public class TestGetEventWriter {
         ConstantPool cp = commit.getConstantPool();
 
         // Search for first INVOKESTATIC instruction in commit method which is expected
-        // to be the call to jdk.jfr.internal.event.EventWriterFactory.getEventWriter(long).
+        // to be the call to jdk.jfr.internal.event.EventWriter.getEventWriter().
         final int INVOKESTATIC = 184;
         byte[] code = commit.getCode();
         for (int bci = 0; bci < code.length; bci++) {

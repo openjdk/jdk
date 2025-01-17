@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package javax.xml.xpath.ptests;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Node;
 
@@ -44,10 +43,8 @@ import static org.testng.Assert.*;
  * @bug 8183266
  * @summary verifies the specification of the XPathEvaluationResult API
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.xpath.ptests.XPathEvaluationResultTest
  * @run testng/othervm javax.xml.xpath.ptests.XPathEvaluationResultTest
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class XPathEvaluationResultTest {
 
     /*

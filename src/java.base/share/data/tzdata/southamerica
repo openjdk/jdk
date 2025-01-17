@@ -425,11 +425,11 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	-
 Zone America/Argentina/Buenos_Aires -3:53:48 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May    # Córdoba Mean Time
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	Arg	-03/-02
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	Arg	%z
 #
 # Córdoba (CB), Santa Fe (SF), Entre Ríos (ER), Corrientes (CN), Misiones (MN),
 # Chaco (CC), Formosa (FM), Santiago del Estero (SE)
@@ -444,120 +444,120 @@ Zone America/Argentina/Buenos_Aires -3:53:48 - LMT	1894 Oct 31
 		#STDOFF	       -4:16:48.25
 Zone America/Argentina/Cordoba -4:16:48 - LMT	1894 Oct 31
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1991 Mar  3
-			-4:00	-	-04	1991 Oct 20
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	Arg	-03/-02
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1991 Mar  3
+			-4:00	-	%z	1991 Oct 20
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	Arg	%z
 #
 # Salta (SA), La Pampa (LP), Neuquén (NQ), Rio Negro (RN)
 Zone America/Argentina/Salta -4:21:40 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1991 Mar  3
-			-4:00	-	-04	1991 Oct 20
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1991 Mar  3
+			-4:00	-	%z	1991 Oct 20
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 #
 # Tucumán (TM)
 Zone America/Argentina/Tucuman -4:20:52 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1991 Mar  3
-			-4:00	-	-04	1991 Oct 20
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	-	-03	2004 Jun  1
-			-4:00	-	-04	2004 Jun 13
-			-3:00	Arg	-03/-02
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1991 Mar  3
+			-4:00	-	%z	1991 Oct 20
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	-	%z	2004 Jun  1
+			-4:00	-	%z	2004 Jun 13
+			-3:00	Arg	%z
 #
 # La Rioja (LR)
 Zone America/Argentina/La_Rioja -4:27:24 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1991 Mar  1
-			-4:00	-	-04	1991 May  7
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	-	-03	2004 Jun  1
-			-4:00	-	-04	2004 Jun 20
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1991 Mar  1
+			-4:00	-	%z	1991 May  7
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	-	%z	2004 Jun  1
+			-4:00	-	%z	2004 Jun 20
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 #
 # San Juan (SJ)
 Zone America/Argentina/San_Juan -4:34:04 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1991 Mar  1
-			-4:00	-	-04	1991 May  7
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	-	-03	2004 May 31
-			-4:00	-	-04	2004 Jul 25
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1991 Mar  1
+			-4:00	-	%z	1991 May  7
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	-	%z	2004 May 31
+			-4:00	-	%z	2004 Jul 25
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 #
 # Jujuy (JY)
 Zone America/Argentina/Jujuy -4:21:12 -	LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1990 Mar  4
-			-4:00	-	-04	1990 Oct 28
-			-4:00	1:00	-03	1991 Mar 17
-			-4:00	-	-04	1991 Oct  6
-			-3:00	1:00	-02	1992
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1990 Mar  4
+			-4:00	-	%z	1990 Oct 28
+			-4:00	1:00	%z	1991 Mar 17
+			-4:00	-	%z	1991 Oct  6
+			-3:00	1:00	%z	1992
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 #
 # Catamarca (CT), Chubut (CH)
 Zone America/Argentina/Catamarca -4:23:08 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1991 Mar  3
-			-4:00	-	-04	1991 Oct 20
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	-	-03	2004 Jun  1
-			-4:00	-	-04	2004 Jun 20
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1991 Mar  3
+			-4:00	-	%z	1991 Oct 20
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	-	%z	2004 Jun  1
+			-4:00	-	%z	2004 Jun 20
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 #
 # Mendoza (MZ)
 Zone America/Argentina/Mendoza -4:35:16 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1990 Mar  4
-			-4:00	-	-04	1990 Oct 15
-			-4:00	1:00	-03	1991 Mar  1
-			-4:00	-	-04	1991 Oct 15
-			-4:00	1:00	-03	1992 Mar  1
-			-4:00	-	-04	1992 Oct 18
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	-	-03	2004 May 23
-			-4:00	-	-04	2004 Sep 26
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1990 Mar  4
+			-4:00	-	%z	1990 Oct 15
+			-4:00	1:00	%z	1991 Mar  1
+			-4:00	-	%z	1991 Oct 15
+			-4:00	1:00	%z	1992 Mar  1
+			-4:00	-	%z	1992 Oct 18
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	-	%z	2004 May 23
+			-4:00	-	%z	2004 Sep 26
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 #
 # San Luis (SL)
 
@@ -567,53 +567,53 @@ Rule	SanLuis	2007	2008	-	Oct	Sun>=8	0:00	1:00	-
 Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1990
-			-3:00	1:00	-02	1990 Mar 14
-			-4:00	-	-04	1990 Oct 15
-			-4:00	1:00	-03	1991 Mar  1
-			-4:00	-	-04	1991 Jun  1
-			-3:00	-	-03	1999 Oct  3
-			-4:00	1:00	-03	2000 Mar  3
-			-3:00	-	-03	2004 May 31
-			-4:00	-	-04	2004 Jul 25
-			-3:00	Arg	-03/-02	2008 Jan 21
-			-4:00	SanLuis	-04/-03	2009 Oct 11
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1990
+			-3:00	1:00	%z	1990 Mar 14
+			-4:00	-	%z	1990 Oct 15
+			-4:00	1:00	%z	1991 Mar  1
+			-4:00	-	%z	1991 Jun  1
+			-3:00	-	%z	1999 Oct  3
+			-4:00	1:00	%z	2000 Mar  3
+			-3:00	-	%z	2004 May 31
+			-4:00	-	%z	2004 Jul 25
+			-3:00	Arg	%z	2008 Jan 21
+			-4:00	SanLuis	%z	2009 Oct 11
+			-3:00	-	%z
 #
 # Santa Cruz (SC)
 Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	-	-03	2004 Jun  1
-			-4:00	-	-04	2004 Jun 20
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	-	%z	2004 Jun  1
+			-4:00	-	%z	2004 Jun 20
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 #
 # Tierra del Fuego, Antártida e Islas del Atlántico Sur (TF)
 Zone America/Argentina/Ushuaia -4:33:12 - LMT	1894 Oct 31
 		#STDOFF	-4:16:48.25
 			-4:16:48 -	CMT	1920 May
-			-4:00	-	-04	1930 Dec
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1999 Oct  3
-			-4:00	Arg	-04/-03	2000 Mar  3
-			-3:00	-	-03	2004 May 30
-			-4:00	-	-04	2004 Jun 20
-			-3:00	Arg	-03/-02	2008 Oct 18
-			-3:00	-	-03
+			-4:00	-	%z	1930 Dec
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1999 Oct  3
+			-4:00	Arg	%z	2000 Mar  3
+			-3:00	-	%z	2004 May 30
+			-4:00	-	%z	2004 Jun 20
+			-3:00	Arg	%z	2008 Oct 18
+			-3:00	-	%z
 
 # Bolivia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/La_Paz	-4:32:36 -	LMT	1890
 			-4:32:36 -	CMT	1931 Oct 15 # Calamarca MT
 			-4:32:36 1:00	BST	1932 Mar 21 # Bolivia ST
-			-4:00	-	-04
+			-4:00	-	%z
 
 # Brazil
 
@@ -984,12 +984,12 @@ Rule	Brazil	2018	only	-	Nov	Sun>=1	0:00	1:00	-
 #
 # Fernando de Noronha (administratively part of PE)
 Zone America/Noronha	-2:09:40 -	LMT	1914
-			-2:00	Brazil	-02/-01	1990 Sep 17
-			-2:00	-	-02	1999 Sep 30
-			-2:00	Brazil	-02/-01	2000 Oct 15
-			-2:00	-	-02	2001 Sep 13
-			-2:00	Brazil	-02/-01	2002 Oct  1
-			-2:00	-	-02
+			-2:00	Brazil	%z	1990 Sep 17
+			-2:00	-	%z	1999 Sep 30
+			-2:00	Brazil	%z	2000 Oct 15
+			-2:00	-	%z	2001 Sep 13
+			-2:00	Brazil	%z	2002 Oct  1
+			-2:00	-	%z
 # Other Atlantic islands have no permanent settlement.
 # These include Trindade and Martim Vaz (administratively part of ES),
 # Rocas Atoll (RN), and the St Peter and St Paul Archipelago (PE).
@@ -1002,119 +1002,119 @@ Zone America/Noronha	-2:09:40 -	LMT	1914
 # In the north a very small part from the river Javary (now Jari I guess,
 # the border with Amapá) to the Amazon, then to the Xingu.
 Zone America/Belem	-3:13:56 -	LMT	1914
-			-3:00	Brazil	-03/-02	1988 Sep 12
-			-3:00	-	-03
+			-3:00	Brazil	%z	1988 Sep 12
+			-3:00	-	%z
 #
 # west Pará (PA)
 # West Pará includes Altamira, Óbidos, Prainha, Oriximiná, and Santarém.
 Zone America/Santarem	-3:38:48 -	LMT	1914
-			-4:00	Brazil	-04/-03	1988 Sep 12
-			-4:00	-	-04	2008 Jun 24  0:00
-			-3:00	-	-03
+			-4:00	Brazil	%z	1988 Sep 12
+			-4:00	-	%z	2008 Jun 24  0:00
+			-3:00	-	%z
 #
 # Maranhão (MA), Piauí (PI), Ceará (CE), Rio Grande do Norte (RN),
 # Paraíba (PB)
 Zone America/Fortaleza	-2:34:00 -	LMT	1914
-			-3:00	Brazil	-03/-02	1990 Sep 17
-			-3:00	-	-03	1999 Sep 30
-			-3:00	Brazil	-03/-02	2000 Oct 22
-			-3:00	-	-03	2001 Sep 13
-			-3:00	Brazil	-03/-02	2002 Oct  1
-			-3:00	-	-03
+			-3:00	Brazil	%z	1990 Sep 17
+			-3:00	-	%z	1999 Sep 30
+			-3:00	Brazil	%z	2000 Oct 22
+			-3:00	-	%z	2001 Sep 13
+			-3:00	Brazil	%z	2002 Oct  1
+			-3:00	-	%z
 #
 # Pernambuco (PE) (except Atlantic islands)
 Zone America/Recife	-2:19:36 -	LMT	1914
-			-3:00	Brazil	-03/-02	1990 Sep 17
-			-3:00	-	-03	1999 Sep 30
-			-3:00	Brazil	-03/-02	2000 Oct 15
-			-3:00	-	-03	2001 Sep 13
-			-3:00	Brazil	-03/-02	2002 Oct  1
-			-3:00	-	-03
+			-3:00	Brazil	%z	1990 Sep 17
+			-3:00	-	%z	1999 Sep 30
+			-3:00	Brazil	%z	2000 Oct 15
+			-3:00	-	%z	2001 Sep 13
+			-3:00	Brazil	%z	2002 Oct  1
+			-3:00	-	%z
 #
 # Tocantins (TO)
 Zone America/Araguaina	-3:12:48 -	LMT	1914
-			-3:00	Brazil	-03/-02	1990 Sep 17
-			-3:00	-	-03	1995 Sep 14
-			-3:00	Brazil	-03/-02	2003 Sep 24
-			-3:00	-	-03	2012 Oct 21
-			-3:00	Brazil	-03/-02	2013 Sep
-			-3:00	-	-03
+			-3:00	Brazil	%z	1990 Sep 17
+			-3:00	-	%z	1995 Sep 14
+			-3:00	Brazil	%z	2003 Sep 24
+			-3:00	-	%z	2012 Oct 21
+			-3:00	Brazil	%z	2013 Sep
+			-3:00	-	%z
 #
 # Alagoas (AL), Sergipe (SE)
 Zone America/Maceio	-2:22:52 -	LMT	1914
-			-3:00	Brazil	-03/-02	1990 Sep 17
-			-3:00	-	-03	1995 Oct 13
-			-3:00	Brazil	-03/-02	1996 Sep  4
-			-3:00	-	-03	1999 Sep 30
-			-3:00	Brazil	-03/-02	2000 Oct 22
-			-3:00	-	-03	2001 Sep 13
-			-3:00	Brazil	-03/-02	2002 Oct  1
-			-3:00	-	-03
+			-3:00	Brazil	%z	1990 Sep 17
+			-3:00	-	%z	1995 Oct 13
+			-3:00	Brazil	%z	1996 Sep  4
+			-3:00	-	%z	1999 Sep 30
+			-3:00	Brazil	%z	2000 Oct 22
+			-3:00	-	%z	2001 Sep 13
+			-3:00	Brazil	%z	2002 Oct  1
+			-3:00	-	%z
 #
 # Bahia (BA)
 # There are too many Salvadors elsewhere, so use America/Bahia instead
 # of America/Salvador.
 Zone America/Bahia	-2:34:04 -	LMT	1914
-			-3:00	Brazil	-03/-02	2003 Sep 24
-			-3:00	-	-03	2011 Oct 16
-			-3:00	Brazil	-03/-02	2012 Oct 21
-			-3:00	-	-03
+			-3:00	Brazil	%z	2003 Sep 24
+			-3:00	-	%z	2011 Oct 16
+			-3:00	Brazil	%z	2012 Oct 21
+			-3:00	-	%z
 #
 # Goiás (GO), Distrito Federal (DF), Minas Gerais (MG),
 # Espírito Santo (ES), Rio de Janeiro (RJ), São Paulo (SP), Paraná (PR),
 # Santa Catarina (SC), Rio Grande do Sul (RS)
 Zone America/Sao_Paulo	-3:06:28 -	LMT	1914
-			-3:00	Brazil	-03/-02	1963 Oct 23  0:00
-			-3:00	1:00	-02	1964
-			-3:00	Brazil	-03/-02
+			-3:00	Brazil	%z	1963 Oct 23  0:00
+			-3:00	1:00	%z	1964
+			-3:00	Brazil	%z
 #
 # Mato Grosso do Sul (MS)
 Zone America/Campo_Grande -3:38:28 -	LMT	1914
-			-4:00	Brazil	-04/-03
+			-4:00	Brazil	%z
 #
 # Mato Grosso (MT)
 Zone America/Cuiaba	-3:44:20 -	LMT	1914
-			-4:00	Brazil	-04/-03	2003 Sep 24
-			-4:00	-	-04	2004 Oct  1
-			-4:00	Brazil	-04/-03
+			-4:00	Brazil	%z	2003 Sep 24
+			-4:00	-	%z	2004 Oct  1
+			-4:00	Brazil	%z
 #
 # Rondônia (RO)
 Zone America/Porto_Velho -4:15:36 -	LMT	1914
-			-4:00	Brazil	-04/-03	1988 Sep 12
-			-4:00	-	-04
+			-4:00	Brazil	%z	1988 Sep 12
+			-4:00	-	%z
 #
 # Roraima (RR)
 Zone America/Boa_Vista	-4:02:40 -	LMT	1914
-			-4:00	Brazil	-04/-03	1988 Sep 12
-			-4:00	-	-04	1999 Sep 30
-			-4:00	Brazil	-04/-03	2000 Oct 15
-			-4:00	-	-04
+			-4:00	Brazil	%z	1988 Sep 12
+			-4:00	-	%z	1999 Sep 30
+			-4:00	Brazil	%z	2000 Oct 15
+			-4:00	-	%z
 #
 # east Amazonas (AM): Boca do Acre, Jutaí, Manaus, Floriano Peixoto
 # The great circle line from Tabatinga to Porto Acre divides
 # east from west Amazonas.
 Zone America/Manaus	-4:00:04 -	LMT	1914
-			-4:00	Brazil	-04/-03	1988 Sep 12
-			-4:00	-	-04	1993 Sep 28
-			-4:00	Brazil	-04/-03	1994 Sep 22
-			-4:00	-	-04
+			-4:00	Brazil	%z	1988 Sep 12
+			-4:00	-	%z	1993 Sep 28
+			-4:00	Brazil	%z	1994 Sep 22
+			-4:00	-	%z
 #
 # west Amazonas (AM): Atalaia do Norte, Boca do Maoco, Benjamin Constant,
 #	Eirunepé, Envira, Ipixuna
 Zone America/Eirunepe	-4:39:28 -	LMT	1914
-			-5:00	Brazil	-05/-04	1988 Sep 12
-			-5:00	-	-05	1993 Sep 28
-			-5:00	Brazil	-05/-04	1994 Sep 22
-			-5:00	-	-05	2008 Jun 24  0:00
-			-4:00	-	-04	2013 Nov 10
-			-5:00	-	-05
+			-5:00	Brazil	%z	1988 Sep 12
+			-5:00	-	%z	1993 Sep 28
+			-5:00	Brazil	%z	1994 Sep 22
+			-5:00	-	%z	2008 Jun 24  0:00
+			-4:00	-	%z	2013 Nov 10
+			-5:00	-	%z
 #
 # Acre (AC)
 Zone America/Rio_Branco	-4:31:12 -	LMT	1914
-			-5:00	Brazil	-05/-04	1988 Sep 12
-			-5:00	-	-05	2008 Jun 24  0:00
-			-4:00	-	-04	2013 Nov 10
-			-5:00	-	-05
+			-5:00	Brazil	%z	1988 Sep 12
+			-5:00	-	%z	2008 Jun 24  0:00
+			-4:00	-	%z	2013 Nov 10
+			-5:00	-	%z
 
 # Chile
 
@@ -1382,36 +1382,36 @@ Rule	Chile	2023	max	-	Sep	Sun>=2	4:00u	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Santiago	-4:42:45 -	LMT	1890
 			-4:42:45 -	SMT	1910 Jan 10 # Santiago Mean Time
-			-5:00	-	-05	1916 Jul  1
+			-5:00	-	%z	1916 Jul  1
 			-4:42:45 -	SMT	1918 Sep 10
-			-4:00	-	-04	1919 Jul  1
+			-4:00	-	%z	1919 Jul  1
 			-4:42:45 -	SMT	1927 Sep  1
-			-5:00	Chile	-05/-04	1932 Sep  1
-			-4:00	-	-04	1942 Jun  1
-			-5:00	-	-05	1942 Aug  1
-			-4:00	-	-04	1946 Jul 14 24:00
-			-4:00	1:00	-03	1946 Aug 28 24:00 # central CL
-			-5:00	1:00	-04	1947 Mar 31 24:00
-			-5:00	-	-05	1947 May 21 23:00
-			-4:00	Chile	-04/-03
+			-5:00	Chile	%z	1932 Sep  1
+			-4:00	-	%z	1942 Jun  1
+			-5:00	-	%z	1942 Aug  1
+			-4:00	-	%z	1946 Jul 14 24:00
+			-4:00	1:00	%z	1946 Aug 28 24:00 # central CL
+			-5:00	1:00	%z	1947 Mar 31 24:00
+			-5:00	-	%z	1947 May 21 23:00
+			-4:00	Chile	%z
 Zone America/Punta_Arenas -4:43:40 -	LMT	1890
 			-4:42:45 -	SMT	1910 Jan 10
-			-5:00	-	-05	1916 Jul  1
+			-5:00	-	%z	1916 Jul  1
 			-4:42:45 -	SMT	1918 Sep 10
-			-4:00	-	-04	1919 Jul  1
+			-4:00	-	%z	1919 Jul  1
 			-4:42:45 -	SMT	1927 Sep  1
-			-5:00	Chile	-05/-04	1932 Sep  1
-			-4:00	-	-04	1942 Jun  1
-			-5:00	-	-05	1942 Aug  1
-			-4:00	-	-04	1946 Aug 28 24:00
-			-5:00	1:00	-04	1947 Mar 31 24:00
-			-5:00	-	-05	1947 May 21 23:00
-			-4:00	Chile	-04/-03	2016 Dec  4
-			-3:00	-	-03
+			-5:00	Chile	%z	1932 Sep  1
+			-4:00	-	%z	1942 Jun  1
+			-5:00	-	%z	1942 Aug  1
+			-4:00	-	%z	1946 Aug 28 24:00
+			-5:00	1:00	%z	1947 Mar 31 24:00
+			-5:00	-	%z	1947 May 21 23:00
+			-4:00	Chile	%z	2016 Dec  4
+			-3:00	-	%z
 Zone Pacific/Easter	-7:17:28 -	LMT	1890
 			-7:17:28 -	EMT	1932 Sep    # Easter Mean Time
-			-7:00	Chile	-07/-06	1982 Mar 14 3:00u # Easter Time
-			-6:00	Chile	-06/-05
+			-7:00	Chile	%z	1982 Mar 14 3:00u # Easter Time
+			-6:00	Chile	%z
 #
 # Salas y Gómez Island is uninhabited.
 # Other Chilean locations, including Juan Fernández Is, Desventuradas Is,
@@ -1431,10 +1431,10 @@ Zone Pacific/Easter	-7:17:28 -	LMT	1890
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Antarctica/Palmer	0	-	-00	1965
-			-4:00	Arg	-04/-03	1969 Oct  5
-			-3:00	Arg	-03/-02	1982 May
-			-4:00	Chile	-04/-03	2016 Dec  4
-			-3:00	-	-03
+			-4:00	Arg	%z	1969 Oct  5
+			-3:00	Arg	%z	1982 May
+			-4:00	Chile	%z	2016 Dec  4
+			-3:00	-	%z
 
 # Colombia
 
@@ -1453,7 +1453,7 @@ Rule	CO	1993	only	-	Feb	 6	24:00	0	-
 		#STDOFF	-4:56:16.4
 Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
 			-4:56:16 -	BMT	1914 Nov 23 # Bogotá Mean Time
-			-5:00	CO	-05/-04
+			-5:00	CO	%z
 # Malpelo, Providencia, San Andres
 # no information; probably like America/Bogota
 
@@ -1484,10 +1484,10 @@ Rule	Ecuador	1993	only	-	Feb	 5	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Guayaquil	-5:19:20 -	LMT	1890
 			-5:14:00 -	QMT	1931 # Quito Mean Time
-			-5:00	Ecuador	-05/-04
+			-5:00	Ecuador	%z
 Zone Pacific/Galapagos	-5:58:24 -	LMT	1931 # Puerto Baquerizo Moreno
-			-5:00	-	-05	1986
-			-6:00	Ecuador	-06/-05
+			-5:00	-	%z	1986
+			-6:00	Ecuador	%z
 
 # Falklands
 
@@ -1587,10 +1587,10 @@ Rule	Falk	2001	2010	-	Sep	Sun>=1	2:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Stanley	-3:51:24 -	LMT	1890
 			-3:51:24 -	SMT	1912 Mar 12 # Stanley Mean Time
-			-4:00	Falk	-04/-03	1983 May
-			-3:00	Falk	-03/-02	1985 Sep 15
-			-4:00	Falk	-04/-03	2010 Sep  5  2:00
-			-3:00	-	-03
+			-4:00	Falk	%z	1983 May
+			-3:00	Falk	%z	1985 Sep 15
+			-4:00	Falk	%z	2010 Sep  5  2:00
+			-3:00	-	%z
 
 # French Guiana
 # For the 1911/1912 establishment of standard time in French possessions, see:
@@ -1598,8 +1598,8 @@ Zone Atlantic/Stanley	-3:51:24 -	LMT	1890
 # page 752, 18b.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Cayenne	-3:29:20 -	LMT	1911 Jul  1
-			-4:00	-	-04	1967 Oct
-			-3:00	-	-03
+			-4:00	-	%z	1967 Oct
+			-3:00	-	%z
 
 # Guyana
 
@@ -1633,10 +1633,10 @@ Zone America/Cayenne	-3:29:20 -	LMT	1911 Jul  1
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Guyana	-3:52:39 -	LMT	1911 Aug  1 # Georgetown
-			-4:00	-	-04	1915 Mar  1
-			-3:45	-	-0345	1975 Aug  1
-			-3:00	-	-03	1992 Mar 29  1:00
-			-4:00	-	-04
+			-4:00	-	%z	1915 Mar  1
+			-3:45	-	%z	1975 Aug  1
+			-3:00	-	%z	1992 Mar 29  1:00
+			-4:00	-	%z
 
 # Paraguay
 #
@@ -1734,9 +1734,9 @@ Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Asuncion	-3:50:40 -	LMT	1890
 			-3:50:40 -	AMT	1931 Oct 10 # Asunción Mean Time
-			-4:00	-	-04	1972 Oct
-			-3:00	-	-03	1974 Apr
-			-4:00	Para	-04/-03
+			-4:00	-	%z	1972 Oct
+			-3:00	-	%z	1974 Apr
+			-4:00	Para	%z
 
 # Peru
 #
@@ -1763,12 +1763,12 @@ Rule	Peru	1994	only	-	Apr	 1	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Lima	-5:08:12 -	LMT	1890
 			-5:08:36 -	LMT	1908 Jul 28 # Lima Mean Time?
-			-5:00	Peru	-05/-04
+			-5:00	Peru	%z
 
 # South Georgia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/South_Georgia -2:26:08 -	LMT	1890 # Grytviken
-			-2:00	-	-02
+			-2:00	-	%z
 
 # South Sandwich Is
 # uninhabited; scientific personnel have wintered
@@ -1778,8 +1778,8 @@ Zone Atlantic/South_Georgia -2:26:08 -	LMT	1890 # Grytviken
 Zone America/Paramaribo	-3:40:40 -	LMT	1911
 			-3:40:52 -	PMT	1935     # Paramaribo Mean Time
 			-3:40:36 -	PMT	1945 Oct    # The capital moved?
-			-3:30	-	-0330	1984 Oct
-			-3:00	-	-03
+			-3:30	-	%z	1984 Oct
+			-3:00	-	%z
 
 # Uruguay
 # From Paul Eggert (1993-11-18):
@@ -1994,15 +1994,15 @@ Rule	Uruguay	2006	2014	-	Oct	Sun>=1	 2:00	1:00	-
 # This Zone can be simplified once we assume zic %z.
 Zone America/Montevideo	-3:44:51 -	LMT	1908 Jun 10
 			-3:44:51 -	MMT	1920 May  1 # Montevideo MT
-			-4:00	-	-04	1923 Oct  1
-			-3:30	Uruguay	-0330/-03 1942 Dec 14
-			-3:00	Uruguay	-03/-0230 1960
-			-3:00	Uruguay	-03/-02	1968
-			-3:00	Uruguay	-03/-0230 1970
-			-3:00	Uruguay	-03/-02	1974
-			-3:00	Uruguay	-03/-0130 1974 Mar 10
-			-3:00	Uruguay	-03/-0230 1974 Dec 22
-			-3:00	Uruguay	-03/-02
+			-4:00	-	%z	1923 Oct  1
+			-3:30	Uruguay	%z	1942 Dec 14
+			-3:00	Uruguay	%z	1960
+			-3:00	Uruguay	%z	1968
+			-3:00	Uruguay	%z	1970
+			-3:00	Uruguay	%z	1974
+			-3:00	Uruguay	%z	1974 Mar 10
+			-3:00	Uruguay	%z	1974 Dec 22
+			-3:00	Uruguay	%z
 
 # Venezuela
 #
@@ -2036,7 +2036,7 @@ Zone America/Montevideo	-3:44:51 -	LMT	1908 Jun 10
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Caracas	-4:27:44 -	LMT	1890
 			-4:27:40 -	CMT	1912 Feb 12 # Caracas Mean Time?
-			-4:30	-	-0430	1965 Jan  1  0:00
-			-4:00	-	-04	2007 Dec  9  3:00
-			-4:30	-	-0430	2016 May  1  2:30
-			-4:00	-	-04
+			-4:30	-	%z	1965 Jan  1  0:00
+			-4:00	-	%z	2007 Dec  9  3:00
+			-4:30	-	%z	2016 May  1  2:30
+			-4:00	-	%z

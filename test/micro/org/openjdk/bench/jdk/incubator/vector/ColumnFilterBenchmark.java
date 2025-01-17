@@ -32,7 +32,7 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgsPrepend = {"--add-modules=jdk.incubator.vector", "-XX:UseAVX=2"})
+@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:UseAVX=2"})
 public class ColumnFilterBenchmark {
     @Param({"1024", "2047", "4096"})
     int size;

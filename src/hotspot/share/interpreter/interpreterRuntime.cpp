@@ -77,9 +77,6 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/events.hpp"
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 
 // Helper class to access current interpreter state
 class LastFrameAccessor : public StackObj {
@@ -735,7 +732,7 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
   assert(Universe::heap()->is_in_or_null(elem->obj()),
          "must be null or an object");
 #ifdef ASSERT
-  current->last_frame().interpreter_frame_verify_monitor(elem);
+  if (!current->preempting()) current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
 JRT_END
 
@@ -949,6 +946,15 @@ void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
   pool->cache()->set_method_handle(method_index, info);
 }
 
+void InterpreterRuntime::cds_resolve_invokehandle(int raw_index,
+                                                  constantPoolHandle& pool, TRAPS) {
+  const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
+  CallInfo info;
+  LinkResolver::resolve_invoke(info, Handle(), pool, raw_index, bytecode, CHECK);
+
+  pool->cache()->set_method_handle(raw_index, info);
+}
+
 // First time execution:  Resolve symbols, create a permanent CallSite object.
 void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   LastFrameAccessor last_frame(current);
@@ -966,6 +972,14 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   } // end JvmtiHideSingleStepping
 
   pool->cache()->set_dynamic_call(info, index);
+}
+
+void InterpreterRuntime::cds_resolve_invokedynamic(int raw_index,
+                                                   constantPoolHandle& pool, TRAPS) {
+  const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
+  CallInfo info;
+  LinkResolver::resolve_invoke(info, Handle(), pool, raw_index, bytecode, CHECK);
+  pool->cache()->set_dynamic_call(info, raw_index);
 }
 
 // This function is the interface to the assembly code. It returns the resolved

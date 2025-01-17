@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "interpreter/bytecodes.hpp"
 #include "jfrfiles/jfrEventIds.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
@@ -216,6 +217,25 @@ static bool should_record(const Method* method, const Method* sender, JavaThread
   return is_not_jdk_module(sender_module, jt) && max_limit_not_reached();
 }
 
+static inline bool is_invoke_bytecode(const Method* sender, int bci) {
+  assert(sender != nullptr, "invariant");
+  assert(sender->validate_bci(bci) >= 0, "invariant");
+  const Bytecodes::Code bc = (Bytecodes::Code)*sender->bcp_from(bci);
+  switch (bc) {
+    case Bytecodes::_invokevirtual:
+    case Bytecodes::_invokestatic:
+    case Bytecodes::_invokeinterface:
+    case Bytecodes::_invokespecial:
+    case Bytecodes::_invokedynamic: {
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
+  return false;
+}
+
 // This is the entry point for newly discovered edges in JfrResolution.cpp.
 void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bci, u1 frame_type, JavaThread* jt) {
   assert(method != nullptr, "invariant");
@@ -224,10 +244,13 @@ void JfrDeprecationManager::on_link(const Method* method, Method* sender, int bc
   assert(!sender->is_native(), "invariant");
   assert(jt != nullptr, "invariant");
   assert(JfrRecorder::is_started_on_commandline(), "invariant");
-  if (JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
-    if (should_record(method, sender, jt)) {
-      create_edge(method, sender, bci, frame_type, jt);
+  if (should_record(method, sender, jt)) {
+    if (is_invoke_bytecode(sender, bci)) {
+      if (!JfrMethodData::mark_deprecated_call_site(sender, bci, jt)) {
+        return;
+      }
     }
+    create_edge(method, sender, bci, frame_type, jt);
   }
 }
 

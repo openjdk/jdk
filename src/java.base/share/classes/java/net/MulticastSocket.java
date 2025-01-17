@@ -131,19 +131,12 @@ public class MulticastSocket extends DatagramSocket {
      * {@link InetAddress#isAnyLocalAddress wildcard} address.
      *
      * <p>
-     * If there is a security manager, its {@code checkListen} method is first
-     * called with 0 as its argument to ensure the operation is allowed. This
-     * could result in a SecurityException.
-     * <p>
      * When the socket is created the
      * {@link DatagramSocket#setReuseAddress(boolean)} method is called to
      * enable the SO_REUSEADDR socket option.
      *
      * @throws    IOException if an I/O exception occurs while creating the
      * MulticastSocket
-     * @throws    SecurityException if a security manager exists and its
-     * {@code checkListen} method doesn't allow the operation.
-     * @see SecurityManager#checkListen
      * @see java.net.DatagramSocket#setReuseAddress(boolean)
      * @see java.net.DatagramSocketImpl#setOption(SocketOption, Object)
      */
@@ -156,11 +149,6 @@ public class MulticastSocket extends DatagramSocket {
      * on the local host machine. The socket will be bound to the
      * {@link InetAddress#isAnyLocalAddress wildcard} address.
      *
-     * <p>If there is a security manager,
-     * its {@code checkListen} method is first called
-     * with the {@code port} argument
-     * as its argument to ensure the operation is allowed.
-     * This could result in a SecurityException.
      * <p>
      * When the socket is created the
      * {@link DatagramSocket#setReuseAddress(boolean)} method is
@@ -169,12 +157,9 @@ public class MulticastSocket extends DatagramSocket {
      * @param     port port to use
      * @throws    IOException if an I/O exception occurs
      *            while creating the MulticastSocket
-     * @throws    SecurityException  if a security manager exists and its
-     *            {@code checkListen} method doesn't allow the operation.
      * @throws    IllegalArgumentException  if port is  <a href="DatagramSocket.html#PortRange">
      *            out of range.</a>
      *
-     * @see       SecurityManager#checkListen
      * @see       java.net.DatagramSocket#setReuseAddress(boolean)
      */
     public MulticastSocket(int port) throws IOException {
@@ -186,11 +171,6 @@ public class MulticastSocket extends DatagramSocket {
      * socket address.
      * <p>
      * If the address is {@code null} an unbound socket will be created.
-     *
-     * <p>If there is a security manager,
-     * its {@code checkListen} method is first called
-     * with the SocketAddress port as its argument to ensure the operation is allowed.
-     * This could result in a SecurityException.
      * <p>
      * When the socket is created the
      * {@link DatagramSocket#setReuseAddress(boolean)} method is
@@ -200,9 +180,6 @@ public class MulticastSocket extends DatagramSocket {
      *           an unbound socket.
      * @throws   IOException if an I/O exception occurs
      *           while creating the MulticastSocket
-     * @throws   SecurityException  if a security manager exists and its
-     *           {@code checkListen} method doesn't allow the operation.
-     * @see      SecurityManager#checkListen
      * @see      java.net.DatagramSocket#setReuseAddress(boolean)
      *
      * @since 1.4
@@ -299,10 +276,6 @@ public class MulticastSocket extends DatagramSocket {
      * Joins a multicast group. Its behavior may be affected by
      * {@code setInterface} or {@code setNetworkInterface}.
      *
-     * <p>If there is a security manager, this method first
-     * calls its {@code checkMulticast} method with the
-     * {@code mcastaddr} argument as its argument.
-     *
      * @apiNote
      * Calling this method is equivalent to calling
      * {@link #joinGroup(SocketAddress, NetworkInterface)
@@ -312,12 +285,9 @@ public class MulticastSocket extends DatagramSocket {
      * @throws     IOException if there is an error joining,
      *             or when the address is not a multicast address,
      *             or the platform does not support multicasting, or the socket is closed.
-     * @throws     SecurityException if a security manager exists and its
-     *             {@code checkMulticast} method doesn't allow the join.
      * @deprecated This method does not accept the network interface on
      *             which to join the multicast group. Use
      *             {@link #joinGroup(SocketAddress, NetworkInterface)} instead.
-     * @see        SecurityManager#checkMulticast(InetAddress)
      */
     @Deprecated(since="14")
     public void joinGroup(InetAddress mcastaddr) throws IOException {
@@ -328,10 +298,6 @@ public class MulticastSocket extends DatagramSocket {
      * Leave a multicast group. Its behavior may be affected by
      * {@code setInterface} or {@code setNetworkInterface}.
      *
-     * <p>If there is a security manager, this method first
-     * calls its {@code checkMulticast} method with the
-     * {@code mcastaddr} argument as its argument.
-     *
      * @apiNote
      * Calling this method is equivalent to calling
      * {@link #leaveGroup(SocketAddress, NetworkInterface)
@@ -340,12 +306,9 @@ public class MulticastSocket extends DatagramSocket {
      * @param      mcastaddr is the multicast address to leave
      * @throws     IOException if there is an error leaving
      *             or when the address is not a multicast address, or the socket is closed.
-     * @throws     SecurityException if a security manager exists and its
-     *             {@code checkMulticast} method doesn't allow the operation.
      * @deprecated This method does not accept the network interface on which
      *             to leave the multicast group. Use
      *             {@link #leaveGroup(SocketAddress, NetworkInterface)} instead.
-     * @see        SecurityManager#checkMulticast(InetAddress)
      */
     @Deprecated(since="14")
     public void leaveGroup(InetAddress mcastaddr) throws IOException {
@@ -355,9 +318,7 @@ public class MulticastSocket extends DatagramSocket {
     /**
      * {@inheritDoc}
      * @throws IOException {@inheritDoc}
-     * @throws SecurityException {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @see    SecurityManager#checkMulticast(InetAddress)
      * @see    DatagramChannel#join(InetAddress, NetworkInterface)
      * @see    StandardSocketOptions#IP_MULTICAST_IF
      * @see    #setNetworkInterface(NetworkInterface)
@@ -374,9 +335,7 @@ public class MulticastSocket extends DatagramSocket {
      * {@inheritDoc}
      * @apiNote {@inheritDoc}
      * @throws IOException {@inheritDoc}
-     * @throws SecurityException {@inheritDoc}
      * @throws IllegalArgumentException {@inheritDoc}
-     * @see    SecurityManager#checkMulticast(InetAddress)
      * @see    #joinGroup(SocketAddress, NetworkInterface)
      * @since 1.4
      */
@@ -517,18 +476,6 @@ public class MulticastSocket extends DatagramSocket {
      * </B> alter the default TTL for the socket. Its behavior may be
      * affected by {@code setInterface}.
      *
-     * <p>If there is a security manager, this method first performs some
-     * security checks. First, if {@code p.getAddress().isMulticastAddress()}
-     * is true, this method calls the
-     * security manager's {@code checkMulticast} method
-     * with {@code p.getAddress()} and {@code ttl} as its arguments.
-     * If the evaluation of that expression is false,
-     * this method instead calls the security manager's
-     * {@code checkConnect} method with arguments
-     * {@code p.getAddress().getHostAddress()} and
-     * {@code p.getPort()}. Each call to a security manager method
-     * could result in a SecurityException if the operation is not allowed.
-     *
      * @param p is the packet to be sent. The packet should contain
      * the destination multicast ip address and the data to be sent.
      * One does not need to be the member of the group to send
@@ -537,9 +484,6 @@ public class MulticastSocket extends DatagramSocket {
      * default ttl is 1.
      *
      * @throws     IOException  if an I/O error occurs, or the socket is closed.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkMulticast} or {@code checkConnect}
-     *             method doesn't allow the send.
      * @throws     PortUnreachableException may be thrown if the socket is connected
      *             to a currently unreachable destination. Note, there is no
      *             guarantee that the exception will be thrown.
@@ -559,8 +503,6 @@ public class MulticastSocket extends DatagramSocket {
      *
      * @see DatagramSocket#send
      * @see DatagramSocket#receive
-     * @see SecurityManager#checkMulticast(java.net.InetAddress, byte)
-     * @see SecurityManager#checkConnect
      */
     @Deprecated(forRemoval = true, since = "1.4")
     public void send(DatagramPacket p, byte ttl)

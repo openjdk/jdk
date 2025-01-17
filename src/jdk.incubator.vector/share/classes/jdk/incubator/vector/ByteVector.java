@@ -536,6 +536,19 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return r;
     }
 
+    static ByteVector selectFromTwoVectorHelper(Vector<Byte> indexes, Vector<Byte> src1, Vector<Byte> src2) {
+        int vlen = indexes.length();
+        byte[] res = new byte[vlen];
+        byte[] vecPayload1 = ((ByteVector)indexes).vec();
+        byte[] vecPayload2 = ((ByteVector)src1).vec();
+        byte[] vecPayload3 = ((ByteVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((ByteVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -871,6 +884,18 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
+            case VECTOR_OP_UMAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)VectorMath.maxUnsigned(a, b));
+            case VECTOR_OP_UMIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)VectorMath.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (byte)(VectorMath.subSaturatingUnsigned(a, b)));
             default: return null;
         }
     }
@@ -1071,7 +1096,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,byte,byte,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,byte,VectorMask)
@@ -2283,9 +2308,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteVector that = (ByteVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)(length() - origin));
+        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2313,9 +2339,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @ForceInline
     ByteVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)(length() - origin));
+        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2334,10 +2361,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         ByteVector that = (ByteVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast((byte)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)origin);
+        VectorMask<Byte> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2374,10 +2401,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     ByteVector
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Byte> iota = iotaShuffle();
-        VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast((byte)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        ByteVector iotaVector = (ByteVector) iotaShuffle().toBitsVector();
+        ByteVector filter = broadcast((byte)origin);
+        VectorMask<Byte> blendMask = iotaVector.compare(VectorOperators.GE, filter);
+        AbstractShuffle<Byte> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2400,13 +2427,12 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     final
     <S extends VectorShuffle<Byte>>
     ByteVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, byte.class, length(),
-            this, ws, null,
+            this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2427,15 +2453,13 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, byte.class, length(),
-                   this, ws, m,
+                   this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
@@ -2456,30 +2480,29 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                            S shuffle,
                                            ByteVector v) {
         VectorMask<Byte> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         ByteVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, byte.class, length(),
-                this, ws, null,
+                this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         ByteVector r1 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, byte.class, length(),
-                v, ws, null,
+                v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<Byte> toShuffle0(ByteSpecies dsp) {
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+        assert(dsp.length() == vspecies().length());
         byte[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2488,16 +2511,18 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return VectorShuffle.fromArray(dsp, sa, 0);
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
-        ByteSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), byte.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     ByteVector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+        ByteVector idx = this;
+        ByteVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            ByteVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<Byte> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
@@ -2573,6 +2598,22 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ByteVector selectFrom(Vector<Byte> v1, Vector<Byte> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final ByteVector selectFromTemplate(ByteVector v1, ByteVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), byte.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -2828,6 +2869,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (byte) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (byte) Math.max(a, b)));
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (byte) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (byte) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((byte)-1, m, (i, a, b) -> (byte)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -4060,7 +4105,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================
@@ -4175,9 +4220,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         private ByteSpecies(VectorShape shape,
                 Class<? extends ByteVector> vectorType,
                 Class<? extends AbstractMask<Byte>> maskType,
+                Class<? extends AbstractShuffle<Byte>> shuffleType,
                 Function<Object, ByteVector> vectorFactory) {
             super(shape, LaneType.of(byte.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Byte.SIZE);
         }
@@ -4463,6 +4509,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_64_BIT,
                             Byte64Vector.class,
                             Byte64Vector.Byte64Mask.class,
+                            Byte64Vector.Byte64Shuffle.class,
                             Byte64Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -4470,6 +4517,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_128_BIT,
                             Byte128Vector.class,
                             Byte128Vector.Byte128Mask.class,
+                            Byte128Vector.Byte128Shuffle.class,
                             Byte128Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4477,6 +4525,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_256_BIT,
                             Byte256Vector.class,
                             Byte256Vector.Byte256Mask.class,
+                            Byte256Vector.Byte256Shuffle.class,
                             Byte256Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4484,6 +4533,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_512_BIT,
                             Byte512Vector.class,
                             Byte512Vector.Byte512Mask.class,
+                            Byte512Vector.Byte512Shuffle.class,
                             Byte512Vector::new);
 
     /** Species representing {@link ByteVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4491,6 +4541,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         = new ByteSpecies(VectorShape.S_Max_BIT,
                             ByteMaxVector.class,
                             ByteMaxVector.ByteMaxMask.class,
+                            ByteMaxVector.ByteMaxShuffle.class,
                             ByteMaxVector::new);
 
     /**

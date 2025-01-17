@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,8 +113,6 @@ public:
   // the memory taken up by the stack segments using the given WorkerThreads. If the WorkerThreads
   // is null, perform the work serially in the current thread.
   void restore(WorkerThreads* workers);
-
-  WorkerTask* create_task();
 
   // Reclaim stack array.
   void reclaim();

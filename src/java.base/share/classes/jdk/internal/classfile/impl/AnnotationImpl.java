@@ -24,14 +24,22 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
-import java.lang.classfile.constantpool.*;
-
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.List;
+
+import static java.util.Objects.requireNonNull;
 
 public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elements)
         implements Annotation {
     public AnnotationImpl {
+        requireNonNull(className);
         elements = List.copyOf(elements);
     }
 
@@ -50,6 +58,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record AnnotationElementImpl(Utf8Entry name,
                                         AnnotationValue value)
             implements AnnotationElement {
+        public AnnotationElementImpl {
+            requireNonNull(name);
+            requireNonNull(value);
+        }
+
         @Override
         public String toString() {
             return name + "=" + value;
@@ -59,7 +72,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfStringImpl(Utf8Entry constant)
             implements AnnotationValue.OfString {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_STRING;
         }
 
@@ -72,7 +85,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfDoubleImpl(DoubleEntry constant)
             implements AnnotationValue.OfDouble {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_DOUBLE;
         }
 
@@ -85,7 +98,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfFloatImpl(FloatEntry constant)
             implements AnnotationValue.OfFloat {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_FLOAT;
         }
 
@@ -98,7 +111,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfLongImpl(LongEntry constant)
             implements AnnotationValue.OfLong {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_LONG;
         }
 
@@ -111,7 +124,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfIntImpl(IntegerEntry constant)
             implements AnnotationValue.OfInt {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_INT;
         }
 
@@ -124,7 +137,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfShortImpl(IntegerEntry constant)
             implements AnnotationValue.OfShort {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_SHORT;
         }
 
@@ -137,7 +150,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfCharImpl(IntegerEntry constant)
             implements AnnotationValue.OfChar {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_CHAR;
         }
 
@@ -150,7 +163,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfByteImpl(IntegerEntry constant)
             implements AnnotationValue.OfByte {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_BYTE;
         }
 
@@ -163,7 +176,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfBooleanImpl(IntegerEntry constant)
             implements AnnotationValue.OfBoolean {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_BOOLEAN;
         }
 
@@ -180,7 +193,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         }
 
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_ARRAY;
         }
     }
@@ -188,7 +201,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfEnumImpl(Utf8Entry className, Utf8Entry constantName)
             implements AnnotationValue.OfEnum {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_ENUM;
         }
     }
@@ -196,7 +209,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfAnnotationImpl(Annotation annotation)
             implements AnnotationValue.OfAnnotation {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_ANNOTATION;
         }
     }
@@ -204,7 +217,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfClassImpl(Utf8Entry className)
             implements AnnotationValue.OfClass {
         @Override
-        public char tag() {
+        public int tag() {
             return TAG_CLASS;
         }
     }

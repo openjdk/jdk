@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,7 @@ void StackOverflow::create_stack_guard_pages() {
   if (!os::uses_stack_guard_pages() ||
       _stack_guard_state != stack_guard_unused ||
       (DisablePrimordialThreadGuardPages && os::is_primordial_thread())) {
-      log_info(os, thread)("Stack guard page creation for thread "
-                           UINTX_FORMAT " disabled", os::current_thread_id());
+      log_info(os, thread)("Stack guard page creation for thread %zu disabled", os::current_thread_id());
     return;
   }
   address low_addr = stack_end();
@@ -107,7 +106,7 @@ void StackOverflow::create_stack_guard_pages() {
     vm_exit_out_of_memory(len, OOM_MPROTECT_ERROR, "memory to guard stack pages");
   }
 
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages activated: "
+  log_debug(os, thread)("Thread %zu stack guard pages activated: "
     PTR_FORMAT "-" PTR_FORMAT ".",
     os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
 }
@@ -136,7 +135,7 @@ void StackOverflow::remove_stack_guard_pages() {
     }
   }
 
-  log_debug(os, thread)("Thread " UINTX_FORMAT " stack guard pages removed: "
+  log_debug(os, thread)("Thread %zu stack guard pages removed: "
     PTR_FORMAT "-" PTR_FORMAT ".",
     os::current_thread_id(), p2i(low_addr), p2i(low_addr + len));
 }

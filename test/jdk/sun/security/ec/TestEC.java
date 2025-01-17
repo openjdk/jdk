@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@
  * @library ../../../javax/net/ssl/TLSCommon
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11.wrapper
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1" TestEC
- * @run main/othervm -Djava.security.policy=TestEC.policy
- *    -Djdk.tls.namedGroups="secp256r1" TestEC
  */
 
 import java.security.NoSuchProviderException;
@@ -85,7 +83,7 @@ public class TestEC {
     }
 
     public static void main0(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunEC");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunEC"));
 
         if (p == null) {
             throw new NoSuchProviderException("Can't get SunEC provider");

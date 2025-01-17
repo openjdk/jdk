@@ -1879,9 +1879,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Luxembourg">
 				<exemplarCity draft="contributed">Luxemburg</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity draft="contributed">Tschoibalsan</exemplarCity>
-			</zone>
 			<zone type="America/Montserrat">
 				<exemplarCity draft="contributed">Brades</exemplarCity>
 			</zone>

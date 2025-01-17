@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,16 @@
  * @test
  * @bug 4358979
  * @summary Tests RadialGradientPaint encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_RadialGradientPaint
+ * @run main/othervm java_awt_RadialGradientPaint
  * @author Sergey Malenkov
  */
 
 import java.awt.Color;
 import java.awt.RadialGradientPaint;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
-
-import static java.awt.MultipleGradientPaint.ColorSpaceType.LINEAR_RGB;
-import static java.awt.MultipleGradientPaint.CycleMethod.REFLECT;
 
 public final class java_awt_RadialGradientPaint extends AbstractTest<RadialGradientPaint> {
     public static void main(String[] args) {
-        new java_awt_RadialGradientPaint().test(true);
+        new java_awt_RadialGradientPaint().test();
     }
 
     protected RadialGradientPaint getObject() {

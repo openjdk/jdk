@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // Therefore add 3 to address that byte within "_flags".
     // Reload method. VM call above may have destroyed register contents
     __ get_method(method);
-    __ testbit(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
+    __ testbit_ushort(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
     method = noreg;  // end of life
     __ z_btrue(isStatic);
 
@@ -721,6 +721,11 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
+}
+
+
 //
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -878,7 +883,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
   address reentry = nullptr;
   {
     Label L;
-    __ testbit(method2_(method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+    __ testbit_ushort(method2_(method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
     __ z_btrue(L);
     reentry = __ stop_chain_static(reentry, "method doesn't need synchronization");
     __ bind(L);
@@ -892,7 +897,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
     Label     done;
     Label     static_method;
 
-    __ testbit(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
+    __ testbit_ushort(method2_(method, access_flags), JVM_ACC_STATIC_BIT);
     __ z_btrue(static_method);
 
     // non-static method: Load receiver obj from stack.
@@ -1344,15 +1349,17 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Make sure method is native and not abstract.
 #ifdef ASSERT
+  // _access_flags must be a 16 bit value.
+  assert(sizeof(AccessFlags) == 2, "testbit_ushort will fail");
   address reentry = nullptr;
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_btrue(L);
     reentry = __ stop_chain_static(reentry, "tried to execute non-native method as native");
     __ bind(L);
   }
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
     __ z_bfalse(L);
     reentry = __ stop_chain_static(reentry, "tried to execute abstract method as non-abstract");
     __ bind(L);
@@ -1398,7 +1405,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #ifdef ASSERT
     { Label L;
       __ get_method(Z_R1_scratch);
-      __ testbit(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+      __ testbit_ushort(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
       __ z_bfalse(L);
       reentry = __ stop_chain_static(reentry, "method needs synchronization");
       __ bind(L);
@@ -1456,7 +1463,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Pass mirror handle if static call.
   {
     Label method_is_not_static;
-    __ testbit(method2_(Rmethod, access_flags), JVM_ACC_STATIC_BIT);
+    __ testbit_ushort(method2_(Rmethod, access_flags), JVM_ACC_STATIC_BIT);
     __ z_bfalse(method_is_not_static);
     // Load mirror from interpreter frame.
     __ z_lg(Z_R1, _z_ijava_state_neg(mirror), Z_fp);
@@ -1714,13 +1721,13 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
   address reentry = nullptr;
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_bfalse(L);
     reentry = __ stop_chain_static(reentry, "tried to execute native method as non-native");
     __ bind(L);
   }
   { Label L;
-    __ testbit(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
+    __ testbit_ushort(method_(access_flags), JVM_ACC_ABSTRACT_BIT);
     __ z_bfalse(L);
     reentry = __ stop_chain_static(reentry, "tried to execute abstract method as non-abstract");
     __ bind(L);
@@ -1770,7 +1777,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
     { Label L;
       __ get_method(Z_R1_scratch);
-      __ testbit(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+      __ testbit_ushort(method2_(Z_R1_scratch, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
       __ z_bfalse(L);
       reentry = __ stop_chain_static(reentry, "method needs synchronization");
       __ bind(L);

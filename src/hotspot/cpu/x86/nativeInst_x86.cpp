@@ -81,7 +81,7 @@ void NativeCall::insert(address code_pos, address entry) {
 // (spinlock). Then patches the last byte, and then atomically replaces
 // the jmp's with the first 4 byte of the new instruction.
 void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
-  assert(Patching_lock->is_locked() ||
+  assert(CodeCache_lock->is_locked() ||
          SafepointSynchronize::is_at_safepoint(), "concurrent code patching");
   assert (instr_addr != nullptr, "illegal address for code patching");
 
@@ -144,7 +144,7 @@ void NativeCall::set_destination_mt_safe(address dest) {
   debug_only(verify());
   // Make sure patching code is locked.  No two threads can patch at the same
   // time but one may be executing this code.
-  assert(Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint() ||
+  assert(CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint() ||
          CompiledICLocker::is_safe(instruction_address()), "concurrent code patching");
   // Both C1 and C2 should now be generating code which aligns the patched address
   // to be within a single cache line.
