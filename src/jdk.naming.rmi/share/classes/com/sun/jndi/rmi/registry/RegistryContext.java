@@ -552,11 +552,6 @@ class BindingEnumeration implements NamingEnumeration<Binding> {
         nextName = 0;
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        ctx.close();
-    }
-
     public boolean hasMore() {
         if (nextName >= names.length) {
             ctx.close();
@@ -593,8 +588,7 @@ class BindingEnumeration implements NamingEnumeration<Binding> {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void close () {
-        finalize();
+        ctx.close();
     }
 }
