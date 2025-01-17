@@ -143,7 +143,7 @@ public class ValidateICCHeaderData {
         System.out.println("CASE 10: Passed \n");
 
         System.out.println("CASE 11: Testing INVALID Rendering Intent ...");
-        //valid rendering intent values are 1-4
+        //valid rendering intent values are 0-3
         int invalidRenderIntent = 5;
         testInvalidHeaderData(invalidRenderIntent, RENDER_INTENT_START_INDEX, 4);
         System.out.println("CASE 11: Passed \n");
