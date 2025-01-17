@@ -452,26 +452,25 @@ public final class SharedUtils {
         };
 
         static MemorySegment acquireOrAllocate(long size) {
+            final MemorySegment result;
             Continuation.pin();
             try {
-                final MemorySegment result;
-                return !couldBeSatisfiedFromCache(size) || (result = tl.get().pop()) == null
-                        ? allocate(size)
-                        : result;
+                result = couldBeSatisfiedFromCache(size) ? tl.get().pop() : null;
             } finally {
                 Continuation.unpin();
             }
+            return result == null ? allocate(size) : result;
         }
 
         static void cacheOrClose(MemorySegment released) {
+            final boolean cached;
             Continuation.pin();
             try {
-                if (!couldCache(released) || !tl.get().push(released)) {
-                    free(released);
-                }
+                cached = couldCache(released) && tl.get().push(released);
             } finally {
                 Continuation.unpin();
             }
+            if (!cached) free(released);
         }
     }
 
