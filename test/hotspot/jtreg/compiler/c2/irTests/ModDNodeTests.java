@@ -29,8 +29,8 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8332268
- * @summary Test that Ideal transformations of UDivINode* are being performed as expected.
+ * @bug 8345766
+ * @summary Test that Ideal transformations of ModDNode are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.ModDNodeTests
  */
