@@ -80,7 +80,15 @@ public class MinMaxVector
             long[][] result;
             int aboveCount, abovePercent;
 
-            // Iterate until you find a set that matches the requirement probability
+            // This algorithm generates 2 arrays of numbers.
+            // The first array is created such that as the array is iterated,
+            // there is P probability of finding a new min/max value,
+            // and 100-P probability of not finding a new min/max value.
+            // This first array is used on its own for tests that iterate an array to reduce it to a single value,
+            // e.g. the min or max value in the array.
+            // The second array is loaded with values relative to the first array,
+            // such that when the values in the same index are compared for min/max,
+            // the probability that a new min/max value is found has the probability P.
             do {
                 long max = ThreadLocalRandom.current().nextLong(10);
                 result = new long[2][size];
@@ -96,8 +104,8 @@ public class MinMaxVector
                         aboveCount++;
                     } else {
                         // Decrement by at least 1
-                        long decrement = ThreadLocalRandom.current().nextLong(10) + 1;
-                        value = max - decrement;
+                        long diffToMax = ThreadLocalRandom.current().nextLong(10) + 1;
+                        value = max - diffToMax;
                     }
                     result[0][i] = value;
                     result[1][i] = max;

@@ -59,8 +59,7 @@ public class MinMaxRed_Long {
     }
 
     private static void runMaxTest(int probability) {
-        long[] longs = new long[1024];
-        ReductionInit(longs, probability);
+        long[] longs = reductionInit(probability);
         long res = 0;
         for (int j = 0; j < 2000; j++) {
             res = maxReductionImplement(longs, res);
@@ -81,8 +80,7 @@ public class MinMaxRed_Long {
     }
 
     private static void runMinTest(int probability) {
-        long[] longs = new long[1024];
-        ReductionInit(longs, probability);
+        long[] longs = reductionInit(probability);
         // Negating the values generated for controlling max branching
         // allows same logic to be used for min tests.
         longs = negate(longs);
@@ -101,10 +99,25 @@ public class MinMaxRed_Long {
         return LongStream.of(nums).map(l -> -l).toArray();
     }
 
-    public static void ReductionInit(long[] longs, int probability) {
+    public static long[] reductionInit(int probability) {
         int aboveCount, abovePercent;
+        long[] longs = new long[1024];
 
-        // Iterate until you find a set that matches the requirement probability
+        // Generates an array of numbers such that as the array is iterated
+        // there is P probability of finding a new max value,
+        // and 100-P probability of not finding a new max value.
+        // The algorithm loops around if the distribution does not match the probability,
+        // but it approximates the probability as the array sizes increase.
+        // The worst case of this algorithm is when the desired array size is 100
+        // and the aim is to get 50% of probability, which can only be satisfied
+        // with 50 elements being a new max. This situation can take 15 rounds.
+        // As sizes increase, say 10'000 elements,
+        // the number of elements that have to satisfy 50% increases,
+        // so the algorithm will stop as an example when 5027 elements are a new max values.
+        // Also, probability values in the edges will achieve their objective quicker,
+        // with 0% or 100% probability doing it in a single loop.
+        // To support the same algorithm for min calculations,
+        // negating the array elements achieves the same objective.
         do {
             long max = random.nextLong(10);
             longs[0] = max;
@@ -118,8 +131,8 @@ public class MinMaxRed_Long {
                     aboveCount++;
                 } else {
                     // Decrement by at least 1
-                    long decrement = random.nextLong(10) + 1;
-                    value = max - decrement;
+                    long diffToMax = random.nextLong(10) + 1;
+                    value = max - diffToMax;
                 }
                 longs[i] = value;
                 max = Math.max(max, value);
@@ -127,6 +140,8 @@ public class MinMaxRed_Long {
 
             abovePercent = ((aboveCount + 1) * 100) / longs.length;
         } while (abovePercent != probability);
+
+        return longs;
     }
 
     @Test
