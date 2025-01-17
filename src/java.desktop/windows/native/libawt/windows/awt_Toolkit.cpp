@@ -1938,12 +1938,12 @@ BOOL AwtToolkit::GetScreenInsets(int screenNum, RECT * rect)
 {
     MONITORINFO *miInfo = AwtWin32GraphicsDevice::GetMonitorInfo(screenNum);
     if (miInfo) {
-        rect->top = miInfo->rcWork.top    - miInfo->rcMonitor.top;
-        rect->left = miInfo->rcWork.left   - miInfo->rcMonitor.left;
+        rect->top = miInfo->rcWork.top - miInfo->rcMonitor.top;
+        rect->left = miInfo->rcWork.left - miInfo->rcMonitor.left;
         rect->bottom = miInfo->rcMonitor.bottom - miInfo->rcWork.bottom;
         rect->right = miInfo->rcMonitor.right - miInfo->rcWork.right;
         return TRUE;
-    }    
+    }
     return FALSE;
 }
 
