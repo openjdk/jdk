@@ -1659,6 +1659,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 
   // check for a pending interrupt
   if (interruptible && current->is_interrupted(true) && !HAS_PENDING_EXCEPTION) {
+    JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
     // post monitor waited event.  Note that this is past-tense, we are done waiting.
     if (JvmtiExport::should_post_monitor_waited()) {
       // Note: 'false' parameter is passed here because the
@@ -1680,11 +1681,11 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     return;
   }
 
-  current->set_current_waiting_monitor(this);
-
   freeze_result result;
   ContinuationEntry* ce = current->last_continuation();
-  if (ce != nullptr && ce->is_virtual_thread()) {
+  bool is_virtual = ce != nullptr && ce->is_virtual_thread();
+  if (is_virtual) {
+    current->set_current_waiting_monitor(this);
     result = Continuation::try_preempt(current, ce->cont_oop(current));
     if (result == freeze_ok) {
       VThreadWait(current, millis);
@@ -1695,6 +1696,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // The jtiows does nothing for non-interruptible.
   JavaThreadInObjectWaitState jtiows(current, millis != 0, interruptible);
 
+  if (!is_virtual) { // it was already set for virtual thread
+    current->set_current_waiting_monitor(this);
+  }
   // create a node to be put into the queue
   // Critically, after we reset() the event but prior to park(), we must check
   // for a pending interrupt.
