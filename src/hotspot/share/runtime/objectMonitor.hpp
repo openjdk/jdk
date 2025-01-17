@@ -390,6 +390,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      enter(JavaThread* current);
   bool      try_enter(JavaThread* current, bool check_for_recursion = true);
   bool      spin_enter(JavaThread* current);
+  void      notify_contended_enter(JavaThread *current);
   void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
   void      exit(JavaThread* current, bool not_suspended = true);
   bool      resume_operation(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
