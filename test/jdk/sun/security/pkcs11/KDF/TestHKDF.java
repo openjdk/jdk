@@ -529,11 +529,26 @@ public final class TestHKDF extends PKCS11Test {
                 "101112131415161718191a1b1c1d1e1f",
                 "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
                 "cc267bd9515c1eba2cf6aaa1fc8380677f4351fcbea6d70873df5a334efc" +
-                        "ee0d",
+                "ee0d",
                 "cf353a33460b146c0eae3f0788ee281e5a0be15280fbeba107472aa1cd58" +
-                        "d111",
+                "d111",
                 "326e9028f51c05c1919215bad6e35668c94c88040c3777e8e6f8b6acdece" +
-                        "85fa");
+                "85fa");
+    }
+
+    private static void test_AES_HKDFWithHmacSHA256_EmptyBaseKeySaltInfo() {
+        executeTest("AES - HKDF-SHA256 (empty base key, salt, and info)",
+                "HKDF-SHA256",
+                "AES",
+                (SecretKey) null,
+                null,
+                null,
+                "b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292" +
+                "c5ad",
+                "eb70f01dede9afafa449eee1b1286504e1f62388b3f7dd4f956697b0e828" +
+                "fe18",
+                "3fdcf83994f6e0a6f6f482d097e242355e255a8ed17e661a71ca2d592c7a" +
+                "884e");
     }
 
     private static void test_HKDF_after_DH_HkdfSHA256() throws Exception {
