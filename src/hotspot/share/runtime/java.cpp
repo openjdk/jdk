@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,7 +182,7 @@ static void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over Method Invocation Counters (cutoff = %zd):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   uint64_t total        = 0,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // Do Int register here
     switch ( i ) {
       case 0:
-        __ movl(rscratch1, Address(rbx, Method::access_flags_offset()));
+        __ load_unsigned_short(rscratch1, Address(rbx, Method::access_flags_offset()));
         __ testl(rscratch1, JVM_ACC_STATIC);
         __ cmovptr(Assembler::zero, c_rarg1, Address(rsp, 0));
         break;
@@ -159,7 +159,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   }
 
   // Now handle integrals.  Only do c_rarg1 if not static.
-  __ movl(c_rarg3, Address(rbx, Method::access_flags_offset()));
+  __ load_unsigned_short(c_rarg3, Address(rbx, Method::access_flags_offset()));
   __ testl(c_rarg3, JVM_ACC_STATIC);
   __ cmovptr(Assembler::zero, c_rarg1, Address(rsp, 0));
 

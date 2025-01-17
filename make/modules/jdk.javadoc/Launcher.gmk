@@ -32,5 +32,5 @@ include LauncherCommon.gmk
 $(eval $(call SetupBuildLauncher, javadoc, \
     MAIN_CLASS := jdk.javadoc.internal.tool.Main, \
     JAVA_ARGS := --add-modules ALL-DEFAULT, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
 ))

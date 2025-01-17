@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {
     JavaFieldStream jfs(ik);
     while (!jfs.done()) {
       if (offset == jfs.offset()) {
-        *modifiers = jfs.access_flags().as_short();
+        *modifiers = jfs.access_flags().as_field_flags();
         return jfs.name();
       }
       jfs.next();

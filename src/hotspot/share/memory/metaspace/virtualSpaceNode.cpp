@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,7 +65,7 @@ static void check_pointer_is_aligned_to_commit_granule(const MetaWord* p) {
 }
 static void check_word_size_is_aligned_to_commit_granule(size_t word_size) {
   assert(is_aligned(word_size, Settings::commit_granule_words()),
-         "Not aligned to commit granule size: " SIZE_FORMAT ".", word_size);
+         "Not aligned to commit granule size: %zu.", word_size);
 }
 #endif
 
@@ -95,7 +95,7 @@ bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
   //  were we to commit the given address range completely.
   const size_t commit_increase_words = word_size - committed_words_in_range;
 
-  UL2(debug, "committing range " PTR_FORMAT ".." PTR_FORMAT "(" SIZE_FORMAT " words)",
+  UL2(debug, "committing range " PTR_FORMAT ".." PTR_FORMAT "(%zu words)",
       p2i(p), p2i(p + word_size), word_size);
 
   if (commit_increase_words == 0) {
@@ -118,7 +118,7 @@ bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
     os::pretouch_memory(p, p + word_size);
   }
 
-  UL2(debug, "... committed " SIZE_FORMAT " additional words.", commit_increase_words);
+  UL2(debug, "... committed %zu additional words.", commit_increase_words);
 
   // ... tell commit limiter...
   _commit_limiter->increase_committed(commit_increase_words);
@@ -180,7 +180,7 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
   const size_t committed_words_in_range = _commit_mask.get_committed_size_in_range(p, word_size);
   DEBUG_ONLY(check_word_size_is_aligned_to_commit_granule(committed_words_in_range);)
 
-  UL2(debug, "uncommitting range " PTR_FORMAT ".." PTR_FORMAT "(" SIZE_FORMAT " words)",
+  UL2(debug, "uncommitting range " PTR_FORMAT ".." PTR_FORMAT "(%zu words)",
       p2i(p), p2i(p + word_size), word_size);
 
   if (committed_words_in_range == 0) {
@@ -194,7 +194,7 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
     fatal("Failed to uncommit metaspace.");
   }
 
-  UL2(debug, "... uncommitted " SIZE_FORMAT " words.", committed_words_in_range);
+  UL2(debug, "... uncommitted %zu words.", committed_words_in_range);
 
   // ... tell commit limiter...
   _commit_limiter->decrease_committed(committed_words_in_range);
@@ -231,7 +231,7 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
   _total_reserved_words_counter(reserve_counter),
   _total_committed_words_counter(commit_counter)
 {
-  UL2(debug, "born (word_size " SIZE_FORMAT ").", _word_size);
+  UL2(debug, "born (word_size %zu).", _word_size);
 
   // Update reserved counter in vslist
   _total_reserved_words_counter->increment_by(_word_size);

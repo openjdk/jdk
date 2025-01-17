@@ -146,7 +146,7 @@ class outputStream;
   f(degen_gc_final_rebuild_freeset,                 "  Rebuild Free Set")              \
   f(degen_gc_stw_evac,                              "  Evacuation")                    \
   f(degen_gc_init_update_refs_manage_gclabs,        "  Manage GCLABs")                 \
-  f(degen_gc_updaterefs,                            "  Update References")             \
+  f(degen_gc_update_refs,                           "  Update References")             \
   f(degen_gc_final_update_refs_finish_work,         "  Finish Work")                   \
   f(degen_gc_final_update_refs_update_region_states,"  Update Region States")          \
   f(degen_gc_final_update_refs_trash_cset,          "  Trash Collection Set")          \

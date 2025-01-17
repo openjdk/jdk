@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ PretouchTask::PretouchTask(const char* task_name,
     _chunk_size(chunk_size) {
 
   assert(chunk_size >= page_size,
-         "Chunk size " SIZE_FORMAT " is smaller than page size " SIZE_FORMAT,
+         "Chunk size %zu is smaller than page size %zu",
          chunk_size, page_size);
 }
 
@@ -79,12 +79,12 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
     size_t num_chunks = ((total_bytes - 1) / chunk_size) + 1;
 
     uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_workers->max_workers());
-    log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
+    log_debug(gc, heap)("Running %s with %u workers for %zu work units pre-touching %zuB.",
                         task.name(), num_workers, num_chunks, total_bytes);
 
     pretouch_workers->run_task(&task, num_workers);
   } else {
-    log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
+    log_debug(gc, heap)("Running %s pre-touching %zuB.",
                         task.name(), total_bytes);
     task.work(0);
   }
