@@ -87,6 +87,42 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::rotate_right() {
   return old_left;
 }
 
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
+RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::prev() {
+  RBNode* node = this;
+  if (_left != nullptr) { // right subtree exists
+    node = _left;
+    while (node->_right != nullptr) {
+      node = node->_right;
+    }
+    return node;
+  }
+
+  while (node != nullptr && node->is_left_child()) {
+    node = node->_parent;
+  }
+  return node->_parent;
+}
+
+template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
+RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::next() {
+  RBNode* node = this;
+  if (_right != nullptr) { // right subtree exists
+    node = _right;
+    while (node->_left != nullptr) {
+      node = node->_left;
+    }
+    return node;
+  }
+
+  while (node != nullptr && node->is_right_child()) {
+    node = node->_parent;
+  }
+  return node->_parent;
+}
+
 #ifdef ASSERT
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::is_correct(
@@ -381,10 +417,8 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove_from_tree(RBNode* node) 
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
-  if (node == nullptr) {
-    return false;
-  }
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
+  assert(node != nullptr, "must be");
 
   if (node->_left != nullptr && node->_right != nullptr) { // node has two children
     // Swap place with the in-order successor and delete there instead
@@ -420,20 +454,20 @@ inline bool RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
 
   remove_from_tree(node);
   free_node(node);
-  return true;
 }
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <typename F>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) {
-  GrowableArrayCHeap<RBNode*, mtInternal> to_visit(2 * log2i(_num_nodes + 1));
+  RBNode* to_visit[64];
+  int stack_idx = 0;
   RBNode* head = _root;
-  while (!to_visit.is_empty() || head != nullptr) {
+  while (stack_idx > 0 || head != nullptr) {
     while (head != nullptr) {
-      to_visit.push(head);
+      to_visit[stack_idx++] = head;
       head = head->_left;
     }
-    head = to_visit.pop();
+    head = to_visit[--stack_idx];
     f(head);
     head = head->_right;
   }
@@ -443,31 +477,13 @@ template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <typename F>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_range_in_order(const K& from, const K& to, F f) {
   assert(COMPARATOR::cmp(from, to) <= 0, "from must be less or equal to to");
-  GrowableArrayCHeap<RBNode*, mtInternal> to_visit;
-  RBNode* head = _root;
-  while (!to_visit.is_empty() || head != nullptr) {
-    while (head != nullptr) {
-      int cmp_from = COMPARATOR::cmp(head->_key, from);
-      to_visit.push(head);
-      if (cmp_from >= 0) {
-        head = head->_left;
-      } else {
-        // We've reached a node which is strictly less than from
-        // We don't need to visit any further to the left.
-        break;
-      }
-    }
-    head = to_visit.pop();
-    const int cmp_from = COMPARATOR::cmp(head->_key, from);
-    const int cmp_to = COMPARATOR::cmp(head->_key, to);
-    if (cmp_from >= 0 && cmp_to < 0) {
-      f(head);
-    }
-    if (cmp_to < 0) {
-      head = head->_right;
-    } else {
-      head = nullptr;
-    }
+  RBNode* curr = closest_gt(from, BoundMode::INCLUSIVE);
+  if (curr == nullptr) return;
+  RBNode* end = closest_gt(to, BoundMode::INCLUSIVE);
+
+  while (curr != nullptr && curr != end) {
+    f(curr);
+    curr = curr->next();
   }
 }
 
@@ -503,23 +519,5 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
   assert(_root->is_correct(black_nodes, maximum_depth, 1), "rbtree does not hold rb-properties");
 }
 #endif // ASSERT
-
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-template <bool Forward>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::IteratorImpl<Forward>::push_left(RBNode* node) {
-  while (node != nullptr) {
-    _to_visit.push(node);
-    node = node->_left;
-  }
-}
-
-template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
-template <bool Forward>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::IteratorImpl<Forward>::push_right(RBNode* node) {
-  while (node != nullptr) {
-    _to_visit.push(node);
-    node = node->_right;
-  }
-}
 
 #endif // SHARE_UTILITIES_RBTREE_INLINE_HPP

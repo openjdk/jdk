@@ -28,7 +28,6 @@
 #include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
 #include <type_traits>
 
 // COMPARATOR must have a static function `cmp(a,b)` which returns:
@@ -68,6 +67,7 @@ public:
   public:
     const K& key() const { return _key; }
     V& val() { return _value; }
+    const V& val() const { return _value; }
 
   private:
     bool is_black() const { return _color == BLACK; }
@@ -95,6 +95,10 @@ public:
 
     // Move node down to the right, and left child up
     RBNode* rotate_right();
+
+    RBNode* prev();
+
+    RBNode* next();
 
   #ifdef ASSERT
     bool is_correct(unsigned int num_blacks, unsigned int maximum_depth, unsigned int current_depth) const;
@@ -159,36 +163,44 @@ public:
   // Returns true if the node was successfully removed, false otherwise.
   bool remove(const K& k) {
     RBNode* node = find_node(_root, k);
-    return remove(node);
+    if (node == nullptr){
+      return false;
+    }
+    remove(node);
+    return true;
   }
 
-  // Removes the given node from the tree.
-  // Returns true if the node was successfully removed, false otherwise.
-  bool remove(RBNode* node);
+  // Removes the given node from the tree. node must be a valid node
+  void remove(RBNode* node);
 
   // Removes all existing nodes from the tree.
   void remove_all() {
-    GrowableArrayCHeap<RBNode*, mtInternal> to_delete(2 * log2i(_num_nodes + 1));
-    to_delete.push(_root);
+    RBNode* to_delete[64];
+    int stack_idx = 0;
+    to_delete[stack_idx++] = _root;
 
-    while (!to_delete.is_empty()) {
-      RBNode* head = to_delete.pop();
+    while (stack_idx > 0) {
+      RBNode* head = to_delete[--stack_idx];
       if (head == nullptr) continue;
-      to_delete.push(head->_left);
-      to_delete.push(head->_right);
+      to_delete[stack_idx++] = head->_left;
+      to_delete[stack_idx++] = head->_right;
       free_node(head);
     }
     _num_nodes = 0;
     _root = nullptr;
   }
 
+  // Alters behaviour of closest_(leq/gt) functions to include/exclude the exact value
+  enum BoundMode : uint8_t { STRICT, INCLUSIVE };
+
   // Finds the node with the closest key <= the given key
-  RBNode* closest_leq(const K& key) {
+  // Change mode to EXCLUSIVE to not include node matching key
+  RBNode* closest_leq(const K& key, BoundMode mode = INCLUSIVE) {
     RBNode* candidate = nullptr;
     RBNode* pos = _root;
     while (pos != nullptr) {
       int cmp_r = COMPARATOR::cmp(pos->key(), key);
-      if (cmp_r == 0) { // Exact match
+      if (mode == INCLUSIVE && cmp_r == 0) { // Exact match
         candidate = pos;
         break; // Can't become better than that.
       }
@@ -196,7 +208,7 @@ public:
         // Found a match, try to find a better one.
         candidate = pos;
         pos = pos->_right;
-      } else if (cmp_r > 0) {
+      } else {
         pos = pos->_left;
       }
     }
@@ -204,35 +216,25 @@ public:
   }
 
   // Finds the node with the closest key > the given key
-  RBNode* closest_gt(const K& key) {
+  // Change mode to STRICT to include node matching key
+  RBNode* closest_gt(const K& key, BoundMode mode = STRICT) {
     RBNode* candidate = nullptr;
     RBNode* pos = _root;
     while (pos != nullptr) {
       int cmp_r = COMPARATOR::cmp(pos->key(), key);
-      if (cmp_r > 0) { // node > key
+      if (mode == INCLUSIVE && cmp_r == 0) { // Exact match
+        candidate = pos;
+        break; // Can't become better than that.
+      }
+      if (cmp_r > 0) {
         // Found a match, try to find a better one.
         candidate = pos;
         pos = pos->_left;
-      } else { // node <= key
+      } else {
         pos = pos->_right;
       }
     }
     return candidate;
-  }
-
-  struct Range {
-    RBNode* start;
-    RBNode* end;
-    Range(RBNode* start, RBNode* end) : start(start), end(end) {}
-  };
-
-  // Return the range [start, end)
-  // where start->key() <= addr < end->key().
-  // Failure to find the range leads to start and/or end being nullptr.
-  Range find_enclosing_range(K addr) {
-    RBNode* start = closest_leq(addr);
-    RBNode* end = closest_gt(addr);
-    return Range(start, end);
   }
 
   // Finds the value associated with the key
@@ -243,6 +245,9 @@ public:
     }
     return &node->val();
   }
+
+  // Finds the value associated with the key
+  const V* find(const K& key) const { return find(key); }
 
   // Visit all RBNodes in ascending order, calling f on each node.
   template <typename F>
@@ -256,39 +261,6 @@ public:
   // Verifies that the tree is correct and holds rb-properties
   void verify_self();
 #endif // ASSERT
-
-private:
-  template<bool Forward>
-  class IteratorImpl : public StackObj {
-  private:
-    const RBTree* const _tree;
-    GrowableArrayCHeap<RBNode*, mtInternal> _to_visit;
-
-    void push_left(RBNode* node);
-    void push_right(RBNode* node);
-
-  public:
-    NONCOPYABLE(IteratorImpl);
-
-    IteratorImpl(const RBTree* tree) : _tree(tree) {
-      _to_visit.reserve(2 * log2i(_tree->_num_nodes + 1));
-      Forward ? push_left(tree->_root) : push_right(tree->_root);
-    }
-
-    bool has_next() { return !_to_visit.is_empty(); }
-
-    RBNode* next() {
-      RBNode* node = _to_visit.pop();
-      if (node != nullptr) {
-        Forward ? push_left(node->_right) : push_right(node->_left);
-      }
-      return node;
-    }
-  };
-
-public:
-  using Iterator = IteratorImpl<true>; // Forward iterator
-  using ReverseIterator = IteratorImpl<false>; // Backward iterator
 
 };
 

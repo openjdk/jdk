@@ -30,6 +30,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/rbTree.hpp"
 #include "utilities/rbTree.inline.hpp"
+#include <cstddef>
 
 
 class RBTreeTest : public testing::Test {
@@ -65,7 +66,7 @@ using RBTreeInt = RBTreeCHeap<int, int, Cmp, mtOther>;
 
 public:
   void inserting_duplicates_results_in_one_value() {
-    constexpr const int up_to = 10;
+    constexpr int up_to = 10;
     GrowableArrayCHeap<int, mtTest> nums_seen(up_to, up_to, 0);
     RBTreeInt rbtree;
 
@@ -108,7 +109,7 @@ public:
       }
     };
 
-    constexpr const int up_to = 10;
+    constexpr int up_to = 10;
     {
       RBTree<int, int, Cmp, LeakCheckedAllocator> rbtree;
       for (int i = 0; i < up_to; i++) {
@@ -280,6 +281,46 @@ public:
     }
   }
 
+  void test_node_prev() {
+    RBTreeInt _tree;
+    using Node = RBTreeInt::RBNode;
+    constexpr int num_nodes = 100;
+
+    for (int i = num_nodes; i > 0; i--) {
+      _tree.upsert(i, i);
+    }
+
+    Node* node = _tree.find_node(_tree._root, num_nodes);
+    int count = num_nodes;
+    while (node != nullptr) {
+      EXPECT_EQ(count, node->val());
+      node = node->prev();
+      count--;
+    }
+
+    EXPECT_EQ(count, 0);
+  }
+
+    void test_node_next() {
+    RBTreeInt _tree;
+    using Node = RBTreeInt::RBNode;
+    constexpr int num_nodes = 100;
+
+    for (int i = 0; i < num_nodes; i++) {
+      _tree.upsert(i, i);
+    }
+
+    Node* node = _tree.find_node(_tree._root, 0);
+    int count = 0;
+    while (node != nullptr) {
+      EXPECT_EQ(count, node->val());
+      node = node->next();
+      count++;
+    }
+
+    EXPECT_EQ(count, num_nodes);
+  }
+
   void test_stable_nodes() {
     using Node = RBTreeInt::RBNode;
     RBTreeInt rbtree;
@@ -331,36 +372,6 @@ public:
     rbtree.visit_in_order([&](Node* node) {
       EXPECT_EQ(node, node->val());
     });
-  }
-
-  void test_empty_iterator() {
-    RBTreeInt tree;
-    RBTreeInt::Iterator iterator(&tree);
-    RBTreeInt::ReverseIterator reverse_iterator(&tree);
-    EXPECT_FALSE(iterator.has_next());
-    EXPECT_FALSE(reverse_iterator.has_next());
-  }
-
-    void test_iterator() {
-    constexpr const int num_nodes = 100;
-    RBTreeInt tree;
-    for (int n = 0; n <= num_nodes; n++) {
-      tree.upsert(n, n);
-    }
-
-    RBTreeInt::Iterator iterator(&tree);
-    for (int n = 0; n <= num_nodes; n++) {
-      EXPECT_TRUE(iterator.has_next());
-      EXPECT_EQ(iterator.next()->val(), n);
-    }
-    EXPECT_FALSE(iterator.has_next());
-
-    RBTreeInt::ReverseIterator reverse_iterator(&tree);
-    for (int n = num_nodes; n >= 0; n--) {
-      EXPECT_TRUE(reverse_iterator.has_next());
-      EXPECT_EQ(reverse_iterator.next()->val(), n);
-    }
-    EXPECT_FALSE(reverse_iterator.has_next());
   }
 
 #ifdef ASSERT
@@ -433,6 +444,14 @@ TEST_VM_F(RBTreeTest, TestClosestLeq) {
   this->test_closest_leq();
 }
 
+TEST_VM_F(RBTreeTest, NodePrev) {
+  this->test_node_prev();
+}
+
+TEST_VM_F(RBTreeTest, NodeNext) {
+  this->test_node_next();
+}
+
 TEST_VM_F(RBTreeTest, NodeStableTest) {
   this->test_stable_nodes();
 }
@@ -441,21 +460,13 @@ TEST_VM_F(RBTreeTest, NodeStableAddressTest) {
   this->test_stable_nodes_addresses();
 }
 
-TEST_VM_F(RBTreeTest, EmptyIteratorTest) {
-  this->test_empty_iterator();
-}
-
-TEST_VM_F(RBTreeTest, IteratorTest) {
-  this->test_iterator();
-}
-
 #ifdef ASSERT
 TEST_VM_F(RBTreeTest, FillAndVerify) {
   this->test_fill_verify();
 }
 
 TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
-  constexpr const int num_nodes = 100;
+  constexpr int num_nodes = 100;
   for (int n_t1 = 0; n_t1 < num_nodes; n_t1++) {
     for (int n_t2 = 0; n_t2 < n_t1; n_t2++) {
       RBTreeInt tree;
@@ -473,7 +484,7 @@ TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
 TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
   { // Repeatedly verify a tree of moderate size
     RBTreeInt rbtree;
-    constexpr const int ten_thousand = 10000;
+    constexpr int ten_thousand = 10000;
     for (int i = 0; i < ten_thousand; i++) {
       int r = os::random();
       if (r % 2 == 0) {
@@ -500,7 +511,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
   { // Make a very large tree and verify at the end
   struct Nothing {};
     RBTreeCHeap<int, Nothing, Cmp, mtOther> rbtree;
-    constexpr const int one_hundred_thousand = 100000;
+    constexpr int one_hundred_thousand = 100000;
     for (int i = 0; i < one_hundred_thousand; i++) {
       rbtree.upsert(i, Nothing());
     }
