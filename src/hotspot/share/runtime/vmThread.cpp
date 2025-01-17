@@ -410,7 +410,7 @@ void VMThread::inner_execute(VM_Operation* op) {
            cause != nullptr ? cause : "",
            cause != nullptr ? ")" : "");
 
-  EventMarkVMOperation em("%s",ss.freeze());
+  EventMarkVMOperation em("%s", ss.freeze());
   log_debug(vmthread)("%s", ss.freeze());
 
   bool end_safepoint = false;
