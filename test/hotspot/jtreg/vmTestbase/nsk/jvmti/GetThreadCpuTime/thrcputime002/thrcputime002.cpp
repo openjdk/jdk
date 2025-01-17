@@ -33,7 +33,7 @@ extern "C" {
 /* ============================================================================= */
 
 static jlong timeout = 0;
-static jrawMonitorID monitor;
+static jrawMonitorID monitor; // a monitor to serialize event callbacks and checkCpuTime calls
 
 #define TESTED_THREAD_NAME      "thrcputime002Thread"
 
