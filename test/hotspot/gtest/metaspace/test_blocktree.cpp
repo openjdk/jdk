@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -144,7 +144,7 @@ static void test_find_nearest_fit_with_tree(const size_t sizes[], size_t request
     EXPECT_0(real_size);
   }
 
-  LOG(SIZE_FORMAT ": " SIZE_FORMAT ".", request_size, real_size);
+  LOG(SIZE_FORMAT ": %zu.", request_size, real_size);
 
 }
 
@@ -398,13 +398,13 @@ class BlockTreeTest {
 
     feed_all(feeding_pattern);
 
-    LOG("Blocks in circulation: bt1=%d:" SIZE_FORMAT ", bt2=%d:" SIZE_FORMAT ".",
+    LOG("Blocks in circulation: bt1=%d:%zu, bt2=%d:%zu.",
         _bt[0].count(), _bt[0].total_size(),
         _bt[1].count(), _bt[1].total_size());
 
     ping_pong_loop(5000);
 
-    LOG("After Pingpong: bt1=%d:" SIZE_FORMAT ", bt2=%d:" SIZE_FORMAT ".",
+    LOG("After Pingpong: bt1=%d:%zu, bt2=%d:%zu.",
         _bt[0].count(), _bt[0].total_size(),
         _bt[1].count(), _bt[1].total_size());
 

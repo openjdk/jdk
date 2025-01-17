@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ public:
         Atomic::inc(_processed);
         ++_local_processed;
       } else if (Atomic::load_acquire(_processed) == _process_limit) {
-        tty->print_cr("thread %u processed " SIZE_FORMAT, _id, _local_processed);
+        tty->print_cr("thread %u processed %zu", _id, _local_processed);
         return;
       }
     }

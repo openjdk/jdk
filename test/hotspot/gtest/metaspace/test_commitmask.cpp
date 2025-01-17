@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -252,7 +252,7 @@ public:
 
   void test() {
     LOG("mask range: " PTR_FORMAT "-" PTR_FORMAT
-         " (" SIZE_FORMAT " words).",
+         " (%zu words).",
          p2i(_base), p2i(_base + _word_size), _word_size);
     for (int i = 0; i < 5; i++) {
       test1(); test2(); test3();

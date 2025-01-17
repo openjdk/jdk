@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,7 @@ class ChunkHeaderPoolTest {
 
   void attempt_free_at(size_t index) {
 
-    LOG("attempt_free_at " SIZE_FORMAT ".", index);
+    LOG("attempt_free_at %zu.", index);
 
     if (_elems[index] == nullptr) {
       return;
@@ -64,7 +64,7 @@ class ChunkHeaderPoolTest {
 
   void attempt_allocate_at(size_t index) {
 
-    LOG("attempt_allocate_at " SIZE_FORMAT ".", index);
+    LOG("attempt_allocate_at %zu.", index);
 
     if (_elems[index] != nullptr) {
       return;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -249,7 +249,7 @@ TEST_VM(Arena, random_allocs) {
       p = ar.AmallocWords(size);
       alignment = BytesPerWord;
     }
-    LOG(("[%d]: " PTR_FORMAT ", size " SIZE_FORMAT ", aligned " SIZE_FORMAT,
+    LOG(("[%d]: " PTR_FORMAT ", size %zu, aligned %zu",
          i, p2i(p), size, alignment));
     ASSERT_NOT_NULL(p);
     ASSERT_ALIGN(p, alignment);
@@ -280,7 +280,7 @@ TEST_VM(Arena, random_allocs) {
       ASSERT_NULL(p2);
     }
     ptrs[i] = p2; sizes[i] = new_size;
-    LOG(("[%d]: realloc " PTR_FORMAT ", size " SIZE_FORMAT ", aligned " SIZE_FORMAT,
+    LOG(("[%d]: realloc " PTR_FORMAT ", size %zu, aligned %zu",
          i, p2i(p2), new_size, alignments[i]));
   }
 
