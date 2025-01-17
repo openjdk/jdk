@@ -46,7 +46,6 @@
 //   - committed size of a MemTag should be <= of its reserved size
 //   - uncommitted size of a MemTag should be <= of its committed size
 //   - released size of a MemTag should be <= of its reserved size
-//   - reserving an already reserved/committed region is not valid
 
 class VirtualMemoryTracker {
  private:
