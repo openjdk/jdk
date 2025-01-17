@@ -5137,7 +5137,7 @@ bool LibraryCallKit::inline_unsafe_setMemory() {
 
   // Call it.  Note that the length argument is not scaled.
   make_runtime_call(flags,
-                    OptoRuntime::make_setmemory_Type(),
+                    OptoRuntime::unsafe_setmemory_Type(),
                     StubRoutines::unsafe_setmemory(),
                     "unsafe_setmemory",
                     dst_type,
