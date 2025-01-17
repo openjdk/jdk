@@ -2108,7 +2108,8 @@ done:
 }
 
 void AwtWindow::SetIconData(JNIEnv* env, jintArray iconRaster, jint w, jint h,
-                             jintArray smallIconRaster, jint smw, jint smh) {
+                             jintArray smallIconRaster, jint smw, jint smh)
+{
     HICON hNewIcon = NULL;
     HICON hNewIconSm = NULL;
 
