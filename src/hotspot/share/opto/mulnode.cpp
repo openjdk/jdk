@@ -223,6 +223,18 @@ MulNode* MulNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
+MulNode* MulNode::make_and(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new AndINode(in1, in2);
+    case T_LONG:
+      return new AndLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 
 //=============================================================================
 //------------------------------Ideal------------------------------------------
@@ -924,7 +936,7 @@ static bool const_shift_count(PhaseGVN* phase, Node* shiftNode, int* count) {
   return false;
 }
 
-static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, int nBits) {
+static int maskShiftAmount(PhaseGVN* phase, Node* shiftNode, uint nBits) {
   int count = 0;
   if (const_shift_count(phase, shiftNode, &count)) {
     int maskedShift = count & (nBits - 1);
@@ -1296,29 +1308,51 @@ const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   return TypeLong::make( (jlong)r1->get_con() << (jint)shift );
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
-Node* RShiftINode::Identity(PhaseGVN* phase) {
+Node *RShiftNode::IdealIL(PhaseGVN *phase, bool can_reshape, BasicType bt) {
+  // Inputs may be TOP if they are dead.
+  const TypeInteger* t1 = phase->type(in(1))->isa_integer(bt);
+  if (!t1) return NodeSentinel;        // Left input is an integer
+  const TypeInteger* t3;  // type of in(1).in(2)
+  int shift = maskShiftAmount(phase, this, bits_per_java_integer(bt));
+  if (shift == 0) {
+    return NodeSentinel;
+  }
+
+  // Check for (x & 0xFF000000) >> 24, whose mask can be made smaller.
+  // Such expressions arise normally from shift chains like (byte)(x >> 24).
+  const Node *mask = in(1);
+  if (mask->Opcode() == Op_And(bt) &&
+      (t3 = phase->type(mask->in(2))->isa_integer(bt)) &&
+      t3->is_con()) {
+    jlong maskbits = t3->get_con_as_long(bt);
+    // Convert to "(x >> shift) & (mask >> shift)"
+    Node* shr_nomask = phase->transform(RShiftNode::make(mask->in(1), in(2), bt));
+    return MulNode::make_and(shr_nomask, phase->integercon(maskbits >> shift, bt), bt);
+  }
+  return nullptr;
+}
+
+Node* RShiftNode::IdentityIL(PhaseGVN* phase, BasicType bt) {
   int count = 0;
   if (const_shift_count(phase, this, &count)) {
-    if ((count & (BitsPerJavaInteger - 1)) == 0) {
-      // Shift by a multiple of 32 does nothing
+    if ((count & (bits_per_java_integer(bt) - 1)) == 0) {
+      // Shift by a multiple of 32/64 does nothing
       return in(1);
     }
     // Check for useless sign-masking
-    if (in(1)->Opcode() == Op_LShiftI &&
+    if (in(1)->Opcode() == Op_LShift(bt) &&
         in(1)->req() == 3 &&
         in(1)->in(2) == in(2)) {
-      count &= BitsPerJavaInteger-1; // semantics of Java shifts
+      count &= bits_per_java_integer(bt)-1; // semantics of Java shifts
       // Compute masks for which this shifting doesn't change
-      int lo = (-1 << (BitsPerJavaInteger - ((uint)count)-1)); // FFFF8000
-      int hi = ~lo;               // 00007FFF
-      const TypeInt* t11 = phase->type(in(1)->in(1))->isa_int();
+      jlong lo = (-1 << (bits_per_java_integer(bt) - ((uint)count)-1)); // FFFF8000
+      jlong hi = ~lo;               // 00007FFF
+      const TypeInteger* t11 = phase->type(in(1)->in(1))->isa_integer(bt);
       if (t11 == nullptr) {
         return this;
       }
       // Does actual value fit inside of mask?
-      if (lo <= t11->_lo && t11->_hi <= hi) {
+      if (lo <= t11->lo_as_long() && t11->hi_as_long() <= hi) {
         return in(1)->in(1);      // Then shifting is a nop
       }
     }
@@ -1326,29 +1360,106 @@ Node* RShiftINode::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//------------------------------Ideal------------------------------------------
-Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Inputs may be TOP if they are dead.
-  const TypeInt *t1 = phase->type(in(1))->isa_int();
-  if (!t1) return nullptr;        // Left input is an integer
-  const TypeInt *t3;  // type of in(1).in(2)
-  int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
-  if (shift == 0) {
-    return nullptr;
+const Type* RShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
+  const Type *t1 = phase->type(in(1));
+  const Type *t2 = phase->type(in(2));
+  // Either input is TOP ==> the result is TOP
+  if (t1 == Type::TOP) return Type::TOP;
+  if (t2 == Type::TOP) return Type::TOP;
+
+  // Left input is ZERO ==> the result is ZERO.
+  if (t1 == TypeInteger::zero(bt)) return TypeInteger::zero(bt);
+  // Shift by zero does nothing
+  if (t2 == TypeInt::ZERO) return t1;
+
+  // Either input is BOTTOM ==> the result is BOTTOM
+  if (t1 == Type::BOTTOM || t2 == Type::BOTTOM) {
+    return TypeInteger::bottom(bt);
   }
 
-  // Check for (x & 0xFF000000) >> 24, whose mask can be made smaller.
-  // Such expressions arise normally from shift chains like (byte)(x >> 24).
-  const Node *mask = in(1);
-  if( mask->Opcode() == Op_AndI &&
-      (t3 = phase->type(mask->in(2))->isa_int()) &&
-      t3->is_con() ) {
-    Node *x = mask->in(1);
-    jint maskbits = t3->get_con();
-    // Convert to "(x >> shift) & (mask >> shift)"
-    Node *shr_nomask = phase->transform( new RShiftINode(mask->in(1), in(2)) );
-    return new AndINode(shr_nomask, phase->intcon( maskbits >> shift));
+  const TypeInteger* r1 = t1->isa_integer(bt); // Handy access
+  const TypeInt* r2 = t2->isa_int(); // Handy access
+
+  // If the shift is a constant, just shift the bounds of the type.
+  // For example, if the shift is 31/63, we just propagate sign bits.
+  if (!r1->is_con() && r2->is_con()) {
+    uint shift = r2->get_con();
+    shift &= bits_per_java_integer(bt)-1;  // semantics of Java shifts
+    // Shift by a multiple of 32/64 does nothing:
+    if (shift == 0)  return t1;
+    // Calculate reasonably aggressive bounds for the result.
+    // This is necessary if we are to correctly type things
+    // like (x<<24>>24) == ((byte)x).
+    jlong lo = r1->lo_as_long() >> (jint)shift;
+    jlong hi = r1->hi_as_long() >> (jint)shift;
+    assert(lo <= hi, "must have valid bounds");
+#ifdef ASSERT
+   if (bt ==T_INT) {
+     jint lo_verify = checked_cast<jint>(r1->lo_as_long()) >> (jint)shift;
+     jint hi_verify = checked_cast<jint>(r1->hi_as_long()) >> (jint)shift;
+     assert((checked_cast<jint>(lo) == lo_verify) & (checked_cast<jint>(hi) == hi_verify), "inconsistent");
+   }
+#endif
+    const TypeInteger* ti = TypeInteger::make(lo, hi, MAX2(r1->_widen,r2->_widen), bt);
+#ifdef ASSERT
+    // Make sure we get the sign-capture idiom correct.
+    if (shift == bits_per_java_integer(bt)-1) {
+      if (r1->lo_as_long() >= 0) assert(ti == TypeInteger::zero(bt),    ">>31/63 of + is  0");
+      if (r1->hi_as_long() <  0) assert(ti == TypeInteger::minus_1(bt), ">>31/63 of - is -1");
+    }
+#endif
+    return ti;
   }
+
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->lo_as_long() >= 0) {
+      return TypeInteger::make(0, r1->hi_as_long(), MAX2(r1->_widen, r2->_widen), bt);
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->hi_as_long() <= -1) {
+      return TypeInteger::make(r1->lo_as_long(), -1, MAX2(r1->_widen, r2->_widen), bt);
+    }
+
+    return TypeInteger::bottom(bt);
+  }
+
+  // Signed shift right
+  return TypeInteger::make(r1->get_con_as_long(bt) >> (r2->get_con() & (bits_per_java_integer(bt) - 1)), bt);
+}
+
+RShiftNode* RShiftNode::make(Node* in1, Node* in2, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new RShiftINode(in1, in2);
+    case T_LONG:
+      return new RShiftLNode(in1, in2);
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
+
+//=============================================================================
+//------------------------------Identity---------------------------------------
+Node* RShiftINode::Identity(PhaseGVN* phase) {
+  return IdentityIL(phase, T_INT);
+}
+
+//------------------------------Ideal------------------------------------------
+Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* progress = IdealIL(phase, can_reshape, T_INT);
+  if (progress == NodeSentinel) {
+    return nullptr;
+  }
+  if (progress != nullptr) {
+    return progress;
+  }
+  const TypeInt *t3;  // type of in(1).in(2)
+  int shift = maskShiftAmount(phase, this, BitsPerJavaInteger);
+  assert(shift != 0, "handled by IdealIL");
 
   // Check for "(short[i] <<16)>>16" which simply sign-extends
   const Node *shl = in(1);
@@ -1391,136 +1502,26 @@ Node *RShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
-// A RShiftINode shifts its input2 right by input1 amount.
 const Type* RShiftINode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  // Either input is TOP ==> the result is TOP
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // Left input is ZERO ==> the result is ZERO.
-  if( t1 == TypeInt::ZERO ) return TypeInt::ZERO;
-  // Shift by zero does nothing
-  if( t2 == TypeInt::ZERO ) return t1;
-
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
-    return TypeInt::INT;
-
-  const TypeInt *r1 = t1->is_int(); // Handy access
-  const TypeInt *r2 = t2->is_int(); // Handy access
-
-  // If the shift is a constant, just shift the bounds of the type.
-  // For example, if the shift is 31, we just propagate sign bits.
-  if (!r1->is_con() && r2->is_con()) {
-    uint shift = r2->get_con();
-    shift &= BitsPerJavaInteger-1;  // semantics of Java shifts
-    // Shift by a multiple of 32 does nothing:
-    if (shift == 0)  return t1;
-    // Calculate reasonably aggressive bounds for the result.
-    // This is necessary if we are to correctly type things
-    // like (x<<24>>24) == ((byte)x).
-    jint lo = (jint)r1->_lo >> (jint)shift;
-    jint hi = (jint)r1->_hi >> (jint)shift;
-    assert(lo <= hi, "must have valid bounds");
-    const TypeInt* ti = TypeInt::make(lo, hi, MAX2(r1->_widen,r2->_widen));
-#ifdef ASSERT
-    // Make sure we get the sign-capture idiom correct.
-    if (shift == BitsPerJavaInteger-1) {
-      if (r1->_lo >= 0) assert(ti == TypeInt::ZERO,    ">>31 of + is  0");
-      if (r1->_hi <  0) assert(ti == TypeInt::MINUS_1, ">>31 of - is -1");
-    }
-#endif
-    return ti;
-  }
-
-  if (!r1->is_con() || !r2->is_con()) {
-    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
-    if (r1->_lo >= 0) {
-      return TypeInt::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
-    }
-
-    // Conversely, if the left input is negative then the result must be negative.
-    if (r1->_hi <= -1) {
-      return TypeInt::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
-    }
-
-    return TypeInt::INT;
-  }
-
-  // Signed shift right
-  return TypeInt::make(r1->get_con() >> (r2->get_con() & 31));
+  return ValueIL(phase, T_INT);
 }
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
 Node* RShiftLNode::Identity(PhaseGVN* phase) {
-  const TypeInt *ti = phase->type(in(2))->isa_int(); // Shift count is an int.
-  return (ti && ti->is_con() && (ti->get_con() & (BitsPerJavaLong - 1)) == 0) ? in(1) : this;
+  return IdentityIL(phase, T_LONG);
 }
 
-//------------------------------Value------------------------------------------
-// A RShiftLNode shifts its input2 right by input1 amount.
+Node *RShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* progress = IdealIL(phase, can_reshape, T_LONG);
+  if (progress == NodeSentinel) {
+    return nullptr;
+  }
+  return progress;
+}
+
 const Type* RShiftLNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  // Either input is TOP ==> the result is TOP
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // Left input is ZERO ==> the result is ZERO.
-  if( t1 == TypeLong::ZERO ) return TypeLong::ZERO;
-  // Shift by zero does nothing
-  if( t2 == TypeInt::ZERO ) return t1;
-
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
-    return TypeLong::LONG;
-
-  const TypeLong *r1 = t1->is_long(); // Handy access
-  const TypeInt  *r2 = t2->is_int (); // Handy access
-
-  // If the shift is a constant, just shift the bounds of the type.
-  // For example, if the shift is 63, we just propagate sign bits.
-  if (!r1->is_con() && r2->is_con()) {
-    uint shift = r2->get_con();
-    shift &= (2*BitsPerJavaInteger)-1;  // semantics of Java shifts
-    // Shift by a multiple of 64 does nothing:
-    if (shift == 0)  return t1;
-    // Calculate reasonably aggressive bounds for the result.
-    // This is necessary if we are to correctly type things
-    // like (x<<24>>24) == ((byte)x).
-    jlong lo = (jlong)r1->_lo >> (jlong)shift;
-    jlong hi = (jlong)r1->_hi >> (jlong)shift;
-    assert(lo <= hi, "must have valid bounds");
-    const TypeLong* tl = TypeLong::make(lo, hi, MAX2(r1->_widen,r2->_widen));
-    #ifdef ASSERT
-    // Make sure we get the sign-capture idiom correct.
-    if (shift == (2*BitsPerJavaInteger)-1) {
-      if (r1->_lo >= 0) assert(tl == TypeLong::ZERO,    ">>63 of + is 0");
-      if (r1->_hi < 0)  assert(tl == TypeLong::MINUS_1, ">>63 of - is -1");
-    }
-    #endif
-    return tl;
-  }
-
-  if (!r1->is_con() || !r2->is_con()) {
-    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
-    if (r1->_lo >= 0) {
-      return TypeLong::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
-    }
-
-    // Conversely, if the left input is negative then the result must be negative.
-    if (r1->_hi <= -1) {
-      return TypeLong::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
-    }
-
-    return TypeLong::LONG;
-  }
-
-  return TypeLong::make(r1->get_con() >> (r2->get_con() & 63));
+  return ValueIL(phase, T_LONG);
 }
 
 //=============================================================================

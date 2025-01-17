@@ -792,6 +792,13 @@ inline jlong min_signed_integer(BasicType bt) {
   return min_jlong;
 }
 
+inline uint bits_per_java_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return BitsPerJavaInteger;
+  }
+  return BitsPerJavaLong;
+}
+
 // Auxiliary math routines
 // least common multiple
 extern size_t lcm(size_t a, size_t b);

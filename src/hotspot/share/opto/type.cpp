@@ -1530,6 +1530,10 @@ const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   return TypeLong::make(lo, hi, w);
 }
 
+const TypeInteger *TypeInteger::make(jlong lo, BasicType bt) {
+  return make(lo, lo, WidenMin, bt);
+}
+
 jlong TypeInteger::get_con_as_long(BasicType bt) const {
   if (bt == T_INT) {
     return is_int()->get_con();

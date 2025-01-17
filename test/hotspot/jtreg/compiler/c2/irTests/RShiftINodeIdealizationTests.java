@@ -37,7 +37,7 @@ public class RShiftINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4" })
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9" })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -56,6 +56,10 @@ public class RShiftINodeIdealizationTests {
         assertResult(max, min);
         assertResult(min, min);
         assertResult(max, max);
+        assertResult(test7Min, b);
+        assertResult(test7Max, b);
+        assertResult(test7Min-1, b);
+        assertResult(test7Max+1, b);
     }
 
     @DontCompile
@@ -64,6 +68,14 @@ public class RShiftINodeIdealizationTests {
         Asserts.assertEQ(((x & 127) >> y) >= 0 ? 0 : 1, test2(x, y));
         Asserts.assertEQ(((-(x & 127) - 1) >> y) >= 0 ? 0 : 1, test3(x, y));
         Asserts.assertEQ((x >> 30) > 4 ? 0 : 1, test4(x, y));
+        Asserts.assertEQ((x & 0xFF000000) >> 24, test5(x));
+        Asserts.assertEQ(x >> 64, test6(x));
+        int x7 = Integer.max(Integer.min(x, test7Max), test7Min);
+        Asserts.assertEQ(((x7 << test7Shift) >> test7Shift), test7(x));
+        int x8 = Integer.max(Integer.min(x, test7Max+1), test7Min);
+        Asserts.assertEQ((x8 << test7Shift) >> test7Shift, test8(x));
+        int x9 = Integer.max(Integer.min(x, test7Max), test7Min-1);
+        Asserts.assertEQ((x9 << test7Shift) >> test7Shift, test9(x));
     }
 
     @Test
@@ -88,5 +100,43 @@ public class RShiftINodeIdealizationTests {
     @IR(failOn = { IRNode.RSHIFT })
     public int test4(int x, int y) {
         return (x >> 30) > 4 ? 0 : 1;
+    }
+
+    @Test
+    @IR(counts = { IRNode.RSHIFT_I, "1" })
+    @IR(failOn = { IRNode.AND_I })
+    public int test5(int x) {
+        return (x & 0xFF000000) >> 24;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.RSHIFT_I })
+    public int test6(int x) {
+        return (x >> 64);
+    }
+
+    final int test7Shift = 10;
+    final int test7Min = -1 << (32 - test7Shift -1);
+    final int test7Max = ~test7Min;
+
+    @Test
+    @IR(failOn = { IRNode.RSHIFT_I, IRNode.LSHIFT_I })
+    public int test7(int x) {
+        x = Integer.max(Integer.min(x, test7Max), test7Min);
+        return ((x << test7Shift) >> test7Shift);
+    }
+
+    @Test
+    @IR(counts = { IRNode.RSHIFT_I, "1", IRNode.LSHIFT_I, "1" })
+    public int test8(int x) {
+        x = Integer.max(Integer.min(x, test7Max+1), test7Min);
+        return ((x << test7Shift) >> test7Shift);
+    }
+
+    @Test
+    @IR(counts = { IRNode.RSHIFT_I, "1", IRNode.LSHIFT_I, "1" })
+    public int test9(int x) {
+        x = Integer.max(Integer.min(x, test7Max), test7Min-1);
+        return ((x << test7Shift) >> test7Shift);
     }
 }
