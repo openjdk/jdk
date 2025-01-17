@@ -1595,7 +1595,7 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
   shenandoah_policy()->record_collection_cause(cause);
 
   const GCCause::Cause current = gc_cause();
-  assert(current == GCCause::_no_gc, "Over-writing cause: %s, with: %s", 
+  assert(current == GCCause::_no_gc, "Over-writing cause: %s, with: %s",
          GCCause::to_string(current), GCCause::to_string(cause));
   assert(_gc_generation == nullptr, "Over-writing _gc_generation");
 
