@@ -74,7 +74,12 @@ import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Context.Factory;
+import java.util.Objects;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.JavaFileObject;
 
@@ -892,7 +897,9 @@ public class TestGetScopeResult {
         JavacTool c = JavacTool.create();
         try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
             String code = """
-                          class Test {
+                          import java.util.*;
+                          class Test<T extends Test&CharSequence> extends ArrayList
+                                                                  implements List {
                               private int test(boolean b) {
                                   int v = b ? test(!b) : 0;
                                   return v;
@@ -919,11 +926,18 @@ public class TestGetScopeResult {
                     new TreePathScanner<Void, Void>() {
                         @Override
                         public Void visitClass(ClassTree node, Void p) {
-                            String clazzType =
-                                String.valueOf(trees.getTypeMirror(getCurrentPath()));
-                            if (!"Test".equals(clazzType)) {
-                                throw new AssertionError("Expected class type 'Test', but got: " + clazzType);
+                            TypeMirror type = trees.getTypeMirror(getCurrentPath());
+                            if (type == null) {
+                                throw new AssertionError("Expected class type 'Test', but got: null");
                             }
+                            assertEquals(TypeKind.DECLARED, type.getKind());
+                            DeclaredType decl = (DeclaredType) type;
+                            TypeVariable tvar = (TypeVariable) decl.getTypeArguments().get(0);
+                            assertEquals("T", tvar.asElement().getSimpleName().toString());
+                            assertEquals("Test&java.lang.CharSequence", tvar.getUpperBound().toString());
+                            TypeElement clazz = (TypeElement) decl.asElement();
+                            assertEquals("java.util.ArrayList", clazz.getSuperclass().toString().toString());
+                            assertEquals("java.util.List", clazz.getInterfaces().toString().toString());
                             return super.visitClass(node, p);
                         }
                         @Override
@@ -941,8 +955,9 @@ public class TestGetScopeResult {
             List<List<String>> expected =
                     List.of(List.of("v:int",
                                     "b:boolean",
-                                    "super:java.lang.Object",
-                                    "this:Test"
+                                    "super:java.util.ArrayList",
+                                    "this:Test<T>",
+                                    "T:T"
                                 ));
 
             if (!expected.equals(actual)) {
@@ -974,4 +989,10 @@ public class TestGetScopeResult {
                                  ", but it is missing.");
     }
 
+    private void assertEquals(Object expected, Object actual) {
+        if (!Objects.equals(expected, actual)) {
+            throw new AssertionError("Expected: '" + expected + "', " +
+                                     "but got: '" + actual + "'");
+        }
+    }
 }
