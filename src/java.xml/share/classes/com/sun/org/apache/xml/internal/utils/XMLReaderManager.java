@@ -50,12 +50,12 @@ public class XMLReaderManager {
     /**
      * Cache of XMLReader objects
      */
-    private ThreadLocal<ReaderWrapper> m_readers;
+    private volatile ThreadLocal<ReaderWrapper> m_readers;
 
     /**
      * Keeps track of whether an XMLReader object is in use.
      */
-    private HashMap<XMLReader, Boolean> m_inUse;
+    private volatile HashMap<XMLReader, Boolean> m_inUse;
 
     private boolean m_overrideDefaultParser;
 
@@ -93,19 +93,22 @@ public class XMLReaderManager {
      * longer needs the reader, it must release it with a call to
      * {@link #releaseXMLReader}.
      */
-    public synchronized XMLReader getXMLReader() throws SAXException {
+    public XMLReader getXMLReader() throws SAXException {
         XMLReader reader;
 
-        if (m_readers == null) {
-            // When the m_readers.get() method is called for the first time
-            // on a thread, a new XMLReader will automatically be created.
-            m_readers = new ThreadLocal<>();
-        }
+        if (m_readers == null || m_inUse == null) {
+            synchronized (this) {
+                if (m_readers == null) {
+                    // When the m_readers.get() method is called for the first time
+                    // on a thread, a new XMLReader will automatically be created.
+                    m_readers = new ThreadLocal<>();
+                }
 
-        if (m_inUse == null) {
-            m_inUse = new HashMap<>();
+                if (m_inUse == null) {
+                    m_inUse = new HashMap<>();
+                }
+            }
         }
-
         /**
          * Constructs a new XMLReader if:
          * (1) the cached reader for this thread is in use, or
@@ -119,21 +122,24 @@ public class XMLReaderManager {
         boolean threadHasReader = (rw != null);
         reader = threadHasReader ? rw.reader : null;
         String factory = System.getProperty(property);
-        if (threadHasReader && m_inUse.get(reader) != Boolean.TRUE &&
-                (rw.overrideDefaultParser == m_overrideDefaultParser) &&
-                ( factory == null || reader.getClass().getName().equals(factory))) {
-            m_inUse.put(reader, Boolean.TRUE);
-            JdkXmlUtils.setReaderProperty(reader, _xmlSecurityManager, _useCatalog,
-                    _catalogFeatures);
-        } else {
-            reader = JdkXmlUtils.getXMLReader(_xmlSecurityManager, m_overrideDefaultParser,
-                    _secureProcessing, _useCatalog, _catalogFeatures);
 
-            // Cache the XMLReader if this is the first time we've created
-            // a reader for this thread.
-            if (!threadHasReader) {
-                m_readers.set(new ReaderWrapper(reader, m_overrideDefaultParser));
+        synchronized (this) {
+            if (threadHasReader && m_inUse.get(reader) != Boolean.TRUE &&
+                    (rw.overrideDefaultParser == m_overrideDefaultParser) &&
+                    ( factory == null || reader.getClass().getName().equals(factory))) {
                 m_inUse.put(reader, Boolean.TRUE);
+                JdkXmlUtils.setReaderProperty(reader, _xmlSecurityManager, _useCatalog,
+                        _catalogFeatures);
+            } else {
+                reader = JdkXmlUtils.getXMLReader(_xmlSecurityManager, m_overrideDefaultParser,
+                        _secureProcessing, _useCatalog, _catalogFeatures);
+
+                // Cache the XMLReader if this is the first time we've created
+                // a reader for this thread.
+                if (!threadHasReader) {
+                    m_readers.set(new ReaderWrapper(reader, m_overrideDefaultParser));
+                    m_inUse.put(reader, Boolean.TRUE);
+                }
             }
         }
 
@@ -153,7 +159,7 @@ public class XMLReaderManager {
      *
      * @param reader The XMLReader that's being released.
      */
-    public synchronized void releaseXMLReader(XMLReader reader) {
+    public void releaseXMLReader(XMLReader reader) {
         // If the reader that's being released is the cached reader
         // for this thread, remove it from the m_inUse list.
         ReaderWrapper rw = m_readers.get();
@@ -167,7 +173,9 @@ public class XMLReaderManager {
             } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
                 // shouldn't happen as the property is supported.
             }
-            m_inUse.remove(reader);
+            synchronized (this) {
+                m_inUse.remove(reader);
+            }
         }
     }
 
