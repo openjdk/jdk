@@ -25,7 +25,7 @@
   @test
   @key headful
   @bug 8020443 6899304
-  @summary Test to check if the frame is created on the specified GraphicsDevice 
+  @summary Test to check if the frame is created on the specified GraphicsDevice
   and if getScreenInsets()returns the correct values across multiple monitors.
   @author Oleg Pekhovskiy
   @library /test/lib
@@ -47,7 +47,7 @@ public class MultiScreenInsetsTest {
     private static final int SIZE = 100;
 
     public static void main(String[] args) throws InterruptedException {
-  
+
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
         if (gds.length < 2) {
@@ -66,8 +66,8 @@ public class MultiScreenInsetsTest {
                               bounds.y + (bounds.height - SIZE) / 2);
             frame.setSize(SIZE, SIZE);
 
-            /* 
-             * On Windows, undecorated maximized frames are placed over the taskbar. 
+            /*
+             * On Windows, undecorated maximized frames are placed over the taskbar.
              * Use a decorated frame instead.
              */
             if(Platform.isWindows()) {
@@ -75,7 +75,7 @@ public class MultiScreenInsetsTest {
             } else {
                 frame.setUndecorated(true);
             }
- 
+
             frame.setVisible(true);
 
             // Maximize Frame to reach the struts
@@ -85,13 +85,13 @@ public class MultiScreenInsetsTest {
             Rectangle frameBounds = frame.getBounds();
             frame.dispose();
 
-            /* 
+            /*
              * On Windows, the top-left corner of an undecorated maximized frame may have negative coordinates (x, y).
              * Adjust the frame bounds accordingly.
              */
             if (frameBounds.x < bounds.x)
             {
-                frameBounds.width -= (bounds.x - frameBounds.x) * 2; 
+                frameBounds.width -= (bounds.x - frameBounds.x) * 2;
                 frameBounds.x = bounds.x;
             }
             if (frameBounds.y < bounds.y)
@@ -99,8 +99,8 @@ public class MultiScreenInsetsTest {
                 frameBounds.height -= (bounds.y - frameBounds.y) * 2;
                 frameBounds.y = bounds.y;
             }
-             
-             // Add a margin to compensate for the lost fractional parts when casting to an integer.       
+
+            // Add a margin to compensate for the lost fractional parts when casting to an integer.
             int marginX = getMarginForScaleX(gc);
             int marginY = getMarginForScaleY(gc);
 
