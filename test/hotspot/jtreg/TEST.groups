@@ -518,6 +518,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
  -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
  -runtime/cds/appcds/CDSandJFR.java \
+ -runtime/cds/appcds/customLoader/HelloCustom_JFR.java \
  -runtime/cds/appcds/customLoader/ParallelTestMultiFP.java \
  -runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
  -runtime/cds/appcds/customLoader/SameNameInTwoLoadersTest.java \
