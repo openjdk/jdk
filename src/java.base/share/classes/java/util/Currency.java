@@ -464,7 +464,7 @@ public final class Currency implements Serializable {
     // Initialize the set of available currencies if needed
     private static synchronized void initAvailableCurrencies() {
         if (available == null) {
-            available = new HashSet<>(256);
+            available = HashSet.newHashSet(256);
 
             // Add simple currencies first
             for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
