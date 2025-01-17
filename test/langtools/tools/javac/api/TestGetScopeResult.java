@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774 8274347
+ * @bug 8205418 8207229 8207230 8230847 8245786 8247334 8248641 8240658 8246774 8274347 8347989
  * @summary Test the outcomes from Trees.getScope
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -52,6 +52,7 @@ import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ReturnTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
@@ -93,6 +94,7 @@ public class TestGetScopeResult {
         new TestGetScopeResult().testRuleCases();
         new TestGetScopeResult().testNestedSwitchExpression();
         new TestGetScopeResult().testModuleImportScope();
+        new TestGetScopeResult().testClassTypeSetInEnterGetScope();
     }
 
     public void run() throws IOException {
@@ -881,6 +883,70 @@ public class TestGetScopeResult {
 
             if (scope.getEnclosingScope() != null) {
                 throw new AssertionError("Did not expect an enclosing scope.");
+            }
+        }
+    }
+
+    //JDK-8347989
+    void testClassTypeSetInEnterGetScope() throws IOException {
+        JavacTool c = JavacTool.create();
+        try (StandardJavaFileManager fm = c.getStandardFileManager(null, null, null)) {
+            String code = """
+                          class Test {
+                              private int test(boolean b) {
+                                  int v = b ? test(!b) : 0;
+                                  return v;
+                              }
+                          }
+                          """;
+            Context ctx = new Context();
+            TestAnalyzer.preRegister(ctx);
+            JavaFileObject input =
+                    SimpleJavaFileObject.forSource(URI.create("myfo:///Test.java"), code);
+            JavacTask t = (JavacTask) c.getTask(null, fm, null, null, null,
+                                                List.of(input),
+                                                ctx);
+            Trees trees = Trees.instance(t);
+            List<List<String>> actual = new ArrayList<>();
+
+            t.addTaskListener(new TaskListener() {
+                @Override
+                public void finished(TaskEvent e) {
+                    if (e.getKind() != TaskEvent.Kind.ENTER) {
+                        return ;
+                    }
+
+                    new TreePathScanner<Void, Void>() {
+                        @Override
+                        public Void visitClass(ClassTree node, Void p) {
+                            String clazzType =
+                                String.valueOf(trees.getTypeMirror(getCurrentPath()));
+                            if (!"Test".equals(clazzType)) {
+                                throw new AssertionError("Expected class type 'Test', but got: " + clazzType);
+                            }
+                            return super.visitClass(node, p);
+                        }
+                        @Override
+                        public Void visitReturn(ReturnTree rt, Void p) {
+                            Scope scope = trees.getScope(getCurrentPath());
+                            actual.add(dumpScope(scope));
+                            return super.visitReturn(rt, p);
+                        }
+                    }.scan(e.getCompilationUnit(), null);
+                }
+            });
+
+            t.analyze();
+
+            List<List<String>> expected =
+                    List.of(List.of("v:int",
+                                    "b:boolean",
+                                    "super:java.lang.Object",
+                                    "this:Test"
+                                ));
+
+            if (!expected.equals(actual)) {
+                throw new AssertionError("Unexpected Scope content: " + actual);
             }
         }
     }
