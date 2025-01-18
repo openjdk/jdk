@@ -24,12 +24,8 @@
  */
 package jdk.internal.net.http.quic;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.VarHandle;
 import java.util.Comparator;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
@@ -40,10 +36,19 @@ import jdk.internal.net.http.quic.frames.StreamFrame;
 
 /**
  * A class to take care of frames reordering in an ordered flow.
+ *
  * Frames that are {@linkplain #receive(QuicFrame) received} out of order
  * will be either buffered or dropped, depending on their {@linkplain
  * #OrderedFlow(Comparator, ToLongFunction, ToIntFunction) position}
  * with respect to the current ordered flow {@linkplain #offset() offset}.
+ * The buffered frames are returned by later calls to {@linkplain #poll()}
+ * when the flow offset matches the frame offset.
+ *
+ * Frames that are {@linkplain #receive(QuicFrame) received} in order
+ * are immediately returned.
+ *
+ * This class is not thread-safe and concurrent access needs to be synchronized
+ * externally.
  * @param <T> A frame type that defines an offset and a {@linkplain
  *           #OrderedFlow(Comparator, ToLongFunction, ToIntFunction)
  *           length}. The offset of the frame
@@ -98,8 +103,8 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
     private final ConcurrentSkipListSet<T> queue;
     private final ToLongFunction<T> position;
     private final ToIntFunction<T> length;
-    volatile long offset;
-    volatile long buffered;
+    long offset;
+    long buffered;
 
     /**
      * Constructs a new instance of ordered flow to reorder frames in a given
@@ -151,7 +156,6 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
     public T receive(T frame) {
         if (frame == null) return null;
 
-        var received = frame;
         long pos = this.position.applyAsLong(frame);
         int length = this.length.applyAsInt(frame);
         assert length >= 0;
@@ -172,31 +176,14 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
             // The code below may return a FIN frame with length 0 even if
             // one has already been returned. This is to ensure we don't fail
             // to return a 0-length frame that has the FIN bit set.
-            while (todeliver >= 0) {
-                // that's the one we're waiting for: let's compute
-                // the position of the next one
-                long next = Math.addExact(offset, todeliver);
-                // try to update the offset with the new position
-                if (OFFSET.compareAndSet(this, offset, next)) {
-                    // cleanup the queue
-                    dropuntil(next);
-                    if (pos == offset) return frame;
-                    if (todeliver == 0) return poll(offset, null);
-                    return slice(frame, offset, todeliver);
-                } else {
-                    // someone beat us to it!
-                    offset = this.offset;
-                    offsetdiff = offset - pos;
-                    // case where the frame is either at offset, or is below
-                    // offset but has a length that provides bytes over
-                    // the current offset
-                    todeliver = offsetdiff < 0 ? -1
-                            : (offsetdiff > length ? -1 : length - (int)offsetdiff);
-                    assert todeliver >= 0;
-                }
-            }
-            // this frame has been superseded - drop it
-            return null;
+            long next = Math.addExact(offset, todeliver);
+            // update the offset with the new position
+            this.offset = next;
+            // cleanup the queue
+            dropuntil(next);
+            if (pos == offset) return frame;
+            if (todeliver == 0) return poll(offset);
+            return slice(frame, offset, todeliver);
         } else if (pos < offset) {
             // late arrival! duplicated or retransmitted frame which
             // has already been handled. Just drop it; No overlap
@@ -206,7 +193,8 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
             // otherwise, the frame is after the offset.
             // insert or slice it, depending on what we
             // have already received.
-            return enqueue(frame, pos, length, offset);
+            enqueue(frame, pos, length, offset);
+            return null;
         }
     }
 
@@ -220,118 +208,98 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
         }
     }
 
-    private T enqueue(T frame, long pos, int length, long after) {
+    private void enqueue(T frame, long pos, int length, long after) {
         assert  pos == position.applyAsLong(frame);
         assert  length == this.length.applyAsInt(frame);
         assert pos > after;
-        T head = null;
-        long offset;
-        // OK to use synchronized: only safe method calls
-        synchronized (this) {
-            head = peekFirst();
-            offset = this.offset;
-            assert offset >= after;
-            int buffering = -1;
-            long newpos = pos;
-            int newlen = length;
-            long limit = Math.addExact(pos, length);
+        long offset = this.offset;
+        assert offset >= after;
+        long newpos = pos;
+        int newlen = length;
+        long limit = Math.addExact(pos, length);
 
-            // look at the closest frame, if any, whose offset is <= to
-            // the new frame offset. Try to see if the new frame overlaps
-            // with that frame, and if so, drops the part that overlaps
-            // in the new frame.
-            T floor = queue.floor(frame);
-            if (floor != null) {
-                long foffset = position.applyAsLong(floor);
-                long flen = this.length.applyAsInt(floor);
-                if (foffset == pos && flen == length) {
-                    // duplicate of floor - just drop it.
-                    return poll(offset, head);
-                }
-                assert foffset <= pos;
-                if (pos - foffset < flen) {
-                    // shift newpos
-                    if (limit - foffset - flen > 0) {
-                        // reduce the frame if it overlaps with the
-                        // one that sits just before in the queue
-                        newpos = foffset + flen;
-                        newlen = length - (int) (newpos - pos);
-                    } else {
-                        // bytes already all buffered!
-                        // just drop the frame
-                        return poll(offset, head);
-                    }
+        // look at the closest frame, if any, whose offset is <= to
+        // the new frame offset. Try to see if the new frame overlaps
+        // with that frame, and if so, drops the part that overlaps
+        // in the new frame.
+        T floor = queue.floor(frame);
+        if (floor != null) {
+            long foffset = position.applyAsLong(floor);
+            long flen = this.length.applyAsInt(floor);
+            if (foffset == pos && flen == length) {
+                // duplicate of floor - just drop it.
+                return;
+            }
+            assert foffset <= pos;
+            if (pos - foffset < flen) {
+                // shift newpos
+                if (limit - foffset - flen > 0) {
+                    // reduce the frame if it overlaps with the
+                    // one that sits just before in the queue
+                    newpos = foffset + flen;
+                    newlen = length - (int) (newpos - pos);
+                } else {
+                    // bytes already all buffered!
+                    // just drop the frame
+                    return;
                 }
             }
+        }
 
-            // Look at the frames that have an offset higher or equal to
-            // the new frame offset, and see if any overlap with the new
-            // frame. Use slices of the new frame to fill up the holes,
-            // if any.
-            while (true) {
-                T ceil = queue.ceiling(frame);
-                // need to add frames to plug the holes while
-                // ceil.offset < frame.offset + frame.length
-                if (ceil != null) {
-                    long coffset = position.applyAsLong(ceil);
-                    if (coffset < limit) {
-                        long clen = this.length.applyAsInt(ceil);
-                        if (coffset < newpos) {
-                            newpos = coffset + clen;
-                            assert newpos >= 0; // there should be no overflow here
-                            if (newpos >= limit) {
-                                // nothing more to do. we enqueued
-                                // anything that needed buffering
-                                return poll(offset, head);
-                            }
-                            // safe cast, since newlen <= len
-                            newlen = (int) (limit - newpos);
-                            // drop the bytes that were already enqueued
-                            frame = slice(frame, newpos, newlen);
-                            continue;
-                        }
-                        assert coffset >= newpos;
-                        if (clen <= limit - coffset) {
-                            // ceiling frame completely contained in the new frame:
-                            // remove the ceiling frame
-                            queue.remove(ceil);
-                            buffered -= clen;
-                            continue;
+        // Look at the frames that have an offset higher or equal to
+        // the new frame offset, and see if any overlap with the new
+        // frame. Use slices of the new frame to fill up the holes,
+        // if any.
+        while (true) {
+            T ceil = queue.ceiling(frame);
+            // need to add frames to plug the holes while
+            // ceil.offset < frame.offset + frame.length
+            if (ceil != null) {
+                long coffset = position.applyAsLong(ceil);
+                if (coffset < limit) {
+                    long clen = this.length.applyAsInt(ceil);
+                    if (coffset < newpos) {
+                        newpos = coffset + clen;
+                        assert newpos >= 0; // there should be no overflow here
+                        if (newpos >= limit) {
+                            // nothing more to do. we enqueued
+                            // anything that needed buffering
+                            return;
                         }
                         // safe cast, since newlen <= len
-                        newlen = (int) (coffset - newpos);
-                        queue.add(slice(frame, newpos, newlen));
-                        buffered += newlen;
-                        newpos = Math.addExact(coffset, clen);
-                        assert newpos >= limit;
-                        return poll(offset, head);
+                        newlen = (int) (limit - newpos);
+                        // drop the bytes that were already enqueued
+                        frame = slice(frame, newpos, newlen);
+                        continue;
                     }
+                    assert coffset >= newpos;
+                    if (clen <= limit - coffset) {
+                        // ceiling frame completely contained in the new frame:
+                        // remove the ceiling frame
+                        queue.remove(ceil);
+                        buffered -= clen;
+                        continue;
+                    }
+                    // safe cast, since newlen <= len
+                    newlen = (int) (coffset - newpos);
+                    queue.add(slice(frame, newpos, newlen));
+                    buffered += newlen;
+                    newpos = Math.addExact(coffset, clen);
+                    assert newpos >= limit;
+                    return;
                 }
-                break;
             }
-            assert limit == newpos + newlen;
-            assert newlen >= 0;
-            if (newlen == length) {
-                assert newpos == pos;
-                queue.add(frame);
-            } else if (newlen > 0) {
-                queue.add(frame = slice(frame, newpos, newlen));
-            }
-            buffered += newlen;
+            break;
         }
-        // then peek at the queue: maybe there's something
-        //   that's been buffered in between
-        return poll(offset, head);
-    }
-
-    /**
-     * {@return the frame which is at the head of the queue, or null}
-     * This method acts like {@link Queue#peek()}.
-     * The frame at the head of the queue might not be at the current
-     * offset.
-     */
-    public T peek() {
-        return peekFirst();
+        assert limit == newpos + newlen;
+        assert newlen >= 0;
+        if (newlen == length) {
+            assert newpos == pos;
+            queue.add(frame);
+        } else if (newlen > 0) {
+            queue.add(slice(frame, newpos, newlen));
+        }
+        buffered += newlen;
     }
 
     /**
@@ -341,7 +309,7 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
      * or {@code null}
      */
     public T poll() {
-        return poll(offset, null);
+        return poll(offset);
     }
 
     /**
@@ -399,24 +367,22 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
                 var consumed = offset - pos;
                 if (length <= consumed) {
                     // drop it
-                    // OK to use synchronized: only safe method calls
-                    synchronized (this) {
-                        if (head == peekFirst() && queue.remove(head)) {
-                            buffered -= length;
-                            dropped += length;
-                        }
+                    if (head == queue.pollFirst()) {
+                        buffered -= length;
+                        dropped += length;
+                    } else {
+                        throw new AssertionError("Concurrent modification");
                     }
                 } else {
                     // safe cast: consumed < length if we reach here
                     int newlen = length - (int)consumed;
                     var newhead = slice(head, offset, newlen);
-                    // OK to use synchronized: only safe method calls
-                    synchronized (this) {
-                        if (head == peekFirst() && queue.remove(head)) {
-                            queue.add(newhead);
-                            buffered -= consumed;
-                            dropped += consumed;
-                        }
+                    if (head == queue.pollFirst()) {
+                        queue.add(newhead);
+                        buffered -= consumed;
+                        dropped += consumed;
+                    } else {
+                        throw new AssertionError("Concurrent modification");
                     }
                 }
             }
@@ -426,49 +392,31 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
 
     /**
      * Pretends to {@linkplain #receive(QuicFrame) receive} the head of the queue,
-     * if it is at the provided offset and if it is not the given frame.
+     * if it is at the provided offset
      *
      * @param offset the minimal offset
-     * @param frame  a frame that we don't want to match (typically
-     *               because we just added it to the queue, and we know
-     *               it's not at the right offset yet)
      *
      * @return a received frame at the current flow offset, or {@code null}
      */
-    private T poll(long offset, T frame) {
+    private T poll(long offset) {
         long current = this.offset;
         assert offset <= current;
         dropuntil(offset);
         T head = peekFirst();
-        if (head != null && head != frame) {
+        if (head != null) {
             long pos = position.applyAsLong(head);
             if (pos == offset) {
                 // the frame we wanted was in the queue!
                 //   well, let's handle it...
-                T first = null;
-                // OK to use synchronized: only safe method calls
-                synchronized (this) {
-                    if (head == peekFirst() && queue.remove(head)) {
-                        long length = this.length.applyAsInt(head);
-                        buffered -= length;
-                        first = head;
-                    }
+                if (head == queue.pollFirst()) {
+                    long length = this.length.applyAsInt(head);
+                    buffered -= length;
+                } else {
+                    throw new AssertionError("Concurrent modification");
                 }
-                if (first == head) {
-                    return receive(head);
-                }
+                return receive(head);
             }
         }
         return null;
-    }
-
-    private static final VarHandle OFFSET;
-    static {
-        try {
-            Lookup lookup = MethodHandles.lookup();
-            OFFSET = lookup.findVarHandle(OrderedFlow.class, "offset", long.class);
-        } catch (Exception x) {
-            throw new ExceptionInInitializerError(x);
-        }
     }
 }
