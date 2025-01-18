@@ -66,9 +66,17 @@ public class PointsAlloc {
 
     @Benchmark
     @OperationsPerInvocation(NUM_CIRCLE_POINTS)
-    public Object panama_by_value() {
+    public Object circle_by_value() {
         try (Arena arena = Arena.ofConfined()) {
-            return new Circle(arena, NUM_CIRCLE_POINTS);
+            return Circle.byValue(arena, NUM_CIRCLE_POINTS);
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(NUM_CIRCLE_POINTS)
+    public Object circle_by_ptr() {
+        try (Arena arena = Arena.ofConfined()) {
+            return Circle.byPtr(arena, NUM_CIRCLE_POINTS);
         }
     }
 }

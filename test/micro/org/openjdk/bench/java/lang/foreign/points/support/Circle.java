@@ -28,6 +28,7 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 
 import static org.openjdk.bench.java.lang.foreign.CLayouts.C_DOUBLE;
@@ -37,32 +38,57 @@ public class Circle {
             C_DOUBLE.withName("x"),
             C_DOUBLE.withName("y")
     );
-    private static final MethodHandle MH_UNIT_ROTATED;
+    private static final MethodHandle MH_UNIT_ROTATED_BY_VALUE;
+    private static final MethodHandle MH_UNIT_ROTATED_BY_PTR;
 
     static {
         Linker abi = Linker.nativeLinker();
         System.loadLibrary("Point");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
-        MH_UNIT_ROTATED = abi.downcallHandle(
+        MH_UNIT_ROTATED_BY_VALUE = abi.downcallHandle(
                 loaderLibs.findOrThrow("unit_rotated"),
                 FunctionDescriptor.of(POINT_LAYOUT, C_DOUBLE)
+        );
+        MH_UNIT_ROTATED_BY_PTR = abi.downcallHandle(
+                loaderLibs.findOrThrow("unit_rotated_ptr"),
+                FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, C_DOUBLE)
         );
     }
 
     private final MemorySegment points;
 
-    public Circle(SegmentAllocator allocator, int numPoints) {
+    private Circle(MemorySegment points) {
+        this.points = points;
+    }
+
+    public static Circle byValue(SegmentAllocator allocator, int numPoints) {
         try {
-            points = allocator.allocate(POINT_LAYOUT, numPoints);
+            MemorySegment points = allocator.allocate(POINT_LAYOUT, numPoints);
             for (int i = 0; i < numPoints; i++) {
                 double phi = 2 * Math.PI * i / numPoints;
                 // points[i] = unit_rotated(phi);
                 MemorySegment dest = points.asSlice(i * POINT_LAYOUT.byteSize(), POINT_LAYOUT.byteSize());
                 MemorySegment unused =
-                        (MemorySegment) MH_UNIT_ROTATED.invokeExact(
+                        (MemorySegment) MH_UNIT_ROTATED_BY_VALUE.invokeExact(
                                 (SegmentAllocator) (_, _) -> dest,
                                 phi);
             }
+            return new Circle(points);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Circle byPtr(SegmentAllocator allocator, int numPoints) {
+        try {
+            MemorySegment points = allocator.allocate(POINT_LAYOUT, numPoints);
+            for (int i = 0; i < numPoints; i++) {
+                double phi = 2 * Math.PI * i / numPoints;
+                // unit_rotated_ptr(&points[i], phi);
+                MemorySegment dest = points.asSlice(i * POINT_LAYOUT.byteSize(), POINT_LAYOUT.byteSize());
+                MH_UNIT_ROTATED_BY_PTR.invokeExact(dest, phi);
+            }
+            return new Circle(points);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }

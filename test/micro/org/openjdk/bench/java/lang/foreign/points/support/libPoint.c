@@ -38,8 +38,10 @@ EXPORT double distance_ptrs(Point* p1, Point* p2) {
 }
 
 EXPORT DoublePoint unit_rotated(double phi) {
-    DoublePoint result;
-    result.x = cos(phi);
-    result.y = sin(phi);
+    DoublePoint result = { cos(phi), sin(phi) };
     return result;
+}
+
+EXPORT void unit_rotated_ptr(DoublePoint* out, double phi) {
+  *out = unit_rotated(phi);
 }
