@@ -91,7 +91,7 @@ public:
           _heap(heap)
   {};
 
-  virtual void update_all() {
+  void update_all() {
     _current_size->set_value(_heap->capacity());
   }
 };

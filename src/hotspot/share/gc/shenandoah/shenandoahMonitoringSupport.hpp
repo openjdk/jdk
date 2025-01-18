@@ -35,6 +35,8 @@ class ShenandoahHeap;
 class CollectorCounters;
 class ShenandoahHeapRegionCounters;
 class ShenandoahMonitoringSupport;
+class ShenandoahGenerationCounters;
+class ShenandoahYoungGenerationCounters;
 
 class ShenandoahPeriodicCountersUpdateTask : public PeriodicTask {
 private:
@@ -60,8 +62,8 @@ private:
   CollectorCounters*   _partial_counters;
   CollectorCounters*   _full_counters;
 
-  GenerationCounters* _young_counters;
-  GenerationCounters* _heap_counters;
+  ShenandoahYoungGenerationCounters* _young_counters;
+  ShenandoahGenerationCounters*      _heap_counters;
 
   HSpaceCounters* _space_counters;
 
