@@ -182,8 +182,8 @@ void VLoopVPointers::count_vpointers() {
 }
 
 void VLoopVPointers::allocate_vpointers_array() {
-  uint bytes2 = _vpointers_length * sizeof(VPointer);
-  _vpointers = (VPointer*)_arena->Amalloc(bytes2);
+  uint bytes = _vpointers_length * sizeof(VPointer);
+  _vpointers = (VPointer*)_arena->Amalloc(bytes);
 }
 
 void VLoopVPointers::compute_and_cache_vpointers() {
@@ -959,7 +959,7 @@ void AlignmentSolver::trace_start_solve() const {
                   _pre_stride, _main_stride);
     // adr = base + con + invar + iv_scale * iv
     tty->print("  adr = base[%d]", base().object_or_native()->_idx);
-    tty->print(" + con(%d) + invar + iv_scale(%d) * iv", _vpointer.con(), iv_scale());
+    tty->print(" + invar + iv_scale(%d) * iv + con(%d)", iv_scale(), _vpointer.con());
   }
 }
 

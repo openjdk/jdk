@@ -95,6 +95,9 @@ public:
   }
 };
 
+// SuperWord unrolling analysis does:
+// - Determine if the loop is a candidate for auto vectorization (SuperWord).
+// - Find a good unrolling factor, to ensure full vector width utilization once we vectorize.
 void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor) {
   IdealLoopTree* lpt    = vloop.lpt();
   CountedLoopNode* cl   = vloop.cl();
@@ -556,7 +559,7 @@ void SuperWord::create_adjacent_memop_pairs() {
 }
 
 // Collect all memops that could potentially be vectorized.
-void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) {
+void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) const {
   int original_index = 0;
   for_each_mem([&] (MemNode* mem, int bb_idx) {
     const VPointer& p = vpointer(mem);
@@ -2834,7 +2837,6 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const int iv_scale  = p.iv_scale();
   const int con       = p.con();
   Node* base          = p.mem_pointer().base().object_or_native();
-  bool is_base_native = p.mem_pointer().base().is_native();
 
 #ifdef ASSERT
   if (_trace._align_vector) {
@@ -2927,6 +2929,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   });
 
   // 1.3: base (unless base is guaranteed aw aligned)
+  bool is_base_native = p.mem_pointer().base().is_native();
   if (aw > ObjectAlignmentInBytes || is_base_native) {
     // For objects, the base is ObjectAlignmentInBytes aligned.
     // For native memory, we simply have a long that was cast to

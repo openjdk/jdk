@@ -594,7 +594,7 @@ private:
     }
   };
   void create_adjacent_memop_pairs();
-  void collect_valid_memops(GrowableArray<MemOp>& memops);
+  void collect_valid_memops(GrowableArray<MemOp>& memops) const;
   void create_adjacent_memop_pairs_in_all_groups(const GrowableArray<MemOp>& memops);
   static int find_group_end(const GrowableArray<MemOp>& memops, int group_start);
   void create_adjacent_memop_pairs_in_one_group(const GrowableArray<MemOp>& memops, const int group_start, int group_end);

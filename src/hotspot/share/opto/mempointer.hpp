@@ -507,10 +507,10 @@ public:
   static int cmp_by_variable_idx(const MemPointerSummand& p1, const MemPointerSummand& p2) {
     if (p1.variable() == nullptr) {
       return (p2.variable() == nullptr) ? 0 : 1;
-    } else if (p2.variable() == nullptr) {
+    }
+    if (p2.variable() == nullptr) {
       return -1;
     }
-
     return p1.variable()->_idx - p2.variable()->_idx;
   }
 
@@ -826,6 +826,11 @@ public:
 #endif
 };
 
+// Utility class.
+// MemPointerParser::parse takes a MemNode (load or store) and computes its MemPointer.
+// It temporarily allocates dynamic data structures (GrowableArray) in the resource
+// area. This way, the computed MemPointer does not have to have any dynamic data
+// structures and can be copied freely by value.
 class MemPointerParser : public StackObj {
 private:
   const MemNode* _mem;

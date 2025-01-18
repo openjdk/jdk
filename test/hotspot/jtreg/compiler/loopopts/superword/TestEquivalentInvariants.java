@@ -34,7 +34,7 @@ import java.lang.foreign.*;
 
 /*
  * @test
- * @bug 8343685 8330274
+ * @bug 8343685 8331659
  * @summary Test vectorization with various invariants that are equivalent, but not trivially so,
  *          i.e. where the invariants have the same summands, but in a different order.
  * @modules java.base/jdk.internal.misc
@@ -884,7 +884,7 @@ public class TestEquivalentInvariants {
                   IRNode.STORE_VECTOR,  "= 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: should be ok to vectorize, but does not. Investigate in JDK-8330274.
+    // FAILS: should be ok to vectorize, but does not. Investigate in JDK-8331659.
     static Object[] testMemorySegmentLInvarL3e(MemorySegment m, int invar1, int invar2, int invar3, int size) {
         long i1 = (long)(-invar1 + invar2 + invar3);
         long i2 = (long)(invar2 + invar3) - (long)(invar1); // not equivalent
