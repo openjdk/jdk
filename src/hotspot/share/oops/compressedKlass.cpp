@@ -321,7 +321,7 @@ void CompressedKlassPointers::establish_protection_zone(address addr, size_t siz
   assert(_protection_zone_size == 0, "just once");
   assert(addr == base(), "Protection zone not at start of encoding range?");
   assert(size > 0 && is_aligned(size, os::vm_page_size()), "Protection zone not page sized");
-  const bool rc = os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, true);
+  const bool rc = os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false);
   assert(rc, "Failed to protect the Class space protection zone");
   log_info(metaspace)("Established Narrow Klass Protection zone " RANGEFMT, RANGEFMTARGS(addr, size));
   _protection_zone_size = size;
