@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,4 +35,11 @@ EXPORT double distance(Point p1, Point p2) {
 
 EXPORT double distance_ptrs(Point* p1, Point* p2) {
     return distance(*p1, *p2);
+}
+
+EXPORT DoublePoint unit_rotated(double phi) {
+    DoublePoint result;
+    result.x = cos(phi);
+    result.y = sin(phi);
+    return result;
 }

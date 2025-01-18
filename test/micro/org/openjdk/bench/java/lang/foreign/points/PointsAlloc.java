@@ -27,13 +27,16 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.bench.java.lang.foreign.points.support.BBPoint;
+import org.openjdk.bench.java.lang.foreign.points.support.Circle;
 import org.openjdk.bench.java.lang.foreign.points.support.JNIPoint;
 import org.openjdk.bench.java.lang.foreign.points.support.PanamaPoint;
 
+import java.lang.foreign.Arena;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -59,4 +62,13 @@ public class PointsAlloc {
         return new PanamaPoint(0, 0);
     }
 
+    static final int NUM_CIRCLE_POINTS = 100;
+
+    @Benchmark
+    @OperationsPerInvocation(NUM_CIRCLE_POINTS)
+    public Object panama_by_value() {
+        try (Arena arena = Arena.ofConfined()) {
+            return new Circle(arena, NUM_CIRCLE_POINTS);
+        }
+    }
 }
