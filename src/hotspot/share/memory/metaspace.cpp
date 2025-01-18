@@ -38,6 +38,7 @@
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/internalStats.hpp"
+#include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/metaspaceReporter.hpp"
@@ -806,6 +807,19 @@ void Metaspace::global_initialize() {
     // Set up compressed class pointer encoding.
     // In CDS=off mode, we give the JVM some leeway to choose a favorable base/shift combination.
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
+
+    // After narrowKlass encoding scheme is decided: if the encoding base points to class space start,
+    // establish a protection zone.
+    if (CompressedKlassPointers::base() == (address)rs.base()) {
+      const size_t protzone_size = os::vm_page_size();
+      const size_t protzone_wordsize = protzone_size / BytesPerWord;
+      const metaspace::chunklevel_t lvl = metaspace::chunklevel::level_fitting_word_size(protzone_wordsize);
+      metaspace::Metachunk* const chunk = MetaspaceContext::context_class()->cm()->get_chunk(lvl);
+      const address protzone = (address) chunk->base();
+      assert(protzone == (address)rs.base(), "The very first chunk should be located at the class space start?");
+      assert(chunk->word_size() == protzone_wordsize, "Weird chunk size");
+      CompressedKlassPointers::establish_protection_zone(protzone, protzone_size);
+    }
   }
 
 #endif
@@ -814,20 +828,6 @@ void Metaspace::global_initialize() {
   MetaspaceContext::initialize_nonclass_space_context();
 
   _tracer = new MetaspaceTracer();
-
-  // We must prevent the very first address of the ccs from being used to store
-  // metadata, since that address would translate to a narrow pointer of 0, and the
-  // VM does not distinguish between "narrow 0 as in null" and "narrow 0 as in start
-  //  of ccs".
-  // Before Elastic Metaspace that did not happen due to the fact that every Metachunk
-  // had a header and therefore could not allocate anything at offset 0.
-#ifdef _LP64
-  if (using_class_space()) {
-    // The simplest way to fix this is to allocate a tiny dummy chunk right at the
-    // start of ccs and do not use it for anything.
-    MetaspaceContext::context_class()->cm()->get_chunk(metaspace::chunklevel::HIGHEST_CHUNK_LEVEL);
-  }
-#endif
 
 #ifdef _LP64
   if (UseCompressedClassPointers) {

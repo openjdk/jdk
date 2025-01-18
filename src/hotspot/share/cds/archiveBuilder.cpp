@@ -365,9 +365,9 @@ address ArchiveBuilder::reserve_buffer() {
   }
 
   if (CDSConfig::is_dumping_static_archive()) {
-    // We don't want any valid object to be at the very bottom of the archive.
-    // See ArchivePtrMarker::mark_pointer().
-    rw_region()->allocate(16);
+    // The region that will be located at the bottom of the encoding range at runtime shall have
+    // space for a protection zone.
+    MetaspaceShared::allocate_and_mark_protection_zone(rw_region());
   }
 
   return buffer_bottom;
