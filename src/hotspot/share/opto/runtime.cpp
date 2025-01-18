@@ -250,10 +250,10 @@ const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
 const TypeFunc* OptoRuntime::_class_id_load_barrier_Type          = nullptr;
 #endif // INCLUDE_JFR
-#ifdef INCLUDE_JVMTI
+#if INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
 #endif // INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
@@ -2002,7 +2002,7 @@ void OptoRuntime::initialize_types() {
   JFR_ONLY(
     _class_id_load_barrier_Type       = make_class_id_load_barrier_Type();
   )
-#ifdef INCLUDE_JVMTI
+#if INCLUDE_JVMTI
   _notify_jvmti_vthread_Type          = make_notify_jvmti_vthread_Type();
 #endif // INCLUDE_JVMTI
   _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
