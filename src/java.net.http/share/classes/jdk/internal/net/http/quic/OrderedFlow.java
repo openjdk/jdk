@@ -226,53 +226,32 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
         if (floor != null) {
             long foffset = position.applyAsLong(floor);
             long flen = this.length.applyAsInt(floor);
-            if (foffset == pos && flen == length) {
-                // duplicate of floor - just drop it.
+            if (limit <= foffset + flen) {
+                // bytes already all buffered!
+                // just drop the frame
                 return;
             }
             assert foffset <= pos;
-            if (pos - foffset < flen) {
-                // shift newpos
-                if (limit - foffset - flen > 0) {
-                    // reduce the frame if it overlaps with the
-                    // one that sits just before in the queue
-                    newpos = foffset + flen;
-                    newlen = length - (int) (newpos - pos);
-                } else {
-                    // bytes already all buffered!
-                    // just drop the frame
-                    return;
-                }
+            // foffset == pos case handled as ceiling below
+            if (foffset < pos && pos - foffset < flen) {
+                // reduce the frame if it overlaps with the
+                // one that sits just before in the queue
+                newpos = foffset + flen;
+                newlen = length - (int) (newpos - pos);
             }
         }
 
         // Look at the frames that have an offset higher or equal to
         // the new frame offset, and see if any overlap with the new
-        // frame. Use slices of the new frame to fill up the holes,
-        // if any.
+        // frame. Remove frames that are entirely contained in the new one,
+        // slice the current frame if the frames overlap.
         while (true) {
             T ceil = queue.ceiling(frame);
-            // need to add frames to plug the holes while
-            // ceil.offset < frame.offset + frame.length
             if (ceil != null) {
                 long coffset = position.applyAsLong(ceil);
+                assert coffset >= newpos : "overlapping frames in queue";
                 if (coffset < limit) {
                     long clen = this.length.applyAsInt(ceil);
-                    if (coffset < newpos) {
-                        newpos = coffset + clen;
-                        assert newpos >= 0; // there should be no overflow here
-                        if (newpos >= limit) {
-                            // nothing more to do. we enqueued
-                            // anything that needed buffering
-                            return;
-                        }
-                        // safe cast, since newlen <= len
-                        newlen = (int) (limit - newpos);
-                        // drop the bytes that were already enqueued
-                        frame = slice(frame, newpos, newlen);
-                        continue;
-                    }
-                    assert coffset >= newpos;
                     if (clen <= limit - coffset) {
                         // ceiling frame completely contained in the new frame:
                         // remove the ceiling frame
@@ -284,8 +263,6 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
                     newlen = (int) (coffset - newpos);
                     queue.add(slice(frame, newpos, newlen));
                     buffered += newlen;
-                    newpos = Math.addExact(coffset, clen);
-                    assert newpos >= limit;
                     return;
                 }
             }
