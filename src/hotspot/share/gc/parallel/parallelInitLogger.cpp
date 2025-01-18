@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 
 void ParallelInitLogger::print_heap() {
   log_info_p(gc, init)("Alignments:"
-                       " Space " SIZE_FORMAT "%s,"
-                       " Generation " SIZE_FORMAT "%s,"
-                       " Heap " SIZE_FORMAT "%s",
+                       " Space %zu%s,"
+                       " Generation %zu%s,"
+                       " Heap %zu%s",
                        byte_size_in_exact_unit(SpaceAlignment), exact_unit_for_byte_size(SpaceAlignment),
                        byte_size_in_exact_unit(GenAlignment), exact_unit_for_byte_size(GenAlignment),
                        byte_size_in_exact_unit(HeapAlignment), exact_unit_for_byte_size(HeapAlignment));

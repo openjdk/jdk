@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +92,7 @@ void ShenandoahHeapRegionCounters::write_snapshot(PerfLongVariable** regions,
     ResourceMark rm;
     LogStream ls(lt);
 
-    ls.print_cr(JLONG_FORMAT " " JLONG_FORMAT " " SIZE_FORMAT " " SIZE_FORMAT " " SIZE_FORMAT,
+    ls.print_cr(JLONG_FORMAT " " JLONG_FORMAT " %zu %zu %zu",
             ts->get_value(), status->get_value(), num_regions, region_size, protocol_version);
     if (num_regions > 0) {
       ls.print(JLONG_FORMAT, regions[0]->get_value());
@@ -147,10 +148,10 @@ static int encode_phase(ShenandoahHeap* heap) {
   if (heap->is_update_refs_in_progress() || heap->is_full_gc_move_in_progress()) {
     return 3;
   }
-  if (heap->is_concurrent_mark_in_progress() || heap->is_full_gc_in_progress()) {
+  if (heap->is_concurrent_mark_in_progress() || heap->is_concurrent_weak_root_in_progress() || heap->is_full_gc_in_progress()) {
     return 1;
   }
-  assert(heap->is_idle(), "What is it doing?");
+  assert(heap->is_idle(), "Unexpected gc_state: %d", heap->gc_state());
   return 0;
 }
 

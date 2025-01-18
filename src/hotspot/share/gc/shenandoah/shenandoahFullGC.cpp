@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -501,7 +502,7 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
   size_t to_begin = heap->num_regions();
   size_t to_end = heap->num_regions();
 
-  log_debug(gc)("Full GC calculating target humongous objects from end " SIZE_FORMAT, to_end);
+  log_debug(gc)("Full GC calculating target humongous objects from end %zu", to_end);
   for (size_t c = heap->num_regions(); c > 0; c--) {
     ShenandoahHeapRegion *r = heap->get_region(c - 1);
     if (r->is_humongous_continuation() || (r->new_top() == r->bottom())) {
@@ -550,7 +551,7 @@ public:
     if (r->is_empty_uncommitted()) {
       r->make_committed_bypass();
     }
-    assert (r->is_committed(), "only committed regions in heap now, see region " SIZE_FORMAT, r->index());
+    assert (r->is_committed(), "only committed regions in heap now, see region %zu", r->index());
 
     // Record current region occupancy: this communicates empty regions are free
     // to the rest of Full GC code.
@@ -572,14 +573,14 @@ public:
     if (r->is_humongous_start()) {
       oop humongous_obj = cast_to_oop(r->bottom());
       if (!_ctx->is_marked(humongous_obj)) {
-        assert(!r->has_live(), "Region " SIZE_FORMAT " is not marked, should not have live", r->index());
+        assert(!r->has_live(), "Region %zu is not marked, should not have live", r->index());
         _heap->trash_humongous_region_at(r);
       } else {
-        assert(r->has_live(), "Region " SIZE_FORMAT " should have live", r->index());
+        assert(r->has_live(), "Region %zu should have live", r->index());
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(), "Region " SIZE_FORMAT " should have live", r->index());
+      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
     } else if (r->is_regular()) {
       if (!r->has_live()) {
         r->make_trash_immediate();
@@ -715,8 +716,8 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
     ShenandoahHeapRegion* r = it.next();
     while (r != nullptr) {
       size_t idx = r->index();
-      assert(ShenandoahPrepareForCompactionTask::is_candidate_region(r), "Sanity: " SIZE_FORMAT, idx);
-      assert(!map.at(idx), "No region distributed twice: " SIZE_FORMAT, idx);
+      assert(ShenandoahPrepareForCompactionTask::is_candidate_region(r), "Sanity: %zu", idx);
+      assert(!map.at(idx), "No region distributed twice: %zu", idx);
       map.at_put(idx, true);
       r = it.next();
     }
@@ -725,7 +726,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
   for (size_t rid = 0; rid < n_regions; rid++) {
     bool is_candidate = ShenandoahPrepareForCompactionTask::is_candidate_region(heap->get_region(rid));
     bool is_distributed = map.at(rid);
-    assert(is_distributed || !is_candidate, "All candidates are distributed: " SIZE_FORMAT, rid);
+    assert(is_distributed || !is_candidate, "All candidates are distributed: %zu", rid);
   }
 #endif
 }
@@ -1045,9 +1046,9 @@ void ShenandoahFullGC::compact_humongous_objects() {
       size_t new_start = heap->heap_region_index_containing(FullGCForwarding::forwardee(old_obj));
       size_t new_end   = new_start + num_regions - 1;
       assert(old_start != new_start, "must be real move");
-      assert(r->is_stw_move_allowed(), "Region " SIZE_FORMAT " should be movable", r->index());
+      assert(r->is_stw_move_allowed(), "Region %zu should be movable", r->index());
 
-      log_debug(gc)("Full GC compaction moves humongous object from region " SIZE_FORMAT " to region " SIZE_FORMAT, old_start, new_start);
+      log_debug(gc)("Full GC compaction moves humongous object from region %zu to region %zu", old_start, new_start);
       Copy::aligned_conjoint_words(r->bottom(), heap->get_region(new_start)->bottom(), words_size);
       ContinuationGCSupport::relativize_stack_chunk(cast_to_oop<HeapWord*>(r->bottom()));
 

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved. *
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +32,9 @@
 #ifndef PRODUCT
 void ShenandoahCardStats::log() const {
   if (ShenandoahEnableCardStats) {
-    log_info(gc,remset)("Card stats: dirty " SIZE_FORMAT " (max run: " SIZE_FORMAT "),"
-      " clean " SIZE_FORMAT " (max run: " SIZE_FORMAT "),"
-      " dirty scans/objs " SIZE_FORMAT,
+    log_info(gc,remset)("Card stats: dirty %zu (max run: %zu),"
+      " clean %zu (max run: %zu),"
+      " dirty scans/objs %zu",
       _dirty_card_cnt, _max_dirty_run,
       _clean_card_cnt, _max_clean_run,
       _dirty_scan_obj_cnt);

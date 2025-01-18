@@ -2110,7 +2110,7 @@ void nmethod::purge(bool unregister_nmethod) {
   // completely deallocate this method
   Events::log_nmethod_flush(Thread::current(), "flushing %s nmethod " INTPTR_FORMAT, is_osr_method() ? "osr" : "", p2i(this));
   log_debug(codecache)("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
-                       "/Free CodeCache:" SIZE_FORMAT "Kb",
+                       "/Free CodeCache:%zuKb",
                        is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
                        CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
 

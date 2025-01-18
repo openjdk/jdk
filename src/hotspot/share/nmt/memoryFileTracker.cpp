@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     if (prev->val().out.type() == VMATree::StateType::Committed) {
       const VMATree::position& start_addr = prev->key();
       const VMATree::position& end_addr = current->key();
-      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s from",
+      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated %zu%s" " for %s from",
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
