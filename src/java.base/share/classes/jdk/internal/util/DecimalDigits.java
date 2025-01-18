@@ -210,7 +210,7 @@ public final class DecimalDigits {
         }
 
         // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
+        while (i < Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
             putPairLatin1(buf, charPos, (int)((q * 100) - i));
@@ -304,7 +304,7 @@ public final class DecimalDigits {
         }
 
         // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
+        while (i < Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
             putPairUTF16(buf, charPos, (int)((q * 100) - i));
@@ -355,7 +355,7 @@ public final class DecimalDigits {
         }
 
         // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i <= Integer.MIN_VALUE) {
+        while (i < Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
             putPair(buf, charPos, (int)((q * 100) - i));
