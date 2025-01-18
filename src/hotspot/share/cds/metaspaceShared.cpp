@@ -1360,6 +1360,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
   return result;
 }
 
+#ifdef _LP64
+
 // Protection zone handling.
 //
 // A Klass structure must never be located at the encoding base since that would encode to an
@@ -1404,6 +1406,7 @@ bool MetaspaceShared::check_and_establish_protection_zone(address addr) {
   CompressedKlassPointers::establish_protection_zone((address)protzone, protzone_size);
   return true;
 }
+#endif // _LP64
 
 // This will reserve two address spaces suitable to house Klass structures, one
 //  for the cds archives (static archive and optionally dynamic archive) and
