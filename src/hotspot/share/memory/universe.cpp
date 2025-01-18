@@ -940,7 +940,7 @@ void Universe::initialize_tlab() {
 ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
 
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
-         "actual alignment " SIZE_FORMAT " must be within maximum heap alignment " SIZE_FORMAT,
+         "actual alignment %zu must be within maximum heap alignment %zu",
          alignment, Arguments::conservative_max_heap_alignment());
 
   size_t total_reserved = align_up(heap_size, alignment);
@@ -985,7 +985,7 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   }
 
   vm_exit_during_initialization(
-    err_msg("Could not reserve enough space for " SIZE_FORMAT "KB object heap",
+    err_msg("Could not reserve enough space for %zuKB object heap",
             total_reserved/K));
 
   // satisfy compiler

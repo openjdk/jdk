@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ bool CompressedOops::base_overlaps() {
 }
 
 void CompressedOops::print_mode(outputStream* st) {
-  st->print("Heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
+  st->print("Heap address: " PTR_FORMAT ", size: %zu MB",
             p2i(_heap_address_range.start()), _heap_address_range.byte_size()/M);
 
   st->print(", Compressed Oops mode: %s", mode_to_string(mode()));

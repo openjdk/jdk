@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,11 +70,11 @@ bool ZUnmapper::try_enqueue(ZPage* page) {
       _warned_sync_unmapping = true;
       log_warning_p(gc)("WARNING: Encountered synchronous unmapping because asynchronous unmapping could not keep up");
     }
-    log_debug(gc, unmap)("Synchronous unmapping " SIZE_FORMAT "M page", page->size() / M);
+    log_debug(gc, unmap)("Synchronous unmapping %zuM page", page->size() / M);
     return false;
   }
 
-  log_trace(gc, unmap)("Asynchronous unmapping " SIZE_FORMAT "M page (" SIZE_FORMAT "M / " SIZE_FORMAT "M enqueued)",
+  log_trace(gc, unmap)("Asynchronous unmapping %zuM page (%zuM / %zuM enqueued)",
                        page->size() / M, _enqueued_bytes / M, queue_capacity() / M);
 
   _queue.insert_last(page);

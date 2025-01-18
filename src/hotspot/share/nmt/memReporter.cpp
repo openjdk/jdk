@@ -42,8 +42,8 @@
 
 // Diff two counters, express them as signed, with range checks
 static ssize_t counter_diff(size_t c1, size_t c2) {
-  assert(c1 <= SSIZE_MAX, "counter out of range: " SIZE_FORMAT ".", c1);
-  assert(c2 <= SSIZE_MAX, "counter out of range: " SIZE_FORMAT ".", c2);
+  assert(c1 <= SSIZE_MAX, "counter out of range: %zu.", c1);
+  assert(c2 <= SSIZE_MAX, "counter out of range: %zu.", c2);
   if (c1 > SSIZE_MAX || c2 > SSIZE_MAX) {
     return 0;
   }
@@ -63,10 +63,10 @@ size_t MemReporterBase::committed_total(const MallocMemory* malloc, const Virtua
 
 void MemReporterBase::print_total(size_t reserved, size_t committed, size_t peak) const {
   const char* scale = current_scale();
-  output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
+  output()->print("reserved=%zu%s, committed=%zu%s",
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
   if (peak != 0) {
-    output()->print(", peak=" SIZE_FORMAT "%s", amount_in_current_scale(peak), scale);
+    output()->print(", peak=%zu%s", amount_in_current_scale(peak), scale);
   }
 }
 
@@ -79,16 +79,16 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
   const size_t count = c->count();
 
   if (mem_tag != mtNone) {
-    out->print("(%s" SIZE_FORMAT "%s type=%s", alloc_type,
+    out->print("(%s%zu%s type=%s", alloc_type,
       amount_in_current_scale(amount), scale, NMTUtil::tag_to_name(mem_tag));
   } else {
-    out->print("(%s" SIZE_FORMAT "%s", alloc_type,
+    out->print("(%s%zu%s", alloc_type,
       amount_in_current_scale(amount), scale);
   }
 
   // blends out mtChunk count number
   if (count > 0) {
-    out->print(" #" SIZE_FORMAT "", count);
+    out->print(" #%zu", count);
   }
 
   out->print(")");
@@ -98,7 +98,7 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
     out->print_raw(" (at peak)");
   } else if (pk_amount > amount) {
     size_t pk_count = c->peak_count();
-    out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
+    out->print(" (peak=%zu%s #%zu)",
         amount_in_current_scale(pk_amount), scale, pk_count);
   }
 }
@@ -106,12 +106,12 @@ void MemReporterBase::print_malloc(const MemoryCounter* c, MemTag mem_tag) const
 void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed, size_t peak) const {
   outputStream* out = output();
   const char* scale = current_scale();
-  out->print("(mmap: reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s, ",
+  out->print("(mmap: reserved=%zu%s, committed=%zu%s, ",
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
   if (peak == committed) {
     out->print_raw("at peak)");
   } else {
-    out->print("peak=" SIZE_FORMAT "%s)", amount_in_current_scale(peak), scale);
+    out->print("peak=%zu%s)", amount_in_current_scale(peak), scale);
   }
 }
 
@@ -122,7 +122,7 @@ void MemReporterBase::print_arena(const MemoryCounter* c) const {
   const size_t amount = c->size();
   const size_t count = c->count();
 
-  out->print("(arena=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
+  out->print("(arena=%zu%s #%zu)",
              amount_in_current_scale(amount), scale, count);
 
   size_t pk_amount = c->peak_size();
@@ -130,14 +130,14 @@ void MemReporterBase::print_arena(const MemoryCounter* c) const {
     out->print_raw(" (at peak)");
   } else if (pk_amount > amount) {
     size_t pk_count = c->peak_count();
-    out->print(" (peak=" SIZE_FORMAT "%s #" SIZE_FORMAT ")",
+    out->print(" (peak=%zu%s #%zu)",
         amount_in_current_scale(pk_amount), scale, pk_count);
   }
 }
 
 void MemReporterBase::print_virtual_memory_region(const char* type, address base, size_t size) const {
   const char* scale = current_scale();
-  output()->print("[" PTR_FORMAT " - " PTR_FORMAT "] %s " SIZE_FORMAT "%s",
+  output()->print("[" PTR_FORMAT " - " PTR_FORMAT "] %s %zu%s",
     p2i(base), p2i(base + size), type, amount_in_current_scale(size), scale);
 }
 
@@ -165,7 +165,7 @@ void MemSummaryReporter::report() {
   print_total(total_reserved_amount, total_committed_amount);
   out->cr();
   INDENT_BY(7,
-    out->print_cr("malloc: " SIZE_FORMAT "%s #" SIZE_FORMAT ", peak=" SIZE_FORMAT "%s #" SIZE_FORMAT,
+    out->print_cr("malloc: %zu%s #%zu, peak=%zu%s #%zu",
                   amount_in_current_scale(total_malloced_bytes), current_scale(),
                   _malloc_snapshot->total_count(),
                   amount_in_current_scale(_malloc_snapshot->total_peak()),
@@ -224,7 +224,7 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
 #if INCLUDE_CDS
   if (mem_tag == mtClassShared) {
       size_t read_only_bytes = FileMapInfo::readonly_total();
-    output()->print(", readonly=" SIZE_FORMAT "%s",
+    output()->print(", readonly=%zu%s",
                     amount_in_current_scale(read_only_bytes), scale);
   }
 #endif
@@ -234,14 +234,14 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
 
   if (mem_tag == mtClass) {
     // report class count
-    out->print_cr("(classes #" SIZE_FORMAT ")", (_instance_class_count + _array_class_count));
-    out->print_cr("(  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
+    out->print_cr("(classes #%zu)", (_instance_class_count + _array_class_count));
+    out->print_cr("(  instance classes #%zu, array classes #%zu)",
                   _instance_class_count, _array_class_count);
   } else if (mem_tag == mtThread) {
     const VirtualMemory* thread_stack_usage =
      _vm_snapshot->by_type(mtThreadStack);
     // report thread count
-    out->print_cr("(threads #" SIZE_FORMAT ")", ThreadStackTracker::thread_count());
+    out->print_cr("(threads #%zu)", ThreadStackTracker::thread_count());
     out->print("(stack: ");
     print_total(thread_stack_usage->reserved(), thread_stack_usage->committed(), thread_stack_usage->peak_size());
     out->print_cr(")");
@@ -265,7 +265,7 @@ void MemSummaryReporter::report_summary_of_type(MemTag mem_tag,
 
   if (mem_tag == mtNMT &&
     amount_in_current_scale(_malloc_snapshot->malloc_overhead()) > 0) {
-    out->print_cr("(tracking overhead=" SIZE_FORMAT "%s)",
+    out->print_cr("(tracking overhead=%zu%s)",
                    amount_in_current_scale(_malloc_snapshot->malloc_overhead()), scale);
   } else if (mem_tag == mtClass) {
     // Metadata information
@@ -301,8 +301,8 @@ void MemSummaryReporter::report_metadata(Metaspace::MetadataType type) const {
   out->print("(    ");
   print_total(stats.reserved(), stats.committed());
   out->print_cr(")");
-  out->print_cr("(    used=" SIZE_FORMAT "%s)", amount_in_current_scale(stats.used()), scale);
-  out->print_cr("(    waste=" SIZE_FORMAT "%s =%2.2f%%)", amount_in_current_scale(waste),
+  out->print_cr("(    used=%zu%s)", amount_in_current_scale(stats.used()), scale);
+  out->print_cr("(    waste=%zu%s =%2.2f%%)", amount_in_current_scale(waste),
                 scale, waste_percentage);
 }
 
@@ -540,7 +540,7 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
   outputStream* out = output();
   const char* alloc_tag = (mem_tag == mtThread) ? "" : "malloc=";
 
-  out->print("%s" SIZE_FORMAT "%s", alloc_tag, amount_in_current_scale(current_amount), scale);
+  out->print("%s%zu%s", alloc_tag, amount_in_current_scale(current_amount), scale);
   // Report type only if it is valid and not under "thread" category
   if (mem_tag != mtNone && mem_tag != mtThread) {
     out->print(" type=%s", NMTUtil::tag_to_name(mem_tag));
@@ -551,7 +551,7 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
     out->print(" " INT64_PLUS_FORMAT "%s", amount_diff, scale);
   }
   if (current_count > 0) {
-    out->print(" #" SIZE_FORMAT "", current_count);
+    out->print(" #%zu", current_count);
     const ssize_t delta_count = counter_diff(current_count, early_count);
     if (delta_count != 0) {
       out->print(" %+zd", delta_count);
@@ -563,13 +563,13 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
   size_t early_amount, size_t early_count) const {
   const char* scale = current_scale();
   outputStream* out = output();
-  out->print("arena=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
+  out->print("arena=%zu%s", amount_in_current_scale(current_amount), scale);
   int64_t amount_diff = diff_in_current_scale(current_amount, early_amount);
   if (amount_diff != 0) {
     out->print(" " INT64_PLUS_FORMAT "%s", amount_diff, scale);
   }
 
-  out->print(" #" SIZE_FORMAT "", current_count);
+  out->print(" #%zu", current_count);
   const ssize_t delta_count = counter_diff(current_count, early_count);
   if (delta_count != 0) {
     out->print(" %+zd", delta_count);
@@ -580,13 +580,13 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
     size_t early_reserved, size_t early_committed) const {
   const char* scale = current_scale();
   outputStream* out = output();
-  out->print("reserved=" SIZE_FORMAT "%s", amount_in_current_scale(current_reserved), scale);
+  out->print("reserved=%zu%s", amount_in_current_scale(current_reserved), scale);
   int64_t reserved_diff = diff_in_current_scale(current_reserved, early_reserved);
   if (reserved_diff != 0) {
     out->print(" " INT64_PLUS_FORMAT "%s", reserved_diff, scale);
   }
 
-  out->print(", committed=" SIZE_FORMAT "%s", amount_in_current_scale(current_committed), scale);
+  out->print(", committed=%zu%s", amount_in_current_scale(current_committed), scale);
   int64_t committed_diff = diff_in_current_scale(current_committed, early_committed);
   if (committed_diff != 0) {
     out->print(" " INT64_PLUS_FORMAT "%s", committed_diff, scale);
@@ -646,7 +646,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
     // detail lines
     if (mem_tag == mtClass) {
       // report class count
-      out->print("(classes #" SIZE_FORMAT, _current_baseline.class_count());
+      out->print("(classes #%zu", _current_baseline.class_count());
       const ssize_t class_count_diff =
           counter_diff(_current_baseline.class_count(), _early_baseline.class_count());
       if (class_count_diff != 0) {
@@ -654,13 +654,13 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
       }
       out->print_cr(")");
 
-      out->print("(  instance classes #" SIZE_FORMAT, _current_baseline.instance_class_count());
+      out->print("(  instance classes #%zu", _current_baseline.instance_class_count());
       const ssize_t instance_class_count_diff =
           counter_diff(_current_baseline.instance_class_count(), _early_baseline.instance_class_count());
       if (instance_class_count_diff != 0) {
         out->print(" %+zd", instance_class_count_diff);
       }
-      out->print(", array classes #" SIZE_FORMAT, _current_baseline.array_class_count());
+      out->print(", array classes #%zu", _current_baseline.array_class_count());
       const ssize_t array_class_count_diff =
           counter_diff(_current_baseline.array_class_count(), _early_baseline.array_class_count());
       if (array_class_count_diff != 0) {
@@ -670,7 +670,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
 
     } else if (mem_tag == mtThread) {
       // report thread count
-      out->print("(threads #" SIZE_FORMAT, _current_baseline.thread_count());
+      out->print("(threads #%zu", _current_baseline.thread_count());
       const ssize_t thread_count_diff = counter_diff(_current_baseline.thread_count(), _early_baseline.thread_count());
       if (thread_count_diff != 0) {
         out->print(" %+zd", thread_count_diff);
@@ -724,7 +724,7 @@ void MemSummaryDiffReporter::diff_summary_of_type(MemTag mem_tag,
       size_t current_tracking_overhead = amount_in_current_scale(_current_baseline.malloc_tracking_overhead());
       size_t early_tracking_overhead   = amount_in_current_scale(_early_baseline.malloc_tracking_overhead());
 
-      out->print("(tracking overhead=" SIZE_FORMAT "%s",
+      out->print("(tracking overhead=%zu%s",
                  amount_in_current_scale(_current_baseline.malloc_tracking_overhead()), scale);
 
       int64_t overhead_diff = diff_in_current_scale(_current_baseline.malloc_tracking_overhead(),
@@ -770,7 +770,7 @@ void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
   int64_t diff_waste = diff_in_current_scale(current_waste, early_waste);
 
   // Diff used
-  out->print("(    used=" SIZE_FORMAT "%s",
+  out->print("(    used=%zu%s",
              amount_in_current_scale(current_stats.used()), scale);
   if (diff_used != 0) {
     out->print(" " INT64_PLUS_FORMAT "%s", diff_used, scale);
@@ -780,7 +780,7 @@ void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
   // Diff waste
   const float waste_percentage = current_stats.committed() == 0 ? 0.0f :
                                  ((float)current_waste * 100.0f) / (float)current_stats.committed();
-  out->print("(    waste=" SIZE_FORMAT "%s =%2.2f%%",
+  out->print("(    waste=%zu%s =%2.2f%%",
              amount_in_current_scale(current_waste), scale, waste_percentage);
   if (diff_waste != 0) {
     out->print(" " INT64_PLUS_FORMAT "%s", diff_waste, scale);

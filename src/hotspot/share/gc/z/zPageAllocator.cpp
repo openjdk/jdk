@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,12 +207,12 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
     return;
   }
 
-  log_info_p(gc, init)("Min Capacity: " SIZE_FORMAT "M", min_capacity / M);
-  log_info_p(gc, init)("Initial Capacity: " SIZE_FORMAT "M", initial_capacity / M);
-  log_info_p(gc, init)("Max Capacity: " SIZE_FORMAT "M", max_capacity / M);
-  log_info_p(gc, init)("Soft Max Capacity: " SIZE_FORMAT "M", soft_max_capacity / M);
+  log_info_p(gc, init)("Min Capacity: %zuM", min_capacity / M);
+  log_info_p(gc, init)("Initial Capacity: %zuM", initial_capacity / M);
+  log_info_p(gc, init)("Max Capacity: %zuM", max_capacity / M);
+  log_info_p(gc, init)("Soft Max Capacity: %zuM", soft_max_capacity / M);
   if (ZPageSizeMedium > 0) {
-    log_info_p(gc, init)("Medium Page Size: " SIZE_FORMAT "M", ZPageSizeMedium / M);
+    log_info_p(gc, init)("Medium Page Size: %zuM", ZPageSizeMedium / M);
   } else {
     log_info_p(gc, init)("Medium Page Size: N/A");
   }
@@ -377,7 +377,7 @@ void ZPageAllocator::decrease_capacity(size_t size, bool set_max_capacity) {
   if (set_max_capacity) {
     // Adjust current max capacity to avoid further attempts to increase capacity
     log_error_p(gc)("Forced to lower max Java heap size from "
-                    SIZE_FORMAT "M(%.0f%%) to " SIZE_FORMAT "M(%.0f%%)",
+                    "%zuM(%.0f%%) to %zuM(%.0f%%)",
                     _current_max_capacity / M, percent_of(_current_max_capacity, _max_capacity),
                     _capacity / M, percent_of(_capacity, _max_capacity));
 
@@ -650,7 +650,7 @@ ZPage* ZPageAllocator::alloc_page_create(ZPageAllocation* allocation) {
 
     // Update statistics
     ZStatInc(ZCounterPageCacheFlush, flushed);
-    log_debug(gc, heap)("Page Cache Flushed: " SIZE_FORMAT "M", flushed / M);
+    log_debug(gc, heap)("Page Cache Flushed: %zuM", flushed / M);
   }
 
   // Allocate any remaining physical memory. Capacity and used has
