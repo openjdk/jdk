@@ -332,7 +332,7 @@ class InternalAddress: public Address {
 class Assembler : public AbstractAssembler {
 private:
 
-  bool static zfa_zli_lookup_double(uint64_t value, int* Rs) {
+  static bool zfa_zli_lookup_double(uint64_t value, int* Rs) {
     (*Rs) = -1;
     switch(value) {
       case 0xbff0000000000000 : (*Rs) =   0; return true;
@@ -373,7 +373,7 @@ private:
   }
 
 
-  bool static zfa_zli_lookup_float(uint32_t value, int* Rs = nullptr) {
+  static bool zfa_zli_lookup_float(uint32_t value, int* Rs = nullptr) {
     (*Rs) = -1;
     switch(value) {
       case 0xbf800000 : (*Rs) =  0; return true;
