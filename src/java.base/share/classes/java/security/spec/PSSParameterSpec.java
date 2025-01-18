@@ -140,6 +140,7 @@ public class PSSParameterSpec implements AlgorithmParameterSpec {
      *         getMGFParameters().
      * @param saltLen      the length of salt in bytes
      * @param trailerField the value of the trailer field
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws    NullPointerException if {@code mdName}, or {@code mgfName}
      *         is null
      * @throws    IllegalArgumentException if {@code saltLen} or

@@ -84,6 +84,7 @@ import sun.security.jca.GetInstance.Instance;
  * Consult the release documentation for your implementation to see if any
  * other algorithms are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  * @see Key
@@ -169,6 +170,7 @@ public class KeyFactory {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyFactory} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -205,6 +207,7 @@ public class KeyFactory {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyFactory} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -247,6 +250,7 @@ public class KeyFactory {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyFactory} object
      *
      * @throws IllegalArgumentException if the specified provider is

@@ -229,6 +229,7 @@ import java.util.Objects;
  *
  * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf
  *      Recommendation for Random Number Generation Using Deterministic Random Bit Generators
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  *
  * @since 9
  */

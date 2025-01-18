@@ -84,6 +84,7 @@ import sun.security.jca.GetInstance.Instance;
  * Multiple threads may concurrently invoke the static methods defined in
  * this class with no ill effects.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since       1.4
  * @author      Sean Mullan, Steve Hanna
  */
@@ -216,6 +217,7 @@ public class CertStore {
      *
      * @param params the initialization parameters (may be {@code null}).
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertStore} object that implements the specified
      *          {@code CertStore} type
      *
@@ -282,6 +284,7 @@ public class CertStore {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertStore} object that implements the
      *          specified type
      *
@@ -343,6 +346,7 @@ public class CertStore {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertStore} object that implements the
      *          specified type
      *

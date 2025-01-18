@@ -36,6 +36,7 @@ import java.util.Objects;
  * "{@docRoot}/../specs/security/standard-names.html#namedparameterspec">
  *          Java Security Standard Algorithm Names Specification</a>.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @since 11
  *
  */
@@ -131,6 +132,7 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
      *        Java Security Standard Algorithm Names Specification</a> for
      *        information about standard names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code stdName} is null.
      */
     public NamedParameterSpec(String stdName) {

@@ -50,6 +50,7 @@ public class ECGenParameterSpec extends NamedParameterSpec {
      *        "{@docRoot}/../specs/security/standard-names.html#ecgenparameterspec">
      *        Java Security Standard Algorithm Names Specification</a> for
      *        information about standard names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code stdName} is null.
      */
     public ECGenParameterSpec(String stdName) {

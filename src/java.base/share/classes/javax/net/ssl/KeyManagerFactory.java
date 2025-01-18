@@ -124,6 +124,7 @@ public class KeyManagerFactory {
      *          Algorithm Names Specification for information about standard
      *          algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
@@ -165,6 +166,7 @@ public class KeyManagerFactory {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -210,6 +212,7 @@ public class KeyManagerFactory {
      *
      * @param provider an instance of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KeyManagerFactory} object
      *
      * @throws IllegalArgumentException if provider is {@code null}

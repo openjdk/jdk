@@ -92,6 +92,7 @@ import sun.security.jca.GetInstance.Instance;
  * threads each manipulating a different {@code CertPathValidator}
  * instance need not synchronize.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @see CertPath
  *
  * @since       1.4
@@ -155,6 +156,7 @@ public class CertPathValidator {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertPathValidator} object that implements the
      *         specified algorithm
      *
@@ -195,6 +197,7 @@ public class CertPathValidator {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertPathValidator} object that implements the
      *         specified algorithm
      *
@@ -239,6 +242,7 @@ public class CertPathValidator {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code CertPathValidator} object that implements the
      *          specified algorithm
      *

@@ -198,6 +198,7 @@ public abstract class CertificateFactorySpi {
      * existing service providers, this method cannot be {@code abstract}
      * and by default throws an {@code UnsupportedOperationException}.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an {@code Iterator} over the names of the supported
      *         {@code CertPath} encodings (as {@code String}s)
      * @throws    UnsupportedOperationException if the method is not supported

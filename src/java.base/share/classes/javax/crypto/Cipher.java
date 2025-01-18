@@ -169,6 +169,7 @@ import sun.security.util.KnownOIDs;
  *      RFC 5116: An Interface and Algorithms for Authenticated Encryption
  * @spec https://www.rfc-editor.org/info/rfc7539
  *      RFC 7539: ChaCha20 and Poly1305 for IETF Protocols
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  * @see KeyGenerator
  * @see SecretKey
@@ -520,6 +521,7 @@ public class Cipher {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code Cipher} object that implements the requested
      * transformation
      *
@@ -611,6 +613,7 @@ public class Cipher {
      *
      * @param provider the name of the provider
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code Cipher} object that implements the requested
      * transformation
      *
@@ -683,6 +686,7 @@ public class Cipher {
      *
      * @param provider the provider
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a {@code Cipher} object that implements the requested
      * transformation
      *

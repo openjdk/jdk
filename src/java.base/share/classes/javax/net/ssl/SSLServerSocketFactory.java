@@ -91,6 +91,7 @@ public abstract class SSLServerSocketFactory extends ServerSocketFactory {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @see #getSupportedCipherSuites()
      * @return array of the cipher suites enabled by default
      */
@@ -112,6 +113,7 @@ public abstract class SSLServerSocketFactory extends ServerSocketFactory {
      * Algorithm Names Specification, and may also include other cipher
      * suites that the provider supports.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return an array of cipher suite names
      * @see #getDefaultCipherSuites()
      */

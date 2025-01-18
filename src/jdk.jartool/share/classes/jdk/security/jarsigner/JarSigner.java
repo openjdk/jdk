@@ -181,6 +181,7 @@ public final class JarSigner {
          *      "{@docRoot}/../specs/security/standard-names.html#messagedigest-algorithms">
          *      Java Cryptography Architecture Standard Algorithm Name
          *      Documentation</a> for information about standard algorithm names.
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @return the {@code JarSigner.Builder} itself.
          * @throws NoSuchAlgorithmException if {@code algorithm} is not available.
          */
@@ -202,6 +203,7 @@ public final class JarSigner {
          *      Java Cryptography Architecture Standard Algorithm Name
          *      Documentation</a> for information about standard algorithm names.
          * @param provider the provider.
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @return the {@code JarSigner.Builder} itself.
          * @throws NoSuchAlgorithmException if {@code algorithm} is not
          *      available in the specified provider.

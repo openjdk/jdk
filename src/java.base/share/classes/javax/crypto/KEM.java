@@ -531,6 +531,7 @@ public final class KEM {
      *          "{@docRoot}/../specs/security/standard-names.html#kem-algorithms">
      *          Java Security Standard Algorithm Names Specification</a>
      *          for information about standard KEM algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KEM} object
      * @throws NoSuchAlgorithmException if no {@code Provider} supports a
      *         {@code KEM} implementation for the specified algorithm
@@ -568,6 +569,7 @@ public final class KEM {
      *          for information about standard KEM algorithm names.
      * @param provider the provider. If {@code null}, this method is equivalent
      *                 to {@link #getInstance(String)}.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KEM} object
      * @throws NoSuchAlgorithmException if a {@code provider} is specified and
      *          it does not support the specified KEM algorithm,
@@ -599,6 +601,7 @@ public final class KEM {
      *          for information about standard KEM algorithm names.
      * @param provider the provider. If {@code null}, this method is equivalent
      *                 to {@link #getInstance(String)}.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return the new {@code KEM} object
      * @throws NoSuchAlgorithmException if a {@code provider} is specified and
      *          it does not support the specified KEM algorithm,

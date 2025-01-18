@@ -183,6 +183,7 @@ import sun.security.util.Debug;
  * Consult the release documentation for your implementation to see if any
  * other types are supported.
  *
+ * @spec security/standard-names.html Java Security Standard Algorithm Names
  * @author Jan Luehe
  *
  * @see java.security.PrivateKey
@@ -300,6 +301,7 @@ public class KeyStore {
          * @throws    NullPointerException if {@code protectionAlgorithm} is
          *     {@code null}
          *
+         * @spec security/standard-names.html Java Security Standard Algorithm Names
          * @since 1.8
          */
         public PasswordProtection(char[] password, String protectionAlgorithm,
@@ -852,6 +854,7 @@ public class KeyStore {
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard keystore types.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws KeyStoreException if no provider supports a
@@ -893,6 +896,7 @@ public class KeyStore {
      *
      * @param provider the name of the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws IllegalArgumentException if the provider name is {@code null}
@@ -939,6 +943,7 @@ public class KeyStore {
      *
      * @param provider the provider.
      *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @return a keystore object of the specified type
      *
      * @throws IllegalArgumentException if the specified provider is

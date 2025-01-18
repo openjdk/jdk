@@ -88,6 +88,7 @@ public class PKCS8EncodedKeySpec extends EncodedKeySpec {
      * "{@docRoot}/../specs/security/standard-names.html#keyfactory-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard algorithm names.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws NullPointerException if {@code encodedKey}
      * or {@code algorithm} is null.
      * @throws IllegalArgumentException if {@code algorithm} is
