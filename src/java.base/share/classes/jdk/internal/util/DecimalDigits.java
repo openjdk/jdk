@@ -168,7 +168,7 @@ public final class DecimalDigits {
         }
 
         // We know there are at most two digits left at this point.
-        if (i < -9) {
+        if (i <= -10) {
             charPos -= 2;
             putPairLatin1(buf, charPos, -i);
         } else {
@@ -228,7 +228,7 @@ public final class DecimalDigits {
         }
 
         // We know there are at most two digits left at this point.
-        if (i2 < -9) {
+        if (i2 <= -10) {
             charPos -= 2;
             putPairLatin1(buf, charPos, -i2);
         } else {
@@ -271,7 +271,7 @@ public final class DecimalDigits {
         }
 
         // We know there are at most two digits left at this point.
-        if (i < -9) {
+        if (i <= -10) {
             charPos -= 2;
             putPairUTF16(buf, charPos, -i);
         } else {
@@ -323,7 +323,7 @@ public final class DecimalDigits {
         }
 
         // We know there are at most two digits left at this point.
-        if (i2 < -9) {
+        if (i2 <= -10) {
             charPos -= 2;
             putPairUTF16(buf, charPos, -i2);
         } else {
@@ -374,7 +374,7 @@ public final class DecimalDigits {
         }
 
         // We know there are at most two digits left at this point.
-        if (i2 < -9) {
+        if (i2 <= -10) {
             charPos -= 2;
             putPair(buf, charPos, -i2);
         } else {
