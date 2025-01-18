@@ -480,8 +480,8 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
   //
-  //      Note: we have been assuming that this also holds for native memory base
-  //            addresses. This is incorrect, see JDK-8323582.
+  //      TODO: Note: we have been assuming that this also holds for native memory base
+  //                  addresses. This is incorrect, see JDK-8323582.
   //
   //   2) The "C_const" term is the sum of all constant terms. This is "con",
   //      plus "iv_scale * init" if it is constant.
@@ -522,7 +522,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
   // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
   //
-  // Note: the following assumption is incorrect for native memory bases, see JDK-8323582.
+  // TODO: Note: the following assumption is incorrect for native memory bases, see JDK-8323582.
   // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
   //
   //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
@@ -880,7 +880,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //         + iv_scale * main_stride * main_iter)) % aw =
   //
   //   -> base aligned: base % aw = 0
-  //        Note: this assumption is incorrect for native memory bases, see JDK-8323582.
+  //        TODO: Note: this assumption is incorrect for native memory bases, see JDK-8323582.
   //   -> main-loop iterations aligned (2): C_main % aw = (iv_scale * main_stride) % aw = 0
   //   (con + invar + iv_scale * init + iv_scale * pre_stride * pre_iter) % aw =
   //

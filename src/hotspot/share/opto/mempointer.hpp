@@ -231,7 +231,7 @@
 //     or outside it. We also have no guarantee for alignment with such a base address.
 //     Still: we would like to find such a base if possible, and if two pointers are similar (i.e. have the
 //     same summands), we would like to find the same base. Further, it is reasonable to speculatively
-//     assume that such base addresses are aligned (need to add this speculative check in  JDK-8323582).
+//     assume that such base addresses are aligned (TODO: need to add this speculative check in JDK-8323582).
 //     A base pointer must have scale = 1, and be accepted byMemPointer::is_native_memory_base_candidate.
 //     It can thus be one of these:
 //      (1) CastX2P
@@ -240,7 +240,7 @@
 //          decomposed the CastX2P, but at that point it is even harder to tell what should be a good
 //          candidate for a native memory base.
 //      (2) LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
-//          This would be preferrable over CastX2P, because it holds the address() of a native
+//          This would be preferable over CastX2P, because it holds the address() of a native
 //          MemorySegment, i.e. we know it points to the beginning of that MemorySegment.
 //
 // -----------------------------------------------------------------------------------------
@@ -607,9 +607,9 @@ public:
     bool is_known()          const { return _kind != Unknown; }
     bool is_object()         const { return _kind == Object; }
     bool is_native()         const { return _kind == Native; }
-    Node* object()           const { assert(is_object(), ""); return _base; }
-    Node* native()           const { assert(is_native(), ""); return _base; }
-    Node* object_or_native() const { assert(is_known(),  ""); return _base; }
+    Node* object()           const { assert(is_object(), "unexpected kind"); return _base; }
+    Node* native()           const { assert(is_native(), "unexpected kind"); return _base; }
+    Node* object_or_native() const { assert(is_known(),  "unexpected kind"); return _base; }
     Node* object_or_native_or_null() const { return _base; }
 
 #ifndef PRODUCT
@@ -675,7 +675,7 @@ private:
     }
 #endif
 
-    // Put the base in in the 0th summand.
+    // Put the base in the 0th summand.
     Node* base = _base.object_or_native_or_null();
     int pos = 0;
     if (base != nullptr) {
@@ -760,7 +760,7 @@ private:
 public:
   bool has_same_non_base_summands_as(const MemPointer& other) const {
     if (!base().is_known() || !other.base().is_known()) {
-      assert(false, "unknonw base case is not answered optimally");
+      assert(false, "unknown base case is not answered optimally");
       return false;
     }
     // Known base at 0th summand: all other summands are non-base summands.

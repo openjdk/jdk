@@ -224,7 +224,7 @@ bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
   worklist.append(start);
   for (int i = 0; i < worklist.length(); i++) {
     Node* n = worklist.at(i);
-    switch(n->Opcode()) {
+    switch (n->Opcode()) {
       case Op_AddL:
         // Traverse to both inputs.
         worklist.append(n->in(1));
@@ -270,11 +270,8 @@ bool MemPointerParser::is_native_memory_base_candidate(Node* n) {
 
   Symbol* field_symbol = field->name()->get_symbol();
   Symbol* holder_symbol = field->holder()->name()->get_symbol();
-  if (holder_symbol != vmSymbols::jdk_internal_foreign_NativeMemorySegmentImpl() ||
-      field_symbol != vmSymbols::min_name()) {
-    return false;
-  }
-  return true;
+  return holder_symbol == vmSymbols::jdk_internal_foreign_NativeMemorySegmentImpl() &&
+         field_symbol == vmSymbols::min_name();
 }
 
 // Check if the decomposition of operation opc is guaranteed to be safe.
@@ -604,7 +601,7 @@ bool MemPointer::never_overlaps_with(const MemPointer& other) const {
   //   this >= other + other.size      ||  this + this.size <= other
   //
   // Which we can restate as:
-  //   distance <= -other.size    ||  this.size <= distance
+  //   distance <= -other.size         ||  this.size <= distance
   //
   const jint distance_lo = -other.size();
   const jint distance_hi = size();

@@ -145,7 +145,7 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 #endif
 
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
-// It wraps a VPointer. The VPointer have an iv_offset applied, which
+// It wraps a VPointer. The VPointer has an iv_offset applied, which
 // simulates a virtual unrolling. They represent the memory region:
 //   [adr, adr + size)
 //   adr = base + invar + iv_scale * (iv + iv_offset) + con
