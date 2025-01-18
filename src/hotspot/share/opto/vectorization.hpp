@@ -1028,7 +1028,7 @@ public:
 
   // Implemented by each subclass
   virtual const AlignmentSolution* filter(const AlignmentSolution* other) const = 0;
-  DEBUG_ONLY( virtual void print() const = 0; )
+  NOT_PRODUCT( virtual void print() const = 0; )
 
   // Compute modulo and ensure that we get a positive remainder
   static int mod(int i, int q) {
