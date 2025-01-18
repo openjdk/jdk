@@ -489,9 +489,9 @@ MemPointerAliasing MemPointer::get_aliasing_with(const MemPointer& other
     // we computed for the MemPointers:
     //   p_other - p_this = distance = other.con - this.con
 #ifndef PRODUCT
-      if (trace.is_trace_aliasing()) {
-        tty->print_cr("  -> Aliasing always at distance = %d.", distance.value());
-      }
+    if (trace.is_trace_aliasing()) {
+      tty->print_cr("  -> Aliasing always at distance = %d.", distance.value());
+    }
 #endif
     return MemPointerAliasing::make_always_at_distance(distance.value());
   } else {
@@ -502,9 +502,9 @@ MemPointerAliasing MemPointer::get_aliasing_with(const MemPointer& other
     //                  same memory object, i.e. (S1) holds. We have already proven (S0)
     //                  and (S3), so all 4 conditions for "MemPointer Lemma" are given.
 #ifndef PRODUCT
-      if (trace.is_trace_aliasing()) {
-        tty->print_cr("  -> Aliasing not or at distance = %d.", distance.value());
-      }
+    if (trace.is_trace_aliasing()) {
+      tty->print_cr("  -> Aliasing not or at distance = %d.", distance.value());
+    }
 #endif
     return MemPointerAliasing::make_not_or_at_distance(distance.value());
   }
