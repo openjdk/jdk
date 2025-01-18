@@ -264,9 +264,9 @@ public final class DecimalDigits {
         // Get 2 digits/iteration using ints
         while (i <= -100) {
             q = i / 100;
-            i = q;
             charPos -= 2;
             putPairUTF16(buf, charPos, (q * 100) - i);
+            i = q;
         }
 
         // We know there are at most two digits left at this point.
