@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2011, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,7 +95,7 @@ static bool read_number_file(const char* file, size_t* out) {
   bool rc = false;
   if (f != nullptr) {
     uint64_t i = 0;
-    if (::fscanf(f, SIZE_FORMAT, out) == 1) {
+    if (::fscanf(f, "%zu", out) == 1) {
       rc = true;
     }
     ::fclose(f);
@@ -155,7 +155,7 @@ void ExplicitHugePageSupport::scan_os() {
     // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
     // sure about the state of hugepage support by the kernel, so we won't use explicit hugepages.
     if (!_pagesizes.contains(_default_hugepage_size)) {
-      log_info(pagesize)("Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
+      log_info(pagesize)("Unexpected configuration: default pagesize (%zu) "
                          "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
       _inconsistent = true;
     }

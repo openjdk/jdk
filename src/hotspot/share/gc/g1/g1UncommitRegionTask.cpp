@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ void G1UncommitRegionTask::report_execution(Tickspan time, uint regions) {
   _summary_region_count += regions;
   _summary_duration += time;
 
-  log_trace(gc, heap)("Concurrent Uncommit: " SIZE_FORMAT "%s, %u regions, %1.3fms",
+  log_trace(gc, heap)("Concurrent Uncommit: %zu%s, %u regions, %1.3fms",
                       byte_size_in_proper_unit(regions * G1HeapRegion::GrainBytes),
                       proper_unit_for_byte_size(regions * G1HeapRegion::GrainBytes),
                       regions,
@@ -90,7 +90,7 @@ void G1UncommitRegionTask::report_execution(Tickspan time, uint regions) {
 }
 
 void G1UncommitRegionTask::report_summary() {
-  log_debug(gc, heap)("Concurrent Uncommit Summary: " SIZE_FORMAT "%s, %u regions, %1.3fms",
+  log_debug(gc, heap)("Concurrent Uncommit Summary: %zu%s, %u regions, %1.3fms",
                       byte_size_in_proper_unit(_summary_region_count * G1HeapRegion::GrainBytes),
                       proper_unit_for_byte_size(_summary_region_count * G1HeapRegion::GrainBytes),
                       _summary_region_count,

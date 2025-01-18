@@ -2364,7 +2364,7 @@ encode %{
     Label miss;
     Label done;
     __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
-                                     nullptr, &miss);
+                                     nullptr, &miss, /*set_cond_codes*/ true);
     if ($primary) {
       __ mv(result_reg, zr);
     } else {
@@ -10019,15 +10019,43 @@ instruct CallLeafNoFPDirect(method meth)
 
 instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, iRegP_R12 tmp, rFlagsReg cr)
 %{
+  predicate(!UseSecondarySupersTable);
   match(Set result (PartialSubtypeCheck sub super));
   effect(KILL tmp, KILL cr);
 
-  ins_cost(11 * DEFAULT_COST);
+  ins_cost(20 * DEFAULT_COST);
   format %{ "partialSubtypeCheck $result, $sub, $super\t#@partialSubtypeCheck" %}
 
   ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
 
   opcode(0x1); // Force zero of result reg on hit
+
+  ins_pipe(pipe_class_memory);
+%}
+
+// Two versions of partialSubtypeCheck, both used when we need to
+// search for a super class in the secondary supers array. The first
+// is used when we don't know _a priori_ the class being searched
+// for. The second, far more common, is used when we do know: this is
+// used for instanceof, checkcast, and any case where C2 can determine
+// it by constant propagation.
+
+instruct partialSubtypeCheckVarSuper(iRegP_R14 sub, iRegP_R10 super, iRegP_R15 result,
+                                     iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13,
+                                     iRegP_R16 tmpR16, rFlagsReg cr)
+%{
+  predicate(UseSecondarySupersTable);
+  match(Set result (PartialSubtypeCheck sub super));
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
+
+  ins_cost(10 * DEFAULT_COST);  // slightly larger than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
+
+  ins_encode %{
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register, $result$$Register,
+                                         $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
+                                         $tmpR16$$Register, nullptr /*L_success*/);
+  %}
 
   ins_pipe(pipe_class_memory);
 %}
@@ -10039,16 +10067,16 @@ instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP 
   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
   effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
 
-  ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
+  ins_cost(5 * DEFAULT_COST); // needs to be less than competing nodes
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
 
   ins_encode %{
     bool success = false;
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $result$$Register,
-                                                 $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
-                                                 $tmpR16$$Register, super_klass_slot);
+      success = __ lookup_secondary_supers_table_const($sub$$Register, $super_reg$$Register, $result$$Register,
+                                                       $tmpR11$$Register, $tmpR12$$Register, $tmpR13$$Register,
+                                                       $tmpR16$$Register, super_klass_slot);
     } else {
       address call = __ reloc_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
       success = (call != nullptr);
@@ -10058,22 +10086,6 @@ instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP 
       return;
     }
   %}
-
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct partialSubtypeCheckVsZero(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, iRegP_R12 tmp,
-                                   immP0 zero, rFlagsReg cr)
-%{
-  match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  effect(KILL tmp, KILL result);
-
-  ins_cost(11 * DEFAULT_COST);
-  format %{ "partialSubtypeCheck $result, $sub, $super == 0\t#@partialSubtypeCheckVsZero" %}
-
-  ins_encode(riscv_enc_partial_subtype_check(sub, super, tmp, result));
-
-  opcode(0x0); // Don't zero result reg on hit
 
   ins_pipe(pipe_class_memory);
 %}

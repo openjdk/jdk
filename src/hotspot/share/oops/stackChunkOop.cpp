@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,7 @@ public:
     assert(obj == nullptr || dbg_is_good_oop(obj), "p: " PTR_FORMAT " obj: " PTR_FORMAT, p2i(p), p2i(obj));
     if (_chunk->has_bitmap()) {
       BitMap::idx_t index = _chunk->bit_index_for(p);
-      assert(_chunk->bitmap().at(index), "Bit not set at index " SIZE_FORMAT " corresponding to " PTR_FORMAT, index, p2i(p));
+      assert(_chunk->bitmap().at(index), "Bit not set at index %zu corresponding to " PTR_FORMAT, index, p2i(p));
     }
   }
 
@@ -582,7 +582,7 @@ public:
 
     oop obj = _chunk->load_oop(p);
     assert(obj == nullptr || dbg_is_good_oop(obj),
-           "p: " PTR_FORMAT " obj: " PTR_FORMAT " index: " SIZE_FORMAT,
+           "p: " PTR_FORMAT " obj: " PTR_FORMAT " index: %zu",
            p2i(p), p2i((oopDesc*)obj), index);
 
     return true; // continue processing

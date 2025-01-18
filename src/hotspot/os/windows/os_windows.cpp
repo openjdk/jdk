@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,26 +146,34 @@ LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = nullptr;
 
 HINSTANCE vm_lib_handle;
 
+static void windows_preinit(HINSTANCE hinst) {
+  vm_lib_handle = hinst;
+  if (ForceTimeHighResolution) {
+    timeBeginPeriod(1L);
+  }
+  WindowsDbgHelp::pre_initialize();
+  SymbolEngine::pre_initialize();
+}
+
+static void windows_atexit() {
+  if (ForceTimeHighResolution) {
+    timeEndPeriod(1L);
+  }
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
+  if (topLevelVectoredExceptionHandler != nullptr) {
+    RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
+    topLevelVectoredExceptionHandler = nullptr;
+  }
+#endif
+}
+
 BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
   switch (reason) {
   case DLL_PROCESS_ATTACH:
-    vm_lib_handle = hinst;
-    if (ForceTimeHighResolution) {
-      timeBeginPeriod(1L);
-    }
-    WindowsDbgHelp::pre_initialize();
-    SymbolEngine::pre_initialize();
+    windows_preinit(hinst);
     break;
   case DLL_PROCESS_DETACH:
-    if (ForceTimeHighResolution) {
-      timeEndPeriod(1L);
-    }
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-    if (topLevelVectoredExceptionHandler != nullptr) {
-      RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
-      topLevelVectoredExceptionHandler = nullptr;
-    }
-#endif
+    windows_atexit();
     break;
   default:
     break;
@@ -198,12 +206,12 @@ struct PreserveLastError {
 static LPVOID virtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect) {
   LPVOID result = ::VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect);
   if (result != nullptr) {
-    log_trace(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) returned " PTR_FORMAT "%s.",
+    log_trace(os)("VirtualAlloc(" PTR_FORMAT ", %zu, %x, %x) returned " PTR_FORMAT "%s.",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, p2i(result),
                   ((lpAddress != nullptr && result != lpAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
-    log_info(os)("VirtualAlloc(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x) failed (%u).",
+    log_info(os)("VirtualAlloc(" PTR_FORMAT ", %zu, %x, %x) failed (%u).",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, ple.v);
   }
   return result;
@@ -213,11 +221,11 @@ static LPVOID virtualAlloc(LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationTy
 static BOOL virtualFree(LPVOID lpAddress, SIZE_T dwSize, DWORD  dwFreeType) {
   BOOL result = ::VirtualFree(lpAddress, dwSize, dwFreeType);
   if (result != FALSE) {
-    log_trace(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) succeeded",
+    log_trace(os)("VirtualFree(" PTR_FORMAT ", %zu, %x) succeeded",
                   p2i(lpAddress), dwSize, dwFreeType);
   } else {
     PreserveLastError ple;
-    log_info(os)("VirtualFree(" PTR_FORMAT ", " SIZE_FORMAT ", %x) failed (%u).",
+    log_info(os)("VirtualFree(" PTR_FORMAT ", %zu, %x) failed (%u).",
                  p2i(lpAddress), dwSize, dwFreeType, ple.v);
   }
   return result;
@@ -228,12 +236,12 @@ static LPVOID virtualAllocExNuma(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSiz
                                  DWORD  flProtect, DWORD  nndPreferred) {
   LPVOID result = ::VirtualAllocExNuma(hProcess, lpAddress, dwSize, flAllocationType, flProtect, nndPreferred);
   if (result != nullptr) {
-    log_trace(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) returned " PTR_FORMAT "%s.",
+    log_trace(os)("VirtualAllocExNuma(" PTR_FORMAT ", %zu, %x, %x, %x) returned " PTR_FORMAT "%s.",
                   p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, p2i(result),
                   ((lpAddress != nullptr && result != lpAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
-    log_info(os)("VirtualAllocExNuma(" PTR_FORMAT ", " SIZE_FORMAT ", %x, %x, %x) failed (%u).",
+    log_info(os)("VirtualAllocExNuma(" PTR_FORMAT ", %zu, %x, %x, %x) failed (%u).",
                  p2i(lpAddress), dwSize, flAllocationType, flProtect, nndPreferred, ple.v);
   }
   return result;
@@ -245,12 +253,12 @@ static LPVOID mapViewOfFileEx(HANDLE hFileMappingObject, DWORD  dwDesiredAccess,
   LPVOID result = ::MapViewOfFileEx(hFileMappingObject, dwDesiredAccess, dwFileOffsetHigh,
                                     dwFileOffsetLow, dwNumberOfBytesToMap, lpBaseAddress);
   if (result != nullptr) {
-    log_trace(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") returned " PTR_FORMAT "%s.",
+    log_trace(os)("MapViewOfFileEx(" PTR_FORMAT ", %zu) returned " PTR_FORMAT "%s.",
                   p2i(lpBaseAddress), dwNumberOfBytesToMap, p2i(result),
                   ((lpBaseAddress != nullptr && result != lpBaseAddress) ? " <different base!>" : ""));
   } else {
     PreserveLastError ple;
-    log_info(os)("MapViewOfFileEx(" PTR_FORMAT ", " SIZE_FORMAT ") failed (%u).",
+    log_info(os)("MapViewOfFileEx(" PTR_FORMAT ", %zu) failed (%u).",
                  p2i(lpBaseAddress), dwNumberOfBytesToMap, ple.v);
   }
   return result;
@@ -544,7 +552,7 @@ static unsigned thread_native_entry(void* t) {
     res = 20115;    // java thread
   }
 
-  log_info(os, thread)("Thread is alive (tid: %zu, stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / K);
+  log_info(os, thread)("Thread is alive (tid: %zu, stacksize: %zuk).", os::current_thread_id(), thread->stack_size() / K);
 
 #ifdef USE_VECTORED_EXCEPTION_HANDLING
   // Any exception is caught by the Vectored Exception Handler, so VM can
@@ -630,7 +638,7 @@ bool os::create_attached_thread(JavaThread* thread) {
   thread->set_osthread(osthread);
 
   log_info(os, thread)("Thread attached (tid: %zu, stack: "
-                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+                       PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), p2i(thread->stack_base()),
                        p2i(thread->stack_end()), thread->stack_size() / K);
 
@@ -663,7 +671,7 @@ static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
   if (stacksize == 0) {
     ss.print("stacksize: default, ");
   } else {
-    ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / K);
+    ss.print("stacksize: %zuk, ", stacksize / K);
   }
   ss.print("flags: ");
   #define PRINT_FLAG(f) if (initflag & f) ss.print( #f " ");
@@ -2083,7 +2091,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
@@ -3433,7 +3441,7 @@ static char* find_aligned_address(size_t size, size_t alignment) {
 }
 
 static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exec) {
-  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=" SIZE_FORMAT "%s",
+  log_debug(pagesize)("Reserving large pages at an aligned address, alignment=%zu%s",
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
   // Will try to find a suitable address at most 20 times. The reason we need to try
@@ -3495,7 +3503,7 @@ static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
   size_t buf_len = os::lasterror(buf, sizeof(buf));
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu"
           ", %d) failed; error='%s' (DOS error/errno=%d)", addr, bytes,
           exec, buf_len != 0 ? buf : "<no_error_string>", err);
 }
@@ -3725,7 +3733,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
     int err = os::get_last_error();
     char buf[256];
     size_t buf_len = os::lasterror(buf, sizeof(buf));
-    warning("INFO: os::protect_memory(" PTR_FORMAT ", " SIZE_FORMAT
+    warning("INFO: os::protect_memory(" PTR_FORMAT ", %zu"
           ") failed; error='%s' (DOS error/errno=%d)", addr, bytes,
           buf_len != 0 ? buf : "<no_error_string>", err);
   }
@@ -4427,6 +4435,14 @@ bool os::message_box(const char* title, const char* message) {
 
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
+  if (is_vm_statically_linked()) {
+    // Mimick what is done in DllMain for non-static builds
+    HMODULE hModule = NULL;
+    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, NULL, &hModule);
+    windows_preinit(hModule);
+    atexit(windows_atexit);
+  }
+
   _initial_pid = _getpid();
 
   win32::initialize_windows_version();

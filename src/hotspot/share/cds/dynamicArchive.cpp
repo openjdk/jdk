@@ -133,8 +133,6 @@ public:
     dump_ro_metadata();
     relocate_metaspaceobj_embedded_pointers();
 
-    verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
-
     sort_methods();
 
     log_info(cds)("Make classes shareable");
@@ -158,8 +156,6 @@ public:
       WriteClosure wc(ro_region());
       ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
-
-    verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
 
     log_info(cds)("Adjust lambda proxy class dictionary");
     SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
@@ -356,7 +352,7 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   size_t file_size = pointer_delta(top, base, sizeof(char));
 
   log_info(cds, dynamic)("Written dynamic archive " PTR_FORMAT " - " PTR_FORMAT
-                         " [" UINT32_FORMAT " bytes header, " SIZE_FORMAT " bytes total]",
+                         " [" UINT32_FORMAT " bytes header, %zu bytes total]",
                          p2i(base), p2i(top), _header->header_size(), file_size);
 
   log_info(cds, dynamic)("%d klasses; %d symbols", klasses()->length(), symbols()->length());

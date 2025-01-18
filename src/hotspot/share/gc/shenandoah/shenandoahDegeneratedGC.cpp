@@ -264,15 +264,15 @@ void ShenandoahDegenGC::op_degenerated() {
       // If heuristics thinks we should do the cycle, this flag would be set,
       // and we need to do update-refs. Otherwise, it would be the shortcut cycle.
       if (heap->has_forwarded_objects()) {
-        op_init_updaterefs();
+        op_init_update_refs();
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       } else {
         _abbreviated = true;
       }
 
-    case _degenerated_updaterefs:
+    case _degenerated_update_refs:
       if (heap->has_forwarded_objects()) {
-        op_updaterefs();
+        op_update_refs();
         op_update_roots();
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
@@ -387,16 +387,16 @@ void ShenandoahDegenGC::op_evacuate() {
   ShenandoahHeap::heap()->evacuate_collection_set(false /* concurrent*/);
 }
 
-void ShenandoahDegenGC::op_init_updaterefs() {
+void ShenandoahDegenGC::op_init_update_refs() {
   // Evacuation has completed
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->prepare_update_heap_references(false /*concurrent*/);
   heap->set_update_refs_in_progress(true);
 }
 
-void ShenandoahDegenGC::op_updaterefs() {
+void ShenandoahDegenGC::op_update_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_updaterefs);
+  ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_update_refs);
   // Handed over from concurrent update references phase
   heap->update_heap_references(false /*concurrent*/);
 
@@ -412,7 +412,7 @@ void ShenandoahDegenGC::op_update_roots() {
   heap->update_heap_region_states(false /*concurrent*/);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_updaterefs();
+    heap->verifier()->verify_after_update_refs();
   }
 
   if (VerifyAfterGC) {
@@ -447,7 +447,7 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
       SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Degenerated GC", " (Mark)");
     case _degenerated_evac:
       SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Degenerated GC", " (Evacuation)");
-    case _degenerated_updaterefs:
+    case _degenerated_update_refs:
       SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Degenerated GC", " (Update Refs)");
     default:
       ShouldNotReachHere();

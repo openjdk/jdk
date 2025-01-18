@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,10 +134,10 @@ TableStatistics::~TableStatistics() { }
 void TableStatistics::print(outputStream* st, const char *table_name) {
   st->print_cr("%s statistics:", table_name);
   st->print_cr("Number of buckets       : %9" PRIuPTR " = %9" PRIuPTR
-               " bytes, each " SIZE_FORMAT,
+               " bytes, each %zu",
               _number_of_buckets, _bucket_bytes, _bucket_size);
   st->print_cr("Number of entries       : %9" PRIuPTR " = %9" PRIuPTR
-               " bytes, each " SIZE_FORMAT,
+               " bytes, each %zu",
                _number_of_entries, _entry_bytes, _entry_size);
   if (_literal_bytes != 0) {
     float literal_avg = (_number_of_entries <= 0) ? 0.0f : (float)(_literal_bytes / _number_of_entries);

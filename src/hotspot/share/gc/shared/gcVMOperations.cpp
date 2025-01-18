@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ bool VM_GC_Operation::doit_prologue() {
   if (!is_init_completed()) {
     vm_exit_during_initialization(
       err_msg("GC triggered before VM initialization completed. Try increasing "
-              "NewSize, current value " SIZE_FORMAT "%s.",
+              "NewSize, current value %zu%s.",
               byte_size_in_proper_unit(NewSize),
               proper_unit_for_byte_size(NewSize)));
   }
@@ -259,7 +259,7 @@ void VM_CollectForMetadataAllocation::doit() {
     return;
   }
 
-  log_debug(gc)("After Metaspace GC failed to allocate size " SIZE_FORMAT, _size);
+  log_debug(gc)("After Metaspace GC failed to allocate size %zu", _size);
 
   if (GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();

@@ -244,18 +244,18 @@ class FlagAccessImpl_size_t : public RangedFlagAccessImpl<size_t, EventUnsignedL
 public:
   void range_error(const char* name, size_t value, size_t min, size_t max, bool verbose) const {
     JVMFlag::printError(verbose,
-                        "size_t %s=" SIZE_FORMAT " is outside the allowed range "
-                        "[ " SIZE_FORMAT " ... " SIZE_FORMAT " ]\n",
+                        "size_t %s=%zu is outside the allowed range "
+                        "[ %zu ... %zu ]\n",
                         name, value, min, max);
   }
   JVMFlag::Error typed_check_constraint(void* func, size_t value, bool verbose) const {
     return ((JVMFlagConstraintFunc_size_t)func)(value, verbose);
   }
   void print_range_impl(outputStream* st, size_t min, size_t max) const {
-    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", min, max);
+    st->print("[ %-25zu ... %25zu ]", min, max);
   }
   void print_default_range(outputStream* st) const {
-    st->print("[ " SIZE_FORMAT_W(-25) " ... " SIZE_FORMAT_W(25) " ]", size_t(0), size_t(SIZE_MAX));
+    st->print("[ %-25zu ... %25zu ]", size_t(0), size_t(SIZE_MAX));
   }
 };
 
