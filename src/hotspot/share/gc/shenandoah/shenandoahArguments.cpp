@@ -191,7 +191,8 @@ void ShenandoahArguments::initialize() {
 
   if (GCCardSizeInBytes < ShenandoahMinCardSizeInBytes) {
     char buf[512];
-    sprintf(buf, "GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes);
+    os::snprintf(buf, (size_t) 512, "GCCardSizeInBytes ( %u ) must be >= %u\n",
+                 GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes);
     vm_exit_during_initialization(buf);
   }
 
