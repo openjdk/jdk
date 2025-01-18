@@ -54,7 +54,7 @@ public class StringBuilders {
     private StringBuilder sbLatin2;
     private StringBuilder sbUtf16;
     private StringBuilder sbUtf17;
-    private int[] intsArray;
+    private int[] intArray;
     private long[] longArray;
 
     @Setup
@@ -72,10 +72,10 @@ public class StringBuilders {
         sbUtf16 = new StringBuilder("UTF-\uFF11\uFF16 string");
         sbUtf17 = new StringBuilder("UTF-\uFF11\uFF16 string");
         int size = 16;
-        intsArray = new int[size];
+        intArray = new int[size];
         longArray = new long[size];
         for (int i = 0; i < longArray.length; i++) {
-            intsArray[i] = ((100 * i + i) << 24) + 4543 + i * 4;
+            intArray[i] = ((100 * i + i) << 24) + 4543 + i * 4;
             longArray[i] = ((100L * i + i) << 32) + 4543 + i * 4L;
         }
     }
@@ -237,8 +237,8 @@ public class StringBuilders {
     public int appendWithIntLatin1() {
         StringBuilder buf = sbLatin1;
         buf.setLength(0);
-        for (long l : longArray) {
-            buf.append(l);
+        for (int i : intArray) {
+            buf.append(i);
         }
         return buf.length();
     }
@@ -247,9 +247,8 @@ public class StringBuilders {
     public int appendWithIntUtf16() {
         StringBuilder buf = sbUtf16;
         buf.setLength(0);
-        buf.setLength(0);
-        for (long l : longArray) {
-            buf.append(l);
+        for (int i : intArray) {
+            buf.append(i);
         }
         return buf.length();
     }
@@ -267,7 +266,6 @@ public class StringBuilders {
     @Benchmark
     public int appendWithLongUtf16() {
         StringBuilder buf = sbUtf16;
-        buf.setLength(0);
         buf.setLength(0);
         for (long l : longArray) {
             buf.append(l);
