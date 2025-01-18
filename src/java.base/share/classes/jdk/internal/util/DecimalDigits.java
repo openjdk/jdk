@@ -253,7 +253,7 @@ public final class DecimalDigits {
      */
     public static int getCharsUTF16(int i, int index, byte[] buf) {
         // Used by trusted callers.  Assumes all necessary bounds checks have been done by the caller.
-        int q, r;
+        int q;
         int charPos = index;
 
         boolean negative = (i < 0);
@@ -264,10 +264,9 @@ public final class DecimalDigits {
         // Get 2 digits/iteration using ints
         while (i <= -100) {
             q = i / 100;
-            r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            putPairUTF16(buf, charPos, r);
+            putPairUTF16(buf, charPos, (q * 100) - i);
         }
 
         // We know there are at most two digits left at this point.
