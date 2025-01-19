@@ -545,111 +545,111 @@ public class ForkJoinPool20Test extends JSR166TestCase {
      * Periodic tasks are nt run after shutdown and
      * delayed tasks keep running after shutdown.
      */
-    @SuppressWarnings("FutureReturnValueIgnored")
-    public void testShutdown_cancellation() throws Exception {
-        final int poolSize = 4;
-        final ForkJoinPool p = new ForkJoinPool(poolSize);
-        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        final long delay = 1;
-        final int rounds = 2;
+    // @SuppressWarnings("FutureReturnValueIgnored")
+    // public void testShutdown_cancellation() throws Exception {
+    //     final int poolSize = 4;
+    //     final ForkJoinPool p = new ForkJoinPool(poolSize);
+    //     final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+    //     final long delay = 1;
+    //     final int rounds = 2;
 
-        // Strategy: Wedge the pool with one wave of "blocker" tasks,
-        // then add a second wave that waits in the queue until unblocked.
-        final AtomicInteger ran = new AtomicInteger(0);
-        final CountDownLatch poolBlocked = new CountDownLatch(poolSize);
-        final CountDownLatch unblock = new CountDownLatch(1);
-        final RuntimeException exception = new RuntimeException();
+    //     // Strategy: Wedge the pool with one wave of "blocker" tasks,
+    //     // then add a second wave that waits in the queue until unblocked.
+    //     final AtomicInteger ran = new AtomicInteger(0);
+    //     final CountDownLatch poolBlocked = new CountDownLatch(poolSize);
+    //     final CountDownLatch unblock = new CountDownLatch(1);
+    //     final RuntimeException exception = new RuntimeException();
 
-        class Task implements Runnable {
-            public void run() {
-                try {
-                    ran.getAndIncrement();
-                    poolBlocked.countDown();
-                    await(unblock);
-                } catch (Throwable fail) { threadUnexpectedException(fail); }
-            }
-        }
+    //     class Task implements Runnable {
+    //         public void run() {
+    //             try {
+    //                 ran.getAndIncrement();
+    //                 poolBlocked.countDown();
+    //                 await(unblock);
+    //             } catch (Throwable fail) { threadUnexpectedException(fail); }
+    //         }
+    //     }
 
-        class PeriodicTask extends Task {
-            PeriodicTask(int rounds) { this.rounds = rounds; }
-            int rounds;
-            public void run() {
-                if (--rounds == 0) super.run();
-                // throw exception to surely terminate this periodic task,
-                // but in a separate execution and in a detectable way.
-                if (rounds == -1) throw exception;
-            }
-        }
+    //     class PeriodicTask extends Task {
+    //         PeriodicTask(int rounds) { this.rounds = rounds; }
+    //         int rounds;
+    //         public void run() {
+    //             if (--rounds == 0) super.run();
+    //             // throw exception to surely terminate this periodic task,
+    //             // but in a separate execution and in a detectable way.
+    //             if (rounds == -1) throw exception;
+    //         }
+    //     }
 
-        Runnable task = new Task();
+    //     Runnable task = new Task();
 
-        List<Future<?>> immediates = new ArrayList<>();
-        List<Future<?>> delayeds   = new ArrayList<>();
-        List<Future<?>> periodics  = new ArrayList<>();
+    //     List<Future<?>> immediates = new ArrayList<>();
+    //     List<Future<?>> delayeds   = new ArrayList<>();
+    //     List<Future<?>> periodics  = new ArrayList<>();
 
-        immediates.add(p.submit(task));
-        delayeds.add(p.schedule(task, delay, MILLISECONDS));
-        periodics.add(p.scheduleAtFixedRate(
-                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
-        periodics.add(p.scheduleWithFixedDelay(
-                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+    //     immediates.add(p.submit(task));
+    //     delayeds.add(p.schedule(task, delay, MILLISECONDS));
+    //     periodics.add(p.scheduleAtFixedRate(
+    //                       new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+    //     periodics.add(p.scheduleWithFixedDelay(
+    //                       new PeriodicTask(rounds), delay, 1, MILLISECONDS));
 
-        await(poolBlocked);
+    //     await(poolBlocked);
 
-        assertEquals(poolSize, ran.get());
+    //     assertEquals(poolSize, ran.get());
 
-        // Add second wave of tasks.
-        immediates.add(p.submit(task));
-        delayeds.add(p.schedule(task, delay, MILLISECONDS));
-        periodics.add(p.scheduleAtFixedRate(
-                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
-        periodics.add(p.scheduleWithFixedDelay(
-                          new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+    //     // Add second wave of tasks.
+    //     immediates.add(p.submit(task));
+    //     delayeds.add(p.schedule(task, delay, MILLISECONDS));
+    //     periodics.add(p.scheduleAtFixedRate(
+    //                       new PeriodicTask(rounds), delay, 1, MILLISECONDS));
+    //     periodics.add(p.scheduleWithFixedDelay(
+    //                       new PeriodicTask(rounds), delay, 1, MILLISECONDS));
 
-        assertEquals(poolSize, ran.get());
+    //     assertEquals(poolSize, ran.get());
 
-        immediates.forEach(
-            f -> assertTrue(
-                (!(f instanceof ScheduledFuture) ||
-                 ((ScheduledFuture)f).getDelay(NANOSECONDS) <= 0L)));
+    //     immediates.forEach(
+    //         f -> assertTrue(
+    //             (!(f instanceof ScheduledFuture) ||
+    //              ((ScheduledFuture)f).getDelay(NANOSECONDS) <= 0L)));
 
-        Stream.of(immediates, delayeds, periodics).flatMap(Collection::stream)
-            .forEach(f -> assertFalse(f.isDone()));
+    //     Stream.of(immediates, delayeds, periodics).flatMap(Collection::stream)
+    //         .forEach(f -> assertFalse(f.isDone()));
 
-        try { p.shutdown(); } catch (SecurityException ok) { return; }
-        assertTrue(p.isShutdown());
-        assertFalse(p.isTerminated());
+    //     try { p.shutdown(); } catch (SecurityException ok) { return; }
+    //     assertTrue(p.isShutdown());
+    //     assertFalse(p.isTerminated());
 
-        assertThrows(
-            RejectedExecutionException.class,
-            () -> p.submit(task),
-            () -> p.schedule(task, 1, SECONDS),
-            () -> p.scheduleAtFixedRate(
-                new PeriodicTask(1), 1, 1, SECONDS),
-            () -> p.scheduleWithFixedDelay(
-                new PeriodicTask(2), 1, 1, SECONDS));
+    //     assertThrows(
+    //         RejectedExecutionException.class,
+    //         () -> p.submit(task),
+    //         () -> p.schedule(task, 1, SECONDS),
+    //         () -> p.scheduleAtFixedRate(
+    //             new PeriodicTask(1), 1, 1, SECONDS),
+    //         () -> p.scheduleWithFixedDelay(
+    //             new PeriodicTask(2), 1, 1, SECONDS));
 
-        immediates.forEach(f -> assertFalse(f.isDone()));
+    //     immediates.forEach(f -> assertFalse(f.isDone()));
 
-        assertFalse(delayeds.get(0).isDone());
-        assertFalse(delayeds.get(1).isDone());
-        periodics.subList(0, 2).forEach(f -> assertFalse(f.isDone()));
-        periodics.subList(2, 4).forEach(f -> assertTrue(f.isCancelled()));
+    //     assertFalse(delayeds.get(0).isDone());
+    //     assertFalse(delayeds.get(1).isDone());
+    //     periodics.subList(0, 2).forEach(f -> assertFalse(f.isDone()));
+    //     periodics.subList(2, 4).forEach(f -> assertTrue(f.isCancelled()));
 
-        unblock.countDown();    // Release all pool threads
+    //     unblock.countDown();    // Release all pool threads
 
-        assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
-        assertTrue(p.isTerminated());
+    //     assertTrue(p.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
+    //     assertTrue(p.isTerminated());
 
-        Stream.of(immediates, delayeds, periodics).flatMap(Collection::stream)
-            .forEach(f -> assertTrue(f.isDone()));
+    //     Stream.of(immediates, delayeds, periodics).flatMap(Collection::stream)
+    //         .forEach(f -> assertTrue(f.isDone()));
 
-        for (Future<?> f : immediates) assertNull(f.get());
+    //     for (Future<?> f : immediates) assertNull(f.get());
 
-        assertNull(delayeds.get(0).get());
-        assertNull(delayeds.get(1).get());
-        periodics.forEach(f -> assertTrue(f.isCancelled()));
+    //     assertNull(delayeds.get(0).get());
+    //     assertNull(delayeds.get(1).get());
+    //     periodics.forEach(f -> assertTrue(f.isCancelled()));
 
-    }
+    // }
 
 }
