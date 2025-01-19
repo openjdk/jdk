@@ -846,7 +846,10 @@ void C2_MacroAssembler::checked_cast_int(const TypeInt* type, Register dst) {
   cmpl(dst, type->_hi);
   jccb(Assembler::lessEqual, succeed);
   bind(fail);
-  stop("Invalid CastII");
+  movl(rax, dst);
+  movl(rcx, type->_lo);
+  movl(rdx, type->_hi);
+  hlt(); // hlt so we have the stack trace
   bind(succeed);
 }
 
@@ -868,7 +871,10 @@ void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register dst, Re
   }
   jccb(Assembler::lessEqual, succeed);
   bind(fail);
-  stop("Invalid CastLL");
+  movq(rax, dst);
+  mov64(rcx, type->_lo);
+  mov64(rdx, type->_hi);
+  hlt(); // hlt so we have the stack trace
   bind(succeed);
 }
 #endif // ASSERT

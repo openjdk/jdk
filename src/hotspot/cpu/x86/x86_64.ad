@@ -6991,7 +6991,7 @@ instruct castPP(rRegP dst)
 
 instruct castII(rRegI dst)
 %{
-  predicate(!VerifyConstraintCasts);
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastII dst));
 
   size(0);
@@ -7003,7 +7003,7 @@ instruct castII(rRegI dst)
 
 instruct castII_checked(rRegI dst, rFlagsReg cr)
 %{
-  predicate(VerifyConstraintCasts);
+  predicate(VerifyConstraintCasts > 0);
   match(Set dst (CastII dst));
 
   effect(KILL cr);
@@ -7016,7 +7016,7 @@ instruct castII_checked(rRegI dst, rFlagsReg cr)
 
 instruct castLL(rRegL dst)
 %{
-  predicate(!VerifyConstraintCasts);
+  predicate(VerifyConstraintCasts == 0);
   match(Set dst (CastLL dst));
 
   size(0);
@@ -7028,7 +7028,7 @@ instruct castLL(rRegL dst)
 
 instruct castLL_checked(rRegL dst, rRegL tmp, rFlagsReg cr)
 %{
-  predicate(VerifyConstraintCasts);
+  predicate(VerifyConstraintCasts > 0);
   match(Set dst (CastLL dst));
 
   effect(KILL cr, TEMP tmp);

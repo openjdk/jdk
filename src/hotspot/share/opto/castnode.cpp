@@ -526,7 +526,7 @@ const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* re
   }
 
   // Keep these casts for verification
-  if (VerifyConstraintCasts) {
+  if (VerifyConstraintCasts > 1) {
     return res;
   }
 
