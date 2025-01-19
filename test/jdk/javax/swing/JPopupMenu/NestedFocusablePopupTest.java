@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
  * @key headful
  * @bug 8342096
  * @requires (os.family == "linux")
+ * @library /test/lib
+ * @build jtreg.SkippedException
+ * @run main NestedFocusablePopupTest
  */
 
 import javax.swing.JButton;
@@ -40,6 +43,8 @@ import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 
+import jtreg.SkippedException;
+
 public class NestedFocusablePopupTest {
 
     static volatile JMenu menu;
@@ -48,8 +53,7 @@ public class NestedFocusablePopupTest {
 
     public static void main(String[] args) throws Exception {
         if (System.getenv("WAYLAND_DISPLAY") == null) {
-            //test is valid only when running on Wayland.
-            return;
+            throw new SkippedException("XWayland only test");
         }
 
         Robot robot = new Robot();
@@ -75,9 +79,13 @@ public class NestedFocusablePopupTest {
             robot.waitForIdle();
             robot.delay(200);
 
-            if (!popupMenu.isVisible()) {
-                throw new RuntimeException("Popup is not visible");
-            }
+            SwingUtilities.invokeAndWait(() -> {
+                boolean visible = popupMenu.isVisible();
+                popupMenu.setVisible(false);
+                if (!visible) {
+                    throw new RuntimeException("Popup is not visible");
+                }
+            });
         } finally {
             SwingUtilities.invokeAndWait(frame::dispose);
         }
