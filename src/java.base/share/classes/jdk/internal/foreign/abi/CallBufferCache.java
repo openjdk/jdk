@@ -8,12 +8,11 @@ import java.lang.foreign.MemorySegment;
 
 /**
  * Allocates intermediate buffer space needed within call handles.
- * Small buffers may be cached across calls.
+ * Small buffers may be cached in thread-local storage.
  */
-final class CallBufferCache {
-    /** Minimum allocation size = maximum cached size */
+public final class CallBufferCache {
+    // Minimum allocation size = maximum cached size
     public static final int CACHED_BUFFER_SIZE = 256;
-
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     static class PerThread {
@@ -54,13 +53,12 @@ final class CallBufferCache {
     }
 
     @SuppressWarnings("restricted")
-    static MemorySegment allocate(long size) {
+    public static MemorySegment allocate(long size) {
         long allocatedSize = Math.max(CACHED_BUFFER_SIZE, size);
-        return MemorySegment.ofAddress(UNSAFE.allocateMemory(allocatedSize))
-                .reinterpret(allocatedSize);
+        return MemorySegment.ofAddress(UNSAFE.allocateMemory(allocatedSize)).reinterpret(allocatedSize);
     }
 
-    static void free(MemorySegment segment) {
+    public static void free(MemorySegment segment) {
         UNSAFE.freeMemory(segment.address());
     }
 
@@ -76,7 +74,7 @@ final class CallBufferCache {
         }
     };
 
-    static MemorySegment acquire() {
+    public static MemorySegment acquire() {
         Continuation.pin();
         try {
             return tl.get().pop();
@@ -85,7 +83,7 @@ final class CallBufferCache {
         }
     }
 
-    static boolean release(MemorySegment segment) {
+    public static boolean release(MemorySegment segment) {
         Continuation.pin();
         try {
             return tl.get().push(segment);
