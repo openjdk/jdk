@@ -170,7 +170,7 @@ public:
 
   // Given an address that should point to a mapped protection zone, check markers, then protect
   // the zone. Will return false if markers don't match up (misshapen/tempered archive)
-  LP64_ONLY( static bool check_and_establish_protection_zone(address address) );
+  LP64_ONLY( static void check_and_establish_protection_zone(address address) );
 
   // Non-zero if the archive(s) need to be mapped a non-default location due to ASLR.
   static intx relocation_delta() { return _relocation_delta; }

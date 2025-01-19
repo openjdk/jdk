@@ -1391,20 +1391,18 @@ void MetaspaceShared::allocate_and_mark_protection_zone(DumpRegion* region) {
 }
 
 // Runtime
-bool MetaspaceShared::check_and_establish_protection_zone(address addr) {
+void MetaspaceShared::check_and_establish_protection_zone(address addr) {
   const size_t protzone_size = MetaspaceShared::core_region_alignment();
   const uint64_t* const protzone = (const uint64_t*) addr;
   const size_t len = protzone_size/sizeof(uint64_t);
-  if (protzone[0] != protzone_tag_start || protzone[len - 1] != protzone_tag_end) {
-    return false;
-  }
+  guarantee(protzone[0] == protzone_tag_start, "Corrupted CDS protection zone");
+  guarantee(protzone[len - 1] == protzone_tag_end, "Corrupted CDS protection zone");
 #ifdef ASSERT
   for (size_t i = 1; i < len - 1; i++) {
     assert(protzone[i] == protzone_tag, "Corrupted CDS protection zone");
   }
 #endif
   CompressedKlassPointers::establish_protection_zone((address)protzone, protzone_size);
-  return true;
 }
 #endif // _LP64
 
