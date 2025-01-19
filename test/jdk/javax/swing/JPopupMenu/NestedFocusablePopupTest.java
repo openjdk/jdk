@@ -24,9 +24,9 @@
 /*
  * @test
  * @summary tests if nested menu is displayed on Wayland
+ * @requires (os.family == "linux")
  * @key headful
  * @bug 8342096
- * @requires (os.family == "linux")
  * @library /test/lib
  * @build jtreg.SkippedException
  * @run main NestedFocusablePopupTest
@@ -35,6 +35,7 @@
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
@@ -47,50 +48,97 @@ import jtreg.SkippedException;
 
 public class NestedFocusablePopupTest {
 
-    static volatile JMenu menu;
+    static volatile JMenu menuWithFocusableItem;
+    static volatile JMenu menuWithNonFocusableItem;
     static volatile JPopupMenu popupMenu;
     static volatile JFrame frame;
+    static volatile Robot robot;
 
     public static void main(String[] args) throws Exception {
         if (System.getenv("WAYLAND_DISPLAY") == null) {
             throw new SkippedException("XWayland only test");
         }
 
-        Robot robot = new Robot();
+        robot = new Robot();
         robot.setAutoDelay(50);
 
         try {
             SwingUtilities.invokeAndWait(NestedFocusablePopupTest::initAndShowGui);
             robot.waitForIdle();
             robot.delay(500);
-
-            Point frameLocation = frame.getLocationOnScreen();
-            robot.mouseMove(frameLocation.x + frame.getWidth() / 2,
-                    frameLocation.y + frame.getHeight() / 2);
-
-            robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+            test0();
 
             robot.waitForIdle();
-            robot.delay(100);
-
-            Point menuLocation = menu.getLocationOnScreen();
-            robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
-            robot.waitForIdle();
-            robot.delay(200);
-
-            SwingUtilities.invokeAndWait(() -> {
-                boolean visible = popupMenu.isVisible();
-                popupMenu.setVisible(false);
-                if (!visible) {
-                    throw new RuntimeException("Popup is not visible");
-                }
-            });
+            robot.delay(500);
+            test1();
         } finally {
             SwingUtilities.invokeAndWait(frame::dispose);
         }
     }
 
+    static void test0() throws Exception {
+        Point frameLocation = frame.getLocationOnScreen();
+        robot.mouseMove(frameLocation.x + frame.getWidth() / 2,
+                frameLocation.y + frame.getHeight() / 2);
+
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+
+        robot.waitForIdle();
+        robot.delay(100);
+
+        Point menuLocation = menuWithFocusableItem.getLocationOnScreen();
+        robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+        robot.waitForIdle();
+        robot.delay(200);
+
+        SwingUtilities.invokeAndWait(() -> {
+            boolean visible = popupMenu.isVisible();
+            popupMenu.setVisible(false);
+            if (!visible) {
+                throw new RuntimeException("Popup is not visible");
+            }
+        });
+    }
+
+    static void test1() throws Exception {
+        Point frameLocation = frame.getLocationOnScreen();
+        robot.mouseMove(frameLocation.x + frame.getWidth() / 2,
+                frameLocation.y + frame.getHeight() / 2);
+
+        robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+
+        robot.waitForIdle();
+        robot.delay(100);
+
+        Point menuLocation = menuWithFocusableItem.getLocationOnScreen();
+        robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+        robot.waitForIdle();
+        robot.delay(200);
+
+        menuLocation = menuWithNonFocusableItem.getLocationOnScreen();
+        robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+        robot.waitForIdle();
+        robot.delay(200);
+
+        SwingUtilities.invokeAndWait(() -> {
+            boolean visible = popupMenu.isVisible();
+            popupMenu.setVisible(false);
+            if (!visible) {
+                throw new RuntimeException("Popup is not visible");
+            }
+        });
+    }
+
+    static JMenu getMenuWithMenuItem(boolean isSubmenuItemFocusable, String text) {
+        JMenu menu = new JMenu(text);
+        menu.add(isSubmenuItemFocusable
+                ? new JButton(text)
+                : new JMenuItem(text)
+        );
+        return menu;
+    }
 
     private static void initAndShowGui() {
         frame = new JFrame("NestedFocusablePopupTest");
@@ -99,9 +147,13 @@ public class NestedFocusablePopupTest {
 
 
         popupMenu = new JPopupMenu();
-        menu = new JMenu("menu to hover");
-        menu.add(new JButton("JButton"));
-        popupMenu.add(menu);
+        menuWithFocusableItem =
+                getMenuWithMenuItem(true, "focusable subitem");
+        menuWithNonFocusableItem =
+                getMenuWithMenuItem(false, "non focusable subitem");
+
+        popupMenu.add(menuWithFocusableItem);
+        popupMenu.add(menuWithNonFocusableItem);
 
         panel.setComponentPopupMenu(popupMenu);
         frame.add(panel);

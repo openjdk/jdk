@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -548,6 +548,13 @@ public abstract class UNIXToolkit extends SunToolkit
                             addWaylandWindowFocusListenerToWindow(oppositeWindow);
                             return;
                         }
+                        Window owner = window.getOwner();
+                        while (owner != null) {
+                            if (owner == oppositeWindow) {
+                                return;
+                            }
+                            owner = owner.getOwner();
+                        }
                         if (window.getParent() == oppositeWindow) {
                             return;
                         }
@@ -570,6 +577,9 @@ public abstract class UNIXToolkit extends SunToolkit
     private static void addWaylandWindowFocusListenerToWindow(Window window) {
         if (!containsWaylandWindowFocusListener(window)) {
             window.addWindowFocusListener(waylandWindowFocusListener);
+            for (Window ownedWindow : window.getOwnedWindows()) {
+                addWaylandWindowFocusListenerToWindow(ownedWindow);
+            }
         }
     }
 
