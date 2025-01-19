@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1120,7 +1120,7 @@ Node* MaxNode::build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, co
       cmp = gvn.transform(CmpNode::make(b, a, bt, is_unsigned));
     }
     Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-    res = gvn.transform(CMoveNode::make(nullptr, bol, a, b, t));
+    res = gvn.transform(CMoveNode::make(bol, a, b, t));
   }
   if (hook != nullptr) {
     hook->destruct(&gvn);
@@ -1149,7 +1149,7 @@ Node* MaxNode::build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const
   }
   Node* sub = gvn.transform(SubNode::make(a, b, bt));
   Node* bol = gvn.transform(new BoolNode(cmp, BoolTest::lt));
-  Node* res = gvn.transform(CMoveNode::make(nullptr, bol, sub, zero, t));
+  Node* res = gvn.transform(CMoveNode::make(bol, sub, zero, t));
   if (hook != nullptr) {
     hook->destruct(&gvn);
   }

@@ -308,7 +308,7 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   }
   assert(r->mapped_base() == (char*)load_address, "sanity");
   log_info(cds)("Loaded heap    region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT
-                " size " SIZE_FORMAT_W(6) " delta %zd",
+                " size %6zu delta %zd",
                 loaded_region->_region_index, load_address, load_address + loaded_region->_region_size,
                 loaded_region->_region_size, loaded_region->_runtime_offset);
 

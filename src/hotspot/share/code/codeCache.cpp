@@ -181,7 +181,7 @@ static void check_min_size(const char* codeheap, size_t size, size_t required_si
     log_debug(codecache)("Code heap (%s) size %zuK below required minimal size %zuK",
                          codeheap, size/K, required_size/K);
     err_msg title("Not enough space in %s to run VM", codeheap);
-    err_msg message(SIZE_FORMAT "K < %zuK", size/K, required_size/K);
+    err_msg message("%zuK < %zuK", size/K, required_size/K);
     vm_exit_during_initialization(title, message);
   }
 }

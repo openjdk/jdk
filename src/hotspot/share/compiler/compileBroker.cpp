@@ -2778,9 +2778,9 @@ void CompileBroker::print_info(outputStream *out) {
   out->print_cr("CodeCache overview");
   out->print_cr("--------------------------------------------------------");
   out->cr();
-  out->print_cr("         Reserved size : " SIZE_FORMAT_W(7) " KB", CodeCache::max_capacity() / K);
-  out->print_cr("        Committed size : " SIZE_FORMAT_W(7) " KB", CodeCache::capacity() / K);
-  out->print_cr("  Unallocated capacity : " SIZE_FORMAT_W(7) " KB", CodeCache::unallocated_capacity() / K);
+  out->print_cr("         Reserved size : %7zu KB", CodeCache::max_capacity() / K);
+  out->print_cr("        Committed size : %7zu KB", CodeCache::capacity() / K);
+  out->print_cr("  Unallocated capacity : %7zu KB", CodeCache::unallocated_capacity() / K);
   out->cr();
 }
 
