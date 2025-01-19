@@ -637,7 +637,6 @@ void Modules::dump_native_access_flag() {
 
 // Caller needs ResourceMark
 const char* Modules::get_native_access_flags_as_sorted_string() {
-  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   return get_numbered_property_as_sorted_string("jdk.module.enable.native.access");
 }
 
@@ -662,7 +661,6 @@ void Modules::dump_addmods_names() {
 
 // Caller needs ResourceMark
 const char* Modules::get_addmods_names_as_sorted_string() {
-  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   return get_numbered_property_as_sorted_string("jdk.module.addmods");
 }
 
@@ -679,7 +677,6 @@ void Modules::serialize_addmods_names(SerializeClosure* soc) {
 
 // Caller needs ResourceMark
 const char* Modules::get_numbered_property_as_sorted_string(const char* property) {
-  assert(Thread::current()->current_resource_mark() != nullptr, "Setup by caller");
   // theoretical string size limit for decimal int, but the following loop will end much sooner due to
   // OS command-line size limit.
   const int max_digits = 10;
