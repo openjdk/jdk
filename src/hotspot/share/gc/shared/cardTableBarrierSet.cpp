@@ -30,7 +30,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
-#include "memory/virtualspace.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/javaThread.hpp"

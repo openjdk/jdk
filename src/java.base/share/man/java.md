@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1292,10 +1292,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
 `-XX:OnOutOfMemoryError=`*string*
 :   Sets a custom command or a series of semicolon-separated commands to run
-    when an `OutOfMemoryError` exception is first thrown. If the string
+    when an `OutOfMemoryError` exception is first thrown by the JVM.
+    If the string
     contains spaces, then it must be enclosed in quotation marks. For an
     example of a command string, see the description of the `-XX:OnError`
     option.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:+PrintCommandLineFlags`
 :   Enables printing of ergonomically selected JVM flags that appeared on the
@@ -1306,7 +1311,7 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 `-XX:+PreserveFramePointer`
 :   Selects between using the RBP register as a general purpose register
     (`-XX:-PreserveFramePointer`) and using the RBP register to hold the frame
-    pointer of the currently executing method (`-XX:+PreserveFramePointer` . If
+    pointer of the currently executing method (`-XX:+PreserveFramePointer`). If
     the frame pointer is available, then external profiling tools (for example,
     Linux perf) can construct more accurate stack traces.
 
@@ -2189,10 +2194,14 @@ perform extensive debugging.
 `-XX:+HeapDumpOnOutOfMemoryError`
 :   Enables the dumping of the Java heap to a file in the current directory by
     using the heap profiler (HPROF) when a `java.lang.OutOfMemoryError`
-    exception is thrown. You can explicitly set the heap dump file path and
+    exception is thrown by the JVM. You can explicitly set the heap dump file path and
     name using the `-XX:HeapDumpPath` option. By default, this option is
     disabled and the heap isn't dumped when an `OutOfMemoryError` exception is
     thrown.
+    This applies only to `OutOfMemoryError` exceptions caused by Java Heap
+    exhaustion; it does not apply to `OutOfMemoryError` exceptions thrown
+    directly from Java code, nor by the JVM for other types of resource
+    exhaustion (such as native thread creation errors).
 
 `-XX:HeapDumpPath=`*path*
 :   Sets the path and file name for writing the heap dump provided by the heap
@@ -3960,11 +3969,40 @@ archive, you should make sure that the archive is created by at least version
 -   The CDS archive cannot be loaded if any JAR files in the class path or
     module path are modified after the archive is generated.
 
--   If any of the VM options `--upgrade-module-path`, `--patch-module` or
-    `--limit-modules` are specified, CDS is disabled. This means that the
-    JVM will execute without loading any CDS archives. In addition, if
-    you try to create a CDS archive with any of these 3 options specified,
-    the JVM will report an error.
+### Module related options
+
+The following module related options are supported by CDS: `--module-path`, `--module`,
+`--add-modules`, and `--enable-native-access`.
+
+The values for these options (if specified), should be identical when creating and using the
+CDS archive. Otherwise, if there is a mismatch of any of these options, the CDS archive may be
+partially or completely disabled, leading to lower performance.
+
+- If the -XX:+AOTClassLinking options *was* used during CDS archive creation, the CDS archive
+  cannot be used, and the following error message is printed:
+
+  `CDS archive has aot-linked classes. It cannot be used when archived full module graph is not used`
+
+- If the -XX:+AOTClassLinking options *was not* used during CDS archive creation, the CDS archive
+  can be used, but the "archived module graph" feature will be disabled. This can lead to increased
+  start-up time.
+
+To diagnose problems with the above options, you can add `-Xlog:cds` to the application's VM
+arguments. For example, if `--add-modules jdk.jconcole` was specified during archive creation
+and `--add-modules jdk.incubator.vector` is specified during runtime, the following messages will
+be logged:
+
+ `Mismatched values for property jdk.module.addmods`
+
+ `runtime jdk.incubator.vector dump time jdk.jconsole`
+
+ `subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled`
+
+If any of the VM options `--upgrade-module-path`, `--patch-module` or
+`--limit-modules` are specified, CDS is disabled. This means that the
+JVM will execute without loading any CDS archives. In addition, if
+you try to create a CDS archive with any of these 3 options specified,
+the JVM will report an error.
 
 ## Performance Tuning Examples
 

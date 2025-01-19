@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +61,7 @@ void ShenandoahArguments::initialize() {
   if (UseLargePages) {
     size_t large_page_size = os::large_page_size();
     if ((align_up(MaxHeapSize, large_page_size) / large_page_size) < ShenandoahHeapRegion::MIN_NUM_REGIONS) {
-      warning("Large pages size (" SIZE_FORMAT "K) is too large to afford page-sized regions, disabling uncommit",
+      warning("Large pages size (%zuK) is too large to afford page-sized regions, disabling uncommit",
               os::large_page_size() / K);
       FLAG_SET_DEFAULT(ShenandoahUncommit, false);
     }

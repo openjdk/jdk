@@ -132,7 +132,7 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
     num_entries += chain_len;
     longest_chain = MAX2(chain_len, longest_chain);
   }
-  st->print("entries: %d (primary: %d, empties: %d), sum bytes: " SIZE_FORMAT
+  st->print("entries: %d (primary: %d, empties: %d), sum bytes: %zu"
             ", longest chain length: %d",
             num_entries, num_primary_entries, table_size - num_primary_entries,
             sum_bytes, longest_chain);
@@ -143,7 +143,7 @@ void NMTPreInitAllocationTable::print_map(outputStream* st) const {
   for (int i = 0; i < table_size; i++) {
     st->print("[%d]: ", i);
     for (NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
-      st->print( PTR_FORMAT "(" SIZE_FORMAT ") ", p2i(a->payload), a->size);
+      st->print( PTR_FORMAT "(%zu) ", p2i(a->payload), a->size);
     }
     st->cr();
   }

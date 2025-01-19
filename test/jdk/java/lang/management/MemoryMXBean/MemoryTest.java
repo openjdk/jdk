@@ -46,15 +46,27 @@
  */
 
 /*
- * @test
+ * @test id=Shenandoah
  * @bug     4530538
- * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
- *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc == "Shenandoah"
+ * @summary Shenandoah has a gc mgr bean for cycles and another
+ *          for pauses, they both have one pool.
+ * @requires vm.gc == "Shenandoah" & vm.opt.ShenandoahGCMode != "generational"
  * @author  Mandy Chung
  *
  * @modules jdk.management
  * @run main MemoryTest 2 1
+ */
+
+/*
+ * @test id=Genshen
+ * @bug     4530538
+ * @summary Shenandoah's generational mode has a gc mgr bean for cycles
+ *          and another for pauses. They both reference the young and old pools.
+ * @requires vm.gc == "Shenandoah" & vm.opt.ShenandoahGCMode == "generational"
+ * @author  Mandy Chung
+ *
+ * @modules jdk.management
+ * @run main MemoryTest 2 2
  */
 
 /*

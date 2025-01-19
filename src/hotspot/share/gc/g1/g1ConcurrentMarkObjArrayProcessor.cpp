@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ size_t G1CMObjArrayProcessor::process_array_slice(objArrayOop obj, HeapWord* sta
 }
 
 size_t G1CMObjArrayProcessor::process_obj(oop obj) {
-  assert(should_be_sliced(obj), "Must be an array object %d and large " SIZE_FORMAT, obj->is_objArray(), obj->size());
+  assert(should_be_sliced(obj), "Must be an array object %d and large %zu", obj->is_objArray(), obj->size());
 
   return process_array_slice(objArrayOop(obj), cast_from_oop<HeapWord*>(obj), objArrayOop(obj)->size());
 }

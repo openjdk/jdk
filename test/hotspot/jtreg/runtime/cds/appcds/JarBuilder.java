@@ -130,36 +130,6 @@ public class JarBuilder {
         executeProcess(args.toArray(new String[1]));
     }
 
-    // Add commonly used inner classes that are often omitted by mistake. Currently
-    // we support only jdk/test/whitebox/WhiteBox$WhiteBoxPermission.
-    // See JDK-8199290
-    private static String[] addInnerClasses(String[] classes, int startIdx) {
-        boolean seenNewWb = false;
-        boolean seenNewWbInner = false;
-        // This method is different than ClassFileInstaller.addInnerClasses which
-        // uses "." as the package delimiter :-(
-        final String newWb = "jdk/test/whitebox/WhiteBox";
-        final String newWbInner = newWb + "$WhiteBoxPermission";
-
-        ArrayList<String> list = new ArrayList<>();
-
-        for (int i = startIdx; i < classes.length; i++) {
-            String cls = classes[i];
-            list.add(cls);
-            switch (cls) {
-            case newWb:      seenNewWb      = true; break;
-            case newWbInner: seenNewWbInner = true; break;
-            }
-        }
-        if (seenNewWb && !seenNewWbInner) {
-            list.add(newWbInner);
-        }
-        String[] array = new String[list.size()];
-        list.toArray(array);
-        return array;
-    }
-
-
     private static String createSimpleJar(String jarclassDir, String jarName,
         String[] classNames) throws Exception {
 
@@ -174,8 +144,6 @@ public class JarBuilder {
 
     private static void addClassArgs(ArrayList<String> args, String jarclassDir,
         String[] classNames) {
-
-        classNames = addInnerClasses(classNames, 0);
 
         for (String name : classNames) {
             args.add("-C");

@@ -241,7 +241,7 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ beqz(tmp2, slow_path);
 
   // Bump the pointer
-  __ sub(tmp2, tmp2, sizeof(ZStoreBarrierEntry));
+  __ subi(tmp2, tmp2, sizeof(ZStoreBarrierEntry));
   __ sd(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
 
   // Compute the buffer entry address
@@ -848,10 +848,10 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_stub(LIR_Assembler* ce,
    // Save x10 unless it is the result or tmp register
    // Set up SP to accommdate parameters and maybe x10.
    if (ref != x10 && tmp != x10) {
-     __ sub(sp, sp, 32);
+     __ subi(sp, sp, 32);
      __ sd(x10, Address(sp, 16));
    } else {
-     __ sub(sp, sp, 16);
+     __ subi(sp, sp, 16);
    }
 
    // Setup arguments and call runtime stub
@@ -963,7 +963,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_stub(LIR_Assembler* ce,
 
   __ la(stub->new_zpointer()->as_register(), ce->as_Address(stub->ref_addr()->as_address_ptr()));
 
-  __ sub(sp, sp, 16);
+  __ subi(sp, sp, 16);
   //Setup arguments and call runtime stub
   assert(stub->new_zpointer()->is_valid(), "invariant");
   ce->store_parameter(stub->new_zpointer()->as_register(), 0);

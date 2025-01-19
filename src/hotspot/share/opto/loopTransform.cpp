@@ -1748,20 +1748,11 @@ void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source
                                                           CountedLoopNode* target_loop_head,
                                                           const NodeInLoopBody& _node_in_loop_body,
                                                           const bool clone_template) {
-  Node* init = target_loop_head->init_trip();
-  Node* stride = target_loop_head->stride();
-  LoopNode* target_outer_loop_head = target_loop_head->skip_strip_mined();
-  Node* target_loop_entry = target_outer_loop_head->in(LoopNode::EntryControl);
-  CreateAssertionPredicatesVisitor create_assertion_predicates_visitor(init, stride, target_loop_entry, this,
-                                                                       _node_in_loop_body, clone_template);
+  CreateAssertionPredicatesVisitor create_assertion_predicates_visitor(target_loop_head, this, _node_in_loop_body,
+                                                                       clone_template);
   Node* source_loop_entry = source_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   PredicateIterator predicate_iterator(source_loop_entry);
   predicate_iterator.for_each(create_assertion_predicates_visitor);
-  if (create_assertion_predicates_visitor.has_created_predicates()) {
-    IfTrueNode* last_created_predicate_success_proj = create_assertion_predicates_visitor.last_created_success_proj();
-    _igvn.replace_input_of(target_outer_loop_head, LoopNode::EntryControl, last_created_predicate_success_proj);
-    set_idom(target_outer_loop_head, last_created_predicate_success_proj, dom_depth(target_outer_loop_head));
-  }
 }
 //------------------------------do_unroll--------------------------------------
 // Unroll the loop body one step - make each trip do 2 iterations.
