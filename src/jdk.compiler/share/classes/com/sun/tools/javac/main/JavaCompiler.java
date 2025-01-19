@@ -290,6 +290,10 @@ public class JavaCompiler {
      */
     protected Names names;
 
+    /** The deferred lint handler.
+     */
+    protected DeferredLintHandler deferredLintHandler;
+
     /** The attributor.
      */
     protected Attr attr;
@@ -397,6 +401,7 @@ public class JavaCompiler {
         names = Names.instance(context);
         log = Log.instance(context);
         diagFactory = JCDiagnostic.Factory.instance(context);
+        deferredLintHandler = DeferredLintHandler.instance(context);
         finder = ClassFinder.instance(context);
         reader = ClassReader.instance(context);
         make = TreeMaker.instance(context);
@@ -450,7 +455,7 @@ public class JavaCompiler {
         sourceOutput  = options.isSet(PRINTSOURCE); // used to be -s
         lineDebugInfo = options.isUnset(G_CUSTOM) ||
                         options.isSet(G_CUSTOM, "lines");
-        genEndPos     = options.isSet(XJCOV) ||
+        keepEndPos    = options.isSet(XJCOV) ||
                         context.get(DiagnosticListener.class) != null;
         devVerbose    = options.isSet("dev");
         processPcks   = options.isSet("process.packages");
@@ -515,9 +520,9 @@ public class JavaCompiler {
      */
     public boolean lineDebugInfo;
 
-    /** Switch: should we store the ending positions?
+    /** Switch: should we keep the ending positions around after parsing?
      */
-    public boolean genEndPos;
+    public boolean keepEndPos;
 
     /** Switch: should we debug ignored exceptions
      */
@@ -652,9 +657,9 @@ public class JavaCompiler {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
                 keepComments = true;
-                genEndPos = true;
+                keepEndPos = true;
             }
-            Parser parser = parserFactory.newParser(content, keepComments(), genEndPos,
+            Parser parser = parserFactory.newParser(content, keepComments(), true,
                                 lineDebugInfo, filename.isNameCompatible("module-info", Kind.SOURCE));
             tree = parser.parseCompilationUnit();
             if (verbose) {
@@ -694,10 +699,14 @@ public class JavaCompiler {
         JavaFileObject prev = log.useSource(filename);
         try {
             JCTree.JCCompilationUnit t = parse(filename, readSource(filename));
-            if (t.endPositions != null)
+            deferredLintHandler.resolvePositionDeferrals(t, t.endPositions);
+            if (keepEndPos)
                 log.setEndPosTable(filename, t.endPositions);
+            else
+                t.endPositions = new JavacParser.EmptyEndPosTable();
             return t;
         } finally {
+            deferredLintHandler.resetPositionDeferrals();
             log.useSource(prev);
         }
     }
@@ -1163,7 +1172,7 @@ public class JavaCompiler {
                 options.put("parameters", "parameters");
                 reader.saveParameterNames = true;
                 keepComments = true;
-                genEndPos = true;
+                keepEndPos = true;
                 if (!taskListener.isEmpty())
                     taskListener.started(new TaskEvent(TaskEvent.Kind.ANNOTATION_PROCESSING));
                 deferredDiagnosticHandler = new Log.DeferredDiagnosticHandler(log);

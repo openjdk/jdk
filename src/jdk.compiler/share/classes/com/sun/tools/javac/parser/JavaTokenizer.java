@@ -25,8 +25,7 @@
 
 package com.sun.tools.javac.parser;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
@@ -86,6 +85,11 @@ public class JavaTokenizer extends UnicodeReader {
     private final Log log;
 
     /**
+     * The deferred lint handler. Required for recognizing @SuppressWarnings.
+     */
+    private final DeferredLintHandler deferredLintHandler;
+
+    /**
      * The token factory. Copied from scanner factory.
      */
     private final Tokens tokens;
@@ -136,13 +140,6 @@ public class JavaTokenizer extends UnicodeReader {
     protected boolean hasEscapeSequences;
 
     /**
-     * The set of lint options currently in effect. It is initialized
-     * from the context, and then is set/reset as needed by Attr as it
-     * visits all the various parts of the trees during attribution.
-     */
-    protected final Lint lint;
-
-    /**
      * Construct a Java token scanner from the input character buffer.
      *
      * @param fac  the factory which created this Scanner.
@@ -167,8 +164,8 @@ public class JavaTokenizer extends UnicodeReader {
         this.tokens = fac.tokens;
         this.source = fac.source;
         this.preview = fac.preview;
+        this.deferredLintHandler = fac.deferredLintHandler;
         this.enableLineDocComments = fac.enableLineDocComments;
-        this.lint = fac.lint;
         this.sb = new StringBuilder(256);
     }
 
@@ -225,8 +222,12 @@ public class JavaTokenizer extends UnicodeReader {
      * @param key    error key to report.
      */
     protected void lexWarning(int pos, JCDiagnostic.LintWarning key) {
-        DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
-        log.warning(dp, key);
+        deferredLintHandler.push(pos);
+        try {
+            deferredLintHandler.report(lint -> lint.logIfEnabled(log, new SimpleDiagnosticPosition(pos), key));
+        } finally {
+            deferredLintHandler.pop();
+        }
     }
 
     /**
@@ -1069,17 +1070,13 @@ public class JavaTokenizer extends UnicodeReader {
                 // If a text block.
                 if (isTextBlock) {
                     // Verify that the incidental indentation is consistent.
-                    if (lint.isEnabled(LintCategory.TEXT_BLOCKS)) {
-                        Set<TextBlockSupport.WhitespaceChecks> checks =
-                                TextBlockSupport.checkWhitespace(string);
-                        if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                            lexWarning(pos,
-                                    LintWarnings.InconsistentWhiteSpaceIndentation);
-                        }
-                        if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                            lexWarning(pos,
-                                    LintWarnings.TrailingWhiteSpaceWillBeRemoved);
-                        }
+                    Set<TextBlockSupport.WhitespaceChecks> checks =
+                            TextBlockSupport.checkWhitespace(string);
+                    if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
+                        lexWarning(pos, LintWarnings.InconsistentWhiteSpaceIndentation);
+                    }
+                    if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
+                        lexWarning(pos, LintWarnings.TrailingWhiteSpaceWillBeRemoved);
                     }
                     // Remove incidental indentation.
                     try {

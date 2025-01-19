@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -854,8 +854,7 @@ public class Attr extends JCTree.Visitor {
                                       JCVariableDecl variable,
                                       Type type) {
 
-        DiagnosticPosition prevLintPos
-                = deferredLintHandler.setPos(variable.pos());
+        deferredLintHandler.push(variable);
 
         final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
@@ -871,7 +870,7 @@ public class Attr extends JCTree.Visitor {
             }
         } finally {
             log.useSource(prevSource);
-            deferredLintHandler.setPos(prevLintPos);
+            deferredLintHandler.pop();
         }
     }
 
@@ -1000,7 +999,7 @@ public class Attr extends JCTree.Visitor {
         Assert.check(!env.info.ctorPrologue);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
-            deferredLintHandler.flush(tree.pos(), lint);
+            deferredLintHandler.flush(tree, lint);
             chk.checkDeprecatedAnnotation(tree.pos(), m);
 
 
@@ -1284,7 +1283,7 @@ public class Attr extends JCTree.Visitor {
         } else {
             if (tree.init != null) {
                 // Field initializer expression need to be entered.
-                annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tree.init, env, tree.sym, tree);
                 annotate.flush();
             }
         }
@@ -1301,7 +1300,7 @@ public class Attr extends JCTree.Visitor {
 
         try {
             v.getConstValue(); // ensure compile-time constant initializer is evaluated
-            deferredLintHandler.flush(tree.pos(), lint);
+            deferredLintHandler.flush(tree, lint);
             chk.checkDeprecatedAnnotation(tree.pos(), v);
 
             if (tree.init != null) {
@@ -4208,9 +4207,10 @@ public class Attr extends JCTree.Visitor {
             setSyntheticVariableType(tree.var, type == Type.noType ? syms.errType
                                                                    : type);
         }
-        annotate.annotateLater(tree.var.mods.annotations, env, v, tree.pos());
+        annotate.annotateLater(tree.var.mods.annotations, env, v,
+          Optional.<JCTree>ofNullable(env.enclMethod).orElse(env.enclClass));
         if (!tree.var.isImplicitlyTyped()) {
-            annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var.pos());
+            annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var);
         }
         annotate.flush();
         result = tree.type;
@@ -5323,7 +5323,7 @@ public class Attr extends JCTree.Visitor {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
 
         try {
-            deferredLintHandler.flush(env.tree.pos(), lint);
+            deferredLintHandler.flush(env.tree, lint);
             attrib.accept(env);
         } finally {
             log.useSource(prev);
@@ -5548,7 +5548,7 @@ public class Attr extends JCTree.Visitor {
         chk.checkDeprecatedAnnotation(tree, msym);
 
         try {
-            deferredLintHandler.flush(tree.pos(), lint);
+            deferredLintHandler.flush(tree, lint);
         } finally {
             chk.setLint(prevLint);
         }
