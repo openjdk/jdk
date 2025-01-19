@@ -46,15 +46,15 @@ public class TestShiftAndMask {
     // any X << INT_MASK_WIDTH is zero under any INT_MASK
     static final int INT_MASK_WIDTH = 1 + RANDOM.nextInt(30);
     static final int INT_MAX_MASK = (1 << INT_MASK_WIDTH) - 1;
-    static final int INT_MASK = RANDOM.nextInt() & INT_MAX_MASK;
-    static final int INT_MASK2 = RANDOM.nextInt() & INT_MAX_MASK;
+    static final int INT_MASK = 1 + RANDOM.nextInt(INT_MAX_MASK);
+    static final int INT_MASK2 = 1 + RANDOM.nextInt(INT_MAX_MASK);
     static final int INT_ZERO_CONST = RANDOM.nextInt() << INT_MASK_WIDTH;
 
     // any X << LONG_MASK_WIDTH is zero under any LONG_MASK
     static final int LONG_MASK_WIDTH = 1 + RANDOM.nextInt(62);
     static final long LONG_MAX_MASK = (1L << LONG_MASK_WIDTH) - 1;
-    static final long LONG_MASK = RANDOM.nextLong() & LONG_MAX_MASK;
-    static final long LONG_MASK2 = RANDOM.nextLong() & LONG_MAX_MASK;
+    static final long LONG_MASK = 1 + RANDOM.nextLong(LONG_MAX_MASK);
+    static final long LONG_MASK2 = 1 + RANDOM.nextLong(LONG_MAX_MASK);
     static final long LONG_ZERO_CONST = RANDOM.nextLong() << LONG_MASK_WIDTH;
 
     static final int ADD_CONST = RANDOM.nextInt();
