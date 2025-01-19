@@ -430,6 +430,6 @@ public final class DecimalDigits {
     }
 
     private static void putCharUTF16(byte[] buf, int charPos, int c) {
-        UNSAFE.putChar(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);
+        UNSAFE.putCharUnaligned(buf, ARRAY_BYTE_BASE_OFFSET + ((long) charPos << 1), (char) c);
     }
 }
