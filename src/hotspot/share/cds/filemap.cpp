@@ -279,23 +279,23 @@ void FileMapHeader::print(outputStream* st) {
   }
   st->print_cr("============ end regions ======== ");
 
-  st->print_cr("- core_region_alignment:          " SIZE_FORMAT, _core_region_alignment);
+  st->print_cr("- core_region_alignment:          %zu", _core_region_alignment);
   st->print_cr("- obj_alignment:                  %d", _obj_alignment);
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
   st->print_cr("- compact_strings:                %d", _compact_strings);
   st->print_cr("- compact_headers:                %d", _compact_headers);
-  st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
+  st->print_cr("- max_heap_size:                  %zu", _max_heap_size);
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
   st->print_cr("- narrow_klass_pointer_bits:      %d", _narrow_klass_pointer_bits);
   st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
-  st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
-  st->print_cr("- early_serialized_data_offset:   " SIZE_FORMAT_X, _early_serialized_data_offset);
-  st->print_cr("- serialized_data_offset:         " SIZE_FORMAT_X, _serialized_data_offset);
+  st->print_cr("- cloned_vtables_offset:          0x%zx", _cloned_vtables_offset);
+  st->print_cr("- early_serialized_data_offset:   0x%zx", _early_serialized_data_offset);
+  st->print_cr("- serialized_data_offset:         0x%zx", _serialized_data_offset);
   st->print_cr("- jvm_ident:                      %s", _jvm_ident);
-  st->print_cr("- shared_path_table_offset:       " SIZE_FORMAT_X, _shared_path_table_offset);
+  st->print_cr("- shared_path_table_offset:       0x%zx", _shared_path_table_offset);
   st->print_cr("- app_class_paths_start_index:    %d", _app_class_paths_start_index);
   st->print_cr("- app_module_paths_start_index:   %d", _app_module_paths_start_index);
   st->print_cr("- num_module_paths:               %d", _num_module_paths);
@@ -307,14 +307,14 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- heap_root_segments.roots_count: %d" , _heap_root_segments.roots_count());
-  st->print_cr("- heap_root_segments.base_offset: " SIZE_FORMAT_X, _heap_root_segments.base_offset());
-  st->print_cr("- heap_root_segments.count:       " SIZE_FORMAT, _heap_root_segments.count());
+  st->print_cr("- heap_root_segments.base_offset: 0x%zx", _heap_root_segments.base_offset());
+  st->print_cr("- heap_root_segments.count:       %zu", _heap_root_segments.count());
   st->print_cr("- heap_root_segments.max_size_elems: %d", _heap_root_segments.max_size_in_elems());
   st->print_cr("- heap_root_segments.max_size_bytes: %d", _heap_root_segments.max_size_in_bytes());
-  st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
-  st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
-  st->print_cr("- _rw_ptrmap_start_pos:           " SIZE_FORMAT, _rw_ptrmap_start_pos);
-  st->print_cr("- _ro_ptrmap_start_pos:           " SIZE_FORMAT, _ro_ptrmap_start_pos);
+  st->print_cr("- _heap_oopmap_start_pos:         %zu", _heap_oopmap_start_pos);
+  st->print_cr("- _heap_ptrmap_start_pos:         %zu", _heap_ptrmap_start_pos);
+  st->print_cr("- _rw_ptrmap_start_pos:           %zu", _rw_ptrmap_start_pos);
+  st->print_cr("- _ro_ptrmap_start_pos:           %zu", _ro_ptrmap_start_pos);
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
@@ -1420,7 +1420,7 @@ bool FileMapInfo::init_from_file(int fd) {
 
 void FileMapInfo::seek_to_position(size_t pos) {
   if (os::lseek(_fd, (long)pos, SEEK_SET) < 0) {
-    log_error(cds)("Unable to seek to position " SIZE_FORMAT, pos);
+    log_error(cds)("Unable to seek to position %zu", pos);
     MetaspaceShared::unrecoverable_loading_error();
   }
 }
@@ -1555,7 +1555,7 @@ BitMapView FileMapInfo::bitmap_view(int region_index, bool is_oopmap) {
   bitmap_base += is_oopmap ? r->oopmap_offset() : r->ptrmap_offset();
   size_t size_in_bits = is_oopmap ? r->oopmap_size_in_bits() : r->ptrmap_size_in_bits();
 
-  log_debug(cds, reloc)("mapped %s relocation %smap @ " INTPTR_FORMAT " (" SIZE_FORMAT " bits)",
+  log_debug(cds, reloc)("mapped %s relocation %smap @ " INTPTR_FORMAT " (%zu bits)",
                         region_name(region_index), is_oopmap ? "oop" : "ptr",
                         p2i(bitmap_base), size_in_bits);
 
@@ -1578,13 +1578,13 @@ void FileMapRegion::print(outputStream* st, int region_index) {
   st->print_cr("- is_heap_region:                 %d", _is_heap_region);
   st->print_cr("- is_bitmap_region:               %d", _is_bitmap_region);
   st->print_cr("- mapped_from_file:               %d", _mapped_from_file);
-  st->print_cr("- file_offset:                    " SIZE_FORMAT_X, _file_offset);
-  st->print_cr("- mapping_offset:                 " SIZE_FORMAT_X, _mapping_offset);
-  st->print_cr("- used:                           " SIZE_FORMAT, _used);
-  st->print_cr("- oopmap_offset:                  " SIZE_FORMAT_X, _oopmap_offset);
-  st->print_cr("- oopmap_size_in_bits:            " SIZE_FORMAT, _oopmap_size_in_bits);
-  st->print_cr("- ptrmap_offset:                  " SIZE_FORMAT_X, _ptrmap_offset);
-  st->print_cr("- ptrmap_size_in_bits:            " SIZE_FORMAT, _ptrmap_size_in_bits);
+  st->print_cr("- file_offset:                    0x%zx", _file_offset);
+  st->print_cr("- mapping_offset:                 0x%zx", _mapping_offset);
+  st->print_cr("- used:                           %zu", _used);
+  st->print_cr("- oopmap_offset:                  0x%zx", _oopmap_offset);
+  st->print_cr("- oopmap_size_in_bits:            %zu", _oopmap_size_in_bits);
+  st->print_cr("- ptrmap_offset:                  0x%zx", _ptrmap_offset);
+  st->print_cr("- ptrmap_size_in_bits:            %zu", _ptrmap_size_in_bits);
   st->print_cr("- mapped_base:                    " INTPTR_FORMAT, p2i(_mapped_base));
 }
 
@@ -1623,7 +1623,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   r->set_file_offset(_file_offset);
   int crc = ClassLoader::crc32(0, base, (jint)size);
   if (size > 0) {
-    log_info(cds)("Shared file region (%s) %d: " SIZE_FORMAT_W(8)
+    log_info(cds)("Shared file region (%s) %d: %8zu"
                    " bytes, addr " INTPTR_FORMAT " file offset 0x%08" PRIxPTR
                    " crc 0x%08x",
                    region_name(region), region, size, p2i(requested_base), _file_offset, crc);
@@ -2109,7 +2109,7 @@ MemRegion FileMapInfo::get_heap_region_requested_range() {
 
   address start = heap_region_requested_address();
   address end = start + size;
-  log_info(cds)("Requested heap region [" INTPTR_FORMAT " - " INTPTR_FORMAT "] = "  SIZE_FORMAT_W(8) " bytes",
+  log_info(cds)("Requested heap region [" INTPTR_FORMAT " - " INTPTR_FORMAT "] = %8zu bytes",
                 p2i(start), p2i(end), size);
 
   return MemRegion((HeapWord*)start, (HeapWord*)end);
@@ -2171,13 +2171,13 @@ bool FileMapInfo::can_use_heap_region() {
   const int archive_narrow_klass_pointer_bits = header()->narrow_klass_pointer_bits();
   const int archive_narrow_klass_shift = header()->narrow_klass_shift();
 
-  log_info(cds)("CDS archive was created with max heap size = " SIZE_FORMAT "M, and the following configuration:",
+  log_info(cds)("CDS archive was created with max heap size = %zuM, and the following configuration:",
                 max_heap_size()/M);
   log_info(cds)("    narrow_klass_base at mapping start address, narrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
                 archive_narrow_klass_pointer_bits, archive_narrow_klass_shift);
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
-  log_info(cds)("The current max heap size = " SIZE_FORMAT "M, G1HeapRegion::GrainBytes = " SIZE_FORMAT,
+  log_info(cds)("The current max heap size = %zuM, G1HeapRegion::GrainBytes = %zu",
                 MaxHeapSize/M, G1HeapRegion::GrainBytes);
   log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", arrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::narrow_klass_pointer_bits(), CompressedKlassPointers::shift());
@@ -2334,7 +2334,7 @@ bool FileMapInfo::map_heap_region_impl() {
     if (base == nullptr || base != addr) {
       dealloc_heap_region();
       log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
-                    INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
+                    INTPTR_FORMAT ", size = %zu bytes",
                     p2i(addr), _mapped_heap_memregion.byte_size());
       return false;
     }
@@ -2371,9 +2371,9 @@ bool FileMapInfo::map_heap_region_impl() {
       return false;
     }
   }
-  log_info(cds)("Heap data mapped at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
+  log_info(cds)("Heap data mapped at " INTPTR_FORMAT ", size = %8zu bytes",
                 p2i(mapped_start), _mapped_heap_memregion.byte_size());
-  log_info(cds)("CDS heap data relocation delta = " INTX_FORMAT " bytes", delta);
+  log_info(cds)("CDS heap data relocation delta = %zd bytes", delta);
   return true;
 }
 

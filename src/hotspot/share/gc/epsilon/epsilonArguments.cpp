@@ -46,7 +46,7 @@ void EpsilonArguments::initialize() {
   }
 
   if (EpsilonMaxTLABSize < MinTLABSize) {
-    log_warning(gc)("EpsilonMaxTLABSize < MinTLABSize, adjusting it to " SIZE_FORMAT, MinTLABSize);
+    log_warning(gc)("EpsilonMaxTLABSize < MinTLABSize, adjusting it to %zu", MinTLABSize);
     EpsilonMaxTLABSize = MinTLABSize;
   }
 

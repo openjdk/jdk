@@ -1715,7 +1715,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
 
       __ sub(swap_reg, swap_reg, sp);
-      __ andi(swap_reg, swap_reg, 3 - (int)os::vm_page_size());
+      __ mv(t0, 3 - (int)os::vm_page_size());
+      __ andr(swap_reg, swap_reg, t0);
 
       // Save the test result, for recursive case, the result is zero
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));

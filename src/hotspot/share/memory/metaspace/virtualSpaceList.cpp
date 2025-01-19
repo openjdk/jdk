@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -150,7 +150,7 @@ void VirtualSpaceList::print_on(outputStream* st) const {
     vsn = vsn->next();
     n++;
   }
-  st->print_cr("- total %d nodes, " SIZE_FORMAT " reserved words, " SIZE_FORMAT " committed words.",
+  st->print_cr("- total %d nodes, %zu reserved words, %zu committed words.",
                n, reserved_words(), committed_words());
 }
 

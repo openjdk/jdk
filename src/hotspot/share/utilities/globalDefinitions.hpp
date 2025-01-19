@@ -134,30 +134,11 @@ class oopDesc;
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
 #define UINT64_FORMAT_0          "%016"       PRIx64
 
+
 // Format integers which change size between 32- and 64-bit.
-#define SSIZE_FORMAT             "%"          PRIdPTR
-#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
-#define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
-#ifdef _LP64
-#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
-#else
-#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
-#endif
 #define SIZE_FORMAT_W(width)     "%"   #width PRIuPTR
-
-#define INTX_FORMAT              "%"          PRIdPTR
-#define INTX_FORMAT_X            "0x%"        PRIxPTR
-#define INTX_FORMAT_W(width)     "%"   #width PRIdPTR
-#define UINTX_FORMAT             "%"          PRIuPTR
-#define UINTX_FORMAT_X           "0x%"        PRIxPTR
-#ifdef _LP64
-#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
-#else
-#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
-#endif
-#define UINTX_FORMAT_W(width)    "%"   #width PRIuPTR
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
@@ -173,13 +154,17 @@ class oopDesc;
 #define JULONG_FORMAT_X          UINT64_FORMAT_X
 #endif
 
-// Format pointers which change size between 32- and 64-bit.
+// Format pointers and padded integral values which change size between 32- and 64-bit.
 #ifdef  _LP64
 #define INTPTR_FORMAT            "0x%016"     PRIxPTR
 #define PTR_FORMAT               "0x%016"     PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%016"     PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%016"     PRIxPTR
 #else   // !_LP64
 #define INTPTR_FORMAT            "0x%08"      PRIxPTR
 #define PTR_FORMAT               "0x%08"      PRIxPTR
+#define UINTX_FORMAT_X_0         "0x%08"      PRIxPTR
+#define SIZE_FORMAT_X_0          "0x%08"      PRIxPTR
 #endif  // _LP64
 
 // Convert pointer to intptr_t, for use in printing pointers.

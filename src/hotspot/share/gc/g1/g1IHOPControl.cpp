@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ G1IHOPControl::G1IHOPControl(double initial_ihop_percent,
 }
 
 void G1IHOPControl::update_target_occupancy(size_t new_target_occupancy) {
-  log_debug(gc, ihop)("Target occupancy update: old: " SIZE_FORMAT "B, new: " SIZE_FORMAT "B",
+  log_debug(gc, ihop)("Target occupancy update: old: %zuB, new: %zuB",
                       _target_occupancy, new_target_occupancy);
   _target_occupancy = new_target_occupancy;
 }
@@ -54,8 +54,8 @@ void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t addi
 void G1IHOPControl::print() {
   assert(_target_occupancy > 0, "Target occupancy still not updated yet.");
   size_t cur_conc_mark_start_threshold = get_conc_mark_start_threshold();
-  log_debug(gc, ihop)("Basic information (value update), threshold: " SIZE_FORMAT "B (%1.2f), target occupancy: " SIZE_FORMAT "B, current occupancy: " SIZE_FORMAT "B, "
-                      "recent allocation size: " SIZE_FORMAT "B, recent allocation duration: %1.2fms, recent old gen allocation rate: %1.2fB/s, recent marking phase length: %1.2fms",
+  log_debug(gc, ihop)("Basic information (value update), threshold: %zuB (%1.2f), target occupancy: %zuB, current occupancy: %zuB, "
+                      "recent allocation size: %zuB, recent allocation duration: %1.2fms, recent old gen allocation rate: %1.2fB/s, recent marking phase length: %1.2fms",
                       cur_conc_mark_start_threshold,
                       percent_of(cur_conc_mark_start_threshold, _target_occupancy),
                       _target_occupancy,
@@ -169,8 +169,8 @@ void G1AdaptiveIHOPControl::update_marking_length(double marking_length_s) {
 void G1AdaptiveIHOPControl::print() {
   G1IHOPControl::print();
   size_t actual_target = actual_target_threshold();
-  log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: " SIZE_FORMAT "B (%1.2f), internal target occupancy: " SIZE_FORMAT "B, "
-                      "occupancy: " SIZE_FORMAT "B, additional buffer size: " SIZE_FORMAT "B, predicted old gen allocation rate: %1.2fB/s, "
+  log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: %zuB (%1.2f), internal target occupancy: %zuB, "
+                      "occupancy: %zuB, additional buffer size: %zuB, predicted old gen allocation rate: %1.2fB/s, "
                       "predicted marking phase length: %1.2fms, prediction active: %s",
                       get_conc_mark_start_threshold(),
                       percent_of(get_conc_mark_start_threshold(), actual_target),

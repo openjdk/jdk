@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Canonicalize the node by moving constants to the right input.
   if (in(Condition)->is_Bool() && phase->type(in(IfFalse))->singleton() && !phase->type(in(IfTrue))->singleton()) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
-    return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
+    return make(phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
 
   return nullptr;
@@ -186,15 +186,15 @@ const Type* CMoveNode::Value(PhaseGVN* phase) const {
 //------------------------------make-------------------------------------------
 // Make a correctly-flavored CMove.  Since _type is directly determined
 // from the inputs we do not need to specify it here.
-CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Type *t) {
+CMoveNode* CMoveNode::make(Node* bol, Node* left, Node* right, const Type* t) {
   switch( t->basic_type() ) {
-    case T_INT:     return new CMoveINode( bol, left, right, t->is_int() );
-    case T_FLOAT:   return new CMoveFNode( bol, left, right, t );
-    case T_DOUBLE:  return new CMoveDNode( bol, left, right, t );
-    case T_LONG:    return new CMoveLNode( bol, left, right, t->is_long() );
-    case T_OBJECT:  return new CMovePNode( c, bol, left, right, t->is_oopptr() );
-    case T_ADDRESS: return new CMovePNode( c, bol, left, right, t->is_ptr() );
-    case T_NARROWOOP: return new CMoveNNode( c, bol, left, right, t );
+    case T_INT:     return new CMoveINode(bol, left, right, t->is_int());
+    case T_FLOAT:   return new CMoveFNode(bol, left, right, t);
+    case T_DOUBLE:  return new CMoveDNode(bol, left, right, t);
+    case T_LONG:    return new CMoveLNode(bol, left, right, t->is_long());
+    case T_OBJECT:  return new CMovePNode(bol, left, right, t->is_oopptr());
+    case T_ADDRESS: return new CMovePNode(bol, left, right, t->is_ptr());
+    case T_NARROWOOP: return new CMoveNNode(bol, left, right, t);
     default:
     ShouldNotReachHere();
     return nullptr;
@@ -278,7 +278,7 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( in(Condition)->is_Bool() ) {
       BoolNode* b  = in(Condition)->as_Bool();
       BoolNode* b2 = b->negate(phase);
-      return make(in(Control), phase->transform(b2), in(IfTrue), in(IfFalse), _type);
+      return make(phase->transform(b2), in(IfTrue), in(IfFalse), _type);
     }
   }
 

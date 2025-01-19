@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -216,8 +216,8 @@ void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
     const size_t available_headroom   = stack_pointer - unguarded_stack_end;
     const size_t allocation_size      = available_headroom - _reattempt_required_stack_headroom + K;
 
-    st->print_cr("Current Stack Pointer: " PTR_FORMAT " alloca " SIZE_FORMAT
-                 " of " SIZE_FORMAT " bytes available unguarded stack space",
+    st->print_cr("Current Stack Pointer: " PTR_FORMAT " alloca %zu"
+                 " of %zu bytes available unguarded stack space",
                  p2i(stack_pointer), allocation_size, available_headroom);
 
     // Allocate byte blob on the stack. Make pointer volatile to avoid having
@@ -263,13 +263,13 @@ char* VMError::error_string(char* buf, int buflen) {
 
   if (signame) {
     jio_snprintf(buf, buflen,
-                 "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=" UINTX_FORMAT,
+                 "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=%zu",
                  signame, _id, _pc,
                  os::current_process_id(), os::current_thread_id());
   } else if (_filename != nullptr && _lineno > 0) {
     // skip directory names
     int n = jio_snprintf(buf, buflen,
-                         "Internal Error at %s:%d, pid=%d, tid=" UINTX_FORMAT,
+                         "Internal Error at %s:%d, pid=%d, tid=%zu",
                          get_filename_only(), _lineno,
                          os::current_process_id(), os::current_thread_id());
     if (n >= 0 && n < buflen && _message) {
@@ -283,7 +283,7 @@ char* VMError::error_string(char* buf, int buflen) {
     }
   } else {
     jio_snprintf(buf, buflen,
-                 "Internal Error (0x%x), pid=%d, tid=" UINTX_FORMAT,
+                 "Internal Error (0x%x), pid=%d, tid=%zu",
                  _id, os::current_process_id(), os::current_thread_id());
   }
 
@@ -649,6 +649,12 @@ void VMError::report(outputStream* st, bool _verbose) {
   address lastpc = nullptr;
 
   BEGIN
+  if (MemTracker::enabled() &&
+      NmtVirtualMemory_lock != nullptr &&
+      NmtVirtualMemory_lock->owned_by_self()) {
+    // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
+    NmtVirtualMemory_lock->unlock();
+  }
 
   STEP("printing fatal error message")
     st->print_cr("#");
@@ -768,7 +774,7 @@ void VMError::report(outputStream* st, bool _verbose) {
           st->print((_id == (int)OOM_MALLOC_ERROR) ? "(malloc) failed to allocate " :
                     (_id == (int)OOM_MMAP_ERROR)   ? "(mmap) failed to map " :
                                                     "(mprotect) failed to protect ");
-          jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
+          jio_snprintf(buf, sizeof(buf), "%zu", _size);
           st->print("%s", buf);
           st->print(" bytes.");
           if (strlen(_detail_msg) > 0) {
@@ -827,7 +833,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP("printing current thread and pid")
     // process id, thread id
     st->print(", pid=%d", os::current_process_id());
-    st->print(", tid=" UINTX_FORMAT, os::current_thread_id());
+    st->print(", tid=%zu", os::current_thread_id());
     st->cr();
 
   STEP_IF("printing error message", should_report_bug(_id)) // already printed the message.
@@ -934,7 +940,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     if (fr.sp()) {
       st->print(",  sp=" PTR_FORMAT, p2i(fr.sp()));
       size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
-      st->print(",  free space=" SIZE_FORMAT "k", free_stack_size);
+      st->print(",  free space=%zuk", free_stack_size);
     }
 
     st->cr();
@@ -1651,7 +1657,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       if (!SuppressFatalErrorMessage) {
         char msgbuf[64];
         jio_snprintf(msgbuf, sizeof(msgbuf),
-                     "[thread " INTX_FORMAT " also had an error]",
+                     "[thread %zd also had an error]",
                      mytid);
         out.print_raw_cr(msgbuf);
       }

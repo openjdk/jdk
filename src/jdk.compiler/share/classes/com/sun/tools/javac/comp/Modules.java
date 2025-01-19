@@ -103,7 +103,6 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -151,7 +150,6 @@ public class Modules extends JCTree.Visitor {
     private final Target target;
     private final boolean allowModules;
     private final boolean allowAccessIntoSystem;
-    private final boolean allowRequiresTransitiveJavaBase;
 
     public final boolean multiModuleMode;
 
@@ -207,11 +205,6 @@ public class Modules extends JCTree.Visitor {
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);
 
-        Preview preview = Preview.instance(context);
-
-        allowRequiresTransitiveJavaBase =
-                Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) &&
-                 (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled());
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
@@ -822,12 +815,10 @@ public class Modules extends JCTree.Visitor {
                 Set<RequiresFlag> flags = EnumSet.noneOf(RequiresFlag.class);
                 if (tree.isTransitive) {
                     if (msym == syms.java_base &&
-                        !allowRequiresTransitiveJavaBase &&
                         !preview.participatesInPreview(syms, sym)) {
                         if (source.compareTo(Source.JDK10) >= 0) {
-                            log.error(DiagnosticFlag.SOURCE_LEVEL,
-                                      tree.pos(),
-                                      Feature.JAVA_BASE_TRANSITIVE.error(source.name));
+                            preview.checkSourceLevel(tree.pos(),
+                                                     Feature.JAVA_BASE_TRANSITIVE);
                         }
                     }
                     flags.add(RequiresFlag.TRANSITIVE);

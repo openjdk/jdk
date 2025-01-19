@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-
 /**
  * @test
  * @key jfr
@@ -41,13 +40,32 @@ import jdk.test.lib.jfr.Events;
 public class TestCPULoad {
     private final static String EVENT_NAME = EventNames.CPULoad;
 
+    public static boolean isPrime(int num) {
+        if (num <= 1) return false;
+        for (int i = 2; i <= Math.sqrt(num); i++) {
+            if (num % i == 0) return false;
+        }
+        return true;
+    }
+
+    public static int burnCpuCycles(int limit) {
+        int primeCount = 0;
+        for (int i = 2; i < limit; i++) {
+            if (isPrime(i)) {
+                primeCount++;
+            }
+        }
+        return primeCount;
+    }
+
     public static void main(String[] args) throws Throwable {
         Recording recording = new Recording();
         recording.enable(EVENT_NAME);
         recording.start();
-        // Need to sleep so a time delta can be calculated
-        Thread.sleep(100);
+        // burn some cycles to check increase of CPU related counters
+        int pn = burnCpuCycles(2500000);
         recording.stop();
+        System.out.println("Found " + pn + " primes while burning cycles");
 
         List<RecordedEvent> events = Events.fromRecording(recording);
         if (events.isEmpty()) {
