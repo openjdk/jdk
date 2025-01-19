@@ -140,12 +140,16 @@ class CLDScanClosure: public CLDClosure {
 };
 
 class IsAliveClosure: public BoolObjectClosure {
-  HeapWord*         _young_gen_end;
+  DefNewGeneration* _young_gen;
 public:
-  IsAliveClosure(DefNewGeneration* g): _young_gen_end(g->reserved().end()) {}
+  IsAliveClosure(DefNewGeneration* g):
+    _young_gen(g) {}
 
   bool do_object_b(oop p) {
-    return cast_from_oop<HeapWord*>(p) >= _young_gen_end || p->is_forwarded();
+    HeapWord* heap_word_ptr = cast_from_oop<HeapWord*>(p);
+    bool is_in_young_gen = _young_gen->is_in_reserved((void*)heap_word_ptr);
+
+    return (!is_in_young_gen) || p->is_forwarded();
   }
 };
 
@@ -172,11 +176,10 @@ class AdjustWeakRootClosure: public OffHeapScanClosure {
 
 class KeepAliveClosure: public OopClosure {
   DefNewGeneration* _young_gen;
-  HeapWord*         _young_gen_end;
   CardTableRS* _rs;
 
   bool is_in_young_gen(void* p) const {
-    return p < _young_gen_end;
+    return _young_gen->is_in_reserved(p);
   }
 
   template <class T>
@@ -196,7 +199,6 @@ class KeepAliveClosure: public OopClosure {
 public:
   KeepAliveClosure(DefNewGeneration* g) :
     _young_gen(g),
-    _young_gen_end(g->reserved().end()),
     _rs(SerialHeap::heap()->rem_set()) {}
 
   void do_oop(oop* p)       { do_oop_work(p); }
