@@ -388,12 +388,13 @@ public final class SharedUtils {
     @ForceInline
     @SuppressWarnings("restricted")
     public static Arena newBoundedArena(long size) {
-        long allocatedSize = Math.max(size, CACHED_BUFFER_SIZE);
-        long fromCache = allocatedSize == CACHED_BUFFER_SIZE ? CallBufferCache.acquire() : 0;
-        long address = fromCache != 0 ? fromCache : CallBufferCache.allocate(allocatedSize);
-        return new BoundedArena(size, MemorySegment.ofAddress(address).reinterpret(allocatedSize));
+        long bufferSize = Math.max(size, CACHED_BUFFER_SIZE);
+        long fromCache = bufferSize == CACHED_BUFFER_SIZE ? CallBufferCache.acquire() : 0;
+        long address = fromCache != 0 ? fromCache : CallBufferCache.allocate(bufferSize);
+        return new BoundedArena(MemorySegment.ofAddress(address).reinterpret(size));
     }
 
+    /** A confined arena slicing off an (unscoped) source segment. */
     static final class BoundedArena implements Arena {
         private final Arena scope = Arena.ofConfined();
         private final MemorySegment scoped;
@@ -401,8 +402,8 @@ public final class SharedUtils {
 
         @ForceInline
         @SuppressWarnings("restricted")
-        public BoundedArena(long size, MemorySegment source) {
-            scoped = source.reinterpret(size, scope, null);
+        public BoundedArena(MemorySegment source) {
+            scoped = source.reinterpret(scope, null);
             allocator = SegmentAllocator.slicingAllocator(scoped);
         }
 
@@ -421,6 +422,7 @@ public final class SharedUtils {
         @ForceInline
         public void close() {
             scope.close();
+            // All segments we handed out are now invalid, we can release source to the cache or free it.
             if (scoped.byteSize() > CACHED_BUFFER_SIZE || !CallBufferCache.release(scoped.address()))
                 CallBufferCache.free(scoped.address());
         }
