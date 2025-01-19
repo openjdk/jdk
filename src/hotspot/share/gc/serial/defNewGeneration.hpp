@@ -119,6 +119,7 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _eden_space;
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
+  HeapWord* _gen_boundary;
 
   STWGCTimer* _gc_timer;
 
@@ -155,6 +156,7 @@ class DefNewGeneration: public Generation {
   size_t free() const;
   size_t max_capacity() const;
   size_t capacity_before_gc() const;
+  HeapWord* gen_boundary() const { return _gen_boundary; }
 
   // Returns "TRUE" iff "p" points into the used areas in each space of young-gen.
   bool is_in(const void* p) const;

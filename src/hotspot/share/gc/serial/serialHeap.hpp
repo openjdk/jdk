@@ -79,6 +79,7 @@ private:
   TenuredGeneration* _old_gen;
   HeapWord* _young_gen_saved_top;
   HeapWord* _old_gen_saved_top;
+  char* _gen_boundary;
 
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
@@ -160,6 +161,8 @@ public:
   // Returns true if p points into the reserved space for the young generation.
   // Assumes the young gen address range is less than that of the old gen.
   bool is_in_young(const void* p) const;
+
+  char* gen_boundary() const { return _gen_boundary; }
 
   bool requires_barriers(stackChunkOop obj) const override;
 

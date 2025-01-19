@@ -193,12 +193,16 @@ jint SerialHeap::initialize() {
   if (SwapSerialGCGenerations) {
     ReservedSpace old_rs = heap_rs.first_part(MaxOldSize, GenAlignment);
     ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
+    _gen_boundary = young_rs.base();
+
     _rem_set->initialize(old_rs.base(), young_rs.base());
     _young_gen = new DefNewGeneration(young_rs, NewSize, MinNewSize, MaxNewSize);
     _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
   } else {
     ReservedSpace young_rs = heap_rs.first_part(MaxNewSize, GenAlignment);
     ReservedSpace old_rs = heap_rs.last_part(MaxNewSize, GenAlignment);
+    _gen_boundary = old_rs.base();
+
     _rem_set->initialize(young_rs.base(), old_rs.base());
     _young_gen = new DefNewGeneration(young_rs, NewSize, MinNewSize, MaxNewSize);
     _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
@@ -711,7 +715,9 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 bool SerialHeap::is_in_young(const void* p) const {
-  bool result = p < _old_gen->reserved().start();
+  bool is_in_lower_region = p < _gen_boundary;
+  bool result = SwapSerialGCGenerations ^ is_in_lower_region;
+
   assert(result == _young_gen->is_in_reserved(p),
          "incorrect test - result=%d, p=" PTR_FORMAT, result, p2i(p));
   return result;
