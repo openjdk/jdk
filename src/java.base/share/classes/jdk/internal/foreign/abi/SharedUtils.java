@@ -388,8 +388,7 @@ public final class SharedUtils {
     @ForceInline
     public static Arena newBoundedArena(long size) {
         MemorySegment cached = size <= BufferCache.CACHED_BUFFER_SIZE ? BufferCache.acquire() : null;
-        MemorySegment source = cached != null ? cached : BufferCache.allocate(size);
-        return new BoundedArena(source);
+        return new BoundedArena(cached != null ? cached : BufferCache.allocate(size));
     }
 
     static final class BoundedArena implements Arena {
@@ -430,25 +429,34 @@ public final class SharedUtils {
         private static final int CACHED_BUFFER_SIZE = 256;
         private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-        // Two-element stack to support downcall + upcall (cached1 == null => cached2 == null).
-        // Elements are unscoped.
+        // Two-elements to support downcall + upcall. Elements are unscoped.
         private MemorySegment cached1;
         private MemorySegment cached2;
 
         MemorySegment pop() {
-            MemorySegment result = cached1;
-            cached1 = cached2;
-            cached2 = null;
-            return result;
+            if (cached1 != null) {
+                MemorySegment result = cached1;
+                cached1 = null;
+                return result;
+            }
+            if (cached2 != null) {
+                MemorySegment result = cached2;
+                cached2 = null;
+                return result;
+            }
+            return null;
         }
 
         boolean push(MemorySegment segment) {
-            if (cached2 != null) {
-                return false;
+            if (cached1 == null) {
+                cached1 = segment;
+                return true;
             }
-            cached2 = cached1;
-            cached1 = segment;
-            return true;
+            if (cached2 == null) {
+                cached2 = segment;
+                return true;
+            }
+            return false;
         }
 
         void free() {
