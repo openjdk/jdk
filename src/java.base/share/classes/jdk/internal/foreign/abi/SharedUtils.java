@@ -40,9 +40,6 @@ import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
-import jdk.internal.misc.TerminatingThreadLocal;
-import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.Continuation;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
@@ -387,8 +384,8 @@ public final class SharedUtils {
 
     @ForceInline
     public static Arena newBoundedArena(long size) {
-        MemorySegment cached = size <= BufferCache.CACHED_BUFFER_SIZE ? BufferCache.acquire() : null;
-        return new BoundedArena(cached != null ? cached : BufferCache.allocate(size));
+        MemorySegment cached = size <= CallBufferCache.CACHED_BUFFER_SIZE ? CallBufferCache.acquire() : null;
+        return new BoundedArena(cached != null ? cached : CallBufferCache.allocate(size));
     }
 
     static final class BoundedArena implements Arena {
@@ -419,90 +416,8 @@ public final class SharedUtils {
         @ForceInline
         public void close() {
             scope.close();
-            if (source.byteSize() != BufferCache.CACHED_BUFFER_SIZE || !BufferCache.release(source))
-                BufferCache.free(source);
-        }
-    }
-
-    // Intermediate buffer needed for a stub call handle. Small buffers may be reused across calls.
-    static final class BufferCache {
-        private static final int CACHED_BUFFER_SIZE = 256;
-        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
-        // Two-elements to support downcall + upcall. Elements are unscoped.
-        private MemorySegment cached1;
-        private MemorySegment cached2;
-
-        MemorySegment pop() {
-            if (cached1 != null) {
-                MemorySegment result = cached1;
-                cached1 = null;
-                return result;
-            }
-            if (cached2 != null) {
-                MemorySegment result = cached2;
-                cached2 = null;
-                return result;
-            }
-            return null;
-        }
-
-        boolean push(MemorySegment segment) {
-            if (cached1 == null) {
-                cached1 = segment;
-                return true;
-            }
-            if (cached2 == null) {
-                cached2 = segment;
-                return true;
-            }
-            return false;
-        }
-
-        void free() {
-            if (cached1 != null) free(cached1);
-            if (cached2 != null) free(cached2);
-        }
-
-        @SuppressWarnings("restricted")
-        static MemorySegment allocate(long size) {
-            long allocatedSize = Math.max(CACHED_BUFFER_SIZE, size);
-            return MemorySegment.ofAddress(UNSAFE.allocateMemory(allocatedSize))
-                    .reinterpret(allocatedSize);
-        }
-
-        static void free(MemorySegment segment) {
-            UNSAFE.freeMemory(segment.address());
-        }
-
-        private static final TerminatingThreadLocal<BufferCache> tl = new TerminatingThreadLocal<>() {
-            @Override
-            protected BufferCache initialValue() {
-                return new BufferCache();
-            }
-
-            @Override
-            protected void threadTerminated(BufferCache cache) {
-                cache.free();
-            }
-        };
-
-        static MemorySegment acquire() {
-            Continuation.pin();
-            try {
-                return tl.get().pop();
-            } finally {
-                Continuation.unpin();
-            }
-        }
-
-        static boolean release(MemorySegment segment) {
-            Continuation.pin();
-            try {
-                return tl.get().push(segment);
-            } finally {
-                Continuation.unpin();
-            }
+            if (source.byteSize() != CallBufferCache.CACHED_BUFFER_SIZE || !CallBufferCache.release(source))
+                CallBufferCache.free(source);
         }
     }
 
