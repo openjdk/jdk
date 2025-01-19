@@ -31,6 +31,7 @@
  *  jdk.compiler/com.sun.tools.javac.file
  *  jdk.compiler/com.sun.tools.javac.main
  *  jdk.compiler/com.sun.tools.javac.util:+open
+ *  jdk.javadoc/jdk.javadoc.internal.tool
  */
 
 import java.io.PrintWriter;
@@ -88,7 +89,17 @@ public class OptionsOrderingTest extends TestRunner {
         }
     }
 
+    // JDK-8348038
+    public void testJavadocIgnoreSymbolsFile() throws Exception {
+        jdk.javadoc.internal.tool.Main.execute(
+          "-XDignore.symbol.file=true",
+          "dummy.java"
+        );
+    }
+
     public static void main(String... args) throws Exception {
-        new OptionsOrderingTest().testJavacMessagesDiagFormatter();
+        OptionsOrderingTest test = new OptionsOrderingTest();
+        test.testJavacMessagesDiagFormatter();
+        test.testJavadocIgnoreSymbolsFile();
     }
 }
