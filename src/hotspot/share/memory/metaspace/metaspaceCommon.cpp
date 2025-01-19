@@ -98,9 +98,9 @@ void print_human_readable_size(outputStream* st, size_t byte_size, size_t scale,
 
   if (width == -1) {
     if (scale == 1) {
-      st->print(SIZE_FORMAT " bytes", byte_size);
+      st->print("%zu bytes", byte_size);
     } else if (scale == BytesPerWord) {
-      st->print(SIZE_FORMAT " words", byte_size / BytesPerWord);
+      st->print("%zu words", byte_size / BytesPerWord);
     } else {
       const char* display_unit = display_unit_for_scale(scale);
       float display_value = (float) byte_size / (float)scale;

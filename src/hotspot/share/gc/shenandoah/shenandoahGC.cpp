@@ -45,7 +45,7 @@ const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
       return "Mark";
     case _degenerated_evac:
       return "Evacuation";
-    case _degenerated_updaterefs:
+    case _degenerated_update_refs:
       return "Update References";
     default:
       ShouldNotReachHere();

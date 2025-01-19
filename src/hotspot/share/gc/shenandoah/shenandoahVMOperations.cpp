@@ -109,14 +109,14 @@ void VM_ShenandoahDegeneratedGC::doit() {
 void VM_ShenandoahInitUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Init Update Refs", SvcGCMarker::CONCURRENT);
   set_active_generation();
-  _gc->entry_init_updaterefs();
+  _gc->entry_init_update_refs();
   ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
 void VM_ShenandoahFinalUpdateRefs::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Final Update Refs", SvcGCMarker::CONCURRENT);
   set_active_generation();
-  _gc->entry_final_updaterefs();
+  _gc->entry_final_update_refs();
   ShenandoahHeap::heap()->propagate_gc_state_to_all_threads();
 }
 
