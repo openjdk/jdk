@@ -30,88 +30,82 @@
 import jdk.internal.foreign.abi.CallBufferCache;
 import org.testng.annotations.Test;
 
-import java.lang.foreign.MemorySegment;
-
-import static jdk.internal.foreign.abi.CallBufferCache.CACHED_BUFFER_SIZE;
 import static org.testng.Assert.*;
 
 public class CallBufferCacheTest {
 
     @Test
     public void testEmpty() {
-        assertNull(CallBufferCache.acquire());
-    }
-
-    private void testAllocate(long size, long expectedSize) {
-        MemorySegment segment1 = CallBufferCache.allocate(size);
-        MemorySegment segment2 = CallBufferCache.allocate(size);
-        assertEquals(segment1.byteSize(), expectedSize);
-        assertEquals(segment2.byteSize(), expectedSize);
-        assertNotSame(segment1, segment2);
-        assertNotSame(segment1.address(), segment2.address());
-        assertTrue(segment1.asOverlappingSlice(segment2).isEmpty());
-        CallBufferCache.free(segment1);
-        CallBufferCache.free(segment2);
+        assertEquals(CallBufferCache.acquire(), 0);
     }
 
     @Test
-    public void testAllocateSmall() {
-        testAllocate(1, CACHED_BUFFER_SIZE);
-    }
-
-    @Test
-    public void testAllocateLarge() {
-        testAllocate(CACHED_BUFFER_SIZE + 123, CACHED_BUFFER_SIZE + 123);
+    public void testAllocate() {
+        long address1 = CallBufferCache.allocate(123);
+        long address2 = CallBufferCache.allocate(123);
+        assertNotEquals(address1, address2);
+        CallBufferCache.free(address1);
+        CallBufferCache.free(address2);
     }
 
     @Test
     public void testCacheSize() {
-        assertNull(CallBufferCache.acquire());
+        assertEquals(CallBufferCache.acquire(), 0);
 
-        MemorySegment segment1 = CallBufferCache.allocate(128);
-        MemorySegment segment2 = CallBufferCache.allocate(128);
-        MemorySegment segment3 = CallBufferCache.allocate(128);
+        // Three nested calls.
+        long address1 = CallBufferCache.allocate(128);
+        long address2 = CallBufferCache.allocate(128);
+        long address3 = CallBufferCache.allocate(128);
 
-        assertTrue(CallBufferCache.release(segment3));
-        assertTrue(CallBufferCache.release(segment2));
-        assertFalse(CallBufferCache.release(segment1));
+        // Two buffers go into the cache.
+        assertTrue(CallBufferCache.release(address3));
+        assertTrue(CallBufferCache.release(address2));
+        assertFalse(CallBufferCache.release(address1));
 
-        MemorySegment first = CallBufferCache.acquire();
-        assertTrue(first == segment3 || first == segment2);
+        // Next acquisition is either of them.
+        long first = CallBufferCache.acquire();
+        assertTrue(first == address3 || first == address2);
         assertTrue(CallBufferCache.release(first));
 
+        // Can re-acquire both.
         first = CallBufferCache.acquire();
-        MemorySegment second = CallBufferCache.acquire();
-        assertNotSame(first, second);
-        assertTrue(first == segment2 || first == segment3);
-        assertTrue(second == segment2 || second == segment3);
+        long second = CallBufferCache.acquire();
+        assertNotEquals(first, second);
+        assertTrue(first == address2 || first == address3);
+        assertTrue(second == address2 || second == address3);
+        // Now the cache is empty again.
+        assertEquals(CallBufferCache.acquire(), 0);
 
-        assertNull(CallBufferCache.acquire());
-
-        CallBufferCache.free(segment1);
-        CallBufferCache.free(segment2);
-        CallBufferCache.free(segment3);
+        CallBufferCache.free(address1);
+        CallBufferCache.free(address2);
+        CallBufferCache.free(address3);
     }
 
     @Test
     public void testThreadLocal() throws InterruptedException {
-        MemorySegment segment = CallBufferCache.allocate(128);
-        assertTrue(CallBufferCache.release(segment));
-        Thread.ofPlatform().start(() -> assertNull(CallBufferCache.acquire())).join();
-        assertSame(segment, CallBufferCache.acquire());
-        CallBufferCache.free(segment);
+        long address = CallBufferCache.allocate(128);
+        assertTrue(CallBufferCache.release(address));
+        Thread.ofPlatform().start(() -> {
+            // Not visible in other thread.
+            assertEquals(CallBufferCache.acquire(), 0);
+        }).join();
+        // Only here.
+        assertEquals(address, CallBufferCache.acquire());
+        CallBufferCache.free(address);
     }
 
     @Test
     public void testMigrateThread() throws InterruptedException {
-        MemorySegment segment = CallBufferCache.allocate(128);
-        assertTrue(CallBufferCache.release(segment));
-        assertSame(segment, CallBufferCache.acquire());
+        long address = CallBufferCache.allocate(128);
+        assertTrue(CallBufferCache.release(address));
+        assertEquals(address, CallBufferCache.acquire());
         Thread.ofPlatform().start(() -> {
-            CallBufferCache.release(segment);
-            assertSame(segment, CallBufferCache.acquire());
-            CallBufferCache.release(segment);
+            // A buffer can migrate to another thread due to VThread scheduling.
+            CallBufferCache.release(address);
+            assertEquals(address, CallBufferCache.acquire());
+            CallBufferCache.release(address);
+            // freed by TL.
         }).join();
-        assertNull(CallBufferCache.acquire());
+        assertEquals(CallBufferCache.acquire(), 0);
     }
 }

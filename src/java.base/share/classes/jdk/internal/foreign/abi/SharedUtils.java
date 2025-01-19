@@ -382,23 +382,28 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    // Minimum allocation size = maximum cached size
+    private static final int CACHED_BUFFER_SIZE = 256;
+
     @ForceInline
+    @SuppressWarnings("restricted")
     public static Arena newBoundedArena(long size) {
-        MemorySegment cached = size <= CallBufferCache.CACHED_BUFFER_SIZE ? CallBufferCache.acquire() : null;
-        return new BoundedArena(cached != null ? cached : CallBufferCache.allocate(size));
+        long allocatedSize = Math.max(size, CACHED_BUFFER_SIZE);
+        long fromCache = allocatedSize == CACHED_BUFFER_SIZE ? CallBufferCache.acquire() : 0;
+        long address = fromCache != 0 ? fromCache : CallBufferCache.allocate(allocatedSize);
+        return new BoundedArena(size, MemorySegment.ofAddress(address).reinterpret(allocatedSize));
     }
 
     static final class BoundedArena implements Arena {
-        private final MemorySegment source;
+        private final Arena scope = Arena.ofConfined();
+        private final MemorySegment scoped;
         private final SegmentAllocator allocator;
-        private final Arena scope;
 
         @ForceInline
         @SuppressWarnings("restricted")
-        public BoundedArena(MemorySegment segment) {
-            source = segment;
-            scope = Arena.ofConfined();
-            allocator = SegmentAllocator.slicingAllocator(segment.reinterpret(scope, null));
+        public BoundedArena(long size, MemorySegment source) {
+            scoped = source.reinterpret(size, scope, null);
+            allocator = SegmentAllocator.slicingAllocator(scoped);
         }
 
         @Override
@@ -416,8 +421,8 @@ public final class SharedUtils {
         @ForceInline
         public void close() {
             scope.close();
-            if (source.byteSize() != CallBufferCache.CACHED_BUFFER_SIZE || !CallBufferCache.release(source))
-                CallBufferCache.free(source);
+            if (scoped.byteSize() > CACHED_BUFFER_SIZE || !CallBufferCache.release(scoped.address()))
+                CallBufferCache.free(scoped.address());
         }
     }
 
