@@ -1890,17 +1890,21 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
         final boolean postExec() { // resubmit if periodic
-            long d; ForkJoinPool p;  ForkJoinPool.DelayScheduler ds;
-            if ((d = nextDelay) == 0L || status < 0 ||
-                (p = pool) == null || (ds = p.delayer) == null)
-                return true;
-            heapIndex = -1;
-            if (d < 0L)
-                when = System.nanoTime() - d;
-            else
-                when += d;
-            ds.add(this);
-            return false;
+            long d; ForkJoinPool p; ForkJoinPool.DelayScheduler ds;
+            if ((d = nextDelay) != 0L && status >= 0 &&
+                (p = pool) != null && (ds = p.delayScheduler) != null) {
+                if (!p.isShutdown()) {
+                    heapIndex = -1;
+                    if (d < 0L)
+                        when = System.nanoTime() - d;
+                    else
+                        when += d;
+                    ds.add(this);
+                    return false;
+                }
+                trySetCancelled();
+            }
+            return true;
         }
         final T compute() throws Exception {
             Callable<? extends T> c; Runnable r;
@@ -1916,7 +1920,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             ForkJoinPool p; ForkJoinPool.DelayScheduler ds;
             boolean stat = super.cancel(mayInterruptIfRunning);
             if (heapIndex >= 0 && nextPending == null &&
-                (p = pool) != null && (ds = p.delayer) != null)
+                (p = pool) != null && (ds = p.delayScheduler) != null)
                 ds.remove(this); // for heap cleanup
             return stat;
         }
