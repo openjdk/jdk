@@ -624,7 +624,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler *masm, DecoratorSet 
                                 tmp1, tmp2, tmp3,
                                 preservation_level);
 
-  // No need for post barrier if storing NULL
+  // No need for post barrier if storing null
   if (ShenandoahCardBarrier && is_reference_type(type) && val != noreg) {
     store_check(masm, base, ind_or_offs, tmp1);
   }

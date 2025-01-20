@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,9 @@ static size_t edge_queue_memory_commit_size(size_t memory_reservation_bytes) {
 }
 
 static void log_edge_queue_summary(const EdgeQueue& edge_queue) {
-  log_trace(jfr, system)("EdgeQueue reserved size total: " SIZE_FORMAT " [KB]", edge_queue.reserved_size() / K);
-  log_trace(jfr, system)("EdgeQueue edges total: " SIZE_FORMAT, edge_queue.top());
-  log_trace(jfr, system)("EdgeQueue liveset total: " SIZE_FORMAT " [KB]", edge_queue.live_set() / K);
+  log_trace(jfr, system)("EdgeQueue reserved size total: %zu [KB]", edge_queue.reserved_size() / K);
+  log_trace(jfr, system)("EdgeQueue edges total: %zu", edge_queue.top());
+  log_trace(jfr, system)("EdgeQueue liveset total: %zu [KB]", edge_queue.live_set() / K);
   if (edge_queue.reserved_size() > 0) {
     log_trace(jfr, system)("EdgeQueue commit reserve ratio: %f\n",
       ((double)edge_queue.live_set() / (double)edge_queue.reserved_size()));

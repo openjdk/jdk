@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -780,7 +780,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     get_method(R_method);
     verify_oop(Z_tos, state);
     push(state); // Save tos/result.
-    testbit(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
+    testbit_ushort(method2_(R_method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
     z_bfalse(unlocked);
 
     // Don't unlock anything if the _do_not_unlock_if_synchronized flag

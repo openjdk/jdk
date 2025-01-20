@@ -939,6 +939,11 @@ enum LIR_Code {
       , lir_alloc_object
       , lir_monaddr
       , lir_roundfp
+      , lir_sqrt
+      , lir_abs
+      , lir_neg
+      , lir_f2hf
+      , lir_hf2f
       , lir_safepoint
       , lir_unwind
       , lir_load_klass
@@ -955,13 +960,6 @@ enum LIR_Code {
       , lir_mul
       , lir_div
       , lir_rem
-      , lir_sqrt
-      , lir_abs
-      , lir_neg
-      , lir_tan
-      , lir_f2hf
-      , lir_hf2f
-      , lir_log10
       , lir_logic_and
       , lir_logic_or
       , lir_logic_xor
@@ -1357,6 +1355,7 @@ class LIR_Op1: public LIR_Op {
 
  protected:
   LIR_Opr         _opr;   // input operand
+  LIR_Opr         _tmp;
   BasicType       _type;  // Operand types
   LIR_PatchCode   _patch; // only required with patchin (NEEDS_CLEANUP: do we want a special instruction for patching?)
 
@@ -1371,12 +1370,21 @@ class LIR_Op1: public LIR_Op {
   LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result = LIR_OprFact::illegalOpr, BasicType type = T_ILLEGAL, LIR_PatchCode patch = lir_patch_none, CodeEmitInfo* info = nullptr)
     : LIR_Op(code, result, info)
     , _opr(opr)
+    , _tmp(LIR_OprFact::illegalOpr)
+    , _type(type)
+    , _patch(patch)                    { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
+
+  LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result, LIR_Opr tmp, BasicType type = T_ILLEGAL, LIR_PatchCode patch = lir_patch_none, CodeEmitInfo* info = nullptr)
+    : LIR_Op(code, result, info)
+    , _opr(opr)
+    , _tmp(tmp)
     , _type(type)
     , _patch(patch)                    { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
 
   LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result, BasicType type, LIR_PatchCode patch, CodeEmitInfo* info, LIR_MoveKind kind)
     : LIR_Op(code, result, info)
     , _opr(opr)
+    , _tmp(LIR_OprFact::illegalOpr)
     , _type(type)
     , _patch(patch)                    {
     assert(code == lir_move, "must be");
@@ -1386,10 +1394,12 @@ class LIR_Op1: public LIR_Op {
   LIR_Op1(LIR_Code code, LIR_Opr opr, CodeEmitInfo* info)
     : LIR_Op(code, LIR_OprFact::illegalOpr, info)
     , _opr(opr)
+    , _tmp(LIR_OprFact::illegalOpr)
     , _type(T_ILLEGAL)
     , _patch(lir_patch_none)           { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
 
   LIR_Opr in_opr()           const               { return _opr;   }
+  LIR_Opr tmp_opr()          const               { return _tmp;   }
   LIR_PatchCode patch_code() const               { return _patch; }
   BasicType type()           const               { return _type;  }
 
@@ -2272,15 +2282,13 @@ class LIR_List: public CompilationResourceObj {
   void cas_int(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
                LIR_Opr t1, LIR_Opr t2, LIR_Opr result = LIR_OprFact::illegalOpr);
 
-  void abs (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_abs , from, tmp, to)); }
-  void negate(LIR_Opr from, LIR_Opr to, LIR_Opr tmp = LIR_OprFact::illegalOpr)              { append(new LIR_Op2(lir_neg, from, tmp, to)); }
-  void sqrt(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_sqrt, from, tmp, to)); }
+  void abs (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_abs , from, to, tmp)); }
+  void negate(LIR_Opr from, LIR_Opr to, LIR_Opr tmp = LIR_OprFact::illegalOpr) { append(new LIR_Op1(lir_neg, from, to, tmp)); }
+  void sqrt(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_sqrt, from, to, tmp)); }
   void fmad(LIR_Opr from, LIR_Opr from1, LIR_Opr from2, LIR_Opr to) { append(new LIR_Op3(lir_fmad, from, from1, from2, to)); }
   void fmaf(LIR_Opr from, LIR_Opr from1, LIR_Opr from2, LIR_Opr to) { append(new LIR_Op3(lir_fmaf, from, from1, from2, to)); }
-  void log10 (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)              { append(new LIR_Op2(lir_log10, from, LIR_OprFact::illegalOpr, to, tmp)); }
-  void tan (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_tan , from, tmp1, to, tmp2)); }
-  void f2hf(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_f2hf, from, tmp, to)); }
-  void hf2f(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_hf2f, from, tmp, to)); }
+  void f2hf(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_f2hf, from, to, tmp)); }
+  void hf2f(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_hf2f, from, to, tmp)); }
 
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }
   void sub (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = nullptr) { append(new LIR_Op2(lir_sub, left, right, res, info)); }

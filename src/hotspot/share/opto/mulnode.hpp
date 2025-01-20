@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,19 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+template <typename TypeClass>
+Node* make_and(Node* a, Node* b);
+
+template <>
+inline Node* make_and<TypeLong>(Node* a, Node* b) {
+  return new AndLNode(a, b);
+}
+
+template <>
+inline Node* make_and<TypeInt>(Node* a, Node* b) {
+  return new AndINode(a, b);
+}
+
 class LShiftNode : public Node {
 public:
   LShiftNode(Node *in1, Node *in2) : Node(nullptr,in1,in2) {
@@ -358,11 +371,24 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+template <typename TypeClass>
+Node* make_urshift(Node* a, Node* b);
+
+template <>
+inline Node* make_urshift<TypeLong>(Node* a, Node* b) {
+  return new URShiftLNode(a, b);
+}
+
+template <>
+inline Node* make_urshift<TypeInt>(Node* a, Node* b) {
+  return new URShiftINode(a, b);
+}
+
 //------------------------------FmaNode--------------------------------------
 // fused-multiply-add
 class FmaNode : public Node {
 public:
-  FmaNode(Node* c, Node* in1, Node* in2, Node* in3) : Node(c, in1, in2, in3) {
+  FmaNode(Node* in1, Node* in2, Node* in3) : Node(nullptr, in1, in2, in3) {
     assert(UseFMA, "Needs FMA instructions support.");
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
@@ -372,7 +398,7 @@ public:
 // fused-multiply-add double
 class FmaDNode : public FmaNode {
 public:
-  FmaDNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
+  FmaDNode(Node* in1, Node* in2, Node* in3) : FmaNode(in1, in2, in3) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -383,7 +409,7 @@ public:
 // fused-multiply-add float
 class FmaFNode : public FmaNode {
 public:
-  FmaFNode(Node* c, Node* in1, Node* in2, Node* in3) : FmaNode(c, in1, in2, in3) {}
+  FmaFNode(Node* in1, Node* in2, Node* in3) : FmaNode(in1, in2, in3) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }

@@ -49,16 +49,4 @@ public class Util {
             throw new IllegalArgumentException(e);
         }
     }
-
-    // Methods retained temporarily due to usage by jdk.management.
-    static void checkAccess(ManagementPermission p) {
-        // no-op
-    }
-
-    static void checkMonitorAccess() throws SecurityException {
-        // no-op
-    }
-    public static void checkControlAccess() throws SecurityException {
-        // no-op
-    }
 }

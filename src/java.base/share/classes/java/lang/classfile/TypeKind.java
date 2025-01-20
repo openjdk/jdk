@@ -26,6 +26,9 @@
 package java.lang.classfile;
 
 import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
@@ -33,13 +36,17 @@ import java.lang.invoke.TypeDescriptor;
 import jdk.internal.vm.annotation.Stable;
 
 /**
- * Describes the data types Java Virtual Machine operates on.
- * This omits {@code returnAddress} (JVMS {@jvms 2.3.3}),
- * which is only used by discontinued {@link
- * DiscontinuedInstruction.JsrInstruction jsr} and {@link
- * DiscontinuedInstruction.RetInstruction ret} instructions,
- * and includes {@link #VOID void} (JVMS {@jvms 4.3.3}), which
- * appears as a method return type.
+ * Describes the data types Java Virtual Machine operates on.  This omits {@code
+ * returnAddress} (JVMS {@jvms 2.3.3}) and includes {@link #VOID void} (JVMS
+ * {@jvms 4.3.3}), which appears as a method return type.
+ * <p>
+ * The <code>{@index returnAddress}</code> type is only used by discontinued
+ * {@linkplain DiscontinuedInstruction.JsrInstruction jump subroutine} and
+ * {@linkplain DiscontinuedInstruction.RetInstruction return from subroutine}
+ * instructions.  Jump subroutine instructions push {@code returnAddress} to the
+ * operand stack; {@link StoreInstruction astore} instructions store {@code
+ * returnAddress} from the operand stack to local variables; return from
+ * subroutine instructions load {@code returnAddress} from local variables.
  *
  * <h2 id="computational-type">Computational Type</h2>
  * In the {@code class} file format, local variables (JVMS {@jvms 2.6.1}),
@@ -164,7 +171,10 @@ public enum TypeKind {
     /**
      * {@return the code used by the {@link Opcode#NEWARRAY newarray} instruction to create an array
      * of this component type, or {@code -1} if this type is not supported by {@code newarray}}
-     * @jvms 6.5.newarray <i>newarray</i>
+     *
+     * @jvms 6.5.newarray <em>newarray</em>
+     * @see NewPrimitiveArrayInstruction
+     * @see #fromNewarrayCode(int) fromNewarrayCode(int)
      */
     public int newarrayCode() {
         return newarrayCode;
@@ -175,6 +185,7 @@ public enum TypeKind {
      * This is also the category of this type for instructions operating on the operand stack without
      * regard to type (JVMS {@jvms 2.11.1}), such as {@link Opcode#POP pop} versus {@link Opcode#POP2
      * pop2}.
+     *
      * @jvms 2.6.1 Local Variables
      * @jvms 2.6.2 Operand Stacks
      */
@@ -185,6 +196,9 @@ public enum TypeKind {
     /**
      * {@return the {@linkplain ##computational-type computational type} for this type, or {@link #VOID void}
      * for {@code void}}
+     *
+     * @see LoadInstruction
+     * @see StoreInstruction
      */
     public TypeKind asLoadable() {
         return ordinal() < 4 ? INT : this;
@@ -193,9 +207,12 @@ public enum TypeKind {
     /**
      * {@return the component type described by the array code used as an operand to {@link Opcode#NEWARRAY
      * newarray}}
+     *
      * @param newarrayCode the operand of the {@code newarray} instruction
      * @throws IllegalArgumentException if the code is invalid
-     * @jvms 6.5.newarray <i>newarray</i>
+     * @jvms 6.5.newarray <em>newarray</em>
+     * @see NewPrimitiveArrayInstruction
+     * @see #newarrayCode() newarrayCode()
      */
     public static TypeKind fromNewarrayCode(int newarrayCode) {
         return switch (newarrayCode) {

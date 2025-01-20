@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,19 +199,19 @@ bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, siz
 #ifdef ASSERT
 void BitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
-         "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,
+         "BitMap index out of bounds: %zu >= %zu",
          bit, _size);
 }
 
 void BitMap::verify_limit(idx_t bit) const {
   assert(bit <= _size,
-         "BitMap limit out of bounds: " SIZE_FORMAT " > " SIZE_FORMAT,
+         "BitMap limit out of bounds: %zu > %zu",
          bit, _size);
 }
 
 void BitMap::verify_range(idx_t beg, idx_t end) const {
   assert(beg <= end,
-         "BitMap range error: " SIZE_FORMAT " > " SIZE_FORMAT, beg, end);
+         "BitMap range error: %zu > %zu", beg, end);
   verify_limit(end);
 }
 #endif // #ifdef ASSERT
@@ -706,11 +706,11 @@ void BitMap::IteratorImpl::assert_not_empty() const {
 #endif
 
 void BitMap::print_on(outputStream* st) const {
-  st->print("Bitmap (" SIZE_FORMAT " bits):", size());
+  st->print("Bitmap (%zu bits):", size());
   for (idx_t index = 0; index < size(); index++) {
     if ((index % 64) == 0) {
       st->cr();
-      st->print(SIZE_FORMAT_W(5) ":", index);
+      st->print("%5zu:", index);
     }
     if ((index % 8) == 0) {
       st->print(" ");

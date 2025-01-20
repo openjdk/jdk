@@ -65,22 +65,22 @@ public class DockerRunOptions {
         this.addJavaOpts("-XX:+ErrorFileToStderr");
     }
 
-    public DockerRunOptions addDockerOpts(String... opts) {
+    public final DockerRunOptions addDockerOpts(String... opts) {
         Collections.addAll(dockerOpts, opts);
         return this;
     }
 
-    public DockerRunOptions addJavaOpts(String... opts) {
+    public final DockerRunOptions addJavaOpts(String... opts) {
         Collections.addAll(javaOpts, opts);
         return this;
     }
 
-    public DockerRunOptions addJavaOptsAppended(String... opts) {
+    public final DockerRunOptions addJavaOptsAppended(String... opts) {
         Collections.addAll(javaOptsAppended, opts);
         return this;
     }
 
-    public DockerRunOptions addClassOptions(String... opts) {
+    public final DockerRunOptions addClassOptions(String... opts) {
         Collections.addAll(classParams,opts);
         return this;
     }

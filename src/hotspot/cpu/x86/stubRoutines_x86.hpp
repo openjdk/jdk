@@ -38,7 +38,7 @@ enum platform_dependent_constants {
   // AVX512 intrinsics add more code in 64-bit VM,
   // Windows have more code to save/restore registers
   _compiler_stubs_code_size     = 20000 LP64_ONLY(+47000) WINDOWS_ONLY(+2000),
-  _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+2000) ZGC_ONLY(+20000)
+  _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+22000) ZGC_ONLY(+20000)
 };
 
 class x86 {
