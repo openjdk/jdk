@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#ifndef H_POINTS
-#define H_POINTS
+
+#include "export.h"
+#include "math.h"
 
 typedef struct {
-    int x;
-    int y;
-} Point;
+    double x;
+    double y;
+} DoublePoint;
 
-#endif
+EXPORT DoublePoint unit_rotated(double phi) {
+    DoublePoint result = { cos(phi), sin(phi) };
+    return result;
+}
+
+EXPORT void unit_rotated_ptr(DoublePoint* out, double phi) {
+  *out = unit_rotated(phi);
+}
