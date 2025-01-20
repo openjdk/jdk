@@ -95,6 +95,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   DirectiveSet*  _directive;
 #if INCLUDE_JVMCI
   bool                 _has_waiter;
+  int                  _waiting_count;  // See waiting_for_completion_count()
   // Compilation state for a blocking JVMCI compilation
   JVMCICompileState*   _blocking_jvmci_compile_state;
 #endif
@@ -173,6 +174,16 @@ class CompileTask : public CHeapObj<mtCompiler> {
 #endif
 
   Monitor*     lock() const                      { return _lock; }
+
+  // See how many threads are waiting for this task. Must have lock to read this.
+  int waiting_for_completion_count() { return _waiting_count; }
+  // Indicates that a thread is waiting for this task to complete. Must have lock to use this.
+  void inc_waiting_for_completion() { _waiting_count++; }
+  // Indicates that a thread stopped waiting for this task to complete. Must have lock to use this.
+  void dec_waiting_for_completion() {
+    assert(_waiting_count > 0, "waiting count is not positive");
+    _waiting_count--;
+  }
 
   void         mark_complete()                   { _is_complete = true; }
   void         mark_success()                    { _is_success = true; }
