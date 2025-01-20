@@ -35,7 +35,7 @@ import static org.testng.Assert.*;
 
 public class CallBufferCacheTest {
     Unsafe UNSAFE = Unsafe.getUnsafe();
-    
+
     @Test
     public void testEmpty() {
         assertEquals(CallBufferCache.acquire(), 0);
