@@ -121,6 +121,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
+        _declined_trigger_count++;
         return false;
       }
     }
@@ -128,6 +129,8 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 
   // inherited triggers have already decided to start a cycle, so no further evaluation is required
   if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
+    _previous_trigger_declinations = _declined_trigger_count;
+    _declined_trigger_count = 0;
     return true;
   }
 
@@ -142,6 +145,8 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // Detect unsigned arithmetic underflow
     assert(promo_potential < heap->capacity(), "Sanity");
     log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
+    _previous_trigger_declinations = _declined_trigger_count;
+    _declined_trigger_count = 0;
     return true;
   }
 
@@ -152,9 +157,12 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // candidates, but has not completed. There is no point in trying to start the young cycle before the old
     // cycle completes.
     log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
+    _previous_trigger_declinations = _declined_trigger_count;
+    _declined_trigger_count = 0;
     return true;
   }
 
+  _declined_trigger_count++;
   return false;
 }
 

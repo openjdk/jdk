@@ -47,6 +47,8 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 }
 
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
+  _declined_trigger_count(0),
+  _previous_trigger_declinations(0),
   _space_info(space_info),
   _region_data(nullptr),
   _guaranteed_gc_interval(0),
@@ -189,6 +191,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
     log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
+    _previous_trigger_declinations = _declined_trigger_count;
+    _declined_trigger_count = 0;
     return true;
   }
 
@@ -197,10 +201,12 @@ bool ShenandoahHeuristics::should_start_gc() {
     if (last_time_ms > _guaranteed_gc_interval) {
       log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
                    last_time_ms, _guaranteed_gc_interval);
+      _previous_trigger_declinations = _declined_trigger_count;
+      _declined_trigger_count = 0;
       return true;
     }
   }
-
+  _declined_trigger_count++;
   return false;
 }
 
@@ -211,6 +217,12 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
+
+  if ((_previous_trigger_declinations < 5) && (step > 0)) {
+    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow 5 checks following
+    // previous GC for self calibration without penalty.
+    step = 0;
+  }
 
   intx new_val = _gc_time_penalties + step;
   if (new_val < 0) {
