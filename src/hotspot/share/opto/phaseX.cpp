@@ -1571,6 +1571,17 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_Phi:
       return false;
+
+    // ConvI2LNode::Identity does
+    // convert I2L(L2I(x)) => x
+    //
+    // Investigate why this did not already happen during IGVN.
+    //
+    // Found with:
+    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-A
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_ConvI2L:
+      return false;
   }
 
   if (n->is_Load()) {
