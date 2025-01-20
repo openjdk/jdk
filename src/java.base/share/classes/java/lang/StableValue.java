@@ -44,10 +44,10 @@ import java.util.function.Supplier;
 /**
  * A stable value is an immutable holder of deferred content.
  * <p>
- * A {@linkplain StableValue {@code StableValue<T>}} is created using the factory method
- * {@linkplain StableValue#ofUnset() {@code StableValue.ofUnset()}}. When created, the
- * stable value is <em>unset</em>, which means it holds no <em>content</em>. Its content
- * , of type {@code T}, can be <em>set</em> by calling
+ * A {@linkplain StableValue {@code StableValue<T>}} can be created using the factory
+ * method {@linkplain StableValue#ofUnset() {@code StableValue.ofUnset()}}. When created
+ * this way, the stable value is <em>unset</em>, which means it holds no <em>content</em>.
+ * Its content, of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
  * or {@linkplain #orElseSet(Supplier) orElseSet()}. Once set, the content
  * can never change and can be retrieved by calling {@linkplain #orElseThrow() orElseThrow()}
@@ -148,7 +148,7 @@ import java.util.function.Supplier;
  * stable supplier, without having to go through an accessor method like {@code getLogger()}.
  * <p>
  * A <em>stable int function</em> is a function that takes an {@code int} parameter and
- * uses it to compute a result that is then cached into the backing stable value storage
+ * uses it to compute a result that is then cached by the backing stable value storage
  * for that parameter value. A stable int function is created via the
  * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.intFunction()}
  * factory. Upon creation, the input range (i.e. [0, size)) is specified together with
@@ -323,8 +323,8 @@ import java.util.function.Supplier;
  * As objects can be set via stable values but never removed, this can be a source
  * of unintended memory leaks. A stable value's content is
  * {@linkplain java.lang.ref##reachability strongly reachable}. Clients are advised that
- * {@linkplain java.lang.ref##reachability reachable} stable values will hold set content
- * perpetually.
+ * {@linkplain java.lang.ref##reachability reachable} stable values will hold their set
+ * content perpetually.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
@@ -336,11 +336,12 @@ import java.util.function.Supplier;
  *           a class and is usually neither exposed directly via accessors nor passed as
  *           a method parameter.
  *           Instance fields explicitly declared as {@code StableValue} or one-dimensional
- *           arrays thereof are eligible for certain JVM optimizations where normal
- *           instance fields are not. This comes with restrictions on reflective
- *           modifications. Although most ways of reflective modification of such fields
- *           are disabled, it is strongly discouraged to circumvent these protection means
- *           as reflectively modifying such fields may lead to unspecified behavior.
+ *           arrays thereof might in some VM implementation be eligible for certain
+ *           JVM optimizations where normal instance fields are not. In such cases, this
+ *           comes with restrictions on reflective modifications -- although most ways of
+ *           reflective modification of such fields are disabled, it is strongly
+ *           discouraged to circumvent these protection means as reflectively modifying
+ *           such fields may lead to unspecified behavior.
  *
  * @param <T> type of the content
  *
@@ -461,7 +462,7 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new set stable value holding the provided {@code content}}
+     * {@return a new pre-set stable value with the provided {@code content}}
      *
      * @param content to set
      * @param <T>     type of the content
