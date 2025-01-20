@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,7 +277,7 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   }
 
   log_info_p(gc, init)("Uncommit: Enabled");
-  log_info_p(gc, init)("Uncommit Delay: " UINTX_FORMAT "s", ZUncommitDelay);
+  log_info_p(gc, init)("Uncommit Delay: %zus", ZUncommitDelay);
 }
 
 void ZPhysicalMemoryManager::alloc(ZPhysicalMemory& pmem, size_t size) {

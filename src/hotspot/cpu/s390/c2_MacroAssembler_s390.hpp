@@ -44,8 +44,10 @@
   //   Kills:    tmp, Z_R0, Z_R1.
   //   Early clobber: result.
   //   Boolean precise controls accuracy of result value.
-  unsigned int string_compress(Register result, Register src, Register dst, Register cnt,
-                               Register tmp,    bool precise, bool toASCII);
+  unsigned int string_compress(Register result, Register Rsrc, Register Rdst, Register Rcnt,
+                               Register tmp, bool precise, bool toASCII, VectorRegister Vtmp1, VectorRegister Vtmp2,
+                               VectorRegister Vmask, VectorRegister Vzero, VectorRegister Vsrc_first, VectorRegister v21,
+                               VectorRegister v22, VectorRegister Vsrc_last);
 
   // Inflate byte[] to char[].
   unsigned int string_inflate_trot(Register src, Register dst, Register cnt, Register tmp);
@@ -54,14 +56,16 @@
   //   Restores: src, dst
   //   Uses:     cnt
   //   Kills:    tmp, Z_R0, Z_R1.
-  unsigned int string_inflate(Register src, Register dst, Register cnt, Register tmp);
+  unsigned int string_inflate(Register src, Register dst, Register cnt, Register tmp, VectorRegister v20, VectorRegister v21,
+                              VectorRegister v22, VectorRegister v23, VectorRegister v24, VectorRegister v25);
 
   // Inflate byte[] to char[], length known at compile time.
   //   Restores: src, dst
   //   Kills:    tmp, Z_R0, Z_R1.
   // Note:
   //   len is signed int. Counts # characters, not bytes.
-  unsigned int string_inflate_const(Register src, Register dst, Register tmp, int len);
+  unsigned int string_inflate_const(Register src, Register dst, Register tmp, int len , VectorRegister v20, VectorRegister v21,
+                                    VectorRegister v22, VectorRegister v23, VectorRegister v24, VectorRegister v25);
 
   unsigned int count_positives(Register result, Register src, Register cnt, Register tmp);
 

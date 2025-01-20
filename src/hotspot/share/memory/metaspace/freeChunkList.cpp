@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -155,7 +155,7 @@ void FreeChunkListVector::print_on(outputStream* st) const {
     list_for_level(l)->print_on(st);
     st->cr();
   }
-  st->print_cr("total chunks: %d, total word size: " SIZE_FORMAT ".",
+  st->print_cr("total chunks: %d, total word size: %zu.",
                num_chunks(), word_size());
 }
 

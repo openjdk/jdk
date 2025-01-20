@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,11 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
-#include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
 MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
-PlatformMutex* MemoryFileTracker::Instance::_mutex = nullptr;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
@@ -87,7 +85,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     if (prev->val().out.type() == VMATree::StateType::Committed) {
       const VMATree::position& start_addr = prev->key();
       const VMATree::position& end_addr = current->key();
-      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s from",
+      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated %zu%s" " for %s from",
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
@@ -132,7 +130,6 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
   if (_tracker == nullptr) return false;
   new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
-  _mutex = new PlatformMutex();
   return true;
 }
 
@@ -188,12 +185,4 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
 
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
-}
-
-MemoryFileTracker::Instance::Locker::Locker() {
-  MemoryFileTracker::Instance::_mutex->lock();
-}
-
-MemoryFileTracker::Instance::Locker::~Locker() {
-  MemoryFileTracker::Instance::_mutex->unlock();
 }

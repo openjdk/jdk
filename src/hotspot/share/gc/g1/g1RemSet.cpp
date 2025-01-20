@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public:
   // dirty card, i.e. actually needs scanning.
   bool chunk_needs_scan(uint const region_idx, uint const card_in_region) const {
     size_t const idx = ((size_t)region_idx << _log_scan_chunks_per_region) + (card_in_region >> _scan_chunks_shift);
-    assert(idx < _num_total_scan_chunks, "Index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
+    assert(idx < _num_total_scan_chunks, "Index %zu out of bounds %zu",
            idx, _num_total_scan_chunks);
     return _region_scan_chunks[idx];
   }
@@ -347,7 +347,7 @@ public:
 
   void set_chunk_dirty(size_t const card_idx) {
     assert((card_idx >> _scan_chunks_shift) < _num_total_scan_chunks,
-           "Trying to access index " SIZE_FORMAT " out of bounds " SIZE_FORMAT,
+           "Trying to access index %zu out of bounds %zu",
            card_idx >> _scan_chunks_shift, _num_total_scan_chunks);
     size_t const chunk_idx = card_idx >> _scan_chunks_shift;
     _region_scan_chunks[chunk_idx] = true;
@@ -1438,7 +1438,7 @@ void G1RemSet::print_merge_heap_roots_stats() {
     size_t total_old_region_cards =
       (g1h->num_regions() - (g1h->num_free_regions() - g1h->collection_set()->cur_length())) * G1HeapRegion::CardsPerRegion;
 
-    ls.print_cr("Visited cards " SIZE_FORMAT " Total dirty " SIZE_FORMAT " (%.2lf%%) Total old " SIZE_FORMAT " (%.2lf%%)",
+    ls.print_cr("Visited cards %zu Total dirty %zu (%.2lf%%) Total old %zu (%.2lf%%)",
                 num_visited_cards,
                 total_dirty_region_cards,
                 percent_of(num_visited_cards, total_dirty_region_cards),
@@ -1471,7 +1471,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
 
   {
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " regions",
+    log_debug(gc, ergo)("Running %s using %u workers for %zu regions",
                         cl.name(), num_workers, increment_length);
     workers->run_task(&cl, num_workers);
   }
@@ -1504,7 +1504,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #ifdef ASSERT
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   assert(g1h->is_in(ct->addr_for(card_ptr)),
-         "Card at " PTR_FORMAT " index " SIZE_FORMAT " representing heap at " PTR_FORMAT " (%u) must be in committed heap",
+         "Card at " PTR_FORMAT " index %zu representing heap at " PTR_FORMAT " (%u) must be in committed heap",
          p2i(card_ptr),
          ct->index_for(ct->addr_for(card_ptr)),
          p2i(ct->addr_for(card_ptr)),
