@@ -46,10 +46,9 @@ public class RelaxedMath {
 
     /**
      * Modes, can be composed with logical OR "|" to combine bit pattern.
+     *  1: Allow reduction reordering.
+     *  2: Allow fusion of "(a * b) + c" to "fma(a, b, c)".
      */
-    public static int Default = 0;
-    public static int AllowReductionReordering = 1;
-    public static int AllowFMA = 2;
 
     // TODO description?
     @IntrinsicCandidate

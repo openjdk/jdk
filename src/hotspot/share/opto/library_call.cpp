@@ -5030,6 +5030,10 @@ bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
   Node* result = nullptr;
 
   // Extract the RelaxedMathOptimizationMode (Default = 0).
+  // Note: it must be a constant already now, so no final field loads
+  // allowed. We could make this smarter but it might require us to
+  // add additional nodes, so that we can capture the mode to constant
+  // fold later during IGVN.
   const TypeInt* mode_t = gvn().type(n3)->is_int();
   jint mode_con = 0;
   if (mode_t->is_con()) {

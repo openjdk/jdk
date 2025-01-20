@@ -101,7 +101,7 @@ public class TestRelaxedMath {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
-            sum = RelaxedMath.add(sum, val, RelaxedMath.Default);
+            sum = RelaxedMath.add(sum, val, /* default: no reordering */ 0);
         }
         return sum;
     }
@@ -120,7 +120,7 @@ public class TestRelaxedMath {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
-            sum = RelaxedMath.add(sum, val, RelaxedMath.AllowReductionReordering);
+            sum = RelaxedMath.add(sum, val, /* allow reduction reordering */ 1);
         }
         return sum;
     }
