@@ -369,9 +369,10 @@ void CompileQueue::free_all() {
     bool found_waiter = false;
     {
       MutexLocker ct_lock(current->lock());
+      assert(current->waiting_for_completion_count() <= 1, "more than one thread are waiting for task");
       while (current->waiting_for_completion_count() > 0) {
         // While other threads are waiting for this task, we must wake them up one-by-one
-        // so they will stop waiting, before we free the task.
+        // so they will stop waiting.
         current->lock()->notify();
         // We notified, now it's time for us to wait for the other thread to wake us up
         // once it stopped waiting.
