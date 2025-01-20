@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,29 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6648816
- * @summary REGRESSION: setting -Djava.security.debug=failure result in NPE
- * in ACC
- * @run main/othervm -Djava.security.debug=failure FailureDebugOption
+package compiler.lib.generators;
+
+/**
+ * Provides a uniform float distribution random generator, in the provided range [lo, hi).
  */
+final class UniformFloatGenerator extends UniformIntersectionRestrictableGenerator<Float> {
+    /**
+     * Creates a new {@link UniformFloatGenerator}.
+     *
+     * @param lo Lower bound of the range (inclusive).
+     * @param hi Higher bound of the range (exclusive).
+     */
+    public UniformFloatGenerator(Generators g, float lo, float hi) {
+        super(g, lo, hi);
+    }
 
-import java.security.ProtectionDomain;
-import java.security.AccessController;
-import java.security.AccessControlException;
-import java.security.BasicPermission;
+    @Override
+    public Float next() {
+        return g.random.nextFloat(lo(), hi());
+    }
 
-public class FailureDebugOption {
-
-   public static void main (String argv[]) throws Exception {
-        try {
-            AccessController.checkPermission(
-                        new BasicPermission("no such permission"){});
-        } catch (NullPointerException npe) {
-           throw new Exception("Unexpected NullPointerException for security" +
-                        " debug option, -Djava.security.debug=failure");
-        } catch (AccessControlException ace) {
-        }
-   }
+    @Override
+    protected RestrictableGenerator<Float> doRestrictionFromIntersection(Float lo, Float hi) {
+        return new UniformFloatGenerator(g, lo, hi);
+    }
 }

@@ -19,20 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
-#define OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
+package compiler.lib.generators;
 
-#include "utilities/compilerWarnings.hpp"
+/**
+ * Provides an any-bits double distribution random generator, i.e. the bits are uniformly sampled,
+ * thus creating any possible double value, including the multiple different NaN representations.
+ */
+final class AnyBitsDoubleGenerator extends BoundGenerator<Double> {
+    /**
+     * Create a new {@link AnyBitsDoubleGenerator}.
+     */
+    public AnyBitsDoubleGenerator(Generators g) {
+        super(g);
+    }
 
-#include <stddef.h> // for size_t
-
-// _fullpath with a null first argument mallocs a string for the result.
-FORBID_IMPORTED_C_FUNCTION(char* _fullpath(char*, const char*, size_t), "use os::realpath");
-
-// _snprintf does NOT null terminate if the output would exceed the buffer size.
-FORBID_C_FUNCTION(int _snprintf(char*, size_t, const char*, ...), "use os::snprintf");
-
-#endif // OS_WINDOWS_FORBIDDENFUNCTIONS_WINDOWS_HPP
+    @Override
+    public Double next() {
+        return Double.longBitsToDouble(g.random.nextLong());
+    }
+}

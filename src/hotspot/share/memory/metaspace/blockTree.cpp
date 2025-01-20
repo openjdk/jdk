@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,7 +44,7 @@ const size_t BlockTree::MinWordSize;
   ", left " PTR_FORMAT \
   ", right " PTR_FORMAT \
   ", next " PTR_FORMAT \
-  ", size " SIZE_FORMAT
+  ", size %zu"
 
 #define NODE_FORMAT_ARGS(n) \
   p2i(n), \

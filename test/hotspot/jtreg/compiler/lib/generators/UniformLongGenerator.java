@@ -19,27 +19,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP
-#define OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP
+package compiler.lib.generators;
 
-#include "utilities/compilerWarnings.hpp"
-#include "utilities/globalDefinitions.hpp"
+/**
+ * Provides a uniform long distribution random generator.
+ */
+final class UniformLongGenerator extends UniformIntersectionRestrictableGenerator<Long> {
+    public UniformLongGenerator(Generators g, Long lo, Long hi) {
+        super(g, lo, hi);
+    }
 
-// Provide wrappers for some functions otherwise forbidden from use in HotSpot.
-// See forbiddenFunctions.hpp for details.
+    @Override
+    public Long next() {
+        if (hi() == Long.MAX_VALUE) {
+            if (lo() == Long.MIN_VALUE) {
+                return g.random.nextLong();
+            }
+            return g.random.nextLong(lo() - 1, hi()) + 1;
+        }
+        return g.random.nextLong(lo(), hi() + 1);
+    }
 
-namespace permit_forbidden_function {
-BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
-
-// Used by the POSIX implementation of os::realpath.
-inline char* realpath(const char* path, char* resolved_path) {
-  return ::realpath(path, resolved_path);
+    @Override
+    protected RestrictableGenerator<Long> doRestrictionFromIntersection(Long lo, Long hi) {
+        return new UniformLongGenerator(g, lo, hi);
+    }
 }
-
-END_ALLOW_FORBIDDEN_FUNCTIONS
-} // namespace permit_forbidden_function
-
-#endif // OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP

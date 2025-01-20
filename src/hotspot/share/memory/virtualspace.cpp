@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre
 
   debug_only(warning(
       "INFO: os::commit_memory(" PTR_FORMAT ", " PTR_FORMAT
-      " size=" SIZE_FORMAT ", executable=%d) failed",
+      " size=%zu, executable=%d) failed",
       p2i(start), p2i(start + size), size, executable);)
 
   return false;
@@ -426,8 +426,8 @@ void VirtualSpace::print_on(outputStream* out) const {
   out->print   ("Virtual space:");
   if (special()) out->print(" (pinned in memory)");
   out->cr();
-  out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
-  out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
+  out->print_cr(" - committed: %zu", committed_size());
+  out->print_cr(" - reserved:  %zu", reserved_size());
   out->print_cr(" - [low, high]:     [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low()), p2i(high()));
   out->print_cr(" - [low_b, high_b]: [" PTR_FORMAT ", " PTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }

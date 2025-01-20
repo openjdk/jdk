@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
@@ -122,7 +123,7 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The heap region is populated by HeapShared::archive_objects.
+// The heap region is written by HeapShared::write_heap().
 //
 // The bitmap region is used to relocate the ro/rw/hp regions.
 
@@ -264,7 +265,7 @@ static char* compute_shared_base(size_t cds_max) {
 
 void MetaspaceShared::initialize_for_static_dump() {
   assert(CDSConfig::is_dumping_static_archive(), "sanity");
-  log_info(cds)("Core region alignment: " SIZE_FORMAT, core_region_alignment());
+  log_info(cds)("Core region alignment: %zu", core_region_alignment());
   // The max allowed size for CDS archive. We use this to limit SharedBaseAddress
   // to avoid address space wrap around.
   size_t cds_max;
@@ -285,7 +286,7 @@ void MetaspaceShared::initialize_for_static_dump() {
   size_t symbol_rs_size = LP64_ONLY(3 * G) NOT_LP64(128 * M);
   _symbol_rs = MemoryReserver::reserve(symbol_rs_size, mtClassShared);
   if (!_symbol_rs.is_reserved()) {
-    log_error(cds)("Unable to reserve memory for symbols: " SIZE_FORMAT " bytes.", symbol_rs_size);
+    log_error(cds)("Unable to reserve memory for symbols: %zu bytes.", symbol_rs_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
   _symbol_region.init(&_symbol_rs, &_symbol_vs);
@@ -544,6 +545,7 @@ public:
 
   virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
+    AOTArtifactFinder::all_cached_classes_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
     Universe::metaspace_pointers_do(it);
     vmSymbols::metaspace_pointers_do(it);
@@ -614,7 +616,15 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  SystemDictionaryShared::find_all_archivable_classes();
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (HeapShared::can_write() && _extra_interned_strings != nullptr) {
+    for (int i = 0; i < _extra_interned_strings->length(); i ++) {
+      OopHandle string = _extra_interned_strings->at(i);
+      HeapShared::add_to_dumped_interned_strings(string.resolve());
+    }
+  }
+#endif
 
   _builder.gather_source_objs();
   _builder.reserve_buffer();
@@ -626,12 +636,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   _builder.dump_ro_metadata();
   _builder.relocate_metaspaceobj_embedded_pointers();
 
-  dump_java_heap_objects(_builder.klasses());
-  dump_shared_symbol_table(_builder.symbols());
-
   log_info(cds)("Make classes shareable");
   _builder.make_klasses_shareable();
   MetaspaceShared::make_method_handle_intrinsics_shareable();
+
+  dump_java_heap_objects(_builder.klasses());
+  dump_shared_symbol_table(_builder.symbols());
 
   char* early_serialized_data = dump_early_read_only_tables();
   char* serialized_data = dump_read_only_tables();
@@ -759,7 +769,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-                     SIZE_FORMAT "M", MaxHeapSize/M);
+                     "%zuM", MaxHeapSize/M);
       MetaspaceShared::writing_error();
     } else {
       log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
@@ -788,15 +798,15 @@ void MetaspaceShared::adjust_heap_sizes_for_dumping() {
   julong max_heap_size = (julong)(4 * G);
 
   if (MinHeapSize > max_heap_size) {
-    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MinHeapSize/M);
+    log_debug(cds)("Setting MinHeapSize to 4G for CDS dumping, original size = %zuM", MinHeapSize/M);
     FLAG_SET_ERGO(MinHeapSize, max_heap_size);
   }
   if (InitialHeapSize > max_heap_size) {
-    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", InitialHeapSize/M);
+    log_debug(cds)("Setting InitialHeapSize to 4G for CDS dumping, original size = %zuM", InitialHeapSize/M);
     FLAG_SET_ERGO(InitialHeapSize, max_heap_size);
   }
   if (MaxHeapSize > max_heap_size) {
-    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = " SIZE_FORMAT "M", MaxHeapSize/M);
+    log_debug(cds)("Setting MaxHeapSize to 4G for CDS dumping, original size = %zuM", MaxHeapSize/M);
     FLAG_SET_ERGO(MaxHeapSize, max_heap_size);
   }
 }
@@ -1000,7 +1010,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
 
 #if INCLUDE_CDS_JAVA_HEAP
 void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
-  if(!HeapShared::can_write()) {
+  if (!HeapShared::can_write()) {
     log_info(cds)(
       "Archived java heap is not supported as UseG1GC "
       "and UseCompressedClassPointers are required."
@@ -1008,25 +1018,7 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
       BOOL_TO_STR(UseG1GC), BOOL_TO_STR(UseCompressedClassPointers));
     return;
   }
-  // Find all the interned strings that should be dumped.
-  int i;
-  for (i = 0; i < klasses->length(); i++) {
-    Klass* k = klasses->at(i);
-    if (k->is_instance_klass()) {
-      InstanceKlass* ik = InstanceKlass::cast(k);
-      ik->constants()->add_dumped_interned_strings();
-    }
-  }
-  if (_extra_interned_strings != nullptr) {
-    for (i = 0; i < _extra_interned_strings->length(); i ++) {
-      OopHandle string = _extra_interned_strings->at(i);
-      HeapShared::add_to_dumped_interned_strings(string.resolve());
-    }
-  }
-
-  HeapShared::archive_objects(&_heap_info);
-  ArchiveBuilder::OtherROAllocMark mark;
-  HeapShared::write_subgraph_info_table();
+  HeapShared::write_heap(&_heap_info);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -1090,7 +1082,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   FileMapInfo* dynamic_mapinfo = nullptr;
 
   if (static_mapinfo != nullptr) {
-    log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
+    log_info(cds)("Core region alignment: %zu", static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
 
     // First try to map at the requested address
@@ -1244,9 +1236,9 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
     }
 #endif // ASSERT
 
-    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved archive_space_rs [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
                    p2i(archive_space_rs.base()), p2i(archive_space_rs.end()), archive_space_rs.size());
-    log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (" SIZE_FORMAT ") bytes",
+    log_info(cds)("Reserved class_space_rs   [" INTPTR_FORMAT " - " INTPTR_FORMAT "] (%zu) bytes",
                    p2i(class_space_rs.base()), p2i(class_space_rs.end()), class_space_rs.size());
 
     if (MetaspaceShared::use_windows_memory_mapping()) {
@@ -1475,8 +1467,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   size_t class_space_size = CompressedClassSpaceSize;
   assert(CompressedClassSpaceSize > 0 &&
          is_aligned(CompressedClassSpaceSize, class_space_alignment),
-         "CompressedClassSpaceSize malformed: "
-         SIZE_FORMAT, CompressedClassSpaceSize);
+         "CompressedClassSpaceSize malformed: %zu", CompressedClassSpaceSize);
 
   const size_t ccs_begin_offset = align_up(archive_space_size, class_space_alignment);
   const size_t gap_size = ccs_begin_offset - archive_space_size;
@@ -1486,7 +1477,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   guarantee(archive_space_size < max_encoding_range_size - class_space_alignment, "Archive too large");
   if ((archive_space_size + gap_size + class_space_size) > max_encoding_range_size) {
     class_space_size = align_down(max_encoding_range_size - archive_space_size - gap_size, class_space_alignment);
-    log_info(metaspace)("CDS initialization: reducing class space size from " SIZE_FORMAT " to " SIZE_FORMAT,
+    log_info(metaspace)("CDS initialization: reducing class space size from %zu to %zu",
         CompressedClassSpaceSize, class_space_size);
     FLAG_SET_ERGO(CompressedClassSpaceSize, class_space_size);
   }
@@ -1608,8 +1599,8 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
 
   mapinfo->set_is_mapped(false);
   if (mapinfo->core_region_alignment() != (size_t)core_region_alignment()) {
-    log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: " SIZE_FORMAT
-                  " actual: " SIZE_FORMAT, mapinfo->core_region_alignment(), core_region_alignment());
+    log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: %zu"
+                  " actual: %zu", mapinfo->core_region_alignment(), core_region_alignment());
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -1778,7 +1769,7 @@ void MetaspaceShared::print_on(outputStream* st) {
     address static_top = (address)_shared_metaspace_static_top;
     address top = (address)MetaspaceObj::shared_metaspace_top();
     st->print("[" PTR_FORMAT "-" PTR_FORMAT "-" PTR_FORMAT "), ", p2i(base), p2i(static_top), p2i(top));
-    st->print("size " SIZE_FORMAT ", ", top - base);
+    st->print("size %zu, ", top - base);
     st->print("SharedBaseAddress: " PTR_FORMAT ", ArchiveRelocationMode: %d.", SharedBaseAddress, ArchiveRelocationMode);
   } else {
     st->print("CDS archive(s) not mapped");

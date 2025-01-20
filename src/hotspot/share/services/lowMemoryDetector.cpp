@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ void SensorInfo::clear(int count, TRAPS) {
 
 #ifndef PRODUCT
 void SensorInfo::print() {
-  tty->print_cr("%s count = " SIZE_FORMAT " pending_triggers = %d pending_clears = %d",
+  tty->print_cr("%s count = %zu pending_triggers = %d pending_clears = %d",
                 (_sensor_on ? "on" : "off"),
                 _sensor_count, _pending_trigger_count, _pending_clear_count);
 }

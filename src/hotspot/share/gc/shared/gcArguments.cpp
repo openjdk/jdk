@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,7 +99,7 @@ void GCArguments::assert_size_info() {
 #endif // ASSERT
 
 void GCArguments::initialize_size_info() {
-  log_debug(gc, heap)("Minimum heap " SIZE_FORMAT "  Initial heap " SIZE_FORMAT "  Maximum heap " SIZE_FORMAT,
+  log_debug(gc, heap)("Minimum heap %zu  Initial heap %zu  Maximum heap %zu",
                       MinHeapSize, InitialHeapSize, MaxHeapSize);
 
   DEBUG_ONLY(assert_size_info();)
@@ -109,10 +109,10 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   assert(SpaceAlignment != 0, "Space alignment not set up properly");
   assert(HeapAlignment != 0, "Heap alignment not set up properly");
   assert(HeapAlignment >= SpaceAlignment,
-         "HeapAlignment: " SIZE_FORMAT " less than SpaceAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu less than SpaceAlignment: %zu",
          HeapAlignment, SpaceAlignment);
   assert(HeapAlignment % SpaceAlignment == 0,
-         "HeapAlignment: " SIZE_FORMAT " not aligned by SpaceAlignment: " SIZE_FORMAT,
+         "HeapAlignment: %zu not aligned by SpaceAlignment: %zu",
          HeapAlignment, SpaceAlignment);
 
   if (FLAG_IS_CMDLINE(MaxHeapSize)) {

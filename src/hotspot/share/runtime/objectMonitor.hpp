@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,12 +84,9 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
-// - The _metadata field must be at offset 0 because the displaced header
-//   from markWord is stored there. We do not want markWord.hpp to include
-//   ObjectMonitor.hpp to avoid exposing ObjectMonitor everywhere. This
-//   means that ObjectMonitor cannot inherit from any other class nor can
-//   it use any virtual member functions. This restriction is critical to
-//   the proper functioning of the VM.
+// - For performance reasons we ensure the _metadata field is located at offset 0,
+//   which in turn means that ObjectMonitor can't inherit from any other class nor use
+//   any virtual member functions.
 // - The _metadata and _owner fields should be separated by enough space
 //   to avoid false sharing due to parallel access by different threads.
 //   This is an advisory recommendation.
@@ -117,11 +114,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // - See TEST_VM(ObjectMonitor, sanity) gtest for how critical restrictions are
 //   enforced.
-// - Adjacent ObjectMonitors should be separated by enough space to avoid
-//   false sharing. This is handled by the ObjectMonitor allocation code
-//   in synchronizer.cpp. Also see TEST_VM(SynchronizerTest, sanity) gtest.
 //
-// Futures notes:
 // - Separating _owner from the <remaining_fields> by enough space to
 //   avoid false sharing might be profitable. Given that the CAS in
 //   monitorenter will invalidate the line underlying _owner. We want
@@ -132,7 +125,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //   would make them immune to CAS-based invalidation from the _owner
 //   field.
 //
-// - The _recursions field should be of type int, or int32_t but not
+// - TODO: The _recursions field should be of type int, or int32_t but not
 //   intptr_t. There's no reason to use a 64-bit type for this field
 //   in a 64-bit JVM.
 
@@ -151,7 +144,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // ParkEvent of unblocker thread.
   static ParkEvent* _vthread_unparker_ParkEvent;
 
-  // The sync code expects the metadata field to be at offset zero (0).
+  // Because of frequent access, the the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
   // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
   // Contains the _object's hashCode.

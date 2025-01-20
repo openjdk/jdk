@@ -122,7 +122,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       bool reg_live = region->has_live();
       bool bm_live = ctx->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
-             "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: " SIZE_FORMAT,
+             "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
 #endif
       if (!region->has_live()) {
@@ -143,7 +143,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   // given the amount of immediately reclaimable garbage. If we do, figure out the collection set.
 
   assert (immediate_garbage <= total_garbage,
-          "Cannot have more immediate garbage than total garbage: " SIZE_FORMAT "%s vs " SIZE_FORMAT "%s",
+          "Cannot have more immediate garbage than total garbage: %zu%s vs %zu%s",
           byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
           byte_size_in_proper_unit(total_garbage),     proper_unit_for_byte_size(total_garbage));
 
@@ -157,9 +157,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t collectable_garbage = collection_set->garbage() + immediate_garbage;
   size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
 
-  log_info(gc, ergo)("Collectable Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), "
-                     "Immediate: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), " SIZE_FORMAT " regions, "
-                     "CSet: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), " SIZE_FORMAT " regions",
+  log_info(gc, ergo)("Collectable Garbage: %zu%s (%zu%%), "
+                     "Immediate: %zu%s (%zu%%), %zu regions, "
+                     "CSet: %zu%s (%zu%%), %zu regions",
 
                      byte_size_in_proper_unit(collectable_garbage),
                      proper_unit_for_byte_size(collectable_garbage),

@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +83,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
 
   log_info(gc, ergo)(
-          "Adaptive CSet Selection for YOUNG. Max Evacuation: " SIZE_FORMAT "%s, Actual Free: " SIZE_FORMAT "%s.",
+          "Adaptive CSet Selection for YOUNG. Max Evacuation: %zu%s, Actual Free: %zu%s.",
           byte_size_in_proper_unit(max_cset), proper_unit_for_byte_size(max_cset),
           byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
@@ -150,7 +151,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     // If concurrent weak root processing is in progress, it means the old cycle has chosen mixed collection
     // candidates, but has not completed. There is no point in trying to start the young cycle before the old
     // cycle completes.
-    log_trigger("Expedite mixed evacuation of " SIZE_FORMAT " regions", mixed_candidates);
+    log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
     return true;
   }
 

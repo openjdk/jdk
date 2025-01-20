@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,11 +337,11 @@ class AdaptiveSizePolicySpaceOverheadTester: public GCOverheadTester {
 
     log_trace(gc, ergo)(
           "AdaptiveSizePolicySpaceOverheadTester::is_exceeded:"
-          " promo_limit: " SIZE_FORMAT
-          " total_free_limit: " SIZE_FORMAT
-          " max_old_gen_size: " SIZE_FORMAT
-          " max_eden_size: " SIZE_FORMAT
-          " mem_free_limit: " SIZE_FORMAT,
+          " promo_limit: %zu"
+          " total_free_limit: %zu"
+          " max_old_gen_size: %zu"
+          " max_eden_size: %zu"
+          " mem_free_limit: %zu",
           promo_limit, total_free_limit,
           _max_old_gen_size, _max_eden_size,
           (size_t)mem_free_limit);

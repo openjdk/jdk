@@ -19,27 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_WINDOWS_PERMITFORBIDDENFUNCTIONS_WINDOWS_HPP
-#define OS_WINDOWS_PERMITFORBIDDENFUNCTIONS_WINDOWS_HPP
+package compiler.lib.generators;
 
-#include "utilities/compilerWarnings.hpp"
-#include "utilities/globalDefinitions.hpp"
+import java.util.ArrayList;
+import java.util.Collection;
 
-// Provide wrappers for some functions otherwise forbidden from use in HotSpot.
-// See forbiddenFunctions.hpp for details.
+class RandomElementGenerator<T> extends BoundGenerator<T> {
+    private final ArrayList<T> elements;
+    private final Generator<Integer> generator;
 
-namespace permit_forbidden_function {
-BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
+    RandomElementGenerator(Generators g, Collection<T> elements) {
+        super(g);
+        this.elements = new ArrayList<>(elements);
+        if (this.elements.isEmpty()) throw new EmptyGeneratorException();
+        this.generator = g.uniformInts(0, elements.size() - 1);
+    }
 
-// Used by the Windows implementation of os::realpath.
-inline char* _fullpath(char* absPath, const char* relPath, size_t maxLength) {
-  return ::_fullpath(absPath, relPath, maxLength);
+    @Override
+    public final T next() {
+        return elements.get(generator.next());
+    }
 }
-
-END_ALLOW_FORBIDDEN_FUNCTIONS
-} // namespace permit_forbidden_function
-
-#endif // OS_WINDOWS_PERMITFORBIDDENFUNCTIONS_WINDOWS_HPP
