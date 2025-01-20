@@ -51,33 +51,31 @@ import static org.openjdk.bench.java.lang.foreign.CLayouts.C_DOUBLE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 1, jvmArgs = {"-Xlog:gc", "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native"})
+@Fork(value = 1, jvmArgs = {"--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native"})
 public class CallOverheadByValue {
 
     public static final MemoryLayout POINT_LAYOUT = MemoryLayout.structLayout(
             C_DOUBLE, C_DOUBLE
     );
-    private static final MethodHandle MH_UNIT_ROTATED_BY_VALUE;
-    private static final MethodHandle MH_UNIT_ROTATED_BY_PTR;
+    private static final MethodHandle MH_UNIT_BY_VALUE;
+    private static final MethodHandle MH_UNIT_BY_PTR;
 
     static {
         Linker abi = Linker.nativeLinker();
         System.loadLibrary("CallOverheadByValue");
         SymbolLookup loaderLibs = SymbolLookup.loaderLookup();
-        MH_UNIT_ROTATED_BY_VALUE = abi.downcallHandle(
-                loaderLibs.findOrThrow("unit_rotated"),
-                FunctionDescriptor.of(POINT_LAYOUT, C_DOUBLE)
+        MH_UNIT_BY_VALUE = abi.downcallHandle(
+                loaderLibs.findOrThrow("unit"),
+                FunctionDescriptor.of(POINT_LAYOUT)
         );
-        MH_UNIT_ROTATED_BY_PTR = abi.downcallHandle(
-                loaderLibs.findOrThrow("unit_rotated_ptr"),
-                FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, C_DOUBLE)
+        MH_UNIT_BY_PTR = abi.downcallHandle(
+                loaderLibs.findOrThrow("unit_ptr"),
+                FunctionDescriptor.ofVoid(ValueLayout.ADDRESS)
         );
     }
 
-    static final int NUM_CIRCLE_POINTS = 100;
-
     Arena arena = Arena.ofConfined();
-    MemorySegment points = arena.allocate(POINT_LAYOUT, NUM_CIRCLE_POINTS);
+    MemorySegment point = arena.allocate(POINT_LAYOUT);
 
     @TearDown
     public void tearDown() {
@@ -85,29 +83,15 @@ public class CallOverheadByValue {
     }
 
     @Benchmark
-    @OperationsPerInvocation(NUM_CIRCLE_POINTS)
-    public MemorySegment byValue() throws Throwable {
-        for (int i = 0; i < NUM_CIRCLE_POINTS; i++) {
-            double phi = 2 * Math.PI * i / NUM_CIRCLE_POINTS;
-            // points[i] = unit_rotated(phi);
-            MemorySegment dest = points.asSlice(i * POINT_LAYOUT.byteSize(), POINT_LAYOUT.byteSize());
-            MemorySegment unused =
-                    (MemorySegment) MH_UNIT_ROTATED_BY_VALUE.invokeExact(
-                            (SegmentAllocator) (_, _) -> dest,
-                            phi);
-        }
-        return points;
+    public void byValue() throws Throwable {
+        // point = unit();
+        MemorySegment unused = (MemorySegment) MH_UNIT_BY_VALUE.invokeExact(
+                (SegmentAllocator) (_, _) -> point);
     }
 
     @Benchmark
-    @OperationsPerInvocation(NUM_CIRCLE_POINTS)
-    public MemorySegment byPtr() throws Throwable {
-        for (int i = 0; i < NUM_CIRCLE_POINTS; i++) {
-            double phi = 2 * Math.PI * i / NUM_CIRCLE_POINTS;
-            // unit_rotated_ptr(&points[i], phi);
-            MemorySegment dest = points.asSlice(i * POINT_LAYOUT.byteSize(), POINT_LAYOUT.byteSize());
-            MH_UNIT_ROTATED_BY_PTR.invokeExact(dest, phi);
-        }
-        return points;
+    public void byPtr() throws Throwable {
+        // unit_ptr(&point);
+        MH_UNIT_BY_PTR.invokeExact(point);
     }
 }

@@ -22,18 +22,17 @@
  */
 
 #include "export.h"
-#include "math.h"
 
 typedef struct {
     double x;
     double y;
 } DoublePoint;
 
-EXPORT DoublePoint unit_rotated(double phi) {
-    DoublePoint result = { cos(phi), sin(phi) };
+EXPORT DoublePoint unit() {
+    DoublePoint result = { 1, 0 };
     return result;
 }
 
-EXPORT void unit_rotated_ptr(DoublePoint* out, double phi) {
-  *out = unit_rotated(phi);
+EXPORT void unit_ptr(DoublePoint* out) {
+  *out = unit();
 }
