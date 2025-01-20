@@ -2382,6 +2382,16 @@ operand immF()
   interface(CONST_INTER);
 %}
 
+// Half Float Immediate
+operand immH()
+%{
+  match(ConH);
+
+  op_cost(15);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Double Immediate zero
 operand immD0()
 %{
@@ -4834,6 +4844,16 @@ instruct loadConF(regF dst, immF con) %{
   match(Set dst con);
   ins_cost(125);
   format %{ "movss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct loadConH(regF dst, immH con) %{
+  match(Set dst con);
+  ins_cost(125);
+  format %{ "movss   $dst, [$constantaddress]\t# load from constant table: halffloat=$con" %}
   ins_encode %{
     __ movflt($dst$$XMMRegister, $constantaddress($con));
   %}

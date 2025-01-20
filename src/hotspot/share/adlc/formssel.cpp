@@ -1088,7 +1088,7 @@ uint  InstructForm::reloc(FormDict &globals) {
     } else if ( oper ) {
       // floats and doubles loaded out of method's constant pool require reloc info
       Form::DataType type = oper->is_base_constant(globals);
-      if ( (type == Form::idealF) || (type == Form::idealD) ) {
+      if ( (type == Form::idealH) || (type == Form::idealF) || (type == Form::idealD) ) {
         ++reloc_entries;
       }
     }
@@ -1099,7 +1099,7 @@ uint  InstructForm::reloc(FormDict &globals) {
   // !!!!!
   // Check for any component being an immediate float or double.
   Form::DataType data_type = is_chain_of_constant(globals);
-  if( data_type==idealD || data_type==idealF ) {
+  if( data_type==idealH || data_type==idealD || data_type==idealF ) {
     reloc_entries++;
   }
 
@@ -2662,6 +2662,7 @@ void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   case Form::idealN: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
   case Form::idealL: fprintf(fp,"  st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", const_index); break;
   case Form::idealF: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
+  case Form::idealH: fprintf(fp,"  st->print(\"#%%d\", _c%d);\n", const_index); break;
   case Form::idealD: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
@@ -2743,6 +2744,7 @@ void OperandForm::access_constant(FILE *fp, FormDict &globals,
   case idealP: fprintf(fp,"_c%d->get_con()",const_index); break;
   case idealL: fprintf(fp,"_c%d",           const_index); break;
   case idealF: fprintf(fp,"_c%d",           const_index); break;
+  case idealH: fprintf(fp,"_c%d",           const_index); break;
   case idealD: fprintf(fp,"_c%d",           const_index); break;
   default:
     assert( false, "ShouldNotReachHere()");
@@ -3953,19 +3955,20 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
 // which could be swapped.
 void MatchNode::count_commutative_op(int& count) {
   static const char *commut_op_list[] = {
-    "AddI","AddL","AddF","AddD",
+    "AddI","AddL","AddHF","AddF","AddD",
     "AndI","AndL",
-    "MaxI","MinI","MaxF","MinF","MaxD","MinD",
-    "MulI","MulL","MulF","MulD",
-    "OrI","OrL", "XorI","XorL",
+    "MaxI","MinI","MaxHF","MinHF","MaxF","MinF","MaxD","MinD",
+    "MulI","MulL","MulHF","MulF","MulD",
+    "OrI","OrL",
+    "XorI","XorL"
     "UMax","UMin"
   };
 
   static const char *commut_vector_op_list[] = {
-    "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
-    "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
+    "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
+    "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
     "AndV", "OrV", "XorV",
-    "MaxV", "MinV", "UMax","UMin"
+    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
@@ -4192,6 +4195,7 @@ int MatchRule::is_expensive() const {
     const char  *opType = _rChild->_opType;
     if( strcmp(opType,"AtanD")==0 ||
         strcmp(opType,"DivD")==0 ||
+        strcmp(opType,"DivHF")==0 ||
         strcmp(opType,"DivF")==0 ||
         strcmp(opType,"DivI")==0 ||
         strcmp(opType,"Log10D")==0 ||
@@ -4200,6 +4204,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"ModI")==0 ||
         strcmp(opType,"SqrtD")==0 ||
         strcmp(opType,"SqrtF")==0 ||
+        strcmp(opType,"SqrtHF")==0 ||
         strcmp(opType,"TanD")==0 ||
         strcmp(opType,"ConvD2F")==0 ||
         strcmp(opType,"ConvD2I")==0 ||
@@ -4219,6 +4224,7 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"DecodeNKlass")==0 ||
         strcmp(opType,"FmaD") == 0 ||
         strcmp(opType,"FmaF") == 0 ||
+        strcmp(opType,"FmaHF") == 0 ||
         strcmp(opType,"RoundDouble")==0 ||
         strcmp(opType,"RoundDoubleMode")==0 ||
         strcmp(opType,"RoundFloat")==0 ||
@@ -4331,15 +4337,15 @@ Form::DataType MatchRule::is_ideal_load() const {
 
 bool MatchRule::is_vector() const {
   static const char *vector_list[] = {
-    "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
-    "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
-    "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",
-    "DivVF","DivVD",
+    "AddVB","AddVHF", "AddVS","AddVI","AddVL","AddVF","AddVD",
+    "SubVB","SubVS","SubVI","SubVL", "SubVHF", "SubVF","SubVD",
+    "MulVB","MulVS","MulVI","MulVL", "MulVHF", "MulVF","MulVD",
+    "DivVHF","DivVF","DivVD",
     "AbsVB","AbsVS","AbsVI","AbsVL","AbsVF","AbsVD",
     "NegVF","NegVD","NegVI","NegVL",
-    "SqrtVD","SqrtVF",
+    "SqrtVD","SqrtVF","SqrtVHF",
     "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV", "UMinV", "UMaxV",
+    "MaxV", "MinV", "MinVHF", "MaxVHF", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
@@ -4360,8 +4366,8 @@ bool MatchRule::is_vector() const {
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
-    "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
-    "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
+    "VectorMaskWrapper", "VectorMaskCmp", "VectorReinterpret", "LoadVectorMasked", "StoreVectorMasked",
+    "FmaVD", "FmaVF", "FmaVHF", "PopCountVI", "PopCountVL", "PopulateIndex", "VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",

@@ -183,6 +183,8 @@ public class AArch64 extends Architecture {
         SVEBITPERM,
         SVE2,
         A53MAC,
+        FPHP,
+        ASIMDHP,
     }
 
     private final EnumSet<CPUFeature> features;

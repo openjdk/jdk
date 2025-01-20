@@ -80,6 +80,8 @@ class SerializeClosure;
   template(java_lang_Character_CharacterCache,        "java/lang/Character$CharacterCache")       \
   template(java_lang_CharacterDataLatin1,             "java/lang/CharacterDataLatin1")            \
   template(java_lang_Float,                           "java/lang/Float")                          \
+  template(java_lang_Float16,                         "java/lang/Float16")                        \
+  template(java_lang_Float16_signature,               "Ljava/lang/Float16;")                      \
   template(java_lang_Double,                          "java/lang/Double")                         \
   template(java_lang_Byte,                            "java/lang/Byte")                           \
   template(java_lang_Byte_ByteCache,                  "java/lang/Byte$ByteCache")                 \
@@ -91,7 +93,8 @@ class SerializeClosure;
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
   template(java_lang_Void,                            "java/lang/Void")                           \
                                                                                                   \
-  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")               \
+  template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")     \
+  template(jdk_internal_vm_vector_Float16Math,        "jdk/internal/vm/vector/Float16Math")       \
   template(jdk_internal_vm_vector_VectorPayload,      "jdk/internal/vm/vector/VectorSupport$VectorPayload") \
   template(jdk_internal_vm_vector_Vector,             "jdk/internal/vm/vector/VectorSupport$Vector")        \
   template(jdk_internal_vm_vector_VectorMask,         "jdk/internal/vm/vector/VectorSupport$VectorMask")    \

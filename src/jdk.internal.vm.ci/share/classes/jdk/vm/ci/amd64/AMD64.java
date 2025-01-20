@@ -257,6 +257,7 @@ public class AMD64 extends Architecture {
         AVX_IFMA,
         APX_F,
         SHA512,
+        AVX512_FP16,
     }
 
     private final EnumSet<CPUFeature> features;

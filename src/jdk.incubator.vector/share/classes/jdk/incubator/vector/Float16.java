@@ -39,6 +39,7 @@ import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
 import static java.lang.Integer.numberOfLeadingZeros;
 import static java.lang.Math.multiplyHigh;
+import jdk.internal.vm.vector.Float16Math;
 
 /**
  * The {@code Float16} is a class holding 16-bit data
@@ -1196,7 +1197,9 @@ public final class Float16
         // Float16 -> double preserves the exact numerical value. The
         // conversion of double -> Float16 also benefits from the
         // 2p+2 property of IEEE 754 arithmetic.
-        return valueOf(Math.sqrt(radicand.doubleValue()));
+        short res = Float16Math.sqrt(float16ToRawShortBits(radicand),
+                      (f16) -> float16ToRawShortBits(valueOf(Math.sqrt(shortBitsToFloat16(f16).doubleValue()))));
+        return shortBitsToFloat16(res);
     }
 
     /**
@@ -1401,8 +1404,15 @@ public final class Float16
         // product is numerically exact in float before the cast to
         // double; not necessary to widen to double before the
         // multiply.
-        double product = (double)(a.floatValue() * b.floatValue());
-        return valueOf(product + c.doubleValue());
+        short fa = float16ToRawShortBits(a);
+        short fb = float16ToRawShortBits(b);
+        short fc = float16ToRawShortBits(c);
+        short res = Float16Math.fma(fa, fb, fc,
+                (f16a, f16b, f16c) -> {
+                    double product = (double)(float16ToFloat(f16a) * float16ToFloat(f16b));
+                    return float16ToRawShortBits(valueOf(product + float16ToFloat(f16c)));
+                });
+        return shortBitsToFloat16(res);
     }
 
     /**
