@@ -24,6 +24,7 @@
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.generators.Generators;
 import jdk.test.lib.Utils;
 import java.util.Map;
 import java.util.HashMap;
@@ -35,12 +36,17 @@ import jdk.internal.math.RelaxedMath;
  * @test
  * @bug 8343597
  * @summary Test RelaxedMath with auto-vectorization.
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.math
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestRelaxedMath
  */
 
 public class TestRelaxedMath {
+    private static int SIZE = 10_000;
+
+    private static float[] aF = new float[SIZE];
+    private static float[] bF = new float[SIZE];
+
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
@@ -52,21 +58,25 @@ public class TestRelaxedMath {
     public TestRelaxedMath() {
     }
 
+    @Setup
+    public static Object[] setupFloat2() {
+        return new Object[] { aF, bF };
+    }
+
     @Test
+    @Arguments(setup = "setupFloat2")
     //@IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
     //              IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
     //              IRNode.STORE_VECTOR, "> 0"},
     //    applyIf = {"MaxVectorSize", ">=8"},
     //    applyIfPlatform = {"64-bit", "true"},
     //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] test0(byte[] a, byte[] b, byte mask) {
-        for (int i = 0; i < RANGE; i+=8) {
-            // Safe to vectorize with AlignVector
-            b[i+0] = (byte)(a[i+0] & mask); // offset 0, align 0
-            b[i+1] = (byte)(a[i+1] & mask);
-            b[i+2] = (byte)(a[i+2] & mask);
-            b[i+3] = (byte)(a[i+3] & mask);
+    static float testReductionFloagAddDotProduct(float[] a, float[] b) {
+        float sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            float val = a[i] * b[i];
+            sum = RelaxedMath.add(sum, val, RelaxedMath.AllowReductionReordering);
         }
-        return new Object[]{ a, b };
+        return sum;
     }
 }
