@@ -60,6 +60,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -382,30 +383,32 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
-    // Minimum allocation size = maximum cached size
-    private static final int CACHED_BUFFER_SIZE = 256;
-
     @ForceInline
     @SuppressWarnings("restricted")
     public static Arena newBoundedArena(long size) {
-        // JDK-8347997: buffer cache pinned section needs to happen outside of constructor.
-        long bufferSize = Math.max(size, CACHED_BUFFER_SIZE);
-        long fromCache = bufferSize == CACHED_BUFFER_SIZE ? CallBufferCache.acquire() : 0;
-        long address = fromCache != 0 ? fromCache : CallBufferCache.allocate(bufferSize);
-        return new BoundedArena(MemorySegment.ofAddress(address).reinterpret(size));
+        // JDK-8347997: buffer cache pinned section needs to happen outside of constructor and before
+        // confined session, otherwise scalar replacement breaks.
+        MemorySegment unscoped = CallBufferCache.acquireOrAllocate(size);
+        Arena scope = Arena.ofConfined();
+        MemorySegment source = unscoped.reinterpret(scope, null);
+        // Preferable we'd like to register this cleanup in the line above
+        // but it breaks scalar replacement.
+        return new BoundedArena(scope, source, CallBufferCache::releaseOrFree);
     }
 
     /** A confined arena slicing off an (unscoped) source segment. */
     static final class BoundedArena implements Arena {
-        private final Arena scope = Arena.ofConfined();
-        private final MemorySegment scoped;
+        private final Arena scope;
+        private final MemorySegment source;
         private final SegmentAllocator allocator;
+        private final Consumer<MemorySegment> cleanup;
 
         @ForceInline
-        @SuppressWarnings("restricted")
-        public BoundedArena(MemorySegment source) {
-            scoped = source.reinterpret(scope, null);
-            allocator = SegmentAllocator.slicingAllocator(scoped);
+        public BoundedArena(Arena scope, MemorySegment source, Consumer<MemorySegment> cleanup) {
+            this.scope = scope;
+            this.source = source;
+            this.allocator = SegmentAllocator.slicingAllocator(source);
+            this.cleanup = cleanup;
         }
 
         @Override
@@ -423,10 +426,7 @@ public final class SharedUtils {
         @ForceInline
         public void close() {
             scope.close();
-            // All segments we handed out are now invalid, we can release source to the cache or free it.
-            // Due to VThread scheduling we may be returning ownership to a different platform thread.
-            if (scoped.byteSize() > CACHED_BUFFER_SIZE || !CallBufferCache.release(scoped.address()))
-                CallBufferCache.free(scoped.address());
+            cleanup.accept(source);
         }
     }
 

@@ -26,16 +26,17 @@ import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.Continuation;
 
+import java.lang.foreign.MemorySegment;
+
 /**
- * Provides carrier-thread-local storage for up to two buffer addresses.
- * It is caller's responsibility to store homogeneous segment sizes.
- * Storing addresses, not MemorySegments turns out to be slightly faster (write barrier?).
+ * Provides carrier-thread-local storage for up to two small buffers.
  */
 public final class CallBufferCache {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     static class PerThread {
         // Two-elements to support downcall + upcall.
+        // Storing addresses, not MemorySegments turns out to be slightly faster (write barrier?).
         private long address1;
         private long address2;
 
@@ -92,6 +93,8 @@ public final class CallBufferCache {
         }
     };
 
+    // visible only for tests
+
     public static long acquire() {
         // Protect against vthread unmount.
         Continuation.pin();
@@ -109,6 +112,26 @@ public final class CallBufferCache {
             return tl.get().push(address);
         } finally {
             Continuation.unpin();
+        }
+    }
+
+    private static final long CACHED_BUFFER_SIZE = 256;
+
+    @SuppressWarnings("restricted")
+    public static MemorySegment acquireOrAllocate(long requestedSize) {
+        final long bufferSize = Math.max(requestedSize, CACHED_BUFFER_SIZE);
+        long address = (bufferSize == CACHED_BUFFER_SIZE) ? acquire() : 0;
+        if (address == 0) {
+            // Either size was too large or cache empty.
+            address = allocate(bufferSize);
+        }
+        return MemorySegment.ofAddress(address).reinterpret(requestedSize);
+    }
+
+    public static void releaseOrFree(MemorySegment segment) {
+        if (segment.byteSize() > CACHED_BUFFER_SIZE || !release(segment.address())) {
+            // Either size was too large or cache full.
+            free(segment.address());
         }
     }
 }
