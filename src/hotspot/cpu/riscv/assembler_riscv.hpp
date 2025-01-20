@@ -924,7 +924,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
   template <FmtPrecision Fmt, uint8_t funct5>
   void fp_base(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm) {
-    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2->raw_encoding(), (RoundingMode)rm);
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2->raw_encoding(), rm);
   }
 
   template <FmtPrecision Fmt, uint8_t funct5>
