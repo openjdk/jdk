@@ -24,7 +24,7 @@
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.generators.Generators;
+import compiler.lib.generators.*;
 import jdk.test.lib.Utils;
 import java.util.Map;
 import java.util.HashMap;
@@ -44,6 +44,9 @@ import jdk.internal.math.RelaxedMath;
 public class TestRelaxedMath {
     private static int SIZE = 10_000;
 
+    private static Generator<Float>  generatorF = Generators.G.floats();
+    private static Generator<Double> generatorD = Generators.G.doubles();
+
     private static float[] aF = new float[SIZE];
     private static float[] bF = new float[SIZE];
 
@@ -60,17 +63,17 @@ public class TestRelaxedMath {
 
     @Setup
     public static Object[] setupFloat2() {
+        Generators.G.fill(generatorF, aF);
+        Generators.G.fill(generatorF, bF);
         return new Object[] { aF, bF };
     }
 
     @Test
     @Arguments(setup = "setupFloat2")
-    //@IR(counts = {IRNode.LOAD_VECTOR_B, IRNode.VECTOR_SIZE_4, "> 0",
-    //              IRNode.AND_VB,        IRNode.VECTOR_SIZE_4, "> 0",
-    //              IRNode.STORE_VECTOR, "> 0"},
-    //    applyIf = {"MaxVectorSize", ">=8"},
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
+                  IRNode.ADD_REDUCTION_VF, ">= 1"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static float testReductionFloagAddDotProduct(float[] a, float[] b) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
