@@ -1004,8 +1004,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 throw (InstanceNotFoundException) e;
             } else if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
-            } else if (e instanceof RuntimeException) {
-                throw (RuntimeException) e;
             } else {
                 throw new IOException("Got unexpected server exception: " + e, e);
             }
