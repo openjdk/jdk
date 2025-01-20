@@ -527,10 +527,12 @@ bool MulFNode::cmp(const Node& n) const {
          relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
 }
 
+#ifndef PRODUCT
 void MulFNode::dump_spec(outputStream* st) const {
   MulNode::dump_spec(st);
   _optimization_mode.dump_on(st);
 }
+#endif
 
 //=============================================================================
 //------------------------------mul_ring---------------------------------------
@@ -563,10 +565,12 @@ bool MulDNode::cmp(const Node& n) const {
          relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
 }
 
+#ifndef PRODUCT
 void MulDNode::dump_spec(outputStream* st) const {
   MulNode::dump_spec(st);
   _optimization_mode.dump_on(st);
 }
+#endif
 
 //=============================================================================
 //------------------------------mul_ring---------------------------------------

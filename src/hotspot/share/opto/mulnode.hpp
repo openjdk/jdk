@@ -148,7 +148,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual uint size_of() const { return sizeof(*this); }
   virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const { return _optimization_mode; }
-  virtual void dump_spec(outputStream* st) const;
+  NOT_PRODUCT( virtual void dump_spec(outputStream* st) const; )
 };
 
 //------------------------------MulDNode---------------------------------------
@@ -173,7 +173,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual uint size_of() const { return sizeof(*this); }
   virtual const RelaxedMathOptimizationMode& relaxed_math_optimization_mode() const { return _optimization_mode; }
-  virtual void dump_spec(outputStream* st) const;
+  NOT_PRODUCT( virtual void dump_spec(outputStream* st) const; )
 };
 
 //-------------------------------MulHiLNode------------------------------------

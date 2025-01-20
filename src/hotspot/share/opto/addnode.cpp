@@ -531,10 +531,12 @@ bool AddFNode::cmp(const Node& n) const {
          relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
 }
 
+#ifndef PRODUCT
 void AddFNode::dump_spec(outputStream* st) const {
   AddNode::dump_spec(st);
   _optimization_mode.dump_on(st);
 }
+#endif
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
@@ -578,10 +580,12 @@ bool AddDNode::cmp(const Node& n) const {
          relaxed_math_optimization_mode().cmp(n.relaxed_math_optimization_mode());
 }
 
+#ifndef PRODUCT
 void AddDNode::dump_spec(outputStream* st) const {
   AddNode::dump_spec(st);
   _optimization_mode.dump_on(st);
 }
+#endif
 
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
