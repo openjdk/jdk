@@ -974,7 +974,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
  public:
 
-  enum FClassBit {
+  enum FClassBits {
     minf       = 1 << 0,   // negative infinite
     mnorm      = 1 << 1,   // negative normal number
     msubnorm   = 1 << 2,   // negative subnormal number
