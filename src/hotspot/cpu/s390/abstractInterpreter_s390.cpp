@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -190,6 +190,9 @@ void AbstractInterpreter::layout_activation(Method* method,
     // Note: the unextended_sp is required by nmethod::orig_pc_addr().
     assert(is_bottom_frame && (sender_sp == caller->unextended_sp()),
            "must initialize sender_sp of bottom skeleton frame when pushing it");
+  } else if (caller->is_upcall_stub_frame()) {
+    // deoptimization case, sender_sp as unextended_sp, see frame::sender_for_interpreter_frame()
+    sender_sp = caller->unextended_sp();
   } else {
     assert(caller->is_entry_frame(), "is there a new frame type??");
     sender_sp = caller->sp(); // Call_stub only uses it's fp.
