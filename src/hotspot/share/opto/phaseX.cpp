@@ -1398,20 +1398,6 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_Phi:
       return false;
 
-    // StoreNode::Ideal can do this:
-    //  // Capture an unaliased, unconditional, simple store into an initializer.
-    //  // Or, if it is independent of the allocation, hoist it above the allocation.
-    // That replaces the Store with a MergeMem.
-    //
-    // We have to investigate why this does not happen during IGVN in this case.
-    // There could also be other issues - I did not investigate further yet.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
-    case Op_StoreN:
-    case Op_StoreB:
-      return false;
-
     // MemBarNode::Ideal does "Eliminate volatile MemBars for scalar replaced objects".
     // For examle "The allocated object does not escape".
     //
@@ -1454,7 +1440,9 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_AddI:
       return false;
+  }
 
+  if (n->is_Load()) {
     // LoadNode::Ideal uses tries to find an earlier memory state, and
     // checks can_see_stored_value for it.
     //
@@ -1467,10 +1455,21 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     // Found with:
     //   test/hotspot/jtreg/compiler/arraycopy/TestCloneAccess.java
     //   -XX:VerifyIterativeGVN=1110
-    case Op_LoadI:
-    case Op_LoadN:
-    case Op_LoadB:
-      return false;
+    return false;
+  }
+
+  if (n->is_Store()) {
+    // StoreNode::Ideal can do this:
+    //  // Capture an unaliased, unconditional, simple store into an initializer.
+    //  // Or, if it is independent of the allocation, hoist it above the allocation.
+    // That replaces the Store with a MergeMem.
+    //
+    // We have to investigate why this does not happen during IGVN in this case.
+    // There could also be other issues - I did not investigate further yet.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=0100 -Xcomp --version
+    return false;
   }
 
   Node* i = n->Ideal(this, can_reshape);
@@ -1541,21 +1540,6 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     case Op_CastLL:
       return false;
 
-    // LoadNode::Identity tries to look for an earier store value via
-    // can_see_stored_value. I found an example where this led to
-    // an Allocation, where we could assume the value was still zero.
-    // So the LoadN can be replaced with a zerocon.
-    //
-    // Investigate why this was not already done during IGVN.
-    // A similar issue happens with Ideal.
-    //
-    // Found with:
-    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
-    case Op_LoadN:
-    case Op_LoadB:
-    case Op_LoadUB:
-      return false;
-
     // In SubNode::Identity, we do:
     //   Convert "(X+Y) - Y" into X and "(X+Y) - X" into Y
     // In the example, the AddI had an input replaced, the AddI is
@@ -1587,6 +1571,20 @@ bool PhaseIterGVN::verify_node_Identity(Node* n) {
     //   -XX:VerifyIterativeGVN=1110
     case Op_Phi:
       return false;
+  }
+
+  if (n->is_Load()) {
+    // LoadNode::Identity tries to look for an earier store value via
+    // can_see_stored_value. I found an example where this led to
+    // an Allocation, where we could assume the value was still zero.
+    // So the LoadN can be replaced with a zerocon.
+    //
+    // Investigate why this was not already done during IGVN.
+    // A similar issue happens with Ideal.
+    //
+    // Found with:
+    //   java -XX:VerifyIterativeGVN=1000 -Xcomp --version
+    return false;
   }
 
   Node* i = n->Identity(this);
