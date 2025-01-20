@@ -3273,9 +3273,9 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
   if (_value_order == ValueOrder::Backward) {
     assert(_store->memory_size() == 1, "only implemented for bytes");
     if (new_memory_size == 8) {
-      merged_input_value = _phase->transform(new ReverseBytesLNode(nullptr, merged_input_value));
+      merged_input_value = _phase->transform(new ReverseBytesLNode(merged_input_value));
     } else if (new_memory_size == 4) {
-      merged_input_value = _phase->transform(new ReverseBytesINode(nullptr, merged_input_value));
+      merged_input_value = _phase->transform(new ReverseBytesINode(merged_input_value));
     } else {
       return nullptr;
     }
