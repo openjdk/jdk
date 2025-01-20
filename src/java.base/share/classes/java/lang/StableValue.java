@@ -45,7 +45,7 @@ import java.util.function.Supplier;
  * A stable value is an immutable holder of deferred content.
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} is created using the factory method
- * {@linkplain StableValue#ofUnset() {@code StableValue.unset()}}. When created, the
+ * {@linkplain StableValue#ofUnset() {@code StableValue.ofUnset()}}. When created, the
  * stable value is <em>unset</em>, which means it holds no <em>content</em>. Its content
  * , of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
@@ -126,22 +126,22 @@ import java.util.function.Supplier;
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for later use. A stable supplier is created via the
- * {@linkplain StableValue#supplier(Supplier) StableValue.ofSupplier()} factory, by
+ * {@linkplain StableValue#supplier(Supplier) StableValue.supplier()} factory, by
  * providing an original {@linkplain Supplier} which is invoked when the stable supplier
  * is first accessed:
  *
  * {@snippet lang = java:
- *     class Component {
+ * class Component {
  *
- *         private final Supplier<Logger> logger =
- *                 // @link substring="supplier" target="#supplier(Supplier)" :
- *                 StableValue.supplier( () -> Logger.getLogger(Component.class) );
+ *     private final Supplier<Logger> logger =
+ *             // @link substring="supplier" target="#supplier(Supplier)" :
+ *             StableValue.supplier( () -> Logger.getLogger(Component.class) );
  *
- *         void process() {
- *            logger.get().info("Process started");
- *            // ...
- *         }
+ *     void process() {
+ *        logger.get().info("Process started");
+ *        // ...
  *     }
+ * }
  *}
  * A stable supplier encapsulates access to its backing stable value storage. This means
  * that code inside {@code Component} can obtain the logger object directly from the
@@ -150,65 +150,65 @@ import java.util.function.Supplier;
  * A <em>stable int function</em> is a function that takes an {@code int} parameter and
  * uses it to compute a result that is then cached into the backing stable value storage
  * for that parameter value. A stable int function is created via the
- * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.ofIntFunction()}
+ * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.intFunction()}
  * factory. Upon creation, the input range (i.e. [0, size)) is specified together with
  * an original {@linkplain IntFunction} which is invoked at most once per input value. In
  * effect, the stable int function will act like a cache for the original {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
- *     class SqrtUtil {
+ * class SqrtUtil {
  *
- *         private static final IntFunction<Double> SQRT =
- *                 // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
- *                 StableValue.intFunction(10, StrictMath::sqrt);
+ *     private static final IntFunction<Double> SQRT =
+ *             // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
+ *             StableValue.intFunction(10, StrictMath::sqrt);
  *
- *         double sqrt9() {
- *             return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
- *         }
- *
+ *     double sqrt9() {
+ *         return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
  *     }
+ *
+ * }
  *}
  * <p>
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
  * uses it to compute a result that is then cached into the backing stable value storage
  * for that parameter value. A stable function is created via the
- * {@linkplain StableValue#function(Set, Function) StableValue.ofFunction()} factory.
+ * {@linkplain StableValue#function(Set, Function) StableValue.function()} factory.
  * Upon creation, the input {@linkplain Set} is specified together with an original
  * {@linkplain Function} which is invoked at most once per input value. In effect, the
  * stable function will act like a cache for the original {@linkplain Function}:
  *
  * {@snippet lang = java:
- *     class SqrtUtil {
+ * class SqrtUtil {
  *
- *         private static final Function<Integer, Double> SQRT =
- *                 // @link substring="function" target="#function(Set,Function)" :
- *                 StableValue.function(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
+ *     private static final Function<Integer, Double> SQRT =
+ *             // @link substring="function" target="#function(Set,Function)" :
+ *             StableValue.function(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
- *         double sqrt16() {
- *             return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
- *         }
- *
+ *     double sqrt16() {
+ *         return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
  *     }
+ *
+ * }
  *}
  *
  * <h2 id="stable-collections">Stable Collections</h2>
  * Stable values can also be used as backing storage for
  * {@linkplain Collection##unmodifiable unmodifiable collections}. A <em>stable list</em>
  * is an unmodifiable list, backed by an array of stable values. The stable list elements
- * are computed when they are first accessed, using the provided {@linkplain IntFunction}:
+ * are computed when they are first accessed, using a provided {@linkplain IntFunction}:
  *
  * {@snippet lang = java:
- *     class SqrtUtil {
+ * class SqrtUtil {
  *
- *         private static final List<Double> SQRT =
- *                 // @link substring="list" target="#list(int,IntFunction)" :
- *                 StableValue.list(10, StrictMath::sqrt);
+ *     private static final List<Double> SQRT =
+ *             // @link substring="list" target="#list(int,IntFunction)" :
+ *             StableValue.list(10, StrictMath::sqrt);
  *
- *         double sqrt9() {
- *             return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
- *         }
- *
+ *     double sqrt9() {
+ *         return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
  *     }
+ *
+ * }
  *}
  * <p>
  * Note: In the example above, there is a constructor in the {@code Component}
@@ -216,20 +216,20 @@ import java.util.function.Supplier;
  * <p>
  * Similarly, a <em>stable map</em> is an unmodifiable map whose keys are known at
  * construction. The stable map values are computed when they are first accessed,
- * using the provided {@linkplain Function}:
+ * using a provided {@linkplain Function}:
  *
  * {@snippet lang = java:
- *     class SqrtUtil {
+ * class SqrtUtil {
  *
- *         private static final Map<Integer, Double> SQRT =
- *                 // @link substring="map" target="#map(Set,Function)" :
- *                 StableValue.map(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
+ *     private static final Map<Integer, Double> SQRT =
+ *             // @link substring="map" target="#map(Set,Function)" :
+ *             StableValue.map(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
- *         double sqrt16() {
- *             return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
- *         }
- *
+ *     double sqrt16() {
+ *         return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
  *     }
+ *
+ * }
  *}
  *
  * <h2 id="composition">Composing stable values</h2>
@@ -239,30 +239,30 @@ import java.util.function.Supplier;
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
  * which are held by stable values:
  * {@snippet lang = java:
- *     class Dependency {
+ * class Dependency {
  *
- *         public static class Foo {
+ *     public static class Foo {
+ *          // ...
+ *      }
+ *
+ *     public static class Bar {
+ *         public Bar(Foo foo) {
  *              // ...
- *          }
- *
- *         public static class Bar {
- *             public Bar(Foo foo) {
- *                  // ...
- *             }
  *         }
- *
- *         private static final Supplier<Foo> FOO = StableValue.supplier(Foo::new);
- *         private static final Supplier<Bar> BAR = StableValue.supplier(() -> new Bar(FOO.get()));
- *
- *         public static Foo foo() {
- *             return FOO.get();
- *         }
- *
- *         public static Bar bar() {
- *             return BAR.get();
- *         }
- *
  *     }
+ *
+ *     private static final Supplier<Foo> FOO = StableValue.supplier(Foo::new);
+ *     private static final Supplier<Bar> BAR = StableValue.supplier(() -> new Bar(FOO.get()));
+ *
+ *     public static Foo foo() {
+ *         return FOO.get();
+ *     }
+ *
+ *     public static Bar bar() {
+ *         return BAR.get();
+ *     }
+ *
+ * }
  *}
  * Calling {@code bar()} will create the {@code Bar} singleton if it is not already
  * created. Upon such a creation, the dependent {@code Foo} will first be created if
@@ -271,20 +271,20 @@ import java.util.function.Supplier;
  * Here is another example where a more complex dependency graph is created in which
  * integers in the Fibonacci delta series are lazily computed:
  * {@snippet lang = java:
- *     class Fibonacci {
+ * class Fibonacci {
  *
- *         private static final int MAX_SIZE_INT = 46;
+ *     private static final int MAX_SIZE_INT = 46;
  *
- *         private static final IntFunction<Integer> FIB =
- *                 StableValue.intFunction(MAX_SIZE_INT, Fibonacci::fib);
+ *     private static final IntFunction<Integer> FIB =
+ *             StableValue.intFunction(MAX_SIZE_INT, Fibonacci::fib);
  *
- *         public static int fib(int n) {
- *             return n < 2
- *                     ? n
- *                     : FIB.apply(n - 1) + FIB.apply(n - 2);
- *         }
- *
+ *     public static int fib(int n) {
+ *         return n < 2
+ *                 ? n
+ *                 : FIB.apply(n - 1) + FIB.apply(n - 2);
  *     }
+ *
+ * }
  *}
  * Both {@code FIB} and {@code Fibonacci::fib} recurses into each other. Because the
  * stable int function {@code FIB} caches intermediate results, the initial
@@ -321,9 +321,9 @@ import java.util.function.Supplier;
  * which would introduce security vulnerabilities.
  * <p>
  * As objects can be set via stable values but never removed, this can be a source
- * of unintended memory leaks. A stable value's set values are
+ * of unintended memory leaks. A stable value's content is
  * {@linkplain java.lang.ref##reachability strongly reachable}. Clients are advised that
- * {@linkplain java.lang.ref##reachability reachable} stable values will hold set values
+ * {@linkplain java.lang.ref##reachability reachable} stable values will hold set content
  * perpetually.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
@@ -393,7 +393,7 @@ public sealed interface StableValue<T>
      * as a lazily computed value or memoized result, as in:
      *
      * {@snippet lang=java:
-     *     Value witness = stable.orElseSet(Value::new);
+     * Value witness = stable.orElseSet(Value::new);
      * }
      * <p>
      * When this method returns successfully, the content is always set.
@@ -402,13 +402,13 @@ public sealed interface StableValue<T>
      *           {@code stable}:
      *
      * {@snippet lang=java:
-     *     if (stable.isSet()) {
-     *         return stable.get();
-     *      } else {
-     *         V newValue = supplier.get();
-     *         stable.setOrThrow(newValue);
-     *         return newValue;
-     *     }
+     * if (stable.isSet()) {
+     *     return stable.get();
+     * } else {
+     *     V newValue = supplier.get();
+     *     stable.setOrThrow(newValue);
+     *     return newValue;
+     * }
      * }
      * Except it is thread-safe and will only return the same witness value
      * regardless if invoked by several threads. Also, the provided {@code supplier}
