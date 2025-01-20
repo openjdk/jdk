@@ -24,17 +24,17 @@
 /*
  * @test
  * @bug 8344361
- * @summary Restore null return for invalid services from legacy providers
+ * @summary Restore null return for invalid services
  */
 
 import java.security.Provider;
 
-public class LegacyProviderTest {
+public class InvalidServiceTest {
 
     public static void main(String[] args) throws Exception {
         Provider p1 = new LProvider("LegacyFormat");
-	// this builds a service with null class name. Helps exercise the code path
-	Provider.Service s1 = p1.getService("MessageDigest", "SHA-1");
+        // this returns a service with null class name. Helps exercise the code path
+        Provider.Service s1 = p1.getService("MessageDigest", "SHA-1");
         if (s1 != null)
             throw new RuntimeException("expecting null service");
     }
@@ -43,7 +43,7 @@ public class LegacyProviderTest {
         LProvider(String name) {
             super(name, "1.0", null);
             put("Signature.MD5withRSA", "com.foo.Sig");
-	    put("MessageDigest.SHA-1 ImplementedIn", "Software");
+            put("MessageDigest.SHA-1 ImplementedIn", "Software");
         }
     }
 }
