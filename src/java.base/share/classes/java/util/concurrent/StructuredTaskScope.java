@@ -298,7 +298,7 @@ import jdk.internal.javac.PreviewFeature;
  *     // @link substring="newInstance" target="ScopedValue#newInstance()" :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
  *
- *     // @link substring="callWhere" target="ScopedValue#where" :
+ *     // @link substring="where" target="ScopedValue#where(ScopedValue, Object)" :
  *     MyResult result = ScopedValue.where(USERNAME, "duke").call(() -> {
  *
  *         try (var scope = StructuredTaskScope.open()) {
@@ -314,7 +314,7 @@ import jdk.internal.javac.PreviewFeature;
  * }
  *
  * <p> A scoped value inherited into a subtask may be
- * <a href="{@docRoot}/java.base/java/lang/ScopedValues.html#rebind">rebound</a> to a new
+ * <a href="{@docRoot}/java.base/java/lang/ScopedValue.html#rebind">rebound</a> to a new
  * value in the subtask for the bounded execution of some method executed in the subtask.
  * When the method completes, the value of the {@code ScopedValue} reverts to its previous
  * value, the value inherited from the thread executing the task.
