@@ -85,10 +85,10 @@ public class VectorRelaxedMath {
     }
 
     @Benchmark
-    public float floatAddReductionDotProductStrict() {
+    public float floatAddReductionDotProductReorder() {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
-            sum = RelaxedMath.add(sum, aF[i] * bF[i], 1);
+            sum = RelaxedMath.add(sum, aF[i] * bF[i], /* allow reduction reordering */ 1);
         }
         return sum;
     }
