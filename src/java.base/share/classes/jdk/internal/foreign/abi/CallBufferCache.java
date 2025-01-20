@@ -27,7 +27,7 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.Continuation;
 
 /**
- * Provides thread-local storage for up to two buffer addresses.
+ * Provides carrier-thread-local storage for up to two buffer addresses.
  * It is caller's responsibility to store homogeneous segment sizes.
  * Storing addresses, not MemorySegments turns out to be slightly faster (write barrier?).
  */
@@ -93,6 +93,7 @@ public final class CallBufferCache {
     };
 
     public static long acquire() {
+        // Protect against vthread unmount.
         Continuation.pin();
         try {
             return tl.get().pop();
@@ -102,6 +103,7 @@ public final class CallBufferCache {
     }
 
     public static boolean release(long address) {
+        // Protect against vthread unmount.
         Continuation.pin();
         try {
             return tl.get().push(address);

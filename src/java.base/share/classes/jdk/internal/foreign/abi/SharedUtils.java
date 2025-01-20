@@ -388,6 +388,7 @@ public final class SharedUtils {
     @ForceInline
     @SuppressWarnings("restricted")
     public static Arena newBoundedArena(long size) {
+        // JDK-8347997: buffer cache pinned section needs to happen outside of constructor.
         long bufferSize = Math.max(size, CACHED_BUFFER_SIZE);
         long fromCache = bufferSize == CACHED_BUFFER_SIZE ? CallBufferCache.acquire() : 0;
         long address = fromCache != 0 ? fromCache : CallBufferCache.allocate(bufferSize);
@@ -423,6 +424,7 @@ public final class SharedUtils {
         public void close() {
             scope.close();
             // All segments we handed out are now invalid, we can release source to the cache or free it.
+            // Due to VThread scheduling we may be returning ownership to a different platform thread.
             if (scoped.byteSize() > CACHED_BUFFER_SIZE || !CallBufferCache.release(scoped.address()))
                 CallBufferCache.free(scoped.address());
         }
