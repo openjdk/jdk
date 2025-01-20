@@ -70,11 +70,53 @@ public class TestRelaxedMath {
 
     @Test
     @Arguments(setup = "setupFloat2")
-    @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0",
-                  IRNode.ADD_REDUCTION_VF, ">= 1"},
+    @IR(counts = {IRNode.LOAD_VECTOR_F,    "> 0",
+                  IRNode.MUL_VF,           "> 0",
+                  IRNode.ADD_REDUCTION_VF, "> 0",
+                  "requires_strict_order", "> 0"},
+        failOn = {"no_strict_order"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static float testReductionFloagAddDotProduct(float[] a, float[] b) {
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    static float testStrictReductionFloatAddDotProduct(float[] a, float[] b) {
+        float sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            float val = a[i] * b[i];
+            sum = sum + val;
+        }
+        return sum;
+    }
+
+    @Test
+    @Arguments(setup = "setupFloat2")
+    @IR(counts = {IRNode.LOAD_VECTOR_F,    "> 0",
+                  IRNode.MUL_VF,           "> 0",
+                  IRNode.ADD_REDUCTION_VF, "> 0",
+                  "requires_strict_order", "> 0"},
+        failOn = {"no_strict_order"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    static float testDefaultReductionFloatAddDotProduct(float[] a, float[] b) {
+        float sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            float val = a[i] * b[i];
+            sum = RelaxedMath.add(sum, val, RelaxedMath.Default);
+        }
+        return sum;
+    }
+
+    @Test
+    @Arguments(setup = "setupFloat2")
+    @IR(counts = {IRNode.LOAD_VECTOR_F,    "> 0",
+                  IRNode.MUL_VF,           "> 0",
+                  IRNode.ADD_REDUCTION_VF, "> 0",
+                  "no_strict_order",       "> 0"},
+        failOn = {"requires_strict_order"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    static float testReorderedReductionFloatAddDotProduct(float[] a, float[] b) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
