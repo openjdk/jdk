@@ -48,13 +48,13 @@ import java.security.Security;
 public class InconsistentEntries {
 
     private static final String JDK_HOME = System.getProperty("test.jdk", ".");
-    private static final Path TEMP_JDK_HOME = Path.of("java");
     private static final String TEST_SRC = System.getProperty("test.src", ".");
+    private static final Path TEMP_JDK_HOME = Path.of("java");
     private static final Path POLICY_DIR = TEMP_JDK_HOME.resolve(Path.of("conf", "security",
             "policy", "testlimited"));
-    private static final Path POLICY_FILE = Paths.get(TEST_SRC, "default_local.policy");
-
-    Path targetFile = null;
+    private static final Path POLICY_FILE_SRC = Paths.get(TEST_SRC, "default_local.policy");
+    private static final Path POLICY_FILE_TARGET = POLICY_DIR
+        .resolve(POLICY_FILE_SRC.getFileName());
 
     @BeforeTest
     public void setUp() throws Exception {
@@ -66,13 +66,23 @@ public class InconsistentEntries {
             Files.createDirectory(POLICY_DIR);
         }
 
-        // copy policy file into directory
-        targetFile = POLICY_DIR.resolve(POLICY_FILE.getFileName());
-        Files.copy(POLICY_FILE, targetFile, StandardCopyOption.REPLACE_EXISTING);
+        // copy policy file into policy directory
+        Files.copy(POLICY_FILE_SRC, POLICY_FILE_TARGET, StandardCopyOption.REPLACE_EXISTING);
     }
 
     public static void main(String[] args) throws Throwable {
+        if (!Files.exists(POLICY_DIR)) {
+            throw new RuntimeException(
+                    "custom policy subdirectory: testlimited does not exist");
+        }
+        File testpolicy = new File(POLICY_FILE_TARGET.toString());
+        if (testpolicy.length() == 0) {
+            throw new RuntimeException(
+                    "policy: default_local.policy does not exist or is empty");
+        }
+
         Security.setProperty("crypto.policy", "testlimited");
+
         Assert.assertThrows(ExceptionInInitializerError.class,
                 () -> Cipher.getMaxAllowedKeyLength("AES"));
     }
