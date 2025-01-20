@@ -209,7 +209,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
         super(-1, 0, cap, cap, fd, isSync, segment);
         address = addr;
-        cleanable = CLEANER.register(this, unmapper);
+        cleanable = (unmapper != null) ? CLEANER.register(this, unmapper) : null;
         att = null;
 #else[rw]
         super(cap, addr, fd, unmapper, isSync, segment);
