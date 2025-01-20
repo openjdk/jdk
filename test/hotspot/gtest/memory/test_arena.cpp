@@ -24,9 +24,15 @@
  */
 
 #include "precompiled.hpp"
+#include "concurrentTestRunner.inline.hpp"
 #include "memory/arena.hpp"
+#ifdef LINUX
+#include "os_linux.hpp"
+#endif
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
+#include "utilities/fastrand.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 #include "testutils.hpp"
@@ -382,3 +388,60 @@ TEST_VM(Arena, different_chunk_sizes) {
     Arena ar7(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
   }
 }
+
+#ifdef LINUX
+struct X : public TestRunnable {
+static size_t alloc_count;
+
+  void runUnitTest() const override {
+    ResourceMark rm;
+    const size_t maxMemory = 32 * M;
+    size_t allocated = 0;
+    size_t number_of_allocs = 0;
+    while (allocated < maxMemory) {
+      //allocate a small random number of bytes, between 16 and 256
+      int size =  os::random() % 256 + 16;
+      char * p = NEW_RESOURCE_ARRAY(char, size);
+      //touch the first byte of the allocation (eg write 'x' to it) if you want to measure RSS
+      p[0] = 'x';
+      // num_allocs ++
+      allocated += size;
+      number_of_allocs ++;
+    }
+    //add number of allocs to global counter with atomic add
+    Atomic::add(&alloc_count, number_of_allocs);
+  }
+
+  static void report(const char *s) {
+    tty->print_cr("Total allocation count: " SIZE_FORMAT_W(9) " for  %s", alloc_count, s);
+    alloc_count = 0;
+  }
+};
+
+ size_t X::alloc_count = 0;
+
+
+TEST_VM(Arena, chunk_pool_speed) {
+  X x;
+  ConcurrentTestRunner runner(&x, 100, 5000);
+  const int N = 3;
+
+  for (int i = 0; i < N; i++) {
+    for (bool pool : { true, false }) {
+      Arena::use_pool = pool;
+
+      os::Linux::meminfo_t minfo_before;
+      os::Linux::query_process_memory_info(&minfo_before);
+
+      runner.run();
+
+      os::Linux::meminfo_t minfo_after;
+      os::Linux::query_process_memory_info(&minfo_after);
+
+      const char* pool_text = pool ? "with pool" : "  no pool";
+      X::report(pool_text);
+      tty->print_cr("RSS %s, diff: " SSIZE_FORMAT, pool_text, minfo_after.vmrss - minfo_before.vmrss);
+    }
+  }
+}
+#endif
