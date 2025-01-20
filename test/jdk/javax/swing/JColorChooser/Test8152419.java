@@ -24,6 +24,7 @@
  /*
 * @test
 * @bug 8152419
+* @library /test/lib
 * @summary To Verify JColorChooser tab selection
 * @run main/manual Test8152419
  */
