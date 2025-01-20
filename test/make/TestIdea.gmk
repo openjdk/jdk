@@ -1,5 +1,5 @@
 
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,20 @@ default: all
 
 IDEA_OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/verify-idea
 
+# Enable the shell script to call make without us interfering.
+# We will keep the $(SPEC), though, to find back to our configuration.
+unexport HAS_SPEC
+unexport CONF
+unexport CONF_NAME
+
 clean-idea:
 	$(RM) -r $(IDEA_OUTPUT_DIR)
 
 verify-idea:
 	$(MKDIR) -p $(IDEA_OUTPUT_DIR)
-	cd $(WORKSPACE_ROOT) && HAS_SPEC= MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea1
-	cd $(WORKSPACE_ROOT) && HAS_SPEC= MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea2 java.base
-	cd $(WORKSPACE_ROOT) && HAS_SPEC= MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea3 java.base jdk.compiler
+	cd $(WORKSPACE_ROOT) && MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea1
+	cd $(WORKSPACE_ROOT) && MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea2 java.base
+	cd $(WORKSPACE_ROOT) && MAKEFLAGS= MFLAGS= $(BASH) $(TOPDIR)/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea3 java.base jdk.compiler
 
 TEST_TARGETS += verify-idea
 
