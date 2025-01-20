@@ -23,29 +23,22 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.foreign.abi
+ * @modules java.base/jdk.internal.foreign.abi  java.base/jdk.internal.misc
  * @run testng/othervm --enable-native-access=ALL-UNNAMED CallBufferCacheTest
  */
 
 import jdk.internal.foreign.abi.CallBufferCache;
+import jdk.internal.misc.Unsafe;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
 
 public class CallBufferCacheTest {
-
+    Unsafe UNSAFE = Unsafe.getUnsafe();
+    
     @Test
     public void testEmpty() {
         assertEquals(CallBufferCache.acquire(), 0);
-    }
-
-    @Test
-    public void testAllocate() {
-        long address1 = CallBufferCache.allocate(123);
-        long address2 = CallBufferCache.allocate(123);
-        assertNotEquals(address1, address2);
-        CallBufferCache.free(address1);
-        CallBufferCache.free(address2);
     }
 
     @Test
@@ -53,9 +46,9 @@ public class CallBufferCacheTest {
         assertEquals(CallBufferCache.acquire(), 0);
 
         // Three nested calls.
-        long address1 = CallBufferCache.allocate(128);
-        long address2 = CallBufferCache.allocate(128);
-        long address3 = CallBufferCache.allocate(128);
+        long address1 = UNSAFE.allocateMemory(128);
+        long address2 = UNSAFE.allocateMemory(128);
+        long address3 = UNSAFE.allocateMemory(128);
 
         // Two buffers go into the cache.
         assertTrue(CallBufferCache.release(address3));
@@ -76,14 +69,14 @@ public class CallBufferCacheTest {
         // Now the cache is empty again.
         assertEquals(CallBufferCache.acquire(), 0);
 
-        CallBufferCache.free(address1);
-        CallBufferCache.free(address2);
-        CallBufferCache.free(address3);
+        UNSAFE.freeMemory(address1);
+        UNSAFE.freeMemory(address2);
+        UNSAFE.freeMemory(address3);
     }
 
     @Test
     public void testThreadLocal() throws InterruptedException {
-        long address = CallBufferCache.allocate(128);
+        long address = UNSAFE.allocateMemory(128);
         assertTrue(CallBufferCache.release(address));
         Thread.ofPlatform().start(() -> {
             // Not visible in other thread.
@@ -91,12 +84,12 @@ public class CallBufferCacheTest {
         }).join();
         // Only here.
         assertEquals(address, CallBufferCache.acquire());
-        CallBufferCache.free(address);
+        UNSAFE.freeMemory(address);
     }
 
     @Test
     public void testMigrateThread() throws InterruptedException {
-        long address = CallBufferCache.allocate(128);
+        long address = UNSAFE.allocateMemory(128);
         assertTrue(CallBufferCache.release(address));
         assertEquals(address, CallBufferCache.acquire());
         Thread.ofPlatform().start(() -> {

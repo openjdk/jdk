@@ -67,18 +67,9 @@ public final class CallBufferCache {
         }
 
         void free() {
-            if (address1 != 0) CallBufferCache.free(address1);
-            if (address2 != 0) CallBufferCache.free(address2);
+            if (address1 != 0) UNSAFE.freeMemory(address1);
+            if (address2 != 0) UNSAFE.freeMemory(address2);
         }
-    }
-
-    @SuppressWarnings("restricted")
-    public static long allocate(long size) {
-        return UNSAFE.allocateMemory(size);
-    }
-
-    public static void free(long address) {
-        UNSAFE.freeMemory(address);
     }
 
     private static final TerminatingThreadLocal<PerThread> tl = new TerminatingThreadLocal<>() {
@@ -93,7 +84,7 @@ public final class CallBufferCache {
         }
     };
 
-    // visible only for tests
+    // acquire/release visible only for tests
 
     public static long acquire() {
         // Protect against vthread unmount.
@@ -123,7 +114,7 @@ public final class CallBufferCache {
         long address = (bufferSize == CACHED_BUFFER_SIZE) ? acquire() : 0;
         if (address == 0) {
             // Either size was too large or cache empty.
-            address = allocate(bufferSize);
+            address = UNSAFE.allocateMemory(bufferSize);
         }
         return MemorySegment.ofAddress(address).reinterpret(requestedSize);
     }
@@ -131,7 +122,7 @@ public final class CallBufferCache {
     public static void releaseOrFree(MemorySegment segment) {
         if (segment.byteSize() > CACHED_BUFFER_SIZE || !release(segment.address())) {
             // Either size was too large or cache full.
-            free(segment.address());
+            UNSAFE.freeMemory(segment.address());
         }
     }
 }
