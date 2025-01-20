@@ -137,12 +137,12 @@ public final class SharedUtils {
      * Takes a MethodHandle that takes an input buffer as a first argument (a MemorySegment), and returns nothing,
      * and adapts it to return a MemorySegment, by allocating a MemorySegment for the input
      * buffer, calling the target MethodHandle, and then returning the allocated MemorySegment.
-     * <p>
+     *
      * This allows viewing a MethodHandle that makes use of in memory return (IMR) as a MethodHandle that just returns
      * a MemorySegment without requiring a pre-allocated buffer as an explicit input.
      *
      * @param handle the target handle to adapt
-     * @param cDesc  the function descriptor of the native function (with actual return layout)
+     * @param cDesc the function descriptor of the native function (with actual return layout)
      * @return the adapted handle
      */
     public static MethodHandle adaptDowncallForIMR(MethodHandle handle, FunctionDescriptor cDesc, CallingSequence sequence) {
@@ -258,8 +258,8 @@ public final class SharedUtils {
 
     static Map<VMStorage, Integer> indexMap(Binding.Move[] moves) {
         return IntStream.range(0, moves.length)
-                .boxed()
-                .collect(Collectors.toMap(i -> moves[i].storage(), i -> i));
+                        .boxed()
+                        .collect(Collectors.toMap(i -> moves[i].storage(), i -> i));
     }
 
     static MethodHandle mergeArguments(MethodHandle mh, int sourceIndex, int destIndex) {
@@ -290,7 +290,7 @@ public final class SharedUtils {
         MethodType mtype = mh.type();
         int[] perms = new int[mtype.parameterCount()];
         MethodType swappedType = MethodType.methodType(mtype.returnType());
-        for (int i = 0; i < perms.length; i++) {
+        for (int i = 0 ; i < perms.length ; i++) {
             int dst = i;
             if (i == firstArg) dst = secondArg;
             if (i == secondArg) dst = firstArg;
@@ -468,8 +468,8 @@ public final class SharedUtils {
         } else if (type == double.class) {
             ptr.set(JAVA_DOUBLE_UNALIGNED, 0, (double) o);
         } else if (type == boolean.class) {
-            boolean b = (boolean) o;
-            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long) 1 : (long) 0);
+            boolean b = (boolean)o;
+            ptr.set(JAVA_LONG_UNALIGNED, 0, b ? (long)1 : (long)0);
         } else {
             throw new IllegalArgumentException("Unsupported carrier: " + type);
         }
