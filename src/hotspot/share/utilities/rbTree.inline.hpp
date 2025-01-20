@@ -186,9 +186,10 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::verify(
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
-RBTree<K, V, COMPARATOR, ALLOCATOR>::find_node(RBNode* curr, const K& k) {
+RBTree<K, V, COMPARATOR, ALLOCATOR>::find_node(const K& k) {
+  RBNode* curr = _root;
   while (curr != nullptr) {
-    int key_cmp_k = COMPARATOR::cmp(k, curr->key());
+    const int key_cmp_k = COMPARATOR::cmp(k, curr->key());
 
     if (key_cmp_k == 0) {
       return curr;
@@ -213,7 +214,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& k, const V& v) {
 
   RBNode* parent = nullptr;
   while (curr != nullptr) {
-    int key_cmp_k = COMPARATOR::cmp(k, curr->key());
+    const int key_cmp_k = COMPARATOR::cmp(k, curr->key());
 
     if (key_cmp_k == 0) {
       curr->_value = v;
@@ -232,7 +233,7 @@ RBTree<K, V, COMPARATOR, ALLOCATOR>::insert_node(const K& k, const V& v) {
   RBNode* node = allocate_node(k, v);
   node->set_parent(parent);
 
-  int key_cmp_k = COMPARATOR::cmp(k, parent->key());
+  const int key_cmp_k = COMPARATOR::cmp(k, parent->key());
   if (key_cmp_k < 0) {
     parent->_left = node;
   } else {
@@ -525,7 +526,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
   _root->verify(num_nodes, black_depth, shortest_leaf_path, longest_leaf_path, tree_depth, _expected_visited);
 
   const unsigned int maximum_depth = log2i(size() + 1) * 2;
-  
+
   assert(shortest_leaf_path <= longest_leaf_path && longest_leaf_path <= shortest_leaf_path * 2,
          "tree imbalanced, shortest path: " SIZE_FORMAT " longest: " SIZE_FORMAT,
          shortest_leaf_path, longest_leaf_path);

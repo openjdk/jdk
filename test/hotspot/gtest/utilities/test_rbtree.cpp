@@ -162,7 +162,7 @@ public:
     auto test = [&](float f) {
       EXPECT_EQ(nullptr, rbtree.find(f));
       rbtree.upsert(f, Empty{});
-      Node* n = rbtree.find_node(rbtree._root, f);
+      const Node* n = rbtree.find_node(f);
       EXPECT_NE(nullptr, n);
       EXPECT_EQ(f, n->key());
     };
@@ -309,7 +309,7 @@ public:
       _tree.upsert(i, i);
     }
 
-    Node* node = _tree.find_node(_tree._root, num_nodes);
+    Node* node = _tree.find_node(num_nodes);
     int count = num_nodes;
     while (node != nullptr) {
       EXPECT_EQ(count, node->val());
@@ -329,7 +329,7 @@ public:
       _tree.upsert(i, i);
     }
 
-    Node* node = _tree.find_node(_tree._root, 0);
+    Node* node = _tree.find_node(0);
     int count = 0;
     while (node != nullptr) {
       EXPECT_EQ(count, node->val());
@@ -347,12 +347,12 @@ public:
     GrowableArray<Node*> a(10000);
     for (int i = 0; i < 10000; i++) {
       rbtree.upsert(i, i);
-      a.push(rbtree.find_node(rbtree._root, i));
+      a.push(rbtree.find_node(i));
     }
 
     for (int i = 0; i < 2000; i++) {
       int r = os::random() % 10000;
-      Node* to_delete = rbtree.find_node(rbtree._root, r);
+      Node* to_delete = rbtree.find_node(r);
       if (to_delete != nullptr && to_delete->_left != nullptr &&
           to_delete->_right != nullptr) {
         rbtree.remove(to_delete);
@@ -361,7 +361,7 @@ public:
 
     // After deleting, nodes should have been moved around but kept their values
     for (int i = 0; i < 10000; i++) {
-      Node* n = rbtree.find_node(rbtree._root, i);
+      const Node* n = rbtree.find_node(i);
       if (n != nullptr) {
         EXPECT_EQ(a.at(i), n);
       }
@@ -374,13 +374,13 @@ public:
     Tree rbtree;
     for (int i = 0; i < 10000; i++) {
       rbtree.upsert(i, nullptr);
-      Node* inserted_node = rbtree.find_node(rbtree._root, i);
+      Node* inserted_node = rbtree.find_node(i);
       inserted_node->val() = inserted_node;
     }
 
     for (int i = 0; i < 2000; i++) {
       int r = os::random() % 10000;
-      Node* to_delete = rbtree.find_node(rbtree._root, r);
+      Node* to_delete = rbtree.find_node(r);
       if (to_delete != nullptr && to_delete->_left != nullptr &&
           to_delete->_right != nullptr) {
         rbtree.remove(to_delete);
@@ -450,10 +450,9 @@ public:
     int num_nodes = memory_size / sizeof(Node);
     for (int i = 0; i < num_nodes; i++) {
       tree.upsert(i, i);
-      Node* node = tree.find_node(tree._root, i);
     }
 
-    Node* start = tree.find_node(tree._root, 0);
+    Node* start = tree.find_node(0);
 
     Node* node = start;
     for (int i = 0; i < num_nodes; i++) {

@@ -128,17 +128,17 @@ private:
     _num_nodes--;
   }
 
-  static inline bool is_black(RBNode* node) {
+  // True if node is black (nil nodes count as black)
+  static inline bool is_black(const RBNode* node) {
     return node == nullptr || node->is_black();
   }
 
-  static inline bool is_red(RBNode* node) {
+  static inline bool is_red(const RBNode* node) {
     return node != nullptr && node->is_red();
   }
 
-  RBNode* find_node(RBNode* curr, const K& k);
 
-   // If the node with key k already exist, the value is updated instead.
+  // If the node with key k already exist, the value is updated instead.
   RBNode* insert_node(const K& k, const V& v);
 
   void fix_insert_violations(RBNode* node);
@@ -168,7 +168,7 @@ public:
   // Removes the node with the given key from the tree if it exists.
   // Returns true if the node was successfully removed, false otherwise.
   bool remove(const K& k) {
-    RBNode* node = find_node(_root, k);
+    RBNode* node = find_node(k);
     if (node == nullptr){
       return false;
     }
@@ -197,7 +197,7 @@ public:
   }
 
   // Alters behaviour of closest_(leq/gt) functions to include/exclude the exact value
-  enum BoundMode : uint8_t { STRICT, INCLUSIVE };
+  enum BoundMode : uint8_t { EXCLUSIVE, INCLUSIVE };
 
   // Finds the node with the closest key <= the given key
   // Change mode to EXCLUSIVE to not include node matching key
@@ -205,7 +205,7 @@ public:
     RBNode* candidate = nullptr;
     RBNode* pos = _root;
     while (pos != nullptr) {
-      int cmp_r = COMPARATOR::cmp(pos->key(), key);
+      const int cmp_r = COMPARATOR::cmp(pos->key(), key);
       if (mode == INCLUSIVE && cmp_r == 0) { // Exact match
         candidate = pos;
         break; // Can't become better than that.
@@ -222,12 +222,12 @@ public:
   }
 
   // Finds the node with the closest key > the given key
-  // Change mode to STRICT to include node matching key
-  RBNode* closest_gt(const K& key, BoundMode mode = STRICT) {
+  // Change mode to INCLUSIVE to include node matching key
+  RBNode* closest_gt(const K& key, BoundMode mode = EXCLUSIVE) {
     RBNode* candidate = nullptr;
     RBNode* pos = _root;
     while (pos != nullptr) {
-      int cmp_r = COMPARATOR::cmp(pos->key(), key);
+      const int cmp_r = COMPARATOR::cmp(pos->key(), key);
       if (mode == INCLUSIVE && cmp_r == 0) { // Exact match
         candidate = pos;
         break; // Can't become better than that.
@@ -243,17 +243,31 @@ public:
     return candidate;
   }
 
-  // Finds the value associated with the key
-  V* find(const K& key) {
-    RBNode* node = find_node(_root, key);
-    if (node == nullptr) {
-      return nullptr;
-    }
-    return &node->val();
+  const RBNode* closest_leq(const K& k, BoundMode mode = INCLUSIVE) const {
+    return const_cast<RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_leq(k, mode);
+  }
+
+  const RBNode* closest_gt(const K& k, BoundMode mode = EXCLUSIVE) const {
+    return const_cast<RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->closest_gt(k, mode);
+  }
+
+  // Finds the node associated with the key
+  RBNode* find_node(const K& k);
+
+  const RBNode* find_node(const K& k) const {
+    return const_cast<RBTree<K, V, COMPARATOR, ALLOCATOR>*>(this)->find_node(k);
   }
 
   // Finds the value associated with the key
-  const V* find(const K& key) const { return find(key); }
+  V* find(const K& key) {
+    RBNode* node = find_node(key);
+    return node == nullptr ? nullptr : &node->val();
+  }
+
+  const V* find(const K& key) const {
+    const RBNode* node = find_node(key);
+    return node == nullptr ? nullptr : &node->val();
+  }
 
   // Visit all RBNodes in ascending order, calling f on each node.
   template <typename F>
