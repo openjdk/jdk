@@ -154,7 +154,7 @@ void TemplateAssertionPredicate::rewire_loop_data_dependencies(IfTrueNode* targe
                                                                PhaseIdealLoop* phase) const {
   for (DUIterator i = _success_proj->outs(); _success_proj->has_out(i); i++) {
     Node* output = _success_proj->out(i);
-    if (!output->is_CFG() && data_in_loop_body.check(output)) {
+    if (!output->is_CFG() && data_in_loop_body.check_node_in_loop_body(output)) {
       phase->igvn().replace_input_of(output, 0, target_predicate);
       --i; // account for the just deleted output
     }

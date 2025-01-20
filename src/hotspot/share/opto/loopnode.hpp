@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -951,12 +951,20 @@ private:
                                                        const Node_List& old_new);
   void initialize_assertion_predicates_for_main_loop(CountedLoopNode* pre_loop_head,
                                                      CountedLoopNode* main_loop_head,
-                                                     uint first_node_index_in_cloned_loop_body,
+                                                     uint first_node_index_in_pre_loop_body,
+                                                     uint last_node_index_in_pre_loop_body,
+                                                     DEBUG_ONLY(uint last_node_index_from_backedge_goo COMMA)
                                                      const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
                                            const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+  void create_assertion_predicates_at_main_or_post_loop(CountedLoopNode* source_loop_head,
+                                                        CountedLoopNode* target_loop_head,
+                                                        const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+  void rewire_old_target_loop_entry_dependency_to_new_entry(LoopNode* target_loop_head,
+                                                            const Node* old_target_loop_entry,
+                                                            uint node_index_before_new_assertion_predicate_nodes);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();
