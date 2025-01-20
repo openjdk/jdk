@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ class Direct$Type$Buffer$RW$$BO$
                 UNSAFE.freeMemory(address);
                 Bits.unreserveMemory(size, capacity);
             } catch (Throwable x) {
-                // Old jdk.internal.ref.Cleaner behavior: when it fails, VM exits.
+                // Long-standing behavior: when deallocation fails, VM exits.
                 if (System.err != null) {
                     new Error("Cleaner terminated abnormally", x).printStackTrace();
                 }
@@ -94,10 +94,10 @@ class Direct$Type$Buffer$RW$$BO$
 
     // Singleton Cleaner for all relevant Buffer instances.
     // Lazily initialized to avoid bootstrapping circularities involving <clinit>.
-    static class CleanerHolder {
+    private static class CleanerHolder {
         private static final Cleaner CLEANER = Cleaner.create();
 
-        public static Cleanable register(Object buffer, Runnable action) {
+        static Cleanable register(Object buffer, Runnable action) {
             if (action != null) {
                 return CLEANER.register(buffer, action);
             } else {
