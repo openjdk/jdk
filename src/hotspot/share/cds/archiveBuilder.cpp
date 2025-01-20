@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
@@ -153,9 +154,7 @@ void ArchiveBuilder::SourceObjList::relocate(int i, ArchiveBuilder* builder) {
 ArchiveBuilder::ArchiveBuilder() :
   _current_dump_region(nullptr),
   _buffer_bottom(nullptr),
-  _last_verified_top(nullptr),
   _num_dump_regions_used(0),
-  _other_region_used_bytes(0),
   _requested_static_archive_bottom(nullptr),
   _requested_static_archive_top(nullptr),
   _requested_dynamic_archive_bottom(nullptr),
@@ -172,9 +171,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _ro_src_objs(),
   _src_obj_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
   _buffered_to_src_table(INITIAL_TABLE_SIZE, MAX_TABLE_SIZE),
-  _total_heap_region_size(0),
-  _estimated_metaspaceobj_bytes(0),
-  _estimated_hashtable_bytes(0)
+  _total_heap_region_size(0)
 {
   _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
   _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
@@ -196,6 +193,8 @@ ArchiveBuilder::~ArchiveBuilder() {
   if (_shared_rs.is_reserved()) {
     MemoryReserver::release(_shared_rs);
   }
+
+  AOTArtifactFinder::dispose();
 }
 
 // Returns a deterministic sequence of pseudo random numbers. The main purpose is NOT
@@ -233,13 +232,8 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
       _klasses->append(klass);
       if (klass->is_hidden()) {
         assert(klass->is_instance_klass(), "must be");
-        assert(SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass::cast(klass)), "must be");
       }
     }
-    // See RunTimeClassInfo::get_for(): make sure we have enough space for both maximum
-    // Klass alignment as well as the RuntimeInfo* pointer we will embed in front of a Klass.
-    _estimated_metaspaceobj_bytes += align_up(BytesPerWord, CompressedKlassPointers::klass_alignment_in_bytes()) +
-        align_up(sizeof(void*), SharedSpaceObjectAlignment);
   } else if (ref->msotype() == MetaspaceObj::SymbolType) {
     // Make sure the symbol won't be GC'ed while we are dumping the archive.
     Symbol* sym = (Symbol*)ref->obj();
@@ -247,14 +241,15 @@ bool ArchiveBuilder::gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool re
     _symbols->append(sym);
   }
 
-  int bytes = ref->size() * BytesPerWord;
-  _estimated_metaspaceobj_bytes += align_up(bytes, SharedSpaceObjectAlignment);
-
   return true; // recurse
 }
 
 void ArchiveBuilder::gather_klasses_and_symbols() {
   ResourceMark rm;
+
+  AOTArtifactFinder::initialize();
+  AOTArtifactFinder::find_artifacts();
+
   log_info(cds)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);
@@ -288,10 +283,6 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     log_info(cds)("Sorting symbols ... ");
     _symbols->sort(compare_symbols_by_address);
     sort_klasses();
-
-    // TODO -- we need a proper estimate for the archived modules, etc,
-    // but this should be enough for now
-    _estimated_metaspaceobj_bytes += 200 * 1024 * 1024;
   }
 
   AOTClassLinker::add_candidates();
@@ -315,59 +306,26 @@ void ArchiveBuilder::sort_klasses() {
   _klasses->sort(compare_klass_by_name);
 }
 
-size_t ArchiveBuilder::estimate_archive_size() {
-  // size of the symbol table and two dictionaries, plus the RunTimeClassInfo's
-  size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
-  size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
-  _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
-
-  if (CDSConfig::is_dumping_aot_linked_classes()) {
-    // This is difficult to estimate when dumping the dynamic archive, as the
-    // AOTLinkedClassTable may need to contain classes in the static archive as well.
-    //
-    // Just give a generous estimate for now. We will remove estimate_archive_size()
-    // in JDK-8340416
-    _estimated_hashtable_bytes += 20 * 1024 * 1024;
-  }
-
-  size_t total = 0;
-
-  total += _estimated_metaspaceobj_bytes;
-  total += _estimated_hashtable_bytes;
-
-  // allow fragmentation at the end of each dump region
-  total += _total_dump_regions * MetaspaceShared::core_region_alignment();
-
-  log_info(cds)("_estimated_hashtable_bytes = " SIZE_FORMAT " + " SIZE_FORMAT " = " SIZE_FORMAT,
-                symbol_table_est, dictionary_est, _estimated_hashtable_bytes);
-  log_info(cds)("_estimated_metaspaceobj_bytes = " SIZE_FORMAT, _estimated_metaspaceobj_bytes);
-  log_info(cds)("total estimate bytes = " SIZE_FORMAT, total);
-
-  return align_up(total, MetaspaceShared::core_region_alignment());
-}
-
 address ArchiveBuilder::reserve_buffer() {
-  size_t buffer_size = estimate_archive_size();
+  size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M);
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              MetaspaceShared::core_region_alignment(),
                                              os::vm_page_size());
   if (!rs.is_reserved()) {
-    log_error(cds)("Failed to reserve " SIZE_FORMAT " bytes of output buffer.", buffer_size);
+    log_error(cds)("Failed to reserve %zu bytes of output buffer.", buffer_size);
     MetaspaceShared::unrecoverable_writing_error();
   }
 
   // buffer_bottom is the lowest address of the 2 core regions (rw, ro) when
   // we are copying the class metadata into the buffer.
   address buffer_bottom = (address)rs.base();
-  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [" SIZE_FORMAT " bytes]",
+  log_info(cds)("Reserved output buffer space at " PTR_FORMAT " [%zu bytes]",
                 p2i(buffer_bottom), buffer_size);
   _shared_rs = rs;
 
   _buffer_bottom = buffer_bottom;
-  _last_verified_top = buffer_bottom;
   _current_dump_region = &_rw_region;
   _num_dump_regions_used = 1;
-  _other_region_used_bytes = 0;
   _current_dump_region->init(&_shared_rs, &_shared_vs);
 
   ArchivePtrMarker::initialize(&_ptrmap, &_shared_vs);
@@ -586,28 +544,9 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
 }
 
 void ArchiveBuilder::start_dump_region(DumpRegion* next) {
-  address bottom = _last_verified_top;
-  address top = (address)(current_dump_region()->top());
-  _other_region_used_bytes += size_t(top - bottom);
-
   current_dump_region()->pack(next);
   _current_dump_region = next;
   _num_dump_regions_used ++;
-
-  _last_verified_top = (address)(current_dump_region()->top());
-}
-
-void ArchiveBuilder::verify_estimate_size(size_t estimate, const char* which) {
-  address bottom = _last_verified_top;
-  address top = (address)(current_dump_region()->top());
-  size_t used = size_t(top - bottom) + _other_region_used_bytes;
-  int diff = int(estimate) - int(used);
-
-  log_info(cds)("%s estimate = " SIZE_FORMAT " used = " SIZE_FORMAT "; diff = %d bytes", which, estimate, used, diff);
-  assert(diff >= 0, "Estimate is too small");
-
-  _last_verified_top = top;
-  _other_region_used_bytes = 0;
 }
 
 char* ArchiveBuilder::ro_strdup(const char* s) {
@@ -1245,7 +1184,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     log_as_hex(last_obj_base, last_obj_end, last_obj_base + buffer_to_runtime_delta());
     if (last_obj_end < region_end) {
-      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data " SIZE_FORMAT " bytes",
+      log_debug(cds, map)(PTR_FORMAT ": @@ Misc data %zu bytes",
                           p2i(last_obj_end + buffer_to_runtime_delta()),
                           size_t(region_end - last_obj_end));
       log_as_hex(last_obj_end, region_end, last_obj_end + buffer_to_runtime_delta());
@@ -1265,7 +1204,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     size_t size = top - base;
     base = requested_base;
     top = requested_base + size;
-    log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " " SIZE_FORMAT_W(9) " bytes]",
+    log_info(cds, map)("[%-18s " PTR_FORMAT " - " PTR_FORMAT " %9zu bytes]",
                        name, p2i(base), p2i(top), size);
   }
 
@@ -1306,7 +1245,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
         // Example:
         // 0x00000007ffc3ffd8: @@ Object filler 40 bytes
-        st.print_cr("filler " SIZE_FORMAT " bytes", byte_size);
+        st.print_cr("filler %zu bytes", byte_size);
       } else {
         ShouldNotReachHere();
       }
@@ -1409,7 +1348,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           print_oop_info_cr(&st, obj);
         }
       } else {
-        st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
+        st.print_cr(" - fields (%zu words):", source_oop->size());
         ArchivedFieldPrinter print_field(heap_info, &st, source_oop, buffered_addr);
         InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
 
@@ -1634,12 +1573,12 @@ void ArchiveBuilder::print_region_stats(FileMapInfo *mapinfo, ArchiveHeapInfo* h
     print_heap_region_stats(heap_info, total_reserved);
   }
 
-  log_debug(cds)("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%5.1f%% used]",
+  log_debug(cds)("total   : %9zu [100.0%% of total] out of %9zu bytes [%5.1f%% used]",
                  total_bytes, total_reserved, total_u_perc);
 }
 
 void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
-  log_debug(cds)("bm space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used]",
+  log_debug(cds)("bm space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used]",
                  size, size/double(total_size)*100.0, size);
 }
 
@@ -1647,7 +1586,7 @@ void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total
   char* start = info->buffer_start();
   size_t size = info->buffer_byte_size();
   char* top = start + size;
-  log_debug(cds)("hp space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
+  log_debug(cds)("hp space: %9zu [ %4.1f%% of total] out of %9zu bytes [100.0%% used] at " INTPTR_FORMAT,
                      size, size/double(total_size)*100.0, size, p2i(start));
 }
 

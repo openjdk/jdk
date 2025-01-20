@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,7 +420,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   if (old_evacuated_committed > old_evacuation_reserve) {
     // This should only happen due to round-off errors when enforcing ShenandoahOldEvacWaste
     assert(old_evacuated_committed <= (33 * old_evacuation_reserve) / 32,
-           "Round-off errors should be less than 3.125%%, committed: " SIZE_FORMAT ", reserved: " SIZE_FORMAT,
+           "Round-off errors should be less than 3.125%%, committed: %zu, reserved: %zu",
            old_evacuated_committed, old_evacuation_reserve);
     old_evacuated_committed = old_evacuation_reserve;
     // Leave old_evac_reserve as previously configured
@@ -449,13 +450,13 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     // This can happen due to round-off errors when adding the results of truncated integer arithmetic.
     // We've already truncated old_evacuated_committed.  Truncate young_advance_promoted_reserve_used here.
     assert(young_advance_promoted_reserve_used <= (33 * (old_available - old_evacuated_committed)) / 32,
-           "Round-off errors should be less than 3.125%%, committed: " SIZE_FORMAT ", reserved: " SIZE_FORMAT,
+           "Round-off errors should be less than 3.125%%, committed: %zu, reserved: %zu",
            young_advance_promoted_reserve_used, old_available - old_evacuated_committed);
     young_advance_promoted_reserve_used = old_available - old_evacuated_committed;
     old_consumed = old_evacuated_committed + young_advance_promoted_reserve_used;
   }
 
-  assert(old_available >= old_consumed, "Cannot consume (" SIZE_FORMAT ") more than is available (" SIZE_FORMAT ")",
+  assert(old_available >= old_consumed, "Cannot consume (%zu) more than is available (%zu)",
          old_consumed, old_available);
   size_t excess_old = old_available - old_consumed;
   size_t unaffiliated_old_regions = old_generation->free_unaffiliated_regions();
@@ -494,10 +495,10 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   if (regions_to_xfer > 0) {
     bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
     assert(excess_old >= regions_to_xfer * region_size_bytes,
-           "Cannot transfer (" SIZE_FORMAT ", " SIZE_FORMAT ") more than excess old (" SIZE_FORMAT ")",
+           "Cannot transfer (%zu, %zu) more than excess old (%zu)",
            regions_to_xfer, region_size_bytes, excess_old);
     excess_old -= regions_to_xfer * region_size_bytes;
-    log_debug(gc, ergo)("%s transferred " SIZE_FORMAT " excess regions to young before start of evacuation",
+    log_debug(gc, ergo)("%s transferred %zu excess regions to young before start of evacuation",
                        result? "Successfully": "Unsuccessfully", regions_to_xfer);
   }
 
@@ -527,7 +528,7 @@ inline void assert_no_in_place_promotions() {
   public:
     void heap_region_do(ShenandoahHeapRegion *r) override {
       assert(r->get_top_before_promote() == nullptr,
-             "Region " SIZE_FORMAT " should not be ready for in-place promotion", r->index());
+             "Region %zu should not be ready for in-place promotion", r->index());
     }
   } cl;
   ShenandoahHeap::heap()->heap_region_iterate(&cl);
@@ -671,8 +672,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
     }
-    log_debug(gc)("Preselected " SIZE_FORMAT " regions containing " SIZE_FORMAT " live bytes,"
-                 " consuming: " SIZE_FORMAT " of budgeted: " SIZE_FORMAT,
+    log_debug(gc)("Preselected %zu regions containing %zu live bytes,"
+                 " consuming: %zu of budgeted: %zu",
                  selected_regions, selected_live, old_consumed, old_available);
   }
 
@@ -724,7 +725,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     // We use integer division so anything up to just less than 2 is considered
     // reasonable, and the "+1" is to avoid divide-by-zero.
     assert((total_pop+1)/(total_census+1) ==  1, "Extreme divergence: "
-           SIZE_FORMAT "/" SIZE_FORMAT, total_pop, total_census);
+           "%zu/%zu", total_pop, total_census);
 #endif
   }
 
@@ -941,7 +942,7 @@ void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
 void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
   if (bytes > 0) {
     assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
-           "Waste (" SIZE_FORMAT ") cannot be negative (after subtracting " SIZE_FORMAT ")", _humongous_waste, bytes);
+           "Waste (%zu) cannot be negative (after subtracting %zu)", _humongous_waste, bytes);
     Atomic::sub(&_humongous_waste, bytes);
   }
 }

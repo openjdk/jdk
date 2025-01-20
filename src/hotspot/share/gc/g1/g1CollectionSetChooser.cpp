@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
       num_pruned++;
     }
 
-    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving " SIZE_FORMAT " bytes waste (allowed " SIZE_FORMAT ")",
+    log_debug(gc, ergo, cset)("Pruned %u regions out of %u, leaving %zu bytes waste (allowed %zu)",
                               num_pruned,
                               num_candidates,
                               wasted_bytes,

@@ -158,6 +158,10 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 2);
     }
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment) &&
+        (_model == CPU_MODEL_AMPERE_1A || _model == CPU_MODEL_AMPERE_1B)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+    }
   }
 
   // ThunderX

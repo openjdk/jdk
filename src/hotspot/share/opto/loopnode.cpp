@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2552,11 +2552,15 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
     jlong final_con  = init_con + stride_con*trip_count;
     int final_int = (int)final_con;
-    // The final value should be in integer range since the loop
-    // is counted and the limit was checked for overflow.
-    // Assert checks for overflow only if all input nodes are ConINodes, as during CCP
-    // there might be a temporary overflow from PhiNodes see JDK-8309266
-    assert((in(Init)->is_ConI() && in(Limit)->is_ConI() && in(Stride)->is_ConI()) ? final_con == (jlong)final_int : true, "final value should be integer");
+    // The final value should be in integer range in almost all cases,
+    // since the loop is counted and the limit was checked for overflow.
+    // There some exceptions, for example:
+    // - During CCP, there might be a temporary overflow from PhiNodes, see JDK-8309266.
+    // - During PhaseIdealLoop::split_thru_phi, the LoopLimitNode floats possibly far above
+    //   the loop and its predicates, and we might get constants on one side of the phi that
+    //   would lead to overflows. Such a code path would never lead us to enter the loop
+    //   because of the loop limit overflow check that happens after the LoopLimitNode
+    //   computation with overflow, but before we enter the loop, see JDK-8335747.
     if (final_con == (jlong)final_int) {
       return TypeInt::make(final_int);
     } else {
@@ -2579,12 +2583,10 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (stride_con == 1)
     return nullptr;  // Identity
 
-  if (in(Init)->is_Con() && in(Limit)->is_Con())
-    return nullptr;  // Value
-
   // Delay following optimizations until all loop optimizations
   // done to keep Ideal graph simple.
   if (!can_reshape || !phase->C->post_loop_opts_phase()) {
+    phase->C->record_for_post_loop_opts_igvn(this);
     return nullptr;
   }
 
@@ -4458,7 +4460,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
     if (profiled_loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
     }
   }
 
@@ -4466,7 +4468,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
     if (loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_opaque_template_assertion_predicate_nodes(parse_predicate_proj, useful_predicates);
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ CFGPrinterOutput::CFGPrinterOutput(Compilation* compilation)
    _do_print_LIR(false)
 {
   char file_name[O_BUFLEN];
-  jio_snprintf(file_name, sizeof(file_name), "output_tid" UINTX_FORMAT "_pid%u.cfg",
+  jio_snprintf(file_name, sizeof(file_name), "output_tid%zu_pid%u.cfg",
                os::current_thread_id(), os::current_process_id());
   _output = new (mtCompiler) fileStream(file_name, "at");
 }

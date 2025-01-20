@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+const TypeFunc* ArrayCopyNode::_arraycopy_type_Type = nullptr;
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), nullptr, TypePtr::BOTTOM),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -475,7 +475,8 @@ void CompilerConfig::set_jvmci_specific_flags() {
 
 bool CompilerConfig::check_args_consistency(bool status) {
   // Check lower bounds of the code cache
-  size_t min_code_cache_size = CompilerConfig::min_code_cache_size();
+  // Template Interpreter code is approximately 3X larger in debug builds.
+  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (ReservedCodeCacheSize < InitialCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid ReservedCodeCacheSize: %dK. Must be at least InitialCodeCacheSize=%dK.\n",

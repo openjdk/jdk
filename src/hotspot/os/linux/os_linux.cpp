@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -847,7 +847,7 @@ static void *thread_native_entry(Thread *thread) {
     }
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread is alive (tid: %zu, pthread id: %zu).",
     os::current_thread_id(), (uintx) pthread_self());
 
   assert(osthread->pthread_id() != 0, "pthread_id was not set as expected");
@@ -863,7 +863,7 @@ static void *thread_native_entry(Thread *thread) {
   // Prevent dereferencing it from here on out.
   thread = nullptr;
 
-  log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
+  log_info(os, thread)("Thread finished (tid: %zu, pthread id: %zu).",
     os::current_thread_id(), (uintx) pthread_self());
 
   return nullptr;
@@ -925,7 +925,7 @@ static size_t get_static_tls_area_size(const pthread_attr_t *attr) {
     }
   }
 
-  log_info(os, thread)("Stack size adjustment for TLS is " SIZE_FORMAT,
+  log_info(os, thread)("Stack size adjustment for TLS is %zu",
                        tls_size);
   return tls_size;
 }
@@ -1032,7 +1032,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     // pthread_attr_setstacksize() function can fail
     // if the stack size exceeds a system-imposed limit.
     assert_status(status == EINVAL, status, "pthread_attr_setstacksize");
-    log_warning(os, thread)("The %sthread stack size specified is invalid: " SIZE_FORMAT "k",
+    log_warning(os, thread)("The %sthread stack size specified is invalid: %zuk",
                             (thr_type == compiler_thread) ? "compiler " : ((thr_type == java_thread) ? "" : "VM "),
                             stack_size / K);
     thread->set_osthread(nullptr);
@@ -1054,7 +1054,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
     char buf[64];
     if (ret == 0) {
-      log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
+      log_info(os, thread)("Thread \"%s\" started (pthread id: %zu, attributes: %s). ",
                            thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
 
       // Print current timer slack if override is enabled and timer slack value is available.
@@ -1062,7 +1062,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       if (TimerSlack >= 0) {
         int slack = prctl(PR_GET_TIMERSLACK);
         if (slack >= 0) {
-          log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
+          log_info(os, thread)("Thread \"%s\" (pthread id: %zu) timer slack: %dns",
                                thread->name(), (uintx) tid, slack);
         }
       }
@@ -1170,8 +1170,8 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
+  log_info(os, thread)("Thread attached (tid: %zu, pthread id: %zu"
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (%zuK) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
                        p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
@@ -1366,12 +1366,9 @@ void os::Linux::capture_initial_stack(size_t max_size) {
         // Skip blank chars
         do { s++; } while (s && isspace((unsigned char) *s));
 
-#define _UFM UINTX_FORMAT
-#define _DFM INTX_FORMAT
-
-        //                                     1   1   1   1   1   1   1   1   1   1   2   2    2    2    2    2    2    2    2
-        //              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1    2    3    4    5    6    7    8
-        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld " _UFM _UFM _DFM _UFM _UFM _UFM _UFM,
+        //                                     1   1   1   1   1   1   1   1   1   1   2   2  2    2   2   2   2   2   2
+        //              3  4  5  6  7  8   9   0   1   2   3   4   5   6   7   8   9   0   1  2    3   4   5   6   7   8
+        i = sscanf(s, "%c %d %d %d %d %d %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %ld %ld %zu %zu %zd %zu %zu %zu %zu",
                    &state,          // 3  %c
                    &ppid,           // 4  %d
                    &pgrp,           // 5  %d
@@ -1391,17 +1388,14 @@ void os::Linux::capture_initial_stack(size_t max_size) {
                    &nice,           // 19 %ld
                    &junk,           // 20 %ld
                    &it_real,        // 21 %ld
-                   &start,          // 22 UINTX_FORMAT
-                   &vsize,          // 23 UINTX_FORMAT
-                   &rss,            // 24 INTX_FORMAT
-                   &rsslim,         // 25 UINTX_FORMAT
-                   &scodes,         // 26 UINTX_FORMAT
-                   &ecode,          // 27 UINTX_FORMAT
-                   &stack_start);   // 28 UINTX_FORMAT
+                   &start,          // 22 %zu
+                   &vsize,          // 23 %zu
+                   &rss,            // 24 %zd
+                   &rsslim,         // 25 %zu
+                   &scodes,         // 26 %zu
+                   &ecode,          // 27 %zu
+                   &stack_start);   // 28 %zu
       }
-
-#undef _UFM
-#undef _DFM
 
       if (i != 28 - 2) {
         assert(false, "Bad conversion from /proc/self/stat");
@@ -1463,8 +1457,8 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     bool primordial = uintptr_t(&rlim) > uintptr_t(_initial_thread_stack_bottom) &&
                       uintptr_t(&rlim) < stack_top;
 
-    log_info(os, thread)("Capturing initial stack in %s thread: req. size: " SIZE_FORMAT "K, actual size: "
-                         SIZE_FORMAT "K, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
+    log_info(os, thread)("Capturing initial stack in %s thread: req. size: %zuK, actual size: "
+                         "%zuK, top=" INTPTR_FORMAT ", bottom=" INTPTR_FORMAT,
                          primordial ? "primordial" : "user", max_size / K,  _initial_thread_stack_size / K,
                          stack_top, intptr_t(_initial_thread_stack_bottom));
   }
@@ -2312,14 +2306,14 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
       info->rssanon = info->rssfile = info->rssshmem = -1;
   if (f != nullptr) {
     while (::fgets(buf, sizeof(buf), f) != nullptr && num_found < num_values) {
-      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: " SSIZE_FORMAT " kB", &info->vmsize) == 1) ||
-           (info->vmpeak == -1    && sscanf(buf, "VmPeak: " SSIZE_FORMAT " kB", &info->vmpeak) == 1) ||
-           (info->vmswap == -1    && sscanf(buf, "VmSwap: " SSIZE_FORMAT " kB", &info->vmswap) == 1) ||
-           (info->vmhwm == -1     && sscanf(buf, "VmHWM: " SSIZE_FORMAT " kB", &info->vmhwm) == 1) ||
-           (info->vmrss == -1     && sscanf(buf, "VmRSS: " SSIZE_FORMAT " kB", &info->vmrss) == 1) ||
-           (info->rssanon == -1   && sscanf(buf, "RssAnon: " SSIZE_FORMAT " kB", &info->rssanon) == 1) || // Needs Linux 4.5
-           (info->rssfile == -1   && sscanf(buf, "RssFile: " SSIZE_FORMAT " kB", &info->rssfile) == 1) || // Needs Linux 4.5
-           (info->rssshmem == -1  && sscanf(buf, "RssShmem: " SSIZE_FORMAT " kB", &info->rssshmem) == 1)  // Needs Linux 4.5
+      if ( (info->vmsize == -1    && sscanf(buf, "VmSize: %zd kB", &info->vmsize) == 1) ||
+           (info->vmpeak == -1    && sscanf(buf, "VmPeak: %zd kB", &info->vmpeak) == 1) ||
+           (info->vmswap == -1    && sscanf(buf, "VmSwap: %zd kB", &info->vmswap) == 1) ||
+           (info->vmhwm == -1     && sscanf(buf, "VmHWM: %zd kB", &info->vmhwm) == 1) ||
+           (info->vmrss == -1     && sscanf(buf, "VmRSS: %zd kB", &info->vmrss) == 1) ||
+           (info->rssanon == -1   && sscanf(buf, "RssAnon: %zd kB", &info->rssanon) == 1) || // Needs Linux 4.5
+           (info->rssfile == -1   && sscanf(buf, "RssFile: %zd kB", &info->rssfile) == 1) || // Needs Linux 4.5
+           (info->rssshmem == -1  && sscanf(buf, "RssShmem: %zd kB", &info->rssshmem) == 1)  // Needs Linux 4.5
            )
       {
         num_found ++;
@@ -2367,15 +2361,15 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   //  rss its components if the kernel is recent enough.
   meminfo_t info;
   if (query_process_memory_info(&info)) {
-    st->print_cr("Virtual Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmsize, info.vmpeak);
-    st->print("Resident Set Size: " SSIZE_FORMAT "K (peak: " SSIZE_FORMAT "K)", info.vmrss, info.vmhwm);
+    st->print_cr("Virtual Size: %zdK (peak: %zdK)", info.vmsize, info.vmpeak);
+    st->print("Resident Set Size: %zdK (peak: %zdK)", info.vmrss, info.vmhwm);
     if (info.rssanon != -1) { // requires kernel >= 4.5
-      st->print(" (anon: " SSIZE_FORMAT "K, file: " SSIZE_FORMAT "K, shmem: " SSIZE_FORMAT "K)",
+      st->print(" (anon: %zdK, file: %zdK, shmem: %zdK)",
                 info.rssanon, info.rssfile, info.rssshmem);
     }
     st->cr();
     if (info.vmswap != -1) { // requires kernel >= 2.6.34
-      st->print_cr("Swapped out: " SSIZE_FORMAT "K", info.vmswap);
+      st->print_cr("Swapped out: %zdK", info.vmswap);
     }
   } else {
     st->print_cr("Could not open /proc/self/status to get process memory related information");
@@ -2396,7 +2390,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // If legacy mallinfo(), we can still print the values if we are sure they cannot have wrapped.
   might_have_wrapped = might_have_wrapped && (info.vmsize * K) > UINT_MAX;
 #endif
-  st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+  st->print_cr("C-Heap outstanding allocations: %zuK, retained: %zuK%s",
                total_allocated / K, free_retained / K,
                might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
@@ -2524,7 +2518,7 @@ void os::Linux::print_steal_info(outputStream* st) {
 void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
-  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
+  st->print(" %zuk page", os::vm_page_size()>>10);
 
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
@@ -2889,17 +2883,15 @@ static bool recoverable_mmap_error(int err) {
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
-          os::strerror(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, exec, os::strerror(err), err);
 }
 
 static void warn_fail_commit_memory(char* addr, size_t size,
                                     size_t alignment_hint, bool exec,
                                     int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", p2i(addr), size,
-          alignment_hint, exec, os::strerror(err), err);
+  warning("INFO: os::commit_memory(" PTR_FORMAT ", %zu, %zu, %d) failed; error='%s' (errno=%d)",
+          p2i(addr), size, alignment_hint, exec, os::strerror(err), err);
 }
 
 // NOTE: Linux kernel does not really reserve the pages for us.
@@ -3049,7 +3041,7 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
       // OS will initially always use small pages.
       return os::vm_page_size();
     } else if (err != 0) {
-      log_info(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d) failed; "
+      log_info(gc, os)("::madvise(" PTR_FORMAT ", %zu, %d) failed; "
                        "error='%s' (errno=%d)", p2i(first), len,
                        MADV_POPULATE_WRITE, os::strerror(err), err);
     }
@@ -3766,7 +3758,7 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
     munmap(p, page_size);
     return true;
   } else {
-      log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) failed sanity check, "
+      log_info(pagesize)("Large page size (%zu%s) failed sanity check, "
                          "checking if smaller large page sizes are usable",
                          byte_size_in_exact_unit(page_size),
                          exact_unit_for_byte_size(page_size));
@@ -3778,7 +3770,7 @@ static bool hugetlbfs_sanity_check(size_t page_size) {
         if (p != MAP_FAILED) {
           // Mapping succeeded, sanity check passed.
           munmap(p, page_size_);
-          log_info(pagesize)("Large page size (" SIZE_FORMAT "%s) passed sanity check",
+          log_info(pagesize)("Large page size (%zu%s) passed sanity check",
                              byte_size_in_exact_unit(page_size_),
                              exact_unit_for_byte_size(page_size_));
           return true;
@@ -3977,22 +3969,22 @@ void os::Linux::large_page_init() {
        LargePageSizeInBytes == 0 ||
        LargePageSizeInBytes == default_large_page_size) {
      large_page_size = default_large_page_size;
-     log_info(pagesize)("Using the default large page size: " SIZE_FORMAT "%s",
+     log_info(pagesize)("Using the default large page size: %zu%s",
                         byte_size_in_exact_unit(large_page_size),
                         exact_unit_for_byte_size(large_page_size));
     } else {
       if (all_large_pages.contains(LargePageSizeInBytes)) {
         large_page_size = LargePageSizeInBytes;
-        log_info(pagesize)("Overriding default large page size (" SIZE_FORMAT "%s) "
-                           "using LargePageSizeInBytes: " SIZE_FORMAT "%s",
+        log_info(pagesize)("Overriding default large page size (%zu%s) "
+                           "using LargePageSizeInBytes: %zu%s",
                            byte_size_in_exact_unit(default_large_page_size),
                            exact_unit_for_byte_size(default_large_page_size),
                            byte_size_in_exact_unit(large_page_size),
                            exact_unit_for_byte_size(large_page_size));
       } else {
         large_page_size = default_large_page_size;
-        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (" SIZE_FORMAT "%s) "
-                           "using the default large page size: " SIZE_FORMAT "%s",
+        log_info(pagesize)("LargePageSizeInBytes is not a valid large page size (%zu%s) "
+                           "using the default large page size: %zu%s",
                            byte_size_in_exact_unit(LargePageSizeInBytes),
                            exact_unit_for_byte_size(LargePageSizeInBytes),
                            byte_size_in_exact_unit(large_page_size),
@@ -4037,7 +4029,7 @@ static void log_on_commit_special_failure(char* req_addr, size_t bytes,
   assert(error == ENOMEM, "Only expect to fail if no memory is available");
 
   log_info(pagesize)("Failed to reserve and commit memory with given page size. req_addr: " PTR_FORMAT
-                     " size: " SIZE_FORMAT "%s, page size: " SIZE_FORMAT "%s, (errno = %d)",
+                     " size: %zu%s, page size: %zu%s, (errno = %d)",
                      p2i(req_addr), byte_size_in_exact_unit(bytes), exact_unit_for_byte_size(bytes),
                      byte_size_in_exact_unit(page_size), exact_unit_for_byte_size(page_size), error);
 }
@@ -4066,8 +4058,7 @@ static bool commit_memory_special(size_t bytes,
     return false;
   }
 
-  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=" SIZE_FORMAT "%s, page size="
-                      SIZE_FORMAT "%s",
+  log_debug(pagesize)("Commit special mapping: " PTR_FORMAT ", size=%zu%s, page size=%zu%s",
                       p2i(addr), byte_size_in_exact_unit(bytes),
                       exact_unit_for_byte_size(bytes),
                       byte_size_in_exact_unit(page_size),
@@ -4483,15 +4474,15 @@ void os::Linux::numa_init() {
   // bitmask when externally configured to run on all or fewer nodes.
 
   if (!Linux::libnuma_init()) {
-    disable_numa("Failed to initialize libnuma");
+    disable_numa("Failed to initialize libnuma", true);
   } else {
     Linux::set_configured_numa_policy(Linux::identify_numa_policy());
     if (Linux::numa_max_node() < 1) {
-      disable_numa("Only a single NUMA node is available");
+      disable_numa("Only a single NUMA node is available", false);
     } else if (Linux::is_bound_to_single_mem_node()) {
-      disable_numa("The process is bound to a single NUMA node");
+      disable_numa("The process is bound to a single NUMA node", true);
     } else if (Linux::mem_and_cpu_node_mismatch()) {
-      disable_numa("The process memory and cpu node configuration does not match");
+      disable_numa("The process memory and cpu node configuration does not match", true);
     } else {
       LogTarget(Info,os) log;
       LogStream ls(log);
@@ -4533,11 +4524,15 @@ void os::Linux::numa_init() {
   }
 }
 
-void os::Linux::disable_numa(const char* reason) {
+void os::Linux::disable_numa(const char* reason, bool warning) {
   if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
       (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
-    // Only issue a warning if the user explicitly asked for NUMA support
-    log_warning(os)("NUMA support disabled: %s", reason);
+    // Only issue a message if the user explicitly asked for NUMA support
+    if (warning) {
+      log_warning(os)("NUMA support disabled: %s", reason);
+    } else {
+      log_info(os)("NUMA support disabled: %s", reason);
+    }
   }
   FLAG_SET_ERGO(UseNUMA, false);
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
@@ -5279,7 +5274,7 @@ bool os::start_debugging(char *buf, int buflen) {
   jio_snprintf(p, buflen-len,
                "\n\n"
                "Do you want to debug the problem?\n\n"
-               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " UINTX_FORMAT " (" INTPTR_FORMAT ")\n"
+               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread %zu (" INTPTR_FORMAT ")\n"
                "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
                "Otherwise, press RETURN to abort...",
                os::current_process_id(), os::current_process_id(),

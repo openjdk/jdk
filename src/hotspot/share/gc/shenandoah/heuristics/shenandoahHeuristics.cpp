@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +122,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       bool reg_live = region->has_live();
       bool bm_live = ctx->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
-             "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: " SIZE_FORMAT,
+             "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
              BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
 #endif
       if (!region->has_live()) {
@@ -142,7 +143,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   // given the amount of immediately reclaimable garbage. If we do, figure out the collection set.
 
   assert (immediate_garbage <= total_garbage,
-          "Cannot have more immediate garbage than total garbage: " SIZE_FORMAT "%s vs " SIZE_FORMAT "%s",
+          "Cannot have more immediate garbage than total garbage: %zu%s vs %zu%s",
           byte_size_in_proper_unit(immediate_garbage), proper_unit_for_byte_size(immediate_garbage),
           byte_size_in_proper_unit(total_garbage),     proper_unit_for_byte_size(total_garbage));
 
@@ -156,9 +157,9 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t collectable_garbage = collection_set->garbage() + immediate_garbage;
   size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);
 
-  log_info(gc, ergo)("Collectable Garbage: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), "
-                     "Immediate: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), " SIZE_FORMAT " regions, "
-                     "CSet: " SIZE_FORMAT "%s (" SIZE_FORMAT "%%), " SIZE_FORMAT " regions",
+  log_info(gc, ergo)("Collectable Garbage: %zu%s (%zu%%), "
+                     "Immediate: %zu%s (%zu%%), %zu regions, "
+                     "CSet: %zu%s (%zu%%), %zu regions",
 
                      byte_size_in_proper_unit(collectable_garbage),
                      proper_unit_for_byte_size(collectable_garbage),
@@ -194,7 +195,7 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
+      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
                    last_time_ms, _guaranteed_gc_interval);
       return true;
     }
@@ -209,7 +210,7 @@ bool ShenandoahHeuristics::should_degenerate_cycle() {
 
 void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range before adjustment: " INTX_FORMAT, _gc_time_penalties);
+         "In range before adjustment: %zd", _gc_time_penalties);
 
   intx new_val = _gc_time_penalties + step;
   if (new_val < 0) {
@@ -221,7 +222,7 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
   _gc_time_penalties = new_val;
 
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
-         "In range after adjustment: " INTX_FORMAT, _gc_time_penalties);
+         "In range after adjustment: %zd", _gc_time_penalties);
 }
 
 void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,7 @@
 
 package javax.swing.text.html.parser;
 
-import java.util.Hashtable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.CharArrayReader;
-import java.net.URL;
+import java.util.Map;
 
 /**
  * An entity is described in a DTD using the ENTITY construct.
@@ -40,8 +34,7 @@ import java.net.URL;
  * @see DTD
  * @author Arthur van Hoff
  */
-public final
-class Entity implements DTDConstants {
+public final class Entity implements DTDConstants {
     /**
      * The name of the entity.
      */
@@ -117,20 +110,17 @@ class Entity implements DTDConstants {
         return new String(data);
     }
 
-
-    static Hashtable<String, Integer> entityTypes = new Hashtable<String, Integer>();
-
-    static {
-        entityTypes.put("PUBLIC", Integer.valueOf(PUBLIC));
-        entityTypes.put("CDATA", Integer.valueOf(CDATA));
-        entityTypes.put("SDATA", Integer.valueOf(SDATA));
-        entityTypes.put("PI", Integer.valueOf(PI));
-        entityTypes.put("STARTTAG", Integer.valueOf(STARTTAG));
-        entityTypes.put("ENDTAG", Integer.valueOf(ENDTAG));
-        entityTypes.put("MS", Integer.valueOf(MS));
-        entityTypes.put("MD", Integer.valueOf(MD));
-        entityTypes.put("SYSTEM", Integer.valueOf(SYSTEM));
-    }
+    private static final Map<String, Integer> entityTypes = Map.of(
+        "PUBLIC", PUBLIC,
+        "CDATA", CDATA,
+        "SDATA", SDATA,
+        "PI", PI,
+        "STARTTAG", STARTTAG,
+        "ENDTAG", ENDTAG,
+        "MS", MS,
+        "MD", MD,
+        "SYSTEM", SYSTEM
+    );
 
     /**
      * Converts <code>nm</code> string to the corresponding
@@ -144,7 +134,6 @@ class Entity implements DTDConstants {
      *   to "CDATA", if none exists
      */
     public static int name2type(String nm) {
-        Integer i = entityTypes.get(nm);
-        return (i == null) ? CDATA : i.intValue();
+        return entityTypes.getOrDefault(nm, CDATA);
     }
 }

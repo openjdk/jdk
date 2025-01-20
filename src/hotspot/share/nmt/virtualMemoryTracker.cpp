@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
@@ -338,10 +337,12 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   assert(base_addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
+
   ReservedMemoryRegion  rgn(base_addr, size, stack, mem_tag);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
-  log_debug(nmt)("Add reserved region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+  log_debug(nmt)("Add reserved region \'%s\' (" INTPTR_FORMAT ", %zu)",
                 rgn.mem_tag_name(), p2i(rgn.base()), rgn.size());
   if (reserved_rgn == nullptr) {
     VirtualMemorySummary::record_reserved_memory(size, mem_tag);
@@ -381,7 +382,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // CDS reserves the whole region for mapping CDS archive, then maps each section into the region.
       // NMT reports CDS as a whole.
       if (reserved_rgn->mem_tag() == mtClassShared) {
-        log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+        log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", %zu)",
                       reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved CDS region should contain this mapping region");
         return true;
@@ -390,7 +391,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       // Mapped CDS string region.
       // The string region(s) is part of the java heap.
       if (reserved_rgn->mem_tag() == mtJavaHeap) {
-        log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+        log_debug(nmt)("CDS reserved region \'%s\' as a whole (" INTPTR_FORMAT ", %zu)",
                       reserved_rgn->mem_tag_name(), p2i(reserved_rgn->base()), reserved_rgn->size());
         assert(reserved_rgn->contain_region(base_addr, size), "Reserved heap region should contain this mapping region");
         return true;
@@ -416,6 +417,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 void VirtualMemoryTracker::set_reserved_region_type(address addr, MemTag mem_tag) {
   assert(addr != nullptr, "Invalid address");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion   rgn(addr, 1);
   ReservedMemoryRegion*  reserved_rgn = _reserved_regions->find(rgn);
@@ -434,18 +436,19 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
   if (reserved_rgn == nullptr) {
-    log_debug(nmt)("Add committed region \'%s\', No reserved region found for  (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
+    log_debug(nmt)("Add committed region \'%s\', No reserved region found for  (" INTPTR_FORMAT ", %zu)",
                   rgn.mem_tag_name(),  p2i(rgn.base()), rgn.size());
   }
   assert(reserved_rgn != nullptr, "Add committed region, No reserved region found");
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
   bool result = reserved_rgn->add_committed_region(addr, size, stack);
-  log_debug(nmt)("Add committed region \'%s\'(" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
+  log_debug(nmt)("Add committed region \'%s\'(" INTPTR_FORMAT ", %zu) %s",
                 reserved_rgn->mem_tag_name(),  p2i(rgn.base()), rgn.size(), (result ? "Succeeded" : "Failed"));
   return result;
 }
@@ -454,14 +457,15 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
-  assert(reserved_rgn != nullptr, "No reserved region (" INTPTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), size);
+  assert(reserved_rgn != nullptr, "No reserved region (" INTPTR_FORMAT ", %zu)", p2i(addr), size);
   assert(reserved_rgn->contain_region(addr, size), "Not completely contained");
   const char* type_name = reserved_rgn->mem_tag_name();  // after remove, info is not complete
   bool result = reserved_rgn->remove_uncommitted_region(addr, size);
-  log_debug(nmt)("Removed uncommitted region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
+  log_debug(nmt)("Removed uncommitted region \'%s\' (" INTPTR_FORMAT ", %zu) %s",
                  type_name,  p2i(addr), size, (result ? " Succeeded" : "Failed"));
   return result;
 }
@@ -469,11 +473,12 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
 bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
   assert(rgn != nullptr, "Sanity check");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   // uncommit regions within the released region
   ReservedMemoryRegion backup(*rgn);
   bool result = rgn->remove_uncommitted_region(rgn->base(), rgn->size());
-  log_debug(nmt)("Remove uncommitted region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") %s",
+  log_debug(nmt)("Remove uncommitted region \'%s\' (" INTPTR_FORMAT ", %zu) %s",
                 backup.mem_tag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
   if (!result) {
     return false;
@@ -481,7 +486,7 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
 
   VirtualMemorySummary::record_released_memory(rgn->size(), rgn->mem_tag());
   result =  _reserved_regions->remove(*rgn);
-  log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") from _reserved_regions %s" ,
+  log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", %zu) from _reserved_regions %s" ,
                 backup.mem_tag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
   return result;
 }
@@ -490,12 +495,13 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
   if (reserved_rgn == nullptr) {
-    log_debug(nmt)("No reserved region found for (" INTPTR_FORMAT ", " SIZE_FORMAT ")!",
+    log_debug(nmt)("No reserved region found for (" INTPTR_FORMAT ", %zu)!",
                   p2i(rgn.base()), rgn.size());
   }
   assert(reserved_rgn != nullptr, "No reserved region");
@@ -571,7 +577,7 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
 
   const char* name = reserved_rgn->mem_tag_name();
   remove_released_region(reserved_rgn);
-  log_debug(nmt)("Split region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")  with size " SIZE_FORMAT,
+  log_debug(nmt)("Split region \'%s\' (" INTPTR_FORMAT ", %zu)  with size %zu",
                 name, p2i(rgn.base()), rgn.size(), split);
   // Now, create two new regions.
   add_reserved_region(addr, split, original_stack, mem_tag);
@@ -621,6 +627,9 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
+      assert_lock_strong(NmtVirtualMemory_lock);
+    }
     if (rgn->mem_tag() == mtThreadStack) {
       address stack_bottom = rgn->thread_stack_uncommitted_bottom();
       address committed_start;
@@ -661,7 +670,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != nullptr, "Sanity check");
-  ThreadCritical tc;
+  MemTracker::NmtVirtualMemoryLocker nvml;
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != nullptr) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();
