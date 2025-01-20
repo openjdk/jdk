@@ -92,7 +92,7 @@ public sealed interface StableHeterogeneousContainer {
         private final Map<Class<?>, StableValueImpl<Object>> map;
 
         public Impl(Set<Class<?>> types) {
-            this.map = StableValueFactories.ofMap(types);
+            this.map = StableValueFactories.map(types);
         }
 
         @ForceInline
@@ -124,7 +124,7 @@ public sealed interface StableHeterogeneousContainer {
         public <T> T computeIfAbsentSlowPath(Class<T> type,
                                              Function<Class<T>, T> constructor,
                                              StableValue<Object> stableValue) {
-            return (T) stableValue.computeIfUnset(new Supplier<Object>() {
+            return (T) stableValue.orElseSet(new Supplier<Object>() {
                 @Override
                 public Object get() {
                     return type.cast(

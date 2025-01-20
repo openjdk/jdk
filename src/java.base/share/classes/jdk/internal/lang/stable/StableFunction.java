@@ -55,7 +55,7 @@ record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         if (stable == null) {
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
-        return stable.computeIfUnset(new Supplier<R>() {
+        return stable.orElseSet(new Supplier<R>() {
             @Override  public R get() { return original.apply(value); }});
     }
 
@@ -94,7 +94,7 @@ record StableFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
 
     static <T, R> StableFunction<T, R> of(Set<? extends T> inputs,
                                           Function<? super T, ? extends R> original) {
-        return new StableFunction<>(StableValueFactories.ofMap(inputs), original);
+        return new StableFunction<>(StableValueFactories.map(inputs), original);
     }
 
 }

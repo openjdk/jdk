@@ -57,11 +57,11 @@ public class StableIntFunctionBenchmark {
     private static final int SIZE = 100;
     private static final IntFunction<Integer> IDENTITY = i -> i;
 
-    private static final List<Integer> STABLE = StableValue.ofList(SIZE, IDENTITY);
-    private static final IntFunction<Integer> INT_FUNCTION = StableValue.ofIntFunction(SIZE, IDENTITY);
+    private static final List<Integer> STABLE = StableValue.list(SIZE, IDENTITY);
+    private static final IntFunction<Integer> INT_FUNCTION = StableValue.intFunction(SIZE, IDENTITY);
 
-    private final List<Integer> stable = StableValue.ofList(SIZE, IDENTITY);
-    private final IntFunction<Integer> intFunction = StableValue.ofIntFunction(SIZE, IDENTITY);
+    private final List<Integer> stable = StableValue.list(SIZE, IDENTITY);
+    private final IntFunction<Integer> intFunction = StableValue.intFunction(SIZE, IDENTITY);
 
     @Benchmark
     public int stable() {

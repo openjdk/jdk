@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,16 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A stable value is a holder of deferred immutable data.
+ * A stable value is an immutable holder of deferred content.
  * <p>
  * A {@linkplain StableValue {@code StableValue<T>}} is created using the factory method
- * {@linkplain StableValue#unset() {@code StableValue.unset()}}. When created, the
- * stable value is <em>unset</em>, which means it holds no value. Its holder value, of
- * type {@code T}, can be <em>set</em> by calling
+ * {@linkplain StableValue#ofUnset() {@code StableValue.unset()}}. When created, the
+ * stable value is <em>unset</em>, which means it holds no <em>content</em>. Its content
+ * , of type {@code T}, can be <em>set</em> by calling
  * {@linkplain #trySet(Object) trySet()}, {@linkplain #setOrThrow(Object) setOrThrow()},
- * or {@linkplain #computeIfUnset(Supplier) computeIfUnset()}. Once set, the holder value
- * can never change and can be retrieved by calling
- * {@linkplain #orElseThrow() orElseThrow()}, {@linkplain #orElse(Object) orElse()}, or
- * {@linkplain #computeIfUnset(Supplier) computeIfUnset()}.
+ * or {@linkplain #orElseSet(Supplier) orElseSet()}. Once set, the content
+ * can never change and can be retrieved by calling {@linkplain #orElseThrow() orElseThrow()}
+ * , {@linkplain #orElse(Object) orElse()}, or {@linkplain #orElseSet(Supplier) orElseSet()}.
  * <p>
  * A stable value that is <em>set</em> is treated as a constant by the JVM, enabling the
  * same performance optimizations that are available for {@code final} fields.
@@ -61,17 +60,17 @@ import java.util.function.Supplier;
  * semantics associated with {@code final} fields is too restrictive.
  * <p>
  * Consider the following example where a stable value field "{@code logger}" is an
- * immutable holder of a value of type {@code Logger} and that is initially created
+ * immutable holder of content of type {@code Logger} and that is initially created
  * as <em>unset</em>, which means it holds no value. Later in the example, the
  * state of the "{@code logger}" field is checked and if it is still <em>unset</em>,
- * a holder value is <em>set</em>:
+ * the content is <em>set</em>:
  *
  * {@snippet lang = java:
  * class Component {
  *
- *    // Creates a new unset stable value with no holder value
- *    // @link substring="unset" target="#unset" :
- *    private final StableValue<Logger> logger = StableValue.unset();
+ *    // Creates a new unset stable value with no content
+ *    // @link substring="ofUnset" target="#ofUnset" :
+ *    private final StableValue<Logger> logger = StableValue.ofUnset();
  *
  *    Logger getLogger() {
  *        if (!logger.isSet()) {
@@ -90,18 +89,18 @@ import java.util.function.Supplier;
  * Note that the holder value can only be set at most once.
  * <p>
  * To guarantee that, even under races, only one instance of {@code Logger} is ever
- * created, the {@linkplain #computeIfUnset(Supplier) computeIfUnset()} method can be used
- * instead, where the holder is atomically and lazily computed via a lambda expression:
+ * created, the {@linkplain #orElseSet(Supplier) orElseSet()} method can be used
+ * instead, where the content is atomically and lazily computed via a lambda expression:
  *
  * {@snippet lang = java:
  * class Component {
  *
- *    // Creates a new unset stable value with no holder value
- *    // @link substring="unset" target="#unset" :
- *    private final StableValue<Logger> logger = StableValue.unset();
+ *    // Creates a new unset stable value with no content
+ *    // @link substring="ofUnset" target="#ofUnset" :
+ *    private final StableValue<Logger> logger = StableValue.ofUnset();
  *
  *    Logger getLogger() {
- *        return logger.computeIfUnset( () -> Logger.create(Component.class) );
+ *        return logger.orElseSet( () -> Logger.create(Component.class) );
  *    }
  *
  *    void process() {
@@ -111,14 +110,14 @@ import java.util.function.Supplier;
  * }
  *}
  * <p>
- * The {@code getLogger()} method calls {@code logger.computeIfUnset()} on the
- * stable value to retrieve its holder value. If the stable value is <em>unset</em>, then
- * {@code computeIfUnset()} evaluates and sets the holder value; the holder value is then
- * returned to the client. In other words, {@code computeIfUnset()} guarantees that a
- * stable value's holder value is <em>set</em> before it is used.
+ * The {@code getLogger()} method calls {@code logger.orElseSet()} on the stable value to
+ * retrieve its content. If the stable value is <em>unset</em>, then {@code orElseSet()}
+ * evaluates and sets the content; the content is then returned to the client. In other
+ * words, {@code orElseSet()} guarantees that a stable value's content is <em>set</em>
+ * before it is used.
  * <p>
- * Furthermore, {@code computeIfUnset()} guarantees that the lambda expression provided is
- * evaluated only once, even when {@code logger.computeIfUnset()} is invoked concurrently.
+ * Furthermore, {@code orElseSet()} guarantees that the lambda expression provided is
+ * evaluated only once, even when {@code logger.orElseSet()} is invoked concurrently.
  * This property is crucial as evaluation of the lambda expression may have side effects,
  * e.g., the call above to {@code Logger.getLogger()} may result in storage resources
  * being prepared.
@@ -127,16 +126,16 @@ import java.util.function.Supplier;
  * Stable values provide the foundation for higher-level functional abstractions. A
  * <em>stable supplier</em> is a supplier that computes a value and then caches it into
  * a backing stable value storage for later use. A stable supplier is created via the
- * {@linkplain StableValue#ofSupplier(Supplier) StableValue.ofSupplier()} factory,
- * by providing an original {@linkplain Supplier} which is invoked when the
- * stable supplier is first accessed:
+ * {@linkplain StableValue#supplier(Supplier) StableValue.ofSupplier()} factory, by
+ * providing an original {@linkplain Supplier} which is invoked when the stable supplier
+ * is first accessed:
  *
  * {@snippet lang = java:
  *     class Component {
  *
  *         private final Supplier<Logger> logger =
- *                 // @link substring="ofSupplier" target="#ofSupplier(Supplier)" :
- *                 StableValue.ofSupplier( () -> Logger.getLogger(Component.class) );
+ *                 // @link substring="supplier" target="#supplier(Supplier)" :
+ *                 StableValue.supplier( () -> Logger.getLogger(Component.class) );
  *
  *         void process() {
  *            logger.get().info("Process started");
@@ -151,7 +150,7 @@ import java.util.function.Supplier;
  * A <em>stable int function</em> is a function that takes an {@code int} parameter and
  * uses it to compute a result that is then cached into the backing stable value storage
  * for that parameter value. A stable int function is created via the
- * {@linkplain StableValue#ofIntFunction(int, IntFunction) StableValue.ofIntFunction()}
+ * {@linkplain StableValue#intFunction(int, IntFunction) StableValue.ofIntFunction()}
  * factory. Upon creation, the input range (i.e. [0, size)) is specified together with
  * an original {@linkplain IntFunction} which is invoked at most once per input value. In
  * effect, the stable int function will act like a cache for the original {@linkplain IntFunction}:
@@ -160,11 +159,11 @@ import java.util.function.Supplier;
  *     class SqrtUtil {
  *
  *         private static final IntFunction<Double> SQRT =
- *                 // @link substring="ofIntFunction" target="#ofIntFunction(int,IntFunction)" :
- *                 StableValue.ofIntFunction(10, StrictMath::sqrt);
+ *                 // @link substring="intFunction" target="#intFunction(int,IntFunction)" :
+ *                 StableValue.intFunction(10, StrictMath::sqrt);
  *
  *         double sqrt9() {
- *             return SQRT.apply(9); // Eventually constant folds to 3.0 at runtime
+ *             return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
  *         }
  *
  *     }
@@ -173,20 +172,20 @@ import java.util.function.Supplier;
  * A <em>stable function</em> is a function that takes a parameter (of type {@code T}) and
  * uses it to compute a result that is then cached into the backing stable value storage
  * for that parameter value. A stable function is created via the
- * {@linkplain StableValue#ofFunction(Set, Function) StableValue.ofFunction()} factory.
- * Upon creation, the input {@linkplain Set} is specified together with an original {@linkplain Function}
- * which is invoked at most once per input value. In effect, the stable function will act
- * like a cache for the original {@linkplain Function}:
+ * {@linkplain StableValue#function(Set, Function) StableValue.ofFunction()} factory.
+ * Upon creation, the input {@linkplain Set} is specified together with an original
+ * {@linkplain Function} which is invoked at most once per input value. In effect, the
+ * stable function will act like a cache for the original {@linkplain Function}:
  *
  * {@snippet lang = java:
  *     class SqrtUtil {
  *
  *         private static final Function<Integer, Double> SQRT =
- *                 // @link substring="ofFunction" target="#ofFunction(Set,Function)" :
- *                 StableValue.ofFunction(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
+ *                 // @link substring="function" target="#function(Set,Function)" :
+ *                 StableValue.function(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
  *         double sqrt16() {
- *             return SQRT.apply(16); // Eventually constant folds to 4.0 at runtime
+ *             return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
  *         }
  *
  *     }
@@ -202,11 +201,11 @@ import java.util.function.Supplier;
  *     class SqrtUtil {
  *
  *         private static final List<Double> SQRT =
- *                 // @link substring="ofList" target="#ofList(int,IntFunction)" :
- *                 StableValue.ofList(10, StrictMath::sqrt);
+ *                 // @link substring="list" target="#list(int,IntFunction)" :
+ *                 StableValue.list(10, StrictMath::sqrt);
  *
  *         double sqrt9() {
- *             return SQRT.apply(9); // Eventually constant folds to 3.0 at runtime
+ *             return SQRT.apply(9); // May eventually constant fold to 3.0 at runtime
  *         }
  *
  *     }
@@ -223,11 +222,11 @@ import java.util.function.Supplier;
  *     class SqrtUtil {
  *
  *         private static final Map<Integer, Double> SQRT =
- *                 // @link substring="ofMap" target="#ofMap(Set,Function)" :
- *                 StableValue.ofMap(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
+ *                 // @link substring="map" target="#map(Set,Function)" :
+ *                 StableValue.map(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
  *         double sqrt16() {
- *             return SQRT.apply(16); // Eventually constant folds to 4.0 at runtime
+ *             return SQRT.apply(16); // May eventually constant fold to 4.0 at runtime
  *         }
  *
  *     }
@@ -252,8 +251,8 @@ import java.util.function.Supplier;
  *             }
  *         }
  *
- *         private static final Supplier<Foo> FOO = StableValue.ofSupplier(Foo::new);
- *         private static final Supplier<Bar> BAR = StableValue.ofSupplier(() ->  new Bar(FOO.get()));
+ *         private static final Supplier<Foo> FOO = StableValue.supplier(Foo::new);
+ *         private static final Supplier<Bar> BAR = StableValue.supplier(() -> new Bar(FOO.get()));
  *
  *         public static Foo foo() {
  *             return FOO.get();
@@ -277,7 +276,7 @@ import java.util.function.Supplier;
  *         private static final int MAX_SIZE_INT = 46;
  *
  *         private static final IntFunction<Integer> FIB =
- *                 StableValue.ofIntFunction(MAX_SIZE_INT, Fibonacci::fib);
+ *                 StableValue.intFunction(MAX_SIZE_INT, Fibonacci::fib);
  *
  *         public static int fib(int n) {
  *             return n < 2
@@ -286,7 +285,7 @@ import java.util.function.Supplier;
  *         }
  *
  *     }
- * }
+ *}
  * Both {@code FIB} and {@code Fibonacci::fib} recurses into each other. Because the
  * stable int function {@code FIB} caches intermediate results, the initial
  * computational complexity is reduced from exponential to linear compared to a
@@ -299,26 +298,26 @@ import java.util.function.Supplier;
  * elements in a circularity.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
- * A holder value is guaranteed to be set at most once. If competing threads are
- * racing to set a stable value, only one update succeeds, while other updates are
- * blocked until the stable value becomes set.
+ * The content of a stable value is guaranteed to be set at most once. If competing
+ * threads are racing to set a stable value, only one update succeeds, while other updates
+ * are blocked until the stable value becomes set.
  * <p>
  * The at-most-once write operation on a stable value (e.g. {@linkplain #trySet(Object) trySet()})
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * any subsequent read operation (e.g. {@linkplain #orElseThrow()}).
  * <p>
- * The method {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()}
- * guarantees that the provided {@linkplain Supplier} is invoked successfully at most
- * once even under race. Since stable functions and stable collections are built on top
- * of {@linkplain StableValue#computeIfUnset(Supplier) computeIfUnset()} they too are
+ * The method {@linkplain StableValue#orElseSet(Supplier) orElseSet()} guarantees that
+ * the provided {@linkplain Supplier} is invoked successfully at most once even under
+ * race. Since stable functions and stable collections are built on top of
+ * {@linkplain StableValue#orElseSet(Supplier) orElseSet()} they too are
  * thread safe and guarantee at-most-once-per-input invocation.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
- * Except for a StableValue's holder value itself, all method parameters must be
+ * Except for a StableValue's content itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  * <p>
  * Stable functions and collections are not {@link Serializable} as this would require
- * {@linkplain #ofList(int, IntFunction) mappers} to be {@link Serializable} as well,
+ * {@linkplain #list(int, IntFunction) mappers} to be {@link Serializable} as well,
  * which would introduce security vulnerabilities.
  * <p>
  * As objects can be set via stable values but never removed, this can be a source
@@ -343,7 +342,7 @@ import java.util.function.Supplier;
  *           are disabled, it is strongly discouraged to circumvent these protection means
  *           as reflectively modifying such fields may lead to unspecified behavior.
  *
- * @param <T> type of the holder value
+ * @param <T> type of the content
  *
  * @since 25
  */
@@ -354,86 +353,86 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * {@return {@code true} if the holder value was set to the provided
-     *          {@code value}, {@code false} otherwise}
+     * {@return {@code true} if the content was set to the provided {@code value},
+     *          {@code false} otherwise}
      * <p>
-     * When this method returns, the holder value is always set.
+     * When this method returns, the content is always set.
      *
      * @param value to set
      */
     boolean trySet(T value);
 
     /**
-     * {@return the holder value if set, otherwise, returns the provided
-     *          {@code other} value}
+     * {@return the content if set, otherwise, returns the provided {@code other} value}
      *
-     *
-     * @param other to return if the holder value is not set
+     * @param other to return if the content is not set
      */
     T orElse(T other);
 
     /**
-     * {@return the holder value if set, otherwise, throws {@code NoSuchElementException}}
+     * {@return the content if set, otherwise, throws {@code NoSuchElementException}}
      *
-     * @throws NoSuchElementException if no holder value is set
+     * @throws NoSuchElementException if no content is set
      */
     T orElseThrow();
 
     /**
-     * {@return {@code true} if the holder value is set, {@code false} otherwise}
+     * {@return {@code true} if the content is set, {@code false} otherwise}
      */
     boolean isSet();
 
     /**
-     * {@return the holder value; if unset, first attempts to compute and set the
-     *          holder value using the provided {@code supplier}}
+     * {@return the content; if unset, first attempts to compute and set the
+     *          content using the provided {@code supplier}}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
      * completes without throwing an exception.
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * holder value is set. The most common usage is to construct a new object serving
+     * content is set. The most common usage is to construct a new object serving
      * as a lazily computed value or memoized result, as in:
      *
-     * <pre> {@code
-     * Value witness = stable.computeIfUnset(Value::new);
-     * }</pre>
+     * {@snippet lang=java:
+     *     Value witness = stable.orElseSet(Value::new);
+     * }
      * <p>
-     * When this method returns successfully, the holder value is always set.
+     * When this method returns successfully, the content is always set.
      *
      * @implSpec The implementation logic is equivalent to the following steps for this
      *           {@code stable}:
      *
-     * <pre> {@code
-     * if (stable.isSet()) {
-     *     return stable.get();
-     * } else {
-     *     V newValue = supplier.get();
-     *     stable.setOrThrow(newValue);
-     *     return newValue;
+     * {@snippet lang=java:
+     *     if (stable.isSet()) {
+     *         return stable.get();
+     *      } else {
+     *         V newValue = supplier.get();
+     *         stable.setOrThrow(newValue);
+     *         return newValue;
+     *     }
      * }
-     * }</pre>
      * Except it is thread-safe and will only return the same witness value
      * regardless if invoked by several threads. Also, the provided {@code supplier}
      * will only be invoked once even if invoked from several threads unless the
      * {@code supplier} throws an exception.
      *
-     * @param  supplier to be used for computing the holder value
+     * @param  supplier to be used for computing the content, if not previously set
      */
-    T computeIfUnset(Supplier<? extends T> supplier);
+    T orElseSet(Supplier<? extends T> supplier);
 
     // Convenience methods
 
     /**
-     * Sets the holder value to the provided {@code value}, or,
-     * if already set, throws {@code IllegalStateException}.
+     * Sets the cintent to the provided {@code value}, or, if already set,
+     * throws {@code IllegalStateException}.
      * <p>
-     * When this method returns (or throws an exception), the holder value is always set.
+     * When this method returns (or throws an exception), the content is always set.
      *
      * @param value to set
-     * @throws IllegalStateException if the holder value was already set
+     * @throws IllegalStateException if the content was already set
      */
     void setOrThrow(T value);
+
+    // Object methods
 
     /**
      * {@return {@code true} if {@code this == obj}, {@code false} otherwise}
@@ -453,22 +452,22 @@ public sealed interface StableValue<T>
     /**
      * {@return a new unset stable value}
      * <p>
-     * An unset stable value has no holder value.
+     * An unset stable value has no content.
      *
-     * @param <T> type of the holder value
+     * @param <T> type of the content
      */
-    static <T> StableValue<T> unset() {
-        return StableValueFactories.unset();
+    static <T> StableValue<T> ofUnset() {
+        return StableValueFactories.ofUnset();
     }
 
     /**
-     * {@return a new set stable value holding the provided {@code value}}
+     * {@return a new set stable value holding the provided {@code content}}
      *
-     * @param value holder value to set
-     * @param <T>   type of the holder value
+     * @param content to set
+     * @param <T>     type of the content
      */
-    static <T> StableValue<T> of(T value) {
-        return StableValueFactories.of(value);
+    static <T> StableValue<T> of(T content) {
+        return StableValueFactories.of(content);
     }
 
     /**
@@ -485,14 +484,14 @@ public sealed interface StableValue<T>
      * thrown by the computing thread.
      * <p>
      * If the provided {@code original} supplier throws an exception, it is relayed
-     * to the initial caller and no holder value is recorded.
+     * to the initial caller and no content is recorded.
      *
      * @param original supplier used to compute a cached value
      * @param <T>      the type of results supplied by the returned supplier
      */
-    static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
+    static <T> Supplier<T> supplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
-        return StableValueFactories.ofSupplier(original);
+        return StableValueFactories.supplier(original);
     }
 
     /**
@@ -511,19 +510,19 @@ public sealed interface StableValue<T>
      * the computing thread.
      * <p>
      * If the provided {@code original} int function throws an exception, it is relayed
-     * to the initial caller and no holder value is recorded.
+     * to the initial caller and no content is recorded.
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
      * @param original IntFunction used to compute cached values
      * @param <R>      the type of results delivered by the returned IntFunction
      */
-    static <R> IntFunction<R> ofIntFunction(int size,
-                                            IntFunction<? extends R> original) {
+    static <R> IntFunction<R> intFunction(int size,
+                                          IntFunction<? extends R> original) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(original);
-        return StableValueFactories.ofIntFunction(size, original);
+        return StableValueFactories.intFunction(size, original);
     }
 
     /**
@@ -541,18 +540,18 @@ public sealed interface StableValue<T>
      * computed or an exception is thrown by the computing thread.
      * <p>
      * If the provided {@code original} function throws an exception, it is relayed to
-     * the initial caller and no holder value is recorded.
+     * the initial caller and no content is recorded.
      *
      * @param inputs   the set of allowed input values
      * @param original Function used to compute cached values
      * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
      */
-    static <T, R> Function<T, R> ofFunction(Set<? extends T> inputs,
-                                            Function<? super T, ? extends R> original) {
+    static <T, R> Function<T, R> function(Set<? extends T> inputs,
+                                          Function<? super T, ? extends R> original) {
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
-        return StableValueFactories.ofFunction(inputs, original);
+        return StableValueFactories.function(inputs, original);
     }
 
     /**
@@ -579,13 +578,13 @@ public sealed interface StableValue<T>
      *               (may return {@code null})
      * @param <E>    the type of elements in the returned list
      */
-    static <E> List<E> ofList(int size,
-                              IntFunction<? extends E> mapper) {
+    static <E> List<E> list(int size,
+                            IntFunction<? extends E> mapper) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(mapper);
-        return StableValueFactories.ofList(size, mapper);
+        return StableValueFactories.list(size, mapper);
     }
 
     /**
@@ -610,11 +609,11 @@ public sealed interface StableValue<T>
      * @param <K>    the type of keys maintained by the returned map
      * @param <V>    the type of mapped values in the returned map
      */
-    static <K, V> Map<K, V> ofMap(Set<K> keys,
-                                  Function<? super K, ? extends V> mapper) {
+    static <K, V> Map<K, V> map(Set<K> keys,
+                                Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
-        return StableValueFactories.ofMap(keys, mapper);
+        return StableValueFactories.map(keys, mapper);
     }
 
 }

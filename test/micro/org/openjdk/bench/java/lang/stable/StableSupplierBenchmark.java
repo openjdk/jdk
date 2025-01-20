@@ -56,15 +56,15 @@ public class StableSupplierBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final StableValue<Integer> STABLE = init(StableValue.unset(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.unset(), VALUE2);
-    private static final Supplier<Integer> SUPPLIER = StableValue.ofSupplier(() -> VALUE);
-    private static final Supplier<Integer> SUPPLIER2 = StableValue.ofSupplier(() -> VALUE);
+    private static final StableValue<Integer> STABLE = init(StableValue.ofUnset(), VALUE);
+    private static final StableValue<Integer> STABLE2 = init(StableValue.ofUnset(), VALUE2);
+    private static final Supplier<Integer> SUPPLIER = StableValue.supplier(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER2 = StableValue.supplier(() -> VALUE);
 
-    private final StableValue<Integer> stable = init(StableValue.unset(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.unset(), VALUE2);
-    private final Supplier<Integer> supplier = StableValue.ofSupplier(() -> VALUE);
-    private final Supplier<Integer> supplier2 = StableValue.ofSupplier(() -> VALUE2);
+    private final StableValue<Integer> stable = init(StableValue.ofUnset(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.ofUnset(), VALUE2);
+    private final Supplier<Integer> supplier = StableValue.supplier(() -> VALUE);
+    private final Supplier<Integer> supplier2 = StableValue.supplier(() -> VALUE2);
 
     @Benchmark
     public int stable() {

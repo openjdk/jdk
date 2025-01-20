@@ -53,7 +53,7 @@ record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
     public R apply(int index) {
         try {
             return delegates[index]
-                    .computeIfUnset(new Supplier<R>() {
+                    .orElseSet(new Supplier<R>() {
                         @Override public R get() { return original.apply(index); }});
         } catch (ArrayIndexOutOfBoundsException ioob) {
             throw new IllegalArgumentException("Input not allowed: " + index, ioob);
@@ -95,7 +95,7 @@ record StableIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
     }
 
     static <R> StableIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new StableIntFunction<>(StableValueFactories.ofArray(size), original);
+        return new StableIntFunction<>(StableValueFactories.array(size), original);
     }
 
 }

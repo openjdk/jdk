@@ -114,7 +114,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @ForceInline
     @Override
-    public T computeIfUnset(Supplier<? extends T> supplier) {
+    public T orElseSet(Supplier<? extends T> supplier) {
         final Object t = value;
         return (t == null) ? computeIfUnsetSlowPath(supplier) : unwrap(t);
     }

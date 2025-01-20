@@ -60,11 +60,11 @@ public class StableFunctionBenchmark {
     private static final int SIZE = 100;
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
-    private static final Map<Integer, Integer> STABLE = StableValue.ofMap(SET, Function.identity());
-    private static final Function<Integer, Integer> FUNCTION = StableValue.ofFunction(SET, Function.identity());
+    private static final Map<Integer, Integer> STABLE = StableValue.map(SET, Function.identity());
+    private static final Function<Integer, Integer> FUNCTION = StableValue.function(SET, Function.identity());
 
-    private final Map<Integer, Integer> stable = StableValue.ofMap(SET, Function.identity());
-    private final Function<Integer, Integer> function = StableValue.ofFunction(SET, Function.identity());
+    private final Map<Integer, Integer> stable = StableValue.map(SET, Function.identity());
+    private final Function<Integer, Integer> function = StableValue.function(SET, Function.identity());
 
     @Benchmark
     public int stable() {

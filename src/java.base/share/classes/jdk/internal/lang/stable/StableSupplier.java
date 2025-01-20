@@ -42,7 +42,7 @@ record StableSupplier<T>(StableValueImpl<T> delegate, Supplier<? extends T> orig
     @ForceInline
     @Override
     public T get() {
-        return delegate.computeIfUnset(original);
+        return delegate.orElseSet(original);
     }
 
     @Override

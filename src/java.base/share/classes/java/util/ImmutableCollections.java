@@ -778,7 +778,7 @@ class ImmutableCollections {
 
         StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
-            this.backing = StableValueFactories.ofArray(size);
+            this.backing = StableValueFactories.array(size);
         }
 
         @Override public boolean  isEmpty() { return backing.length == 0;}
@@ -790,7 +790,7 @@ class ImmutableCollections {
         public E get(int i) {
             try {
                 return backing[i]
-                        .computeIfUnset(new Supplier<E>() {
+                        .orElseSet(new Supplier<E>() {
                             @Override  public E get() { return mapper.apply(i); }});
             } catch (ArrayIndexOutOfBoundsException aioobe) {
                 throw new IndexOutOfBoundsException(i);
@@ -1468,7 +1468,7 @@ class ImmutableCollections {
 
         StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
-            this.delegate = StableValueFactories.ofMap(keys);
+            this.delegate = StableValueFactories.map(keys);
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
@@ -1484,7 +1484,7 @@ class ImmutableCollections {
             }
             @SuppressWarnings("unchecked")
             final K k = (K) key;
-            return stable.computeIfUnset(new Supplier<V>() {
+            return stable.orElseSet(new Supplier<V>() {
                 @Override public V get() { return mapper.apply(k); }});
         }
 
@@ -1518,7 +1518,7 @@ class ImmutableCollections {
                 public Entry<K, V> next() {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
                     final K k = inner.getKey();
-                    return new NullableKeyValueHolder<>(k, inner.getValue().computeIfUnset(new Supplier<V>() {
+                    return new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
                         @Override public V get() { return mapper.apply(k); }}));
                 }
 
@@ -1529,7 +1529,7 @@ class ImmutableCollections {
                                 @Override
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
                                     final K k = inner.getKey();
-                                    action.accept(new NullableKeyValueHolder<>(k, inner.getValue().computeIfUnset(new Supplier<V>() {
+                                    action.accept(new NullableKeyValueHolder<>(k, inner.getValue().orElseSet(new Supplier<V>() {
                                         @Override public V get() { return mapper.apply(k); }})));
                                 }
                             };

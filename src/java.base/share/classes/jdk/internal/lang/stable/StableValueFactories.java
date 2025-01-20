@@ -17,27 +17,27 @@ public final class StableValueFactories {
 
     // Factories
 
-    public static <T> StableValueImpl<T> unset() {
+    public static <T> StableValueImpl<T> ofUnset() {
         return StableValueImpl.newInstance();
     }
 
     public static <T> StableValueImpl<T> of(T value) {
-        final StableValueImpl<T> stableValue = unset();
+        final StableValueImpl<T> stableValue = ofUnset();
         stableValue.trySet(value);
         return stableValue;
     }
 
-    public static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
+    public static <T> Supplier<T> supplier(Supplier<? extends T> original) {
         return StableSupplier.of(original);
     }
 
-    public static <R> IntFunction<R> ofIntFunction(int size,
-                                                   IntFunction<? extends R> original) {
+    public static <R> IntFunction<R> intFunction(int size,
+                                                 IntFunction<? extends R> original) {
         return StableIntFunction.of(size, original);
     }
 
-    public static <T, R> Function<T, R> ofFunction(Set<? extends T> inputs,
-                                                   Function<? super T, ? extends R> original) {
+    public static <T, R> Function<T, R> function(Set<? extends T> inputs,
+                                                 Function<? super T, ? extends R> original) {
         if (inputs.isEmpty()) {
             return EmptyStableFunction.of(original);
         }
@@ -50,17 +50,17 @@ public final class StableValueFactories {
         return new StableHeterogeneousContainer.Impl(types);
     }
 
-    public static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
+    public static <E> List<E> list(int size, IntFunction<? extends E> mapper) {
         return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
     }
 
-    public static <K, V> Map<K, V> ofMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+    public static <K, V> Map<K, V> map(Set<K> keys, Function<? super K, ? extends V> mapper) {
         return SharedSecrets.getJavaUtilCollectionAccess().stableMap(keys, mapper);
     }
 
     // Supporting methods
 
-    public static <T> StableValueImpl<T>[] ofArray(int size) {
+    public static <T> StableValueImpl<T>[] array(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
@@ -72,7 +72,7 @@ public final class StableValueFactories {
         return stableValues;
     }
 
-    public static <K, T> Map<K, StableValueImpl<T>> ofMap(Set<K> keys) {
+    public static <K, T> Map<K, StableValueImpl<T>> map(Set<K> keys) {
         Objects.requireNonNull(keys);
         @SuppressWarnings("unchecked")
         final var entries = (Map.Entry<K, StableValueImpl<T>>[]) new Map.Entry<?, ?>[keys.size()];
@@ -82,6 +82,5 @@ public final class StableValueFactories {
         }
         return Map.ofEntries(entries);
     }
-
 
 }

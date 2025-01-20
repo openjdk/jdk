@@ -54,7 +54,7 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         final int index = value.ordinal() - firstOrdinal;
         try {
             return delegates[index]
-                    .computeIfUnset(new Supplier<R>() {
+                    .orElseSet(new Supplier<R>() {
                         @Override public R get() { return original.apply(value); }});
         } catch (ArrayIndexOutOfBoundsException ioob) {
             throw new IllegalArgumentException("Input not allowed: " + value, ioob);
@@ -108,7 +108,7 @@ record StableEnumFunction<E extends Enum<E>, R>(Class<E> enumType,
         }
         final int size = max - min + 1;
         final Class<E> enumType = (Class<E>)inputs.iterator().next().getClass();
-        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, StableValueFactories.ofArray(size), (Function<E, R>) original);
+        return (Function<T, R>) new StableEnumFunction<E, R>(enumType, min, StableValueFactories.array(size), (Function<E, R>) original);
     }
 
 }
