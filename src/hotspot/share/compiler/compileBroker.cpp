@@ -370,20 +370,17 @@ void CompileQueue::free_all() {
     {
       MutexLocker ct_lock(current->lock());
       assert(current->waiting_for_completion_count() <= 1, "more than one thread are waiting for task");
-      while (current->waiting_for_completion_count() > 0) {
-        // While other threads are waiting for this task, we must wake them up one-by-one
-        // so they will stop waiting.
+      if (current->waiting_for_completion_count() > 0) {
+        // If another thread waits for this task, we must wake them up
+        // so they will stop waiting and free the task.
         current->lock()->notify();
-        // We notified, now it's time for us to wait for the other thread to wake us up
-        // once it stopped waiting.
-        current->lock()->wait();
         found_waiter = true;
       }
-      // At this point, no other threads are waiting for the task.
     }
     if (!found_waiter) {
-      // If no one was waiting for this task, we need to free it ourselves. Otherwise, by convention,
-      // it's the waiters responsibility to free the task.
+      // If no one was waiting for this task, we need to free it ourselves. In this case, the task
+      // is also certainly unlocked, because, again, there is no waiter.
+      // Otherwise, by convention, it's the waiters responsibility to free the task.
       // Put the task back on the freelist.
       CompileTask::free(current);
     }
@@ -1756,8 +1753,6 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
       ml.wait();
     }
     task->dec_waiting_for_completion();
-    // We need to notify after decrementing the waiting count. See CompileQueue::free_all
-    ml.notify();
   }
 
   if (free_task) {
