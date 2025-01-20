@@ -839,6 +839,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
 #ifdef ASSERT
 void C2_MacroAssembler::checked_cast_int(const TypeInt* type, Register dst) {
+  BLOCK_COMMENT("CastII {");
   Label fail;
   Label succeed;
   cmpl(dst, type->_lo);
@@ -851,9 +852,11 @@ void C2_MacroAssembler::checked_cast_int(const TypeInt* type, Register dst) {
   movl(rdx, type->_hi);
   hlt(); // hlt so we have the stack trace
   bind(succeed);
+  BLOCK_COMMENT("} // CastII");
 }
 
 void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register dst, Register tmp) {
+  BLOCK_COMMENT("CastLL {");
   Label fail;
   Label succeed;
   if (is_simm32(type->_lo)) {
@@ -876,6 +879,7 @@ void C2_MacroAssembler::checked_cast_long(const TypeLong* type, Register dst, Re
   mov64(rdx, type->_hi);
   hlt(); // hlt so we have the stack trace
   bind(succeed);
+  BLOCK_COMMENT("} // CastLL");
 }
 #endif // ASSERT
 

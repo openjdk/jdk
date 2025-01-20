@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,24 @@
 
 /*
  * @test
- * @bug 8238756
+ * @bug 8346836
  * @requires vm.debug == true & vm.flavor == "server"
- * @summary Run with -Xcomp to test -XX:VerifyIterativeGVN=11 in debug builds.
+ * @summary Run with -Xcomp to test -XX:+StressGCM -XX:VerifyConstraintCasts=1 in debug builds.
  *
- * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:VerifyIterativeGVN=11 compiler.c2.TestVerifyIterativeGVN
+ * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=1 compiler.c2.TestVerifyConstraintCasts
+ */
+
+/*
+ * @test
+ * @bug 8346836
+ * @requires vm.debug == true & vm.flavor == "server"
+ * @summary Run with -Xcomp to test -XX:+StressGCM -XX:VerifyConstraintCasts=2 in debug builds.
+ *
+ * @run main/othervm/timeout=300 -Xbatch -Xcomp -XX:+StressGCM -XX:VerifyConstraintCasts=2 compiler.c2.TestVerifyConstraintCasts
  */
 package compiler.c2;
 
-public class TestVerifyIterativeGVN {
+public class TestVerifyConstraintCasts {
     public static void main(String[] args) {
     }
 }
