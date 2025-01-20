@@ -42,7 +42,8 @@ import jdk.internal.math.RelaxedMath;
 @Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1,
-      jvmArgs = {"--add-exports", "java.base/jdk.internal.math=ALL-UNNAMED"})
+      jvmArgs = {"--add-modules", "java.base",
+                 "--add-exports", "java.base/jdk.internal.math=ALL-UNNAMED"})
 public class VectorRelaxedMath {
     @Param({"10000"})
     public int SIZE;
@@ -77,7 +78,7 @@ public class VectorRelaxedMath {
     @Benchmark
     public float floatAddReductionDotProductStrict() {
         float sum = 0;
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < aF.length; i++) {
             sum += aF[i] * bF[i];
         }
         return sum;
@@ -86,7 +87,7 @@ public class VectorRelaxedMath {
     @Benchmark
     public float floatAddReductionDotProductReorder() {
         float sum = 0;
-        for (int i = 0; i < a.length; i++) {
+        for (int i = 0; i < aF.length; i++) {
             sum = RelaxedMath.add(sum, aF[i] * bF[i], /* allow reduction reordering */ 1);
         }
         return sum;
