@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,7 +61,7 @@ void CommitMask::check_pointer(const MetaWord* p) const {
 void CommitMask::check_pointer_aligned(const MetaWord* p) const {
   check_pointer(p);
   assert(is_aligned(p, _words_per_bit * BytesPerWord),
-         "Pointer " PTR_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
+         "Pointer " PTR_FORMAT " should be aligned to commit granule size %zu.",
          p2i(p), _words_per_bit * BytesPerWord);
 }
 // Given a range, check if it points into the range this bitmap covers,
@@ -69,7 +69,7 @@ void CommitMask::check_pointer_aligned(const MetaWord* p) const {
 void CommitMask::check_range(const MetaWord* start, size_t word_size) const {
   check_pointer_aligned(start);
   assert(is_aligned(word_size, _words_per_bit),
-         "Range " SIZE_FORMAT " should be aligned to commit granule size " SIZE_FORMAT ".",
+         "Range %zu should be aligned to commit granule size %zu.",
          word_size, _words_per_bit);
   check_pointer(start + word_size - 1);
 }

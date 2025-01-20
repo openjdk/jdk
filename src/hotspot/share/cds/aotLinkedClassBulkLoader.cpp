@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
   ResourceMark rm(current);
   if (current->pending_exception()->is_a(vmClasses::OutOfMemoryError_klass())) {
     log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
-                   SIZE_FORMAT "M", MaxHeapSize/M);
+                   "%zuM", MaxHeapSize/M);
   } else {
     log_error(cds)("%s: %s", current->pending_exception()->klass()->external_name(),
                    java_lang_String::as_utf8_string(java_lang_Throwable::message(current->pending_exception())));

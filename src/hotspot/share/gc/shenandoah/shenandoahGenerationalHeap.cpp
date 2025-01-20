@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -460,20 +461,20 @@ HeapWord* ShenandoahGenerationalHeap::allocate_from_plab_slow(Thread* thread, si
   size_t future_size = MIN2(cur_size * 2, plab_max_size());
   // Doubling, starting at a card-multiple, should give us a card-multiple. (Ceiling and floor
   // are card multiples.)
-  assert(is_aligned(future_size, CardTable::card_size_in_words()), "Card multiple by construction, future_size: " SIZE_FORMAT
-          ", card_size: " SIZE_FORMAT ", cur_size: " SIZE_FORMAT ", max: " SIZE_FORMAT,
+  assert(is_aligned(future_size, CardTable::card_size_in_words()), "Card multiple by construction, future_size: %zu"
+          ", card_size: %zu, cur_size: %zu, max: %zu",
          future_size, (size_t) CardTable::card_size_in_words(), cur_size, plab_max_size());
 
   // Record new heuristic value even if we take any shortcut. This captures
   // the case when moderately-sized objects always take a shortcut. At some point,
   // heuristics should catch up with them.  Note that the requested cur_size may
   // not be honored, but we remember that this is the preferred size.
-  log_debug(gc, free)("Set new PLAB size: " SIZE_FORMAT, future_size);
+  log_debug(gc, free)("Set new PLAB size: %zu", future_size);
   ShenandoahThreadLocalData::set_plab_size(thread, future_size);
   if (cur_size < size) {
     // The PLAB to be allocated is still not large enough to hold the object. Fall back to shared allocation.
     // This avoids retiring perfectly good PLABs in order to represent a single large object allocation.
-    log_debug(gc, free)("Current PLAB size (" SIZE_FORMAT ") is too small for " SIZE_FORMAT, cur_size, size);
+    log_debug(gc, free)("Current PLAB size (%zu) is too small for %zu", cur_size, size);
     return nullptr;
   }
 
@@ -570,7 +571,7 @@ void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
   if (top != nullptr && plab->waste() > original_waste && is_in_old(top)) {
     // If retiring the plab created a filler object, then we need to register it with our card scanner so it can
     // safely walk the region backing the plab.
-    log_debug(gc)("retire_plab() is registering remnant of size " SIZE_FORMAT " at " PTR_FORMAT,
+    log_debug(gc)("retire_plab() is registering remnant of size %zu at " PTR_FORMAT,
                   plab->waste() - original_waste, p2i(top));
     // No lock is necessary because the PLAB memory is aligned on card boundaries.
     old_generation()->card_scan()->register_object_without_lock(top);
@@ -714,7 +715,7 @@ void ShenandoahGenerationalHeap::TransferResult::print_on(const char* when, outp
   ShenandoahOldGeneration* const old_gen = heap->old_generation();
   const size_t young_available = young_gen->available();
   const size_t old_available = old_gen->available();
-  ss->print_cr("After %s, %s " SIZE_FORMAT " regions to %s to prepare for next gc, old available: "
+  ss->print_cr("After %s, %s %zu regions to %s to prepare for next gc, old available: "
                      PROPERFMT ", young_available: " PROPERFMT,
                      when,
                      success? "successfully transferred": "failed to transfer", region_count, region_destination,
@@ -819,7 +820,7 @@ private:
       HeapWord* update_watermark = r->get_update_watermark();
       assert(update_watermark >= r->bottom(), "sanity");
 
-      log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region " SIZE_FORMAT, worker_id, r->index());
+      log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
       bool region_progress = false;
       if (r->is_active() && !r->is_cset()) {
         if (r->is_young()) {
@@ -845,13 +846,13 @@ private:
           // updated.
 
           assert(r->get_update_watermark() == r->bottom(),
-                 "%s Region " SIZE_FORMAT " is_active but not recognized as YOUNG or OLD so must be newly transitioned from FREE",
+                 "%s Region %zu is_active but not recognized as YOUNG or OLD so must be newly transitioned from FREE",
                  r->affiliation_name(), r->index());
         }
       }
 
       if (region_progress && ShenandoahPacing) {
-        _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
+        _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
       }
 
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
@@ -911,7 +912,7 @@ private:
         }
 
         if (ShenandoahPacing) {
-          _heap->pacer()->report_updaterefs(pointer_delta(end_of_range, start_of_range));
+          _heap->pacer()->report_update_refs(pointer_delta(end_of_range, start_of_range));
         }
       }
     }
@@ -1071,7 +1072,7 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   shenandoah_assert_heaplocked_or_safepoint();
   if (is_concurrent_old_mark_in_progress()) {
     // This is still necessary for degenerated cycles because the degeneration point may occur
-    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_updaterefs for
+    // after final mark of the young generation. See ShenandoahConcurrentGC::op_final_update_refs for
     // a more detailed explanation.
     old_generation()->transfer_pointers_from_satb();
   }

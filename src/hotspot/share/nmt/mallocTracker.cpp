@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  *
@@ -292,7 +292,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     } else {
       where = "just outside of";
     }
-    st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size " SIZE_FORMAT ", tag %s",
+    st->print_cr(PTR_FORMAT " %s %s malloced block starting at " PTR_FORMAT ", size %zu, tag %s",
                  p2i(p), where,
                  (block->is_dead() ? "dead" : "live"),
                  p2i(block + 1), // lets print the payload start, not the header

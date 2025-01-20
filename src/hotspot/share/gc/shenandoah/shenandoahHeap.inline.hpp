@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,7 +379,7 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
     // Old regions are in old and global collections, not in young collections
     return !gen->is_young();
   default:
-    assert(false, "Bad affiliation (%d) for region " SIZE_FORMAT, region_affiliation(index), index);
+    assert(false, "Bad affiliation (%d) for region %zu", region_affiliation(index), index);
     return false;
   }
 }
@@ -471,7 +472,7 @@ inline bool ShenandoahHeap::is_evacuation_in_progress() const {
 }
 
 inline bool ShenandoahHeap::is_update_refs_in_progress() const {
-  return is_gc_state(UPDATEREFS);
+  return is_gc_state(UPDATE_REFS);
 }
 
 inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {

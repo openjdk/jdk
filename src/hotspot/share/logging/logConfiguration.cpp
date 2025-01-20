@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,8 @@ size_t LogConfiguration::add_output(LogOutput* output) {
 
 void LogConfiguration::delete_output(size_t idx) {
   assert(idx > 1 && idx < _n_outputs,
-         "idx must be in range 1 < idx < _n_outputs, but idx = " SIZE_FORMAT
-         " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
+         "idx must be in range 1 < idx < _n_outputs, but idx = %zu"
+         " and _n_outputs = %zu", idx, _n_outputs);
   LogOutput* output = _outputs[idx];
   // Swap places with the last output and shrink the array
   _outputs[idx] = _outputs[--_n_outputs];
@@ -240,7 +240,7 @@ void LogConfiguration::delete_output(size_t idx) {
 //
 void LogConfiguration::configure_output(size_t idx, const LogSelectionList& selections, const LogDecorators& decorators) {
   assert(ConfigurationLock::current_thread_has_lock(), "Must hold configuration lock to call this function.");
-  assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
+  assert(idx < _n_outputs, "Invalid index, idx = %zu and _n_outputs = %zu", idx, _n_outputs);
   LogOutput* output = _outputs[idx];
 
   output->_reconfigured = true;
@@ -351,7 +351,7 @@ void LogConfiguration::configure_stdout(LogLevelType level, int exact_match, ...
     }
   }
   assert(i < LogTag::MaxTags || static_cast<LogTagType>(va_arg(ap, int)) == LogTag::__NO_TAG,
-         "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
+         "Too many tags specified! Can only have up to %zu tags in a tag set.", LogTag::MaxTags);
   va_end(ap);
 
   LogSelection selection(tags, !exact_match, level);
@@ -500,7 +500,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
   size_t idx;
   bool added = false;
   if (outputstr[0] == '#') { // Output specified using index
-    int ret = sscanf(outputstr + 1, SIZE_FORMAT, &idx);
+    int ret = sscanf(outputstr + 1, "%zu", &idx);
     if (ret != 1 || idx >= _n_outputs) {
       errstream->print_cr("Invalid output index '%s'", outputstr);
       return false;
@@ -566,7 +566,7 @@ void LogConfiguration::describe_available(outputStream* out) {
 void LogConfiguration::describe_current_configuration(outputStream* out) {
   out->print_cr("Log output configuration:");
   for (size_t i = 0; i < _n_outputs; i++) {
-    out->print(" #" SIZE_FORMAT ": ", i);
+    out->print(" #%zu: ", i);
     _outputs[i]->describe(out);
     if (_outputs[i]->is_reconfigured()) {
       out->print(" (reconfigured)");
