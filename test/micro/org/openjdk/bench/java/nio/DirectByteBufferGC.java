@@ -23,7 +23,7 @@
 package org.openjdk.bench.java.nio;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
@@ -40,13 +40,15 @@ public class DirectByteBufferGC {
     @Param({"16384", "65536", "262144", "1048576", "4194304"})
     int count;
 
-    // Make sure all buffers are reachable and available for GC in scalable manner.
+    // Make sure all buffers are reachable and available for GC. Buffers
+    // directly reference their Cleanables, so we do not want to provide
+    // excess parallelism here.
     // This exposes the potential GC problem in Cleaner lists.
-    ArrayList<ByteBuffer> buffers;
+    LinkedList<ByteBuffer> buffers;
 
     @Setup
     public void setup() {
-        buffers = new ArrayList<>();
+        buffers = new LinkedList<>();
         for (int c = 0; c < count; c++) {
             buffers.add(ByteBuffer.allocateDirect(1));
         }
