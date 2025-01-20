@@ -240,6 +240,7 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
                 newlen = length - (int) (newpos - pos);
             }
         }
+        assert limit == newpos + newlen;
 
         // Look at the frames that have an offset higher or equal to
         // the new frame offset, and see if any overlap with the new
@@ -261,14 +262,10 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
                     }
                     // safe cast, since newlen <= len
                     newlen = (int) (coffset - newpos);
-                    queue.add(slice(frame, newpos, newlen));
-                    buffered += newlen;
-                    return;
                 }
             }
             break;
         }
-        assert limit == newpos + newlen;
         assert newlen >= 0;
         if (newlen == length) {
             assert newpos == pos;
