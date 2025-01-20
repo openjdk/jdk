@@ -95,10 +95,10 @@ class CompileTask : public CHeapObj<mtCompiler> {
   DirectiveSet*  _directive;
 #if INCLUDE_JVMCI
   bool                 _has_waiter;
-  int                  _waiting_count;  // See waiting_for_completion_count()
   // Compilation state for a blocking JVMCI compilation
   JVMCICompileState*   _blocking_jvmci_compile_state;
 #endif
+  int                  _waiting_count;  // See waiting_for_completion_count()
   int                  _comp_level;
   int                  _num_inlined_bytecodes;
   CompileTask*         _next, *_prev;
