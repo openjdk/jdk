@@ -780,7 +780,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
             dependencies: [
-                "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
+                "autoconf", "boot_jdk", "devkit", "graphviz", "pandoc", buildJdkDep,
             ],
             configure_args: concat(
                 "--enable-full-docs",

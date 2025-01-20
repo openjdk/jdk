@@ -1215,9 +1215,7 @@ Node* VPointer::maybe_negate_invar(bool negate, Node* invar) {
   if (negate) {
     BasicType bt = invar->bottom_type()->basic_type();
     assert(bt == T_INT || bt == T_LONG, "");
-    PhaseIterGVN& igvn = phase()->igvn();
-    Node* zero = igvn.zerocon(bt);
-    phase()->set_ctrl(zero, phase()->C->root());
+    Node* zero = phase()->zerocon(bt);
     Node* sub = SubNode::make(zero, invar, bt);
     invar = register_if_new(sub);
   }

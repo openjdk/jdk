@@ -30,6 +30,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -95,7 +96,7 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
 
   // Check that Klass range is fully engulfed in the encoding range
   const address encoding_start = _base;
-  const address encoding_end = _base + nth_bit(narrow_klass_pointer_bits() + _shift);
+  const address encoding_end = (address)(p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift));
   ASSERT_HERE_2(_klass_range_start >= _base && _klass_range_end <= encoding_end,
                 "Resulting encoding range does not fully cover the class range");
 
@@ -175,6 +176,12 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   _shift = requested_shift;
 
   calc_lowest_highest_narrow_klass_id();
+
+  // This has already been checked for SharedBaseAddress and if this fails, it's a bug in the allocation code.
+  if (!set_klass_decode_mode()) {
+    fatal("base=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+          p2i(_base), _shift);
+  }
 
   DEBUG_ONLY(sanity_check_after_initialization();)
 }
@@ -267,6 +274,20 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   calc_lowest_highest_narrow_klass_id();
 
+  // Initialize klass decode mode and check compability with decode instructions
+  if (!set_klass_decode_mode()) {
+
+    // Give fatal error if this is a specified address
+    if (CompressedClassSpaceBaseAddress == (size_t)_base) {
+      vm_exit_during_initialization(
+            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+                    CompressedClassSpaceBaseAddress, _shift));
+    } else {
+      // If this fails, it's a bug in the allocation code.
+      fatal("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+            p2i(_base), _shift);
+    }
+  }
 #ifdef ASSERT
   sanity_check_after_initialization();
 #endif

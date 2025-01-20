@@ -24,12 +24,14 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "memory/metaspace.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/formatBuffer.hpp"
 
 // Helper function; reserve at an address that is compatible with EOR
 static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
@@ -79,6 +81,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
   }
   return result;
 }
+
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
   char* result = nullptr;
@@ -116,4 +119,13 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   }
 
   return result;
+}
+
+bool CompressedKlassPointers::check_klass_decode_mode(address base, int shift, const size_t range) {
+  return MacroAssembler::check_klass_decode_mode(base, shift, range);
+}
+
+bool CompressedKlassPointers::set_klass_decode_mode() {
+  const size_t range = klass_range_end() - base();
+  return MacroAssembler::set_klass_decode_mode(_base, _shift, range);
 }

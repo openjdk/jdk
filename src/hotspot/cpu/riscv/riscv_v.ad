@@ -116,6 +116,9 @@ source %{
     return false;
   }
 
+  bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+    return false;
+  }
 %}
 
 definitions %{
@@ -4418,41 +4421,6 @@ instruct vmask_reinterpret_diff_esize(vRegMask dst, vRegMask_V0 src, vReg tmp) %
     BasicType to_bt = Matcher::vector_element_basic_type(this);
     __ vsetvli_helper(to_bt, Matcher::vector_length(this));
     __ vmseq_vi(as_VectorRegister($dst$$reg), as_VectorRegister($tmp$$reg), -1);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-// ------------------------------ Vector shuffle -------------------------------
-
-instruct loadshuffleB(vReg dst) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
-  match(Set dst (VectorLoadShuffle dst));
-  format %{ "loadshuffleB $dst, $dst" %}
-  ins_encode %{
-    // For T_BYTE, no need to do anything
-  %}
-  ins_pipe(pipe_class_empty);
-%}
-
-instruct loadshuffleX(vReg dst, vReg src) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE ||
-            Matcher::vector_element_basic_type(n) == T_LONG ||
-            Matcher::vector_element_basic_type(n) == T_FLOAT ||
-            Matcher::vector_element_basic_type(n) == T_INT ||
-            Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst (VectorLoadShuffle src));
-  effect(TEMP_DEF dst);
-  format %{ "loadshuffleX $dst, $src" %}
-  ins_encode %{
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    __ vsetvli_helper(bt, Matcher::vector_length(this));
-    if (bt == T_SHORT) {
-      __ vzext_vf2(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
-    } else if (bt == T_FLOAT || bt == T_INT) {
-      __ vzext_vf4(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
-    } else { // bt == T_DOUBLE || bt == T_LONG
-      __ vzext_vf8(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
-    }
   %}
   ins_pipe(pipe_slow);
 %}

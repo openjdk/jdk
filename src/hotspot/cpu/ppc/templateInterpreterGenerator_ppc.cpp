@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -144,9 +144,9 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
     // TODO PPC port: requires change in shared code.
     //assert(in_bytes(AccessFlags::flags_offset()) == 0,
     //       "MethodDesc._access_flags == MethodDesc._access_flags._flags");
-    // _access_flags must be a 32 bit value.
-    assert(sizeof(AccessFlags) == 4, "wrong size");
-    __ lwa(R11_scratch1/*access_flags*/, method_(access_flags));
+    // _access_flags must be a 16 bit value.
+    assert(sizeof(AccessFlags) == 2, "wrong size");
+    __ lhz(R11_scratch1/*access_flags*/, method_(access_flags));
     // testbit with condition register.
     __ testbitdi(CCR0, R0, R11_scratch1/*access_flags*/, JVM_ACC_STATIC_BIT);
     __ btrue(CCR0, L);
@@ -823,7 +823,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 
   {
     if (!flags_preloaded) {
-      __ lwz(Rflags, method_(access_flags));
+      __ lhz(Rflags, method_(access_flags));
     }
 
 #ifdef ASSERT
@@ -1301,8 +1301,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   assert(__ nonvolatile_accross_vthread_preemtion(access_flags),
          "access_flags not preserved");
   // Type check.
-  assert(4 == sizeof(AccessFlags), "unexpected field size");
-  __ lwz(access_flags, method_(access_flags));
+  assert(2 == sizeof(AccessFlags), "unexpected field size");
+  __ lhz(access_flags, method_(access_flags));
 
   // We don't want to reload R19_method and access_flags after calls
   // to some helper functions.
@@ -1769,7 +1769,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 #ifdef ASSERT
   else {
     Label Lok;
-    __ lwz(R0, in_bytes(Method::access_flags_offset()), R19_method);
+    __ lhz(R0, in_bytes(Method::access_flags_offset()), R19_method);
     __ andi_(R0, R0, JVM_ACC_SYNCHRONIZED);
     __ asm_assert_eq("method needs synchronization");
     __ bind(Lok);

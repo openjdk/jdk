@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "c2_intelJccErratum_x86.hpp"
-#include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/machnode.hpp"
 #include "opto/node.hpp"

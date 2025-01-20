@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,7 +736,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state, Register ret_a
   ldrb(Rflag, do_not_unlock_if_synchronized);
 
   // get method access flags
-  ldr_u32(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
+  ldrh(Raccess_flags, Address(Rmethod, Method::access_flags_offset()));
 
   strb(zero_register(Rtemp), do_not_unlock_if_synchronized); // reset the flag
 

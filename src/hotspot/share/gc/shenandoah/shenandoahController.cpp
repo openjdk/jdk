@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +62,7 @@ void ShenandoahController::handle_alloc_failure(ShenandoahAllocRequest& req, boo
 
   if (try_set_alloc_failure_gc(is_humongous)) {
     // Only report the first allocation failure
-    log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
+    log_info(gc)("Failed to allocate %s, %zu%s",
                  req.type_string(),
                  byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
 
@@ -84,7 +85,7 @@ void ShenandoahController::handle_alloc_failure_evac(size_t words) {
 
   if (try_set_alloc_failure_gc(is_humongous)) {
     // Only report the first allocation failure
-    log_info(gc)("Failed to allocate " SIZE_FORMAT "%s for evacuation",
+    log_info(gc)("Failed to allocate %zu%s for evacuation",
                  byte_size_in_proper_unit(words * HeapWordSize), proper_unit_for_byte_size(words * HeapWordSize));
   }
 

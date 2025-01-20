@@ -34,8 +34,8 @@ void FullGCForwarding::initialize_flags(size_t max_heap_size) {
 #ifdef _LP64
   size_t max_narrow_heap_size = right_n_bits(NumLowBitsNarrow - Shift);
   if (UseCompactObjectHeaders && max_heap_size > max_narrow_heap_size * HeapWordSize) {
-    warning("Compact object headers require a java heap size smaller than " SIZE_FORMAT
-            "%s (given: " SIZE_FORMAT "%s). Disabling compact object headers.",
+    warning("Compact object headers require a java heap size smaller than %zu"
+            "%s (given: %zu%s). Disabling compact object headers.",
             byte_size_in_proper_unit(max_narrow_heap_size * HeapWordSize),
             proper_unit_for_byte_size(max_narrow_heap_size * HeapWordSize),
             byte_size_in_proper_unit(max_heap_size),

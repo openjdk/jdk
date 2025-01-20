@@ -36,7 +36,7 @@
                          constraint)                                    \
                                                                         \
   product(bool, UseOprofile, false,                                     \
-        "enable support for Oprofile profiler")                         \
+        "(Deprecated) enable support for Oprofile profiler")            \
                                                                         \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \

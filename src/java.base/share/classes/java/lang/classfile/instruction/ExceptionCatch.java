@@ -24,23 +24,37 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.util.Optional;
 
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 
 /**
- * A pseudo-instruction modeling an entry in the exception table of a code
- * attribute.  Entries in the exception table model catch and finally blocks.
- * Delivered as a {@link CodeElement} when traversing the contents
- * of a {@link CodeModel}.
+ * A pseudo-instruction modeling an entry in the {@code exception_table} array
+ * of a {@link CodeAttribute Code} attribute.  Catch (JVMS {@jvms 3.12}) and
+ * finally (JVMS {@jvms 3.14}) blocks in Java source code compile to exception
+ * table entries.  Delivered as a {@link CodeElement} when traversing the
+ * contents of a {@link CodeModel}.
+ * <p>
+ * An exception table entry is composite:
+ * {@snippet lang=text :
+ * // @link substring="ExceptionCatch" target="#of(Label, Label, Label, Optional)" :
+ * ExceptionCatch(
+ *     Label handler, // @link substring="handler" target="#handler"
+ *     Label tryStart, // @link substring="tryStart" target="#tryStart"
+ *     Label tryEnd, // @link substring="tryEnd" target="#tryEnd"
+ *     Optional<ClassEntry> catchType // @link substring="catchType" target="#catchType"
+ * )
+ * }
  *
- * @see PseudoInstruction
- *
+ * @see CodeBuilder#exceptionCatch CodeBuilder::exceptionCatch
+ * @jvms 4.7.3 The {@code Code} Attribute
  * @since 24
  */
 public sealed interface ExceptionCatch extends PseudoInstruction
@@ -61,8 +75,8 @@ public sealed interface ExceptionCatch extends PseudoInstruction
     Label tryEnd();
 
     /**
-     * {@return the type of the exception to catch, or empty if this handler is
-     * unconditional}
+     * {@return the type of the exception to catch, or empty if this handler
+     * catches everything}
      */
     Optional<ClassEntry> catchType();
 
@@ -80,10 +94,10 @@ public sealed interface ExceptionCatch extends PseudoInstruction
     }
 
     /**
-     * {@return an exception table pseudo-instruction for an unconditional handler}
+     * {@return an exception table pseudo-instruction to catch everything}
      * @param handler the handler for the exception
-     * @param tryStart the beginning of the instruction range for the gaurded instructions
-     * @param tryEnd the end of the instruction range for the gaurded instructions
+     * @param tryStart the beginning of the instruction range for the guarded instructions
+     * @param tryEnd the end of the instruction range for the guarded instructions
      */
     static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd) {
         return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, (ClassEntry) null);

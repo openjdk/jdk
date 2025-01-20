@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ void ZUncommitter::run_thread() {
     if (uncommitted > 0) {
       // Update statistics
       ZStatInc(ZCounterUncommit, uncommitted);
-      log_info(gc, heap)("Uncommitted: " SIZE_FORMAT "M(%.0f%%)",
+      log_info(gc, heap)("Uncommitted: %zuM(%.0f%%)",
                          uncommitted / M, percent_of(uncommitted, ZHeap::heap()->max_capacity()));
 
       // Send event

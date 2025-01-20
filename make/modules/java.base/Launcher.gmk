@@ -38,7 +38,8 @@ JAVA_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
 ################################################################################
 
 $(eval $(call SetupBuildLauncher, java, \
-    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
+    ENABLE_ARG_FILES := true, \
+    EXPAND_CLASSPATH_WILDCARDS := true, \
     EXTRA_RCFLAGS := $(JAVA_RCFLAGS), \
     VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
     OPTIMIZATION := HIGH, \
@@ -50,7 +51,9 @@ $(eval $(call SetupBuildLauncher, java, \
 
 ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupBuildLauncher, javaw, \
-      CFLAGS := -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
+      ENABLE_ARG_FILES := true, \
+      EXPAND_CLASSPATH_WILDCARDS := true, \
+      WINDOWS_JAVAW := true, \
       EXTRA_RCFLAGS := $(JAVA_RCFLAGS), \
       VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
   ))

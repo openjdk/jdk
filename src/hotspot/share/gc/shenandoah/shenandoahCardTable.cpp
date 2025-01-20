@@ -26,8 +26,10 @@
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/init.hpp"
+#include "memory/memoryReserver.hpp"
+#include "memory/reservedSpace.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/init.hpp"
 
 void ShenandoahCardTable::initialize() {
   size_t num_cards = cards_required(_whole_heap.word_size());
@@ -41,9 +43,9 @@ void ShenandoahCardTable::initialize() {
   HeapWord* high_bound = _whole_heap.end();
 
   // ReservedSpace constructor would assert rs_align >= os::vm_page_size().
-  const size_t rs_align = _page_size == os::vm_page_size() ? 0 : MAX2(_page_size, granularity);
+  const size_t rs_align = MAX2(_page_size, granularity);
 
-  ReservedSpace write_space(_byte_map_size, rs_align, _page_size);
+  ReservedSpace write_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
   initialize(write_space);
 
   // The assembler store_check code will do an unsigned shift of the oop,
@@ -58,7 +60,7 @@ void ShenandoahCardTable::initialize() {
   _write_byte_map = _byte_map;
   _write_byte_map_base = _byte_map_base;
 
-  ReservedSpace read_space(_byte_map_size, rs_align, _page_size);
+  ReservedSpace read_space = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
   initialize(read_space);
 
   _read_byte_map = (CardValue*) read_space.base();
