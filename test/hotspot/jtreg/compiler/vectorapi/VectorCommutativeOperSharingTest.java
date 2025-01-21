@@ -24,6 +24,7 @@
 package compiler.vectorapi;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
 import java.util.Random;
 import jdk.incubator.vector.*;
 import jdk.test.lib.Utils;
@@ -61,8 +62,8 @@ public class VectorCommutativeOperSharingTest {
         ir4 = new int[LENGTH];
 
         for (int i = 0; i < LENGTH; i++) {
-            ia[i] = RD.nextInt(25);
-            ib[i] = RD.nextInt(25);
+            ia[i] = RD.nextInt(Integer.MAX_VALUE);
+            ib[i] = RD.nextInt(Integer.MAX_VALUE);
         }
     }
 
@@ -97,6 +98,16 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing1(i);
         }
+        checkVectorIRSharing1();
+    }
+
+    public void checkVectorIRSharing1() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ib[i]) + (ib[i] + ia[i]));
+            Verify.checkEQ(ir2[i], (ia[i] * ib[i]) * (ib[i] * ia[i]));
+            Verify.checkEQ(ir3[i], Integer.max(Integer.max(ia[i], ib[i]), Integer.max(ib[i], ia[i])));
+            Verify.checkEQ(ir4[i], Integer.min(Integer.max(ia[i], ib[i]), Integer.min(ib[i], ia[i])));
+        }
     }
 
     @Test
@@ -122,6 +133,15 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing2(i);
         }
+        checkVectorIRSharing2();
+    }
+
+    public void checkVectorIRSharing2() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] ^ ib[i]) ^ (ib[i] ^ ia[i]));
+            Verify.checkEQ(ir2[i], (ia[i] & ib[i]) & (ib[i] & ia[i]));
+            Verify.checkEQ(ir3[i], (ia[i] | ib[i]) | (ib[i] | ia[i]));
+        }
     }
 
     @Test
@@ -138,6 +158,14 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver3() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing3(i);
+        }
+        checkVectorIRSharing3();
+    }
+
+    public void checkVectorIRSharing3() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir4[i], VectorMath.addSaturating(VectorMath.addSaturating(ia[i], ib[i]),
+                                                            VectorMath.addSaturating(ib[i], ia[i])));
         }
     }
 
@@ -157,6 +185,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing4(i);
         }
+        checkVectorIRSharing4();
+    }
+
+    public void checkVectorIRSharing4() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ia[i]) + (ia[i] + ia[i]));
+        }
     }
 
     @Test
@@ -174,6 +209,13 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver5() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing5(i);
+        }
+        checkVectorIRSharing5();
+    }
+
+    public void checkVectorIRSharing5() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ia[i]) + (ia[i] + ib[i]));
         }
     }
 
@@ -193,6 +235,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing6(i);
         }
+        checkVectorIRSharing6();
+    }
+
+    public void checkVectorIRSharing6() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ia[i]) + (ib[i] + ia[i]));
+        }
     }
 
     @Test
@@ -210,6 +259,13 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver7() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing7(i);
+        }
+        checkVectorIRSharing7();
+    }
+
+    public void checkVectorIRSharing7() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ia[i]) + (ib[i] + ib[i]));
         }
     }
 
@@ -229,6 +285,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing8(i);
         }
+        checkVectorIRSharing8();
+    }
+
+    public void checkVectorIRSharing8() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ib[i]) + (ia[i] + ia[i]));
+        }
     }
 
     @Test
@@ -246,6 +309,13 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver9() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing9(i);
+        }
+        checkVectorIRSharing9();
+    }
+
+    public void checkVectorIRSharing9() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ib[i]) + (ia[i] + ib[i]));
         }
     }
 
@@ -265,6 +335,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing10(i);
         }
+        checkVectorIRSharing10();
+    }
+
+    public void checkVectorIRSharing10() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ib[i]) + (ib[i] + ia[i]));
+        }
     }
 
     @Test
@@ -282,6 +359,13 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver11() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing11(i);
+        }
+        checkVectorIRSharing11();
+    }
+
+    public void checkVectorIRSharing11() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ia[i] + ib[i]) + (ib[i] + ib[i]));
         }
     }
 
@@ -301,6 +385,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing12(i);
         }
+        checkVectorIRSharing12();
+    }
+
+    public void checkVectorIRSharing12() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ib[i] + ia[i]) + (ia[i] + ia[i]));
+        }
     }
 
     @Test
@@ -318,6 +409,13 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver13() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing13(i);
+        }
+        checkVectorIRSharing13();
+    }
+
+    public void checkVectorIRSharing13() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ib[i] + ia[i]) + (ia[i] + ib[i]));
         }
     }
 
@@ -337,6 +435,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing14(i);
         }
+        checkVectorIRSharing14();
+    }
+
+    public void checkVectorIRSharing14() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ib[i] + ia[i]) + (ib[i] + ia[i]));
+        }
     }
 
     @Test
@@ -354,6 +459,13 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver15() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing15(i);
+        }
+        checkVectorIRSharing15();
+    }
+
+    public void checkVectorIRSharing15() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ib[i] + ia[i]) + (ib[i] + ib[i]));
         }
     }
 
@@ -373,6 +485,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing16(i);
         }
+        checkVectorIRSharing16();
+    }
+
+    public void checkVectorIRSharing16() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ib[i] + ib[i]) + (ia[i] + ia[i]));
+        }
     }
 
     @Test
@@ -391,6 +510,13 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing17(i);
         }
+        checkVectorIRSharing17();
+    }
+
+    public void checkVectorIRSharing17() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ib[i] + ib[i]) + (ia[i] + ib[i]));
+        }
     }
 
     @Test
@@ -408,6 +534,13 @@ public class VectorCommutativeOperSharingTest {
     public void testVectorIRSharingDriver18() {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
             testVectorIRSharing18(i);
+        }
+        checkVectorIRSharing18();
+    }
+
+    public void checkVectorIRSharing18() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], (ib[i] + ib[i]) + (ib[i] + ia[i]));
         }
     }
 }
