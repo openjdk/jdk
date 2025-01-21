@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeScanner;
@@ -52,14 +51,15 @@ import com.sun.tools.javac.util.Context;
  * emitted later, during attribution, via {@link #flush}.
  *
  * <p>
- * There is also an "immediate" mode, during which warnings are emitted synchronously.
+ * There is also an "immediate" mode, where warnings are emitted synchronously; see {@link #pushImmediate}.
  *
  * <p>
  * Deferred warnings are grouped by the innermost containing module, package, class, method, or variable
  * declaration (represented by {@link JCTree} nodes), so that the corresponding {@link Lint} configuration
  * can be applied when the warning is eventually generated. During parsing, no {@link JCTree} nodes exist
- * yet, so warnings are stored only by file character offset. Once parsing completes, these offsets are
- * resolved into {@link JCTree} nodes by {@link #resolvePositionDeferrals}.
+ * yet, so warnings are stored by file character offset. Once parsing completes, these offsets are resolved
+ * to the innermost containing declaration. This class therefore operates in two distinct modes: parsing mode
+ * and non-parsing mode. Warnings are actually emitted when the correpsonding declaration is {@link #flush}ed.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -83,28 +83,32 @@ public class DeferredLintHandler {
     private final Lint rootLint;
 
     /**
-     * The current {@link Reporter} stack.
+     * Are we in parsing mode or non-parsing mode?
      */
-    private final ArrayDeque<Reporter> reporterStack = new ArrayDeque<>();
+    private boolean parsing;
 
     /**
      * Registered lexical {@link Deferral}s for the source file currently being parsed.
      *
      * <p>
-     * These are resolved and moved to {@link #deferralMap} once the parse is complete.
-     * See {@link #resolvePositionDeferrals}.
+     * This list is only used when parsing a source file. Once parsing ends, these deferrals
+     * are resolved to their corresponding declarations and moved to {@link #deferralMap}.
      */
-    private final ArrayList<PositionDeferral> positionDeferrals = new ArrayList<>();
+    private ArrayList<Deferral> parsingDeferrals = new ArrayList<>();
 
     /**
-     * Registered {@link Deferral}s grouped by declaration.
+     * Registered {@link Deferral}s grouped by the innermost containing module, package, class,
+     * method, or variable declaration.
      */
     private final HashMap<JCTree, ArrayList<Deferral>> deferralMap = new HashMap<>();
 
     /**
-     * Mapping from source file position to innermost enclosing declaration.
+     * The current "reporter" stack, reflecting calls to {@link #push} and {@link #pop}.
+     *
+     * <p>
+     * The top of the stack determines how calls to {@link #report} are handled.
      */
-    private final ArrayList<DeclPosition> declPositions = new ArrayList<>();
+    private final ArrayDeque<Consumer<LintLogger>> reporterStack = new ArrayDeque<>();
 
     @SuppressWarnings("this-escape")
     protected DeferredLintHandler(Context context) {
@@ -113,33 +117,75 @@ public class DeferredLintHandler {
         pushImmediate(rootLint);            // default to "immediate" mode
     }
 
+// Mode Switching
+
     /**
-     * Defer reported warnings until the declaration encompassing the given location,
-     * or the given source file if none, is flushed.
+     * Enter parsing mode.
+     */
+    public void enterParsingMode() {
+        Assert.check(!parsing);
+        Assert.check(parsingDeferrals.isEmpty());
+        parsing = true;
+    }
+
+    /**
+     * Exit parsing mode and resolve each of the {@link Deferral}s accumulated during parsing to the
+     * innermost containing declaration in the given tree.
      *
      * <p>
-     * This is invoked during file parsing only to configure handling for lexical warnings.
+     * Any {@link Deferral}s that are not encompassed by a declaration are emitted using the root
+     * {@link Lint} instance.
+     *
+     * @param tree top level node, or null if parsing failed
+     */
+    public void exitParsingMode(JCCompilationUnit tree) {
+        Assert.check(parsing || tree == null);
+        parsing = false;
+        parsingDeferrals.sort(Comparator.comparingInt(Deferral::pos));          // sort deferrals by position
+        if (tree != null) {
+            new LexicalDeferralMapper(tree).map();                              // map them into deferralMap
+            parsingDeferrals.forEach(deferral -> deferral.report(rootLint));    // report any leftovers
+        }
+        parsingDeferrals.clear();
+    }
+
+// Reporter Stack
+
+    /**
+     * Defer {@link #report}ed warnings until the declaration encompassing the given
+     * source file position is flushed.
+     *
+     * <p>
+     * This should only be invoked when in parsing mode.
      *
      * @param pos character offset
      * @see #pop
      */
     public void push(int pos) {
-        reporterStack.push(new PositionReporter(pos));
+        Assert.check(parsing);
+        reporterStack.push(logger -> parsingDeferrals.add(new Deferral(logger, pos)));
     }
 
     /**
-     * Defer reported warnings until the given declaration is flushed.
+     * Defer {@link #report}ed warnings until the given declaration is flushed.
+     *
+     * <p>
+     * This is normally only invoked when in non-parsing mode, but it can also be invoked in
+     * parsing mode if the declaration is known (e.g., see handling for "dangling-doc-comments").
      *
      * @param decl module, package, class, method, or variable declaration
      * @see #pop
      */
     public void push(JCTree decl) {
+        //Assert.check(!parsing);
         Assert.check(decl.getTag() == Tag.MODULEDEF
                   || decl.getTag() == Tag.PACKAGEDEF
                   || decl.getTag() == Tag.CLASSDEF
                   || decl.getTag() == Tag.METHODDEF
                   || decl.getTag() == Tag.VARDEF);
-        reporterStack.push(new DeclarationReporter(decl));
+        reporterStack.push(logger ->
+            deferralMap.computeIfAbsent(decl, s -> new ArrayList<>())
+              .add(new Deferral(logger, decl.getPreferredPosition())));
     }
 
     /**
@@ -148,12 +194,12 @@ public class DeferredLintHandler {
      * @param lint lint configuration to use for reported warnings
      */
     public void pushImmediate(Lint lint) {
-        reporterStack.push(new ImmediateReporter(lint));
+        reporterStack.push(logger -> logger.report(lint));
     }
 
     /**
-     * Revert to the current declaration or immediate mode that was in effect prior to the
-     * most recent invocation of {@link #push} or {@link #pushImmediate}.
+     * Revert to the previous configuration in effect prior to the most recent invocation
+     * of {@link #push} or {@link #pushImmediate}.
      *
      * @see #pop
      */
@@ -163,7 +209,7 @@ public class DeferredLintHandler {
     }
 
     /**
-     * Register a warning at the current location or declaration.
+     * Report a warning.
      *
      * <p>
      * In immediate mode, the warning is emitted synchronously. Otherwise, the warning is emitted later
@@ -171,37 +217,10 @@ public class DeferredLintHandler {
      */
     public void report(LintLogger logger) {
         Assert.check(!reporterStack.isEmpty());
-        reporterStack.peek().report(this, logger);
+        reporterStack.peek().accept(logger);
     }
 
-    /**
-     * Associate {@link PositionDeferral}s accumulated during parsing with the innermost
-     * containing declarations in the given tree.
-     *
-     * <p>
-     * Any {@link PositionDeferral}s that are not encompassed by a declaration are emitted at this point,
-     * using the root {@link Lint} instance.
-     *
-     * @param tree top level node
-     * @param endPos ending position table
-     */
-    public void resolvePositionDeferrals(JCCompilationUnit tree, EndPosTable endPosTable) {
-        positionDeferrals.sort(Comparator.comparingInt(PositionDeferral::pos)); // ensure deferrals are sorted by position
-        new PositionDeferralConverter(endPosTable).scan(tree);
-        positionDeferrals.forEach(deferral -> deferral.report(rootLint));
-        positionDeferrals.clear();
-    }
-
-    /**
-     * Discard any {@link PositionDeferral}s accumulated during parsing.
-     *
-     * <p>
-     * This should be invoked after parsing if an error occurred and {@link #resolvePositionDeferrals}
-     * won't be invoked.
-     */
-    public void resetPositionDeferrals() {
-        positionDeferrals.clear();
-    }
+// Warning Flush
 
     /**
      * Emit deferred warnings encompassed by the given declaration.
@@ -210,7 +229,7 @@ public class DeferredLintHandler {
      * @param lint lint configuration corresponding to {@code decl}
      */
     public void flush(JCTree decl, Lint lint) {
-        Assert.check(positionDeferrals.isEmpty());      // should have been resolved already
+        Assert.check(!parsing);
         ArrayList<Deferral> deferrals = deferralMap.remove(decl);
         if (deferrals != null) {
             for (Deferral deferral : deferrals) {
@@ -234,62 +253,6 @@ public class DeferredLintHandler {
         void report(Lint lint);
     }
 
-// Reporter
-
-    /**
-     * Handler for {@code report()} requests.
-     */
-    private abstract static class Reporter {
-
-        abstract void report(DeferredLintHandler handler, LintLogger logger);
-    }
-
-    // Handles report() in immediate mode
-    private static class ImmediateReporter extends Reporter {
-
-        private final Lint lint;
-
-        ImmediateReporter(Lint lint) {
-            this.lint = lint;
-        }
-
-        @Override
-        void report(DeferredLintHandler handler, LintLogger logger) {
-            logger.report(lint);
-        }
-    }
-
-    // Handles report() when there is a current declaration
-    private static class DeclarationReporter extends Reporter {
-
-        private final JCTree decl;
-
-        DeclarationReporter(JCTree decl) {
-            this.decl = decl;
-        }
-
-        @Override
-        void report(DeferredLintHandler handler, LintLogger logger) {
-            handler.deferralMap.computeIfAbsent(decl, s -> new ArrayList<>())
-              .add(new Deferral(logger));
-        }
-    }
-
-    // Handles report() when there is a current position
-    private static class PositionReporter extends Reporter {
-
-        private final int pos;
-
-        PositionReporter(int pos) {
-            this.pos = pos;
-        }
-
-        @Override
-        void report(DeferredLintHandler handler, LintLogger logger) {
-            handler.positionDeferrals.add(new PositionDeferral(logger, pos));
-        }
-    }
-
 // Deferral
 
     /**
@@ -298,25 +261,10 @@ public class DeferredLintHandler {
     private static class Deferral {
 
         private final LintLogger logger;
-
-        Deferral(LintLogger logger) {
-            this.logger = logger;
-        }
-
-        void report(Lint lint) {
-            logger.report(lint);
-        }
-    }
-
-    /**
-     * A {@link Deferral} generated during parsing corresponding to a lexical position in a source file.
-     */
-    private static class PositionDeferral extends Deferral {
-
         private final int pos;
 
-        PositionDeferral(LintLogger logger, int pos) {
-            super(logger);
+        Deferral(LintLogger logger, int pos) {
+            this.logger = logger;
             this.pos = pos;
         }
 
@@ -324,32 +272,35 @@ public class DeferredLintHandler {
             return pos;
         }
 
+        void report(Lint lint) {
+            logger.report(lint);
+        }
+
+        // Does the position fit into the given range?
         boolean matches(int minPos, int maxPos) {
             return pos == minPos || (pos > minPos && pos < maxPos);
         }
 
-        static PositionDeferral key(int pos) {
-            return new PositionDeferral(null, pos);
+        // Create a binary search key
+        static Deferral key(int pos) {
+            return new Deferral(null, pos);
         }
     }
 
-// DeclPosition
+// LexicalDeferralMapper
 
-    private record DeclPosition(JCTree decl, int minPos, int maxPos) {
+    // This scans a source file and identifies, for each lexical Deferral, the innermost
+    // declaration that contains it and moves it to the corresponding entry in deferralMap.
+    private class LexicalDeferralMapper extends TreeScanner {
 
-        boolean matches(int pos) {
-            return pos == minPos() || (pos > minPos() && pos < maxPos());
+        private final JCCompilationUnit tree;
+
+        LexicalDeferralMapper(JCCompilationUnit tree) {
+            this.tree = tree;
         }
-    }
 
-    // This scans a source file and identifies, for each PositionDeferral, the innermost module,
-    // package, class, method, of variable declaration that contains it, if any.
-    private class PositionDeferralConverter extends TreeScanner {
-
-        private final EndPosTable endPosTable;
-
-        PositionDeferralConverter(EndPosTable endPosTable) {
-            this.endPosTable = endPosTable;
+        void map() {
+            scan(tree);
         }
 
     // TreeScanner methods
@@ -386,18 +337,18 @@ public class DeferredLintHandler {
 
             // Get the lexical extent of this declaration
             int minPos = decl.getPreferredPosition();
-            int maxPos = decl.getEndPosition(endPosTable);
+            int maxPos = decl.getEndPosition(tree.endPositions);
 
-            // Find matching PositionDeferral's, if any, and move them into deferralMap
-            int index = Collections.binarySearch(positionDeferrals,
-              PositionDeferral.key(minPos), Comparator.comparingInt(PositionDeferral::pos));
+            // Find matching lexical Deferral's, if any, and move them into deferralMap
+            int index = Collections.binarySearch(parsingDeferrals,
+              Deferral.key(minPos), Comparator.comparingInt(Deferral::pos));
             if (index < 0)
                 index = ~index;
-            while (index < positionDeferrals.size()) {
-                PositionDeferral deferral = positionDeferrals.get(index);
+            while (index < parsingDeferrals.size()) {
+                Deferral deferral = parsingDeferrals.get(index);
                 if (!deferral.matches(minPos, maxPos))
                     break;
-                positionDeferrals.remove(index);
+                parsingDeferrals.remove(index);
                 deferralMap.computeIfAbsent(decl, s -> new ArrayList<>()).add(deferral);
             }
         }

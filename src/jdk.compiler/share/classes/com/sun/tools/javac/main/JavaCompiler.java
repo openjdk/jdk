@@ -661,7 +661,15 @@ public class JavaCompiler {
             }
             Parser parser = parserFactory.newParser(content, keepComments(), true,
                                 lineDebugInfo, filename.isNameCompatible("module-info", Kind.SOURCE));
-            tree = parser.parseCompilationUnit();
+            try {
+                deferredLintHandler.enterParsingMode();
+                tree = parser.parseCompilationUnit();
+                deferredLintHandler.exitParsingMode(tree);
+                if (!keepEndPos)
+                    tree.endPositions = new JavacParser.EmptyEndPosTable();
+            } finally {
+                deferredLintHandler.exitParsingMode(null);
+            }
             if (verbose) {
                 log.printVerbose("parsing.done", Long.toString(elapsed(msec)));
             }
@@ -699,14 +707,10 @@ public class JavaCompiler {
         JavaFileObject prev = log.useSource(filename);
         try {
             JCTree.JCCompilationUnit t = parse(filename, readSource(filename));
-            deferredLintHandler.resolvePositionDeferrals(t, t.endPositions);
-            if (keepEndPos)
+            if (t.endPositions != null)
                 log.setEndPosTable(filename, t.endPositions);
-            else
-                t.endPositions = new JavacParser.EmptyEndPosTable();
             return t;
         } finally {
-            deferredLintHandler.resetPositionDeferrals();
             log.useSource(prev);
         }
     }

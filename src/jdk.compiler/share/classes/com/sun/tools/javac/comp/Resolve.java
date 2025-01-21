@@ -3977,7 +3977,7 @@ public class Resolve {
             return false;
 
         // The flexible constructors feature must be enabled
-        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
+        preview.checkSourceLevel(env.info.lint, pos, Feature.FLEXIBLE_CONSTRUCTORS);
 
         // OK
         return true;

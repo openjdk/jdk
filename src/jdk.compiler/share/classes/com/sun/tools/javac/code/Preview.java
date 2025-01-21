@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.code;
 
+import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
@@ -71,6 +72,9 @@ public class Preview {
     /** flag: is the "preview" lint category enabled? */
     private final boolean verbose;
 
+    /** the deferred lint warning handler */
+    private final DeferredLintHandler deferredLintHandler;
+
     /** the diag handler to manage preview feature usage diagnostics */
     private final MandatoryWarningHandler previewHandler;
 
@@ -105,6 +109,7 @@ public class Preview {
         log = Log.instance(context);
         source = Source.instance(context);
         verbose = Lint.instance(context).isEnabled(LintCategory.PREVIEW);
+        deferredLintHandler = DeferredLintHandler.instance(context);
         previewHandler = new MandatoryWarningHandler(log, source, verbose, true, "preview", LintCategory.PREVIEW);
         forcePreview = options.isSet("forcePreview");
         majorVersionToSource = initMajorVersionToSourceMap();
@@ -161,26 +166,45 @@ public class Preview {
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the
      * set of sourcefiles with dependencies on preview features.
+     *
+     * <p>
+     * This method is intended to be used during parsing, when declarations do not exist yet.
+     * The warning is deferred until the applicable {@lint Lint} configuration is known.
+     *
      * @param pos the position at which the preview feature was used.
      * @param feature the preview feature used.
      */
     public void warnPreview(int pos, Feature feature) {
-        warnPreview(new SimpleDiagnosticPosition(pos), feature);
+        DiagnosticPosition diagPos = new SimpleDiagnosticPosition(pos);
+        deferredLintHandler.push(pos);
+        try {
+            deferredLintHandler.report(lint -> warnPreview(lint, diagPos, feature));
+        } finally {
+            deferredLintHandler.pop();
+        }
+        markUsesPreview(diagPos);
     }
 
     /**
      * Report usage of a preview feature. Usages reported through this method will affect the
      * set of sourcefiles with dependencies on preview features.
+     *
+     * @param lint applicable lint configuration
      * @param pos the position at which the preview feature was used.
      * @param feature the preview feature used.
      */
-    public void warnPreview(DiagnosticPosition pos, Feature feature) {
+    public void warnPreview(Lint lint, DiagnosticPosition pos, Feature feature) {
         Assert.check(isEnabled());
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
+
+        // For preview warnings, even if a warning occurs inside the scope of @SuppressWarnings("preview"),
+        // we still want to output the aggregated "recompile" note at the end of compilation. So we always
+        // invoke previewHandler.report() here but override its "verbose" setting using the current Lint.
         previewHandler.report(pos, feature.isPlural() ?
-                LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-                LintWarnings.PreviewFeatureUse(feature.nameFragment()));
+            LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
+            LintWarnings.PreviewFeatureUse(feature.nameFragment()),
+            lint.isEnabled(LintCategory.PREVIEW));
     }
 
     /**
@@ -286,7 +310,7 @@ public class Preview {
         previewHandler.clear();
     }
 
-    public void checkSourceLevel(DiagnosticPosition pos, Feature feature) {
+    public void checkSourceLevel(Lint lint, DiagnosticPosition pos, Feature feature) {
         if (isPreview(feature) && !isEnabled()) {
             //preview feature without --preview flag, error
             log.error(JCDiagnostic.DiagnosticFlag.SOURCE_LEVEL, pos, disabledError(feature));
@@ -296,7 +320,7 @@ public class Preview {
                           feature.error(source.name));
             }
             if (isEnabled() && isPreview(feature)) {
-                warnPreview(pos, feature);
+                warnPreview(lint, pos, feature);
             }
         }
     }

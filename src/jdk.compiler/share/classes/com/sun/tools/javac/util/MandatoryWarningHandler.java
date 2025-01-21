@@ -125,9 +125,16 @@ public class MandatoryWarningHandler {
     }
 
     /**
-     * Report a mandatory warning.
+     * Report a mandatory warning using the default "verbose" setting.
      */
     public void report(DiagnosticPosition pos, LintWarning warnKey) {
+        report(pos, warnKey, verbose);
+    }
+
+    /**
+     * Report a mandatory warning using the provided "verbose" setting.
+     */
+    public void report(DiagnosticPosition pos, LintWarning warnKey, boolean verbose) {
         JavaFileObject currentSource = log.currentSourceFile();
         Assert.check(warnKey.getLintCategory() == lintCategory);
 
@@ -191,7 +198,7 @@ public class MandatoryWarningHandler {
                 }
             }
 
-            if (!verbose)
+            if (!anyWarningGenerated)
                 logMandatoryNote(deferredDiagnosticSource, prefix + ".recompile");
         }
     }
@@ -244,6 +251,12 @@ public class MandatoryWarningHandler {
     private Object deferredDiagnosticArg;
 
     /**
+     * Whether we have actually logged a warning yet or just deferred everything.
+     * In the latter case, the "recompile" notice is included in the summary.
+     */
+    private boolean anyWarningGenerated;
+
+    /**
      * True if mandatory warnings and notes are being enforced.
      */
     private final boolean enforceMandatory;
@@ -264,6 +277,7 @@ public class MandatoryWarningHandler {
             log.mandatoryWarning(pos, warnKey);
         else
             log.warning(pos, warnKey);
+        anyWarningGenerated = true;
     }
 
     /**

@@ -324,7 +324,7 @@ public class PreviewErrors extends ComboInstance<PreviewErrors> {
                     ok = true;
                     switch (elementType) {
                         case LANGUAGE -> {
-                            if (lint == Lint.ENABLE_PREVIEW) {
+                            if (lint == Lint.ENABLE_PREVIEW && suppress == Suppress.NO) {
                                 expected = Set.of("5:41:compiler.warn.preview.feature.use");
                             } else {
                                 expected = Set.of("-1:-1:compiler.note.preview.filename",
