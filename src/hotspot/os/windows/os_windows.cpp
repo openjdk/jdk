@@ -3639,10 +3639,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
     // Handle mapping error. We assert in debug, unconditionally print a warning in release.
     if (err != nullptr) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
-#ifdef ASSERT
-      os::print_memory_mappings((char*)start, bytes, tty);
       assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
-#endif
       return false;
     }
     // Free this range

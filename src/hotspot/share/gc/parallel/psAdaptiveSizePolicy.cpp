@@ -947,12 +947,10 @@ uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
   // Finally, increment or decrement the tenuring threshold, as decided above.
   // We test for decrementing first, as we might have hit the target size
   // limit.
-  if (decr_tenuring_threshold && !(AlwaysTenure || NeverTenure)) {
-    if (tenuring_threshold > 1) {
+  if (!(AlwaysTenure || NeverTenure)) {
+    if (decr_tenuring_threshold && tenuring_threshold > 1) {
       tenuring_threshold--;
-    }
-  } else if (incr_tenuring_threshold && !(AlwaysTenure || NeverTenure)) {
-    if (tenuring_threshold < MaxTenuringThreshold) {
+    } else if (incr_tenuring_threshold && tenuring_threshold < MaxTenuringThreshold) {
       tenuring_threshold++;
     }
   }

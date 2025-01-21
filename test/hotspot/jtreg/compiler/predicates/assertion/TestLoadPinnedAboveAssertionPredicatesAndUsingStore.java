@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +19,37 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
 
 /*
  * @test
- * @summary Tests connection timeouts during SSL handshake
- * @bug 8208391
- * @library /test/lib
- * @build AbstractConnectTimeoutHandshake
- * @run testng/othervm ConnectTimeoutHandshakeSync
+ * @bug 8347018
+ * @summary Test that stores cloned with clone_up_backedge_goo() are not pinned above Assertion Predicates on which a
+ *          load node is pinned at which will later fail in scheduling.
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*TestLoadPinnedAboveAssertionPredicatesAndUsingStore::test
+ *                   compiler.predicates.assertion.TestLoadPinnedAboveAssertionPredicatesAndUsingStore
  */
 
-public class ConnectTimeoutHandshakeSync
-    extends AbstractConnectTimeoutHandshake
-{
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutSync(Version requestVersion,
-                            String method,
-                            Duration connectTimeout,
-                            Duration requestTimeout)
-        throws Exception
-    {
-        super.timeoutSync(requestVersion, method, connectTimeout, requestTimeout);
+package compiler.predicates.assertion;
+
+public class TestLoadPinnedAboveAssertionPredicatesAndUsingStore {
+    static int iFld;
+    static int iArr[] = new int[100];
+
+    static void test() {
+        int i = 63;
+        do {
+            iArr[1] = 34;
+            iArr[i] += iFld;
+            for (int j = i; j < 1; j++) {
+            }
+        } while (--i > 0);
+    }
+
+    public static void main(String[] strArr) {
+        for (int i = 0; i < 10000; i++) {
+            test();
+        }
     }
 }

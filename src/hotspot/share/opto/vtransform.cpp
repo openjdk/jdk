@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,57 +144,47 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
-// We use two comparisons, because a subtraction could underflow.
-#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
-  if (a < b) { return -1; }                 \
-  if (a > b) { return  1; }
-
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
-// It represents a memory region: [ptr, ptr + memory_size)
-class VMemoryRegion : public StackObj {
+// It wraps a VPointer. The VPointer has an iv_offset applied, which
+// simulates a virtual unrolling. They represent the memory region:
+//   [adr, adr + size)
+//   adr = base + invar + iv_scale * (iv + iv_offset) + con
+class VMemoryRegion : public ResourceObj {
 private:
-  Node* _base;        // ptr = base + offset + invar + scale * iv
-  int _scale;
-  Node* _invar;
-  int _offset;
-  uint _memory_size;
+  // Note: VPointer has no default constructor, so we cannot use VMemoryRegion
+  //       in-place in a GrowableArray. Hence, we make VMemoryRegion a resource
+  //       allocated object, so the GrowableArray of VMemoryRegion* has a default
+  //       nullptr element.
+  const VPointer _vpointer;
   bool _is_load;      // load or store?
   uint _schedule_order;
 
 public:
-  VMemoryRegion() {} // empty constructor for GrowableArray
-  VMemoryRegion(const VPointer& vpointer, int iv_offset, int vector_length, uint schedule_order) :
-    _base(vpointer.base()),
-    _scale(vpointer.scale_in_bytes()),
-    _invar(vpointer.invar()),
-    _offset(vpointer.offset_in_bytes() + _scale * iv_offset),
-    _memory_size(vpointer.memory_size() * vector_length),
-    _is_load(vpointer.mem()->is_Load()),
+  VMemoryRegion(const VPointer& vpointer, bool is_load, uint schedule_order) :
+    _vpointer(vpointer),
+    _is_load(is_load),
     _schedule_order(schedule_order) {}
 
-    Node* base()          const { return _base; }
-    int scale()           const { return _scale; }
-    Node* invar()         const { return _invar; }
-    int offset()          const { return _offset; }
-    uint memory_size()    const { return _memory_size; }
+    const VPointer& vpointer() const { return _vpointer; }
     bool is_load()        const { return _is_load; }
     uint schedule_order() const { return _schedule_order; }
 
     static int cmp_for_sort_by_group(VMemoryRegion* r1, VMemoryRegion* r2) {
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->base()->_idx, r2->base()->_idx);
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->scale(),      r2->scale());
-      int r1_invar_idx = r1->invar() == nullptr ? 0 : r1->invar()->_idx;
-      int r2_invar_idx = r2->invar() == nullptr ? 0 : r2->invar()->_idx;
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1_invar_idx,      r2_invar_idx);
-      return 0; // equal
+      // Sort by mem_pointer (base, invar, iv_scale), except for the con.
+      return MemPointer::cmp_summands(r1->vpointer().mem_pointer(),
+                                      r2->vpointer().mem_pointer());
     }
 
-    static int cmp_for_sort(VMemoryRegion* r1, VMemoryRegion* r2) {
-      int cmp_group = cmp_for_sort_by_group(r1, r2);
+    static int cmp_for_sort(VMemoryRegion** r1, VMemoryRegion** r2) {
+      int cmp_group = cmp_for_sort_by_group(*r1, *r2);
       if (cmp_group != 0) { return cmp_group; }
 
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->offset(),     r2->offset());
-      return 0; // equal
+      // We use two comparisons, because a subtraction could underflow.
+      jint con1 = (*r1)->vpointer().con();
+      jint con2 = (*r2)->vpointer().con();
+      if (con1 < con2) { return -1; }
+      if (con1 > con2) { return  1; }
+      return 0;
     }
 
     enum Aliasing { DIFFERENT_GROUP, BEFORE, EXACT_OVERLAP, PARTIAL_OVERLAP, AFTER };
@@ -204,26 +194,23 @@ public:
       VMemoryRegion* p2 = &other;
       if (cmp_for_sort_by_group(p1, p2) != 0) { return DIFFERENT_GROUP; }
 
-      jlong offset1 = p1->offset();
-      jlong offset2 = p2->offset();
-      jlong memory_size1 = p1->memory_size();
-      jlong memory_size2 = p2->memory_size();
+      jlong con1 = p1->vpointer().con();
+      jlong con2 = p2->vpointer().con();
+      jlong size1 = p1->vpointer().size();
+      jlong size2 = p2->vpointer().size();
 
-      if (offset1 >= offset2 + memory_size2) { return AFTER; }
-      if (offset2 >= offset1 + memory_size1) { return BEFORE; }
-      if (offset1 == offset2 && memory_size1 == memory_size2) { return EXACT_OVERLAP; }
+      if (con1 >= con2 + size2) { return AFTER; }
+      if (con2 >= con1 + size1) { return BEFORE; }
+      if (con1 == con2 && size1 == size2) { return EXACT_OVERLAP; }
       return PARTIAL_OVERLAP;
     }
 
 #ifndef PRODUCT
   void print() const {
-    tty->print("VMemoryRegion[%s %dbytes, schedule_order(%4d), base",
-               _is_load ? "load " : "store", _memory_size, _schedule_order);
-    VPointer::print_con_or_idx(_base);
-    tty->print(" + offset(%4d)", _offset);
-    tty->print(" + invar");
-    VPointer::print_con_or_idx(_invar);
-    tty->print_cr(" + scale(%4d) * iv]", _scale);
+    tty->print("VMemoryRegion[%s schedule_order(%4d), ",
+               _is_load ? "load, " : "store,", _schedule_order);
+    vpointer().print_on(tty, false);
+    tty->print_cr("]");
   }
 #endif
 };
@@ -329,7 +316,8 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 
   // Collect all pointers for scalar and vector loads/stores.
   ResourceMark rm;
-  GrowableArray<VMemoryRegion> memory_regions;
+  // Use pointers because no default constructor for elements available.
+  GrowableArray<VMemoryRegion*> memory_regions;
 
   // To detect store-to-load-forwarding failures at the iteration threshold or below, we
   // simulate a super-unrolling to reach SuperWordStoreToLoadForwardingFailureDetection
@@ -351,10 +339,15 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
         const VPointer& p = vtn->vpointer(vloop_analyzer);
-        if (p.valid()) {
+        if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
-          uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
-          memory_regions.push(VMemoryRegion(p, iv_offset, vector_length, schedule_order++));
+          bool is_load = vtn->is_load_in_loop();
+          const VPointer iv_offset_p(p.make_with_iv_offset(iv_offset));
+          if (iv_offset_p.is_valid()) {
+            // The iv_offset may lead to overflows. This is a heuristic, so we do not
+            // care too much about those edge cases.
+            memory_regions.push(new VMemoryRegion(iv_offset_p, is_load, schedule_order++));
+          }
         }
       }
     }
@@ -369,7 +362,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     tty->print_cr("  simulated_unrolling_count = %d", simulated_unrolling_count);
     tty->print_cr("  simulated_super_unrolling_count = %d", simulated_super_unrolling_count);
     for (int i = 0; i < memory_regions.length(); i++) {
-      VMemoryRegion& region = memory_regions.at(i);
+      VMemoryRegion& region = *memory_regions.at(i);
       region.print();
     }
   }
@@ -377,10 +370,10 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 
   // For all pairs of pointers in the same group, check if they have a partial overlap.
   for (int i = 0; i < memory_regions.length(); i++) {
-    VMemoryRegion& region1 = memory_regions.at(i);
+    VMemoryRegion& region1 = *memory_regions.at(i);
 
     for (int j = i + 1; j < memory_regions.length(); j++) {
-      VMemoryRegion& region2 = memory_regions.at(j);
+      VMemoryRegion& region2 = *memory_regions.at(j);
 
       const VMemoryRegion::Aliasing aliasing = region1.aliasing(region2);
       if (aliasing == VMemoryRegion::Aliasing::DIFFERENT_GROUP ||
@@ -575,12 +568,13 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
+  const VPointer& load_p = vpointer(vloop_analyzer);
   while (mem->is_StoreVector()) {
-    VPointer p_store(mem->as_Mem(), vloop_analyzer.vloop());
-    if (p_store.overlap_possible_with_any_in(nodes())) {
-      break;
-    } else {
+    VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop());
+    if (store_p.never_overlaps_with(load_p)) {
       mem = mem->in(MemNode::Memory);
+    } else {
+      break;
     }
   }
 

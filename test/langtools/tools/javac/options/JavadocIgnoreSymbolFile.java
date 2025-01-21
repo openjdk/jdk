@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,30 @@
  * questions.
  */
 
-import java.net.http.HttpClient.Version;
-import java.time.Duration;
-import org.testng.annotations.Test;
-
 /*
  * @test
- * @summary Tests connection timeouts during SSL handshake
- * @bug 8208391
- * @library /test/lib
- * @build AbstractConnectTimeoutHandshake
- * @run testng/othervm ConnectTimeoutHandshakeSync
+ * @bug 8348038
+ * @summary Verify use of "-XDignore.symbol.file=true" doesn't cause assertion failure
+ * @modules jdk.javadoc/jdk.javadoc.internal.tool
  */
 
-public class ConnectTimeoutHandshakeSync
-    extends AbstractConnectTimeoutHandshake
-{
-    @Test(dataProvider = "variants")
-    @Override
-    public void timeoutSync(Version requestVersion,
-                            String method,
-                            Duration connectTimeout,
-                            Duration requestTimeout)
-        throws Exception
-    {
-        super.timeoutSync(requestVersion, method, connectTimeout, requestTimeout);
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+public class JavadocIgnoreSymbolFile {
+
+    public static void main(String[] args) {
+        String[] javadocArgs = new String[] {
+            "-XDignore.symbol.file=true"
+        };
+        StringWriter buf = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(buf)) {
+            jdk.javadoc.internal.tool.Main.execute(javadocArgs, pw);
+        }
+        String expected = "error: No modules, packages or classes specified. 1 error";
+        String actual = buf.toString().trim().replaceAll("\\s+", " ");
+        if (!actual.equals(expected))
+            throw new AssertionError("unexpected output:\n" + actual);
     }
 }
