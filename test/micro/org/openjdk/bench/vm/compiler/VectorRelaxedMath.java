@@ -41,9 +41,7 @@ import jdk.internal.math.RelaxedMath;
 @State(Scope.Thread)
 @Warmup(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 1, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 1,
-      jvmArgs = {"--add-modules", "java.base",
-                 "--add-exports", "java.base/jdk.internal.math=ALL-UNNAMED"})
+@Fork(value = 1, jvmArgs = {"--add-exports", "java.base/jdk.internal.math=ALL-UNNAMED"})
 public class VectorRelaxedMath {
     @Param({"10000"})
     public int SIZE;
