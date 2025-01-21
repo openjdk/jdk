@@ -217,8 +217,6 @@ file as the first include line. Declarations needed by other files
 should be put in the .hpp file, and not in the .inline.hpp file. This
 rule exists to resolve problems with circular dependencies between
 .inline.hpp files.</p></li>
-<li><p>All .cpp files include precompiled.hpp as the first include
-line.</p></li>
 <li><p>precompiled.hpp is just a build time optimization, so don't rely
 on it to resolve include problems.</p></li>
 <li><p>Keep the include lines alphabetically sorted.</p></li>
