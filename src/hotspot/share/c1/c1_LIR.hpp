@@ -1599,8 +1599,6 @@ public:
 class LIR_Op2: public LIR_Op {
  friend class LIR_OpVisitState;
 
-  int  _fpu_stack_size; // for sin/cos implementation on Intel
-
  protected:
   LIR_Opr   _opr1;
   LIR_Opr   _opr2;
@@ -1617,7 +1615,6 @@ class LIR_Op2: public LIR_Op {
  public:
   LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, CodeEmitInfo* info = nullptr, BasicType type = T_ILLEGAL)
     : LIR_Op(code, LIR_OprFact::illegalOpr, info)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(LIR_OprFact::illegalOpr)
@@ -1632,7 +1629,6 @@ class LIR_Op2: public LIR_Op {
 
   LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type)
     : LIR_Op(code, result, nullptr)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(LIR_OprFact::illegalOpr)
@@ -1649,7 +1645,6 @@ class LIR_Op2: public LIR_Op {
   LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result = LIR_OprFact::illegalOpr,
           CodeEmitInfo* info = nullptr, BasicType type = T_ILLEGAL)
     : LIR_Op(code, result, info)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(LIR_OprFact::illegalOpr)
@@ -1665,7 +1660,6 @@ class LIR_Op2: public LIR_Op {
   LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp1, LIR_Opr tmp2 = LIR_OprFact::illegalOpr,
           LIR_Opr tmp3 = LIR_OprFact::illegalOpr, LIR_Opr tmp4 = LIR_OprFact::illegalOpr, LIR_Opr tmp5 = LIR_OprFact::illegalOpr)
     : LIR_Op(code, result, nullptr)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(tmp1)
@@ -1692,9 +1686,6 @@ class LIR_Op2: public LIR_Op {
   void set_condition(LIR_Condition condition) {
     assert(code() == lir_cmp || code() == lir_branch || code() == lir_cond_float_branch, "only valid for branch"); _condition = condition;
   }
-
-  void set_fpu_stack_size(int size)              { _fpu_stack_size = size; }
-  int  fpu_stack_size() const                    { return _fpu_stack_size; }
 
   void set_in_opr1(LIR_Opr opr)                  { _opr1 = opr; }
   void set_in_opr2(LIR_Opr opr)                  { _opr2 = opr; }
