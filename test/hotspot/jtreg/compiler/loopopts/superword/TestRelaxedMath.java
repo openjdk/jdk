@@ -68,10 +68,71 @@ public class TestRelaxedMath {
     }
 
     @Setup
+    public static Object[] setupFloat() {
+        Generators.G.fill(generatorF, aF);
+        return new Object[] { aF };
+    }
+
+    @Setup
     public static Object[] setupFloat2() {
         Generators.G.fill(generatorF, aF);
         Generators.G.fill(generatorF, bF);
         return new Object[] { aF, bF };
+    }
+
+    @Test
+    @Arguments(setup = "setupFloat")
+    @IR(counts = {IRNode.LOAD_VECTOR_F,    "= 0",
+                  IRNode.ADD_REDUCTION_VF, "= 0",
+                  "requires_strict_order", "= 0"},
+        failOn = {"no_strict_order"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    // FAILS: simple sum does not vectorize (see JDK-8307516).
+    static float testStrictReductionFloatAdd(float[] a) {
+        float sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            float val = a[i];
+            sum = sum + val;
+        }
+        return sum;
+    }
+
+    @Test
+    @Arguments(setup = "setupFloat")
+    @IR(counts = {IRNode.LOAD_VECTOR_F,    "= 0",
+                  IRNode.ADD_REDUCTION_VF, "= 0",
+                  "requires_strict_order", "= 0"},
+        failOn = {"no_strict_order"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    static float testDefaultReductionFloatAdd(float[] a) {
+        float sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            float val = a[i];
+            sum = RelaxedMath.add(sum, val, /* default: no reordering */ 0);
+        }
+        return sum;
+    }
+
+    @Test
+    @Arguments(setup = "setupFloat")
+    @IR(counts = {IRNode.LOAD_VECTOR_F,    "= 0",
+                  IRNode.ADD_REDUCTION_VF, "= 0",
+                  "no_strict_order",       "= 0"},
+        failOn = {"requires_strict_order"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    static float testReorderedReductionFloatAdd(float[] a) {
+        float sum = 0;
+        for (int i = 0; i < a.length; i++) {
+            float val = a[i];
+            sum = RelaxedMath.add(sum, val, /* allow reduction reordering */ 1);
+        }
+        return sum;
     }
 
     @Test
