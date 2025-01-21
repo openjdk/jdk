@@ -23,8 +23,13 @@
 package jdk.jpackage.internal.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 public class CompositeProxyTest {
@@ -255,6 +260,63 @@ public class CompositeProxyTest {
         });
 
         assertEquals("ciao,bye", proxy.talk());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testBasicObjectMethods(boolean withOverrides) {
+        interface A {
+            default void foo() {}
+        }
+
+        interface B {
+            default void bar() {}
+        }
+
+        interface C extends A, B {
+        }
+
+        final A aImpl;
+        final B bImpl;
+
+        if (withOverrides) {
+            aImpl = new A() {
+                @Override
+                public String toString() {
+                    return "theA";
+                }
+
+                @Override
+                public boolean equals(Object other) {
+                    return true;
+                }
+
+                @Override
+                public int hashCode() {
+                    return 7;
+                }
+            };
+
+            bImpl = new B() {
+                @Override
+                public String toString() {
+                    return "theB";
+                }
+            };
+        } else {
+            aImpl = new A() {};
+            bImpl = new B() {};
+        }
+
+        var proxy = CompositeProxy.create(C.class, aImpl, bImpl);
+        var proxy2 = CompositeProxy.create(C.class, aImpl, bImpl);
+
+        assertNotEquals(proxy.toString(), proxy2.toString());
+        assertNotEquals(proxy.hashCode(), proxy2.hashCode());
+        assertFalse(proxy.equals(proxy2));
+        assertFalse(proxy2.equals(proxy));
+        assertTrue(proxy.equals(proxy));
+        assertTrue(proxy2.equals(proxy2));
     }
 
     @Test

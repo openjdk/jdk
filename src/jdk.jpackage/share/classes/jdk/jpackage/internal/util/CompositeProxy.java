@@ -405,9 +405,58 @@ public final class CompositeProxy {
             } else if (method.isDefault()) {
                 return InvocationHandler.invokeDefault(proxy, method, args);
             } else {
-                throw new UnsupportedOperationException(String.format("No handler for %s", method));
+                handler = OBJECT_METHOD_DISPATCH.get(method);
+                if (handler != null) {
+                    return handler.invoke(proxy, args);
+                } else {
+                    throw new UnsupportedOperationException(String.format("No handler for %s", method));
+                }
             }
         }
+
+        private static String objectToString(Object obj) {
+            return obj.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(obj));
+        }
+
+        private static boolean objectEquals(Object obj, Object other) {
+            return obj == other;
+        }
+
+        private static Method getMethod(Class<?> type, String methodName, Class<?>...paramaterTypes) {
+            try {
+                return type.getDeclaredMethod(methodName, paramaterTypes);
+            } catch (NoSuchMethodException|SecurityException ex) {
+                throw new InternalError(ex);
+            }
+        }
+
+        static class ObjectMethodHandler extends HandlerOfMethod {
+
+            ObjectMethodHandler(Method method) {
+                super(method);
+            }
+
+            @Override
+            public Object invoke(Object proxy, Object[] args) throws Throwable {
+                if (args == null) {
+                    return method.invoke(null, proxy);
+                } else {
+                    final var newArgs = new Object[args.length + 1];
+                    newArgs[0] = proxy;
+                    System.arraycopy(args, 0, newArgs, 1, args.length);
+                    return method.invoke(null, newArgs);
+                }
+            }
+        }
+
+        private static final Map<Method, Handler> OBJECT_METHOD_DISPATCH = Map.of(
+                getMethod(Object.class, "toString"),
+                new ObjectMethodHandler(getMethod(CompositeProxyInvocationHandler.class, "objectToString", Object.class)),
+                getMethod(Object.class, "equals", Object.class),
+                new ObjectMethodHandler(getMethod(CompositeProxyInvocationHandler.class, "objectEquals", Object.class, Object.class)),
+                getMethod(Object.class, "hashCode"),
+                new ObjectMethodHandler(getMethod(System.class, "identityHashCode", Object.class))
+        );
     }
 
     private static HandlerOfMethod createHandlerForDefaultMethod(Method method, InvokeTunnel invokeTunnel) {
