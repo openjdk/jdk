@@ -1,4 +1,4 @@
-package ValidateICCHeaderData;/*
+/*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,9 +24,9 @@ package ValidateICCHeaderData;/*
 /*
  * @test
  * @bug 8337703
- * @summary To verify if ICC_Profile's setData() validates header data
- *          and throws IAE for invalid values.
- * @run main ValidateICCHeaderData.ValidateICCHeaderData
+ * @summary To verify if ICC_Profile's setData() and getInstance() methods
+ *          validate header data and throw IAE for invalid values.
+ * @run main ValidateICCHeaderData
  */
 
 import java.awt.color.ColorSpace;
@@ -164,20 +164,10 @@ public class ValidateICCHeaderData {
         System.out.println("CASE 14: Passed \n");
 
         System.out.println("CASE 15: Testing Deserialization of ICC_Profile ...");
-        testDeSerialization();
+        testDeserialization();
         System.out.println("CASE 15: Passed \n");
 
         System.out.println("Successfully completed testing all 15 cases. Test Passed !!");
-    }
-
-    private static void testDeSerialization() throws IOException {
-        //invalidSRGB.icc is serialized on older version of JDK
-        //Upon deserialization, the invalid profile is expected to throw IAE
-        try {
-            ICC_Profile.getInstance("./invalidSRGB.icc");
-        } catch (IllegalArgumentException iae) {
-            System.out.println("Expected IAE thrown: " + iae.getMessage());
-        }
     }
 
     private static void testValidHeaderData(int[] validData, int startIndex,
@@ -253,6 +243,16 @@ public class ValidateICCHeaderData {
         try {
             profile.setData(HEADER_TAG, invalidHeaderSize);
             throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
+        } catch (IllegalArgumentException iae) {
+            System.out.println("Expected IAE thrown: " + iae.getMessage());
+        }
+    }
+
+    private static void testDeserialization() throws IOException {
+        //invalidSRGB.icc is serialized on older version of JDK
+        //Upon deserialization, the invalid profile is expected to throw IAE
+        try {
+            ICC_Profile.getInstance("./invalidSRGB.icc");
         } catch (IllegalArgumentException iae) {
             System.out.println("Expected IAE thrown: " + iae.getMessage());
         }
