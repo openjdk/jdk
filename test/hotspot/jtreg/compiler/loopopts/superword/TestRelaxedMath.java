@@ -145,7 +145,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float floatAddReductionDotProductStrict(float[] a) {
+    static float floatAddReductionDotProductStrict(float[] a, float[] b) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
@@ -164,7 +164,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float floatAddReductionDotProductDefault(float[] a) {
+    static float floatAddReductionDotProductDefault(float[] a, float[] b) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
@@ -183,7 +183,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float floatAddReductionDotProductReorder(float[] a) {
+    static float floatAddReductionDotProductReorder(float[] a, float[] b) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
