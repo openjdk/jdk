@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/nmethod.hpp"
 #include "code/scopeDesc.hpp"
 #include "gc/shared/barrierSet.hpp"
