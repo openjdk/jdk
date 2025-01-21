@@ -440,17 +440,57 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
   C->set_major_progress();
 }
 
-// TODO desc / ASCII art
+// Create a new if in the multiversioning pattern, adding an additional condition for the
+// multiversioning fast-loop.
+//
+// Before:
+//                       entry  opaque
+//                         |      |
+//                      multiversion_if
+//                         |      |
+//        +----------------+      +---------------+
+//        |                                       |
+//   multiversion_fast_proj          multiversion_slow_proj
+//                                                |
+//                                                +--------+
+//                                                         |
+//                                                      slow_path
+//
+//
+// After:
+//                     entry  opaque <-- to be replaced by caller
+//                         |  |
+//                        new_if
+//                         |  |
+//                         |  +-----------------------------+
+//                         |                                |
+//                 new_if_true  opaque                new_if_false
+//                         |      |                         |
+//                      multiversion_if                     |
+//                         |      |                         |
+//        +----------------+      +---------------+         |
+//        |                                       |         |
+//   multiversion_fast_proj      new_multiversion_slow_proj |
+//                                                |         |
+//                                                +------+  |
+//                                                       |  |
+//                                                      region
+//                                                         |
+//                                                      slow_path
+//
 IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multiversioning_fast_proj) {
+  // Give all nodes in the old sub-graph a name.
   IfNode* multiversion_if = multiversioning_fast_proj->in(0)->as_If();
+  Node* entry = multiversion_if->in(0);
   OpaqueMultiversioningNode* opaque = multiversion_if->in(1)->as_OpaqueMultiversioning();
+  IfFalseNode* multiversion_slow_proj = multiversion_if->proj_out(0)->as_IfFalse();
+  Node* slow_path = multiversion_slow_proj->unique_ctrl_out();
 
   // Now that we have at least one condition for the multiversioning,
   // we should unstall the slow loop.
   opaque->unstall_slow_loop();
 
   // Create new_if with its projections.
-  Node* entry = multiversion_if->in(0);
   IfNode* new_if = IfNode::make_with_same_profile(multiversion_if, entry, opaque);
   IdealLoopTree* lp = get_loop(entry);
   register_control(new_if, lp, entry);
@@ -465,9 +505,7 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
 
   // Clone multiversion_slow_path - this allows us to easily carry the dependencies to
   // the new region below.
-  IfFalseNode* old_multiversion_slow_proj = multiversion_if->proj_out(0)->as_IfFalse();
-  Node* slow_path = old_multiversion_slow_proj->unique_ctrl_out();
-  IfFalseNode* new_multiversion_slow_proj = old_multiversion_slow_proj->clone()->as_IfFalse();
+  IfFalseNode* new_multiversion_slow_proj = multiversion_slow_proj->clone()->as_IfFalse();
   register_control(new_multiversion_slow_proj, lp, multiversion_if);
 
   // Create new Region.
@@ -476,9 +514,9 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_multiversion(IfTrueNode* multivers
   region->add_req(new_if_false);
   register_control(region, lp, new_multiversion_slow_proj);
 
-  // Hook region into slow_path, in stead of the old_multiversion_slow_proj.
-  // This also moves all other dependencies of the old_multiversion_slow_proj to the region.
-  _igvn.replace_node(old_multiversion_slow_proj, region);
+  // Hook region into slow_path, in stead of the multiversion_slow_proj.
+  // This also moves all other dependencies of the multiversion_slow_proj to the region.
+  _igvn.replace_node(multiversion_slow_proj, region);
 
   return new_if_true;
 }
