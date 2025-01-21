@@ -34,17 +34,15 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class StressAsyncUL {
-    static void analyze_output(String args) throws Exception {
+    static void analyze_output(String... args) throws Exception {
         ProcessBuilder pb =
             ProcessTools.createLimitedTestJavaProcessBuilder(args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }
     public static void main(String[] args) throws Exception {
-        String dropArgs = "-Xlog:async:drop -Xlog:all=trace:file=/dev/null::filecount=0 " + InnerClass.class.getName();
-        String stallArgs = "-Xlog:async:stall -Xlog:all=trace:file=/dev/null::filecount=0 " + InnerClass.class.getName();
-        analyze_output(dropArgs);
-        analyze_output(stallArgs);
+        analyze_output("-Xlog:async:drop", "-Xlog:all=trace:file=/dev/null::filecount=0", InnerClass.class.getName());
+        analyze_output("-Xlog:async:stall", "-Xlog:all=trace:file=/dev/null::filecount=0", InnerClass.class.getName());
     }
 
     public static class InnerClass {
