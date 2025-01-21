@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public:
     _root(nullptr),
     _prng_seed(_initial_seed),
     _node_count(0) {
-    static_assert(std::is_trivially_destructible<K>, "must be");
+    static_assert(std::is_trivially_destructible<K>::value, "must be");
   }
 
   ~Treap() {
