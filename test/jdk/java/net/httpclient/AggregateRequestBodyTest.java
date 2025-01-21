@@ -429,7 +429,7 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
         public void onNext(ByteBuffer item) {
             items.addLast(item);
             int available = semaphore.availablePermits();
-            if (semaphore.availablePermits() > Integer.MAX_VALUE - 8) {
+            if (available > Integer.MAX_VALUE - 8) {
                 onError(new IllegalStateException("too many buffers in queue: " + available));
             }
             semaphore.release();
