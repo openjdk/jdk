@@ -1012,7 +1012,7 @@ void AlignmentSolver::trace_start_solve() const {
                   _pre_stride, _main_stride);
     // adr = base + con + invar + iv_scale * iv
     tty->print("  adr = base[%d]", base().object_or_native()->_idx);
-    tty->print(" + invar + iv_scale(%d) * iv + con(%d)", iv_scale(), _vpointer.con());
+    tty->print_cr(" + invar + iv_scale(%d) * iv + con(%d)", iv_scale(), _vpointer.con());
   }
 }
 

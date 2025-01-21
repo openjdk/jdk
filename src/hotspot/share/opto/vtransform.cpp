@@ -148,7 +148,7 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 void VTransform::apply_speculative_runtime_checks() {
   if (VLoop::vectors_should_be_aligned()) {
 #ifdef ASSERT
-    if (_trace._align_vector) {
+    if (_trace._align_vector || _trace._speculative_runtime_checks) {
       tty->print_cr("\nVTransform::apply_speculative_runtime_checks: native memory alignment");
     }
 #endif
@@ -172,14 +172,14 @@ void VTransform::apply_speculative_runtime_checks() {
   }
 }
 
-#define TRACE_ALIGN_VECTOR_NODE(node) { \
-  DEBUG_ONLY(                           \
-    if (_trace._align_vector) {         \
-      tty->print("  " #node ": ");      \
-      node->dump();                     \
-    }                                   \
-  )                                     \
-}                                       \
+#define TRACE_SPECULATIVE_ALIGNMENT_CHECK(node) {                     \
+  DEBUG_ONLY(                                                         \
+    if (_trace._align_vector || _trace._speculative_runtime_checks) { \
+      tty->print("  " #node ": ");                                    \
+      node->dump();                                                   \
+    }                                                                 \
+  )                                                                   \
+}                                                                     \
 
 // Check: (node % alignment) == 0.
 void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
@@ -190,28 +190,28 @@ void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
     // adr -> int/long
     node = new CastP2XNode(nullptr, node);
     phase()->register_new_node(node, ctrl);
-    TRACE_ALIGN_VECTOR_NODE(node);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
   }
   if (node->bottom_type()->basic_type() == T_LONG) {
     // long -> int
     node  = new ConvL2INode(node);
     phase()->register_new_node(node, ctrl);
-    TRACE_ALIGN_VECTOR_NODE(node);
+    TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
   }
 
   Node* mask_alignment = igvn().intcon(alignment-1);
   Node* base_alignment = new AndINode(node, mask_alignment);
   phase()->register_new_node(base_alignment, ctrl);
-  TRACE_ALIGN_VECTOR_NODE(mask_alignment);
-  TRACE_ALIGN_VECTOR_NODE(base_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(mask_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(base_alignment);
 
   Node* zero = igvn().intcon(0);
   Node* cmp_alignment = CmpNode::make(base_alignment, zero, T_INT, false);
   BoolNode* bol_alignment = new BoolNode(cmp_alignment, BoolTest::eq);
   phase()->register_new_node(cmp_alignment, ctrl);
   phase()->register_new_node(bol_alignment, ctrl);
-  TRACE_ALIGN_VECTOR_NODE(cmp_alignment);
-  TRACE_ALIGN_VECTOR_NODE(bol_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(cmp_alignment);
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(bol_alignment);
 
   add_speculative_check(bol_alignment);
 }
@@ -229,8 +229,7 @@ void VTransform::add_speculative_check(BoolNode* bol) {
   }
   Node* iff_speculate = new_check_proj->in(0);
   igvn().replace_input_of(iff_speculate, 1, bol);
-  TRACE_ALIGN_VECTOR_NODE(iff_speculate);
-  // TODO trace more generally!
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(iff_speculate);
 }
 
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
