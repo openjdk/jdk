@@ -717,7 +717,6 @@ public:
     VTransformVectorNode(vtransform, prototype, req), _vpointer(vpointer) {}
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
-  VPointer const* vpointer() const { return _vpointer; }
   virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
 };
 
