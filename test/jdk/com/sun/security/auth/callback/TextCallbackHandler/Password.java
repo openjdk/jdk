@@ -25,44 +25,52 @@
  * @test
  * @bug 6825240 6829785
  * @summary Password.readPassword() echos the input when System.Console is null
- * @run main/manual Password
- */
-
-/*
- * This test should not be run with JTreg. If it is run using JTreg the test will fail.
- * Please use the following instructions:
- *
- * This scenario cannot be automated because util/Password.java verifies the given input stream is
- * equal to the initialSystemIn. This prevents the test from providing a custom input stream.
- *
- *  Steps to run the test:
- *  1) Compile the class using the JDK version being tested: '<JdkBin>/javac Password.java'
- *  2) Run the test using the JDK version being tested: '<JdkBin>/java -cp . Password'
- *  3) Type in the first password, it should not be visible in the console
- *  4) Type in the second password, it should be visible in the console
- *  5) The final output line displays the entered passwords, both should be visible
+ * @modules java.base/java.lang:+open
+ * @run main/othervm Password
  */
 
 import com.sun.security.auth.callback.TextCallbackHandler;
+
+
 import javax.security.auth.callback.*;
+import java.io.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
+import jdk.test.lib.Asserts;
 
 public class Password {
-   public static void main(String args[]) throws Exception {
+    private static final String VISIBLE_LINE = "lineVisible";
 
-        if (System.getProperty("java.class.path").contains("jtreg")){
-            throw new RuntimeException("This test is designated as manual and will fail if run with jtreg. " +
-                    "Please read the instruction/steps in the file comments before proceeding with manual execution.");
-        }
+    public static void main(String args[]) throws Exception {
 
+        InputStream originalInput = System.in;
+
+        // setting the initial input stream from the System class
+        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(System.class, MethodHandles.lookup());
+        VarHandle initialIn = lookup.findStaticVarHandle(System.class, "initialIn", InputStream.class);
+
+        // setting the input stream and the output stream
+        ByteArrayInputStream inputStream = (new ByteArrayInputStream((VISIBLE_LINE + "\nlineInvisible\n").getBytes()));
+        System.setIn(inputStream);
+        initialIn.set(inputStream);
+
+        // handling the password callbacks, as the input stream is here the invisible should not echo and should be null
         TextCallbackHandler h = new TextCallbackHandler();
         PasswordCallback nc = new PasswordCallback("Invisible: ", false);
         PasswordCallback nc2 = new PasswordCallback("Visible: ", true);
 
-        System.out.println("Two passwords will be prompted for. The first one " +
-                "should have echo off, the second one on. Otherwise, this test fails");
-        Callback[] callbacks = { nc, nc2 };
+        System.out.println("Two passwords will be prompted for. They will automatically be populated. " +
+                "The invisible password will remain null with this input stream configuration.");
+        Callback[] callbacks = {nc, nc2};
         h.handle(callbacks);
-        System.out.println("You input " + new String(nc.getPassword()) +
-                " and " + new String(nc2.getPassword()));
-   }
+
+        //reverting everything back
+        initialIn.set(originalInput);
+        System.setIn(originalInput);
+
+
+        Asserts.assertNull(nc.getPassword());
+        Asserts.assertEquals(VISIBLE_LINE, new String(nc2.getPassword()));
+    }
 }
