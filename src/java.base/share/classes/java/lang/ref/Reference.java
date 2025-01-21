@@ -228,50 +228,16 @@ public abstract sealed class Reference<T>
         if (q != ReferenceQueue.NULL) q.enqueue(this);
     }
 
-    private static final Object processPendingLock = new Object();
-    private static boolean processPendingActive = false;
-
     private static void processPendingReferences() {
         // Only the singleton reference processing thread calls
         // waitForReferencePendingList() and getAndClearReferencePendingList().
-        // These are separate operations to avoid a race with other threads
-        // that are calling waitForReferenceProcessing().
         waitForReferencePendingList();
-        Reference<?> pendingList;
-        synchronized (processPendingLock) {
-            pendingList = getAndClearReferencePendingList();
-            processPendingActive = true;
-        }
+        Reference<?> pendingList = getAndClearReferencePendingList();
         while (pendingList != null) {
             Reference<?> ref = pendingList;
             pendingList = ref.discovered;
             ref.discovered = null;
             ref.enqueueFromPending();
-        }
-        // Notify any waiters of completion of current round.
-        synchronized (processPendingLock) {
-            processPendingActive = false;
-            processPendingLock.notifyAll();
-        }
-    }
-
-    // Wait for progress in reference processing.
-    //
-    // Returns true after waiting (for notification from the reference
-    // processing thread) if either (1) the VM has any pending
-    // references, or (2) the reference processing thread is
-    // processing references. Otherwise, returns false immediately.
-    private static boolean waitForReferenceProcessing()
-        throws InterruptedException
-    {
-        synchronized (processPendingLock) {
-            if (processPendingActive || hasReferencePendingList()) {
-                // Wait for progress, not necessarily completion.
-                processPendingLock.wait();
-                return true;
-            } else {
-                return false;
-            }
         }
     }
 
@@ -299,13 +265,6 @@ public abstract sealed class Reference<T>
                      tg = tgn, tgn = tg.getParent());
                 Reference.startReferenceHandlerThread(tg);
                 Finalizer.startFinalizerThread(tg);
-            }
-
-            @Override
-            public boolean waitForReferenceProcessing()
-                throws InterruptedException
-            {
-                return Reference.waitForReferenceProcessing();
             }
 
             @Override

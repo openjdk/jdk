@@ -107,71 +107,61 @@ class Bits {                            // package-private
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, long cap) {
-
         if (!MEMORY_LIMIT_SET && VM.initLevel() >= 1) {
             MAX_MEMORY = VM.maxDirectMemory();
             MEMORY_LIMIT_SET = true;
         }
 
-        // optimist!
+        // Optimistic path: enough memory to satisfy allocation.
         if (tryReserveMemory(size, cap)) {
             return;
         }
 
-        final JavaLangRefAccess jlra = SharedSecrets.getJavaLangRefAccess();
+        // Short on memory, with potentially many threads competing for it.
+        // To alleviate progress races, acquire the lock and go slow.
+        synchronized (Bits.class) {
+            reserveMemorySlow(size, cap);
+        }
+    }
+
+    static void reserveMemorySlow(long size, long cap) {
+        // Slow path under the lock. This code would try to trigger cleanups and
+        // sense if cleaning was performed. Since the failure mode is OOME,
+        // there is no need to rush.
+        //
+        // If this code is modified, make sure a stress test like DirectBufferAllocTest
+        // performs well.
+
         boolean interrupted = false;
         try {
+            BufferCleaner.Canary canary = null;
 
-            // Retry allocation until success or there are no more
-            // references (including Cleaners that might free direct
-            // buffer memory) to process and allocation still fails.
-            boolean refprocActive;
-            do {
-                try {
-                    refprocActive = jlra.waitForReferenceProcessing();
-                } catch (InterruptedException e) {
-                    // Defer interrupts and keep trying.
-                    interrupted = true;
-                    refprocActive = true;
-                }
-                if (tryReserveMemory(size, cap)) {
-                    return;
-                }
-            } while (refprocActive);
-
-            // trigger VM's Reference processing
-            System.gc();
-
-            // A retry loop with exponential back-off delays.
-            // Sometimes it would suffice to give up once reference
-            // processing is complete.  But if there are many threads
-            // competing for memory, this gives more opportunities for
-            // any given thread to make progress.  In particular, this
-            // seems to be enough for a stress test like
-            // DirectBufferAllocTest to (usually) succeed, while
-            // without it that test likely fails.  Since failure here
-            // ends in OOME, there's no need to hurry.
             long sleepTime = 1;
-            int sleeps = 0;
-            while (true) {
+            for (int sleeps = 0; sleeps < MAX_SLEEPS; sleeps++) {
+                // See if we can satisfy the allocation now.
                 if (tryReserveMemory(size, cap)) {
                     return;
                 }
-                if (sleeps >= MAX_SLEEPS) {
-                    break;
+
+                if (canary == null || canary.isDead()) {
+                    // If canary is not yet initialized, we have not triggered a cleanup.
+                    // If canary is dead, there was progress, and it was not enough.
+                    // Trigger GC to perform reference processing and then cleaning.
+                    canary = BufferCleaner.newCanary();
+                    System.gc();
                 }
+
+                // Exponentially back off waiting for Cleaner to catch up.
                 try {
-                    if (!jlra.waitForReferenceProcessing()) {
-                        Thread.sleep(sleepTime);
-                        sleepTime <<= 1;
-                        sleeps++;
-                    }
+                    Thread.sleep(sleepTime);
+                    sleepTime *= 2;
                 } catch (InterruptedException e) {
                     interrupted = true;
+                    break;
                 }
             }
 
-            // no luck
+            // No luck:
             throw new OutOfMemoryError
                 ("Cannot reserve "
                  + size + " bytes of direct buffer memory (allocated: "

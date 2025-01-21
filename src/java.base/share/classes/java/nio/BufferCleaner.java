@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,39 @@
  * questions.
  */
 
-package jdk.internal.access;
+package java.nio;
 
-import java.lang.ref.ReferenceQueue;
+import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 
-public interface JavaLangRefAccess {
+class BufferCleaner {
+    private static final Cleaner CLEANER = Cleaner.create();
 
-    /**
-     * Starts the Finalizer and Reference Handler threads.
-     */
-    void startThreads();
+    static Cleanable register(Object buffer, Runnable action) {
+        if (action != null) {
+            return CLEANER.register(buffer, action);
+        } else {
+            return null;
+        }
+    }
 
-    /**
-     * Runs the finalization methods of any objects pending finalization.
-     *
-     * Invoked by Runtime.runFinalization()
-     */
-    void runFinalization();
+    static Canary newCanary() {
+        Canary canary = new Canary();
+        register(new Object(), canary);
+        return canary;
+    }
+
+    public static class Canary implements Runnable {
+        volatile boolean dead;
+
+        @Override
+        public void run() {
+            dead = true;
+        }
+
+        public boolean isDead() {
+            return dead;
+        }
+    }
+
 }

@@ -30,7 +30,6 @@ package java.nio;
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
-import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 import java.util.Objects;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
@@ -92,20 +91,6 @@ class Direct$Type$Buffer$RW$$BO$
         }
     }
 
-    // Singleton Cleaner for all relevant Buffer instances.
-    // Lazily initialized to avoid bootstrapping circularities involving <clinit>.
-    private static class CleanerHolder {
-        private static final Cleaner CLEANER = Cleaner.create();
-
-        static Cleanable register(Object buffer, Runnable action) {
-            if (action != null) {
-                return CLEANER.register(buffer, action);
-            } else {
-                return null;
-            }
-        }
-    }
-
     private final Cleanable cleanable;
 
     public Cleanable cleanable() {
@@ -147,7 +132,7 @@ class Direct$Type$Buffer$RW$$BO$
             address = base;
         }
         try {
-            cleanable = CleanerHolder.register(this, new Deallocator(base, size, cap));
+            cleanable = BufferCleaner.register(this, new Deallocator(base, size, cap));
         } catch (Throwable t) {
             // Prevent leak if the Deallocator or Cleaner fail for any reason
             UNSAFE.freeMemory(base);
@@ -222,7 +207,7 @@ class Direct$Type$Buffer$RW$$BO$
 #if[rw]
         super(-1, 0, cap, cap, fd, isSync, segment);
         address = addr;
-        cleanable = CleanerHolder.register(this, unmapper);
+        cleanable = BufferCleaner.register(this, unmapper);
         att = null;
 #else[rw]
         super(cap, addr, fd, unmapper, isSync, segment);
