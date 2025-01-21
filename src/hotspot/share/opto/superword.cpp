@@ -2541,7 +2541,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     int vw = element_size_in_bytes * vtn->vector_length();
     if (vw > max_aw) {
       max_aw = vw;
-      vpointer = vtn->vpointer();
+      vpointer = &vtn->vpointer(_vloop_analyzer);
     }
   }
   assert(vpointer != nullptr && max_aw > 0, "found vpointer and aw");
@@ -2564,10 +2564,15 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 // pre-loop limit.
 void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
-  const VPointer* align_to_vpointer_p = _vpointer_for_main_loop_alignment;
-  const int aw                      = _aw_for_main_loop_alignment;
-  assert(align_to_vpointer_p != nullptr && aw > 0, "must have alignment reference and aw");
+
+  assert(_vpointer_for_main_loop_alignment != nullptr &&
+         _aw_for_main_loop_alignment > 0,
+         "must have alignment reference and aw");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
+
+  const VPointer& p = *_vpointer_for_main_loop_alignment;
+  const int aw      = _aw_for_main_loop_alignment;
+  assert(p.is_valid(), "sanity");
 
   // The opaque node for the limit, where we adjust the input
   Opaque1Node* pre_opaq = _vloop.pre_loop_end()->limit()->as_Opaque1();
@@ -2581,9 +2586,6 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
-
-  const VPointer& p = vpointer(align_to_ref);
-  assert(p.is_valid(), "sanity");
 
   // For the main-loop, we want the address of align_to_vpointer to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
@@ -2720,8 +2722,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #ifdef ASSERT
   if (_trace._align_vector) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
-    tty->print("  align_to_ref:");
-    align_to_ref->dump();
+    tty->print_cr("  vpointer_for_main_loop_alignment:");
     tty->print("  ");
     p.print_on(tty);
     tty->print_cr("  aw:        %d", aw);
