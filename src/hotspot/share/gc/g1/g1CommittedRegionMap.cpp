@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"

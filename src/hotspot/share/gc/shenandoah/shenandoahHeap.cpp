@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
