@@ -53,6 +53,8 @@ import static jdk.internal.net.http.quic.streams.QuicReceiverStream.ReceivingStr
  */
 public final class QuicReceiverStreamImpl extends AbstractQuicStream implements QuicReceiverStream {
 
+    private static final int MAX_SMALL_FRAGMENTS =
+            Utils.getIntegerProperty("jdk.httpclient.quic.maxSmallFragments", 100);
     private final Logger debug = Utils.getDebugLogger(this::dbgTag);
     private final String dbgTag;
 
@@ -352,6 +354,17 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         if (needWakeup) {
             var reader = this.reader;
             if (reader != null) reader.wakeup();
+        } else {
+            int numFrames = dataFlow.size();
+            long numBytes = dataFlow.buffered();
+            if (numFrames > MAX_SMALL_FRAGMENTS && numBytes / numFrames < 400) {
+                // The peer sent a large number of small fragments
+                // that follow a gap and can't be immediately released to the reader;
+                // we need to buffer them, and the memory overhead is unreasonably high.
+                throw new QuicTransportException("Excessive stream fragmentation",
+                        QuicTLSEngine.KeySpace.ONE_RTT, streamFrame.frameType(),
+                        QuicTransportErrors.INTERNAL_ERROR);
+            }
         }
     }
 
