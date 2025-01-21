@@ -58,7 +58,7 @@ PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
                                            ReferenceProcessor* ref_processor)
-  :_partial_array_splitter(_partial_array_state_manager, ParallelGCThreads),
+  :_partial_array_splitter(_partial_array_state_manager, ParallelScavengeHeap::heap()->workers().max_workers()),
    _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -127,8 +127,7 @@ void ParCompactionManager::push_objArray(oop obj) {
   size_t initial_chunk_size =
     // The destination array is unused when processing states.
     _partial_array_splitter.start(&_marking_stack, obj_array, nullptr, array_length);
-  int end = checked_cast<int>(initial_chunk_size);
-  follow_array(obj_array, 0, end);
+  follow_array(obj_array, 0, initial_chunk_size);
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
@@ -136,10 +135,7 @@ void ParCompactionManager::process_array_chunk(PartialArrayState* state, bool st
   oop obj = state->source();
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_marking_stack, stolen);
-  int start = checked_cast<int>(claim._start);
-  int end = checked_cast<int>(claim._end);
-  assert(start < end, "invariant");
-  follow_array(objArrayOop(obj), start, end);
+  follow_array(objArrayOop(obj), claim._start, claim._end);
 }
 
 void ParCompactionManager::follow_marking_stacks() {

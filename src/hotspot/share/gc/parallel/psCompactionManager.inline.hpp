@@ -106,7 +106,7 @@ inline void ParCompactionManager::FollowStackClosure::do_void() {
 }
 
 template <typename T>
-inline void follow_array_specialized(objArrayOop obj, int start, int end, ParCompactionManager* cm) {
+inline void follow_array_specialized(objArrayOop obj, size_t start, size_t end, ParCompactionManager* cm) {
   assert(start <= end, "invariant");
   T* const base = (T*)obj->base();
   T* const beg = base + start;
@@ -118,7 +118,7 @@ inline void follow_array_specialized(objArrayOop obj, int start, int end, ParCom
   }
 }
 
-inline void ParCompactionManager::follow_array(objArrayOop obj, int start, int end) {
+inline void ParCompactionManager::follow_array(objArrayOop obj, size_t start, size_t end) {
   if (UseCompressedOops) {
     follow_array_specialized<narrowOop>(obj, start, end, this);
   } else {

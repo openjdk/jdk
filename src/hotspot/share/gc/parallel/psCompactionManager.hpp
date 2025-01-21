@@ -208,7 +208,7 @@ public:
   void drain_region_stacks();
 
   inline void follow_contents(const ScannerTask& task, bool stolen);
-  inline void follow_array(objArrayOop array, int start, int end);
+  inline void follow_array(objArrayOop array, size_t start, size_t end);
   void process_array_chunk(PartialArrayState* state, bool stolen);
 
   class FollowStackClosure: public VoidClosure {
