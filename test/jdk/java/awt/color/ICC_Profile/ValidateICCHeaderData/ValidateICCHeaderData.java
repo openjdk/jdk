@@ -163,7 +163,7 @@ public class ValidateICCHeaderData {
         testProfileCreation(false);
         System.out.println("CASE 14: Passed \n");
 
-        System.out.println("CASE 15: Testing DeSerialization of ICC_Profile ...");
+        System.out.println("CASE 15: Testing Deserialization of ICC_Profile ...");
         testDeSerialization();
         System.out.println("CASE 15: Passed \n");
 
