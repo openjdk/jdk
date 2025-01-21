@@ -75,6 +75,7 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
 
         @Override
         protected CryptoFrame slice(CryptoFrame frame, long offset, int length) {
+            if (length == 0) return null;
             return frame.slice(offset, length);
         }
     }
@@ -96,6 +97,7 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
 
         @Override
         protected StreamFrame slice(StreamFrame frame, long offset, int length) {
+            if (length == 0) return null;
             return frame.slice(offset, length);
         }
     }
@@ -141,13 +143,11 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
     protected abstract T slice(T frame, long offset, int length);
 
     /**
-     * Receives a new frame. If the frame offset is below the current
+     * Receives a new frame. If the frame is below the current
      * offset the frame is dropped. If it is above the current offset,
      * it is queued.
      * If the frame is exactly at the current offset, it is
      * returned.
-     * Otherwise, if the queue contains a frame at the
-     * current offset, that frame is returned instead.
      *
      * @param frame a frame that was received
      * @return the next frame in the flow, or {@code null} if it is not
@@ -172,17 +172,15 @@ public sealed abstract class OrderedFlow<T extends QuicFrame> {
 
         // is this the frame we are waiting for, or does it overlaps
         // with the frame we're waiting for?
-        if (todeliver >= 0) {
-            // The code below may return a FIN frame with length 0 even if
-            // one has already been returned. This is to ensure we don't fail
-            // to return a 0-length frame that has the FIN bit set.
+        if (todeliver == 0 || length == 0) {
+            return null;
+        } else if (todeliver > 0) {
             long next = Math.addExact(offset, todeliver);
             // update the offset with the new position
             this.offset = next;
             // cleanup the queue
             dropuntil(next);
             if (pos == offset) return frame;
-            if (todeliver == 0) return poll(offset);
             return slice(frame, offset, todeliver);
         } else if (pos < offset) {
             // late arrival! duplicated or retransmitted frame which

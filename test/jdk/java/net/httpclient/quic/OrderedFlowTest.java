@@ -371,26 +371,20 @@ public class OrderedFlowTest {
         var size = LOREM.length();
         StringBuilder result = new StringBuilder(size);
         long maxBuffered = 0;
-        T last = null;
         for (var f : testData.frames()) {
             T received = flow.receive(f);
             var buffered = flow.buffered();
             maxBuffered = Math.max(buffered, maxBuffered);
             assertTrue(buffered < size,
                     "buffered data %s exceeds or equals payload size %s".formatted(buffered, size));
-            while ((last=received) != null) {
+            while (received != null) {
                 var payload = testData.payloadAccessor.apply(received);
-                if (!hasEmptyFrames) {
-                    assertNotEquals(payload, "", "empty frames not expected: " + received);
-                }
+                assertNotEquals(payload, "", "empty frames not expected: " + received);
                 result.append(payload);
                 received = flow.poll();
             }
         }
         assertEquals(result.toString(), testData.expectedResult);
-        if (last instanceof StreamFrame sf) {
-            assertEquals(sf.isLast(), "true", "last stream frame should have FIN bit");
-        }
     }
 
     @Test(dataProvider = "CryptoFrame")

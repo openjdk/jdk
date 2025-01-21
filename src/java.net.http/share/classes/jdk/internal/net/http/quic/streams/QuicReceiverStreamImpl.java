@@ -325,10 +325,8 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         }
 
         var readyFrame = dataFlow.receive(streamFrame);
-        if (readyFrame == null) {
-            return;
-        }
         var received = this.received;
+        boolean needWakeup = false;
         while (readyFrame != null) {
             // check again - this avoids a race condition where a frame
             // would be considered ready if requestStopSending had been
@@ -342,13 +340,19 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                     .formatted(received, readyFrame.offset());
             this.received = received = received + readyFrame.dataLength();
             offer(readyFrame);
+            needWakeup = true;
             readyFrame = dataFlow.poll();
         }
-        if (received == knownSize) {
-            switchReceivingState(DATA_RECVD);
+        if (state == SIZE_KNOWN && received == knownSize) {
+            if (switchReceivingState(DATA_RECVD)) {
+                offerEof();
+                needWakeup = true;
+            }
         }
-        var reader = this.reader;
-        if (reader != null) reader.wakeup();
+        if (needWakeup) {
+            var reader = this.reader;
+            if (reader != null) reader.wakeup();
+        }
     }
 
     /**
@@ -500,9 +504,10 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         if (payload.hasRemaining()) {
             orderedQueue.add(payload.slice());
         }
-        if (isLast) {
-            orderedQueue.add(QuicStreamReader.EOF);
-        }
+    }
+
+    private void offerEof() {
+        orderedQueue.add(QuicStreamReader.EOF);
     }
 
     /**
