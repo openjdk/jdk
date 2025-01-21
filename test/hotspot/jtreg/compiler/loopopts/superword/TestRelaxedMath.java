@@ -90,7 +90,7 @@ public class TestRelaxedMath {
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
     // FAILS: simple sum does not vectorize (see JDK-8307516).
-    static float testStrictReductionFloatAdd(float[] a) {
+    static float floatAddReductionStrict(float[] a) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i];
@@ -108,7 +108,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float testDefaultReductionFloatAdd(float[] a) {
+    static float floatAddReductionDefault(float[] a) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i];
@@ -126,7 +126,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float testReorderedReductionFloatAdd(float[] a) {
+    static float floatAddReductionReorder(float[] a) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i];
@@ -145,7 +145,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float testStrictReductionFloatAddDotProduct(float[] a, float[] b) {
+    static float floatAddReductionDotProductStrict(float[] a) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
@@ -164,7 +164,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float testDefaultReductionFloatAddDotProduct(float[] a, float[] b) {
+    static float floatAddReductionDotProductDefault(float[] a) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
@@ -183,7 +183,7 @@ public class TestRelaxedMath {
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         phase = CompilePhase.PRINT_IDEAL)
-    static float testReorderedReductionFloatAddDotProduct(float[] a, float[] b) {
+    static float floatAddReductionDotProductReorder(float[] a) {
         float sum = 0;
         for (int i = 0; i < a.length; i++) {
             float val = a[i] * b[i];
