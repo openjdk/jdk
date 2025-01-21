@@ -21,12 +21,12 @@
  * questions.
  */
 
- /*
-* @test
-* @bug 8152419
-* @library /test/lib
-* @summary To Verify JColorChooser tab selection
-* @run main/manual Test8152419
+/*
+ * @test
+ * @bug 8152419
+ * @library /test/lib
+ * @summary To Verify JColorChooser tab selection
+ * @run main/manual Test8152419
  */
 
 import java.awt.Color;
@@ -49,7 +49,6 @@ import jtreg.SkippedException;
 public class Test8152419 {
 
     public static void main(String args[]) throws Exception {
-
         // ColorChooser UI design is different for GTK L&F.
         // There are no tabs available for GTK L&F, skip the testing.
         if (UIManager.getLookAndFeel().getName().contains("GTK")) {
