@@ -938,7 +938,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   }
 
   template <FmtPrecision Fmt, uint8_t funct5>
-  void fp_base(FloatRegister Rd, FloatRegister Rs1, int Rs2, int8_t rm) {
+  void fp_base(FloatRegister Rd, FloatRegister Rs1, int8_t Rs2, int8_t rm) {
     guarantee(is_uimm5(Rs2), "Rs2 is out of validity");
     fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2, (RoundingMode)rm);
   }
