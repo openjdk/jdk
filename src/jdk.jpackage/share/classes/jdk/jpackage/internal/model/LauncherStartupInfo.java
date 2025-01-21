@@ -87,31 +87,4 @@ public interface LauncherStartupInfo {
             implements LauncherStartupInfo {
 
     }
-
-    /**
-     * Implementation of {@link LauncherStartupInfo} interface in which every method
-     * throws {@link UnsupportedOperationException} exception.
-     */
-    class Unsupported implements LauncherStartupInfo {
-
-        @Override
-        public String qualifiedClassName() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<String> javaOptions() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<String> defaultParameters() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<Path> classPath() {
-            throw new UnsupportedOperationException();
-        }
-    }
 }

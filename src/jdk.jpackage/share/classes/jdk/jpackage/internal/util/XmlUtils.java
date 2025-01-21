@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@ import java.lang.reflect.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,6 +45,13 @@ import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stax.StAXResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 
 public final class XmlUtils {
@@ -109,5 +120,30 @@ public final class XmlUtils {
             throw new IllegalStateException(ex);
         }
         return dbf;
+    }
+
+    public static Stream<Node> queryNodes(Node xml, XPath xPath, String xpathExpr) throws XPathExpressionException {
+        return toStream((NodeList) xPath.evaluate(xpathExpr, xml, XPathConstants.NODESET));
+    }
+
+    public static Stream<Node> toStream(NodeList nodes) {
+        return Optional.ofNullable(nodes).map(v -> {
+            return IntStream.range(0, v.getLength()).mapToObj(v::item);
+        }).orElseGet(Stream::of);
+    }
+
+    public static Stream<Node> toStream(NamedNodeMap nodes) {
+        return Optional.ofNullable(nodes).map(v -> {
+            return IntStream.range(0, v.getLength()).mapToObj(v::item);
+        }).orElseGet(Stream::of);
+    }
+
+    public static String elementValue(Element e, XPath xPath) {
+        try {
+            return queryNodes(e, xPath, "text()").map(Node::getNodeValue).collect(Collectors.joining());
+        } catch (XPathExpressionException ex) {
+            // Should never happen
+            throw new RuntimeException(ex);
+        }
     }
 }
