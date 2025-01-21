@@ -28,8 +28,9 @@ default: all
 
 IDEA_OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/verify-idea
 
-# Enable the shell script to call make without us interfering.
-# We will keep the $(SPEC), though, to find back to our configuration.
+# Unset these variables to avoid having the current environment interfere with
+# the idea generation script. SPEC needs to remain as idea.sh will call back to
+# make and that call needs to have SPEC defined.
 unexport HAS_SPEC
 unexport CONF
 unexport CONF_NAME
