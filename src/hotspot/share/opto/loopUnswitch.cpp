@@ -375,37 +375,6 @@ class OriginalLoop : public StackObj {
     _phase->igvn().rehash_node_delayed(unswitch_candidate_clone);
     _phase->dominated_by(loop_selector.false_path_loop_proj(), unswitch_candidate_clone);
   }
-
-// TODO old code - rm
-// public:
-//  // Unswitch the original loop on the invariant loop selector by creating a true-path-loop and a false-path-loop.
-//  // Remove the unswitch candidate If from both unswitched loop versions which are now covered by the loop selector If.
-//  void unswitch(const UnswitchedLoopSelector& unswitched_loop_selector) {
-//    multiversion(unswitched_loop_selector.loop_selector());
-//    remove_unswitch_candidate_from_loops(unswitched_loop_selector);
-//  }
-//
-//  // Multiversion the original loop. The loop selector if selects between the original loop (true-path-loop), and
-//  // a copy of it (false-path-loop).
-//  void multiversion(const LoopSelector& loop_selector) {
-//    _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_loop_head),
-//                       PhaseIdealLoop::CloneIncludesStripMined, loop_selector.selector());
-//
-//    // At this point, the selector If projections are the corresponding loop entries.
-//    // clone_parse_and_assertion_predicates_to_unswitched_loop() could clone additional predicates after the selector
-//    // If projections. The loop entries are updated accordingly.
-//    IfProjNode* true_path_loop_entry  = loop_selector.true_path_loop_proj();
-//    IfProjNode* false_path_loop_entry = loop_selector.false_path_loop_proj();
-//    // TODO maybe rename unswitched -> multiversioned everywhere?
-//    _phase->clone_parse_and_assertion_predicates_to_unswitched_loop(_loop, _old_new,
-//                                                                    true_path_loop_entry, false_path_loop_entry);
-//
-//    fix_loop_entries(true_path_loop_entry, false_path_loop_entry);
-//
-//    DEBUG_ONLY(verify_loop_versions(_loop->_head->as_Loop(), loop_selector);)
-//
-//    _phase->recompute_dom_depth();
-//  }
 };
 
 // See comments below file header for more information about Loop Unswitching.
