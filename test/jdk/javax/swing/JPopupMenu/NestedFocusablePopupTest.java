@@ -143,14 +143,14 @@ public class NestedFocusablePopupTest {
     private static void initAndShowGui() {
         frame = new JFrame("NestedFocusablePopupTest");
         JPanel panel = new JPanel();
-        panel.setPreferredSize(new Dimension(200,180));
+        panel.setPreferredSize(new Dimension(200, 180));
 
 
         popupMenu = new JPopupMenu();
         menuWithFocusableItem =
                 getMenuWithMenuItem(true, "focusable subitem");
         menuWithNonFocusableItem =
-                getMenuWithMenuItem(false, "non focusable subitem");
+                getMenuWithMenuItem(false, "non-focusable subitem");
 
         popupMenu.add(menuWithFocusableItem);
         popupMenu.add(menuWithNonFocusableItem);

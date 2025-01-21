@@ -524,11 +524,13 @@ public abstract class UNIXToolkit extends SunToolkit
         if (window == null) {
             return false;
         }
+
         for (WindowFocusListener focusListener : window.getWindowFocusListeners()) {
             if (focusListener == waylandWindowFocusListener) {
                 return true;
             }
         }
+
         return false;
     }
 
@@ -548,6 +550,7 @@ public abstract class UNIXToolkit extends SunToolkit
                             addWaylandWindowFocusListenerToWindow(oppositeWindow);
                             return;
                         }
+
                         Window owner = window.getOwner();
                         while (owner != null) {
                             if (owner == oppositeWindow) {
@@ -555,6 +558,7 @@ public abstract class UNIXToolkit extends SunToolkit
                             }
                             owner = owner.getOwner();
                         }
+
                         if (window.getParent() == oppositeWindow) {
                             return;
                         }
