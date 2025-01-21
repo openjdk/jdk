@@ -25,14 +25,17 @@
  * @test
  * @bug 8328919
  * @summary tests `limiting()` in `HttpResponse.Body{Handlers,Subscribers}`
+ * @key randomness
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext
- *        jdk.httpclient.test.lib.common.HttpServerAdapters
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.RandomFactory
+ *        jdk.test.lib.net.SimpleSSLContext
  * @run junit HttpResponseLimitingTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -49,14 +52,15 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow.Subscription;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.copyOfRange;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
@@ -69,6 +73,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpResponseLimitingTest {
 
+    private static final Random RANDOM = RandomFactory.getRandom();
+
     private static final byte[] RESPONSE_BODY = "random non-empty body".getBytes(UTF_8);
 
     @ParameterizedTest
@@ -79,7 +85,10 @@ class HttpResponseLimitingTest {
     }
 
     static Arguments[] sufficientCapacities() {
-        return capacityArgs(Long.MAX_VALUE, RESPONSE_BODY.length);
+        long minExtremeCapacity = RESPONSE_BODY.length;
+        long maxExtremeCapacity = Long.MAX_VALUE;
+        long nonExtremeCapacity = RANDOM.nextLong(minExtremeCapacity + 1, maxExtremeCapacity);
+        return capacityArgs(minExtremeCapacity, nonExtremeCapacity, maxExtremeCapacity);
     }
 
     @ParameterizedTest
@@ -90,7 +99,47 @@ class HttpResponseLimitingTest {
     }
 
     static Arguments[] insufficientCapacities() {
-        return capacityArgs(0, RESPONSE_BODY.length - 1);
+        long minExtremeCapacity = 0;
+        long maxExtremeCapacity = RESPONSE_BODY.length - 1;
+        long nonExtremeCapacity = RANDOM.nextLong(minExtremeCapacity + 1, maxExtremeCapacity);
+        return capacityArgs(minExtremeCapacity, nonExtremeCapacity, maxExtremeCapacity);
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidCapacities")
+    void testFailureOnInvalidCapacityForHandler(long invalidCapacity) {
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> BodyHandlers.limiting(BodyHandlers.ofByteArray(), invalidCapacity));
+        assertEquals(exception.getMessage(), "capacity must not be negative: " + invalidCapacity);
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidCapacities")
+    void testFailureOnInvalidCapacityForSubscriber(long invalidCapacity) {
+        var exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> BodySubscribers.limiting(BodySubscribers.ofByteArray(), invalidCapacity));
+        assertEquals(exception.getMessage(), "capacity must not be negative: " + invalidCapacity);
+    }
+
+    static long[] invalidCapacities() {
+        long minExtremeCapacity = Long.MIN_VALUE;
+        long maxExtremeCapacity = -1;
+        long nonExtremeCapacity = RANDOM.nextLong(minExtremeCapacity + 1, maxExtremeCapacity);
+        return new long[]{minExtremeCapacity, nonExtremeCapacity, maxExtremeCapacity};
+    }
+
+    @Test
+    void testFailureOnNullDownstreamHandler() {
+        var exception = assertThrows(NullPointerException.class, () -> BodyHandlers.limiting(null, 0));
+        assertEquals(exception.getMessage(), "downstreamHandler");
+    }
+
+    @Test
+    void testFailureOnNullDownstreamSubscriber() {
+        var exception = assertThrows(NullPointerException.class, () -> BodySubscribers.limiting(null, 0));
+        assertEquals(exception.getMessage(), "downstreamSubscriber");
     }
 
     private static Arguments[] capacityArgs(long... capacities) {
@@ -138,13 +187,10 @@ class HttpResponseLimitingTest {
 
         // Start the server and the client
         server.start();
-        try (var client = createClient(sslContext)) {
+        try (var client = createClient(version, sslContext)) {
 
             // Issue the request
-            var request = HttpRequest
-                    .newBuilder(requestUri)
-                    .timeout(Duration.ofSeconds(5))
-                    .build();
+            var request = HttpRequest.newBuilder(requestUri).version(version).build();
             var handler = BodyHandlers.limiting(BodyHandlers.ofByteArray(), capacity);
             return client.send(request, handler);
 
@@ -154,10 +200,8 @@ class HttpResponseLimitingTest {
 
     }
 
-    private static HttpClient createClient(SSLContext sslContext) {
-        HttpClient.Builder builder = HttpClient
-                .newBuilder()
-                .connectTimeout(Duration.ofSeconds(5));
+    private static HttpClient createClient(HttpClient.Version version, SSLContext sslContext) {
+        HttpClient.Builder builder = HttpClient.newBuilder().version(version).proxy(NO_PROXY);
         if (sslContext != null) {
             builder.sslContext(sslContext);
         }

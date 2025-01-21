@@ -751,8 +751,8 @@ public interface HttpResponse<T> {
          }
 
         /**
-         * {@return a {@code BodyHandler} limiting the number of body bytes
-         * consumed and passed to the given downstream {@code BodyHandler}}
+         * {@return a {@code BodyHandler} that limits the number of body bytes
+         * that are delivered to the given {@code downstreamHandler}}
          * <p>
          * If the number of body bytes received exceeds the given
          * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
@@ -1380,8 +1380,8 @@ public interface HttpResponse<T> {
         }
 
         /**
-         * {@return a {@code BodySubscriber} limiting the number of body bytes
-         * consumed and passed to the given downstream {@code BodySubscriber}}
+         * {@return a {@code BodySubscriber} that limits the number of body
+         * bytes that are delivered to the given {@code downstreamSubscriber}}
          * <p>
          * If the number of body bytes received exceeds the given
          * {@code capacity}, {@link BodySubscriber#onError(Throwable) onError}
