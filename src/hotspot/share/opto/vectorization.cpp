@@ -511,21 +511,25 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   1) The "base" of the address:
   //        - For heap objects, this is the base of the object, and as such
   //          ObjectAlignmentInBytes (a power of 2) aligned.
-  //        - For off-heap / native memory, the "base" is null, but instead
-  //          there is some "adr" of unknown alignment. If we can, we add
-  //          a runtime check to verify ObjectAlignmentInBytes alignment.
-  //          If we do not pass this check, then we currently have to return
-  //          an empty solution.
-  //          In a future RFE, we could add the "adr" to the "invar", and
-  //          have some alignment runtime-check on the "invar" instead, which
-  //          would allow more cases to vectorize.
+  //        - For off-heap / native memory, the "base" has no alignment
+  //          gurantees. To ensure alignment we can do either of these:
+  //          - Add a runtime check to verify ObjectAlignmentInBytes alignment,
+  //            i.e. we can speculatively compile with an alignment assumption.
+  //            If we pass the check, we can go into the loop with the alignment
+  //            assumption, if we fail we have to trap/deopt or take the other
+  //            loop version without alignment assumptions.
+  //          - If runtime checks are not possible, then we return an empty
+  //            solution, i.e. we do not vectorize the corresponding pack.
+  //
+  //      Let us assume we have an object "base", or passed the alignment
+  //      runtime check for native "bases", hence we know:
+  //
+  //        base % ObjectAlignmentInBytes = 0
+  //
   //      We defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is
   //      a power of 2. And hence we know that "base" is thus also aw-aligned:
   //
-  //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
-  //
-  //      TODO: Note: we have been assuming that this also holds for native memory base
-  //                  addresses. This is incorrect, see JDK-8323582.
+  //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0              (BASE_ALIGNED)
   //
   //   2) The "C_const" term is the sum of all constant terms. This is "con",
   //      plus "iv_scale * init" if it is constant.
@@ -550,9 +554,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   6) The "C_main * main_iter" term represents how much the iv is increased
   //      during "main_iter" main-loop iterations.
 
-  // For native memory, we must add a runtime-check that "adr % ObjectAlignmentInBytes". If we
-  // cannot add this runtime-check, we have no guarantee on its alignment.
-  // In a future RFE we can generalize this, and add runtime-checks for the invariant as well.
+  // For native memory, we must add a runtime-check that "base % ObjectAlignmentInBytes", to
+  // ensure (BASE_ALIGNED). If we cannot add this runtime-check, we have no guarantee on its
+  // alignment.
   if (!_vpointer.mem_pointer().base().is_object() && !_are_speculative_checks_possible) {
     return new EmptyAlignmentSolution("Cannot add speculative check for native memory alignment.");
   }
@@ -573,8 +577,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
   // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
   //
-  // TODO: Note: the following assumption is incorrect for native memory bases, see JDK-8323582.
-  // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
+  // Since "base % aw = 0" (BASE_ALIGNED), we only need to ensure alignment of the other 5 terms:
   //
   //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
   //
@@ -930,8 +933,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //         + iv_scale * pre_stride * pre_iter
   //         + iv_scale * main_stride * main_iter)) % aw =
   //
-  //   -> base aligned: base % aw = 0
-  //        TODO: Note: this assumption is incorrect for native memory bases, see JDK-8323582.
+  //   -> apply (BASE_ALIGNED): base % aw = 0
   //   -> main-loop iterations aligned (2): C_main % aw = (iv_scale * main_stride) % aw = 0
   //   (con + invar + iv_scale * init + iv_scale * pre_stride * pre_iter) % aw =
   //
