@@ -42,8 +42,10 @@ public class DirectByteBufferGC {
 
     // Make sure all buffers are reachable and available for GC. Buffers
     // directly reference their Cleanables, so we do not want to provide
-    // excess parallelism here.
-    // This exposes the potential GC problem in Cleaner lists.
+    // excess GC parallelism opportunities here, this is why reference
+    // buffers from a linked list.
+    //
+    // This exposes the potential GC parallelism problem in Cleaner lists.
     LinkedList<ByteBuffer> buffers;
 
     @Setup
