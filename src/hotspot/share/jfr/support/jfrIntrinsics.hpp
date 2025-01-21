@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class JfrIntrinsicSupport : AllStatic {
 #define JFR_TEMPLATES(template)                                                                                      \
   template(jdk_jfr_internal_management_HiddenWait,                    "jdk/jfr/internal/management/HiddenWait")      \
   template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                        \
-  template(jdk_jfr_internal_event_EventWriterFactory,                 "jdk/jfr/internal/event/EventWriterFactory")   \
+  template(jdk_jfr_internal_event_EventWriter,                        "jdk/jfr/internal/event/EventWriter")   \
   template(jdk_jfr_internal_event_EventConfiguration_signature,       "Ljdk/jfr/internal/event/EventConfiguration;") \
   template(getEventWriter_signature,                                  "()Ljdk/jfr/internal/event/EventWriter;")      \
   template(eventConfiguration_name,                                   "eventConfiguration")                          \

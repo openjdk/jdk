@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,17 +89,6 @@ inline int g_isnan(double f) { return isnan(f); }
 inline int g_isfinite(jfloat  f)                 { return isfinite(f); }
 inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 
-
-// Formatting.
-#ifdef _LP64
-# ifdef __APPLE__
-# define FORMAT64_MODIFIER "ll"
-# else
-# define FORMAT64_MODIFIER "l"
-# endif
-#else // !_LP64
-#define FORMAT64_MODIFIER "ll"
-#endif // _LP64
 
 // gcc warns about applying offsetof() to non-POD object or calculating
 // offset directly when base address is null. The -Wno-invalid-offsetof

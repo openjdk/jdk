@@ -294,7 +294,7 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
 
     /********************************************************************/
 
-    /* CODE LIFTED FROM ObjectStreamClass constuctor.
+    /* CODE LIFTED FROM ObjectStreamClass constructor.
      * ObjectStreamClass.writeObjectMethod is private.
      *
      * Look for the writeObject method
@@ -302,30 +302,21 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
      * Subclass of AbstractObjectOutputStream will call it as necessary.
      */
     public static Method getWriteObjectMethod(final Class<?> cl) {
-
-        Method writeObjectMethod =
-            java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<Method>() {
-                public Method run() {
-                    Method m = null;
-                    try {
-                        Class<?>[] args = {ObjectOutputStream.class};
-                        m = cl.getDeclaredMethod("writeObject", args);
-                        int mods = m.getModifiers();
-                        // Method must be private and non-static
-                        if (!Modifier.isPrivate(mods) ||
-                            Modifier.isStatic(mods)) {
-                            m = null;
-                        } else {
-                            m.setAccessible(true);
-                        }
-                    } catch (NoSuchMethodException e) {
-                        m = null;
-                    }
-                    return m;
-                }
-            });
-        return writeObjectMethod;
+        try {
+            Class<?>[] args = {ObjectOutputStream.class};
+            Method m = cl.getDeclaredMethod("writeObject", args);
+            int mods = m.getModifiers();
+            // Method must be private and non-static
+            if (!Modifier.isPrivate(mods) ||
+                Modifier.isStatic(mods)) {
+                return null;
+            } else {
+                m.setAccessible(true);
+                return m;
+            }
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
     }
 
     /*************************************************************/
@@ -336,30 +327,19 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
         throws IOException
     {
         try {
-            java.security.AccessController.doPrivileged
-                (new java.security.PrivilegedExceptionAction<Void>() {
-                    public Void run() throws InvocationTargetException,
-                                        java.lang.IllegalAccessException {
-                        m.invoke(obj, argList);
-                        return null;
-                    }
-                });
-        } catch (java.security.PrivilegedActionException e) {
-            Exception ex = e.getException();
-            if (ex instanceof InvocationTargetException) {
-                Throwable t =
-                        ((InvocationTargetException)ex).getTargetException();
-                if (t instanceof IOException)
-                    throw (IOException)t;
-                else if (t instanceof RuntimeException)
-                    throw (RuntimeException) t;
-                else if (t instanceof Error)
-                    throw (Error) t;
-                else
-                    throw new Error("interal error");
-            } else {
-                // IllegalAccessException cannot happen
-            }
+            m.invoke(obj, argList);
+        } catch (InvocationTargetException ex) {
+            Throwable t = ex.getTargetException();
+            if (t instanceof IOException)
+                throw (IOException)t;
+            else if (t instanceof RuntimeException)
+                throw (RuntimeException) t;
+            else if (t instanceof Error)
+                throw (Error) t;
+            else
+                throw new Error("intenral error");
+        } catch (IllegalAccessException iae) {
+            // IllegalAccessException can not happen
         }
     }
 };

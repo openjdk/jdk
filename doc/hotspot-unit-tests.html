@@ -245,7 +245,7 @@ compare C string contents. There are also case-insensitive versions
 <p>All GoogleTest asserts print compared expressions and their values,
 so there is no need to have them in error messages. Asserts print only
 compared values, they do not print any of interim variables, e.g.
-<code>ASSERT_TRUE((val1 == val2 &amp;&amp; isFail(foo(8)) || i == 18)</code>
+<code>ASSERT_TRUE((val1 == val2 &amp;&amp; isFail(foo(8))) || i == 18)</code>
 prints only one value. If you use some complex predicates, please
 consider <code>EXPECT_PRED*</code> or <code>EXPECT_FORMAT_PRED</code>
 assertions family, they check that a predicate returns true/success and

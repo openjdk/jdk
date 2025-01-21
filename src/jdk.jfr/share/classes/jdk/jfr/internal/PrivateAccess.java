@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.jfr.internal;
 
-import java.security.AccessControlContext;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +34,6 @@ import jdk.jfr.EventSettings;
 import jdk.jfr.EventType;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
-import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.management.EventSettingsModifier;
@@ -60,7 +58,7 @@ public abstract class PrivateAccess {
             // Will trigger
             // FlightRecorderPermission.<clinit>
             // which will call PrivateAccess.setPrivateAccess
-            new FlightRecorderPermission(SecuritySupport.REGISTER_EVENT);
+            new FlightRecorderPermission("accessFlightRecorder");
         }
         return instance;
     }
@@ -98,9 +96,6 @@ public abstract class PrivateAccess {
     public abstract boolean isUnsigned(ValueDescriptor v);
 
     public abstract PlatformRecorder getPlatformRecorder();
-
-    @SuppressWarnings("removal")
-    public abstract AccessControlContext getContext(SettingControl sc);
 
     public abstract EventSettings newEventSettings(EventSettingsModifier esm);
 
