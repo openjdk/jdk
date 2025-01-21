@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -175,7 +174,7 @@ JVMFlag::Error WriteableFlags::set_uint64_t_flag(const char* name, const char* a
 JVMFlag::Error WriteableFlags::set_size_t_flag(const char* name, const char* arg, JVMFlagOrigin origin, FormatBuffer<80>& err_msg) {
   size_t value;
 
-  if (sscanf(arg, SIZE_FORMAT, &value) == 1) {
+  if (sscanf(arg, "%zu", &value) == 1) {
     return set_flag_impl<JVM_FLAG_TYPE(size_t)>(name, value, origin, err_msg);
   }
   err_msg.print("flag value must be an unsigned integer");
