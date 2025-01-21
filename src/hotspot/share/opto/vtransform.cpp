@@ -668,10 +668,9 @@ float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
 VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply_state) const {
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
-  const Type* element_type = Type::get_const_basic_type(bt);
 
   Node* val = apply_state.transformed_node(in(1));
-  VectorNode* vn = VectorNode::scalar2vector(val, vlen, element_type);
+  VectorNode* vn = VectorNode::scalar2vector(val, vlen, bt);
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
@@ -1004,9 +1003,9 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
   // TODO: can we move this elsewhere? Refactor VPointer?
-  const VPointer& load_p = vpointer(vloop_analyzer);
+  const VPointer& load_p = vpointer(apply_state.vloop_analyzer());
   while (mem->is_StoreVector()) {
-    VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop());
+    VPointer store_p(mem->as_Mem(), apply_state.vloop());
     if (store_p.never_overlaps_with(load_p)) {
       mem = mem->in(MemNode::Memory);
     } else {

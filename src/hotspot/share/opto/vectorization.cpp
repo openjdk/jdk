@@ -243,20 +243,20 @@ void VLoopVPointers::allocate_vpointers_array() {
 }
 
 void VLoopVPointers::compute_and_cache_vpointers() {
-  Node_Stack nstack(_vloop.estimated_body_length());
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, &nstack);
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
 
-    // Process the nodes in the pointer expression:
-    while (nstack.is_nonempty()) {
-      Node* n = nstack.node();
-      nstack.pop();
-      _bb_idx_to_is_in_pointer_expression.set(_body.bb_idx(n));
-    }
+    // TODO implement this right
+    // // Process the nodes in the pointer expression:
+    // while (nstack.is_nonempty()) {
+    //   Node* n = nstack.node();
+    //   nstack.pop();
+    //   _bb_idx_to_is_in_pointer_expression.set(_body.bb_idx(n));
+    // }
   });
 }
 
