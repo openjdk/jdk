@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,19 +29,6 @@
 #include "opto/mulnode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
-
-#ifndef PRODUCT
-void VPointer::print_con_or_idx(const Node* n) {
-  if (n == nullptr) {
-    tty->print("(   0)");
-  } else if (n->is_ConI()) {
-    jint val = n->as_ConI()->get_int();
-    tty->print("(%4d)", val);
-  } else {
-    tty->print("[%4d]", n->_idx);
-  }
-}
-#endif
 
 bool VLoop::check_preconditions() {
 #ifndef PRODUCT
@@ -224,7 +211,7 @@ void VLoopVPointers::print() const {
   _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
     const VPointer& p = vpointer(mem);
     tty->print("  ");
-    p.print();
+    p.print_on(tty);
   });
 }
 #endif
@@ -265,7 +252,7 @@ void VLoopDependencyGraph::construct() {
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
         const VPointer& p2 = _vpointers.vpointer(n2);
-        if (!VPointer::not_equal(p1.cmp(p2))) {
+        if (!p1.never_overlaps_with(p2)) {
           // Possibly overlapping memory
           memory_pred_edges.append(_body.bb_idx(n2));
         }
@@ -406,1256 +393,38 @@ void VLoopDependencyGraph::PredsIterator::next() {
 }
 
 #ifndef PRODUCT
-int VPointer::Tracer::_depth = 0;
-#endif
+void VPointer::print_on(outputStream* st, bool end_with_cr) const {
+  st->print("VPointer[");
 
-VPointer::VPointer(MemNode* const mem, const VLoop& vloop,
-                   Node_Stack* nstack, bool analyze_only) :
-  _mem(mem), _vloop(vloop),
-  _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
-#ifdef ASSERT
-  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
-#endif
-  _has_int_index_after_convI2L(false),
-  _int_index_after_convI2L_offset(0),
-  _int_index_after_convI2L_invar(nullptr),
-  _int_index_after_convI2L_scale(0),
-  _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
-#ifndef PRODUCT
-  , _tracer(vloop.is_trace_pointer_analysis())
-#endif
-{
-  NOT_PRODUCT(_tracer.ctor_1(mem);)
-
-  Node* adr = mem->in(MemNode::Address);
-  if (!adr->is_AddP()) {
-    assert(!valid(), "too complex");
-    return;
-  }
-  // Match AddP(base, AddP(ptr, k*iv [+ invariant]), constant)
-  Node* base = adr->in(AddPNode::Base);
-  // The base address should be loop invariant
-  if (is_loop_member(base)) {
-    assert(!valid(), "base address is loop variant");
-    return;
-  }
-  // unsafe references require misaligned vector access support
-  if (base->is_top() && !Matcher::misaligned_vectors_ok()) {
-    assert(!valid(), "unsafe access");
+  if (!is_valid()) {
+    st->print_cr("invalid]");
     return;
   }
 
-  NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.store_depth();)
-  NOT_PRODUCT(_tracer.ctor_2(adr);)
+  st->print("size: %2d, %s, ", size(),
+            _mem_pointer.base().is_object() ? "object" : "native");
 
-  int i;
-  for (i = 0; ; i++) {
-    NOT_PRODUCT(_tracer.ctor_3(adr, i);)
+  Node* base = _mem_pointer.base().object_or_native();
+  tty->print("base(%d %s) + con(%3d) + iv_scale(%3d) * iv + invar(",
+             base->_idx, base->Name(),
+             _mem_pointer.con().value(),
+             _iv_scale);
 
-    if (!scaled_iv_plus_offset(adr->in(AddPNode::Offset))) {
-      assert(!valid(), "too complex");
-      return;
+  int count = 0;
+  for_each_invar_summand([&] (const MemPointerSummand& s) {
+    if (count > 0) {
+      st->print(" + ");
     }
-    adr = adr->in(AddPNode::Address);
-    NOT_PRODUCT(_tracer.ctor_4(adr, i);)
-
-    if (base == adr || !adr->is_AddP()) {
-      NOT_PRODUCT(_tracer.ctor_5(adr, base, i);)
-      break; // stop looking at addp's
-    }
+    s.print_on(tty);
+    count++;
+  });
+  if (count == 0) {
+    st->print("0");
   }
-  if (!invariant(adr)) {
-    // The address must be invariant for the current loop. But if we are in a main-loop,
-    // it must also be invariant of the pre-loop, otherwise we cannot use this address
-    // for the pre-loop limit adjustment required for main-loop alignment.
-    assert(!valid(), "adr is loop variant");
-    return;
-  }
-
-  if (!base->is_top() && adr != base) {
-    assert(!valid(), "adr and base differ");
-    return;
-  }
-
-  NOT_PRODUCT(if(_tracer._is_trace_alignment) _tracer.restore_depth();)
-  NOT_PRODUCT(_tracer.ctor_6(mem);)
-
-  // In the pointer analysis, and especially the AlignVector, analysis we assume that
-  // stride and scale are not too large. For example, we multiply "scale * stride",
-  // and assume that this does not overflow the int range. We also take "abs(scale)"
-  // and "abs(stride)", which would overflow for min_int = -(2^31). Still, we want
-  // to at least allow small and moderately large stride and scale. Therefore, we
-  // allow values up to 2^30, which is only a factor 2 smaller than the max/min int.
-  // Normal performance relevant code will have much lower values. And the restriction
-  // allows us to keep the rest of the autovectorization code much simpler, since we
-  // do not have to deal with overflows.
-  jlong long_scale  = _scale;
-  jlong long_stride = _vloop.iv_stride();
-  jlong max_val = 1 << 30;
-  if (abs(long_scale) >= max_val ||
-      abs(long_stride) >= max_val ||
-      abs(long_scale * long_stride) >= max_val) {
-    assert(!valid(), "adr stride*scale is too large");
-    return;
-  }
-
-  if (!is_safe_to_use_as_simple_form(base, adr)) {
-    assert(!valid(), "does not have simple form");
-    return;
-  }
-
-  _base = base;
-  _adr  = adr;
-  assert(valid(), "Usable");
-}
-
-// Following is used to create a temporary object during
-// the pattern match of an address expression.
-VPointer::VPointer(VPointer* p) :
-  _mem(p->_mem), _vloop(p->_vloop),
-  _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
-#ifdef ASSERT
-  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
-#endif
-  _has_int_index_after_convI2L(false),
-  _int_index_after_convI2L_offset(0),
-  _int_index_after_convI2L_invar(nullptr),
-  _int_index_after_convI2L_scale(0),
-  _nstack(p->_nstack), _analyze_only(p->_analyze_only), _stack_idx(p->_stack_idx)
-#ifndef PRODUCT
-  , _tracer(p->_tracer._is_trace_alignment)
-#endif
-{}
-
-// Biggest detectable factor of the invariant.
-int VPointer::invar_factor() const {
-  Node* n = invar();
-  if (n == nullptr) {
-    return 0;
-  }
-  int opc = n->Opcode();
-  if (opc == Op_LShiftI && n->in(2)->is_Con()) {
-    return 1 << n->in(2)->get_int();
-  } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
-    return 1 << n->in(2)->get_int();
-  }
-  // All our best-effort has failed.
-  return 1;
-}
-
-// We would like to make decisions about aliasing (i.e. removing memory edges) and adjacency
-// (i.e. which loads/stores can be packed) based on the simple form:
-//
-//   s_pointer = adr + offset + invar + scale * ConvI2L(iv)
-//
-// However, we parse the compound-long-int form:
-//
-//   c_pointer = adr + long_offset + long_invar + long_scale * ConvI2L(int_index)
-//   int_index =       int_offset  + int_invar  + int_scale  * iv
-//
-// In general, the simple and the compound-long-int form do not always compute the same pointer
-// at runtime. For example, the simple form would give a different result due to an overflow
-// in the int_index.
-//
-// Example:
-//   For both forms, we have:
-//     iv = 0
-//     scale = 1
-//
-//   We now account the offset and invar once to the long part and once to the int part:
-//     Pointer 1 (long offset and long invar):
-//       long_offset = min_int
-//       long_invar  = min_int
-//       int_offset  = 0
-//       int_invar   = 0
-//
-//     Pointer 2 (int offset and int invar):
-//       long_offset = 0
-//       long_invar  = 0
-//       int_offset  = min_int
-//       int_invar   = min_int
-//
-//   This gives us the following pointers:
-//     Compound-long-int form pointers:
-//       Form:
-//         c_pointer   = adr + long_offset + long_invar + long_scale * ConvI2L(int_offset + int_invar + int_scale * iv)
-//
-//       Pointers:
-//         c_pointer1  = adr + min_int     + min_int    + 1          * ConvI2L(0          + 0         + 1         * 0)
-//                     = adr + min_int + min_int
-//                     = adr - 2^32
-//
-//         c_pointer2  = adr + 0           + 0          + 1          * ConvI2L(min_int    + min_int   + 1         * 0)
-//                     = adr + ConvI2L(min_int + min_int)
-//                     = adr + 0
-//                     = adr
-//
-//     Simple form pointers:
-//       Form:
-//         s_pointer  = adr + offset                     + invar                     + scale                    * ConvI2L(iv)
-//         s_pointer  = adr + (long_offset + int_offset) + (long_invar  + int_invar) + (long_scale * int_scale) * ConvI2L(iv)
-//
-//       Pointers:
-//         s_pointer1 = adr + (min_int     + 0         ) + (min_int     + 0        ) + 1                        * 0
-//                    = adr + min_int + min_int
-//                    = adr - 2^32
-//         s_pointer2 = adr + (0           + min_int   ) + (0           + min_int  ) + 1                        * 0
-//                    = adr + min_int + min_int
-//                    = adr - 2^32
-//
-//   We see that the two addresses are actually 2^32 bytes apart (derived from the c_pointers), but their simple form look identical.
-//
-// Hence, we need to determine in which cases it is safe to make decisions based on the simple
-// form, rather than the compound-long-int form. If we cannot prove that using the simple form
-// is safe (i.e. equivalent to the compound-long-int form), then we do not get a valid VPointer,
-// and the associated memop cannot be vectorized.
-bool VPointer::is_safe_to_use_as_simple_form(Node* base, Node* adr) const {
-#ifndef _LP64
-  // On 32-bit platforms, there is never an explicit int_index with ConvI2L for the iv. Thus, the
-  // parsed pointer form is always the simple form, with int operations:
-  //
-  //   pointer = adr + offset + invar + scale * iv
-  //
-  assert(!_has_int_index_after_convI2L, "32-bit never has an int_index with ConvI2L for the iv");
-  return true;
-#else
-
-  // Array accesses that are not Unsafe always have a RangeCheck which ensures that there is no
-  // int_index overflow. This implies that the conversion to long can be done separately:
-  //
-  //   ConvI2L(int_index) = ConvI2L(int_offset) + ConvI2L(int_invar) + ConvI2L(scale) * ConvI2L(iv)
-  //
-  // And hence, the simple form is guaranteed to be identical to the compound-long-int form at
-  // runtime and the VPointer is safe/valid to be used.
-  const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
-  if (ary_ptr_t != nullptr) {
-    if (!_mem->is_unsafe_access()) {
-      return true;
-    }
-  }
-
-  // We did not find the int_index. Just to be safe, reject this VPointer.
-  if (!_has_int_index_after_convI2L) {
-    return false;
-  }
-
-  int int_offset  = _int_index_after_convI2L_offset;
-  Node* int_invar = _int_index_after_convI2L_invar;
-  int int_scale   = _int_index_after_convI2L_scale;
-  int long_scale  = _scale / int_scale;
-
-  // If "int_index = iv", then the simple form is identical to the compound-long-int form.
-  //
-  //   int_index = int_offset + int_invar + int_scale * iv
-  //             = 0            0           1         * iv
-  //             =                                      iv
-  if (int_offset == 0 && int_invar == nullptr && int_scale == 1) {
-    return true;
-  }
-
-  // Intuition: What happens if the int_index overflows? Let us look at two pointers on the "overflow edge":
-  //
-  //              pointer1 = adr + ConvI2L(int_index1)
-  //              pointer2 = adr + ConvI2L(int_index2)
-  //
-  //              int_index1 = max_int + 0 = max_int  -> very close to but before the overflow
-  //              int_index2 = max_int + 1 = min_int  -> just enough to get the overflow
-  //
-  //            When looking at the difference of pointer1 and pointer2, we notice that it is very large
-  //            (almost 2^32). Since arrays have at most 2^31 elements, chances are high that pointer2 is
-  //            an actual out-of-bounds access at runtime. These would normally be prevented by range checks
-  //            at runtime. However, if the access was done by using Unsafe, where range checks are omitted,
-  //            then an out-of-bounds access constitutes undefined behavior. This means that we are allowed to
-  //            do anything, including changing the behavior.
-  //
-  //            If we can set the right conditions, we have a guarantee that an overflow is either impossible
-  //            (no overflow or range checks preventing that) or undefined behavior. In both cases, we are
-  //            safe to do a vectorization.
-  //
-  // Approach:  We want to prove a lower bound for the distance between these two pointers, and an
-  //            upper bound for the size of a memory object. We can derive such an upper bound for
-  //            arrays. We know they have at most 2^31 elements. If we know the size of the elements
-  //            in bytes, we have:
-  //
-  //              array_element_size_in_bytes * 2^31 >= max_possible_array_size_in_bytes
-  //                                                 >= array_size_in_bytes                      (ARR)
-  //
-  //            If some small difference "delta" leads to an int_index overflow, we know that the
-  //            int_index1 before overflow must have been close to max_int, and the int_index2 after
-  //            the overflow must be close to min_int:
-  //
-  //              pointer1 =        adr + long_offset + long_invar + long_scale * ConvI2L(int_index1)
-  //                       =approx  adr + long_offset + long_invar + long_scale * max_int
-  //
-  //              pointer2 =        adr + long_offset + long_invar + long_scale * ConvI2L(int_index2)
-  //                       =approx  adr + long_offset + long_invar + long_scale * min_int
-  //
-  //            We realize that the pointer difference is very large:
-  //
-  //              difference =approx  long_scale * 2^32
-  //
-  //            Hence, if we set the right condition for long_scale and array_element_size_in_bytes,
-  //            we can prove that an overflow is impossible (or would imply undefined behaviour).
-  //
-  // We must now take this intuition, and develop a rigorous proof. We start by stating the problem
-  // more precisely, with the help of some definitions and the Statement we are going to prove.
-  //
-  // Definition:
-  //   Two VPointers are "comparable" (i.e. VPointer::comparable is true, set with VPointer::cmp()),
-  //   iff all of these conditions apply for the simple form:
-  //     1) Both VPointers are valid.
-  //     2) The adr are identical, or both are array bases of different arrays.
-  //     3) They have identical scale.
-  //     4) They have identical invar.
-  //     5) The difference in offsets is limited: abs(offset1 - offset2) < 2^31.                 (DIFF)
-  //
-  // For the Vectorization Optimization, we pair-wise compare VPointers and determine if they are:
-  //   1) "not comparable":
-  //        We do not optimize them (assume they alias, not assume adjacency).
-  //
-  //        Whenever we chose this option based on the simple form, it is also correct based on the
-  //        compound-long-int form, since we make no optimizations based on it.
-  //
-  //   2) "comparable" with different array bases at runtime:
-  //        We assume they do not alias (remove memory edges), but not assume adjacency.
-  //
-  //        Whenever we have two different array bases for the simple form, we also have different
-  //        array bases for the compound-long-form. Since VPointers provably point to different
-  //        memory objects, they can never alias.
-  //
-  //   3) "comparable" with the same base address:
-  //        We compute the relative pointer difference, and based on the load/store size we can
-  //        compute aliasing and adjacency.
-  //
-  //        We must find a condition under which the pointer difference of the simple form is
-  //        identical to the pointer difference of the compound-long-form. We do this with the
-  //        Statement below, which we then proceed to prove.
-  //
-  // Statement:
-  //   If two VPointers satisfy these 3 conditions:
-  //     1) They are "comparable".
-  //     2) They have the same base address.
-  //     3) Their long_scale is a multiple of the array element size in bytes:
-  //
-  //          abs(long_scale) % array_element_size_in_bytes = 0                                     (A)
-  //
-  //   Then their pointer difference of the simple form is identical to the pointer difference
-  //   of the compound-long-int form.
-  //
-  //   More precisely:
-  //     Such two VPointers by definition have identical adr, invar, and scale.
-  //     Their simple form is:
-  //
-  //       s_pointer1 = adr + offset1 + invar + scale * ConvI2L(iv)                                 (B1)
-  //       s_pointer2 = adr + offset2 + invar + scale * ConvI2L(iv)                                 (B2)
-  //
-  //     Thus, the pointer difference of the simple forms collapses to the difference in offsets:
-  //
-  //       s_difference = s_pointer1 - s_pointer2 = offset1 - offset2                               (C)
-  //
-  //     Their compound-long-int form for these VPointer is:
-  //
-  //       c_pointer1 = adr + long_offset1 + long_invar1 + long_scale1 * ConvI2L(int_index1)        (D1)
-  //       int_index1 = int_offset1 + int_invar1 + int_scale1 * iv                                  (D2)
-  //
-  //       c_pointer2 = adr + long_offset2 + long_invar2 + long_scale2 * ConvI2L(int_index2)        (D3)
-  //       int_index2 = int_offset2 + int_invar2 + int_scale2 * iv                                  (D4)
-  //
-  //     And these are the offset1, offset2, invar and scale from the simple form (B1) and (B2):
-  //
-  //       offset1 = long_offset1 + long_scale1 * ConvI2L(int_offset1)                              (D5)
-  //       offset2 = long_offset2 + long_scale2 * ConvI2L(int_offset2)                              (D6)
-  //
-  //       invar   = long_invar1 + long_scale1 * ConvI2L(int_invar1)
-  //               = long_invar2 + long_scale2 * ConvI2L(int_invar2)                                (D7)
-  //
-  //       scale   = long_scale1 * ConvI2L(int_scale1)
-  //               = long_scale2 * ConvI2L(int_scale2)                                              (D8)
-  //
-  //     The pointer difference of the compound-long-int form is defined as:
-  //
-  //       c_difference = c_pointer1 - c_pointer2
-  //
-  //   Thus, the statement claims that for the two VPointer we have:
-  //
-  //     s_difference = c_difference                                                                (Statement)
-  //
-  // We prove the Statement with the help of a Lemma:
-  //
-  // Lemma:
-  //   There is some integer x, such that:
-  //
-  //     c_difference = s_difference + array_element_size_in_bytes * x * 2^32                       (Lemma)
-  //
-  // From condition (DIFF), we can derive:
-  //
-  //   abs(s_difference) < 2^31                                                                     (E)
-  //
-  // Assuming the Lemma, we prove the Statement:
-  //   If "x = 0" (intuitively: the int_index does not overflow), then:
-  //     c_difference = s_difference
-  //     and hence the simple form computes the same pointer difference as the compound-long-int form.
-  //   If "x != 0" (intuitively: the int_index overflows), then:
-  //     abs(c_difference) >= abs(s_difference + array_element_size_in_bytes * x * 2^32)
-  //                       >= array_element_size_in_bytes * 2^32 - abs(s_difference)
-  //                                                               --  apply (E)  --
-  //                       >  array_element_size_in_bytes * 2^32 - 2^31
-  //                       >= array_element_size_in_bytes * 2^31
-  //                              --  apply (ARR)  --
-  //                       >= max_possible_array_size_in_bytes
-  //                       >= array_size_in_bytes
-  //
-  //     This shows that c_pointer1 and c_pointer2 have a distance that exceeds the maximum array size.
-  //     Thus, at least one of the two pointers must be outside of the array bounds. But we can assume
-  //     that out-of-bounds accesses do not happen. If they still do, it is undefined behavior. Hence,
-  //     we are allowed to do anything. We can also "safely" use the simple form in this case even though
-  //     it might not match the compound-long-int form at runtime.
-  // QED Statement.
-  //
-  // We must now prove the Lemma.
-  //
-  // ConvI2L always truncates by some power of 2^32, i.e. there is some integer y such that:
-  //
-  //   ConvI2L(y1 + y2) = ConvI2L(y1) + ConvI2L(y2) + 2^32 * y                                  (F)
-  //
-  // It follows, that there is an integer y1 such that:
-  //
-  //   ConvI2L(int_index1) =  ConvI2L(int_offset1 + int_invar1 + int_scale1 * iv)
-  //                          -- apply (F) --
-  //                       =  ConvI2L(int_offset1)
-  //                        + ConvI2L(int_invar1)
-  //                        + ConvI2L(int_scale1) * ConvI2L(iv)
-  //                        + y1 * 2^32                                                         (G)
-  //
-  // Thus, we can write the compound-long-int form (D1) as:
-  //
-  //   c_pointer1 =   adr + long_offset1 + long_invar1 + long_scale1 * ConvI2L(int_index1)
-  //                  -- apply (G) --
-  //              =   adr
-  //                + long_offset1
-  //                + long_invar1
-  //                + long_scale1 * ConvI2L(int_offset1)
-  //                + long_scale1 * ConvI2L(int_invar1)
-  //                + long_scale1 * ConvI2L(int_scale1) * ConvI2L(iv)
-  //                + long_scale1 * y1 * 2^32                                                    (H)
-  //
-  // And we can write the simple form as:
-  //
-  //   s_pointer1 =   adr + offset1 + invar + scale * ConvI2L(iv)
-  //                  -- apply (D5, D7, D8) --
-  //              =   adr
-  //                + long_offset1
-  //                + long_scale1 * ConvI2L(int_offset1)
-  //                + long_invar1
-  //                + long_scale1 * ConvI2L(int_invar1)
-  //                + long_scale1 * ConvI2L(int_scale1) * ConvI2L(iv)                            (K)
-  //
-  // We now compute the pointer difference between the simple (K) and compound-long-int form (H).
-  // Most terms cancel out immediately:
-  //
-  //   sc_difference1 = c_pointer1 - s_pointer1 = long_scale1 * y1 * 2^32                        (L)
-  //
-  // Rearranging the equation (L), we get:
-  //
-  //   c_pointer1 = s_pointer1 + long_scale1 * y1 * 2^32                                         (M)
-  //
-  // And since long_scale1 is a multiple of array_element_size_in_bytes, there is some integer
-  // x1, such that (M) implies:
-  //
-  //   c_pointer1 = s_pointer1 + array_element_size_in_bytes * x1 * 2^32                         (N)
-  //
-  // With an analogue equation for c_pointer2, we can now compute the pointer difference for
-  // the compound-long-int form:
-  //
-  //   c_difference =  c_pointer1 - c_pointer2
-  //                   -- apply (N) --
-  //                =  s_pointer1 + array_element_size_in_bytes * x1 * 2^32
-  //                 -(s_pointer2 + array_element_size_in_bytes * x2 * 2^32)
-  //                   -- where "x = x1 - x2" --
-  //                =  s_pointer1 - s_pointer2 + array_element_size_in_bytes * x * 2^32
-  //                   -- apply (C) --
-  //                =  s_difference            + array_element_size_in_bytes * x * 2^32
-  // QED Lemma.
-  if (ary_ptr_t != nullptr) {
-    BasicType array_element_bt = ary_ptr_t->elem()->array_element_basic_type();
-    if (is_java_primitive(array_element_bt)) {
-      int array_element_size_in_bytes = type2aelembytes(array_element_bt);
-      if (abs(long_scale) % array_element_size_in_bytes == 0) {
-        return true;
-      }
-    }
-  }
-
-  // General case: we do not know if it is safe to use the simple form.
-  return false;
-#endif
-}
-
-bool VPointer::is_loop_member(Node* n) const {
-  Node* n_c = phase()->get_ctrl(n);
-  return lpt()->is_member(phase()->get_loop(n_c));
-}
-
-bool VPointer::invariant(Node* n) const {
-  NOT_PRODUCT(Tracer::Depth dd;)
-  bool is_not_member = !is_loop_member(n);
-  if (is_not_member) {
-    CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
-    if (cl->is_main_loop()) {
-      // Check that n_c dominates the pre loop head node. If it does not, then
-      // we cannot use n as invariant for the pre loop CountedLoopEndNode check
-      // because n_c is either part of the pre loop or between the pre and the
-      // main loop (Illegal invariant happens when n_c is a CastII node that
-      // prevents data nodes to flow above the main loop).
-      Node* n_c = phase()->get_ctrl(n);
-      return phase()->is_dominator(n_c, _vloop.pre_loop_head());
-    }
-  }
-  return is_not_member;
-}
-
-// Match: k*iv + offset
-// where: k is a constant that maybe zero, and
-//        offset is (k2 [+/- invariant]) where k2 maybe zero and invariant is optional
-bool VPointer::scaled_iv_plus_offset(Node* n) {
-  NOT_PRODUCT(Tracer::Depth ddd;)
-  NOT_PRODUCT(_tracer.scaled_iv_plus_offset_1(n);)
-
-  if (scaled_iv(n)) {
-    NOT_PRODUCT(_tracer.scaled_iv_plus_offset_2(n);)
-    return true;
-  }
-
-  if (offset_plus_k(n)) {
-    NOT_PRODUCT(_tracer.scaled_iv_plus_offset_3(n);)
-    return true;
-  }
-
-  int opc = n->Opcode();
-  if (opc == Op_AddI) {
-    if (offset_plus_k(n->in(2)) && scaled_iv_plus_offset(n->in(1))) {
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_4(n);)
-      return true;
-    }
-    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_5(n);)
-      return true;
-    }
-  } else if (opc == Op_SubI || opc == Op_SubL) {
-    if (offset_plus_k(n->in(2), true) && scaled_iv_plus_offset(n->in(1))) {
-      // (offset1 + invar1 + scale * iv) - (offset2 + invar2)
-      // Subtraction handled via "negate" flag of "offset_plus_k".
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_6(n);)
-      return true;
-    }
-    VPointer tmp(this);
-    if (offset_plus_k(n->in(1)) && tmp.scaled_iv_plus_offset(n->in(2))) {
-      // (offset1 + invar1) - (offset2 + invar2 + scale * iv)
-      // Subtraction handled explicitly below.
-      assert(_scale == 0, "shouldn't be set yet");
-      // _scale = -tmp._scale
-      if (!try_MulI_no_overflow(-1, tmp._scale, _scale)) {
-        return false; // mul overflow.
-      }
-      // _offset -= tmp._offset
-      if (!try_SubI_no_overflow(_offset, tmp._offset, _offset)) {
-        return false; // sub overflow.
-      }
-      // _invar -= tmp._invar
-      if (tmp._invar != nullptr) {
-        maybe_add_to_invar(tmp._invar, true);
-#ifdef ASSERT
-        _debug_invar_scale = tmp._debug_invar_scale;
-        _debug_negate_invar = !tmp._debug_negate_invar;
-#endif
-      }
-
-      // Forward info about the int_index:
-      assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
-      _has_int_index_after_convI2L = tmp._has_int_index_after_convI2L;
-      _int_index_after_convI2L_offset = tmp._int_index_after_convI2L_offset;
-      _int_index_after_convI2L_invar  = tmp._int_index_after_convI2L_invar;
-      _int_index_after_convI2L_scale  = tmp._int_index_after_convI2L_scale;
-
-      NOT_PRODUCT(_tracer.scaled_iv_plus_offset_7(n);)
-      return true;
-    }
-  }
-
-  NOT_PRODUCT(_tracer.scaled_iv_plus_offset_8(n);)
-  return false;
-}
-
-// Match: k*iv where k is a constant that's not zero
-bool VPointer::scaled_iv(Node* n) {
-  NOT_PRODUCT(Tracer::Depth ddd;)
-  NOT_PRODUCT(_tracer.scaled_iv_1(n);)
-
-  if (_scale != 0) { // already found a scale
-    NOT_PRODUCT(_tracer.scaled_iv_2(n, _scale);)
-    return false;
-  }
-
-  if (n == iv()) {
-    _scale = 1;
-    NOT_PRODUCT(_tracer.scaled_iv_3(n, _scale);)
-    return true;
-  }
-  if (_analyze_only && (is_loop_member(n))) {
-    _nstack->push(n, _stack_idx++);
-  }
-
-  int opc = n->Opcode();
-  if (opc == Op_MulI) {
-    if (n->in(1) == iv() && n->in(2)->is_Con()) {
-      _scale = n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.scaled_iv_4(n, _scale);)
-      return true;
-    } else if (n->in(2) == iv() && n->in(1)->is_Con()) {
-      _scale = n->in(1)->get_int();
-      NOT_PRODUCT(_tracer.scaled_iv_5(n, _scale);)
-      return true;
-    }
-  } else if (opc == Op_LShiftI) {
-    if (n->in(1) == iv() && n->in(2)->is_Con()) {
-      if (!try_LShiftI_no_overflow(1, n->in(2)->get_int(), _scale)) {
-        return false; // shift overflow.
-      }
-      NOT_PRODUCT(_tracer.scaled_iv_6(n, _scale);)
-      return true;
-    }
-  } else if (opc == Op_ConvI2L && !has_iv()) {
-    // So far we have not found the iv yet, and are about to enter a ConvI2L subgraph,
-    // which may be the int index (that might overflow) for the memory access, of the form:
-    //
-    //   int_index = int_offset + int_invar + int_scale * iv
-    //
-    // If we simply continue parsing with the current VPointer, then the int_offset and
-    // int_invar simply get added to the long offset and invar. But for the checks in
-    // VPointer::is_safe_to_use_as_simple_form() we need to have explicit access to the
-    // int_index. Thus, we must parse it explicitly here. For this, we use a temporary
-    // VPointer, to pattern match the int_index sub-expression of the address.
-
-    NOT_PRODUCT(Tracer::Depth dddd;)
-    VPointer tmp(this);
-    NOT_PRODUCT(_tracer.scaled_iv_8(n, &tmp);)
-
-    if (tmp.scaled_iv_plus_offset(n->in(1)) && tmp.has_iv()) {
-      // We successfully matched an integer index, of the form:
-      //   int_index = int_offset + int_invar + int_scale * iv
-      // Forward scale.
-      assert(_scale == 0 && tmp._scale != 0, "iv only found just now");
-      _scale = tmp._scale;
-      // Accumulate offset.
-      if (!try_AddI_no_overflow(_offset, tmp._offset, _offset)) {
-        return false; // add overflow.
-      }
-      // Accumulate invar.
-      if (tmp._invar != nullptr) {
-        maybe_add_to_invar(tmp._invar, false);
-      }
-      // Set info about the int_index:
-      assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
-      _has_int_index_after_convI2L = true;
-      _int_index_after_convI2L_offset = tmp._offset;
-      _int_index_after_convI2L_invar  = tmp._invar;
-      _int_index_after_convI2L_scale  = tmp._scale;
-
-      NOT_PRODUCT(_tracer.scaled_iv_7(n);)
-      return true;
-    }
-  } else if (opc == Op_ConvI2L || opc == Op_CastII) {
-    if (scaled_iv_plus_offset(n->in(1))) {
-      NOT_PRODUCT(_tracer.scaled_iv_7(n);)
-      return true;
-    }
-  } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
-    if (!has_iv()) {
-      // Need to preserve the current _offset value, so
-      // create a temporary object for this expression subtree.
-      // Hacky, so should re-engineer the address pattern match.
-      NOT_PRODUCT(Tracer::Depth dddd;)
-      VPointer tmp(this);
-      NOT_PRODUCT(_tracer.scaled_iv_8(n, &tmp);)
-
-      if (tmp.scaled_iv_plus_offset(n->in(1))) {
-        int shift = n->in(2)->get_int();
-        // Accumulate scale.
-        if (!try_LShiftI_no_overflow(tmp._scale, shift, _scale)) {
-          return false; // shift overflow.
-        }
-        // Accumulate offset.
-        int shifted_offset = 0;
-        if (!try_LShiftI_no_overflow(tmp._offset, shift, shifted_offset)) {
-          return false; // shift overflow.
-        }
-        if (!try_AddI_no_overflow(_offset, shifted_offset, _offset)) {
-          return false; // add overflow.
-        }
-        // Accumulate invar.
-        if (tmp._invar != nullptr) {
-          BasicType bt = tmp._invar->bottom_type()->basic_type();
-          assert(bt == T_INT || bt == T_LONG, "");
-          maybe_add_to_invar(register_if_new(LShiftNode::make(tmp._invar, n->in(2), bt)), false);
-#ifdef ASSERT
-          _debug_invar_scale = n->in(2);
-#endif
-        }
-
-        // Forward info about the int_index:
-        assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
-        _has_int_index_after_convI2L = tmp._has_int_index_after_convI2L;
-        _int_index_after_convI2L_offset = tmp._int_index_after_convI2L_offset;
-        _int_index_after_convI2L_invar  = tmp._int_index_after_convI2L_invar;
-        _int_index_after_convI2L_scale  = tmp._int_index_after_convI2L_scale;
-
-        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar);)
-        return true;
-      }
-    }
-  }
-  NOT_PRODUCT(_tracer.scaled_iv_10(n);)
-  return false;
-}
-
-// Match: offset is (k [+/- invariant])
-// where k maybe zero and invariant is optional, but not both.
-bool VPointer::offset_plus_k(Node* n, bool negate) {
-  NOT_PRODUCT(Tracer::Depth ddd;)
-  NOT_PRODUCT(_tracer.offset_plus_k_1(n);)
-
-  int opc = n->Opcode();
-  if (opc == Op_ConI) {
-    if (!try_AddSubI_no_overflow(_offset, n->get_int(), negate, _offset)) {
-      return false; // add/sub overflow.
-    }
-    NOT_PRODUCT(_tracer.offset_plus_k_2(n, _offset);)
-    return true;
-  } else if (opc == Op_ConL) {
-    // Okay if value fits into an int
-    const TypeLong* t = n->find_long_type();
-    if (t->higher_equal(TypeLong::INT)) {
-      jlong loff = n->get_long();
-      jint  off  = (jint)loff;
-      if (!try_AddSubI_no_overflow(_offset, off, negate, _offset)) {
-        return false; // add/sub overflow.
-      }
-      NOT_PRODUCT(_tracer.offset_plus_k_3(n, _offset);)
-      return true;
-    }
-    NOT_PRODUCT(_tracer.offset_plus_k_4(n);)
-    return false;
-  }
-  assert((_debug_invar == nullptr) == (_invar == nullptr), "");
-
-  if (_analyze_only && is_loop_member(n)) {
-    _nstack->push(n, _stack_idx++);
-  }
-  if (opc == Op_AddI) {
-    if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      maybe_add_to_invar(n->in(1), negate);
-      if (!try_AddSubI_no_overflow(_offset, n->in(2)->get_int(), negate, _offset)) {
-        return false; // add/sub overflow.
-      }
-      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, negate, _offset);)
-      return true;
-    } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
-      if (!try_AddSubI_no_overflow(_offset, n->in(1)->get_int(), negate, _offset)) {
-        return false; // add/sub overflow.
-      }
-      maybe_add_to_invar(n->in(2), negate);
-      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, negate, _offset);)
-      return true;
-    }
-  }
-  if (opc == Op_SubI) {
-    if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      maybe_add_to_invar(n->in(1), negate);
-      if (!try_AddSubI_no_overflow(_offset, n->in(2)->get_int(), !negate, _offset)) {
-        return false; // add/sub overflow.
-      }
-      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, negate, _offset);)
-      return true;
-    } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
-      if (!try_AddSubI_no_overflow(_offset, n->in(1)->get_int(), negate, _offset)) {
-        return false; // add/sub overflow.
-      }
-      maybe_add_to_invar(n->in(2), !negate);
-      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, !negate, _offset);)
-      return true;
-    }
-  }
-
-  if (!is_loop_member(n)) {
-    // 'n' is loop invariant. Skip ConvI2L and CastII nodes before checking if 'n' is dominating the pre loop.
-    if (opc == Op_ConvI2L) {
-      n = n->in(1);
-    }
-    if (n->Opcode() == Op_CastII) {
-      // Skip CastII nodes
-      assert(!is_loop_member(n), "sanity");
-      n = n->in(1);
-    }
-    // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
-    if (invariant(n)) {
-      maybe_add_to_invar(n, negate);
-      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, negate, _offset);)
-      return true;
-    }
-  }
-
-  NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
-  return false;
-}
-
-Node* VPointer::maybe_negate_invar(bool negate, Node* invar) {
-#ifdef ASSERT
-  _debug_negate_invar = negate;
-#endif
-  if (negate) {
-    BasicType bt = invar->bottom_type()->basic_type();
-    assert(bt == T_INT || bt == T_LONG, "");
-    Node* zero = phase()->zerocon(bt);
-    Node* sub = SubNode::make(zero, invar, bt);
-    invar = register_if_new(sub);
-  }
-  return invar;
-}
-
-Node* VPointer::register_if_new(Node* n) const {
-  PhaseIterGVN& igvn = phase()->igvn();
-  Node* prev = igvn.hash_find_insert(n);
-  if (prev != nullptr) {
-    n->destruct(&igvn);
-    n = prev;
-  } else {
-    Node* c = phase()->get_early_ctrl(n);
-    phase()->register_new_node(n, c);
-  }
-  return n;
-}
-
-void VPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
-  new_invar = maybe_negate_invar(negate, new_invar);
-  if (_invar == nullptr) {
-    _invar = new_invar;
-#ifdef ASSERT
-    _debug_invar = new_invar;
-#endif
-    return;
-  }
-#ifdef ASSERT
-  _debug_invar = NodeSentinel;
-#endif
-  BasicType new_invar_bt = new_invar->bottom_type()->basic_type();
-  assert(new_invar_bt == T_INT || new_invar_bt == T_LONG, "");
-  BasicType invar_bt = _invar->bottom_type()->basic_type();
-  assert(invar_bt == T_INT || invar_bt == T_LONG, "");
-
-  BasicType bt = (new_invar_bt == T_LONG || invar_bt == T_LONG) ? T_LONG : T_INT;
-  Node* current_invar = _invar;
-  if (invar_bt != bt) {
-    assert(bt == T_LONG && invar_bt == T_INT, "");
-    assert(new_invar_bt == bt, "");
-    current_invar = register_if_new(new ConvI2LNode(current_invar));
-  } else if (new_invar_bt != bt) {
-    assert(bt == T_LONG && new_invar_bt == T_INT, "");
-    assert(invar_bt == bt, "");
-    new_invar = register_if_new(new ConvI2LNode(new_invar));
-  }
-  Node* add = AddNode::make(current_invar, new_invar, bt);
-  _invar = register_if_new(add);
-}
-
-bool VPointer::try_AddI_no_overflow(int offset1, int offset2, int& result) {
-  jlong long_offset = java_add((jlong)(offset1), (jlong)(offset2));
-  jint  int_offset  = java_add(        offset1,          offset2);
-  if (long_offset != int_offset) {
-    return false;
-  }
-  result = int_offset;
-  return true;
-}
-
-bool VPointer::try_SubI_no_overflow(int offset1, int offset2, int& result) {
-  jlong long_offset = java_subtract((jlong)(offset1), (jlong)(offset2));
-  jint  int_offset  = java_subtract(        offset1,          offset2);
-  if (long_offset != int_offset) {
-    return false;
-  }
-  result = int_offset;
-  return true;
-}
-
-bool VPointer::try_AddSubI_no_overflow(int offset1, int offset2, bool is_sub, int& result) {
-  if (is_sub) {
-    return try_SubI_no_overflow(offset1, offset2, result);
-  } else {
-    return try_AddI_no_overflow(offset1, offset2, result);
-  }
-}
-
-bool VPointer::try_LShiftI_no_overflow(int offset, int shift, int& result) {
-  if (shift < 0 || shift > 31) {
-    return false;
-  }
-  jlong long_offset = java_shift_left((jlong)(offset), shift);
-  jint  int_offset  = java_shift_left(        offset,  shift);
-  if (long_offset != int_offset) {
-    return false;
-  }
-  result = int_offset;
-  return true;
-}
-
-bool VPointer::try_MulI_no_overflow(int offset1, int offset2, int& result) {
-  jlong long_offset = java_multiply((jlong)(offset1), (jlong)(offset2));
-  jint  int_offset  = java_multiply(        offset1,          offset2);
-  if (long_offset != int_offset) {
-    return false;
-  }
-  result = int_offset;
-  return true;
-}
-
-// We use two comparisons, because a subtraction could underflow.
-#define RETURN_CMP_VALUE_IF_NOT_EQUAL(a, b) \
-  if (a < b) { return -1; }                 \
-  if (a > b) { return  1; }
-
-// To be in the same group, two VPointers must be the same,
-// except for the offset.
-int VPointer::cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2) {
-  const VPointer* a = *p1;
-  const VPointer* b = *p2;
-
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->base()->_idx,     b->base()->_idx);
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->scale_in_bytes(), b->scale_in_bytes());
-
-  int a_inva_idx = a->invar() == nullptr ? 0 : a->invar()->_idx;
-  int b_inva_idx = b->invar() == nullptr ? 0 : b->invar()->_idx;
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a_inva_idx,          b_inva_idx);
-
-  return 0; // equal
-}
-
-// We compare by group, then by offset, and finally by node idx.
-int VPointer::cmp_for_sort(const VPointer** p1, const VPointer** p2) {
-  int cmp_group = cmp_for_sort_by_group(p1, p2);
-  if (cmp_group != 0) { return cmp_group; }
-
-  const VPointer* a = *p1;
-  const VPointer* b = *p2;
-
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->offset_in_bytes(), b->offset_in_bytes());
-  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->_idx,       b->mem()->_idx);
-  return 0; // equal
-}
-
-#ifndef PRODUCT
-// Function for printing the fields of a VPointer
-void VPointer::print() const {
-  tty->print("VPointer[mem: %4d %10s, ", _mem->_idx, _mem->Name());
-
-  if (!valid()) {
-    tty->print_cr("invalid]");
-    return;
-  }
-
-  tty->print("base: %4d, ", _base != nullptr ? _base->_idx : 0);
-  tty->print("adr: %4d, ", _adr != nullptr ? _adr->_idx : 0);
-
-  tty->print(" base");
-  VPointer::print_con_or_idx(_base);
-
-  tty->print(" + offset(%4d)", _offset);
-
-  tty->print(" + invar");
-  VPointer::print_con_or_idx(_invar);
-
-  tty->print_cr(" + scale(%4d) * iv]", _scale);
+  st->print(")]");
+  if (end_with_cr) { st->cr(); }
 }
 #endif
-
-// Following are functions for tracing VPointer match
-#ifndef PRODUCT
-void VPointer::Tracer::print_depth() const {
-  for (int ii = 0; ii < _depth; ++ii) {
-    tty->print("  ");
-  }
-}
-
-void VPointer::Tracer::ctor_1(const Node* mem) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::VPointer: start alignment analysis", mem->_idx); mem->dump();
-  }
-}
-
-void VPointer::Tracer::ctor_2(Node* adr) {
-  if (_is_trace_alignment) {
-    //store_depth();
-    inc_depth();
-    print_depth(); tty->print(" %d (adr) VPointer::VPointer: ", adr->_idx); adr->dump();
-    inc_depth();
-    print_depth(); tty->print(" %d (base) VPointer::VPointer: ", adr->in(AddPNode::Base)->_idx); adr->in(AddPNode::Base)->dump();
-  }
-}
-
-void VPointer::Tracer::ctor_3(Node* adr, int i) {
-  if (_is_trace_alignment) {
-    inc_depth();
-    Node* offset = adr->in(AddPNode::Offset);
-    print_depth(); tty->print(" %d (offset) VPointer::VPointer: i = %d: ", offset->_idx, i); offset->dump();
-  }
-}
-
-void VPointer::Tracer::ctor_4(Node* adr, int i) {
-  if (_is_trace_alignment) {
-    inc_depth();
-    print_depth(); tty->print(" %d (adr) VPointer::VPointer: i = %d: ", adr->_idx, i); adr->dump();
-  }
-}
-
-void VPointer::Tracer::ctor_5(Node* adr, Node* base, int i) {
-  if (_is_trace_alignment) {
-    inc_depth();
-    if (base == adr) {
-      print_depth(); tty->print_cr("  \\ %d (adr) == %d (base) VPointer::VPointer: breaking analysis at i = %d", adr->_idx, base->_idx, i);
-    } else if (!adr->is_AddP()) {
-      print_depth(); tty->print_cr("  \\ %d (adr) is NOT Addp VPointer::VPointer: breaking analysis at i = %d", adr->_idx, i);
-    }
-  }
-}
-
-void VPointer::Tracer::ctor_6(const Node* mem) {
-  if (_is_trace_alignment) {
-    //restore_depth();
-    print_depth(); tty->print_cr(" %d (adr) VPointer::VPointer: stop analysis", mem->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_1(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::scaled_iv_plus_offset testing node: ", n->_idx);
-    n->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_2(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: PASSED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_3(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: PASSED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_4(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_5(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
-    print_depth(); tty->print("  \\  %d VPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_7(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_plus_offset_8(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv_plus_offset: FAILED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_1(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::scaled_iv: testing node: ", n->_idx); n->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_2(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: FAILED since another _scale has been detected before", n->_idx);
-    print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: _scale (%d) != 0", scale);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_3(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: is iv, setting _scale = %d", n->_idx, scale);
-  }
-}
-
-void VPointer::Tracer::scaled_iv_4(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_5(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is iv: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_6(Node* n, int scale) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_LShiftI PASSED, setting _scale = %d", n->_idx, scale);
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_7(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_ConvI2L PASSED", n->_idx);
-    print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: in(1) %d is scaled_iv_plus_offset: ", n->in(1)->_idx);
-    inc_depth(); inc_depth();
-    print_depth(); n->in(1)->dump();
-    dec_depth(); dec_depth();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_8(Node* n, VPointer* tmp) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::scaled_iv: Op_LShiftL, creating tmp VPointer: ", n->_idx); tmp->print();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
-    print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
-    n->in(1)->_idx, n->in(2)->_idx, scale, offset);
-    if (invar != nullptr) {
-      print_depth(); tty->print_cr("  \\ VPointer::scaled_iv: scaled invariant: [%d]", invar->_idx);
-    }
-    inc_depth(); inc_depth();
-    print_depth(); n->in(1)->dump();
-    print_depth(); n->in(2)->dump();
-    if (invar != nullptr) {
-      print_depth(); invar->dump();
-    }
-    dec_depth(); dec_depth();
-  }
-}
-
-void VPointer::Tracer::scaled_iv_10(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::scaled_iv: FAILED", n->_idx);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_1(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print(" %d VPointer::offset_plus_k: testing node: ", n->_idx); n->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_2(Node* n, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_ConI PASSED, setting _offset = %d", n->_idx, _offset);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_3(Node* n, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_ConL PASSED, setting _offset = %d", n->_idx, _offset);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_4(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
-    print_depth(); tty->print_cr("  \\ " JLONG_FORMAT " VPointer::offset_plus_k: Op_ConL FAILED, k is too big", n->get_long());
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED since another invariant has been detected before", n->_idx);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: _invar is not null: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
-    n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
-    n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_SubI is PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
-    n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: Op_SubI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
-    print_depth(); tty->print("  \\ %d VPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
-    print_depth(); tty->print_cr("  \\ %d VPointer::offset_plus_k: is invariant", n->_idx);
-  }
-}
-
-void VPointer::Tracer::offset_plus_k_11(Node* n) {
-  if (_is_trace_alignment) {
-    print_depth(); tty->print_cr(" %d VPointer::offset_plus_k: FAILED", n->_idx);
-  }
-}
-#endif
-
 
 AlignmentSolution* AlignmentSolver::solve() const {
   DEBUG_ONLY( trace_start_solve(); )
@@ -1667,9 +436,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   assert(is_power_of_2(abs(_main_stride)), "main_stride is power of 2");
   assert(_aw > 0 && is_power_of_2(_aw), "aw must be power of 2");
 
-  // Out of simplicity: non power-of-2 scale not supported.
-  if (abs(_scale) == 0 || !is_power_of_2(abs(_scale))) {
-    return new EmptyAlignmentSolution("non power-of-2 scale not supported");
+  // Out of simplicity: non power-of-2 iv_scale not supported.
+  if (abs(iv_scale()) == 0 || !is_power_of_2(abs(iv_scale()))) {
+    return new EmptyAlignmentSolution("non power-of-2 iv_scale not supported");
   }
 
   // We analyze the address of mem_ref. The idea is to disassemble it into a linear
@@ -1678,7 +447,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // The Simple form of the address is disassembled by VPointer into:
   //
-  //   adr = base + offset + invar + scale * iv
+  //   adr = base + invar + iv_scale * iv + con
   //
   // Where the iv can be written as:
   //
@@ -1694,14 +463,14 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // expanding the iv variable. In a second step, we reshape the expression again, and
   // state it as a linear expression, consisting of 6 terms.
   //
-  //          Simple form           Expansion of iv variable                  Reshaped with constants   Comments for terms
-  //          -----------           ------------------------                  -----------------------   ------------------
-  //   adr =  base               =  base                                   =  base                      (base % aw = 0)
-  //        + offset              + offset                                  + C_const                   (sum of constant terms)
-  //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
-  //                          /   + scale * init                            + C_init  * var_init        (term for variable init)
-  //        + scale * iv   -> |   + scale * pre_stride * pre_iter           + C_pre   * pre_iter        (adjustable pre-loop term)
-  //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
+  //          Simple form             Expansion of iv variable                  Reshaped with constants   Comments for terms
+  //          -----------             ------------------------                  -----------------------   ------------------
+  //   adr =  base                 =  base                                   =  base                      (assume: base % aw = 0)
+  //        + invar                 + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
+  //                            /   + iv_scale * init                         + C_init  * var_init        (term for variable init)
+  //        + iv_scale * iv  -> |   + iv_scale * pre_stride * pre_iter        + C_pre   * pre_iter        (adjustable pre-loop term)
+  //                            \   + iv_scale * main_stride * main_iter      + C_main  * main_iter       (main-loop term)
+  //        + con                   + con                                     + C_const                   (sum of constant terms)
   //
   // We describe the 6 terms:
   //   1) The "base" of the address is the address of a Java object (e.g. array),
@@ -1711,19 +480,22 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
   //
-  //   2) The "C_const" term is the sum of all constant terms. This is "offset",
-  //      plus "scale * init" if it is constant.
+  //      TODO: Note: we have been assuming that this also holds for native memory base
+  //                  addresses. This is incorrect, see JDK-8323582.
+  //
+  //   2) The "C_const" term is the sum of all constant terms. This is "con",
+  //      plus "iv_scale * init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
   //
   //        invar = C_invar * var_invar                                             (FAC_INVAR)
   //
-  //   4) The "C_init * var_init" is the factorization of "scale * init" into a
+  //   4) The "C_init * var_init" is the factorization of "iv_scale * init" into a
   //      constant and a variable term. If "init" is constant, then "C_init" is
   //      zero, and "C_const" accounts for "init" instead.
   //
-  //        scale * init = C_init * var_init + scale * C_const_init                 (FAC_INIT)
-  //        C_init       = (init is constant) ? 0    : scale
+  //        iv_scale * init = C_init * var_init + iv_scale * C_const_init           (FAC_INIT)
+  //        C_init       = (init is constant) ? 0    : iv_scale
   //        C_const_init = (init is constant) ? init : 0
   //
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
@@ -1736,20 +508,21 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
-  const int C_const =      _offset + C_const_init * _scale;
+  const int C_const =      _vpointer.con() + C_const_init * iv_scale();
 
   // Set C_invar depending on if invar is present
-  const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
+  const int C_invar = _vpointer.compute_invar_factor();
 
-  const int C_init = _init_node->is_ConI() ? 0 : _scale;
-  const int C_pre =  _scale * _pre_stride;
-  const int C_main = _scale * _main_stride;
+  const int C_init = _init_node->is_ConI() ? 0 : iv_scale();
+  const int C_pre =  iv_scale() * _pre_stride;
+  const int C_main = iv_scale() * _main_stride;
 
   DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
 
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
   // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
   //
+  // TODO: Note: the following assumption is incorrect for native memory bases, see JDK-8323582.
   // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
   //
   //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
@@ -2028,7 +801,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   pre_iter_C_const = mx2 * q - sign(C_pre) * X
   //                    = mx2 * q - sign(C_pre) * C_const             / abs(C_pre)
   //                    = mx2 * q - C_const / C_pre
-  //                    = mx2 * q - C_const / (scale * pre_stride)                                  (11a)
+  //                    = mx2 * q - C_const / (iv_scale * pre_stride)                               (11a)
   //
   // If there is an invariant:
   //
@@ -2036,19 +809,19 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //                    = my2 * q - sign(C_pre) * C_invar * var_invar / abs(C_pre)
   //                    = my2 * q - sign(C_pre) * invar               / abs(C_pre)
   //                    = my2 * q - invar / C_pre
-  //                    = my2 * q - invar / (scale * pre_stride)                                    (11b, with invar)
+  //                    = my2 * q - invar / (iv_scale * pre_stride)                                 (11b, with invar)
   //
   // If there is no invariant (i.e. C_invar = 0 ==> Y = 0):
   //
   //   pre_iter_C_invar = my2 * q                                                                   (11b, no invar)
   //
-  // If init is variable (i.e. C_init = scale, init = var_init):
+  // If init is variable (i.e. C_init = iv_scale, init = var_init):
   //
-  //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z       * var_init
-  //                    = mz2 * q - sign(C_pre) * C_init  * var_init  / abs(C_pre)
-  //                    = mz2 * q - sign(C_pre) * scale   * init      / abs(C_pre)
-  //                    = mz2 * q - scale * init / C_pre
-  //                    = mz2 * q - scale * init / (scale * pre_stride)
+  //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z          * var_init
+  //                    = mz2 * q - sign(C_pre) * C_init     * var_init  / abs(C_pre)
+  //                    = mz2 * q - sign(C_pre) * iv_scale   * init      / abs(C_pre)
+  //                    = mz2 * q - iv_scale * init / C_pre
+  //                    = mz2 * q - iv_scale * init / (iv_scale * pre_stride)
   //                    = mz2 * q - init / pre_stride                                               (11c, variable init)
   //
   // If init is constant (i.e. C_init = 0 ==> Z = 0):
@@ -2059,35 +832,35 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // with m = mx2 + my2 + mz2:
   //
   //   pre_iter =   pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
-  //            =   mx2 * q  - C_const / (scale * pre_stride)
-  //              + my2 * q [- invar / (scale * pre_stride) ]
-  //              + mz2 * q [- init / pre_stride            ]
+  //            =   mx2 * q  - C_const / (iv_scale * pre_stride)
+  //              + my2 * q [- invar / (iv_scale * pre_stride) ]
+  //              + mz2 * q [- init / pre_stride               ]
   //
   //            =   m * q                                 (periodic part)
-  //              - C_const / (scale * pre_stride)        (align constant term)
-  //             [- invar / (scale * pre_stride)   ]      (align invariant term, if present)
-  //             [- init / pre_stride              ]      (align variable init term, if present)    (12)
+  //              - C_const / (iv_scale * pre_stride)        (align constant term)
+  //             [- invar / (iv_scale * pre_stride)   ]      (align invariant term, if present)
+  //             [- init / pre_stride                 ]      (align variable init term, if present)    (12)
   //
   // We can further simplify this solution by introducing integer 0 <= r < q:
   //
-  //   r = (-C_const / (scale * pre_stride)) % q                                                    (13)
+  //   r = (-C_const / (iv_scale * pre_stride)) % q                                                    (13)
   //
-  const int r = AlignmentSolution::mod(-C_const / (_scale * _pre_stride), q);
+  const int r = AlignmentSolution::mod(-C_const / (iv_scale() * _pre_stride), q);
   //
   //   pre_iter = m * q + r
-  //                   [- invar / (scale * pre_stride)  ]
-  //                   [- init / pre_stride             ]                                           (14)
+  //                   [- invar / (iv_scale * pre_stride)  ]
+  //                   [- init / pre_stride                ]                                           (14)
   //
   // We thus get a solution that can be stated in terms of:
   //
-  //   q (periodicity), r (constant alignment), invar, scale, pre_stride, init
+  //   q (periodicity), r (constant alignment), invar, iv_scale, pre_stride, init
   //
   // However, pre_stride and init are shared by all mem_ref in the loop, hence we do not need to provide
   // them in the solution description.
 
   DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
 
-  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _scale);
+  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _vpointer /* holds invar and iv_scale */);
 
   // APPENDIX:
   // We can now verify the success of the solution given by (12):
@@ -2095,48 +868,49 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   adr % aw =
   //
   //   -> Simple form
-  //   (base + offset + invar + scale * iv) % aw =
+  //   (base + invar + iv_scale * iv + con) % aw =
   //
   //   -> Expand iv
-  //   (base + offset + invar + scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
+  //   (base + con + invar + iv_scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
   //
   //   -> Reshape
-  //   (base + offset + invar
-  //         + scale * init
-  //         + scale * pre_stride * pre_iter
-  //         + scale * main_stride * main_iter)) % aw =
+  //   (base + con + invar
+  //         + iv_scale * init
+  //         + iv_scale * pre_stride * pre_iter
+  //         + iv_scale * main_stride * main_iter)) % aw =
   //
   //   -> base aligned: base % aw = 0
-  //   -> main-loop iterations aligned (2): C_main % aw = (scale * main_stride) % aw = 0
-  //   (offset + invar + scale * init + scale * pre_stride * pre_iter) % aw =
+  //        TODO: Note: this assumption is incorrect for native memory bases, see JDK-8323582.
+  //   -> main-loop iterations aligned (2): C_main % aw = (iv_scale * main_stride) % aw = 0
+  //   (con + invar + iv_scale * init + iv_scale * pre_stride * pre_iter) % aw =
   //
   //   -> apply (12)
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * (m * q - C_const / (scale * pre_stride)
-  //                                        [- invar / (scale * pre_stride) ]
-  //                                        [- init / pre_stride            ]
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * (m * q - C_const / (iv_scale * pre_stride)
+  //                                        [- invar / (iv_scale * pre_stride) ]
+  //                                        [- init / pre_stride               ]
   //                                  )
   //   ) % aw =
   //
-  //   -> expand C_const = offset [+ init * scale]  (if init const)
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * (m * q - offset / (scale * pre_stride)
-  //                                        [- init / pre_stride            ]             (if init constant)
-  //                                        [- invar / (scale * pre_stride) ]             (if invar present)
-  //                                        [- init / pre_stride            ]             (if init variable)
+  //   -> expand C_const = con [+ init * iv_scale]  (if init const)
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * (m * q - con / (iv_scale * pre_stride)
+  //                                        [- init / pre_stride               ]          (if init constant)
+  //                                        [- invar / (iv_scale * pre_stride) ]          (if invar present)
+  //                                        [- init / pre_stride               ]          (if init variable)
   //                                  )
   //   ) % aw =
   //
   //   -> assuming invar = 0 if it is not present
   //   -> merge the two init terms (variable or constant)
-  //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(scale * pre_stride)
-  //   -> and hence: (scale * pre_stride * q) % aw = 0
+  //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(iv_scale * pre_stride)
+  //   -> and hence: (iv_scale * pre_stride * q) % aw = 0
   //   -> all terms are canceled out
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * m * q                             -> aw aligned
-  //           - scale * pre_stride * offset / (scale * pre_stride)     -> = offset
-  //           - scale * pre_stride * init / pre_stride                 -> = scale * init
-  //           - scale * pre_stride * invar / (scale * pre_stride)      -> = invar
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * m * q                              -> aw aligned
+  //        - iv_scale * pre_stride * con   / (iv_scale * pre_stride)    -> = con
+  //        - iv_scale * pre_stride * init  / pre_stride                 -> = iv_scale * init
+  //        - iv_scale * pre_stride * invar / (iv_scale * pre_stride)    -> = invar
   //   ) % aw = 0
   //
   // The solution given by (12) does indeed guarantee alignment.
@@ -2147,8 +921,9 @@ void AlignmentSolver::trace_start_solve() const {
   if (is_trace()) {
     tty->print(" vector mem_ref:");
     _mem_ref->dump();
-    tty->print_cr("  vector_width = vector_length(%d) * element_size(%d) = %d",
-                  _vector_length, _element_size, _vector_width);
+    tty->print("  VPointer: ");
+    _vpointer.print_on(tty);
+    tty->print_cr("  vector_width = %d", _vector_width);
     tty->print_cr("  aw = alignment_width = min(vector_width(%d), ObjectAlignmentInBytes(%d)) = %d",
                   _vector_width, ObjectAlignmentInBytes, _aw);
 
@@ -2157,25 +932,34 @@ void AlignmentSolver::trace_start_solve() const {
       _init_node->dump();
     }
 
-    if (_invar != nullptr) {
-      tty->print("  invar:");
-      _invar->dump();
+    tty->print_cr("  invar = SUM(invar_summands), invar_summands:");
+    int invar_count = 0;
+    _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
+      tty->print("   ");
+      s.print_on(tty);
+      tty->print(" -> ");
+      s.variable()->dump();
+      invar_count++;
+    });
+    if (invar_count == 0) {
+      tty->print_cr("   No invar_summands.");
     }
 
-    tty->print_cr("  invar_factor = %d", _invar_factor);
+    const jint invar_factor = _vpointer.compute_invar_factor();
+    tty->print_cr("  invar_factor = %d", invar_factor);
 
     // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
-    VPointer::print_con_or_idx(_init_node);
+    if (_init_node->is_ConI()) {
+      tty->print("(%4d)", _init_node->as_ConI()->get_int());
+    } else {
+      tty->print("[%4d]", _init_node->_idx);
+    }
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
-
-    // adr = base + offset + invar + scale * iv
-    tty->print("  adr = base");
-    VPointer::print_con_or_idx(_base);
-    tty->print(" + offset(%d) + invar", _offset);
-    VPointer::print_con_or_idx(_invar);
-    tty->print_cr(" + scale(%d) * iv", _scale);
+    // adr = base + con + invar + iv_scale * iv
+    tty->print("  adr = base[%d]", base().object_or_native()->_idx);
+    tty->print(" + invar + iv_scale(%d) * iv + con(%d)", iv_scale(), _vpointer.con());
   }
 }
 
@@ -2187,7 +971,7 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
                                           const int C_main) const
 {
   if (is_trace()) {
-    tty->print("      = base[%d] + ", _base->_idx);
+    tty->print("      = base[%d] + ", base().object_or_native()->_idx);
     tty->print_cr("C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init + C_pre(%d) * pre_iter + C_main(%d) * main_iter",
                   C_const, C_invar, C_init,  C_pre, C_main);
     if (_init_node->is_ConI()) {
@@ -2197,21 +981,21 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
     } else {
       tty->print_cr("  init is variable:");
       tty->print_cr("    C_const_init = %d", C_const_init);
-      tty->print_cr("    C_init = abs(scale)= %d", C_init);
+      tty->print_cr("    C_init = abs(iv_scale)= %d", C_init);
     }
-    if (_invar != nullptr) {
+    if (C_invar != 0) {
       tty->print_cr("  invariant present:");
-      tty->print_cr("    C_invar = abs(invar_factor) = %d", C_invar);
+      tty->print_cr("    C_invar = invar_factor = %d", C_invar);
     } else {
       tty->print_cr("  no invariant:");
       tty->print_cr("    C_invar = %d", C_invar);
     }
-    tty->print_cr("  C_const = offset(%d) + scale(%d) * C_const_init(%d) = %d",
-                  _offset, _scale, C_const_init, C_const);
-    tty->print_cr("  C_pre   = scale(%d) * pre_stride(%d) = %d",
-                  _scale, _pre_stride, C_pre);
-    tty->print_cr("  C_main  = scale(%d) * main_stride(%d) = %d",
-                  _scale, _main_stride, C_main);
+    tty->print_cr("  C_const = con(%d) + iv_scale(%d) * C_const_init(%d) = %d",
+                  _vpointer.con(), iv_scale(), C_const_init, C_const);
+    tty->print_cr("  C_pre   = iv_scale(%d) * pre_stride(%d) = %d",
+                  iv_scale(), _pre_stride, C_pre);
+    tty->print_cr("  C_main  = iv_scale(%d) * main_stride(%d) = %d",
+                  iv_scale(), _main_stride, C_main);
   }
 }
 
@@ -2280,13 +1064,13 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
     tty->print_cr("  EQ(10b): pre_iter_C_invar = my2 * q(%d) - sign(C_pre) * Y(%d) * var_invar", q, Y);
     tty->print_cr("  EQ(10c): pre_iter_C_init  = mz2 * q(%d) - sign(C_pre) * Z(%d) * var_init ", q, Z);
 
-    tty->print_cr("  r = (-C_const(%d) / (scale(%d) * pre_stride(%d)) %% q(%d) = %d",
-                  C_const, _scale, _pre_stride, q, r);
+    tty->print_cr("  r = (-C_const(%d) / (iv_scale(%d) * pre_stride(%d)) %% q(%d) = %d",
+                  C_const, iv_scale(), _pre_stride, q, r);
 
     tty->print_cr("  EQ(14):  pre_iter = m * q(%3d) - r(%d)", q, r);
-    if (_invar != nullptr) {
-      tty->print_cr("                                 - invar / (scale(%d) * pre_stride(%d))",
-                    _scale, _pre_stride);
+    if (C_invar != 0) {
+      tty->print_cr("                                 - invar / (iv_scale(%d) * pre_stride(%d))",
+                    iv_scale(), _pre_stride);
     }
     if (!_init_node->is_ConI()) {
       tty->print_cr("                                 - init / pre_stride(%d)",

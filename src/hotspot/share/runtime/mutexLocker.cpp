@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ Mutex*   JvmtiThreadState_lock        = nullptr;
 Monitor* EscapeBarrier_lock           = nullptr;
 Monitor* JvmtiVTMSTransition_lock     = nullptr;
 Monitor* Heap_lock                    = nullptr;
-#ifdef INCLUDE_PARALLELGC
+#if INCLUDE_PARALLELGC
 Mutex*   PSOldGenExpand_lock      = nullptr;
 #endif
 Mutex*   AdapterHandlerLibrary_lock   = nullptr;
@@ -333,7 +333,7 @@ void mutex_init() {
   }
 
   MUTEX_DEFL(CompileTaskAlloc_lock          , PaddedMutex  ,  MethodCompileQueue_lock);
-#ifdef INCLUDE_PARALLELGC
+#if INCLUDE_PARALLELGC
   if (UseParallelGC) {
     MUTEX_DEFL(PSOldGenExpand_lock          , PaddedMutex  , Heap_lock, true);
   }
@@ -377,4 +377,3 @@ GCMutexLocker::GCMutexLocker(Mutex* mutex) {
     _mutex->lock();
   }
 }
-
