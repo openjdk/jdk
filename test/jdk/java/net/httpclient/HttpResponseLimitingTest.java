@@ -85,10 +85,8 @@ class HttpResponseLimitingTest {
     @ParameterizedTest
     @MethodSource("insufficientCapacities")
     void testFailureOnInsufficientCapacity(HttpClient.Version version, boolean secure, long insufficientCapacity) {
-        assertThrows(
-                IOException.class,
-                () -> requestBytes(version, secure, insufficientCapacity),
-                "body exceeds capacity: " + RESPONSE_BODY.length);
+        var exception = assertThrows(IOException.class, () -> requestBytes(version, secure, insufficientCapacity));
+        assertEquals(exception.getMessage(), "body exceeds capacity: " + insufficientCapacity);
     }
 
     static Arguments[] insufficientCapacities() {
