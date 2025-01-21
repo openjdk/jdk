@@ -92,11 +92,6 @@ JVM_CFLAGS += \
     $(EXTRA_CFLAGS) \
     #
 
-# -DDONT_USE_PRECOMPILED_HEADER will exclude all includes in precompiled.hpp.
-ifeq ($(USE_PRECOMPILED_HEADER), false)
-  JVM_CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
-endif
-
 ifneq ($(HOTSPOT_OVERRIDE_LIBPATH), )
   JVM_CFLAGS += -DOVERRIDE_LIBPATH='"$(HOTSPOT_OVERRIDE_LIBPATH)"'
 endif
