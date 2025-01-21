@@ -90,4 +90,58 @@ public class VectorRelaxedMath {
         }
         return sum;
     }
+
+    @Benchmark
+    public float floatMulReductionOfAdditionStrict() {
+        float sum = 0;
+        for (int i = 0; i < aF.length; i++) {
+            sum *= aF[i] + bF[i];
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public float floatMulReductionOfAdditionReorder() {
+        float sum = 0;
+        for (int i = 0; i < aF.length; i++) {
+            sum = RelaxedMath.mul(sum, aF[i] + bF[i], /* allow reduction reordering */ 1);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public double doubleAddReductionDotProductStrict() {
+        double sum = 0;
+        for (int i = 0; i < aD.length; i++) {
+            sum += aD[i] * bD[i];
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public double doubleAddReductionDotProductReorder() {
+        double sum = 0;
+        for (int i = 0; i < aD.length; i++) {
+            sum = RelaxedMath.add(sum, aD[i] * bD[i], /* allow reduction reordering */ 1);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public double doubleMulReductionOfAdditionStrict() {
+        double sum = 0;
+        for (int i = 0; i < aD.length; i++) {
+            sum *= aD[i] + bD[i];
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public double doubleMulReductionOfAdditionReorder() {
+        double sum = 0;
+        for (int i = 0; i < aD.length; i++) {
+            sum = RelaxedMath.mul(sum, aD[i] + bD[i], /* allow reduction reordering */ 1);
+        }
+        return sum;
+    }
 }

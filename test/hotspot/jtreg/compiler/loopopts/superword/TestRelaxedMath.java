@@ -41,6 +41,12 @@ import jdk.internal.math.RelaxedMath;
  * @run driver compiler.loopopts.superword.TestRelaxedMath
  */
 
+// Note: The corresponding benchmark is
+//       test/micro/org/openjdk/bench/vm/compiler/VectorRelaxedMath.java
+//
+//       Please make sure to verify that changes to the IR rules are justified
+//       also by the benchmark results.
+
 public class TestRelaxedMath {
     private static int SIZE = 10_000;
 
