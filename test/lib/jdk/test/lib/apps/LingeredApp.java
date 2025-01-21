@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ public class LingeredApp {
         }
     }
 
-    /**
+    /*
      *  High level interface for test writers
      */
 
@@ -589,10 +589,17 @@ public class LingeredApp {
 
     static class SteadyStateLock {};
 
+    private static volatile boolean isReady = false;
+
+    protected static boolean isReady() {
+        return isReady;
+    }
+
     /**
      * This part is the application itself. First arg is optional "forceCrash".
      * Following arg is the lock file name.
      */
+    @SuppressWarnings("restricted")
     public static void main(String args[]) {
         boolean forceCrash = false;
 
@@ -627,6 +634,7 @@ public class LingeredApp {
                 while (Files.exists(path)) {
                     // Touch the lock to indicate our readiness
                     setLastModified(theLockFileName, epoch());
+                    isReady = true;
                     Thread.sleep(spinDelay);
                 }
             }

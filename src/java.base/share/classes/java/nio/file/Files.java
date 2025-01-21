@@ -982,7 +982,10 @@ public final class Files {
      * The {@code existing} parameter is the path to an existing file. This
      * method creates a new directory entry for the file so that it can be
      * accessed using {@code link} as the path. On some file systems this is
-     * known as creating a "hard link". Whether the file attributes are
+     * known as creating a "hard link". If the {@code existing} parameter
+     * is the path to a symbolic link, then whether the new link is for the
+     * target of the symbolic link or for the symbolic link itself is platform
+     * dependent and therefore not specified. Whether the file attributes are
      * maintained for the file or for each directory entry is file system
      * specific and therefore not specified. Typically, a file system requires
      * that all links (directory entries) for a file be on the same file system.
@@ -1506,7 +1509,7 @@ public final class Files {
     }
 
     // lazy loading of default and installed file type detectors
-    private static class FileTypeDetectors{
+    private static class FileTypeDetectors {
         static final FileTypeDetector defaultFileTypeDetector =
             createDefaultFileTypeDetector();
         static final List<FileTypeDetector> installedDetectors =
@@ -1519,13 +1522,11 @@ public final class Files {
 
         // loads all installed file type detectors
         private static List<FileTypeDetector> loadInstalledDetectors() {
-            List<FileTypeDetector> list = new ArrayList<>();
-            ServiceLoader<FileTypeDetector> loader = ServiceLoader
-                .load(FileTypeDetector.class, ClassLoader.getSystemClassLoader());
-            for (FileTypeDetector detector: loader) {
-                list.add(detector);
-            }
-            return list;
+            return ServiceLoader.load(FileTypeDetector.class,
+                                      ClassLoader.getSystemClassLoader())
+                .stream()
+                .map(ServiceLoader.Provider::get)
+                .toList();
         }
     }
 

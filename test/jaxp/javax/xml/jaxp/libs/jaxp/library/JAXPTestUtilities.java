@@ -51,6 +51,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import org.testng.Assert;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -60,6 +61,9 @@ import org.xml.sax.SAXException;
  * This is an interface provide basic support for JAXP functional test.
  */
 public class JAXPTestUtilities {
+    public static final String CLS_DIR = System.getProperty("test.classes");
+    public static final String SRC_DIR = System.getProperty("test.src");
+    public static final boolean isWindows = System.getProperty("os.name").contains("Windows");
     /**
      * Prefix for error message.
      */
@@ -371,6 +375,34 @@ public class JAXPTestUtilities {
     @FunctionalInterface
     public interface RunnableWithException {
         void run() throws Exception;
+    }
+
+    /**
+     * Asserts the run does not cause a Throwable. May be replaced with JUnit 5.
+     * @param runnable the runnable
+     * @param message the message if the test fails
+     */
+    public static void assertDoesNotThrow(Assert.ThrowingRunnable runnable, String message) {
+        try {
+            runnable.run();
+        } catch (Throwable t) {
+            Assert.fail(message + "\n Exception thrown: " + t.getMessage());
+        }
+    }
+
+    /**
+     * Returns the System identifier (URI) of the source.
+     * @param path the path to the source
+     * @return the System identifier
+     */
+    public static String getSystemId(String path) {
+        if (path == null) return null;
+        String xmlSysId = "file://" + path;
+        if (isWindows) {
+            path = path.replace('\\', '/');
+            xmlSysId = "file:///" + path;
+        }
+        return xmlSysId;
     }
 
     /**

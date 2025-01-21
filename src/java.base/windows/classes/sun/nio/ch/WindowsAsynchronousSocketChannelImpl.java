@@ -25,12 +25,15 @@
 
 package sun.nio.ch;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.channels.*;
 import java.nio.ByteBuffer;
 import java.nio.BufferOverflowException;
 import java.net.*;
 import java.util.concurrent.*;
 import java.io.IOException;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.Unsafe;
 import sun.net.util.SocketExceptions;
 
@@ -367,10 +370,13 @@ class WindowsAsynchronousSocketChannelImpl
      * result when the read completes.
      */
     private class ReadTask<V,A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer[] bufs;
         private final int numBufs;
         private final boolean scatteringRead;
         private final PendingFuture<V,A> result;
+        private volatile boolean released;
 
         // set by run method
         private ByteBuffer[] shadow;
@@ -461,12 +467,14 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         void releaseBuffers() {
-            for (int i=0; i<numBufs; i++) {
-                if (!(bufs[i] instanceof DirectBuffer)) {
-                    Util.releaseTemporaryDirectBuffer(shadow[i]);
+            if (RELEASED.compareAndSet(this, false, true)) {
+                for (int i = 0; i < numBufs; i++) {
+                    if (!(bufs[i] instanceof DirectBuffer)) {
+                        Util.releaseTemporaryDirectBuffer(shadow[i]);
+                    }
                 }
+                IOUtil.releaseScopes(scopeHandleReleasers);
             }
-            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override
@@ -641,10 +649,13 @@ class WindowsAsynchronousSocketChannelImpl
      * result when the write completes.
      */
     private class WriteTask<V,A> implements Runnable, Iocp.ResultHandler {
+        private static final VarHandle RELEASED = MhUtil.findVarHandle(MethodHandles.lookup(),
+                "released", boolean.class);
         private final ByteBuffer[] bufs;
         private final int numBufs;
         private final boolean gatheringWrite;
         private final PendingFuture<V,A> result;
+        private volatile boolean released;
 
         // set by run method
         private ByteBuffer[] shadow;
@@ -728,12 +739,14 @@ class WindowsAsynchronousSocketChannelImpl
         }
 
         void releaseBuffers() {
-            for (int i=0; i<numBufs; i++) {
-                if (!(bufs[i] instanceof DirectBuffer)) {
-                    Util.releaseTemporaryDirectBuffer(shadow[i]);
+            if (RELEASED.compareAndSet(this, false, true)) {
+                for (int i = 0; i < numBufs; i++) {
+                    if (!(bufs[i] instanceof DirectBuffer)) {
+                        Util.releaseTemporaryDirectBuffer(shadow[i]);
+                    }
                 }
+                IOUtil.releaseScopes(scopeHandleReleasers);
             }
-            IOUtil.releaseScopes(scopeHandleReleasers);
         }
 
         @Override

@@ -360,7 +360,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
             }
         });
         setPtr(ref.get());
-        if (peer != null) { // Not applicable to CWarningWindow
+        if (peer != null) {
             peer.setTextured(IS(TEXTURED, styleBits));
         }
         if (target instanceof javax.swing.RootPaneContainer) {

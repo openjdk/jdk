@@ -28,7 +28,6 @@
 #include "code/nativeInst.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "opto/c2_MacroAssembler.hpp"
 
 //-----------------------------------------------------------------------------
 // The CompiledIC represents a compiled inline cache.

@@ -23,12 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -48,22 +44,5 @@ void ShenandoahSATBMode::initialize_flags() const {
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCASBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahCloneBarrier);
   SHENANDOAH_CHECK_FLAG_SET(ShenandoahStackWatermarkBarrier);
-}
-
-ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {
-  if (ShenandoahGCHeuristics == nullptr) {
-    vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
-  }
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-    return new ShenandoahAggressiveHeuristics(heap);
-  } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-    return new ShenandoahStaticHeuristics(heap);
-  } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-    return new ShenandoahAdaptiveHeuristics(heap);
-  } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-    return new ShenandoahCompactHeuristics(heap);
-  }
-  vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
-  return nullptr;
+  SHENANDOAH_CHECK_FLAG_UNSET(ShenandoahCardBarrier);
 }

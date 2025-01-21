@@ -141,7 +141,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Signature of method with type parameters
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="type-parameters">&lt;T extends java.util.List,<wbr>
+                    lass="type-parameters">&lt;T extends java.util.List, \
                     V&gt;</span>
                     <span class="return-type">java.lang.String[]</span>&nbsp;<span class="element-name">meth\
                     odThatHasTypeParameters</span><wbr><span class="parameters">(T&nbsp;param1,
@@ -218,8 +218,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <dl class="notes">
                     <dt>All Implemented Interfaces:</dt>
                     <dd><code><a href="SubInterface.html" title="interface in pkg">SubInterface</a>&\
-                    lt;E&gt;</code>, <code><a href="SuperInterface.html" title="interface in pkg">Su\
-                    perInterface</a>&lt;E&gt;</code></dd>
+                    lt;E&gt;, <a href="SuperInterface.html" title="interface in pkg">SuperInterface<\
+                    /a>&lt;E&gt;</code></dd>
                     </dl>""");
 
         checkOutput("pkg/SuperInterface.html", true,

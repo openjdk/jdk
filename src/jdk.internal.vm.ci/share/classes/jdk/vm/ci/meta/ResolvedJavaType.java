@@ -402,4 +402,9 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     default ResolvedJavaField resolveField(UnresolvedJavaField unresolvedJavaField, ResolvedJavaType accessingClass) {
         return null;
     }
+
+    @Override
+    default boolean isConcrete() {
+        return isArray() || !isAbstract();
+    }
 }

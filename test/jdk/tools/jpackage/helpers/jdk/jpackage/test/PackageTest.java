@@ -45,7 +45,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;

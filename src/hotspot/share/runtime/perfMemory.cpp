@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ void PerfMemory::initialize() {
                              os::vm_allocation_granularity());
 
   log_debug(perf, memops)("PerfDataMemorySize = %d,"
-                          " os::vm_allocation_granularity = " SIZE_FORMAT
-                          ", adjusted size = " SIZE_FORMAT,
+                          " os::vm_allocation_granularity = %zu"
+                          ", adjusted size = %zu",
                           PerfDataMemorySize,
                           os::vm_allocation_granularity(),
                           capacity);
@@ -127,7 +127,7 @@ void PerfMemory::initialize() {
     // the PerfMemory region was created as expected.
 
     log_debug(perf, memops)("PerfMemory created: address = " INTPTR_FORMAT ","
-                            " size = " SIZE_FORMAT,
+                            " size = %zu",
                             p2i(_start),
                             _capacity);
 
@@ -178,8 +178,8 @@ void PerfMemory::destroy() {
     //
     if (PrintMiscellaneous && Verbose) {
       warning("PerfMemory Overflow Occurred.\n"
-              "\tCapacity = " SIZE_FORMAT " bytes"
-              "  Used = " SIZE_FORMAT " bytes"
+              "\tCapacity = %zu bytes"
+              "  Used = %zu bytes"
               "  Overflow = " INT32_FORMAT " bytes"
               "\n\tUse -XX:PerfDataMemorySize=<size> to specify larger size.",
               PerfMemory::capacity(),

@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.IOException;
 import java.util.List;
-import jdk.jpackage.internal.AppImageFile;
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
@@ -87,7 +87,7 @@ public class AppImagePackageTest {
                 cmd.addArguments("--icon", iconPath("icon"));
             }
             cmd.removeArgumentWithValue("--input");
-            cmd.createJPackageXMLFile("EmptyAppImagePackageTest", "Hello");
+            new AppImageFile("EmptyAppImagePackageTest", "Hello").save(appImageDir);
 
             // on mac, with --app-image and without --mac-package-identifier,
             // will try to infer it from the image, so foreign image needs it.

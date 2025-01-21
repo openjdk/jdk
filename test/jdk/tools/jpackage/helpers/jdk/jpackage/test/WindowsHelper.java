@@ -284,14 +284,13 @@ public class WindowsHelper {
     }
 
     private static long[] findAppLauncherPIDs(JPackageCommand cmd, String launcherName) {
-        // Get the list of PIDs and PPIDs of app launcher processes.
+        // Get the list of PIDs and PPIDs of app launcher processes. Run setWinRunWithEnglishOutput(true) for JDK-8344275.
         // wmic process where (name = "foo.exe") get ProcessID,ParentProcessID
         List<String> output = Executor.of("wmic", "process", "where", "(name",
                 "=",
                 "\"" + cmd.appLauncherPath(launcherName).getFileName().toString() + "\"",
-                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).
-                saveOutput().executeAndGetOutput();
-
+                ")", "get", "ProcessID,ParentProcessID").dumpOutput(true).saveOutput().
+                setWinRunWithEnglishOutput(true).executeAndGetOutput();
         if ("No Instance(s) Available.".equals(output.getFirst().trim())) {
             return new long[0];
         }
