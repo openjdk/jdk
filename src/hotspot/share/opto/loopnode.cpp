@@ -4963,29 +4963,6 @@ void PhaseIdealLoop::build_and_optimize() {
     C->set_major_progress();
   }
 
-  // Auto-vectorization requires a fully canonicalized graph, e.g. all
-  // constant-folding must be completed.
-  // TODO do we need this? Used to be accomplised by removing predicates earier...
-  // TODO maybe we can drop the adding of those nodes to workist.
-  // TODO also with improved parsing of VPointer, this step might be unnecessary,
-  //      as we can do constant folding in parsing!
-  if (C->do_superword() && C->has_loops() && !C->major_progress()) {
-    bool found_work = false;
-    for (uint i = 0; i < _igvn._worklist.size(); i++) {
-      Node* n = _igvn._worklist.at(i);
-      if (!n->is_Opaque1() && n->Opcode() != Op_ConvI2L && n->Opcode() != Op_CastII) {
-        found_work = true;
-        break;
-      }
-    }
-    if (found_work) {
-      if (TraceLoopOpts) {
-        tty->print_cr("DoIGVNBeforeSuperWord");
-      }
-      C->set_major_progress();
-    }
-  }
-
   // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     Compile::TracePhase tp(_t_autoVectorize);
