@@ -5024,17 +5024,35 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
 }
 
 bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
-  Node* n1 = argument(0);
-  Node* n2 = argument(1);
-  Node* n3 = argument(2);
-  Node* result = nullptr;
+  Node* n1;
+  Node* n2;
+  Node* mode_n;
+
+  switch (id) {
+  case vmIntrinsics::_RelaxedMath_float_add:
+  case vmIntrinsics::_RelaxedMath_float_mul:
+    n1     = argument(0);
+    n2     = argument(1);
+    mode_n = argument(2);
+    break;
+  case vmIntrinsics::_RelaxedMath_double_add:
+  case vmIntrinsics::_RelaxedMath_double_mul:
+    // Double arguments take 2 stack slots each (see pop_pair).
+    n1     = argument(0);
+    n2     = argument(2);
+    mode_n = argument(4);
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
+  }
 
   // Extract the RelaxedMathOptimizationMode (Default = 0).
   // Note: it must be a constant already now, so no final field loads
   // allowed. We could make this smarter but it might require us to
   // add additional nodes, so that we can capture the mode to constant
   // fold later during IGVN.
-  const TypeInt* mode_t = gvn().type(n3)->is_int();
+  const TypeInt* mode_t = gvn().type(mode_n)->is_int();
   jint mode_con = 0;
   if (mode_t->is_con()) {
     jint con = mode_t->get_con();
@@ -5044,6 +5062,7 @@ bool LibraryCallKit::inline_relaxed_math(vmIntrinsics::ID id) {
   }
   RelaxedMathOptimizationMode mode(mode_con);
 
+  Node* result = nullptr;
   switch (id) {
   case vmIntrinsics::_RelaxedMath_float_add:
     result = new AddFNode(n1, n2, mode);
