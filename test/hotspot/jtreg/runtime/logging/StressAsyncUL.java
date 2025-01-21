@@ -41,8 +41,8 @@ public class StressAsyncUL {
         output.shouldHaveExitValue(0);
     }
     public static void main(String[] args) throws Exception {
-        analyze_output("-Xlog:async:drop", "-Xlog:all=trace:file=/dev/null::filecount=0", InnerClass.class.getName());
-        analyze_output("-Xlog:async:stall", "-Xlog:all=trace:file=/dev/null::filecount=0", InnerClass.class.getName());
+        analyze_output("-Xlog:async:drop", "-Xlog:all=trace", InnerClass.class.getName());
+        analyze_output("-Xlog:async:stall", "-Xlog:all=trace", InnerClass.class.getName());
     }
 
     public static class InnerClass {
