@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ JVM_SRC_DIRS += $(call uniq, $(wildcard $(foreach d, $(JVM_SRC_ROOTS), \
 
 JVM_CFLAGS_INCLUDES += \
     $(patsubst %,-I%,$(JVM_SRC_DIRS)) \
-    -I$(TOPDIR)/src/hotspot/share/precompiled \
     -I$(TOPDIR)/src/hotspot/share/include \
     -I$(TOPDIR)/src/hotspot/os/$(HOTSPOT_TARGET_OS_TYPE)/include \
     -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
