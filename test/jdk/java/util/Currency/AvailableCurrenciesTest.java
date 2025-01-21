@@ -44,4 +44,12 @@ public class AvailableCurrenciesTest {
         assertEquals(currencies, Currency.availableCurrencies().collect(Collectors.toSet()),
                 "availableCurrencies() and getAvailableCurrencies() do not have the same elements");
     }
+
+    // Ensure there are no duplicates in the available currencies
+    @Test
+    public void noDuplicatesTest() {
+        assertEquals(Currency.getAvailableCurrencies().size(),
+                Currency.availableCurrencies().distinct().count(),
+                "Duplicate currencies returned by availableCurrencies()");
+    }
 }
