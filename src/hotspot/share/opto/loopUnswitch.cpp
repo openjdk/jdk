@@ -301,53 +301,53 @@ class OriginalLoop : public StackObj {
 
   // Multiversion the original loop. The loop selector if selects between the original loop (true-path-loop), and
   // a copy of it (false-path-loop).
-  void mutiversion(const LoopSelector& loop_selector) {
+  void multiversion(const LoopSelector& loop_selector) {
     const uint first_false_path_loop_node_index = _phase->C->unique();
-    clone_loop(unswitched_loop_selector);
+    clone_loop(loop_selector);
 
-    move_parse_and_template_assertion_predicates_to_unswitched_loops(unswitched_loop_selector,
+    move_parse_and_template_assertion_predicates_to_unswitched_loops(loop_selector,
                                                                      first_false_path_loop_node_index);
-    DEBUG_ONLY(verify_unswitched_loop_versions(_loop->_head->as_Loop(), unswitched_loop_selector);)
+    DEBUG_ONLY(verify_loop_versions(_loop->_head->as_Loop(), loop_selector);)
 
     _phase->recompute_dom_depth();
   }
 
  private:
-  void clone_loop(const UnswitchedLoopSelector& unswitched_loop_selector) {
+  void clone_loop(const LoopSelector& loop_selector) {
     _phase->clone_loop(_loop, _old_new, _phase->dom_depth(_loop_head),
-                       PhaseIdealLoop::CloneIncludesStripMined, unswitched_loop_selector.selector());
-    fix_loop_entries(unswitched_loop_selector);
+                       PhaseIdealLoop::CloneIncludesStripMined, loop_selector.selector());
+    fix_loop_entries(loop_selector);
   }
 
-  void fix_loop_entries(const UnswitchedLoopSelector& unswitched_loop_selector) {
-    _phase->replace_loop_entry(_loop_head, unswitched_loop_selector.true_path_loop_proj());
+  void fix_loop_entries(const LoopSelector& loop_selector) {
+    _phase->replace_loop_entry(_loop_head, loop_selector.true_path_loop_proj());
     LoopNode* false_path_loop_strip_mined_head = old_to_new(_loop_head)->as_Loop();
     _phase->replace_loop_entry(false_path_loop_strip_mined_head,
-                               unswitched_loop_selector.false_path_loop_proj());
+                               loop_selector.false_path_loop_proj());
   }
 
   // Moves the Parse And Template Assertion Predicates to the true and false path loop. They are inserted between the
   // loop heads and the loop selector If projections. The old Parse and Template Assertion Predicates before
   // the unswitched loop selector are killed.
   void move_parse_and_template_assertion_predicates_to_unswitched_loops(
-    const UnswitchedLoopSelector& unswitched_loop_selector, const uint first_false_path_loop_node_index) const {
+    const LoopSelector& loop_selector, const uint first_false_path_loop_node_index) const {
     const NodeInOriginalLoopBody node_in_true_path_loop_body(first_false_path_loop_node_index, _old_new);
     const NodeInClonedLoopBody node_in_false_path_loop_body(first_false_path_loop_node_index);
     CloneUnswitchedLoopPredicatesVisitor
     clone_unswitched_loop_predicates_visitor(_loop_head, old_to_new(_loop_head)->as_Loop(), node_in_true_path_loop_body,
                                              node_in_false_path_loop_body, _phase);
-    Node* source_loop_entry = unswitched_loop_selector.selector()->in(0);
+    Node* source_loop_entry = loop_selector.selector()->in(0);
     PredicateIterator predicate_iterator(source_loop_entry);
     predicate_iterator.for_each(clone_unswitched_loop_predicates_visitor);
   }
 
 #ifdef ASSERT
   void verify_loop_versions(LoopNode* true_path_loop_head,
-                                       const LoopSelector& loop_selector) const {
+                            const LoopSelector& loop_selector) const {
     verify_loop_version(true_path_loop_head,
                         loop_selector.true_path_loop_proj());
     verify_loop_version(old_to_new(true_path_loop_head)->as_Loop(),
-                                   loop_selector.false_path_loop_proj());
+                        loop_selector.false_path_loop_proj());
   }
 
   static void verify_loop_version(LoopNode* loop_head, IfProjNode* loop_selector_if_proj) {
