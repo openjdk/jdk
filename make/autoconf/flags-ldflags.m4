@@ -71,10 +71,13 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      BASIC_LDFLAGS="-Wl,--exclude-libs,ALL"
       # Clang needs the lld linker to work correctly
-      BASIC_LDFLAGS="-fuse-ld=lld -Wl,--exclude-libs,ALL"
-      if test "x$CXX_IS_USER_SUPPLIED" = xfalse && test "x$CC_IS_USER_SUPPLIED" = xfalse; then
-        UTIL_REQUIRE_PROGS(LLD, lld, $TOOLCHAIN_PATH:$PATH)
+      UTIL_LOOKUP_PROGS(LLD, lld, $TOOLCHAIN_PATH:$PATH)
+      if test "x$LLD" = x; then
+        BASIC_LDFLAGS="$BASIC_LDFLAGS -fuse-ld=lld"
+      else
+        BASIC_LDFLAGS="$BASIC_LDFLAGS --ld-path=$LLD"
       fi
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
