@@ -557,7 +557,12 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       __ z_lg(Rsubklass,   0*BytesPerWord + FrameMap::first_available_sp_in_frame + frame_size, Z_SP);
       __ z_lg(Rsuperklass, 1*BytesPerWord + FrameMap::first_available_sp_in_frame + frame_size, Z_SP);
 
-      __ check_klass_subtype_slow_path(Rsubklass, Rsuperklass, Rarray_ptr, Rlength, nullptr, &miss);
+      __ check_klass_subtype_slow_path(Rsubklass,
+                                       Rsuperklass,
+                                       Rarray_ptr  /* temp_reg  */,
+                                       Rlength     /* temp2_reg */,
+                                       nullptr     /* L_success */,
+                                       &miss       /* L_failure */);
 
       // Match falls through here.
       i = 0;

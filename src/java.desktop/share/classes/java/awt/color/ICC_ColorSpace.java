@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,32 +88,32 @@ public class ICC_ColorSpace extends ColorSpace {
     private static final long serialVersionUID = 3455889114070431483L;
 
     /**
-     * The specified {@code ICC_Profile} object.
+     * @serial The specified {@code ICC_Profile} object.
      */
     private ICC_Profile thisProfile;
 
     /**
-     * The minimum normalized component values.
+     * @serial The minimum normalized component values.
      */
     private float[] minVal;
 
     /**
-     * The maximum normalized component values.
+     * @serial The maximum normalized component values.
      */
     private float[] maxVal;
 
     /**
-     * Difference between min and max values.
+     * @serial Difference between min and max values.
      */
     private float[] diffMinMax;
 
     /**
-     * Inverted value of the difference between min and max values.
+     * @serial Inverted value of the difference between min and max values.
      */
     private float[] invDiffMinMax;
 
     /**
-     * Whether the values should be scaled or not.
+     * @serial Whether the values should be scaled or not.
      */
     private boolean needScaleInit = true;
 

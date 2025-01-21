@@ -187,6 +187,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Serial Free Collection Set:", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set \\(ms\\):", Level.TRACE),
         new LogMessageWithLevel("Non-Young Free Collection Set \\(ms\\):", Level.TRACE),
+        new LogMessageWithLevel("Reset Partial Array State Manager \\(ms\\)", Level.TRACE),
 
         // Misc Top-level
         new LogMessageWithLevel("Rebuild Free List:", Level.DEBUG),

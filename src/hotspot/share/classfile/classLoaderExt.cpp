@@ -244,6 +244,10 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", entry->name()));
   }
 
+  if (strstr(manifest, "Multi-Release: true") != nullptr) {
+    entry->set_multi_release_jar();
+  }
+
   char* cp_attr = get_class_path_attr(entry->name(), manifest, manifest_size);
 
   if (cp_attr != nullptr && strlen(cp_attr) > 0) {
@@ -299,6 +303,7 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
       file_start = file_end;
     }
   }
+  return;
 }
 
 void ClassLoaderExt::setup_search_paths(JavaThread* current) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,7 +214,7 @@ private:
 void SymbolTable::create_table ()  {
   size_t start_size_log_2 = log2i_ceil(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
-  log_trace(symboltable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
+  log_trace(symboltable)("Start size: %zu (%zu)",
                          _current_size, start_size_log_2);
   _local_table = new SymbolTableHash(start_size_log_2, END_SIZE, REHASH_LEN, true);
 
@@ -749,7 +749,7 @@ void SymbolTable::grow(JavaThread* jt) {
   }
   gt.done(jt);
   _current_size = table_size();
-  log_debug(symboltable)("Grown to size:" SIZE_FORMAT, _current_size);
+  log_debug(symboltable)("Grown to size:%zu", _current_size);
 }
 
 struct SymbolTableDoDelete : StackObj {
@@ -798,7 +798,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 
   Atomic::add(&_symbols_counted, stdc._processed);
 
-  log_debug(symboltable)("Cleaned " SIZE_FORMAT " of " SIZE_FORMAT,
+  log_debug(symboltable)("Cleaned %zu of %zu",
                          stdd._deleted, stdc._processed);
 }
 
@@ -931,29 +931,29 @@ void SymbolTable::print_histogram() {
   HistogramIterator hi;
   _local_table->do_scan(Thread::current(), hi);
   tty->print_cr("Symbol Table Histogram:");
-  tty->print_cr("  Total number of symbols  " SIZE_FORMAT_W(7), hi.total_count);
-  tty->print_cr("  Total size in memory     " SIZE_FORMAT_W(7) "K", (hi.total_size * wordSize) / K);
-  tty->print_cr("  Total counted            " SIZE_FORMAT_W(7), _symbols_counted);
-  tty->print_cr("  Total removed            " SIZE_FORMAT_W(7), _symbols_removed);
+  tty->print_cr("  Total number of symbols  %7zu", hi.total_count);
+  tty->print_cr("  Total size in memory     %7zuK", (hi.total_size * wordSize) / K);
+  tty->print_cr("  Total counted            %7zu", _symbols_counted);
+  tty->print_cr("  Total removed            %7zu", _symbols_removed);
   if (_symbols_counted > 0) {
     tty->print_cr("  Percent removed          %3.2f",
           ((double)_symbols_removed / (double)_symbols_counted) * 100);
   }
-  tty->print_cr("  Reference counts         " SIZE_FORMAT_W(7), Symbol::_total_count);
-  tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used() / K);
-  tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes() / K);
-  tty->print_cr("  Total symbol length      " SIZE_FORMAT_W(7), hi.total_length);
-  tty->print_cr("  Maximum symbol length    " SIZE_FORMAT_W(7), hi.max_length);
+  tty->print_cr("  Reference counts         %7zu", Symbol::_total_count);
+  tty->print_cr("  Symbol arena used        %7zuK", arena()->used() / K);
+  tty->print_cr("  Symbol arena size        %7zuK", arena()->size_in_bytes() / K);
+  tty->print_cr("  Total symbol length      %7zu", hi.total_length);
+  tty->print_cr("  Maximum symbol length    %7zu", hi.max_length);
   tty->print_cr("  Average symbol length    %7.2f", ((double)hi.total_length / (double)hi.total_count));
   tty->print_cr("  Symbol length histogram:");
   tty->print_cr("    %6s %10s %10s", "Length", "#Symbols", "Size");
   for (size_t i = 0; i < hi.results_length; i++) {
     if (hi.counts[i] > 0) {
-      tty->print_cr("    " SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K",
+      tty->print_cr("    %6zu %10zu %10zuK",
                     i, hi.counts[i], (hi.sizes[i] * wordSize) / K);
     }
   }
-  tty->print_cr("  >=" SIZE_FORMAT_W(6) " " SIZE_FORMAT_W(10) " " SIZE_FORMAT_W(10) "K\n",
+  tty->print_cr("  >= %6zu %10zu %10zuK\n",
                 hi.results_length, hi.out_of_range_count, (hi.out_of_range_size*wordSize) / K);
 }
 #endif // PRODUCT

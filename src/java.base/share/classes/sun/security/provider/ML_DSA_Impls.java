@@ -41,7 +41,7 @@ public class ML_DSA_Impls {
     // set the version to an older one. The following VM option is required:
     //
     // --add-exports java.base/sun.security.provider=ALL-UNNAMED
-    public static Version version = Version.DRAFT;
+    public static Version version = Version.FINAL;
 
     static int name2int(String name) {
         if (name.endsWith("44")) {

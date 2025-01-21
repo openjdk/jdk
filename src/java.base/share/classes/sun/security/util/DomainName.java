@@ -32,8 +32,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -205,21 +203,12 @@ class DomainName {
         }
 
         private static InputStream getPubSuffixStream() {
-            @SuppressWarnings("removal")
-            InputStream is = AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    @Override
-                    public InputStream run() {
-                        File f = new File(StaticProperty.javaHome(),
-                            "lib/security/public_suffix_list.dat");
-                        try {
-                            return new FileInputStream(f);
-                        } catch (FileNotFoundException e) {
-                            return null;
-                        }
-                    }
-                }
-            );
+            InputStream is = null;
+            File f = new File(System.getProperty("java.home"),
+                "lib/security/public_suffix_list.dat");
+            try {
+                is = new FileInputStream(f);
+            } catch (FileNotFoundException e) { }
             if (is == null) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl") &&
                         SSLLogger.isOn("trustmanager")) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ bool LogFileOutput::set_option(const char* key, const char* value, outputStream*
       success = Arguments::atojulong(value, &longval);
       if (!success || (longval > SIZE_MAX)) {
         errstream->print_cr("Invalid option: %s must be in range [0, "
-                            SIZE_FORMAT "]", FileSizeOptionKey, (size_t)SIZE_MAX);
+                            "%zu]", FileSizeOptionKey, (size_t)SIZE_MAX);
         success = false;
       } else {
         _rotate_size = static_cast<size_t>(longval);
@@ -215,7 +215,7 @@ bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
   }
 
   log_trace(logging)("Initializing logging to file '%s' (filecount: %u"
-                     ", filesize: " SIZE_FORMAT " KiB).",
+                     ", filesize: %zu KiB).",
                      _file_name, _file_count, _rotate_size / K);
 
   if (_file_count > 0 && file_exist) {
@@ -461,7 +461,7 @@ char* LogFileOutput::make_file_name(const char* file_name,
 
 void LogFileOutput::describe(outputStream *out) {
   LogFileStreamOutput::describe(out);
-  out->print(",filecount=%u,filesize=" SIZE_FORMAT "%s,async=%s", _file_count,
+  out->print(",filecount=%u,filesize=%zu%s,async=%s", _file_count,
              byte_size_in_proper_unit(_rotate_size),
              proper_unit_for_byte_size(_rotate_size),
              LogConfiguration::is_async_mode() ? "true" : "false");

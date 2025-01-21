@@ -197,8 +197,9 @@ public:
     st->print_cr("state:   region state and type:");
     st->print_cr("             state: committed / reserved");
     st->print_cr("             type: image / mapped / private");
+    st->print_cr("offset:  offset from start of allocation block");
+    st->print_cr("vminfo:  VM information (requires NMT)");
     st->print_cr("file:    file mapped, if mapping is not anonymous");
-    st->print_cr("vm info: VM information (requires NMT)");
     {
       streamIndentor si(st, 16);
       _session.print_nmt_flag_legend();

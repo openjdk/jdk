@@ -115,6 +115,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
           "Use Zihintpause instructions")                                        \
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
   product(bool, UseZvbb, false, EXPERIMENTAL, "Use Zvbb instructions")           \
+  product(bool, UseZvbc, false, EXPERIMENTAL, "Use Zvbc instructions")           \
   product(bool, UseZvfh, false, DIAGNOSTIC, "Use Zvfh instructions")             \
   product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \

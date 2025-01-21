@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "logging/log.hpp"
+#include "runtime/os.hpp"
 
 void G1CardTable::g1_mark_as_young(const MemRegion& mr) {
   CardValue *const first = byte_for(mr.start());
@@ -45,6 +46,11 @@ void G1CardTableChangedListener::on_commit(uint start_idx, size_t num_regions, b
   // Default value for a clean card on the card table is -1. So we cannot take advantage of the zero_filled parameter.
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * G1HeapRegion::GrainWords);
   _card_table->clear_MemRegion(mr);
+}
+
+size_t G1CardTable::compute_size(size_t mem_region_size_in_words) {
+  size_t number_of_slots = (mem_region_size_in_words / _card_size_in_words);
+  return os::align_up_vm_allocation_granularity(number_of_slots);
 }
 
 void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {

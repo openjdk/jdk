@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -164,7 +164,6 @@ void Relocation::pd_set_call_destination(address x) {
 
 address* Relocation::pd_address_in_code() {
  ShouldNotReachHere();
- return 0;
 }
 
 address Relocation::pd_get_address_from_code() {
