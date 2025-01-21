@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/idealGraphPrinter.hpp"
