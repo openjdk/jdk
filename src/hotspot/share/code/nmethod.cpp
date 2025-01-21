@@ -3376,6 +3376,76 @@ void nmethod::print_constant_pool(outputStream* st) {
 
 #endif
 
+void nmethod::decode_platform(outputStream* ost) const {
+#if defined(SUPPORT_ABSTRACT_ASSEMBLY)
+
+  ResourceMark rm;
+
+  ost = tty;
+
+  // Compressed undisassembled disassembly format.
+  // The following status values are defined/supported:
+  //   = 0 - currently at bol() position, nothing printed yet on current line.
+  //   = 1 - currently at position after print_location().
+  //   > 1 - in the midst of printing instruction stream bytes.
+  int        code_comment_column      = 0;
+  const uint tabspacing               = 8;
+  unsigned char* start = this->code_begin();
+  unsigned char* p     = this->code_begin();
+  unsigned char* end   = this->code_end();
+  unsigned char* pss   = p; // start of a code section (used for offsets)
+
+  if ((start == nullptr) || (end == nullptr)) {
+    ost->print_cr("PrintAssembly not possible due to uninitialized section pointers");
+    return;
+  }
+
+  // Make sure we have a valid stream to print on.
+  outputStream* st = ost ? ost : tty;
+
+  //---<  Open the output (Marker for post-mortem disassembler)  >---
+  st->print_cr("[MachCode]");
+  st->move_to(28);
+  st->print("%s ", AbstractDisassembler::pd_start_text_command());
+  while ((p < end) && (p != nullptr)) {
+    //---<  Block comments for nmethod. Interrupts instruction stream, if any.  >---
+    // Outputs a bol() before and a cr() after, but only if a comment is printed.
+    // Prints nmethod_section_label as well.
+    if (AbstractDisassembler::show_block_comment()) {
+       print_block_comment(st, p);
+    }
+
+    if (AbstractDisassembler::show_comment() && const_cast<nmethod*>(this)->has_code_comment(p, p + 1)) {
+      if (st->position() > 0) {
+        st->cr();  // interrupt byte stream
+        st->cr();  // add an empty line
+        st->print("%s ", AbstractDisassembler::pd_inline_comment_open());
+        st->print(PTR_FORMAT, p2i(p));
+        st->print(" %s  ", AbstractDisassembler::pd_inline_comment_close());
+        code_comment_column = st->position();
+      }
+      const_cast<nmethod*>(this)->print_code_comment_on(st, code_comment_column, p, p + 1);
+      st->bol();
+    }
+
+    if (st->position() == 0) {
+      st->print("%s ", AbstractDisassembler::pd_inline_comment_open());
+      st->print(PTR_FORMAT, p2i(p));
+      st->print(" %s  ", AbstractDisassembler::pd_inline_comment_close());
+      code_comment_column = st->position();
+      st->print("%s ", AbstractDisassembler::pd_insns_start());
+    }
+
+    st->print("%s%02x", AbstractDisassembler::pd_hex_prefix(), *p++);
+    if (st->position() >= 80) {
+      st->bol();
+    } else if (p < end) {
+      st->print(", ");
+    }
+  }
+#endif
+}
+
 // Disassemble this nmethod.
 // Print additional debug information, if requested. This could be code
 // comments, block comments, profiling counters, etc.
@@ -3440,6 +3510,12 @@ void nmethod::decode2(outputStream* ost) const {
 #endif
 
 #if defined(SUPPORT_ABSTRACT_ASSEMBLY)
+  if (AbstractDisassembler::print_platform_asm()) {
+    nmethod::decode_platform(ost);
+    // return;
+  }
+
+
   //---<  plain abstract disassembly, no comments or anything, just section headers  >---
   if (use_compressed_format && ! compressed_with_comments) {
     const_cast<nmethod*>(this)->print_constant_pool(st);
@@ -3683,11 +3759,14 @@ const char* nmethod::nmethod_section_label(address pos) const {
 }
 
 void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels) const {
+  const char *comment_prefix =
+    AbstractDisassembler::print_platform_asm() ? AbstractDisassembler::pd_comment_prefix() : "#";
+
   if (print_section_labels) {
     const char* label = nmethod_section_label(block_begin);
     if (label != nullptr) {
       stream->bol();
-      stream->print_cr("%s", label);
+      stream->print_cr("%s %s", comment_prefix, label);
     }
   }
 
@@ -3806,13 +3885,17 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
   int pc_offset = (int)(begin - code_begin());
   int cont_offset = implicit_table.continuation_offset(pc_offset);
   bool oop_map_required = false;
+  const char *comment_prefix =
+    AbstractDisassembler::print_platform_asm() ? AbstractDisassembler::pd_comment_prefix() : "#";
+
   if (cont_offset != 0) {
     st->move_to(column, 6, 0);
     if (pc_offset == cont_offset) {
-      st->print("; implicit exception: deoptimizes");
+      st->print("%s implicit exception: deoptimizes", comment_prefix);
       oop_map_required = true;
     } else {
-      st->print("; implicit exception: dispatches to " INTPTR_FORMAT, p2i(code_begin() + cont_offset));
+      st->print("%s implicit exception: dispatches to " INTPTR_FORMAT,
+                comment_prefix, p2i(code_begin() + cont_offset));
     }
   }
 
@@ -3836,7 +3919,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
 #endif
         if (is_implicit_deopt ? pc == begin : pc > begin && pc <= end) {
           st->move_to(column, 6, 0);
-          st->print("; ");
+          st->print("%s ", comment_prefix);
           om->print_on(st);
           oop_map_required = false;
         }
@@ -3855,17 +3938,17 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
   if (sd != nullptr) {
     st->move_to(column, 6, 0);
     if (sd->bci() == SynchronizationEntryBCI) {
-      st->print(";*synchronization entry");
+      st->print("%s *synchronization entry", comment_prefix);
     } else if (sd->bci() == AfterBci) {
-      st->print(";* method exit (unlocked if synchronized)");
+      st->print("%s * method exit (unlocked if synchronized)", comment_prefix);
     } else if (sd->bci() == UnwindBci) {
-      st->print(";* unwind (locked if synchronized)");
+      st->print("%s * unwind (locked if synchronized)", comment_prefix);
     } else if (sd->bci() == AfterExceptionBci) {
-      st->print(";* unwind (unlocked if synchronized)");
+      st->print("%s * unwind (unlocked if synchronized)", comment_prefix);
     } else if (sd->bci() == UnknownBci) {
-      st->print(";* unknown");
+      st->print("%s * unknown", comment_prefix);
     } else if (sd->bci() == InvalidFrameStateBci) {
-      st->print(";* invalid frame state");
+      st->print("%s * invalid frame state", comment_prefix);
     } else {
       if (sd->method() == nullptr) {
         st->print("method is nullptr");
@@ -3873,7 +3956,11 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
         st->print("method is native");
       } else {
         Bytecodes::Code bc = sd->method()->java_code_at(sd->bci());
-        st->print(";*%s", Bytecodes::name(bc));
+        if (AbstractDisassembler::print_platform_asm()) {
+          st->print("%s %s", comment_prefix, Bytecodes::name(bc));
+        } else {
+          st->print("*%s", Bytecodes::name(bc));
+        }
         switch (bc) {
         case Bytecodes::_invokevirtual:
         case Bytecodes::_invokespecial:
@@ -3910,7 +3997,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
     // Print all scopes
     for (;sd != nullptr; sd = sd->sender()) {
       st->move_to(column, 6, 0);
-      st->print("; -");
+      st->print("%s -", comment_prefix);
       if (sd->should_reexecute()) {
         st->print(" (reexecute)");
       }
@@ -3936,7 +4023,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, address begin,
   if (str != nullptr) {
     if (sd != nullptr) st->cr();
     st->move_to(column, 6, 0);
-    st->print(";   {%s}", str);
+    st->print("%s   {%s}", comment_prefix, str);
   }
 }
 

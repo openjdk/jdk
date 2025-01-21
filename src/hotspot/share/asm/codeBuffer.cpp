@@ -1218,11 +1218,12 @@ void AsmRemarks::clear() {
 
 uint AsmRemarks::print(uint offset, outputStream* strm) const {
   uint count = 0;
-  const char* prefix = " ;; ";
+  const char* prefix =
+    AbstractDisassembler::print_platform_asm() ? AbstractDisassembler::pd_comment_prefix() : "";
   const char* remstr = _remarks->lookup(offset);
   while (remstr != nullptr) {
     strm->bol();
-    strm->print("%s", prefix);
+    strm->print(" %s ;; ", prefix);
     // Don't interpret as format strings since it could contain '%'.
     strm->print_raw(remstr);
     // Advance to next line iff string didn't contain a cr() at the end.

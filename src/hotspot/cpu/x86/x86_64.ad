@@ -1689,6 +1689,14 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
     return NO_REG_mask();
 }
 
+bool flivver() {
+  static int blah;
+  if (getenv("APH_FOO_BAR")) {
+    blah++;
+  }
+  return (blah >= 100);
+}
+
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
@@ -4329,6 +4337,14 @@ instruct loadN(rRegN dst, memory mem)
    ins_cost(125); // XXX
    format %{ "movl    $dst, $mem\t# compressed ptr" %}
    ins_encode %{
+    if (flivver()) {
+      __ xorptr($dst$$Register, $dst$$Register);
+      __ movsbl($dst$$Register, Address($dst$$Register, 0));
+    } else {
+      for (int i = 0; i < 7; i++) {
+        __ nop();
+      }
+    }
      __ movl($dst$$Register, $mem$$Address);
    %}
    ins_pipe(ialu_reg_mem); // XXX

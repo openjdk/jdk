@@ -401,6 +401,9 @@ void decode_env::process_options(outputStream* ost) {
   if (strstr(options(), "print-raw")) {
     _print_raw = (strstr(options(), "xml") ? 2 : 1);
   }
+  if (strstr(options(), "print-platform-asm")) {
+    AbstractDisassembler::toggle_print_platform_asm();
+  }
 
   if (_optionsParsed) return;  // parse only once
 
@@ -437,6 +440,9 @@ void decode_env::process_options(outputStream* ost) {
   if (strstr(options(), "show-block-comment")) {
     AbstractDisassembler::toggle_show_block_comment();
   }
+  if (strstr(options(), "print_platform_asm")) {
+    AbstractDisassembler::toggle_print_platform_asm();
+  }
   _optionsParsed = true;
 
   if (_print_help && ! _helpPrinted) {
@@ -455,6 +461,7 @@ void decode_env::process_options(outputStream* ost) {
     ost->print_cr("  show-comment       toggle instruction comments,       currently %s", AbstractDisassembler::show_comment()       ? "ON" : "OFF");
     ost->print_cr("  show-block-comment toggle block comments,             currently %s", AbstractDisassembler::show_block_comment() ? "ON" : "OFF");
     ost->print_cr("  align-instr        toggle instruction alignment,      currently %s", AbstractDisassembler::align_instr()        ? "ON" : "OFF");
+    ost->print_cr("  print_platform-asm print in platform asm format       currently %s", AbstractDisassembler::print_platform_asm()        ? "ON" : "OFF");
     ost->print_cr("combined options: %s", options());
   }
 }
