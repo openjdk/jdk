@@ -183,6 +183,7 @@ void VTransform::apply_speculative_runtime_checks() {
 
 // Check: (node % alignment) == 0.
 void VTransform::add_speculative_alignment_check(Node* node, juint alignment) {
+  TRACE_SPECULATIVE_ALIGNMENT_CHECK(node);
   Node* ctrl = phase()->get_ctrl(node);
 
   // Cast adr/long -> int
