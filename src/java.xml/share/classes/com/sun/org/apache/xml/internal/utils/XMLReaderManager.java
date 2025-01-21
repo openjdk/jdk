@@ -50,7 +50,7 @@ public class XMLReaderManager {
     /**
      * Cache of XMLReader objects
      */
-    private volatile ThreadLocal<ReaderWrapper> m_readers;
+    private ThreadLocal<ReaderWrapper> m_readers;
 
     /**
      * Keeps track of whether an XMLReader object is in use.
@@ -141,14 +141,14 @@ public class XMLReaderManager {
                     m_inUse.put(reader, Boolean.TRUE);
                 }
             }
+
+            //reader is cached, but this property might have been reset
+                JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
+                        _accessExternalDTD, true);
+
+                JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
+                        _cdataChunkSize, false);
         }
-
-        //reader is cached, but this property might have been reset
-        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
-                _accessExternalDTD, true);
-
-        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
-                _cdataChunkSize, false);
 
         return reader;
     }
