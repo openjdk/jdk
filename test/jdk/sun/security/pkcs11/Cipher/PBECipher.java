@@ -75,7 +75,8 @@ public final class PBECipher extends PKCS11Test {
         AnonymousPBEKey,
     }
 
-    private static Provider sunJCE = Security.getProvider("SunJCE");
+    private static Provider sunJCE = Security.getProvider(
+                            System.getProperty("test.provider.name", "SunJCE"));
 
     private record AssertionData(String pbeCipherAlgo, String cipherAlgo,
             BigInteger expectedCiphertext) {}

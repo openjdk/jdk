@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,6 +345,8 @@ public:
   static float cost_for_scalar(int opcode);
   static float cost_for_vector(int opcode, int vlen, BasicType bt);
   static float cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order);
+
+  static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
   static const RegMask* predicate_reg_mask(void);
 

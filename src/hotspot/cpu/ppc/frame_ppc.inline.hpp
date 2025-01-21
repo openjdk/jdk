@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,10 @@ inline void frame::setup(kind knd) {
     // The back link for compiled frames on the heap is not valid
     if (is_heap_frame()) {
       // fp for interpreted frames should have been derelativized and passed to the constructor
-      assert(is_compiled_frame(), "");
+      assert(is_compiled_frame()
+             || is_native_frame()   // native wrapper (nmethod) for j.l.Object::wait0
+             || is_runtime_frame(), // e.g. Runtime1::monitorenter, SharedRuntime::complete_monitor_locking_C
+             "sp:" PTR_FORMAT " fp:" PTR_FORMAT " name:%s", p2i(_sp), p2i(_unextended_sp + _cb->frame_size()), _cb->name());
       // The back link for compiled frames on the heap is invalid.
       _fp = _unextended_sp + _cb->frame_size();
     } else {

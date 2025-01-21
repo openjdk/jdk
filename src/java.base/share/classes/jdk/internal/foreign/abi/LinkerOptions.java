@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,7 @@ public class LinkerOptions {
             optionMap.put(option.getClass(), opImpl);
         }
 
-        LinkerOptions linkerOptions = new LinkerOptions(optionMap);
-        if (linkerOptions.hasCapturedCallState() && linkerOptions.isCritical()) {
-            throw new IllegalArgumentException("Incompatible linker options: captureCallState, critical");
-        }
-        return linkerOptions;
+        return new LinkerOptions(optionMap);
     }
 
     public static LinkerOptions empty() {

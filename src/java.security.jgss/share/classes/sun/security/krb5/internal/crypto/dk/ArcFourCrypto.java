@@ -89,8 +89,6 @@ public class ArcFourCrypto extends DkCrypto {
             MessageDigest md = sun.security.provider.MD4.getInstance();
             md.update(passwd);
             digest = md.digest();
-        } catch (Exception e) {
-            return null;
         } finally {
             if (passwd != null) {
                 Arrays.fill(passwd, (byte)0);

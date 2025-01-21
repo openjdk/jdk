@@ -1833,24 +1833,6 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_PartialSubtypeCheck()
-  %{
-    Register Rrdi = as_Register(RDI_enc); // result register
-    Register Rrax = as_Register(RAX_enc); // super class
-    Register Rrcx = as_Register(RCX_enc); // killed
-    Register Rrsi = as_Register(RSI_enc); // sub class
-    Label miss;
-    const bool set_cond_codes = true;
-
-    __ check_klass_subtype_slow_path(Rrsi, Rrax, Rrcx, Rrdi,
-                                     nullptr, &miss,
-                                     /*set_cond_codes:*/ true);
-    if ($primary) {
-      __ xorptr(Rrdi, Rrdi);
-    }
-    __ bind(miss);
-  %}
-
   enc_class clear_avx %{
     debug_only(int off0 = __ offset());
     if (generate_vzeroupper(Compile::current())) {
@@ -4369,12 +4351,30 @@ instruct loadKlass(rRegP dst, memory mem)
 // Load narrow Klass Pointer
 instruct loadNKlass(rRegN dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
     __ movl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg_mem); // XXX
+%}
+
+instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+  effect(KILL cr);
+  ins_cost(125); // XXX
+  format %{
+    "movl    $dst, $mem\t# compressed klass ptr, shifted\n\t"
+    "shrl    $dst, markWord::klass_shift_at_offset"
+  %}
+  ins_encode %{
+    __ movl($dst$$Register, $mem$$Address);
+    __ shrl($dst$$Register, markWord::klass_shift_at_offset);
   %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -4424,21 +4424,21 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
   predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-  format %{ "maxF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
+  format %{ "maxF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
     __ vminmax_fp(Op_MaxV, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
+instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr) %{
   predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxF a b));
-  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "$dst = max($a, $b)\t# intrinsic (float)" %}
+  format %{ "maxF_reduction $dst, $a, $b \t!using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
                     false /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4449,21 +4449,21 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
-  format %{ "maxD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
+  format %{ "maxD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
     __ vminmax_fp(Op_MaxV, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
+instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr) %{
   predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MaxD a b));
-  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "$dst = max($a, $b)\t# intrinsic (double)" %}
+  format %{ "maxD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
                     false /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4474,21 +4474,21 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
   predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-  format %{ "minF $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
+  format %{ "minF $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
     __ vminmax_fp(Op_MinV, T_FLOAT, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
+instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xtmp, rRegI rtmp, rFlagsReg cr) %{
   predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinF a b));
-  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "$dst = min($a, $b)\t# intrinsic (float)" %}
+  format %{ "minF_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
                     true /*min*/, true /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -4499,21 +4499,21 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
   predicate(UseAVX > 0 && !VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
-    format %{ "minD $dst, $a, $b \t! using tmp, atmp and btmp as TEMP" %}
+    format %{ "minD $dst, $a, $b \t! using $tmp, $atmp and $btmp as TEMP" %}
   ins_encode %{
     __ vminmax_fp(Op_MinV, T_DOUBLE, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $tmp$$XMMRegister, $atmp$$XMMRegister, $btmp$$XMMRegister, Assembler::AVX_128bit);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
+instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xtmp, rRegL rtmp, rFlagsReg cr) %{
   predicate(UseAVX > 0 && VLoopReductions::is_reduction(n));
   match(Set dst (MinD a b));
-  effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
+  effect(USE a, USE b, TEMP xtmp, TEMP rtmp, KILL cr);
 
-  format %{ "$dst = min($a, $b)\t# intrinsic (double)" %}
+  format %{ "maxD_reduction $dst, $a, $b \t! using $xtmp and $rtmp as TEMP" %}
   ins_encode %{
-    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xmmt$$XMMRegister, $tmp$$Register,
+    emit_fp_min_max(masm, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp$$XMMRegister, $rtmp$$Register,
                     true /*min*/, false /*single*/);
   %}
   ins_pipe( pipe_slow );
@@ -11683,6 +11683,7 @@ instruct compN_rReg_imm_klass(rFlagsRegU cr, rRegN op1, immNKlass op2) %{
 
 instruct compN_mem_imm_klass(rFlagsRegU cr, memory mem, immNKlass src)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set cr (CmpN src (LoadNKlass mem)));
 
   format %{ "cmpl    $mem, $src\t# compressed klass ptr" %}
@@ -12141,6 +12142,7 @@ instruct partialSubtypeCheck(rdi_RegP result,
                              rFlagsReg cr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
+  predicate(!UseSecondarySupersTable);
   effect(KILL rcx, KILL cr);
 
   ins_cost(1100);  // slightly larger than the next version
@@ -12153,8 +12155,46 @@ instruct partialSubtypeCheck(rdi_RegP result,
             "xorq    $result, $result\t\t Hit: rdi zero\n\t"
     "miss:\t" %}
 
-  opcode(0x1); // Force a XOR of RDI
-  ins_encode(enc_PartialSubtypeCheck());
+  ins_encode %{
+    Label miss;
+    // NB: Callers may assume that, when $result is a valid register,
+    // check_klass_subtype_slow_path_linear sets it to a nonzero
+    // value.
+    __ check_klass_subtype_slow_path_linear($sub$$Register, $super$$Register,
+                                            $rcx$$Register, $result$$Register,
+                                            nullptr, &miss,
+                                            /*set_cond_codes:*/ true);
+    __ xorptr($result$$Register, $result$$Register);
+    __ bind(miss);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+// ============================================================================
+// Two versions of hashtable-based partialSubtypeCheck, both used when
+// we need to search for a super class in the secondary supers array.
+// The first is used when we don't know _a priori_ the class being
+// searched for. The second, far more common, is used when we do know:
+// this is used for instanceof, checkcast, and any case where C2 can
+// determine it by constant propagation.
+
+instruct partialSubtypeCheckVarSuper(rsi_RegP sub, rax_RegP super, rdi_RegP result,
+                                       rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
+                                       rFlagsReg cr)
+%{
+  match(Set result (PartialSubtypeCheck sub super));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
+
+  ins_cost(1000);
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
+
+  ins_encode %{
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register, $temp1$$Register, $temp2$$Register,
+					 $temp3$$Register, $temp4$$Register, $result$$Register);
+  %}
+
   ins_pipe(pipe_slow);
 %}
 
@@ -12172,7 +12212,7 @@ instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP su
   ins_encode %{
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $temp1$$Register, $temp2$$Register,
+      __ lookup_secondary_supers_table_const($sub$$Register, $super_reg$$Register, $temp1$$Register, $temp2$$Register,
                                        $temp3$$Register, $temp4$$Register, $result$$Register,
                                        super_klass_slot);
     } else {
@@ -12180,28 +12220,6 @@ instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP su
     }
   %}
 
-  ins_pipe(pipe_slow);
-%}
-
-instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
-                                     rsi_RegP sub, rax_RegP super, rcx_RegI rcx,
-                                     immP0 zero,
-                                     rdi_RegP result)
-%{
-  match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
-  effect(KILL rcx, KILL result);
-
-  ins_cost(1000);
-  format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
-            "movl    rcx, [rdi + Array<Klass*>::length_offset_in_bytes()]\t# length to scan\n\t"
-            "addq    rdi, Array<Klass*>::base_offset_in_bytes()\t# Skip to start of data; set NZ in case count is zero\n\t"
-            "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"
-            "jne,s   miss\t\t# Missed: flags nz\n\t"
-            "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
-    "miss:\t" %}
-
-  opcode(0x0); // No need to XOR RDI
-  ins_encode(enc_PartialSubtypeCheck());
   ins_pipe(pipe_slow);
 %}
 

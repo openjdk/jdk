@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.util.List;
  * {@code SNIServerName} objects are immutable.  Subclasses should not provide
  * methods that can change the state of an instance once it has been created.
  *
+ * @spec https://www.rfc-editor.org/info/rfc6066
+ *      RFC 6066: Transport Layer Security (TLS) Extensions: Extension Definitions
  * @see SSLParameters#getServerNames()
  * @see SSLParameters#setServerNames(List)
  *

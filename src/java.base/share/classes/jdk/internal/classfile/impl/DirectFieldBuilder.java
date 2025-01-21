@@ -25,13 +25,12 @@
 
 package jdk.internal.classfile.impl;
 
-import java.util.function.Consumer;
-
 import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 

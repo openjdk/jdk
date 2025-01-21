@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,6 +180,43 @@ import java.io.IOException;
  *      -XX:+DeoptimizeNMethodBarriersALot -XX:-Inline
  *      gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
  */
+/*
+ * @test id=generational
+ * @key stress
+ * @library /
+ * @requires vm.gc.Shenandoah
+ * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @summary Stress the Shenandoah GC by trying to make old objects more likely to be garbage than young objects.
+ *
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ *
+ * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+ */
+
+ /*
+  * @test id=generational-deopt-nmethod
+  * @key stress
+  * @library /
+  * @requires vm.gc.Shenandoah
+  * @requires vm.flavor == "server" & !vm.emulatedClient & vm.opt.ClassUnloading != false
+  * @summary Stress Shenandoah GC with nmethod barrier forced deoptimization enabled.
+  *
+  * @run main/othervm/timeout=200 -Xlog:gc*=info,nmethod+barrier=trace -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *      -XX:+DeoptimizeNMethodBarriersALot -XX:-Inline
+  *      -XX:+ShenandoahVerify
+  *      gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+  *
+  * @run main/othervm/timeout=200 -Xlog:gc*=info,nmethod+barrier=trace -Xmx1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+  *      -XX:+DeoptimizeNMethodBarriersALot -XX:-Inline
+  *      gc.stress.gcbasher.TestGCBasherWithShenandoah 120000
+  */
 
 public class TestGCBasherWithShenandoah {
     public static void main(String[] args) throws IOException {

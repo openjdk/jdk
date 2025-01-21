@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,12 @@ package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.jfr.Recording;
 import jdk.jfr.internal.PrivateAccess;
-import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.WriteableUserPath;
+import jdk.jfr.internal.WriteablePath;
 
 /**
  * JFR.stop
@@ -47,20 +47,20 @@ final class DCmdStop extends AbstractDCmd {
         String filename = parser.getOption("filename");
         try {
             Recording recording = findRecording(name);
-            WriteableUserPath path = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();
-            SafePath safePath = path == null ? null : new SafePath(path.getRealPathText());
+            WriteablePath wp = PrivateAccess.getInstance().getPlatformRecording(recording).getDestination();
+            Path path = wp == null ? null : wp.getReal();
             if (filename != null) {
                 try {
-                    // Ensure path is valid. Don't generate safePath if filename == null, as a user may
+                    // Ensure path is valid. Don't generate path if filename == null, as a user may
                     // want to stop recording without a dump
-                    safePath = resolvePath(null, filename);
+                    path = resolvePath(null, filename);
                     recording.setDestination(Paths.get(filename));
                 } catch (IOException | InvalidPathException  e) {
                     throw new DCmdException("Failed to stop %s. Could not set destination for \"%s\" to file %s", recording.getName(), filename, e.getMessage());
                 }
             }
             recording.stop();
-            reportOperationComplete("Stopped", recording.getName(), safePath);
+            reportOperationComplete("Stopped", recording.getName(), path);
             recording.close();
         } catch (InvalidPathException | DCmdException e) {
             if (filename != null) {

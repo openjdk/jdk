@@ -43,6 +43,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ang">古英文</language>
 			<language type="ann">奧博洛語</language>
 			<language type="anp">昂加文</language>
+			<language type="apc" draft="unconfirmed">黎凡特阿拉伯文</language>
 			<language type="ar">阿拉伯文</language>
 			<language type="ar_001">現代標準阿拉伯文</language>
 			<language type="arc">阿拉米文</language>
@@ -90,6 +91,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">班亞爾文</language>
 			<language type="bkm">康姆文</language>
 			<language type="bla">錫克錫卡文</language>
+			<language type="blo">阿尼文</language>
+			<language type="blt" draft="unconfirmed">黑傣語</language>
 			<language type="bm">班巴拉文</language>
 			<language type="bn">孟加拉文</language>
 			<language type="bo">藏文</language>
@@ -125,6 +128,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chp">奇佩瓦揚文</language>
 			<language type="chr">柴羅基文</language>
 			<language type="chy">沙伊安文</language>
+			<language type="cic" draft="contributed">契卡索文</language>
 			<language type="ckb">中庫德文</language>
 			<language type="ckb" alt="variant">庫德文（索拉尼）</language>
 			<language type="clc">齊爾柯廷語</language>
@@ -133,7 +137,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="cps">卡皮茲文</language>
 			<language type="cr">克里文</language>
 			<language type="crg">米奇夫語</language>
-			<language type="crh">土耳其文（克里米亞半島）</language>
+			<language type="crh">克里米亞韃靼文</language>
 			<language type="crj">東南克里語</language>
 			<language type="crk">平原克里語</language>
 			<language type="crl">北部東克里語</language>
@@ -218,7 +222,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">中古高地德文</language>
 			<language type="gn">瓜拉尼文</language>
 			<language type="goh">古高地德文</language>
-			<language type="gom">孔卡尼文</language>
 			<language type="gon">岡德文</language>
 			<language type="gor">科隆達羅文</language>
 			<language type="got">哥德文</language>
@@ -239,11 +242,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="he">希伯來文</language>
 			<language type="hi">印地文</language>
 			<language type="hi_Latn">印地語（拉丁文）</language>
-			<language type="hi_Latn" alt="variant">印地語</language>
+			<language type="hi_Latn" alt="variant">印地英語</language>
 			<language type="hif">斐濟印地文</language>
 			<language type="hil">希利蓋農文</language>
 			<language type="hit">赫梯文</language>
 			<language type="hmn">苗語</language>
+			<language type="hnj" draft="unconfirmed">青苗話</language>
 			<language type="ho">西里莫圖土文</language>
 			<language type="hr">克羅埃西亞文</language>
 			<language type="hsb">上索布文</language>
@@ -330,6 +334,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">科米文</language>
 			<language type="kw">康瓦耳文</language>
 			<language type="kwk">誇誇嘉誇語</language>
+			<language type="kxv">庫維文</language>
 			<language type="ky">吉爾吉斯文</language>
 			<language type="la">拉丁文</language>
 			<language type="lad">拉迪諾文</language>
@@ -345,6 +350,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lil">利洛威特文</language>
 			<language type="liv">利伏尼亞文</language>
 			<language type="lkt">拉科塔文</language>
+			<language type="lld" draft="unconfirmed">拉定文</language>
 			<language type="lmo">倫巴底文</language>
 			<language type="ln">林加拉文</language>
 			<language type="lo">寮文</language>
@@ -412,7 +418,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nan">閩南語</language>
 			<language type="nap">拿波里文</language>
 			<language type="naq">納馬文</language>
-			<language type="nb">巴克摩挪威文</language>
+			<language type="nb">書面挪威文</language>
 			<language type="nd">北地畢列文</language>
 			<language type="nds">低地德文</language>
 			<language type="nds_NL">低地薩克遜文</language>
@@ -425,7 +431,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nl">荷蘭文</language>
 			<language type="nl_BE">法蘭德斯文</language>
 			<language type="nmg">夸西奧文</language>
-			<language type="nn">耐諾斯克挪威文</language>
+			<language type="nn">新挪威文</language>
 			<language type="nnh">恩甘澎文</language>
 			<language type="no">挪威文</language>
 			<language type="nog">諾蓋文</language>
@@ -544,7 +550,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sn">紹納文</language>
 			<language type="snk">索尼基文</language>
 			<language type="so">索馬利文</language>
-			<language type="sog">索格底亞納文</language>
+			<language type="sog">粟特文</language>
 			<language type="sq">阿爾巴尼亞文</language>
 			<language type="sr">塞爾維亞文</language>
 			<language type="srn">蘇拉南東墎文</language>
@@ -624,6 +630,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vi">越南文</language>
 			<language type="vls">西佛蘭德文</language>
 			<language type="vmf">美茵-法蘭克尼亞文</language>
+			<language type="vmw">馬庫瓦文</language>
 			<language type="vo">沃拉普克文</language>
 			<language type="vot">沃提克文</language>
 			<language type="vro">佛羅文</language>
@@ -639,6 +646,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">卡爾梅克文</language>
 			<language type="xh">科薩文</language>
 			<language type="xmf">明格列爾文</language>
+			<language type="xnr">康格里</language>
 			<language type="xog">索加文</language>
 			<language type="yao">瑤文</language>
 			<language type="yap">雅浦文</language>
@@ -700,7 +708,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Dupl" draft="contributed">杜普洛伊速記</script>
 			<script type="Egyd">古埃及世俗體</script>
 			<script type="Egyh">古埃及僧侶體</script>
-			<script type="Egyp">古埃及象形文字</script>
+			<script type="Egyp">古埃及聖書體</script>
 			<script type="Elba" draft="contributed">愛爾巴桑文</script>
 			<script type="Ethi">衣索比亞文</script>
 			<script type="Geok">喬治亞語系（阿索他路里和努斯克胡里文）</script>
@@ -713,7 +721,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Gujr">古吉拉特文</script>
 			<script type="Guru">古魯穆奇文</script>
 			<script type="Hanb">標上注音符號的漢字</script>
-			<script type="Hang">韓文字</script>
+			<script type="Hang">諺文</script>
 			<script type="Hani">漢字</script>
 			<script type="Hano">哈努諾文</script>
 			<script type="Hans">簡體</script>
@@ -725,6 +733,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hira">平假名</script>
 			<script type="Hluw" draft="contributed">安那托利亞象形文字</script>
 			<script type="Hmng">楊松錄苗文</script>
+			<script type="Hmnp" draft="unconfirmed">創世紀苗文</script>
 			<script type="Hrkt">片假名或平假名</script>
 			<script type="Hung">古匈牙利文</script>
 			<script type="Inds">印度河流域（哈拉帕文）</script>
@@ -738,15 +747,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Khar">卡羅須提文</script>
 			<script type="Khmr">高棉文</script>
 			<script type="Khoj" draft="contributed">克吉奇文字</script>
+			<script type="Kits" draft="unconfirmed">契丹小字</script>
 			<script type="Knda">坎那達文</script>
 			<script type="Kore">韓文</script>
 			<script type="Kpel" draft="contributed">克培列文</script>
 			<script type="Kthi" draft="contributed">凱提文</script>
 			<script type="Lana">藍拿文</script>
-			<script type="Laoo">寮國文</script>
+			<script type="Laoo">寮文</script>
 			<script type="Latf">拉丁文（尖角體活字變體）</script>
 			<script type="Latg">拉丁文（蓋爾語變體）</script>
-			<script type="Latn">拉丁文</script>
+			<script type="Latn">拉丁字母</script>
 			<script type="Lepc">雷布查文</script>
 			<script type="Limb">林佈文</script>
 			<script type="Lina">線性文字（A）</script>
@@ -758,7 +768,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Mahj" draft="contributed">印地文</script>
 			<script type="Mand">曼底安文</script>
 			<script type="Mani" draft="contributed">摩尼教文</script>
-			<script type="Marc" draft="contributed">藏文</script>
+			<script type="Marc">瑪欽文</script>
 			<script type="Maya">瑪雅象形文字</script>
 			<script type="Mend" draft="contributed">門德文</script>
 			<script type="Merc" draft="contributed">麥羅埃文（曲線字體）</script>
@@ -776,13 +786,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Newa" draft="contributed">Vote 尼瓦爾文</script>
 			<script type="Nkgb" draft="contributed">納西格巴文</script>
 			<script type="Nkoo">西非書面語言 (N’Ko)</script>
-			<script type="Nshu" draft="contributed">女書文字</script>
+			<script type="Nshu" draft="contributed">女書</script>
 			<script type="Ogam">歐甘文</script>
 			<script type="Olck">桑塔利文</script>
 			<script type="Orkh">鄂爾渾文</script>
 			<script type="Orya">歐迪亞文</script>
 			<script type="Osge" draft="contributed">歐塞奇文</script>
 			<script type="Osma">歐斯曼亞文</script>
+			<script type="Ougr" draft="unconfirmed">回鶻文</script>
 			<script type="Palm" draft="contributed">帕米瑞拉文字</script>
 			<script type="Pauc" draft="contributed">鮑欽豪文</script>
 			<script type="Perm">古彼爾姆諸文</script>
@@ -831,7 +842,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tglg">塔加拉文</script>
 			<script type="Thaa">塔安那文</script>
 			<script type="Thai">泰文</script>
-			<script type="Tibt">西藏文</script>
+			<script type="Tibt">藏文</script>
 			<script type="Tirh" draft="contributed">邁蒂利文</script>
 			<script type="Ugar">烏加列文</script>
 			<script type="Vaii">瓦依文</script>
@@ -999,7 +1010,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">以色列</territory>
 			<territory type="IM">曼島</territory>
 			<territory type="IN">印度</territory>
-			<territory type="IO" draft="contributed">英屬印度洋領地</territory>
+			<territory type="IO">英屬印度洋領地</territory>
 			<territory type="IO" alt="chagos">查哥斯群島</territory>
 			<territory type="IQ">伊拉克</territory>
 			<territory type="IR">伊朗</territory>
@@ -1208,6 +1219,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="OSOJS" draft="contributed">雷西亞歐西亞柯方言</variant>
 			<variant type="OXENDICT" draft="contributed">牛津英文字典拼音</variant>
 			<variant type="PAMAKA" draft="contributed">蘇利南帕馬卡方言</variant>
+			<variant type="PEHOEJI" draft="unconfirmed">白話字</variant>
 			<variant type="PETR1708" draft="contributed">俄羅斯文拼字（1708 年）</variant>
 			<variant type="PINYIN">漢語拼音</variant>
 			<variant type="POLYTON" draft="contributed">希臘文多調正字法</variant>
@@ -1225,7 +1237,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="SURMIRAN" draft="contributed">瑞士蘇邁拉方言</variant>
 			<variant type="SURSILV" draft="contributed">瑞士蘇瑟瓦方言</variant>
 			<variant type="SUTSILV" draft="contributed">瑞士蘇希瓦方言</variant>
+			<variant type="TAILO" draft="unconfirmed">臺羅</variant>
 			<variant type="TARASK" draft="contributed">白俄羅斯文傳統拼字</variant>
+			<variant type="TONGYONG" draft="unconfirmed">通用拼音</variant>
 			<variant type="UCCOR" draft="contributed">統一康沃爾文拼字</variant>
 			<variant type="UCRCOR" draft="contributed">統一康沃爾文修訂拼字</variant>
 			<variant type="ULSTER" draft="contributed">愛爾蘭阿爾斯特方言</variant>
@@ -1265,10 +1279,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="hebrew">希伯來曆</type>
 			<type key="calendar" type="indian">印度國曆</type>
 			<type key="calendar" type="islamic">伊斯蘭曆</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">伊斯蘭民用曆</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">伊斯蘭新月曆</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">伊斯蘭天文曆</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">伊斯蘭曆（烏姆庫拉）</type>
+			<type key="calendar" type="islamic-civil">伊斯蘭民用曆</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">伊斯蘭新月曆</type>
+			<type key="calendar" type="islamic-tbla">伊斯蘭天文曆</type>
+			<type key="calendar" type="islamic-umalqura">伊斯蘭曆（烏姆庫拉）</type>
 			<type key="calendar" type="iso8601">ISO 8601 國際曆法</type>
 			<type key="calendar" type="japanese">日本曆</type>
 			<type key="calendar" type="persian">波斯曆</type>
@@ -1295,7 +1309,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonetic">發音排序</type>
 			<type key="collation" type="pinyin">拼音排序</type>
 			<type key="collation" type="search">一般用途搜尋</type>
-			<type key="collation" type="searchjl" draft="contributed">韓文子音排序</type>
+			<type key="collation" type="searchjl">依諺文聲母搜尋</type>
 			<type key="collation" type="standard">標準排序</type>
 			<type key="collation" type="stroke">筆畫排序</type>
 			<type key="collation" type="traditional">傳統排序</type>
@@ -1376,6 +1390,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="mroo" draft="contributed">默文數字</type>
 			<type key="numbers" type="mtei">曼尼普爾數字</type>
 			<type key="numbers" type="mymr">緬甸數字</type>
+			<type key="numbers" type="mymrepka" draft="unconfirmed">緬甸東山地克倫數字</type>
+			<type key="numbers" type="mymrpao" draft="unconfirmed">緬甸勃歐數字</type>
 			<type key="numbers" type="mymrshan" draft="contributed">緬甸撣文數字</type>
 			<type key="numbers" type="mymrtlng" draft="contributed">緬甸傣族數字</type>
 			<type key="numbers" type="native">原始數字</type>
@@ -1397,7 +1413,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="tamldec">坦米爾數字</type>
 			<type key="numbers" type="telu">泰盧固數字</type>
 			<type key="numbers" type="thai">泰文數字</type>
-			<type key="numbers" type="tibt">西藏數字</type>
+			<type key="numbers" type="tibt">藏文數字</type>
 			<type key="numbers" type="tirh" draft="contributed">提爾胡塔數字</type>
 			<type key="numbers" type="traditional" draft="contributed">傳統數字</type>
 			<type key="numbers" type="vaii">瓦伊文數字</type>
@@ -2703,38 +2719,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<months>
 					<monthContext type="format">
 						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">穆哈蘭姆月</month>
-							<month type="2" draft="contributed">色法爾月</month>
-							<month type="3" draft="contributed">賴比月 I</month>
-							<month type="4" draft="contributed">賴比月 II</month>
-							<month type="5" draft="contributed">主馬達月 I</month>
-							<month type="6" draft="contributed">主馬達月 II</month>
-							<month type="7" draft="contributed">賴哲卜月</month>
-							<month type="8" draft="contributed">舍爾邦月</month>
-							<month type="9" draft="contributed">賴買丹月</month>
-							<month type="10" draft="contributed">閃瓦魯月</month>
-							<month type="11" draft="contributed">都爾喀爾德月</month>
-							<month type="12" draft="contributed">都爾黑哲月</month>
+							<month type="1">穆哈蘭姆月</month>
+							<month type="2">色法爾月</month>
+							<month type="3">賴比月 I</month>
+							<month type="4">賴比月 II</month>
+							<month type="5">主馬達月 I</month>
+							<month type="6">主馬達月 II</month>
+							<month type="7">賴哲卜月</month>
+							<month type="8">舍爾邦月</month>
+							<month type="9">賴買丹月</month>
+							<month type="10">閃瓦魯月</month>
+							<month type="11">都爾喀爾德月</month>
+							<month type="12">都爾黑哲月</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="contributed">穆哈蘭姆月</month>
-							<month type="2" draft="contributed">色法爾月</month>
-							<month type="3" draft="contributed">賴比月 I</month>
-							<month type="4" draft="contributed">賴比月 II</month>
-							<month type="5" draft="contributed">主馬達月 I</month>
-							<month type="6" draft="contributed">主馬達月 II</month>
-							<month type="7" draft="contributed">賴哲卜月</month>
-							<month type="8" draft="contributed">舍爾邦月</month>
-							<month type="9" draft="contributed">賴買丹月</month>
-							<month type="10" draft="contributed">閃瓦魯月</month>
-							<month type="11" draft="contributed">都爾喀爾德月</month>
-							<month type="12" draft="contributed">都爾黑哲月</month>
+							<month type="1">穆哈蘭姆月</month>
+							<month type="2">色法爾月</month>
+							<month type="3">賴比月 I</month>
+							<month type="4">賴比月 II</month>
+							<month type="5">主馬達月 I</month>
+							<month type="6">主馬達月 II</month>
+							<month type="7">賴哲卜月</month>
+							<month type="8">舍爾邦月</month>
+							<month type="9">賴買丹月</month>
+							<month type="10">閃瓦魯月</month>
+							<month type="11">都爾喀爾德月</month>
+							<month type="12">都爾黑哲月</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<eras>
 					<eraAbbr>
-						<era type="0" draft="contributed">伊斯蘭曆</era>
+						<era type="0">伊斯蘭曆</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
@@ -2783,6 +2799,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<availableFormats>
 						<dateFormatItem id="Ed">d日（E）</dateFormatItem>
 						<dateFormatItem id="Gy">Gy年</dateFormatItem>
+						<dateFormatItem id="GyMd">GGGGG y/M/d</dateFormatItem>
 						<dateFormatItem id="GyMMM">Gy年M月</dateFormatItem>
 						<dateFormatItem id="GyMMMd">Gy年M月d日</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">Gy年M月d日E</dateFormatItem>
@@ -3442,7 +3459,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>年代</displayName>
+				<displayName>紀元</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>紀元</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>紀元</displayName>
 			</field>
 			<field type="year">
 				<displayName>年</displayName>
@@ -3457,7 +3480,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="quarter">
-				<displayName>季</displayName>
+				<displayName>季度</displayName>
 				<relative type="-1">上一季</relative>
 				<relative type="0">這一季</relative>
 				<relative type="1">下一季</relative>
@@ -3494,7 +3517,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativePeriod>{0} 當週</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
-				<displayName>週</displayName>
+				<displayName>該月第幾週</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>月週次</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>月週次</displayName>
 			</field>
 			<field type="day">
 				<displayName>日</displayName>
@@ -3511,13 +3540,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
-				<displayName>年天</displayName>
+				<displayName>該年第幾天</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>該年第幾天</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>該年第幾天</displayName>
 			</field>
 			<field type="weekday">
-				<displayName>週天</displayName>
+				<displayName>星期</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>星期</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>星期</displayName>
 			</field>
 			<field type="weekdayOfMonth">
-				<displayName>每月平日</displayName>
+				<displayName>該月第幾週</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>該月第幾週</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>該月第幾週</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">上週日</relative>
@@ -3596,8 +3643,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} 個週六前</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayperiod-short">
+				<displayName>時段</displayName>
+			</field>
 			<field type="dayperiod">
-				<displayName>上午/下午</displayName>
+				<displayName>時段</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>時段</displayName>
 			</field>
 			<field type="hour">
 				<displayName>小時</displayName>
@@ -3609,6 +3662,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} 小時前</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="hour-short">
+				<displayName>時</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>時</displayName>
+			</field>
 			<field type="minute">
 				<displayName>分鐘</displayName>
 				<relative type="0">這一分鐘</relative>
@@ -3618,6 +3677,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} 分鐘前</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="minute-short">
+				<displayName>分</displayName>
+			</field>
+			<field type="minute-narrow">
+				<displayName>分</displayName>
 			</field>
 			<field type="second">
 				<displayName>秒</displayName>
@@ -3636,6 +3701,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<timeZoneNames>
 			<regionFormat>{0}時間</regionFormat>
 			<fallbackFormat>{1}（{0}）</fallbackFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>檀香山</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>世界標準時間</standard>
@@ -4254,7 +4322,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<exemplarCity>恩得伯理島</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kanton">
-				<exemplarCity draft="contributed">坎頓島</exemplarCity>
+				<exemplarCity>坎頓島</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>基里地馬地島</exemplarCity>
@@ -4372,9 +4440,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>烏蘭巴托</exemplarCity>
-			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>喬巴山</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>澳門</exemplarCity>
@@ -4774,9 +4839,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>諾姆</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>檀香山</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>安克拉治</exemplarCity>
@@ -5192,13 +5254,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>中國夏令時間</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>喬巴山時間</generic>
-					<standard>喬巴山標準時間</standard>
-					<daylight>喬巴山夏令時間</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>聖誕島時間</standard>
@@ -5455,6 +5510,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>彼得羅巴甫洛夫斯克時間</generic>
 					<standard>彼得羅巴甫洛夫斯克標準時間</standard>
 					<daylight>彼得羅巴甫洛夫斯克日光節約時間</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>哈薩克時間</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -5899,7 +5959,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Yukon">
 				<long>
-					<standard draft="contributed">育空地區時間</standard>
+					<standard>育空地區時間</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -5939,63 +5999,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<currencyFormats numberSystem="arabext">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="bali">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="beng">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="brah">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="cakm">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="cham">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="deva">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="fullwide">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="gonm">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="gujr">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="guru">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="hanidec">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="java">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="kali">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="khmr">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="knda">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="lana">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="lanatham">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="laoo">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -6004,8 +6007,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
-					<pattern alt="alphaNextToNumber" draft="contributed">¤ #,##0.00;(¤ #,##0.00)</pattern>
-					<pattern alt="noCurrency" draft="contributed">#,##0.00;(#,##0.00)</pattern>
+					<pattern alt="alphaNextToNumber">¤ #,##0.00;(¤ #,##0.00)</pattern>
+					<pattern alt="noCurrency">#,##0.00;(#,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -6024,73 +6027,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">¤000兆</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="lepc">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="limb">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mlym">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mong">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mtei">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mymr">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="mymrshan">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="nkoo">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="olck">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="orya">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="osma">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="saur">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="shrd">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="sora">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="sund">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="takr">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="talu">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="tamldec">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="telu">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="thai">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="tibt">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
-		</currencyFormats>
-		<currencyFormats numberSystem="vaii">
-			<unitPattern count="other" draft="contributed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -7150,7 +7086,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 牛頓</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName draft="contributed">每百公里千瓦小時</displayName>
+				<displayName>每百公里千瓦小時</displayName>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>像素</displayName>
@@ -7180,6 +7116,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-inch">
 				<unitPattern count="other">{0} 英寸</unitPattern>
 				<perUnitPattern>每英寸 {0}</perUnitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>斯堪地那維亞里</displayName>
+				<unitPattern count="other">{0} 斯堪地那維亞里</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>太陽半徑</displayName>
@@ -7267,6 +7207,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<perUnitPattern>每英制加侖 {0}</perUnitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>十億分點濃度</displayName>
+				<unitPattern count="other">{0} 十億分點濃度</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>夜</displayName>
+				<unitPattern count="other">{0} 夜</unitPattern>
+				<perUnitPattern>{0}/夜</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>基本方向</displayName>
@@ -7478,9 +7427,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/年</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<displayName draft="contributed">刻</displayName>
-				<unitPattern count="other" draft="contributed">{0} 刻</unitPattern>
-				<perUnitPattern draft="contributed">{0}/刻</perUnitPattern>
+				<displayName>刻</displayName>
+				<unitPattern count="other">{0} 刻</unitPattern>
+				<perUnitPattern>{0}/刻</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>月</displayName>
@@ -7593,12 +7542,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 赫茲</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="contributed">dpcm</displayName>
-				<unitPattern count="other" draft="contributed">{0} dpcm</unitPattern>
+				<displayName>dpcm</displayName>
+				<unitPattern count="other">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="contributed">dpi</displayName>
-				<unitPattern count="other" draft="contributed">{0} dpi</unitPattern>
+				<displayName>dpi</displayName>
+				<unitPattern count="other">{0} dpi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>公里</displayName>
@@ -7678,8 +7627,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} 海里</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName>斯堪地那維亞英里</displayName>
-				<unitPattern count="other">{0} 斯堪地那維亞英里</unitPattern>
+				<displayName>斯堪地那維亞里</displayName>
+				<unitPattern count="other">{0} 斯堪地那維亞里</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>點</displayName>
@@ -8000,6 +7949,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>英制夸脫</displayName>
 				<unitPattern count="other">{0} 英制夸脫</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>濃度/十億</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>夜</displayName>
+				<unitPattern count="other">{0} 夜</unitPattern>
+				<perUnitPattern>{0}/夜</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>方向</displayName>
 				<coordinateUnitPattern type="east">東經{0}</coordinateUnitPattern>
@@ -8019,7 +7976,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}圈</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<unitPattern count="other" draft="contributed">{0}弧度</unitPattern>
+				<unitPattern count="other">{0}弧度</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<unitPattern count="other">{0}°</unitPattern>
@@ -8031,16 +7988,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}角秒</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
-				<unitPattern count="other" draft="contributed">{0}km²</unitPattern>
+				<unitPattern count="other">{0}km²</unitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<unitPattern count="other">{0}公頃</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<unitPattern count="other" draft="contributed">{0}m²</unitPattern>
+				<unitPattern count="other">{0}m²</unitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
-				<unitPattern count="other" draft="contributed">{0}cm²</unitPattern>
+				<unitPattern count="other">{0}cm²</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<unitPattern count="other">{0}平方英里</unitPattern>
@@ -8049,16 +8006,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}英畝</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<unitPattern count="other" draft="contributed">{0}yd²</unitPattern>
+				<unitPattern count="other">{0}yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<unitPattern count="other">{0}平方英尺</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
-				<unitPattern count="other" draft="contributed">{0}in²</unitPattern>
+				<unitPattern count="other">{0}平方英寸</unitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<unitPattern count="other" draft="contributed">{0}杜納畝</unitPattern>
+				<unitPattern count="other">{0}杜納畝</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<unitPattern count="other">{0}克拉</unitPattern>
@@ -8076,7 +8033,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}百萬分率</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
-				<unitPattern count="other" draft="contributed">{0}莫耳</unitPattern>
+				<unitPattern count="other">{0}莫耳</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<unitPattern count="other">{0}升/公里</unitPattern>
@@ -8092,43 +8049,43 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}英里/英制加侖</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
-				<unitPattern count="other" draft="contributed">{0}PB</unitPattern>
+				<unitPattern count="other">{0}PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
-				<unitPattern count="other" draft="contributed">{0}TB</unitPattern>
+				<unitPattern count="other">{0}TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<unitPattern count="other" draft="contributed">{0}Tb</unitPattern>
+				<unitPattern count="other">{0}Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
-				<unitPattern count="other" draft="contributed">{0}GB</unitPattern>
+				<unitPattern count="other">{0}GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
-				<unitPattern count="other" draft="contributed">{0}Gb</unitPattern>
+				<unitPattern count="other">{0}Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
-				<unitPattern count="other" draft="contributed">{0}MB</unitPattern>
+				<unitPattern count="other">{0}MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
-				<unitPattern count="other" draft="contributed">{0}Mb</unitPattern>
+				<unitPattern count="other">{0}Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<unitPattern count="other" draft="contributed">{0}kB</unitPattern>
+				<unitPattern count="other">{0}kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
-				<unitPattern count="other" draft="contributed">{0}kb</unitPattern>
+				<unitPattern count="other">{0}kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<unitPattern count="other" draft="contributed">{0}byte</unitPattern>
+				<unitPattern count="other">{0}byte</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<unitPattern count="other" draft="contributed">{0}bit</unitPattern>
+				<unitPattern count="other">{0}bit</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<unitPattern count="other" draft="contributed">{0}μs</unitPattern>
+				<unitPattern count="other">{0}μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<unitPattern count="other" draft="contributed">{0}ns</unitPattern>
+				<unitPattern count="other">{0}ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<unitPattern count="other">{0}安培</unitPattern>
@@ -8143,40 +8100,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}伏特</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
-				<unitPattern count="other" draft="contributed">{0}千卡</unitPattern>
+				<unitPattern count="other">{0}千卡</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<unitPattern count="other" draft="contributed">{0}卡</unitPattern>
+				<unitPattern count="other">{0}卡</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<unitPattern count="other">{0}大卡</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
-				<unitPattern count="other" draft="contributed">{0}千焦耳</unitPattern>
+				<unitPattern count="other">{0}千焦耳</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<unitPattern count="other" draft="contributed">{0}焦</unitPattern>
+				<unitPattern count="other">{0}焦</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<unitPattern count="other">{0}千瓦小時</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<unitPattern count="other" draft="contributed">{0}電子伏特</unitPattern>
+				<unitPattern count="other">{0}電子伏特</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<unitPattern count="other" draft="contributed">{0}英熱單位</unitPattern>
+				<unitPattern count="other">{0}英熱單位</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
-				<unitPattern count="other" draft="contributed">{0}美制撒姆</unitPattern>
+				<unitPattern count="other">{0}美制撒姆</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<unitPattern count="other" draft="contributed">{0}lbf</unitPattern>
+				<unitPattern count="other">{0}lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<unitPattern count="other" draft="contributed">{0}N</unitPattern>
+				<unitPattern count="other">{0}N</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<unitPattern count="other" draft="contributed">{0}kWh/100km</unitPattern>
+				<unitPattern count="other">{0}kWh/100km</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<unitPattern count="other">{0}吉赫</unitPattern>
@@ -8206,16 +8163,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<unitPattern count="other" draft="contributed">{0}dpcm</unitPattern>
+				<unitPattern count="other">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<unitPattern count="other" draft="contributed">{0}dpi</unitPattern>
+				<unitPattern count="other">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<unitPattern count="other" draft="contributed">{0}px</unitPattern>
+				<unitPattern count="other">{0}px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
-				<unitPattern count="other" draft="contributed">{0}R⊕</unitPattern>
+				<unitPattern count="other">{0}R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="other">{0}公里</unitPattern>
@@ -8224,7 +8181,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}公尺</unitPattern>
 			</unit>
 			<unit type="length-decimeter">
-				<unitPattern count="other" draft="contributed">{0}dm</unitPattern>
+				<unitPattern count="other">{0}公寸</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<unitPattern count="other">{0}公分</unitPattern>
@@ -8233,10 +8190,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}公釐</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
-				<unitPattern count="other" draft="contributed">{0}μm</unitPattern>
+				<unitPattern count="other">{0}μm</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<unitPattern count="other" draft="contributed">{0}nm</unitPattern>
+				<unitPattern count="other">{0}奈米</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<unitPattern count="other">{0}皮米</unitPattern>
@@ -8254,43 +8211,44 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}吋</unitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<unitPattern count="other" draft="contributed">{0}pc</unitPattern>
+				<unitPattern count="other">{0}秒差距</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<unitPattern count="other">{0}光年</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<unitPattern count="other" draft="contributed">{0}au</unitPattern>
+				<unitPattern count="other">{0}天文單位</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<unitPattern count="other" draft="contributed">{0}化朗</unitPattern>
+				<unitPattern count="other">{0}化朗</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<unitPattern count="other" draft="contributed">{0}fth</unitPattern>
+				<unitPattern count="other">{0}fth</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<unitPattern count="other" draft="contributed">{0}nmi</unitPattern>
+				<unitPattern count="other">{0}nmi</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<unitPattern count="other" draft="contributed">{0}smi</unitPattern>
+				<displayName>斯堪地那維亞里</displayName>
+				<unitPattern count="other">{0}smi</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<unitPattern count="other" draft="contributed">{0}點</unitPattern>
+				<unitPattern count="other">{0}點</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<unitPattern count="other" draft="contributed">{0}R☉</unitPattern>
+				<unitPattern count="other">{0}R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<unitPattern count="other">{0}勒克斯</unitPattern>
 			</unit>
 			<unit type="light-candela">
-				<unitPattern count="other" draft="contributed">{0}燭光</unitPattern>
+				<unitPattern count="other">{0}燭光</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<unitPattern count="other" draft="contributed">{0}流明</unitPattern>
+				<unitPattern count="other">{0}流明</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<unitPattern count="other" draft="contributed">{0}L☉</unitPattern>
+				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<unitPattern count="other">{0}公噸</unitPattern>
@@ -8308,7 +8266,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}微克</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="contributed">英噸</displayName>
+				<displayName>英噸</displayName>
 				<unitPattern count="other">{0}美噸</unitPattern>
 			</unit>
 			<unit type="mass-stone">
@@ -8327,16 +8285,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}克拉</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<unitPattern count="other" draft="contributed">{0}達爾頓</unitPattern>
+				<unitPattern count="other">{0}達爾頓</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<unitPattern count="other" draft="contributed">{0}地球質量</unitPattern>
+				<unitPattern count="other">{0}地球質量</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<unitPattern count="other" draft="contributed">{0}太陽質量</unitPattern>
+				<unitPattern count="other">{0}太陽質量</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<unitPattern count="other" draft="contributed">{0}格林</unitPattern>
+				<unitPattern count="other">{0}格林</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<unitPattern count="other">{0}吉瓦</unitPattern>
@@ -8363,53 +8321,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}psi</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
-				<unitPattern count="other" draft="contributed">{0}英吋汞柱</unitPattern>
+				<unitPattern count="other">{0}英吋汞柱</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<unitPattern count="other" draft="contributed">{0}巴</unitPattern>
+				<unitPattern count="other">{0}巴</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<unitPattern count="other">{0}毫巴</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<unitPattern count="other" draft="contributed">{0}atm</unitPattern>
+				<unitPattern count="other">{0}atm</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<unitPattern count="other" draft="contributed">{0}帕</unitPattern>
+				<unitPattern count="other">{0}帕</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<unitPattern count="other">{0}百帕</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
-				<unitPattern count="other" draft="contributed">{0}千帕</unitPattern>
+				<unitPattern count="other">{0}千帕</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
-				<unitPattern count="other" draft="contributed">{0}兆帕</unitPattern>
+				<unitPattern count="other">{0}兆帕</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<unitPattern count="other">{0}公里/小時</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<unitPattern count="other" draft="contributed">{0}公尺/秒</unitPattern>
+				<unitPattern count="other">{0}公尺/秒</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<unitPattern count="other">{0}英里/小時</unitPattern>
 			</unit>
 			<unit type="speed-beaufort">
-				<unitPattern count="other" draft="contributed">蒲福風級{0}級</unitPattern>
+				<unitPattern count="other">蒲福風級{0}級</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 			</unit>
 			<unit type="temperature-kelvin">
-				<displayName draft="contributed">K</displayName>
+				<displayName>K</displayName>
 				<unitPattern count="other">{0}克耳文</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<unitPattern count="other" draft="contributed">{0}磅英尺</unitPattern>
+				<unitPattern count="other">{0}磅英尺</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
-				<unitPattern count="other" draft="contributed">{0}牛頓米</unitPattern>
+				<unitPattern count="other">{0}牛頓米</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<unitPattern count="other">{0}立方公里</unitPattern>
@@ -8440,7 +8398,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-liter">
 				<unitPattern count="other">{0}升</unitPattern>
-				<perUnitPattern draft="contributed">{0}/L</perUnitPattern>
+				<perUnitPattern>{0}/L</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<unitPattern count="other">{0}公合</unitPattern>
@@ -8465,11 +8423,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-gallon">
 				<unitPattern count="other">{0}加侖</unitPattern>
-				<perUnitPattern draft="contributed">{0}/gal</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<unitPattern count="other">{0}英制加侖</unitPattern>
-				<perUnitPattern draft="contributed">{0}/galIm</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<unitPattern count="other">{0}夸脫</unitPattern>
@@ -8484,37 +8440,45 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}液盎司</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<unitPattern count="other" draft="contributed">{0}英液盎司</unitPattern>
+				<unitPattern count="other">{0}英液盎司</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
-				<unitPattern count="other" draft="contributed">{0}匙</unitPattern>
+				<unitPattern count="other">{0}匙</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<unitPattern count="other">{0}茶匙</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<unitPattern count="other" draft="contributed">{0}桶</unitPattern>
+				<unitPattern count="other">{0}桶</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<unitPattern count="other" draft="contributed">{0}甜品匙</unitPattern>
+				<unitPattern count="other">{0}甜品匙</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<unitPattern count="other">{0}甜品匙</unitPattern>
 			</unit>
 			<unit type="volume-drop">
-				<unitPattern count="other" draft="contributed">{0}滴</unitPattern>
+				<unitPattern count="other">{0}滴</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<unitPattern count="other" draft="contributed">{0}打蘭</unitPattern>
+				<unitPattern count="other">{0}打蘭</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
-				<unitPattern count="other" draft="contributed">{0}量酒杯</unitPattern>
+				<unitPattern count="other">{0}量酒杯</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
-				<unitPattern count="other" draft="contributed">{0}小撮</unitPattern>
+				<unitPattern count="other">{0}小撮</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
-				<unitPattern count="other" draft="contributed">{0}英制夸脫</unitPattern>
+				<unitPattern count="other">{0}英制夸脫</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>夜</displayName>
+				<unitPattern count="other">{0}夜</unitPattern>
+				<perUnitPattern>{0}/夜</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ void GCTraceTimeLoggerImpl::log_end(Ticks end) {
     size_t used_before_m = _heap_usage_before / M;
     size_t used_m = heap->used() / M;
     size_t capacity_m = heap->capacity() / M;
-    out.print(" " SIZE_FORMAT "M->" SIZE_FORMAT "M("  SIZE_FORMAT "M)", used_before_m, used_m, capacity_m);
+    out.print(" %zuM->%zuM(%zuM)", used_before_m, used_m, capacity_m);
   }
 
   out.print_cr(" %.3fms", duration_in_ms);

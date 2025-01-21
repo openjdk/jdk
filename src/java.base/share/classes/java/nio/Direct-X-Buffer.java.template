@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,10 @@ import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.Objects;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
@@ -156,9 +159,10 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
+    // and JavaNioAccess.newDirectByteBuffer(int).
     // The long-valued capacity is restricted to int range.
     //
-    private Direct$Type$Buffer(long addr, long cap) {
+    Direct$Type$Buffer(long addr, long cap) {
         super(-1, 0, checkCapacity(cap), (int)cap, null);
         address = addr;
         cleaner = null;
@@ -528,6 +532,24 @@ class Direct$Type$Buffer$RW$$BO$
     }
 #end[char]
 
+#if[byte]
+    @ForceInline
+    @Override
+    int scaleShifts() {
+        return 0;
+    }
+
+    @ForceInline
+    @Override
+    AbstractMemorySegmentImpl heapSegment(Object base,
+                                          long offset,
+                                          long length,
+                                          boolean readOnly,
+                                          MemorySessionImpl bufferScope) {
+        // Direct buffers are not backed by an array.
+        throw new UnsupportedOperationException();
+    }
+#end[byte]
 
 #if[byte]
     // #BIN

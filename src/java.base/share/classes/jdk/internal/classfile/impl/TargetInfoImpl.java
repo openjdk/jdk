@@ -24,9 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.List;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeAnnotation.*;
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 

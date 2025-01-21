@@ -25,14 +25,12 @@
  */
 package jdk.internal.classfile.impl;
 
-
-import java.util.Arrays;
-
 import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
+import java.util.Arrays;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;

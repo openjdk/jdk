@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
+#include <string.h>
 
 const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
 
@@ -119,14 +120,35 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
   int written = 0;
   const bool use_decorations = !_decorators.is_empty();
 
-  if (use_decorations) {
-    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
-  }
-
   if (!_fold_multilines) {
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+    const char* base = msg;
+    int decorator_padding = 0;
+    if (use_decorations) {
+      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), decorator_padding);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+    }
+    written += decorator_padding;
+
+    // Search for newlines in the string and repeatedly print the substrings that end
+    // with each newline.
+    const char* next = strstr(msg, "\n");
+    while (next != nullptr) {  // We have some newlines to print
+      int to_print = next - base;
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%.*s\n", to_print, base), written);
+      if (use_decorations) {
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "[%*c] ", decorator_padding - 2, ' '), written); // Substracting 2 because decorator_padding includes the brackets
+      }
+      base = next + 1;
+      next = strstr(base, "\n");
+    }
+
+    // Print the end of the message
+    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", base), written);
   } else {
+    if (use_decorations) {
+      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+    }
     char *dupstr = os::strdup_check_oom(msg, mtLogging);
     char *cur = dupstr;
     char *next;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1008,7 +1008,7 @@ static void _fatal() {
     }
   }
   intx current_thread_id = os::current_thread_id();
-  fatal("thread " INTX_FORMAT ": Fatal error in JVMCI shared library", current_thread_id);
+  fatal("thread %zd: Fatal error in JVMCI shared library", current_thread_id);
 }
 
 JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) :
@@ -1678,14 +1678,12 @@ Klass* JVMCIRuntime::get_klass_by_name_impl(Klass*& accessing_klass,
   }
 
   Handle loader;
-  Handle domain;
   if (accessing_klass != nullptr) {
     loader = Handle(THREAD, accessing_klass->class_loader());
-    domain = Handle(THREAD, accessing_klass->protection_domain());
   }
 
   Klass* found_klass = require_local ?
-                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader, domain) :
+                         SystemDictionary::find_instance_or_array_klass(THREAD, sym, loader) :
                          SystemDictionary::find_constrained_instance_or_array_klass(THREAD, sym, loader);
 
   // If we fail to find an array klass, look again for its element type.

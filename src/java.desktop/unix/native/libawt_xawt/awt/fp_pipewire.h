@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ void (*fp_pw_stream_destroy)(struct pw_stream *stream);
 
 
 void (*fp_pw_init)(int *argc, char **argv[]);
-void (*fp_pw_deinit)(void);
 
 struct pw_core *
 (*fp_pw_context_connect_fd)(struct pw_context *context,

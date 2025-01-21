@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1707,6 +1707,12 @@ public:
   }
 
   ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
+  ~ThreadDumper() {
+    for (int index = 0; index < _frames->length(); index++) {
+      delete _frames->at(index);
+    }
+    delete _frames;
+  }
 
   // affects frame_count
   void add_oom_frame(Method* oome_constructor) {
@@ -1875,9 +1881,12 @@ void ThreadDumper::dump_stack_refs(AbstractDumpWriter * writer) {
         // native frame
         blk.set_frame_number(depth);
         if (is_top_frame) {
-          // JNI locals for the top frame.
-          assert(_java_thread != nullptr, "impossible for unmounted vthread");
-          _java_thread->active_handles()->oops_do(&blk);
+          // JNI locals for the top frame if mounted
+          assert(_java_thread != nullptr || jvf->method()->is_synchronized()
+                 || jvf->method()->is_object_wait0(), "impossible for unmounted vthread");
+          if (_java_thread != nullptr) {
+            _java_thread->active_handles()->oops_do(&blk);
+          }
         } else {
           if (last_entry_frame != nullptr) {
             // JNI locals for the entry frame

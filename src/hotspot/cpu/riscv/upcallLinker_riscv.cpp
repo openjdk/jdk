@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -267,8 +267,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   __ push_cont_fastpath(xthread);
 
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jalr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jalr(t1);
 
   __ pop_cont_fastpath(xthread);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,10 @@
 #include "utilities/stringUtils.hpp"
 
 #define COMPILER_TRACE_AUTO_VECTORIZATION_TAG(flags) \
-  flags(POINTER_ANALYSIS,     "Trace VPointer (verbose)") \
+  flags(POINTER_PARSING,      "Trace VPointer/MemPointer parsing") \
+  flags(POINTER_ALIASING,     "Trace VPointer/MemPointer aliasing") \
+  flags(POINTER_ADJACENCY,    "Trace VPointer/MemPointer adjacency") \
+  flags(POINTER_OVERLAP,      "Trace VPointer/MemPointer overlap") \
   flags(PRECONDITIONS,        "Trace VLoop::check_preconditions") \
   flags(LOOP_ANALYZER,        "Trace VLoopAnalyzer::setup_submodules") \
   flags(MEMORY_SLICES,        "Trace VLoopMemorySlices") \

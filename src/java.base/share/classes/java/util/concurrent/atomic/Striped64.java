@@ -380,17 +380,12 @@ abstract class Striped64 extends Number {
 
         BASE = MhUtil.findVarHandle(l1, "base", long.class);
         CELLSBUSY = MhUtil.findVarHandle(l1, "cellsBusy", int.class);
-            @SuppressWarnings("removal")
-        MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<>() {
-                        public MethodHandles.Lookup run() {
-                            try {
-                                return MethodHandles.privateLookupIn(Thread.class, MethodHandles.lookup());
-                            } catch (ReflectiveOperationException e) {
-                                throw new ExceptionInInitializerError(e);
-                            }
-                        }});
-        THREAD_PROBE = MhUtil.findVarHandle(l2, "threadLocalRandomProbe", int.class);
+        try {
+            MethodHandles.Lookup l2 = MethodHandles.privateLookupIn(Thread.class, l1);
+            THREAD_PROBE = MhUtil.findVarHandle(l2, "threadLocalRandomProbe", int.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
     }
 
 }

@@ -25,19 +25,19 @@
 
 package jdk.internal.classfile.impl;
 
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Consumer;
-
 import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
 
 import static java.util.Objects.requireNonNull;

@@ -28,7 +28,6 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -126,13 +125,13 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   assert(data->lock()->owned_by_self(), "Must hold the lock");
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  if (heap->is_concurrent_mark_in_progress()) {
-    ShenandoahKeepAliveClosure cl;
-    data->oops_do(&cl);
-  } else if (heap->is_concurrent_weak_root_in_progress() ||
-             heap->is_concurrent_strong_root_in_progress() ) {
+  if (heap->is_concurrent_weak_root_in_progress() ||
+      heap->is_concurrent_strong_root_in_progress()) {
     ShenandoahEvacOOMScope evac_scope;
     heal_nmethod_metadata(data);
+  } else if (heap->is_concurrent_mark_in_progress()) {
+    ShenandoahKeepAliveClosure cl;
+    data->oops_do(&cl);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be

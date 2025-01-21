@@ -27,6 +27,7 @@ import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
 import nsk.share.jdi.JDIThreadFactory;
+import jdk.test.lib.thread.VThreadPinner;
 
 import java.io.*;
 import java.util.*;
@@ -152,6 +153,17 @@ class MyThread extends Thread {
     }
 
     public void run() {
+        boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+        if (vthreadMode) {
+            // JVMTI StopThread is only supported for mounted virtual threads. We need to
+            // pin the virtual threads so they remain mounted.
+            VThreadPinner.runPinned(() -> test());
+        } else {
+            test();
+        }
+    }
+
+    public void test() {
         // Concatenate strings in advance to avoid lambda calculations later
         String ThreadFinished = "Thread finished: " + this.name;
         String CaughtExpected = "Thread " + this.name + " caught expected async exception: " + expectedException;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,8 @@ public class GCMLargeDataKAT {
 
     byte[] encrypt(int inLen) {
         try {
-            cipher = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+            cipher = Cipher.getInstance("AES/GCM/NoPadding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             cipher.init(Cipher.ENCRYPT_MODE, key, spec);
             return cipher.doFinal(plaintext, 0, inLen);
         } catch (Exception e) {
@@ -125,7 +126,8 @@ public class GCMLargeDataKAT {
             return false;
         }
         try {
-            cipher = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+            cipher = Cipher.getInstance("AES/GCM/NoPadding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             cipher.init(Cipher.DECRYPT_MODE, key, spec);
             result = cipher.doFinal(data);
         } catch (Exception e) {

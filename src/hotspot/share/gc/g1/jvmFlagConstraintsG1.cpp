@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   // Default value of G1HeapRegionSize=0 means will be set ergonomically.
   if (FLAG_IS_CMDLINE(G1HeapRegionSize) && (value < G1HeapRegionBounds::min_size())) {
     JVMFlag::printError(verbose,
-                        "G1HeapRegionSize (" SIZE_FORMAT ") must be "
+                        "G1HeapRegionSize (%zu) must be "
                         "greater than or equal to ergonomic heap region minimum size\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
@@ -123,8 +123,8 @@ JVMFlag::Error G1MaxNewSizePercentConstraintFunc(uint value, bool verbose) {
 JVMFlag::Error MaxGCPauseMillisConstraintFuncG1(uintx value, bool verbose) {
   if (UseG1GC && FLAG_IS_CMDLINE(MaxGCPauseMillis) && (value >= GCPauseIntervalMillis)) {
     JVMFlag::printError(verbose,
-                        "MaxGCPauseMillis (" UINTX_FORMAT ") must be "
-                        "less than GCPauseIntervalMillis (" UINTX_FORMAT ")\n",
+                        "MaxGCPauseMillis (%zu) must be "
+                        "less than GCPauseIntervalMillis (%zu)\n",
                         value, GCPauseIntervalMillis);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -137,7 +137,7 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
     if (FLAG_IS_CMDLINE(GCPauseIntervalMillis)) {
       if (value < 1) {
         JVMFlag::printError(verbose,
-                            "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
+                            "GCPauseIntervalMillis (%zu) must be "
                             "greater than or equal to 1\n",
                             value);
         return JVMFlag::VIOLATES_CONSTRAINT;
@@ -152,8 +152,8 @@ JVMFlag::Error GCPauseIntervalMillisConstraintFuncG1(uintx value, bool verbose) 
 
       if (value <= MaxGCPauseMillis) {
         JVMFlag::printError(verbose,
-                            "GCPauseIntervalMillis (" UINTX_FORMAT ") must be "
-                            "greater than MaxGCPauseMillis (" UINTX_FORMAT ")\n",
+                            "GCPauseIntervalMillis (%zu) must be "
+                            "greater than MaxGCPauseMillis (%zu)\n",
                             value, MaxGCPauseMillis);
         return JVMFlag::VIOLATES_CONSTRAINT;
       }
@@ -171,7 +171,7 @@ JVMFlag::Error NewSizeConstraintFuncG1(size_t value, bool verbose) {
   // So maximum of NewSize should be 'max_juint * 1M'
   if (UseG1GC && (value > (max_juint * 1 * M))) {
     JVMFlag::printError(verbose,
-                        "NewSize (" SIZE_FORMAT ") must be less than ergonomic maximum value\n",
+                        "NewSize (%zu) must be less than ergonomic maximum value\n",
                         value);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }

@@ -30,17 +30,16 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import java.lang.classfile.ClassHierarchyResolver;
-
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.ClassFile.ACC_INTERFACE;
 import static java.lang.classfile.constantpool.PoolEntry.*;
+import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 

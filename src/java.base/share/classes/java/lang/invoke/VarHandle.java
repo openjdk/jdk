@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2371,9 +2371,9 @@ public abstract sealed class VarHandle implements Constable
          * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
          * for an instance field.
          *
-         * @param name the unqualified name of the field
          * @param declaringClass a {@link ClassDesc} describing the declaring class,
          *                       for field var handles
+         * @param name the unqualified name of the field
          * @param fieldType a {@link ClassDesc} describing the type of the field
          * @return the {@linkplain VarHandleDesc}
          * @throws NullPointerException if any of the arguments are null
@@ -2390,9 +2390,9 @@ public abstract sealed class VarHandle implements Constable
          * Returns a {@linkplain VarHandleDesc} corresponding to a {@link VarHandle}
          * for a static field.
          *
-         * @param name the unqualified name of the field
          * @param declaringClass a {@link ClassDesc} describing the declaring class,
          *                       for field var handles
+         * @param name the unqualified name of the field
          * @param fieldType a {@link ClassDesc} describing the type of the field
          * @return the {@linkplain VarHandleDesc}
          * @throws NullPointerException if any of the arguments are null

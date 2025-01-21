@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
@@ -116,6 +116,8 @@ class VM_Version : public Abstract_VM_Version {
   //
   // Zfh Half-Precision Floating-Point instructions
   //
+  // Zicond Conditional operations
+  //
   // Zicsr Control and Status Register (CSR) Instructions
   // Zifencei Instruction-Fetch Fence
   // Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space.
@@ -156,14 +158,17 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZcb))         \
   decl(ext_Zfh         , "Zfh"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfh))         \
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zicntr      , "Zicntr"      , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
   decl(ext_Ztso        , "Ztso"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZtso))        \
   decl(ext_Zihintpause , "Zihintpause" , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZihintpause)) \
   decl(ext_Zacas       , "Zacas"       , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZacas))       \
   decl(ext_Zvbb        , "Zvbb"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvbb))        \
+  decl(ext_Zvbc        , "Zvbc"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvbc))        \
   decl(ext_Zvfh        , "Zvfh"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvfh))        \
   decl(ext_Zvkn        , "Zvkn"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvkn))        \
+  decl(ext_Zicond      , "Zicond"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicond))      \
   decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
   decl(marchid         , "ArchId"      , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
   decl(mimpid          , "ImpId"       , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
@@ -223,6 +228,7 @@ class VM_Version : public Abstract_VM_Version {
     RV_ENABLE_EXTENSION(UseZicbom)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
     RV_ENABLE_EXTENSION(UseZicboz)                  \
+    RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
 
   static void useRVA23U64Profile();

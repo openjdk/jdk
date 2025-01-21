@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222 8320618 8335475 8338623 8338661
+ * @bug 8305990 8320222 8320618 8335475 8338623 8338661 8343436
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -33,7 +33,7 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.StackMapFrameInfo;
 import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -344,8 +344,27 @@ class StackMapsTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testI2LCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var bytes = cf.build(ClassDesc.of("Test"), clb -> clb
+            .withMethodBody("a", MTD_long_int, ACC_STATIC, cob ->
+                    cob.iload(0)
+                       .i2l()
+                       .lreturn()));
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var code = (CodeAttribute) method.code().orElseThrow();
+            assertEquals(1, code.maxLocals());
+            assertEquals(2, code.maxStack());
+        }
+    }
+
     private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
     private static final MethodTypeDesc MTD_int_String = MethodTypeDesc.of(CD_int, CD_String);
+    private static final MethodTypeDesc MTD_long_int = MethodTypeDesc.of(CD_long, CD_int);
 
     @ParameterizedTest
     @EnumSource(ClassFile.StackMapsOption.class)

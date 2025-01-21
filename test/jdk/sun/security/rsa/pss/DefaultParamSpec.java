@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,12 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.Date;
+import jdk.test.lib.security.SecurityUtils;
 
 /**
  * @test
  * @bug 8242811
+ * @library /test/lib
  * @modules java.base/sun.security.x509
  * @summary AlgorithmId::getDefaultAlgorithmParameterSpec returns incompatible
  *          PSSParameterSpec for an RSASSA-PSS key
@@ -42,7 +44,7 @@ public class DefaultParamSpec {
     public static void main(String[] args) throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSASSA-PSS");
         KeyFactory kf = KeyFactory.getInstance("RSASSA-PSS");
-        kpg.initialize(new RSAKeyGenParameterSpec(2048,
+        kpg.initialize(new RSAKeyGenParameterSpec(SecurityUtils.getTestKeySize("RSA"),
                 RSAKeyGenParameterSpec.F4,
                 new PSSParameterSpec(
                         "SHA-384", "MGF1",

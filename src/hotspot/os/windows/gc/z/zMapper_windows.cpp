@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@
 // they will be split before being used.
 
 #define fatal_error(msg, addr, size)                  \
-  fatal(msg ": " PTR_FORMAT " " SIZE_FORMAT "M (%d)", \
+  fatal(msg ": " PTR_FORMAT " %zuM (%d)", \
         (addr), (size) / M, GetLastError())
 
 zaddress_unsafe ZMapper::reserve(zaddress_unsafe addr, size_t size) {
@@ -251,7 +251,7 @@ void ZMapper::unreserve_for_shared_awe(zaddress_unsafe addr, size_t size) {
     );
 
   if (!res) {
-    fatal("Failed to unreserve memory: " PTR_FORMAT " " SIZE_FORMAT "M (%d)",
+    fatal("Failed to unreserve memory: " PTR_FORMAT " %zuM (%d)",
           untype(addr), size / M, GetLastError());
   }
 }

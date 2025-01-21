@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,12 +105,7 @@ public class StateTestService {
             reply_port = Integer.parseInt(args[0]);
             logDir = System.getProperty("test.classes");
 
-            Channel c = null;
-            try {
-                c = System.inheritedChannel();
-            } catch (SecurityException se) {
-                // ignore
-            }
+            Channel c = System.inheritedChannel();
             if (c == null) {
                 println("c == null");
                 reply("FAILED");

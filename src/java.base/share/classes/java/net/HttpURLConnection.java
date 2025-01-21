@@ -50,18 +50,6 @@ import java.util.Date;
  * <a href="doc-files/net-properties.html#Proxies">Proxy settings</a> as well as
  * <a href="doc-files/net-properties.html#MiscHTTP"> various other settings</a>.
  * </P>
- * <p>
- * <b>Security permissions</b>
- * <p>
- * If a security manager is installed, and if a method is called which results in an
- * attempt to open a connection, the caller must possess either:
- * <ul><li>a "connect" {@link SocketPermission} to the host/port combination of the
- * destination URL or</li>
- * <li>a {@link URLPermission} that permits this request.</li>
- * </ul><p>
- * If automatic redirection is enabled, and this request is redirected to another
- * destination, then the caller must also have permission to connect to the
- * redirected host/URL.
  *
  * @see     java.net.HttpURLConnection#disconnect()
  * @since 1.1
@@ -374,27 +362,12 @@ public abstract class HttpURLConnection extends URLConnection {
     /**
      * Sets whether HTTP redirects  (requests with response code 3xx) should
      * be automatically followed by this class.  True by default.
-     * <p>
-     * If there is a security manager, this method first calls
-     * the security manager's {@code checkSetFactory} method
-     * to ensure the operation is allowed.
-     * This could result in a SecurityException.
      *
      * @param set a {@code boolean} indicating whether or not
      * to follow HTTP redirects.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkSetFactory} method doesn't
-     *             allow the operation.
-     * @see        SecurityManager#checkSetFactory
      * @see #getFollowRedirects()
      */
     public static void setFollowRedirects(boolean set) {
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            // seems to be the best check here...
-            sec.checkSetFactory();
-        }
         followRedirects = set;
     }
 
@@ -460,9 +433,6 @@ public abstract class HttpURLConnection extends URLConnection {
      * @param method the HTTP method
      * @throws    ProtocolException if the method cannot be reset or if
      *              the requested method isn't valid for HTTP.
-     * @throws    SecurityException if a security manager is set and the
-     *              method is "TRACE", but the "allowHttpTrace"
-     *              NetPermission is not granted.
      * @see #getRequestMethod()
      */
     public void setRequestMethod(String method) throws ProtocolException {
@@ -476,13 +446,6 @@ public abstract class HttpURLConnection extends URLConnection {
 
         for (int i = 0; i < methods.length; i++) {
             if (methods[i].equals(method)) {
-                if (method.equals("TRACE")) {
-                    @SuppressWarnings("removal")
-                    SecurityManager s = System.getSecurityManager();
-                    if (s != null) {
-                        s.checkPermission(new NetPermission("allowHttpTrace"));
-                    }
-                }
                 this.method = method;
                 return;
             }

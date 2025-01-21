@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ class VTransformCmpVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
 class VTransformMemVectorNode;
+class VTransformLoadVectorNode;
+class VTransformStoreVectorNode;
 
 // Result from VTransformNode::apply
 class VTransformApplyResult {
@@ -167,6 +169,7 @@ public:
   void optimize(VTransform& vtransform);
   bool schedule();
   float cost() const;
+  bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
 private:
@@ -232,6 +235,7 @@ public:
   void optimize() { return _graph.optimize(*this); }
   bool schedule() { return _graph.schedule(); }
   float cost() const { return _graph.cost(); }
+  bool has_store_to_load_forwarding_failure() const { return _graph.has_store_to_load_forwarding_failure(_vloop_analyzer); }
   void apply();
 
 private:
@@ -493,7 +497,12 @@ public:
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
   virtual VTransformMemVectorNode* isa_MemVector() { return nullptr; }
-  virtual bool is_load_or_store_in_loop() const { return false; }
+  virtual VTransformLoadVectorNode* isa_LoadVector() { return nullptr; }
+  virtual VTransformStoreVectorNode* isa_StoreVector() { return nullptr; }
+
+  virtual bool is_load_in_loop() const { return false; } // TODO do we need this?
+  virtual bool is_load_or_store_in_loop() const { return false; } // TODO do we need this?
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const { ShouldNotReachHere(); } // TODO do we need argument?
 
   virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
@@ -518,7 +527,9 @@ public:
     VTransformNode(vtransform, prototype, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
+  virtual bool is_load_in_loop() const override { return _node->is_Load(); }
   virtual bool is_load_or_store_in_loop() const override { return _node->is_Load() || _node->is_Store(); }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return vloop_analyzer.vpointers().vpointer(node()->as_Mem()); }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
@@ -533,6 +544,7 @@ public:
   VTransformInputScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
     VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
+  virtual bool is_load_in_loop() const override { return false; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
@@ -698,14 +710,15 @@ private:
 
 class VTransformMemVectorNode : public VTransformVectorNode {
 private:
-  VPointer const* _vpointer;
+  const VPointer _vpointer; // with size of the vector
 
 public:
-  VTransformMemVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req, const VPointer* vpointer) :
+  VTransformMemVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req, const VPointer& vpointer) :
     VTransformVectorNode(vtransform, prototype, req), _vpointer(vpointer) {}
   virtual VTransformMemVectorNode* isa_MemVector() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
   VPointer const* vpointer() const { return _vpointer; }
+  virtual const VPointer& vpointer(const VLoopAnalyzer& vloop_analyzer) const override { return _vpointer; }
 };
 
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
@@ -715,14 +728,18 @@ private:
   GrowableArray<Node*> _nodes;
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer* vpointer, const LoadNode::ControlDependency control_dependency) :
+  VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer& vpointer, const LoadNode::ControlDependency control_dependency) :
     VTransformMemVectorNode(vtransform, prototype, 3, vpointer),
     _control_dependency(control_dependency),
     _nodes(vtransform.arena(),
            vector_length(),
            vector_length(),
 	   nullptr) {}
-  LoadNode::ControlDependency control_dependency() const;
+
+  virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
+  virtual bool is_load_in_loop() const override { return true; }
+
+  LoadNode::ControlDependency control_dependency() const; // TODO rm?
 
   void set_nodes(const Node_List* pack) {
     assert(pack->size() == vector_length(), "must have same length");
@@ -739,8 +756,10 @@ public:
 class VTransformStoreVectorNode : public VTransformMemVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer* vpointer) :
+  VTransformStoreVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer& vpointer) :
     VTransformMemVectorNode(vtransform, prototype, 4, vpointer) {}
+  virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
+  virtual bool is_load_in_loop() const override { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)

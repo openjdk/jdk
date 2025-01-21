@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ public final class WGLGraphicsConfig
     private ContextCapabilities oglCaps;
     private final OGLContext context;
     private Object disposerReferent = new Object();
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
 
     public static native int getDefaultPixFmt(int screennum);
     private static native boolean initWGL();
@@ -99,8 +100,8 @@ public final class WGLGraphicsConfig
     }
 
     @Override
-    public Object getProxyKey() {
-        return this;
+    public SurfaceManager.ProxyCache getSurfaceDataProxyCache() {
+        return surfaceDataProxyCache;
     }
 
     @Override

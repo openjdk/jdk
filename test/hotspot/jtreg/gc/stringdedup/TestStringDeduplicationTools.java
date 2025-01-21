@@ -57,7 +57,6 @@ class TestStringDeduplicationTools {
     private static byte[] dummy;
 
     private static String selectedGC = null;
-    private static String selectedGCMode = null;
 
     static {
         try {
@@ -74,9 +73,6 @@ class TestStringDeduplicationTools {
 
     public static void selectGC(String[] args) {
         selectedGC = args[0];
-        if (args.length > 1) {
-            selectedGCMode = args[1];
-        }
     }
 
     private static Object getValue(String string) {
@@ -137,14 +133,8 @@ class TestStringDeduplicationTools {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("ZGC")) {
-                    // Generational ZGC only triggers string deduplications from major collections
+                    // ZGC only triggers string deduplications from major collections
                     if (info.getGcName().startsWith("ZGC Major") && "end of GC cycle".equals(info.getGcAction())) {
-                        gcCount++;
-                    }
-
-                    // Single-gen ZGC
-                    if (!info.getGcName().startsWith("ZGC Major") && !info.getGcName().startsWith("ZGC Minor") &&
-                            "end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("G1")) {
@@ -325,9 +315,6 @@ class TestStringDeduplicationTools {
 
         ArrayList<String> args = new ArrayList<String>();
         args.add("-XX:+Use" + selectedGC + "GC");
-        if (selectedGCMode != null) {
-            args.add(selectedGCMode);
-        }
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 

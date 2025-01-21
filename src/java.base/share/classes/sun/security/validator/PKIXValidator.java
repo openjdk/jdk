@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
-import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.AlgorithmChecker;
 import sun.security.provider.certpath.PKIXExtendedParameters;
 import sun.security.util.SecurityProperties;
@@ -56,8 +55,8 @@ public final class PKIXValidator extends Validator {
      * manager. Typically, this will only work if the PKIX implementation
      * supports CRL distribution points as we do not manually set up CertStores.
      */
-    private static final boolean checkTLSRevocation = GetBooleanAction
-            .privilegedGetProperty("com.sun.net.ssl.checkRevocation");
+    private static final boolean checkTLSRevocation =
+            Boolean.getBoolean("com.sun.net.ssl.checkRevocation");
 
     /**
      * System or security property that if set (or set to "true"), allows trust
@@ -67,7 +66,7 @@ public final class PKIXValidator extends Validator {
     private static final boolean ALLOW_NON_CA_ANCHOR = allowNonCaAnchor();
     private static boolean allowNonCaAnchor() {
         String prop = SecurityProperties
-                .privilegedGetOverridable("jdk.security.allowNonCaAnchor");
+                .getOverridableProperty("jdk.security.allowNonCaAnchor");
         return prop != null && (prop.isEmpty() || prop.equalsIgnoreCase("true"));
     }
 

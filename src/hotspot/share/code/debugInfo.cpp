@@ -382,7 +382,7 @@ void ConstantOopReadValue::print_on(outputStream* st) const {
   if (value()() != nullptr) {
     value()()->print_value_on(st);
   } else {
-    st->print("nullptr");
+    st->print("null");
   }
 }
 

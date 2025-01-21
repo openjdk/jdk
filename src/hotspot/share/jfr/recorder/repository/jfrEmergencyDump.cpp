@@ -109,8 +109,6 @@ static void close_emergency_dump_file() {
 }
 
 static const char* create_emergency_dump_path() {
-  assert(is_path_empty(), "invariant");
-
   const size_t path_len = get_dump_directory();
   if (path_len == 0) {
     return nullptr;

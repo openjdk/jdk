@@ -159,6 +159,12 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
+  if (!is_readable_pointer(epc)) {
+    // Try to recover from calling into bad memory
+    // Assume new frame has not been set up, the same as
+    // compiled frame stack bang
+    return fetch_compiled_frame_from_context(ucVoid);
+  }
   return frame(sp, fp, epc);
 }
 
@@ -442,23 +448,6 @@ void os::print_context(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == nullptr) return;
-
-  const ucontext_t* uc = (const ucontext_t*)context;
-
-  address sp = (address)os::Bsd::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
-  st->cr();
-}
-
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   const int register_count = 29 /* x0-x28 */ + 3 /* fp, lr, sp */;
   int n = continuation;
@@ -512,6 +501,7 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 }
 
 extern "C" {
+  // needs local assembler label '1:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
@@ -534,14 +524,14 @@ extern "C" {
                                       // to entry for case SpinWait::NOP
         "  add  %[d], %[d], %[o]  \n"
         "  br   %[d]              \n"
-        "  b    SpinPause_return  \n" // case SpinWait::NONE  (-1)
+        "  b    1f                \n" // case SpinWait::NONE  (-1)
         "  nop                    \n" // padding
         "  nop                    \n" // case SpinWait::NOP   ( 0)
-        "  b    SpinPause_return  \n"
+        "  b    1f                \n"
         "  isb                    \n" // case SpinWait::ISB   ( 1)
-        "  b    SpinPause_return  \n"
+        "  b    1f                \n"
         "  yield                  \n" // case SpinWait::YIELD ( 2)
-        "SpinPause_return:        \n"
+        "1:        \n"
         : [d]"=&r"(br_dst)
         : [o]"r"(off)
         : "memory");

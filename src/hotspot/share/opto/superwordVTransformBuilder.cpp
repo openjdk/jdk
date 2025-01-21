@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,6 +176,7 @@ void SuperWordVTransformBuilder::build_outputs() {
 
 // Create a vtnode for each pack. No in/out edges set yet.
 VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(const Node_List* pack) const {
+  uint pack_size = pack->size();
   Node* p0 = pack->at(0);
   int opc = p0->Opcode();
   VTransformVectorNode* vtn = nullptr;
@@ -183,15 +184,20 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   BasicType bt = prototype.element_basic_type();
 
   if (p0->is_Load()) {
-    const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Load());
+    const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+
     const LoadNode::ControlDependency dep = load_control_dependency(pack);;
+
     VTransformLoadVectorNode* load;
-    load = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vpointer, dep);
-    load->set_nodes(pack);
+    load = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vector_p, dep);
+    load->set_nodes(pack); // TODO do we still need this?
     vtn = load;
   } else if (p0->is_Store()) {
-    const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Store());
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vpointer);
+    const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vector_p);
   } else if (p0->is_Cmp()) {
     vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, prototype, p0->req());
   } else if (p0->is_Bool()) {
@@ -293,7 +299,13 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       return shift_count;
     } else {
       // Replicate the scalar same_input to every vector element.
-      BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
+      // In some rare case, p0 is Convert node such as a ConvL2I: all
+      // ConvL2I nodes in the pack only differ in their types.
+      // velt_basic_type(p0) is the output type of the pack. In the
+      // case of a ConvL2I, it can be int or some narrower type such
+      // as short etc. But given we replicate the input of the Convert
+      // node, we have to use the input type instead.
+      BasicType element_bt = p0->is_Convert() ? p0->in(1)->bottom_type()->basic_type() : _vloop_analyzer.types().velt_basic_type(p0);
       if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_bt == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");

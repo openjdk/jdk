@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4955844
+ * @library /test/lib
  * @summary ensure that the NONEwithRSA adapter works correctly
  * @author Andreas Sterbenz
  * @key randomness
@@ -34,17 +35,19 @@ import java.util.*;
 import java.security.*;
 
 import javax.crypto.*;
+import jdk.test.lib.security.SecurityUtils;
 
 public class NONEwithRSA {
 
     public static void main(String[] args) throws Exception {
-//      showProvider(Security.getProvider("SUN"));
+//      showProvider(Security.getProvider(System.getProperty("test.provider.name", "SUN")));
         Random random = new Random();
         byte[] b = new byte[16];
         random.nextBytes(b);
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(512);
+        String kpgAlgorithm = "RSA";
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(kpgAlgorithm);
+        kpg.initialize(SecurityUtils.getTestKeySize(kpgAlgorithm));
         KeyPair kp = kpg.generateKeyPair();
 
         Signature sig = Signature.getInstance("NONEwithRSA");
@@ -66,9 +69,11 @@ public class NONEwithRSA {
             throw new Exception("decryption failed");
         }
 
-        sig = Signature.getInstance("NONEwithRSA", "SunJCE");
+        sig = Signature.getInstance("NONEwithRSA",
+                System.getProperty("test.provider.name", "SunJCE"));
         sig.initSign(kp.getPrivate());
-        sig = Signature.getInstance("NONEwithRSA", Security.getProvider("SunJCE"));
+        sig = Signature.getInstance("NONEwithRSA", Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE")));
         sig.initSign(kp.getPrivate());
 
         try {

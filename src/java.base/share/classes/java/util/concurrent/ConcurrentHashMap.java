@@ -70,6 +70,7 @@ import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -595,7 +596,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
     /** Number of CPUS, to place bounds on some sizings */
-    static final int NCPU = Runtime.getRuntime().availableProcessors();
+    static @Stable int NCPU;
+
+    static {
+        runtimeSetup();
+    }
+
+    // Called from JVM when loading an AOT cache.
+    private static void runtimeSetup() {
+        NCPU = Runtime.getRuntime().availableProcessors();
+    }
 
     /**
      * Serialized pseudo-fields, provided only for jdk7 compatibility.
@@ -4601,6 +4611,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public static final class KeySetView<K,V> extends CollectionView<K,V,K>
         implements Set<K>, java.io.Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final V value;
         KeySetView(ConcurrentHashMap<K,V> map, V value) {  // non-public

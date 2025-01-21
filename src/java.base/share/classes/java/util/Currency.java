@@ -32,8 +32,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ConcurrentHashMap;
@@ -103,8 +101,8 @@ import sun.util.logging.PlatformLogger;
  * and/or minor unit are encountered, those entries are ignored and the remainder
  * of entries in file are processed.
  *
- * <p>
- * It is recommended to use {@link java.math.BigDecimal} class while dealing
+ * @apiNote
+ * It is recommended to use the {@link java.math.BigDecimal} class while dealing
  * with {@code Currency} or monetary values as it provides better handling of floating
  * point numbers and their operations.
  *
@@ -213,63 +211,57 @@ public final class Currency implements Serializable {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
     private static void initStatic() {
-        AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public Void run() {
-                try {
-                    try (InputStream in = getClass().getResourceAsStream("/java/util/currency.data")) {
-                        if (in == null) {
-                            throw new InternalError("Currency data not found");
-                        }
-                        DataInputStream dis = new DataInputStream(new BufferedInputStream(in));
-                        if (dis.readInt() != MAGIC_NUMBER) {
-                            throw new InternalError("Currency data is possibly corrupted");
-                        }
-                        formatVersion = dis.readInt();
-                        if (formatVersion != VALID_FORMAT_VERSION) {
-                            throw new InternalError("Currency data format is incorrect");
-                        }
-                        dataVersion = dis.readInt();
-                        mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
-                        int scCount = dis.readInt();
-                        specialCasesList = readSpecialCases(dis, scCount);
-                        int ocCount = dis.readInt();
-                        otherCurrenciesList = readOtherCurrencies(dis, ocCount);
-                    }
-                } catch (IOException e) {
-                    throw new InternalError(e);
-                }
 
-                // look for the properties file for overrides
-                String propsFile = System.getProperty("java.util.currency.data");
-                if (propsFile == null) {
-                    propsFile = StaticProperty.javaHome() + File.separator + "lib" +
-                        File.separator + "currency.properties";
+        try {
+            try (InputStream in = Currency.class.getResourceAsStream("/java/util/currency.data")) {
+                if (in == null) {
+                    throw new InternalError("Currency data not found");
                 }
-                try {
-                    File propFile = new File(propsFile);
-                    if (propFile.exists()) {
-                        Properties props = new Properties();
-                        try (FileReader fr = new FileReader(propFile)) {
-                            props.load(fr);
-                        }
-                        Pattern propertiesPattern =
-                                Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
-                                        "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
-                                        "\\d{2}:\\d{2})?");
-                        List<CurrencyProperty> currencyEntries
-                                = getValidCurrencyData(props, propertiesPattern);
-                        currencyEntries.forEach(Currency::replaceCurrencyData);
-                    }
-                } catch (IOException e) {
-                    CurrencyProperty.info("currency.properties is ignored"
-                            + " because of an IOException", e);
+                DataInputStream dis = new DataInputStream(new BufferedInputStream(in));
+                if (dis.readInt() != MAGIC_NUMBER) {
+                    throw new InternalError("Currency data is possibly corrupted");
                 }
-                return null;
+                formatVersion = dis.readInt();
+                if (formatVersion != VALID_FORMAT_VERSION) {
+                    throw new InternalError("Currency data format is incorrect");
+                }
+                dataVersion = dis.readInt();
+                mainTable = readIntArray(dis, A_TO_Z * A_TO_Z);
+                int scCount = dis.readInt();
+                specialCasesList = readSpecialCases(dis, scCount);
+                int ocCount = dis.readInt();
+                otherCurrenciesList = readOtherCurrencies(dis, ocCount);
             }
-        });
+        } catch (IOException e) {
+            throw new InternalError(e);
+        }
+
+        // look for the properties file for overrides
+        String propsFile = System.getProperty("java.util.currency.data");
+        if (propsFile == null) {
+            propsFile = StaticProperty.javaHome() + File.separator + "lib" +
+                File.separator + "currency.properties";
+        }
+        try {
+            File propFile = new File(propsFile);
+            if (propFile.exists()) {
+                Properties props = new Properties();
+                try (FileReader fr = new FileReader(propFile)) {
+                    props.load(fr);
+                }
+                Pattern propertiesPattern =
+                        Pattern.compile("([A-Z]{3})\\s*,\\s*(\\d{3})\\s*,\\s*" +
+                                "(\\d+)\\s*,?\\s*(\\d{4}-\\d{2}-\\d{2}T\\d{2}:" +
+                                "\\d{2}:\\d{2})?");
+                List<CurrencyProperty> currencyEntries
+                        = getValidCurrencyData(props, propertiesPattern);
+                currencyEntries.forEach(Currency::replaceCurrencyData);
+            }
+        } catch (IOException e) {
+            CurrencyProperty.info("currency.properties is ignored"
+                    + " because of an IOException", e);
+        }
     }
 
     /**
@@ -494,10 +486,7 @@ public final class Currency implements Serializable {
                 }
             }
         }
-
-        @SuppressWarnings("unchecked")
-        Set<Currency> result = (Set<Currency>) available.clone();
-        return result;
+        return new HashSet<>(available);
     }
 
     /**
@@ -521,7 +510,8 @@ public final class Currency implements Serializable {
      * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the symbol returned from this method reflects
      * the value specified with that extension.
-     * <p>
+     *
+     * @implSpec
      * This is equivalent to calling
      * {@link #getSymbol(Locale)
      *     getSymbol(Locale.getDefault(Locale.Category.DISPLAY))}.
@@ -621,7 +611,8 @@ public final class Currency implements Serializable {
      * the default {@link Locale.Category#DISPLAY DISPLAY} locale.
      * If there is no suitable display name found
      * for the default locale, the ISO 4217 currency code is returned.
-     * <p>
+     *
+     * @implSpec
      * This is equivalent to calling
      * {@link #getDisplayName(Locale)
      *     getDisplayName(Locale.getDefault(Locale.Category.DISPLAY))}.
