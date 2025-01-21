@@ -553,7 +553,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // For native memory, we must add a runtime-check that "adr % ObjectAlignmentInBytes". If we
   // cannot add this runtime-check, we have no guarantee on its alignment.
   // In a future RFE we can generalize this, and add runtime-checks for the invariant as well.
-  if (_base->is_top() && !_are_speculative_checks_possible) {
+  if (!_vpointer.mem_pointer().base().is_object() && !_are_speculative_checks_possible) {
     return new EmptyAlignmentSolution("Cannot add speculative check for native memory alignment.");
   }
 

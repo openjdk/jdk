@@ -160,13 +160,14 @@ void VTransform::apply_speculative_runtime_checks() {
       MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
       if (p0 == nullptr) { continue; }
       const VPointer& vp = vpointer(p0);
-      if (!vp.base()->is_top()) { continue; }
+      if (vp.mem_pointer().base().is_object()) { continue; }
+      assert(vp.mem_pointer().base().is_native(), "VPointer base must be object or native");
 
       // We have a native memory reference. Build a runtime check for it.
       // See: AlignmentSolver::solve
       // In a future RFE we may be able to speculate on invar alignment as
       // well, and allow vectorization of more cases.
-      add_speculative_alignment_check(vp.adr(), ObjectAlignmentInBytes);
+      add_speculative_alignment_check(vp.mem_pointer().base().native(), ObjectAlignmentInBytes);
     }
   }
 }
