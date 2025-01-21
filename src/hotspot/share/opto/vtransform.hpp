@@ -735,7 +735,7 @@ public:
     _nodes(vtransform.arena(),
            vector_length(),
            vector_length(),
-	   nullptr) {}
+           nullptr) {}
 
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }

@@ -195,7 +195,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
       VTransformNode* use = vtn->out(i);
       // Or is vtn a backedge or one of its transitive defs?
       if (in_loop.test(use->_idx) ||
-	  (use->isa_LoopPhi() != nullptr && !vtn->isa_InputScalar())) {
+          (use->isa_LoopPhi() != nullptr && !vtn->isa_InputScalar())) {
         in_loop.set(vtn->_idx);
         break;
       }
