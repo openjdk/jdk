@@ -3389,17 +3389,23 @@ public class ForkJoinPool extends AbstractExecutorService
         private static final long SCHEDULERSTATE;
         private static final long ADDITIONS;
         private static final long REMOVALS;
+        static final long nanoTimeOrigin;
         static {
             U = Unsafe.getUnsafe();
             Class<DelayScheduler> klass = DelayScheduler.class;
             SCHEDULERSTATE = U.objectFieldOffset(klass, "schedulerState");
             ADDITIONS = U.objectFieldOffset(klass, "additions");
             REMOVALS = U.objectFieldOffset(klass, "removals");
+            nanoTimeOrigin = System.nanoTime();
         }
 
         DelayScheduler(ForkJoinPool p) {
             setDaemon(true);
             pool = p;
+        }
+
+        static final long now() {
+            return System.nanoTime() - nanoTimeOrigin;
         }
 
         private boolean compareAndSetSchedulerState(int c, int v) {
@@ -3447,11 +3453,10 @@ public class ForkJoinPool extends AbstractExecutorService
                 ThreadLocalRandom.localInit();
                 heap = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
                 runScheduler(pool);
+                cancelAll();
             } finally {
-                ForkJoinPool p;
                 schedulerState = STOPPED;
-                if ((p = pool) != null)
-                    p.tryTerminate(false, false);
+                pool.tryTerminate(false, false);
             }
         }
 
@@ -3474,27 +3479,29 @@ public class ForkJoinPool extends AbstractExecutorService
                         int prevState = schedulerState;
                         int hs = processPending(p, heap, heapSize);
                         waitTime = (hs > 0) ? submitReadyTasks(p, heap, hs) : 0L;
+                        boolean working = (waitTime != 0L);
                         int state = schedulerState;
-                        if (waitTime != 0L && (state & WORKING) == 0)
+                        if (working && (state & WORKING) == 0)
                             getAndBitwiseOrSchedulerState(WORKING);
                         else if (state != prevState)
                             ;
                         else if ((state & ACTIVE) != 0)
                             compareAndSetSchedulerState(state, state & ~ACTIVE);
-                        else if (waitTime != 0L || (state & WORKING) == 0 ||
+                        else if (working || (state & WORKING) == 0 ||
                                  compareAndSetSchedulerState(state,
                                                              state & ~WORKING))
                             idle = true;
                     }
                     else {
                         idle = false;
-                        Thread.interrupted(); // clear
-                        if ((schedulerState & ACTIVE) == 0)
+                        if (waitTime != 0L) // 1 usec minumum timed wait
+                            waitTime = Math.max(waitTime, 1000L);
+                        if (!Thread.interrupted() &&
+                            (schedulerState & ACTIVE) == 0)
                             U.park(false, waitTime);
                         getAndBitwiseOrSchedulerState(ACTIVE | WORKING);
                     }
                 }
-                cancelAll();
             }
         }
 
@@ -3526,7 +3533,7 @@ public class ForkJoinPool extends AbstractExecutorService
             if (hs > 0 && p != null && h != null && h.length > 0) {
                 DelayedTask<?> first;
                 int s = hs;
-                long now = System.nanoTime();
+                long now = now();
                 while ((first = h[0]) != null) {
                     int stat;
                     long d = first.when - now;
@@ -3542,7 +3549,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     }
                     first.heapIndex = -1;
                     h[0] = null;
-                    s = (s > 1) ? heapReplace(now, h, 0, s) : 0;
+                    s = (s > 1) ? heapReplace(h, 0, s) : 0;
                     if (stat >= 0)
                         pushReadyTask(first, p);
                     if (s == 0)
@@ -3567,7 +3574,7 @@ public class ForkJoinPool extends AbstractExecutorService
                             U.getAndSetReference(this, ADDITIONS, null);
                     if (t == null)
                         break;
-                    long now = System.nanoTime();
+                    long now = now();
                     do {
                         int idx, cap = h.length, newCap;
                         if ((next = t.nextPending) != null)
@@ -3590,7 +3597,7 @@ public class ForkJoinPool extends AbstractExecutorService
                                 if (s >= cap)  // can't grow
                                     t.trySetCancelled();
                                 else if (s > 0)
-                                    s = heapAdd(now, h, s, t);
+                                    s = heapAdd(h, s, t);
                                 else if (cap > 0) {
                                     h[0] = t;
                                     s = 1;
@@ -3600,7 +3607,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         else if (idx < s && s <= cap && h[idx] == t) {
                             h[idx] = null;
                             t.heapIndex = -1;
-                            s = (s > 1) ? heapReplace(now, h, idx, s) : 0;
+                            s = (s > 1) ? heapReplace(h, idx, s) : 0;
                         }
                     } while ((t = next) != null);
                 }
@@ -3610,7 +3617,7 @@ public class ForkJoinPool extends AbstractExecutorService
             return s;
         }
 
-        private static int heapAdd(long now, DelayedTask<?>[] h,
+        private static int heapAdd(DelayedTask<?>[] h,
                                    int s, DelayedTask<?> t) {
             if (h != null && s >= 0 && s < h.length && t != null) {
                 DelayedTask<?> u, p;
@@ -3619,9 +3626,9 @@ public class ForkJoinPool extends AbstractExecutorService
                     h[--s] = null;
                 }
                 int k = s++, parent, ck;
-                long d = t.when - now;
+                long d = t.when;
                 while (k > 0 && (p = h[parent = (k - 1) >>> 1]) != null &&
-                       (p.status < 0 || d < p.when - now)) {
+                       (p.status < 0 || d < p.when)) {
                     p.heapIndex = k;
                     h[k] = p;
                     k = parent;
@@ -3632,8 +3639,7 @@ public class ForkJoinPool extends AbstractExecutorService
             return s;
         }
 
-        private static int heapReplace(long now, DelayedTask<?>[] h,
-                                       int k, int s) {
+        private static int heapReplace(DelayedTask<?>[] h, int k, int s) {
             if (k >= 0 && s >= 0 && h != null && s <= h.length) {
                 DelayedTask<?> t = null;
                 while (s > k) { // find uncancelled replacement
@@ -3649,11 +3655,11 @@ public class ForkJoinPool extends AbstractExecutorService
                 }
                 if (t != null) {
                     int child, right; DelayedTask<?> c, r;
-                    long d = t.when - now, rd;
+                    long d = t.when, rd;
                     while ((child = (k << 1) + 1) < s && (c = h[child]) != null) {
-                        long cd = (c.status < 0) ? Long.MAX_VALUE : c.when - now;
+                        long cd = (c.status < 0) ? Long.MAX_VALUE : c.when;
                         if ((right = child + 1) < s && (r = h[right]) != null &&
-                            r.status >= 0 && (rd = r.when - now) < cd) {
+                            r.status >= 0 && (rd = r.when) < cd) {
                             cd = rd;
                             c = r;
                             child = right;
@@ -3680,7 +3686,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     if ((stat = t.status) < 0 || t.nextDelay != 0L) {
                         h[i] = null;
                         t.heapIndex = -1;
-                        s = heapSize = ((s > 1) ? heapReplace(now, h, i, s) : 0);
+                        s = heapSize = ((s > 1) ? heapReplace(h, i, s) : 0);
                         if (stat >= 0)
                             t.trySetCancelled();
                     }
@@ -3739,12 +3745,18 @@ public class ForkJoinPool extends AbstractExecutorService
 
     private <V> ScheduledFuture<V> sched(Runnable command, Callable<V> callable,
                                          long delay, long nextDelay) {
-        DelayScheduler ds; DelayedTask<V> t;
-        if (((ds = delayScheduler) == null &&
-             (ds = startDelayScheduler()) == null) ||
-            (runState & SHUTDOWN) != 0L)
+        DelayScheduler ds;
+        long when = DelayScheduler.now() + delay;
+        DelayedTask<V> t = new DelayedTask<>(command, callable, this, nextDelay,
+                                             when);
+        if ((ds = delayScheduler) == null)
+            ds = startDelayScheduler();
+        if (delay <= 0L)
+            poolSubmit(true, t);
+        else if (ds == null || (runState & SHUTDOWN) != 0L)
             throw new RejectedExecutionException();
-        ds.add(t = new DelayedTask<>(command, callable, this, delay, nextDelay));
+        else
+            ds.add(t);
         return t;
     }
 

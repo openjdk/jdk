@@ -1879,9 +1879,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         int heapIndex;            // index if queued on heap
 
         DelayedTask(Runnable runnable, Callable<T> callable, ForkJoinPool pool,
-                    long delay, long nextDelay) {
+                    long nextDelay, long when) {
             heapIndex = -1;
-            when = System.nanoTime() + delay;
+            this.when = when;
             this.runnable = runnable;
             this.callable = callable;
             this.pool = pool;
@@ -1896,7 +1896,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 if (!p.isShutdown()) {
                     heapIndex = -1;
                     if (d < 0L)
-                        when = System.nanoTime() - d;
+                        when = ForkJoinPool.DelayScheduler.now() - d;
                     else
                         when += d;
                     ds.add(this);
@@ -1925,7 +1925,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             return stat;
         }
         public final long getDelay(TimeUnit unit) {
-            return unit.convert(when - System.nanoTime(), NANOSECONDS);
+            return unit.convert(when - ForkJoinPool.DelayScheduler.now(), NANOSECONDS);
         }
         public int compareTo(Delayed other) {
             long diff = getDelay(NANOSECONDS) - other.getDelay(NANOSECONDS);
