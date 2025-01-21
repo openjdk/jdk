@@ -253,6 +253,7 @@ public class ValidateICCHeaderData {
         //Upon deserialization, the invalid profile is expected to throw IAE
         try {
             ICC_Profile.getInstance("./invalidSRGB.icc");
+            throw new RuntimeException("Test Failed ! Expected IAE NOT thrown");
         } catch (IllegalArgumentException iae) {
             System.out.println("Expected IAE thrown: " + iae.getMessage());
         }
