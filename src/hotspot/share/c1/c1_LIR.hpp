@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1016,7 +1016,7 @@ enum LIR_Code {
   , begin_opAssert
     , lir_assert
   , end_opAssert
-#ifdef INCLUDE_ZGC
+#if INCLUDE_ZGC
   , begin_opXLoadBarrierTest
     , lir_xloadbarrier_test
   , end_opXLoadBarrierTest
