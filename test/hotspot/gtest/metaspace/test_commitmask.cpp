@@ -251,7 +251,7 @@ public:
 
   void test() {
     LOG("mask range: " PTR_FORMAT "-" PTR_FORMAT
-         " (" SIZE_FORMAT " words).",
+         " (%zu words).",
          p2i(_base), p2i(_base + _word_size), _word_size);
     for (int i = 0; i < 5; i++) {
       test1(); test2(); test3();

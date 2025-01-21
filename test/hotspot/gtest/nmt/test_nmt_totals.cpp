@@ -80,7 +80,7 @@ TEST_VM(NMTNumbers, totals) {
 
   const totals_t t1 = get_totals();
 
-  LOG("t1: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t1.n, t1.s, t1.ovrh);
+  LOG("t1: %zu - %zu - %zu", t1.n, t1.s, t1.ovrh);
 
   static const int NUM_ALLOCS = 1024 * 16;
   static const int ALLOC_SIZE = 1024;
@@ -93,14 +93,14 @@ TEST_VM(NMTNumbers, totals) {
   }
 
   const totals_t t2 = get_totals();
-  LOG("t2: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t2.n, t2.s, t2.ovrh);
+  LOG("t2: %zu - %zu - %zu", t2.n, t2.s, t2.ovrh);
 
   totals_t t2_expected;
   t2_expected.n = t1.n + NUM_ALLOCS;
   t2_expected.s = t1.s + ALLOC_SIZE * NUM_ALLOCS;
   t2_expected.ovrh = (t1.n + NUM_ALLOCS) * sizeof(MallocHeader);
 
-  LOG("t2 expected: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t2_expected.n, t2_expected.s, t2_expected.ovrh);
+  LOG("t2 expected: %zu - %zu - %zu", t2_expected.n, t2_expected.s, t2_expected.ovrh);
 
   compare_totals(t2, t2_expected);
 
@@ -109,7 +109,7 @@ TEST_VM(NMTNumbers, totals) {
   }
 
   const totals_t t3 = get_totals();
-  LOG("t3: " SIZE_FORMAT " - " SIZE_FORMAT " - " SIZE_FORMAT, t3.n, t3.s, t3.ovrh);
+  LOG("t3: %zu - %zu - %zu", t3.n, t3.s, t3.ovrh);
 
   compare_totals(t3, t1);
 

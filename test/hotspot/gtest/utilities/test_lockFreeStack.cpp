@@ -233,7 +233,7 @@ public:
         Atomic::inc(_processed);
         ++_local_processed;
       } else if (Atomic::load_acquire(_processed) == _process_limit) {
-        tty->print_cr("thread %u processed " SIZE_FORMAT, _id, _local_processed);
+        tty->print_cr("thread %u processed %zu", _id, _local_processed);
         return;
       }
     }

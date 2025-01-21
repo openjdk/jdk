@@ -167,14 +167,14 @@ TEST_VM_F(LogMessageTest, message_with_many_lines) {
 
   LogMessageBuffer msg;
   for (size_t i = 0; i < lines; i++) {
-    msg.info("Line #" SIZE_FORMAT, i);
+    msg.info("Line #%zu", i);
   }
   _log.write(msg);
 
   char expected_lines_data[lines][line_length];
   const char* expected_lines[lines + 1];
   for (size_t i = 0; i < lines; i++) {
-    jio_snprintf(&expected_lines_data[i][0], line_length, "Line #" SIZE_FORMAT, i);
+    jio_snprintf(&expected_lines_data[i][0], line_length, "Line #%zu", i);
     expected_lines[i] = expected_lines_data[i];
   }
   expected_lines[lines] = nullptr;

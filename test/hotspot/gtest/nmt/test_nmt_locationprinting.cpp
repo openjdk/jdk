@@ -49,7 +49,7 @@ static void test_pointer(const void* p, bool expected_return_code, const char* e
 
 static void test_for_live_c_heap_block(size_t sz, ssize_t offset) {
   char* c = NEW_C_HEAP_ARRAY(char, sz, mtTest);
-  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), sz);
+  LOG_HERE("C-block starts " PTR_FORMAT ", size %zu.", p2i(c), sz);
   memset(c, 0, sz);
   if (MemTracker::enabled()) {
     const char* expected_string = "into live malloced block";
@@ -72,7 +72,7 @@ static void test_for_dead_c_heap_block(size_t sz, ssize_t offset) {
     return;
   }
   char* c = NEW_C_HEAP_ARRAY(char, sz, mtTest);
-  LOG_HERE("C-block starts " PTR_FORMAT ", size " SIZE_FORMAT ".", p2i(c), sz);
+  LOG_HERE("C-block starts " PTR_FORMAT ", size %zu.", p2i(c), sz);
   memset(c, 0, sz);
   // We cannot just free the allocation to try dead block printing, since the memory
   // may be immediately reused by concurrent code. Instead, we mark the block as dead
