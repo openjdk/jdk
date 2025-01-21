@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package java.lang.classfile.instruction;
 
 import java.lang.classfile.*;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
@@ -71,7 +72,13 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * astore} series of instructions can then store this value to a local
      * variable slot.
      *
+     * @apiNote
+     * Jump subroutine instructions are discontinued to enforce verification by
+     * type checking (JVMS {@jvms 4.10.1}) using the {@link StackMapTableAttribute
+     * StackMapTable} attribute.
+     *
      * @see Opcode.Kind#DISCONTINUED_JSR
+     * @see StackMapTableAttribute
      * @since 24
      */
     sealed interface JsrInstruction extends DiscontinuedInstruction
@@ -130,8 +137,14 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * TypeKind##returnAddress returnAddress} value to a local variable slot,
      * making the slot usable by a return from subroutine instruction.
      *
+     * @apiNote
+     * Return from subroutine instructions are discontinued to enforce
+     * verification by type checking (JVMS {@jvms 4.10.1}) using the {@link
+     * StackMapTableAttribute StackMapTable} attribute.
+     *
      * @jvms 6.5.ret <em>ret</em>
      * @see Opcode.Kind#DISCONTINUED_RET
+     * @see StackMapTableAttribute
      * @since 24
      */
     sealed interface RetInstruction extends DiscontinuedInstruction
