@@ -62,6 +62,8 @@ public:
    */
   static inline oop try_update_forwardee(oop obj, oop update);
 
+  static inline oop try_forward_to_self(oop obj);
+
   static inline size_t size(oop obj);
   static inline Klass* klass(oop obj);
 };

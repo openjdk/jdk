@@ -116,6 +116,16 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
   r->make_cset();
 }
 
+void ShenandoahCollectionSet::remove_region(ShenandoahHeapRegion* r) {
+  auto const previous_value = Atomic::cmpxchg(_cset_map + r->affiliation(), char(1), char(0));
+  if (previous_value == 1) {
+    log_info(gc)("Removed region %zu from collection set", r->index());
+    // TODO: All of the accounting and meta data for this collection set
+    _region_count--;
+    r->make_regular_bypass();
+  }
+}
+
 void ShenandoahCollectionSet::clear() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at a safepoint");
 

@@ -1320,7 +1320,10 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   if (copy == nullptr) {
     control_thread()->handle_alloc_failure_evac(size);
 
-    _oom_evac_handler.handle_out_of_memory_during_evacuation();
+    // _oom_evac_handler.handle_out_of_memory_during_evacuation();
+    ShenandoahForwarding::try_forward_to_self(p);
+
+    collection_set()->remove_region(heap_region_containing(p));
 
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
