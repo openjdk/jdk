@@ -115,17 +115,6 @@ public interface Launcher {
     }
 
     /**
-     * Gets the additional properties for application launcher entries in the app
-     * image (".jpackage") file.
-     *
-     * @return the additional properties for application launcher entries in
-     *         ".jpackage" file
-     */
-    default Map<String, String> extraAppImageFileData() {
-        return Map.of();
-    }
-
-    /**
      * Gets the icon for this launcher or an empty {@link Optional} instance if the
      * launcher is requested to have no icon.
      *
@@ -183,52 +172,19 @@ public interface Launcher {
     String defaultIconResourceName();
 
     /**
+     * Gets the additional properties for application launcher entries in the app
+     * image (".jpackage") file.
+     *
+     * @return the additional properties for application launcher entries in
+     *         ".jpackage" file
+     */
+    Map<String, String> extraAppImageFileData();
+
+    /**
      * Default implementation of {@link Launcher} interface.
      */
     record Stub(String name, Optional<LauncherStartupInfo> startupInfo, List<FileAssociation> fileAssociations,
-            boolean isService, String description, Optional<LauncherIcon> icon, String defaultIconResourceName)
-            implements Launcher {
-    }
-
-    /**
-     * Implementation of {@link Launcher} interface in which every method throws
-     * {@link UnsupportedOperationException} exception.
-     */
-    class Unsupported implements Launcher {
-
-        @Override
-        public String name() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Optional<LauncherStartupInfo> startupInfo() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<FileAssociation> fileAssociations() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isService() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String description() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Optional<LauncherIcon> icon() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String defaultIconResourceName() {
-            throw new UnsupportedOperationException();
-        }
+            boolean isService, String description, Optional<LauncherIcon> icon, String defaultIconResourceName,
+            Map<String, String> extraAppImageFileData) implements Launcher {
     }
 }

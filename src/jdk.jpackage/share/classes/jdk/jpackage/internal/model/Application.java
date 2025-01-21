@@ -227,9 +227,7 @@ public interface Application {
      * @return the additional properties of this application for the application
      *         entry in ".jpackage" file
      */
-    default Map<String, String> extraAppImageFileData() {
-        return Map.of();
-    }
+    Map<String, String> extraAppImageFileData();
 
     /**
      * Gets the file associations of all application launchers of this application.
@@ -248,64 +246,6 @@ public interface Application {
      */
     record Stub(String name, String description, String version, String vendor, String copyright, Optional<Path> srcDir,
             List<Path> contentDirs, AppImageLayout imageLayout, Optional<RuntimeBuilder> runtimeBuilder,
-            List<Launcher> launchers) implements Application {
+            List<Launcher> launchers,  Map<String, String> extraAppImageFileData) implements Application {
     }
-
-    /**
-     * Implementation of {@link Application} interface in which every method throws
-     * {@link UnsupportedOperationException} exception.
-     */
-    class Unsupported implements Application {
-
-        @Override
-        public String name() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String description() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String version() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String vendor() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String copyright() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Optional<Path> srcDir() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<Path> contentDirs() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public AppImageLayout imageLayout() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Optional<RuntimeBuilder> runtimeBuilder() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public List<Launcher> launchers() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
 }
