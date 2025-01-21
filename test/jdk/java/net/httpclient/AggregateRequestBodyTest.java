@@ -414,11 +414,11 @@ public class AggregateRequestBodyTest implements HttpServerAdapters {
     }
 
     static class RequestSubscriber implements Flow.Subscriber<ByteBuffer> {
-        CompletableFuture<Subscription> subscriptionCF = new CompletableFuture<>();
-        ConcurrentLinkedDeque<ByteBuffer> items = new ConcurrentLinkedDeque<>();
-        CompletableFuture<List<ByteBuffer>> resultCF = new CompletableFuture<>();
+        final CompletableFuture<Subscription> subscriptionCF = new CompletableFuture<>();
+        final ConcurrentLinkedDeque<ByteBuffer> items = new ConcurrentLinkedDeque<>();
+        final CompletableFuture<List<ByteBuffer>> resultCF = new CompletableFuture<>();
 
-        Semaphore semaphore = new Semaphore(0);
+        final Semaphore semaphore = new Semaphore(0);
 
         @Override
         public void onSubscribe(Subscription subscription) {
