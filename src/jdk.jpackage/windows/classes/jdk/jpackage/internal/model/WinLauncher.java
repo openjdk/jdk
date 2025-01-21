@@ -24,11 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
+import static java.util.stream.Collectors.toMap;
+
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import static java.util.stream.Collectors.toMap;
 import jdk.jpackage.internal.resources.ResourceLocator;
 import jdk.jpackage.internal.util.CompositeProxy;
 
@@ -47,8 +47,7 @@ public interface WinLauncher extends Launcher, WinLauncherMixin {
 
     @Override
     default Map<String, String> extraAppImageFileData() {
-        return Optional.ofNullable(shortcuts()).orElseGet(Set::of).stream().collect(
-                toMap(WinShortcut::name, v -> Boolean.toString(true)));
+        return shortcuts().stream().collect(toMap(WinShortcut::name, v -> Boolean.toString(true)));
     }
 
     public static WinLauncher create(Launcher launcher, WinLauncherMixin mixin) {
