@@ -1,4 +1,4 @@
-/*
+package ValidateICCHeaderData;/*
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,12 +26,13 @@
  * @bug 8337703
  * @summary To verify if ICC_Profile's setData() validates header data
  *          and throws IAE for invalid values.
- * @run main ValidateICCHeaderData
+ * @run main ValidateICCHeaderData.ValidateICCHeaderData
  */
 
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
@@ -162,7 +163,21 @@ public class ValidateICCHeaderData {
         testProfileCreation(false);
         System.out.println("CASE 14: Passed \n");
 
-        System.out.println("Successfully completed testing all 14 cases. Test Passed !!");
+        System.out.println("CASE 15: Testing DeSerialization of ICC_Profile ...");
+        testDeSerialization();
+        System.out.println("CASE 15: Passed \n");
+
+        System.out.println("Successfully completed testing all 15 cases. Test Passed !!");
+    }
+
+    private static void testDeSerialization() throws IOException {
+        //invalidSRGB.icc is serialized on older version of JDK
+        //Upon deserialization, the invalid profile is expected to throw IAE
+        try {
+            ICC_Profile.getInstance("./invalidSRGB.icc");
+        } catch (IllegalArgumentException iae) {
+            System.out.println("Expected IAE thrown: " + iae.getMessage());
+        }
     }
 
     private static void testValidHeaderData(int[] validData, int startIndex,
