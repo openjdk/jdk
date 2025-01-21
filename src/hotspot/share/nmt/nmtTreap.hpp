@@ -31,6 +31,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <type_traits>
 
 // A Treap is a self-balanced binary tree where each node is equipped with a
 // priority. It adds the invariant that the priority of a parent P is strictly larger
@@ -228,7 +229,9 @@ public:
   : _allocator(),
     _root(nullptr),
     _prng_seed(_initial_seed),
-    _node_count(0) {}
+    _node_count(0) {
+    static_assert(std::is_trivially_destructible<K>, "must be");
+  }
 
   ~Treap() {
     this->remove_all();
@@ -266,6 +269,7 @@ public:
     if (second_split.right != nullptr) {
       // The key k existed, we delete it.
       _node_count--;
+      second_split.right->_value.~V();
       _allocator.free(second_split.right);
     }
     // Merge together everything
@@ -283,6 +287,7 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
+      head->_value.~V();
       _allocator.free(head);
     }
     _root = nullptr;
