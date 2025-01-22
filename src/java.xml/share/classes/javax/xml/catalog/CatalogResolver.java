@@ -40,7 +40,7 @@ import org.xml.sax.InputSource;
  * Transform {@link javax.xml.transform.URIResolver}, and resolves
  * external references using catalogs.
  * <p>
- * The <a href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html">
+ * The <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">
  * Catalog Standard</a> distinguished {@code external identifiers} from {@code uri entries}
  * as being used to solely identify DTDs, while {@code uri entries} for
  * other resources such as stylesheets and schema. The Java APIs, such as
