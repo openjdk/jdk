@@ -69,12 +69,12 @@ public class TestXorInt {
     @IR(counts = {IRNode.CON_I, "1"})
     // Checks (x ^ x)  => c (constant folded)
     @Arguments(values = Argument.RANDOM_EACH)
-    public int testConstXorSelf(int x) {
+    public int testXorSelf(int x) {
         return x ^ x;
     }
 
-    @Check(test = "testConstXorSelf")
-    public void checkTestConstXorSelf(int result) {
+    @Check(test = "testXorSelf")
+    public void checkTestXorSelf(int result) {
         Asserts.assertEquals(0, result);
     }
 }

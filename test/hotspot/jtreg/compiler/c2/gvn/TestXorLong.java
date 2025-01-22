@@ -69,12 +69,12 @@ public class TestXorLong {
     @IR(counts = {IRNode.CON_L, "1"})
     // Checks (x ^ x)  => c (constant folded)
     @Arguments(values = Argument.RANDOM_EACH)
-    public long testConstXorSelf(long x) {
+    public long testXorSelf(long x) {
         return x ^ x;
     }
 
-    @Check(test = "testConstXorSelf")
-    public void checkTestConstXorSelf(long result) {
+    @Check(test = "testXorSelf")
+    public void checkTestXorSelf(long result) {
         Asserts.assertEquals(0L, result);
     }
 }
