@@ -1026,6 +1026,7 @@ void TargetLoopPredicateChain::insert_predicate(const Predicate& predicate) {
   rewire_to_target_chain_head(predicate.tail()->as_IfTrue());
   _current_predicate_chain_head = predicate.head();
   assert(predicate.head()->_idx >= _node_index_before_cloning, "must be a newly cloned predicate");
+  assert(predicate.tail()->_idx >= _node_index_before_cloning, "must be a newly cloned predicate");
   assert(_current_predicate_chain_head->in(0) == _old_target_loop_entry &&
          _old_target_loop_entry->unique_ctrl_out() == _current_predicate_chain_head , "must be connected now");
 }
@@ -1082,7 +1083,8 @@ void CloneUnswitchedLoopPredicatesVisitor::visit(const TemplateAssertionPredicat
   template_assertion_predicate.kill(_phase);
 }
 
-// Update the Template Assertion Predicate by setting a new input for the OpaqueLoopStrideNode.
+// Update the Template Assertion Predicate by setting a new input for the OpaqueLoopStrideNode. Create a new
+// Initialized Assertion Predicate from the updated Template Assertion Predicate.
 void UpdateStrideForAssertionPredicates::visit(const TemplateAssertionPredicate& template_assertion_predicate) {
   if (!template_assertion_predicate.is_last_value()) {
     // Only Last Value Assertion Predicates have an OpaqueLoopStrideNode.
@@ -1102,7 +1104,7 @@ void UpdateStrideForAssertionPredicates::replace_opaque_stride_input(
 }
 
 InitializedAssertionPredicate UpdateStrideForAssertionPredicates::initialize_from_updated_template(
-  const TemplateAssertionPredicate& template_assertion_predicate) const {
+    const TemplateAssertionPredicate& template_assertion_predicate) const {
   return template_assertion_predicate.initialize(_phase);
 }
 
@@ -1110,7 +1112,7 @@ InitializedAssertionPredicate UpdateStrideForAssertionPredicates::initialize_fro
 // the Template Assertion Predicate above this. So, we will not accidentally visit this again and kill it with the
 // visit() method for Initialized Assertion Predicates.
 void UpdateStrideForAssertionPredicates::connect_initialized_assertion_predicate(
-  Node* new_control_out, const InitializedAssertionPredicate& initialized_assertion_predicate) const {
+    Node* new_control_out, const InitializedAssertionPredicate& initialized_assertion_predicate) const {
   Node* initialized_assertion_predicate_success_proj = initialized_assertion_predicate.tail();
   if (new_control_out->is_Loop()) {
     _phase->replace_loop_entry(new_control_out->as_Loop(), initialized_assertion_predicate_success_proj);
