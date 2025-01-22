@@ -663,11 +663,11 @@
   develop(uint, VerifyConstraintCasts, 0,                                   \
           "Perform runtime checks to verify the value of a "                \
           "ConstraintCast lies inside its type"                             \
-          "0=does not perform any verification, "                           \
-          "1=perform verification on ConstraintCastNodes that are present " \
-          "during code emission, "                                          \
-          "2=Do not do widening of ConstraintCastNodes so that we can "     \
-          "have more verification coverage")                                \
+          "0 = does not perform any verification, "                         \
+          "1 = perform verification on ConstraintCastNodes that are "       \
+              "present during code emission, "                              \
+          "2 = Do not do widening of ConstraintCastNodes so that we can "   \
+              "have more verification coverage")                            \
           range(0, 2)                                                       \
                                                                             \
   product(intx, MaxInlineLevel, 15,                                         \

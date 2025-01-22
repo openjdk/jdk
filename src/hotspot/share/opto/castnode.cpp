@@ -525,7 +525,13 @@ const Type* ConstraintCastNode::widen_type(const PhaseGVN* phase, const Type* re
     return res;
   }
 
-  // Keep these casts for verification
+  // At VerifyConstraintCasts == 1, we verify the ConstraintCastNodes that are present during code
+  // emission. This allows us detecting possible mis-scheduling due to these nodes being pinned at
+  // the wrong control nodes.
+  // At VerifyConstraintCasts == 2, we do not perform widening so that we can verify the
+  // correctness of more ConstraintCastNodes. This further helps us detect possible
+  // mis-transformations that may happen due to these nodes being pinned at the wrong control
+  // nodes.
   if (VerifyConstraintCasts > 1) {
     return res;
   }
