@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,49 +24,40 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.I18N.buildConfigException;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import static jdk.internal.util.OperatingSystem.LINUX;
-import static jdk.internal.util.OperatingSystem.MACOS;
-import static jdk.internal.util.OperatingSystem.WINDOWS;
-import static jdk.jpackage.internal.I18N.buildConfigException;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.CustomLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Launcher.Stub;
-import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.util.function.ExceptionBox;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException;
-import jdk.jpackage.internal.model.CustomLauncherIcon;
 import jdk.jpackage.internal.model.LauncherIcon;
+import jdk.jpackage.internal.model.LauncherStartupInfo;
 
 final class LauncherBuilder {
 
     Launcher create() throws ConfigException {
-        try {
-            CustomLauncherIcon.fromLauncherIcon(icon)
-                    .map(CustomLauncherIcon::path)
-                    .ifPresent(toConsumer(LauncherBuilder::validateIcon));
+        CustomLauncherIcon.fromLauncherIcon(icon)
+                .map(CustomLauncherIcon::path)
+                .ifPresent(toConsumer(LauncherBuilder::validateIcon));
 
-            var fa = createFileAssociations(faSources.stream()).toList();
+        final var fa = createFileAssociations(faSources, Optional.ofNullable(faTraits).orElse(DEFAULT_FA_TRAITS));
 
-            Objects.requireNonNull(name);
-            Objects.requireNonNull(description);
-            Objects.requireNonNull(defaultIconResourceName);
+        Objects.requireNonNull(defaultIconResourceName);
 
-            return new Stub(name, Optional.ofNullable(startupInfo), fa, isService, description, Optional.ofNullable(icon), defaultIconResourceName);
-        } catch (RuntimeException ex) {
-            throw ConfigException.rethrowConfigException(ex);
-        }
+        final var nonNullName = deriveNonNullName();
+
+        return new Stub(nonNullName, Optional.ofNullable(startupInfo), fa,
+                isService, Optional.ofNullable(description).orElse(nonNullName),
+                Optional.ofNullable(icon), defaultIconResourceName,
+                Optional.ofNullable(extraAppImageFileData).orElseGet(Map::of));
     }
 
     LauncherBuilder name(String v) {
@@ -79,13 +70,13 @@ final class LauncherBuilder {
         return this;
     }
 
-    LauncherBuilder faSources(List<FileAssociationGroup> v) {
+    LauncherBuilder faGroups(List<FileAssociationGroup> v) {
         faSources = v;
         return this;
     }
 
-    LauncherBuilder faPrediacate(Predicate<FileAssociation> v) {
-        faPrediacate = v;
+    LauncherBuilder faTraits(FileAssociationTraits v) {
+        faTraits = v;
         return this;
     }
 
@@ -109,96 +100,73 @@ final class LauncherBuilder {
         return this;
     }
 
-    static boolean isFileAssociationValid(FileAssociation src) {
-        toConsumer(LauncherBuilder::verifyFileAssociation).accept(src);
+    LauncherBuilder extraAppImageFileData(Map<String, String> v) {
+        extraAppImageFileData = v;
+        return this;
+    }
 
-        return Optional.ofNullable(src.extension()).isPresent();
+    private String deriveNonNullName() {
+        return Optional.ofNullable(name).orElseGet(() -> startupInfo.simpleClassName());
     }
 
     static void validateIcon(Path icon) throws ConfigException {
         switch (OperatingSystem.current()) {
             case WINDOWS -> {
                 if (!icon.getFileName().toString().toLowerCase().endsWith(".ico")) {
-                    throw buildConfigException()
-                            .message("message.icon-not-ico", icon).create();
+                    throw buildConfigException().message("message.icon-not-ico", icon).create();
                 }
             }
             case LINUX -> {
                 if (!icon.getFileName().toString().endsWith(".png")) {
-                    throw buildConfigException()
-                            .message("message.icon-not-png", icon).create();
+                    throw buildConfigException().message("message.icon-not-png", icon).create();
                 }
             }
             case MACOS -> {
                 if (!icon.getFileName().toString().endsWith(".icns")) {
-                    throw buildConfigException()
-                            .message("message.icon-not-icns", icon).create();
+                    throw buildConfigException().message("message.icon-not-icns", icon).create();
                 }
+            }
+            default -> {
+                throw new UnsupportedOperationException();
             }
         }
     }
 
-    private Stream<FileAssociation> createFileAssociations(
-            Stream<FileAssociationGroup> sources) throws ConfigException {
-
-        var sourcesAsArray = sources.toArray(FileAssociationGroup[]::new);
-
-        var stream = IntStream.range(0, sourcesAsArray.length).mapToObj(idx -> {
-            return Map.entry(idx + 1, sourcesAsArray[idx]);
-        }).map(entry -> {
-            try {
-                var faGroup = FileAssociationGroup.filter(faPrediacate).apply(entry.getValue());
-                if (faGroup.isEmpty()) {
-                    return null;
-                } else {
-                    return Map.entry(entry.getKey(), faGroup);
-                }
-            } catch (ExceptionBox ex) {
-                if (ex.getCause() instanceof ConfigException cfgException) {
-                    throw rethrowUnchecked(buildConfigException()
-                            .cause(cfgException.getCause())
-                            .message(cfgException.getMessage(), entry.getKey())
-                            .advice(cfgException.getAdvice(), entry.getKey())
-                            .create());
-                } else {
-                    throw ex;
-                }
-            }
-        }).filter(Objects::nonNull).peek(entry -> {
-            var faGroup = entry.getValue();
-            if (faGroup.items().size() != faGroup.items().stream().map(FileAssociation::extension).distinct().count()) {
-                throw rethrowUnchecked(buildConfigException()
-                        .message("error.too-many-content-types-for-file-association", entry.getKey())
-                        .advice("error.too-many-content-types-for-file-association.advice", entry.getKey())
-                        .create());
-            }
-        }).map(entry -> {
-            return entry.getValue().items().stream();
-        }).flatMap(x -> x);
-
-        try {
-            return stream.toList().stream();
-        } catch (RuntimeException ex) {
-            throw rethrowConfigException(ex);
-        }
+    record FileAssociationTraits() {
     }
 
-    private static void verifyFileAssociation(FileAssociation src) throws ConfigException {
-        if (Optional.ofNullable(src.mimeType()).isEmpty()) {
-            throw buildConfigException()
-                    .noformat()
-                    .message("error.no-content-types-for-file-association")
-                    .advice("error.no-content-types-for-file-association.advice")
-                    .create();
+    private static List<FileAssociation> createFileAssociations(
+            List<FileAssociationGroup> groups, FileAssociationTraits faTraits) throws ConfigException {
+
+        Objects.requireNonNull(groups);
+        Objects.requireNonNull(faTraits);
+
+        int faID = 1;
+        for (var group : groups) {
+            final var scanResult = new FileAssociationScaner().scan(group.items());
+
+            if (!scanResult.extensionsWithMultipleMimeTypes().isEmpty()) {
+                throw buildConfigException()
+                        .message("error.too-many-content-types-for-file-association", faID)
+                        .advice("error.too-many-content-types-for-file-association.advice", faID)
+                        .create();
+            }
+
+            faID++;
         }
+
+        return FileAssociationGroup.flatMap(groups.stream()).toList();
     }
 
     private String name;
     private LauncherStartupInfo startupInfo;
     private List<FileAssociationGroup> faSources;
-    private Predicate<FileAssociation> faPrediacate = LauncherBuilder::isFileAssociationValid;
+    private FileAssociationTraits faTraits;
     private boolean isService;
     private String description;
     private LauncherIcon icon;
     private String defaultIconResourceName;
+    private Map<String, String> extraAppImageFileData;
+
+    private static final FileAssociationTraits DEFAULT_FA_TRAITS = new FileAssociationTraits();
 }

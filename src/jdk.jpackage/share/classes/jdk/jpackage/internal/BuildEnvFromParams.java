@@ -24,11 +24,13 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import java.util.Map;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
+
+import java.util.Map;
+
+import jdk.jpackage.internal.model.ConfigException;
 
 final class BuildEnvFromParams {
 
@@ -51,5 +53,5 @@ final class BuildEnvFromParams {
     }
 
     static final BundlerParamInfo<BuildEnv> BUILD_ENV = BundlerParamInfo.createBundlerParam(
-            "env", BuildEnvFromParams::create);
+            BuildEnv.class, BuildEnvFromParams::create);
 }

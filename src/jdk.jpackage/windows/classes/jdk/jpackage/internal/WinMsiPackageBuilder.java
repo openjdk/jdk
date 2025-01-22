@@ -24,13 +24,15 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.I18N.buildConfigException;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import static jdk.jpackage.internal.I18N.buildConfigException;
+
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.MsiVersion;
@@ -66,7 +68,7 @@ final class WinMsiPackageBuilder {
                 withShortcutPrompt,
                 Optional.ofNullable(helpURL),
                 Optional.ofNullable(updateURL),
-                startMenuGroupName,
+                Optional.ofNullable(startMenuGroupName).orElseGet(DEFAULTS::startMenuGroupName),
                 isSystemWideInstall,
                 Optional.ofNullable(upgradeCode).orElseGet(() -> upgradeCode(pkg.app())),
                 productCode(pkg.app(), pkg.version()),
@@ -126,14 +128,18 @@ final class WinMsiPackageBuilder {
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
     }
 
+    record Defaults(String startMenuGroupName) {}
+
     private boolean withInstallDirChooser;
     private boolean withShortcutPrompt;
     private String helpURL;
     private String updateURL;
     private String startMenuGroupName;
-    private boolean isSystemWideInstall;
+    private boolean isSystemWideInstall = true;
     private Path serviceInstaller;
     private UUID upgradeCode;
 
     private final PackageBuilder pkgBuilder;
+
+    private static final Defaults DEFAULTS = new Defaults(I18N.getString("param.menu-group.default"));
 }

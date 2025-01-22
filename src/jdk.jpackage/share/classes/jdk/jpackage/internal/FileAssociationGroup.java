@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.util.CollectionUtils;
 
 final record FileAssociationGroup(List<FileAssociation> items) {
+
     FileAssociationGroup {
         Objects.requireNonNull(items);
     }
@@ -66,27 +66,40 @@ final record FileAssociationGroup(List<FileAssociation> items) {
         return new Builder();
     }
 
+    static class FileAssociationException extends Exception {
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    static final class FileAssociationNoMimesException extends FileAssociationException {
+
+        private static final long serialVersionUID = 1L;
+    }
+
+    static final class FileAssociationNoExtensionsException extends FileAssociationException {
+
+        private static final long serialVersionUID = 1L;
+    }
+
     static final class Builder {
 
-        FileAssociationGroup create() {
-            Function<String, Stream<FileAssociation>> forExtension = ext -> {
-                if (mimeTypes.isEmpty()) {
-                    return Stream.of(createFileAssociation(Optional.empty(), ext));
-                } else {
-                    return mimeTypes.stream().map(faMimeType -> {
-                        return createFileAssociation(Optional.of(faMimeType), ext);
-                    });
-                }
-            };
+        private Builder() {
+        }
 
-            Stream<FileAssociation> faStream;
-            if (extensions.isEmpty()) {
-                faStream = forExtension.apply(null);
-            } else {
-                faStream = extensions.stream().flatMap(forExtension);
+        FileAssociationGroup create() throws FileAssociationException {
+            if (mimeTypes == null || mimeTypes.isEmpty()) {
+                throw new FileAssociationNoMimesException();
             }
 
-            return new FileAssociationGroup(faStream.toList());
+            if (extensions == null || extensions.isEmpty()) {
+                throw new FileAssociationNoExtensionsException();
+            }
+
+            return new FileAssociationGroup(mimeTypes.stream().map(mimeType -> {
+                return extensions.stream().map(ext -> {
+                    return createFileAssociation(mimeType, ext);
+                });
+            }).flatMap(x -> x).toList());
         }
 
         Builder icon(Path v) {
@@ -100,23 +113,19 @@ final record FileAssociationGroup(List<FileAssociation> items) {
         }
 
         Builder mimeTypes(Collection<String> v) {
-            mimeTypes = conv(v);
+            mimeTypes = CollectionUtils.toSet(v);
             return this;
         }
 
         Builder extensions(Collection<String> v) {
-            extensions = conv(v);
+            extensions = CollectionUtils.toSet(v);
             return this;
         }
 
-        private static Set<String> conv(Collection<String> col) {
-            return Optional.ofNullable(col).map(Collection::stream).orElseGet(
-                    Stream::of).collect(toSet());
-        }
-
-        private FileAssociation createFileAssociation(Optional<String> mimeType, String ext) {
+        private FileAssociation createFileAssociation(String mimeType, String ext) {
             Objects.requireNonNull(ext);
-            return new FileAssociation.Stub(Optional.ofNullable(description), Optional.ofNullable(icon), mimeType.orElse(null), ext);
+            Objects.requireNonNull(mimeType);
+            return new FileAssociation.Stub(Optional.ofNullable(description), Optional.ofNullable(icon), mimeType, ext);
         }
 
         private Path icon;

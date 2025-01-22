@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,12 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.Launcher;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
 import static jdk.jpackage.internal.StandardBundlerParam.ABOUT_URL;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.ADD_MODULES;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
@@ -50,15 +41,28 @@ import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
 import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.LIMIT_MODULES;
 import static jdk.jpackage.internal.StandardBundlerParam.MODULE_PATH;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
+import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 import static jdk.jpackage.internal.StandardBundlerParam.isRuntimeInstaller;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.RuntimeLayout;
 import jdk.jpackage.internal.util.function.ThrowingFunction;
@@ -69,16 +73,17 @@ final class FromParams {
             Function<Map<String, ? super Object>, Launcher> launcherMapper, ApplicationLayout appLayout)
             throws ConfigException, IOException {
 
-        var appBuilder = new ApplicationBuilder()
-                .name(APP_NAME.fetchFrom(params))
-                .description(DESCRIPTION.fetchFrom(params))
-                .version(VERSION.fetchFrom(params))
-                .vendor(VENDOR.fetchFrom(params))
-                .copyright(COPYRIGHT.fetchFrom(params))
-                .srcDir(SOURCE_DIR.fetchFrom(params))
-                .contentDirs(APP_CONTENT.fetchFrom(params));
+        final var appBuilder = new ApplicationBuilder();
 
-        var isRuntimeInstaller = isRuntimeInstaller(params);
+        APP_NAME.copyInto(params, appBuilder::name);
+        DESCRIPTION.copyInto(params, appBuilder::description);
+        appBuilder.version(VERSION.fetchFrom(params));
+        VENDOR.copyInto(params, appBuilder::vendor);
+        COPYRIGHT.copyInto(params, appBuilder::copyright);
+        SOURCE_DIR.copyInto(params, appBuilder::srcDir);
+        APP_CONTENT.copyInto(params, appBuilder::contentDirs);
+
+        final var isRuntimeInstaller = isRuntimeInstaller(params);
 
         if (isRuntimeInstaller) {
             appBuilder.appImageLayout(RuntimeLayout.DEFAULT);
@@ -86,34 +91,32 @@ final class FromParams {
             appBuilder.appImageLayout(appLayout);
         }
 
-        var predefinedAppImage = getPredefinedAppImage(params);
-
         if (isRuntimeInstaller) {
-        } else if (predefinedAppImage != null) {
-            var appIMafeFile = AppImageFile2.load(predefinedAppImage, appLayout);
-            appBuilder.initFromAppImage(appIMafeFile, launcherInfo -> {
+            // NOP if building Java runtime installer
+        } else if (hasPredefinedAppImage(params)) {
+            final var appImageFile = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params);
+            appBuilder.initFromAppImage(appImageFile, launcherInfo -> {
                 var launcherParams = mapLauncherInfo(launcherInfo);
                 return launcherMapper.apply(mergeParams(params, launcherParams));
             });
         } else {
-            var launchers = createLaunchers(params, launcherMapper);
+            final var launchers = createLaunchers(params, launcherMapper);
 
-            var runtimeBuilderBuilder = new RuntimeBuilderBuilder()
-                    .modulePath(MODULE_PATH.fetchFrom(params));
+            final var runtimeBuilderBuilder = new RuntimeBuilderBuilder();
 
-            Path predefinedRuntimeImage = PREDEFINED_RUNTIME_IMAGE.fetchFrom(params);
-            if (predefinedRuntimeImage != null) {
-                runtimeBuilderBuilder.forRuntime(predefinedRuntimeImage);
-            } else {
-                var startupInfos = launchers.asList().stream()
+            MODULE_PATH.copyInto(params, runtimeBuilderBuilder::modulePath);
+
+            final var predefinedRuntimeImage = PREDEFINED_RUNTIME_IMAGE.findIn(params);
+            predefinedRuntimeImage.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
+                final var startupInfos = launchers.asList().stream()
                         .map(Launcher::startupInfo)
                         .map(Optional::orElseThrow).toList();
-                runtimeBuilderBuilder.forNewRuntime(startupInfos)
-                        .addModules(ADD_MODULES.fetchFrom(params))
-                        .limitModules(LIMIT_MODULES.fetchFrom(params))
-                        .options(JLINK_OPTIONS.fetchFrom(params))
-                        .appy();
-            }
+                final var jlinkOptionsBuilder = runtimeBuilderBuilder.forNewRuntime(startupInfos);
+                ADD_MODULES.copyInto(params, jlinkOptionsBuilder::addModules);
+                LIMIT_MODULES.copyInto(params, jlinkOptionsBuilder::limitModules);
+                JLINK_OPTIONS.copyInto(params, jlinkOptionsBuilder::options);
+                jlinkOptionsBuilder.appy();
+            });
 
             appBuilder.launchers(launchers).runtimeBuilder(runtimeBuilderBuilder.create());
         }
@@ -124,38 +127,34 @@ final class FromParams {
     static PackageBuilder createPackageBuilder(
             Map<String, ? super Object> params, Application app,
             PackageType type) throws ConfigException {
-        return new PackageBuilder(app, type)
-                .name(INSTALLER_NAME.fetchFrom(params))
-                .description(DESCRIPTION.fetchFrom(params))
-                .version(VERSION.fetchFrom(params))
-                .aboutURL(ABOUT_URL.fetchFrom(params))
-                .licenseFile(Optional.ofNullable(LICENSE_FILE.fetchFrom(params)).map(Path::of).orElse(null))
-                .predefinedAppImage(getPredefinedAppImage(params))
-                .installDir(Optional.ofNullable(INSTALL_DIR.fetchFrom(params)).map(Path::of).orElse(null));
+
+        final var builder = new PackageBuilder(app, type);
+
+        builder.name(INSTALLER_NAME.fetchFrom(params));
+        DESCRIPTION.copyInto(params, builder::description);
+        VERSION.copyInto(params, builder::version);
+        ABOUT_URL.copyInto(params, builder::aboutURL);
+        LICENSE_FILE.findIn(params).map(Path::of).ifPresent(builder::licenseFile);
+        builder.predefinedAppImage(getPredefinedAppImage(params));
+        INSTALL_DIR.findIn(params).map(Path::of).ifPresent(builder::installDir);
+
+        return builder;
     }
 
     static <T extends Application> BundlerParamInfo<T> createApplicationBundlerParam(
-            ThrowingFunction<Map<String, ? super Object>, T> valueFunc) {
-        return BundlerParamInfo.createBundlerParam("target.application", params -> {
-            var app = valueFunc.apply(params);
-            params.put(APPLICATION.getID(), app);
-            return app;
-        });
+            ThrowingFunction<Map<String, ? super Object>, T> ctor) {
+        return BundlerParamInfo.createBundlerParam(Application.class, ctor);
     }
 
     static <T extends jdk.jpackage.internal.model.Package> BundlerParamInfo<T> createPackageBundlerParam(
-            ThrowingFunction<Map<String, ? super Object>, T> valueFunc) {
-        return BundlerParamInfo.createBundlerParam("target.package", params -> {
-            var pkg = valueFunc.apply(params);
-            params.put(PACKAGE.getID(), pkg);
-            return pkg;
-        });
+            ThrowingFunction<Map<String, ? super Object>, T> ctor) {
+        return BundlerParamInfo.createBundlerParam(jdk.jpackage.internal.model.Package.class, ctor);
     }
 
     private static ApplicationLaunchers createLaunchers(
             Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper) {
-        var launchers = Optional.ofNullable(ADD_LAUNCHERS.fetchFrom(params)).orElseGet(List::of);
+        var launchers = ADD_LAUNCHERS.findIn(params).orElseGet(List::of);
 
         var mainLauncher = launcherMapper.apply(params);
         var additionalLaunchers = launchers.stream().map(launcherParams -> {
@@ -167,7 +166,7 @@ final class FromParams {
 
     private static Map<String, ? super Object> mapLauncherInfo(LauncherInfo launcherInfo) {
         Map<String, ? super Object> launcherParams = new HashMap<>();
-        launcherParams.put(APP_NAME.getID(), launcherInfo.name());
+        launcherParams.put(NAME.getID(), launcherInfo.name());
         launcherParams.put(LAUNCHER_AS_SERVICE.getID(), Boolean.toString(launcherInfo.service()));
         launcherParams.putAll(launcherInfo.extra());
         return launcherParams;

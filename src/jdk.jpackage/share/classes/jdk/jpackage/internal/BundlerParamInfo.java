@@ -74,6 +74,11 @@ record BundlerParamInfo<T>(String id, Class<T> valueType,
         return new BundlerParamInfo(id, valueType, ThrowingFunction.toFunction(valueCtor), null);
     }
 
+    static <U> BundlerParamInfo<U> createBundlerParam(Class<? super U> valueType,
+            ThrowingFunction<Map<String, ? super Object>, U> valueCtor) {
+        return createBundlerParam(valueType.getName(), valueType, valueCtor);
+    }
+
     static boolean toBoolean(String value, Map<String, ? super Object> params) {
         if (value == null || "null".equalsIgnoreCase(value)) {
             return false;

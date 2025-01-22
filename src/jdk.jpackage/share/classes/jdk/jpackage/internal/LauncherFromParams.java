@@ -24,18 +24,7 @@
  */
 package jdk.jpackage.internal;
 
-import java.nio.file.Path;
-import java.util.List;
-import jdk.jpackage.internal.model.Launcher;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.function.Predicate;
-import jdk.internal.util.OperatingSystem;
-import static jdk.internal.util.OperatingSystem.LINUX;
-import static jdk.internal.util.OperatingSystem.MACOS;
-import static jdk.internal.util.OperatingSystem.WINDOWS;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.I18N.buildConfigException;
 import static jdk.jpackage.internal.StandardBundlerParam.ARGUMENTS;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
@@ -43,54 +32,92 @@ import static jdk.jpackage.internal.StandardBundlerParam.FA_DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.FA_EXTENSIONS;
 import static jdk.jpackage.internal.StandardBundlerParam.FA_ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
-import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.JAVA_OPTIONS;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_DATA;
+import static jdk.jpackage.internal.StandardBundlerParam.NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.stream.IntStream;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
 import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
 
-record LauncherFromParams(Predicate<FileAssociation> faPredicate) {
+record LauncherFromParams(Optional<BiFunction<FileAssociation, Map<String, ? super Object>, FileAssociation>> faExtension) {
 
     LauncherFromParams {
-        Objects.requireNonNull(faPredicate);
+        Objects.requireNonNull(faExtension);
     }
 
     LauncherFromParams() {
-        this(LauncherBuilder::isFileAssociationValid);
+        this(Optional.empty());
     }
 
     Launcher create(Map<String, ? super Object> params) throws ConfigException {
-        var builder = new LauncherBuilder()
-                .description(DESCRIPTION.fetchFrom(params))
-                .icon(toLauncherIcon(ICON.fetchFrom(params)))
-                .isService(LAUNCHER_AS_SERVICE.fetchFrom(params))
-                .name(APP_NAME.fetchFrom(params))
-                .defaultIconResourceName(defaultIconResourceName())
-                .faPrediacate(faPredicate);
+        final var builder = new LauncherBuilder().defaultIconResourceName(defaultIconResourceName());
 
-        if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
-            builder.startupInfo(new LauncherStartupInfoBuilder()
-                    .launcherData(StandardBundlerParam.LAUNCHER_DATA.fetchFrom(params))
-                    .defaultParameters(ARGUMENTS.fetchFrom(params))
-                    .javaOptions(JAVA_OPTIONS.fetchFrom(params))
-                    .create());
+        DESCRIPTION.copyInto(params, builder::description);
+        builder.icon(toLauncherIcon(ICON.findIn(params).orElse(null)));
+        LAUNCHER_AS_SERVICE.copyInto(params, builder::isService);
+        NAME.copyInto(params, builder::name);
+
+        if (PREDEFINED_APP_IMAGE.findIn(params).isEmpty()) {
+            final var startupInfoBuilder = new LauncherStartupInfoBuilder();
+
+            startupInfoBuilder.launcherData(LAUNCHER_DATA.fetchFrom(params));
+            ARGUMENTS.copyInto(params, startupInfoBuilder::defaultParameters);
+            JAVA_OPTIONS.copyInto(params, startupInfoBuilder::javaOptions);
+
+            builder.startupInfo(startupInfoBuilder.create());
         }
 
-        var faSources = Optional.ofNullable(
-                FILE_ASSOCIATIONS.fetchFrom(params)).orElseGet(List::of).stream().map(faParams -> {
-            return FileAssociationGroup.build()
-                    .description(FA_DESCRIPTION.fetchFrom(faParams))
-                    .icon(FA_ICON.fetchFrom(faParams))
-                    .extensions(FA_EXTENSIONS.fetchFrom(faParams))
-                    .mimeTypes(FA_CONTENT_TYPE.fetchFrom(faParams))
-                    .create();
+        final var faParamsList = FILE_ASSOCIATIONS.findIn(params).orElseGet(List::of);
+
+        final var faGroups = IntStream.range(0, faParamsList.size()).mapToObj(idx -> {
+            final var faParams = faParamsList.get(idx);
+            return toSupplier(() -> {
+                final var faGroupBuilder = FileAssociationGroup.build();
+
+                FA_DESCRIPTION.copyInto(faParams, faGroupBuilder::description);
+                FA_ICON.copyInto(faParams, faGroupBuilder::icon);
+                FA_EXTENSIONS.copyInto(faParams, faGroupBuilder::extensions);
+                FA_CONTENT_TYPE.copyInto(faParams, faGroupBuilder::mimeTypes);
+
+                final var faID = idx + 1;
+
+                final FileAssociationGroup faGroup;
+                try {
+                    faGroup = faGroupBuilder.create();
+                } catch (FileAssociationGroup.FileAssociationNoMimesException ex) {
+                    throw buildConfigException()
+                            .message("error.no-content-types-for-file-association", faID)
+                            .advice("error.no-content-types-for-file-association.advice", faID)
+                            .create();
+                }
+
+                if (faExtension.isPresent()) {
+                    return new FileAssociationGroup(faGroup.items().stream().map(fa -> {
+                        return faExtension.get().apply(fa, params);
+                    }).toList());
+                } else {
+                    return faGroup;
+                }
+            }).get();
         }).toList();
 
-        return builder.faSources(faSources).create();
+        return builder.faGroups(faGroups).create();
     }
 
     private static LauncherIcon toLauncherIcon(Path launcherIconPath) {

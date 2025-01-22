@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,8 @@
  */
 package jdk.jpackage.internal;
 
-import java.io.IOException;
-import jdk.jpackage.internal.model.ConfigException;
-import jdk.jpackage.internal.model.WinMsiPackage;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.BundlerParamInfo.createBooleanBundlerParam;
 import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.FromParams.createApplicationBuilder;
 import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
@@ -43,75 +36,80 @@ import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SHORTCUT_HINT;
 import static jdk.jpackage.internal.WinAppImageBuilder.APPLICATION_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.WIN_MSI;
-import jdk.jpackage.internal.model.WinApplication;
-import jdk.jpackage.internal.model.WinLauncher;
 import static jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut.WIN_SHORTCUT_DESKTOP;
 import static jdk.jpackage.internal.model.WinLauncherMixin.WinShortcut.WIN_SHORTCUT_START_MENU;
-import jdk.jpackage.internal.model.WinLauncherMixin;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.WinApplication;
+import jdk.jpackage.internal.model.WinLauncher;
+import jdk.jpackage.internal.model.WinLauncherMixin;
+import jdk.jpackage.internal.model.WinMsiPackage;
 
 final class WinFromParams {
 
     private static WinApplication createWinApplication(
             Map<String, ? super Object> params) throws ConfigException, IOException {
-        var launcherFromParams = new LauncherFromParams();
-        var app = createApplicationBuilder(params, toFunction(launcherParams -> {
-            var launcher = launcherFromParams.create(launcherParams);
 
-            boolean isConsole = CONSOLE_HINT.fetchFrom(launcherParams);
+        final var launcherFromParams = new LauncherFromParams();
 
-            var shortcuts = Map.of(WIN_SHORTCUT_DESKTOP, List.of(SHORTCUT_HINT,
+        final var app = createApplicationBuilder(params, toFunction(launcherParams -> {
+
+            final var launcher = launcherFromParams.create(launcherParams);
+
+            final boolean isConsole = CONSOLE_HINT.findIn(launcherParams).orElse(false);
+
+            final var shortcuts = Map.of(WIN_SHORTCUT_DESKTOP, List.of(SHORTCUT_HINT,
                 WIN_SHORTCUT_HINT), WIN_SHORTCUT_START_MENU, List.of(MENU_HINT,
                         WIN_MENU_HINT)).entrySet().stream().filter(e -> {
-                    var shortcutParams = e.getValue();
-                    if (launcherParams.containsKey(shortcutParams.get(0).getID())) {
-                        // This is an explicit shortcut configuration for an addition launcher
-                        return shortcutParams.get(0).fetchFrom(launcherParams);
-                    } else {
-                        return shortcutParams.get(1).fetchFrom(launcherParams);
-                    }
+
+                    final var shortcutParams = e.getValue();
+
+                    return shortcutParams.get(0).findIn(launcherParams).orElseGet(() -> {
+                        return shortcutParams.get(1).findIn(launcherParams).orElse(false);
+                    });
                 }).map(Map.Entry::getKey).collect(toSet());
 
             return WinLauncher.create(launcher, new WinLauncherMixin.Stub(isConsole, shortcuts));
+
         }), APPLICATION_LAYOUT).create();
+
         return WinApplication.create(app);
     }
 
     private static WinMsiPackage createWinMsiPackage(Map<String, ? super Object> params) throws ConfigException, IOException {
 
-        var app = APPLICATION.fetchFrom(params);
+        final var app = APPLICATION.fetchFrom(params);
 
-        var pkgBuilder = createPackageBuilder(params, app, WIN_MSI);
+        final var superPkgBuilder = createPackageBuilder(params, app, WIN_MSI);
 
-        final Path serviceInstaller;
-        if (!app.isService()) {
-            serviceInstaller = null;
-        } else {
-            serviceInstaller = Optional.ofNullable(RESOURCE_DIR.fetchFrom(params)).map(
-                    resourceDir -> {
-                        return resourceDir.resolve("service-installer.exe");
-                    }).orElse(null);
+        final var pkgBuilder = new WinMsiPackageBuilder(superPkgBuilder);
+
+        HELP_URL.copyInto(params, pkgBuilder::helpURL);
+        MSI_SYSTEM_WIDE.copyInto(params, pkgBuilder::isSystemWideInstall);
+        MENU_GROUP.copyInto(params, pkgBuilder::startMenuGroupName);
+        UPDATE_URL.copyInto(params, pkgBuilder::updateURL);
+        INSTALLDIR_CHOOSER.copyInto(params, pkgBuilder::withInstallDirChooser);
+        SHORTCUT_PROMPT.copyInto(params, pkgBuilder::withShortcutPrompt);
+
+        if (app.isService()) {
+            RESOURCE_DIR.copyInto(params, resourceDir -> {
+                pkgBuilder.serviceInstaller(resourceDir.resolve("service-installer.exe"));
+            });
         }
 
-        return new WinMsiPackageBuilder(pkgBuilder)
-                .helpURL(HELP_URL.fetchFrom(params))
-                .isSystemWideInstall(MSI_SYSTEM_WIDE.fetchFrom(params))
-                .serviceInstaller(serviceInstaller)
-                .startMenuGroupName(MENU_GROUP.fetchFrom(params))
-                .updateURL(UPDATE_URL.fetchFrom(params))
-                .upgradeCode(getUpgradeCode(params))
-                .withInstallDirChooser(INSTALLDIR_CHOOSER.fetchFrom(params))
-                .withShortcutPrompt(SHORTCUT_PROMPT.fetchFrom(params))
-                .create();
-    }
-
-    private static UUID getUpgradeCode(Map<String, ? super Object> params) throws ConfigException {
         try {
-            return Optional.ofNullable(UPGRADE_UUID.fetchFrom(params)).map(UUID::fromString).orElse(
-                    null);
+            UPGRADE_UUID.findIn(params).map(UUID::fromString).ifPresent(pkgBuilder::upgradeCode);
         } catch (IllegalArgumentException ex) {
             throw new ConfigException(ex);
         }
+
+        return pkgBuilder.create();
     }
 
     static final BundlerParamInfo<WinApplication> APPLICATION = createApplicationBundlerParam(
@@ -120,61 +118,34 @@ final class WinFromParams {
     static final BundlerParamInfo<WinMsiPackage> MSI_PACKAGE = createPackageBundlerParam(
             WinFromParams::createWinMsiPackage);
 
-    private static final BundlerParamInfo<Boolean> WIN_MENU_HINT = new BundlerParamInfo<>(
-            Arguments.CLIOptions.WIN_MENU_HINT.getId(),
-            Boolean.class,
-            p -> false,
-            // valueOf(null) is false,
-            // and we actually do want null in some cases
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
+    private static final BundlerParamInfo<Boolean> WIN_MENU_HINT = createBooleanBundlerParam(
+            Arguments.CLIOptions.WIN_MENU_HINT.getId());
 
-    private static final BundlerParamInfo<Boolean> WIN_SHORTCUT_HINT = new BundlerParamInfo<>(
-            Arguments.CLIOptions.WIN_SHORTCUT_HINT.getId(),
-            Boolean.class,
-            p -> false,
-            // valueOf(null) is false,
-            // and we actually do want null in some cases
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? false : Boolean.valueOf(s));
+    private static final BundlerParamInfo<Boolean> WIN_SHORTCUT_HINT = createBooleanBundlerParam(
+            Arguments.CLIOptions.WIN_SHORTCUT_HINT.getId());
 
-    public static final BundlerParamInfo<Boolean> CONSOLE_HINT = new BundlerParamInfo<>(
-            Arguments.CLIOptions.WIN_CONSOLE_HINT.getId(),
-            Boolean.class,
-            params -> false,
-            // valueOf(null) is false,
-            // and we actually do want null in some cases
-            (s, p) -> (s == null
-            || "null".equalsIgnoreCase(s)) ? true : Boolean.valueOf(s));
+    public static final BundlerParamInfo<Boolean> CONSOLE_HINT = createBooleanBundlerParam(
+            Arguments.CLIOptions.WIN_CONSOLE_HINT.getId());
 
     private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_DIR_CHOOSER.getId(),
             Boolean.class,
-            params -> false,
+            null,
             (s, p) -> Boolean.valueOf(s)
     );
 
     private static final BundlerParamInfo<Boolean> SHORTCUT_PROMPT = new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_SHORTCUT_PROMPT.getId(),
             Boolean.class,
-            params -> false,
+            null,
             (s, p) -> Boolean.valueOf(s)
     );
 
-    private static final BundlerParamInfo<String> MENU_GROUP = new BundlerParamInfo<>(
-            Arguments.CLIOptions.WIN_MENU_GROUP.getId(),
-            String.class,
-            params -> I18N.getString("param.menu-group.default"),
-            (s, p) -> s
-    );
+    private static final BundlerParamInfo<String> MENU_GROUP = createStringBundlerParam(
+            Arguments.CLIOptions.WIN_MENU_GROUP.getId());
 
-    private static final BundlerParamInfo<Boolean> MSI_SYSTEM_WIDE = new BundlerParamInfo<>(
-            Arguments.CLIOptions.WIN_PER_USER_INSTALLATION.getId(),
-            Boolean.class,
-            params -> true, // MSIs default to system wide
-            // valueOf(null) is false,
-            // and we actually do want null
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ? null
-            : Boolean.valueOf(s)
-    );
+    private static final BundlerParamInfo<Boolean> MSI_SYSTEM_WIDE = createBooleanBundlerParam(
+            Arguments.CLIOptions.WIN_PER_USER_INSTALLATION.getId());
 
     private static final BundlerParamInfo<String> HELP_URL = createStringBundlerParam(
             Arguments.CLIOptions.WIN_HELP_URL.getId());

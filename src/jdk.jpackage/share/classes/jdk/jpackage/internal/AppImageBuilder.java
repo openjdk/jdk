@@ -25,28 +25,31 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ApplicationLayout;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.Package;
+import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ExceptionBox;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 
 final class AppImageBuilder {
@@ -57,13 +60,11 @@ final class AppImageBuilder {
         }
 
         Builder addItem(AppImageItem v) {
-            Objects.requireNonNull(v);
-            Optional.ofNullable(customAppImageItemGroups.get(curGroup)).orElseGet(() -> {
-                List<AppImageItem> items = new ArrayList<>();
-                customAppImageItemGroups.put(curGroup, items);
-                return items;
-            }).add(v);
-            return this;
+            return addItem(v, Scope.ALL);
+        }
+
+        Builder addApplicationItem(AppImageItem v) {
+            return addItem(v, Scope.APPLICATION_ONLY);
         }
 
         Builder itemGroup(AppImageItemGroup v) {
@@ -74,10 +75,6 @@ final class AppImageBuilder {
 
         Builder excludeDirFromCopying(Path path) {
             Objects.requireNonNull(path);
-
-            if (excludeCopyDirs == null) {
-                excludeCopyDirs = new ArrayList<>();
-            }
             excludeCopyDirs.add(path);
             return this;
         }
@@ -90,9 +87,18 @@ final class AppImageBuilder {
             return new AppImageBuilder(pkg, excludeCopyDirs, customAppImageItemGroups);
         }
 
-        private List<Path> excludeCopyDirs;
+        private Builder addItem(AppImageItem v, Set<Scope> scope) {
+            Optional.ofNullable(customAppImageItemGroups.get(curGroup)).orElseGet(() -> {
+                List<ScopedAppImageItem> items = new ArrayList<>();
+                customAppImageItemGroups.put(curGroup, items);
+                return items;
+            }).add(new ScopedAppImageItem(v, scope));
+            return this;
+        }
+
+        private List<Path> excludeCopyDirs = new ArrayList<>();
         private AppImageItemGroup curGroup = AppImageItemGroup.END;
-        private Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups = new HashMap<>();
+        private Map<AppImageItemGroup, List<ScopedAppImageItem>> customAppImageItemGroups = new HashMap<>();
     }
 
     static Builder build() {
@@ -108,50 +114,84 @@ final class AppImageBuilder {
         END
     }
 
+    private enum Scope {
+        APPLICATION,
+        PACKAGE;
+
+        final static Set<Scope> APPLICATION_ONLY = Set.of(APPLICATION);
+        final static Set<Scope> ALL = EnumSet.allOf(Scope.class);
+    }
+
+    private record ScopedAppImageItem(AppImageItem item, Set<Scope> scope) {
+        ScopedAppImageItem {
+            Objects.requireNonNull(item);
+            Objects.requireNonNull(scope);
+        }
+
+        boolean isInScope(Scope v) {
+            return scope.contains(v);
+        }
+    }
+
     @FunctionalInterface
     interface AppImageItem {
         void write(BuildEnv env, Application app, ApplicationLayout appLayout) throws IOException, PackagerException;
     }
 
-    private AppImageBuilder(Application app, ApplicationLayout appLayout,
-            List<Path> excludeCopyDirs, boolean withAppImageFile,
-            Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
+    private AppImageBuilder(Scope scope, Application app, ApplicationLayout appLayout,
+            List<Path> excludeCopyDirs, Map<AppImageItemGroup, List<ScopedAppImageItem>> customAppImageItemGroups) {
+
         this.app = Objects.requireNonNull(app);
         this.appLayout = Objects.requireNonNull(appLayout);
 
+        Objects.requireNonNull(scope);
+        Objects.requireNonNull(excludeCopyDirs);
+        Objects.requireNonNull(customAppImageItemGroups);
+
         appImageItemGroups = new HashMap<>();
+
         appImageItemGroups.put(AppImageItemGroup.RUNTIME, List.of(
                 createRuntimeAppImageItem()));
         appImageItemGroups.put(AppImageItemGroup.CONTENT, List.of(
-                createContentAppImageItem(
-                        Optional.ofNullable(excludeCopyDirs).orElseGet(List::of))));
+                createContentAppImageItem(excludeCopyDirs)));
         appImageItemGroups.put(AppImageItemGroup.LAUNCHERS, List.of(
                 createLaunchersAppImageItem()));
-        if (withAppImageFile) {
-            appImageItemGroups.put(AppImageItemGroup.APP_IMAGE_FILE, List.of(
-                    createAppImageFileAppImageItem()));
+
+        switch (scope) {
+            case APPLICATION -> {
+                appImageItemGroups.put(AppImageItemGroup.APP_IMAGE_FILE, List.of(
+                        createAppImageFileAppImageItem()));
+            }
+
+            default -> {
+                // NOP
+            }
         }
 
         for (var e : customAppImageItemGroups.entrySet()) {
-            var group = e.getKey();
-            var mutableItems = Optional.ofNullable(appImageItemGroups.get(group)).map(items -> {
+            final var group = e.getKey();
+            final var mutableItems = Optional.ofNullable(appImageItemGroups.get(group)).map(items -> {
                 return new ArrayList<>(items);
             }).orElseGet(() -> {
                 return new ArrayList<>();
             });
-            mutableItems.addAll(e.getValue());
-            appImageItemGroups.put(group, mutableItems);
+            mutableItems.addAll(e.getValue().stream().filter(item -> {
+                return item.isInScope(scope);
+            }).map(ScopedAppImageItem::item).toList());
+            if (!mutableItems.isEmpty()) {
+                appImageItemGroups.put(group, mutableItems);
+            }
         }
     }
 
     private AppImageBuilder(Application app, List<Path> excludeCopyDirs,
-            Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
-        this(app, app.asApplicationLayout().orElseThrow(), excludeCopyDirs, true, customAppImageItemGroups);
+            Map<AppImageItemGroup, List<ScopedAppImageItem>> customAppImageItemGroups) {
+        this(Scope.APPLICATION, app, app.asApplicationLayout().orElseThrow(), excludeCopyDirs, customAppImageItemGroups);
     }
 
     private AppImageBuilder(Package pkg, List<Path> excludeCopyDirs,
-            Map<AppImageItemGroup, List<AppImageItem>> customAppImageItemGroups) {
-        this(pkg.app(), pkg.asPackageApplicationLayout().orElseThrow(), excludeCopyDirs, false, customAppImageItemGroups);
+            Map<AppImageItemGroup, List<ScopedAppImageItem>> customAppImageItemGroups) {
+        this(Scope.PACKAGE, pkg.app(), pkg.asPackageApplicationLayout().orElseThrow(), excludeCopyDirs, customAppImageItemGroups);
     }
 
     private static void copyRecursive(Path srcDir, Path dstDir, List<Path> excludeDirs) throws IOException {
