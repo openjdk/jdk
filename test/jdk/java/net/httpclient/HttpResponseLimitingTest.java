@@ -45,11 +45,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
@@ -148,8 +150,8 @@ class HttpResponseLimitingTest {
             return builder.build();
         }
 
-        private HttpResponse<byte[]> requestBytes(long capacity) throws Exception {
-            var handler = BodyHandlers.limiting(BodyHandlers.ofByteArray(), capacity);
+        private <T> HttpResponse<T> request(BodyHandler<T> downstreamHandler, long capacity) throws Exception {
+            var handler = BodyHandlers.limiting(downstreamHandler, capacity);
             return client.send(request, handler);
         }
 
@@ -171,9 +173,21 @@ class HttpResponseLimitingTest {
 
     @ParameterizedTest
     @MethodSource("sufficientCapacities")
-    void testSuccessOnSufficientCapacity(ServerClientPair pair, long sufficientCapacity) throws Exception {
-        HttpResponse<byte[]> response = pair.requestBytes(sufficientCapacity);
+    void testSuccessOnSufficientCapacityForByteArray(ServerClientPair pair, long sufficientCapacity) throws Exception {
+        HttpResponse<byte[]> response = pair.request(BodyHandlers.ofByteArray(), sufficientCapacity);
         assertArrayEquals(RESPONSE_BODY, response.body());
+    }
+
+    @ParameterizedTest
+    @MethodSource("sufficientCapacities")
+    void testSuccessOnSufficientCapacityForInputStream(ServerClientPair pair, long sufficientCapacity) throws Exception {
+        HttpResponse<InputStream> response = pair.request(BodyHandlers.ofInputStream(), sufficientCapacity);
+        try (InputStream responseBodyStream = response.body()) {
+            byte[] responseBodyBuffer = new byte[RESPONSE_BODY.length];
+            int responseBodyBufferLength = responseBodyStream.read(responseBodyBuffer);
+            assertEquals(responseBodyBuffer.length, responseBodyBufferLength);
+            assertArrayEquals(RESPONSE_BODY, responseBodyBuffer);
+        }
     }
 
     static Arguments[] sufficientCapacities() {
@@ -185,9 +199,24 @@ class HttpResponseLimitingTest {
 
     @ParameterizedTest
     @MethodSource("insufficientCapacities")
-    void testFailureOnInsufficientCapacity(ServerClientPair pair, long insufficientCapacity) {
-        var exception = assertThrows(IOException.class, () -> pair.requestBytes(insufficientCapacity));
+    void testFailureOnInsufficientCapacityForByteArray(ServerClientPair pair, long insufficientCapacity) {
+        var exception = assertThrows(
+                IOException.class,
+                () -> pair.request(BodyHandlers.ofByteArray(), insufficientCapacity));
         assertEquals(exception.getMessage(), "body exceeds capacity: " + insufficientCapacity);
+    }
+
+    @ParameterizedTest
+    @MethodSource("insufficientCapacities")
+    void testFailureOnInsufficientCapacityForInputStream(ServerClientPair pair, long insufficientCapacity) throws Exception {
+        HttpResponse<InputStream> response = pair.request(BodyHandlers.ofInputStream(), insufficientCapacity);
+        try (InputStream responseBodyStream = response.body()) {
+            var exception = assertThrows(
+                    IOException.class,
+                    () -> responseBodyStream.read(new byte[RESPONSE_BODY.length]));
+            assertNotNull(exception.getCause());
+            assertEquals(exception.getCause().getMessage(), "body exceeds capacity: " + insufficientCapacity);
+        }
     }
 
     static Arguments[] insufficientCapacities() {
