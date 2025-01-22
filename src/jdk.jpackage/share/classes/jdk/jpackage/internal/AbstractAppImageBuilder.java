@@ -32,8 +32,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Stream;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
@@ -42,6 +40,8 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.OUTPUT_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
 import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.PathUtils;
 
 /*
  * AbstractAppImageBuilder
@@ -92,7 +92,7 @@ public abstract class AbstractAppImageBuilder {
                 }
             }
 
-            IOUtils.copyRecursive(inputPath,
+            FileUtils.copyRecursive(inputPath,
                     appLayout.appDirectory().toAbsolutePath(), excludes);
         }
 
@@ -100,7 +100,7 @@ public abstract class AbstractAppImageBuilder {
 
         List<String> items = APP_CONTENT.fetchFrom(params);
         for (String item : items) {
-            IOUtils.copyRecursive(Path.of(item),
+            FileUtils.copyRecursive(Path.of(item),
                 appLayout.contentDirectory().resolve(Path.of(item).getFileName()));
         }
     }
@@ -115,7 +115,7 @@ public abstract class AbstractAppImageBuilder {
         }
 
         final String resourcePublicName = APP_NAME.fetchFrom(params)
-                + IOUtils.getSuffix(Path.of(defaultIconName));
+                + PathUtils.getSuffix(Path.of(defaultIconName));
 
         IconType iconType = getLauncherIconType(params);
         if (iconType == IconType.NoIcon) {

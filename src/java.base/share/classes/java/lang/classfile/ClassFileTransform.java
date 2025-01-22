@@ -60,12 +60,7 @@ import java.util.function.Supplier;
  * its state must be reset for each traversal; this will happen automatically if
  * the transform is created with {@link ClassTransform#ofStateful(Supplier)} (or
  * corresponding methods for other classfile locations.)
- * <p>
- * Class transformation sample where code transformation is stateful:
- * {@snippet lang="java" class="PackageSnippets" region="codeRelabeling"}
- * <p>
- * Complex class instrumentation sample chaining multiple transformations:
- * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
+ *
  * @param <C> the transform type
  * @param <E> the element type
  * @param <B> the builder type

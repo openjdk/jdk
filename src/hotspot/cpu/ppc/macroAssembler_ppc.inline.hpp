@@ -297,6 +297,20 @@ inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_
   }
 }
 
+inline void MacroAssembler::f2hf(Register dst, FloatRegister src, FloatRegister tmp) {
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  xscvdphp(tmp->to_vsr(), src->to_vsr());
+  mffprd(dst, tmp);
+  // Make it a proper short (sign-extended).
+  extsh(dst, dst);
+}
+
+inline void MacroAssembler::hf2f(FloatRegister dst, Register src) {
+  mtfprd(dst, src);
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  xscvhpdp(dst->to_vsr(), dst->to_vsr());
+}
+
 // Convenience bc_far versions
 inline void MacroAssembler::blt_far(ConditionRegister crx, Label& L, int optimize) { MacroAssembler::bc_far(bcondCRbiIs1, bi0(crx, less), L, optimize); }
 inline void MacroAssembler::bgt_far(ConditionRegister crx, Label& L, int optimize) { MacroAssembler::bc_far(bcondCRbiIs1, bi0(crx, greater), L, optimize); }

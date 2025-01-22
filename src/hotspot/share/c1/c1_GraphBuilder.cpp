@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "c1/c1_CFGPrinter.hpp"
 #include "c1/c1_Canonicalizer.hpp"
 #include "c1/c1_Compilation.hpp"
@@ -41,12 +40,8 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/vm_version.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/checkedCast.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -2121,7 +2116,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   if (cha_monomorphic_target != nullptr) {
-    assert(!target->can_be_statically_bound() || target->equals(cha_monomorphic_target), "");
+    assert(!target->can_be_statically_bound() || target == cha_monomorphic_target, "");
     assert(!cha_monomorphic_target->is_abstract(), "");
     if (!cha_monomorphic_target->can_be_statically_bound(actual_recv)) {
       // If we inlined because CHA revealed only a single target method,

@@ -39,10 +39,7 @@ import java.io.Console;
 import java.io.FileDescriptor;
 import java.io.FilePermission;
 import java.io.ObjectInputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.security.ProtectionDomain;
 import java.security.Signature;
 import javax.security.auth.x500.X500Principal;
 
@@ -77,6 +74,7 @@ public class SharedSecrets {
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
     private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
+    private static JavaObjectStreamReflectionAccess javaObjectStreamReflectionAccess;
     private static JavaNetInetAddressAccess javaNetInetAddressAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNetUriAccess javaNetUriAccess;
@@ -88,7 +86,6 @@ public class SharedSecrets {
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
-    private static JavaSecurityAccess javaSecurityAccess;
     private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
@@ -312,19 +309,6 @@ public class SharedSecrets {
         return access;
     }
 
-    public static void setJavaSecurityAccess(JavaSecurityAccess jsa) {
-        javaSecurityAccess = jsa;
-    }
-
-    public static JavaSecurityAccess getJavaSecurityAccess() {
-        var access = javaSecurityAccess;
-        if (access == null) {
-            ensureClassInitialized(ProtectionDomain.class);
-            access = javaSecurityAccess;
-        }
-        return access;
-    }
-
     public static void setJavaSecurityPropertiesAccess(JavaSecurityPropertiesAccess jspa) {
         javaSecurityPropertiesAccess = jspa;
     }
@@ -429,6 +413,21 @@ public class SharedSecrets {
 
     public static void setJavaObjectInputFilterAccess(JavaObjectInputFilterAccess access) {
         javaObjectInputFilterAccess = access;
+    }
+
+    public static JavaObjectStreamReflectionAccess getJavaObjectStreamReflectionAccess() {
+        var access = javaObjectStreamReflectionAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.io.ObjectStreamReflection$Access", true, null);
+                access = javaObjectStreamReflectionAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaObjectStreamReflectionAccess(JavaObjectStreamReflectionAccess access) {
+        javaObjectStreamReflectionAccess = access;
     }
 
     public static void setJavaIORandomAccessFileAccess(JavaIORandomAccessFileAccess jirafa) {

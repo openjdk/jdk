@@ -377,14 +377,6 @@ import java.util.function.BiFunction;
  *     }
  * </pre></blockquote>
  *
- * <P>
- * Applications might choose to process delegated tasks in different
- * threads.  When an {@code SSLEngine}
- * is created, the current {@link java.security.AccessControlContext}
- * is saved.  All future delegated tasks will be processed using this
- * context:  that is, all access control decisions will be made using the
- * context captured at engine creation.
- *
  * <HR>
  *
  * <B>Concurrency Notes</B>:
@@ -817,9 +809,6 @@ public abstract class SSLEngine {
      * java.lang.Runnable#run() run} operation.  Once the
      * {@code run} method returns, the {@code Runnable} object
      * is no longer needed and may be discarded.
-     * <P>
-     * Delegated tasks run in the {@code AccessControlContext}
-     * in place when this object was created.
      * <P>
      * A call to this method will return each outstanding task
      * exactly once.

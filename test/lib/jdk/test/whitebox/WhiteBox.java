@@ -29,18 +29,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.security.BasicPermission;
 import java.util.Objects;
 
 import jdk.test.whitebox.parser.DiagnosticCommand;
 
 public class WhiteBox {
-  @SuppressWarnings("serial")
-  public static class WhiteBoxPermission extends BasicPermission {
-    public WhiteBoxPermission(String s) {
-      super(s);
-    }
-  }
 
   private WhiteBox() {}
   private static final WhiteBox instance = new WhiteBox();
@@ -98,6 +91,8 @@ public class WhiteBox {
   // Returns the potentially abridged form of `str` as it would be
   // printed by the VM.
   public native String printString(String str, int maxLength);
+
+  public native void lockAndStuckInSafepoint();
 
   public int countAliveClasses(String name) {
     // Make sure class name is in the correct format
@@ -775,9 +770,6 @@ public class WhiteBox {
 
   // Resolved Method Table
   public native long resolvedMethodItemsCount();
-
-  // Protection Domain Table
-  public native int protectionDomainRemovedCount();
 
   public native int getKlassMetadataSize(Class<?> c);
 

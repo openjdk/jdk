@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@
 class JvmtiThreadState;
 class RecordComponent;
 class SerializeClosure;
+class ObjectWaiter;
+class ObjectMonitor;
 
 #define CHECK_INIT(offset)  assert(offset != 0, "should be initialized"); return offset;
 
@@ -254,6 +256,7 @@ class java_lang_Class : AllStatic {
   static int _source_file_offset;
   static int _classData_offset;
   static int _classRedefinedCount_offset;
+  static int _reflectionData_offset;
 
   static bool _offsets_computed;
 
@@ -318,11 +321,12 @@ class java_lang_Class : AllStatic {
     set_init_lock(java_class, nullptr);
   }
   static oop  component_mirror(oop java_class);
+  static int component_mirror_offset() { return _component_mirror_offset; }
   static objArrayOop signers(oop java_class);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
-
-  static int component_mirror_offset() { return _component_mirror_offset; }
+  static void set_reflection_data(oop java_class, oop reflection_data);
+  static int reflection_data_offset() { return _reflectionData_offset; }
 
   static oop class_loader(oop java_class);
   static void set_module(oop java_class, oop module);
@@ -535,6 +539,8 @@ class java_lang_ThreadGroup : AllStatic {
 
 
 // Interface to java.lang.VirtualThread objects
+#define VTHREAD_INJECTED_FIELDS(macro)                                           \
+  macro(java_lang_VirtualThread,   objectWaiter,  intptr_signature,       false)
 
 class java_lang_VirtualThread : AllStatic {
  private:
@@ -547,6 +553,7 @@ class java_lang_VirtualThread : AllStatic {
   static int _notified_offset;
   static int _recheckInterval_offset;
   static int _timeout_offset;
+  static int _objectWaiter_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
  public:
   enum {
@@ -598,6 +605,11 @@ class java_lang_VirtualThread : AllStatic {
   static void set_notified(oop vthread, jboolean value);
   static bool is_preempted(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
+
+  static inline ObjectWaiter* objectWaiter(oop vthread);
+  static inline void set_objectWaiter(oop vthread, ObjectWaiter* waiter);
+  static ObjectMonitor* current_pending_monitor(oop vthread);
+  static ObjectMonitor* current_waiting_monitor(oop vthread);
 };
 
 
@@ -1478,27 +1490,6 @@ public:
   static bool is_instance(oop obj);
 };
 
-// Interface to java.security.AccessControlContext objects
-
-class java_security_AccessControlContext: AllStatic {
- private:
-  // Note that for this class the layout changed between JDK1.2 and JDK1.3,
-  // so we compute the offsets at startup rather than hard-wiring them.
-  static int _context_offset;
-  static int _privilegedContext_offset;
-  static int _isPrivileged_offset;
-  static int _isAuthorized_offset;
-
-  static void compute_offsets();
- public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  static oop create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS);
-
-  // Debugging/initialization
-  friend class JavaClasses;
-};
-
-
 // Interface to java.lang.ClassLoader objects
 
 #define CLASSLOADER_INJECTED_FIELDS(macro)                            \
@@ -1555,16 +1546,11 @@ class java_lang_System : AllStatic {
   static int _static_in_offset;
   static int _static_out_offset;
   static int _static_err_offset;
-  static int _static_security_offset;
-  static int _static_allow_security_offset;
-  static int _static_never_offset;
 
  public:
   static int  in_offset() { CHECK_INIT(_static_in_offset); }
   static int out_offset() { CHECK_INIT(_static_out_offset); }
   static int err_offset() { CHECK_INIT(_static_err_offset); }
-  static bool allow_security_manager();
-  static bool has_security_manager();
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;

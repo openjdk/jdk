@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 
 package java.security.cert;
 
-import java.security.AccessController;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Objects;
@@ -317,10 +315,7 @@ public class CertPathBuilder {
      * {@literal "PKIX"} if no such property exists.
      */
     public static final String getDefaultType() {
-        @SuppressWarnings("removal")
-        String cpbtype =
-            AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                    Security.getProperty(CPB_TYPE));
+        String cpbtype = Security.getProperty(CPB_TYPE);
         return (cpbtype == null) ? "PKIX" : cpbtype;
     }
 

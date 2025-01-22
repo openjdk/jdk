@@ -148,13 +148,6 @@ public final class Channels {
         if (!fd.valid())
             throw new IllegalArgumentException("file descriptor is not valid");
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkRead(fd);
-            sm.checkWrite(fd);
-        }
-
         SelectorProvider provider = SelectorProvider.provider();
         if (!(provider instanceof SelectorProviderImpl))
             throw new UnsupportedOperationException("custom SelectorProvider");

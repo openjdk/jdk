@@ -172,8 +172,14 @@ public class CtwRunner {
 
         long classStart = start(totalClassCount);
         long classStop = stop(totalClassCount);
-
         long classCount = classStop - classStart;
+
+        boolean allowZeroClassCount = Boolean.getBoolean("sun.hotspot.tools.ctw.allow_zero_class_count");
+        if (allowZeroClassCount && totalClassCount == 0L) {
+            System.out.println("WARN: " + target + "(at " + targetPath + ") has no classes. Ignoring.");
+            return;
+        }
+
         Asserts.assertGreaterThan(classCount, 0L,
                 target + "(at " + targetPath + ") does not have any classes");
 

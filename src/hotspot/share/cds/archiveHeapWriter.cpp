@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,20 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
-#include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -216,7 +217,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   // after the roots.
 
   assert((_buffer_used % MIN_GC_REGION_ALIGNMENT) == 0,
-         "Pre-condition: Roots start at aligned boundary: " SIZE_FORMAT, _buffer_used);
+         "Pre-condition: Roots start at aligned boundary: %zu", _buffer_used);
 
   int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
   assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
@@ -237,7 +238,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
     ensure_buffer_space(_buffer_used);
 
     assert((oop_offset % MIN_GC_REGION_ALIGNMENT) == 0,
-           "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
+           "Roots segment %zu start is not aligned: %zu",
            segments.count(), oop_offset);
 
     objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
@@ -245,7 +246,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
       root_segment_at_put(seg_oop, i, roots->at(root_index++));
     }
 
-    log_info(cds, heap)("archived obj root segment [%d] = " SIZE_FORMAT " bytes, obj = " PTR_FORMAT,
+    log_info(cds, heap)("archived obj root segment [%d] = %zu bytes, obj = " PTR_FORMAT,
                         size_elems, size_bytes, p2i(seg_oop));
   }
 
@@ -322,9 +323,13 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
 
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, src_obj);
     _buffer_offset_to_source_obj_table->maybe_grow();
+
+    if (java_lang_Module::is_instance(src_obj)) {
+      Modules::check_archived_module_oop(src_obj);
+    }
   }
 
-  log_info(cds)("Size of heap region = " SIZE_FORMAT " bytes, %d objects, %d roots, %d native ptrs",
+  log_info(cds)("Size of heap region = %zu bytes, %d objects, %d roots, %d native ptrs",
                 _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
 }
 
@@ -390,7 +395,7 @@ void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
     ensure_buffer_space(filler_end);
 
     int array_length = filler_array_length(fill_bytes);
-    log_info(cds, heap)("Inserting filler obj array of %d elements (" SIZE_FORMAT " bytes total) @ buffer offset " SIZE_FORMAT,
+    log_info(cds, heap)("Inserting filler obj array of %d elements (%zu bytes total) @ buffer offset %zu",
                         array_length, fill_bytes, _buffer_used);
     HeapWord* filler = init_filler_array_at_buffer_top(array_length, fill_bytes);
     _buffer_used = filler_end;
@@ -535,7 +540,14 @@ oop ArchiveHeapWriter::load_oop_from_buffer(narrowOop* buffered_addr) {
 
 template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap) {
   oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
-  if (!CompressedOops::is_null(source_referent)) {
+  if (source_referent != nullptr) {
+    if (java_lang_Class::is_instance(source_referent)) {
+      // When the source object points to a "real" mirror, the buffered object should point
+      // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
+      // at run time).
+      source_referent = HeapShared::scratch_java_mirror(source_referent);
+      assert(source_referent != nullptr, "must be");
+    }
     oop request_referent = source_obj_to_requested_obj(source_referent);
     store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
     mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
@@ -614,7 +626,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
   // The whole heap is covered by total_bits, but there are only non-zero bits within [start ... end).
   size_t start = bitmap->find_first_set_bit(0);
   size_t end = bitmap->size();
-  log_info(cds)("%s = " SIZE_FORMAT_W(7) " ... " SIZE_FORMAT_W(7) " (%3zu%% ... %3zu%% = %3zu%%)", which,
+  log_info(cds)("%s = %7zu ... %7zu (%3zu%% ... %3zu%% = %3zu%%)", which,
                 start, end,
                 start * 100 / total_bits,
                 end * 100 / total_bits,
@@ -731,7 +743,9 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
 
     Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
     Metadata* native_ptr = *buffered_field_addr;
-    assert(native_ptr != nullptr, "sanity");
+    guarantee(native_ptr != nullptr, "sanity");
+    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+              "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
@@ -739,7 +753,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
   }
 
   heap_info->ptrmap()->resize(max_idx + 1);
-  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region (" SIZE_FORMAT " bits)",
+  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for heap region (%zu bits)",
                       num_non_null_ptrs, size_t(heap_info->ptrmap()->size()));
 }
 

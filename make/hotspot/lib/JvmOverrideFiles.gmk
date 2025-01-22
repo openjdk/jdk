@@ -37,6 +37,10 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
     # Need extra inlining to collapse shared marking code into the hot marking loop
     BUILD_LIBJVM_shenandoahMark.cpp_CXXFLAGS := --param inline-unit-growth=1000
   endif
+  # disable lto in g1ParScanThreadState because of special inlining/flattening used there
+  ifeq ($(call check-jvm-feature, link-time-opt), true)
+    BUILD_LIBJVM_g1ParScanThreadState.cpp_CXXFLAGS := -fno-lto
+  endif
 endif
 
 LIBJVM_FDLIBM_COPY_OPT_FLAG := $(CXX_O_FLAG_NONE)

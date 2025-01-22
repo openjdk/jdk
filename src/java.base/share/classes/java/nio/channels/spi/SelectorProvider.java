@@ -33,8 +33,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.ServiceLoader;
@@ -81,17 +79,13 @@ public abstract class SelectorProvider {
     private static class Holder {
         static final SelectorProvider INSTANCE = provider();
 
-        @SuppressWarnings("removal")
         static SelectorProvider provider() {
-            PrivilegedAction<SelectorProvider> pa = () -> {
-                SelectorProvider sp;
-                if ((sp = loadProviderFromProperty()) != null)
-                    return sp;
-                if ((sp = loadProviderAsService()) != null)
-                    return sp;
-                return sun.nio.ch.DefaultSelectorProvider.get();
-            };
-            return AccessController.doPrivileged(pa);
+            SelectorProvider sp;
+            if ((sp = loadProviderFromProperty()) != null)
+                return sp;
+            if ((sp = loadProviderAsService()) != null)
+                return sp;
+            return sun.nio.ch.DefaultSelectorProvider.get();
         }
 
         private static SelectorProvider loadProviderFromProperty() {
@@ -105,8 +99,7 @@ public abstract class SelectorProvider {
                     NoSuchMethodException |
                     IllegalAccessException |
                     InvocationTargetException |
-                    InstantiationException |
-                    SecurityException x) {
+                    InstantiationException x) {
                 throw new ServiceConfigurationError(null, x);
             }
         }
@@ -116,17 +109,7 @@ public abstract class SelectorProvider {
                 ServiceLoader.load(SelectorProvider.class,
                                    ClassLoader.getSystemClassLoader());
             Iterator<SelectorProvider> i = sl.iterator();
-            for (;;) {
-                try {
-                    return i.hasNext() ? i.next() : null;
-                } catch (ServiceConfigurationError sce) {
-                    if (sce.getCause() instanceof SecurityException) {
-                        // Ignore the security exception, try the next provider
-                        continue;
-                    }
-                    throw sce;
-                }
-            }
+            return sl.findFirst().orElse(null);
         }
     }
 

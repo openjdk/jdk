@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -622,7 +621,7 @@ class StubGenerator: public StubCodeGenerator {
   // Don't generate, rather use C++ code.
   address generate_verify_oop() {
     // this is actually a `FunctionDescriptor*'.
-    address start = 0;
+    address start = nullptr;
 
 #if !defined(PRODUCT)
     start = CAST_FROM_FN_PTR(address, verify_oop_helper);
@@ -3451,6 +3450,24 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    address start = __ function_entry();
+    __ f2hf(R3_RET, F1_ARG1, F0);
+    __ blr();
+    return start;
+  }
+
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    address start = __ function_entry();
+    __ hf2f(F1_RET, R3_ARG1);
+    __ blr();
+    return start;
+  }
+
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
@@ -4677,6 +4694,12 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     if (UseCRC32CIntrinsics) {
       StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
+    }
+
+    if (VM_Version::supports_float16()) {
+      // For results consistency both intrinsics should be enabled.
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
     }
   }
 

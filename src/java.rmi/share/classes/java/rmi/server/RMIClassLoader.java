@@ -27,8 +27,6 @@ package java.rmi.server;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
@@ -112,12 +110,7 @@ public class RMIClassLoader {
         newDefaultProviderInstance();
 
     /** provider instance */
-    @SuppressWarnings("removal")
-    private static final RMIClassLoaderSpi provider =
-        AccessController.doPrivileged(
-            new PrivilegedAction<RMIClassLoaderSpi>() {
-                public RMIClassLoaderSpi run() { return initializeProvider(); }
-            });
+    private static final RMIClassLoaderSpi provider = initializeProvider();
 
     /*
      * Disallow anyone from creating one of these.
@@ -538,11 +531,6 @@ public class RMIClassLoader {
      * @since   1.4
      */
     public static RMIClassLoaderSpi getDefaultProviderInstance() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("setFactory"));
-        }
         return defaultProvider;
     }
 

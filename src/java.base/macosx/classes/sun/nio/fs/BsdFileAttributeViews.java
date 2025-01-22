@@ -50,9 +50,6 @@ class BsdFileAttributeViews {
             return;
         }
 
-        // permission check
-        path.checkWrite();
-
         // use a file descriptor if possible to avoid a race due to accessing
         // a path more than once as the file at that path could change.
         // if path is a symlink, then the open should fail with ELOOP and

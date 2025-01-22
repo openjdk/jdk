@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ class ClassFileStream;
 class ClassLoaderData;
 class ClassPathEntry;
 class outputStream;
+class ReservedSpace;
 
 class SharedClassPathEntry : public MetaspaceObj {
   enum {
@@ -64,6 +65,7 @@ class SharedClassPathEntry : public MetaspaceObj {
   u1     _type;
   bool   _is_module_path;
   bool   _from_class_path_attr;
+  bool   _is_multi_release;
   time_t _timestamp;          // jar timestamp,  0 if is directory, modules image or other
   int64_t      _filesize;     // jar/jimage file size, -1 if is directory, -2 if other
   Array<char>* _name;
@@ -71,7 +73,7 @@ class SharedClassPathEntry : public MetaspaceObj {
 
 public:
   SharedClassPathEntry() : _type(0), _is_module_path(false),
-                           _from_class_path_attr(false), _timestamp(0),
+                           _from_class_path_attr(false), _is_multi_release(false), _timestamp(0),
                            _filesize(0), _name(nullptr), _manifest(nullptr) {}
   static int size() {
     static_assert(is_aligned(sizeof(SharedClassPathEntry), wordSize), "must be");
@@ -92,6 +94,7 @@ public:
   bool is_jar()           const { return _type == jar_entry; }
   bool is_non_existent()  const { return _type == non_existent_entry; }
   bool from_class_path_attr() { return _from_class_path_attr; }
+  bool is_multi_release()     { return _is_multi_release; }
   time_t timestamp() const { return _timestamp; }
   const char* name() const;
   const char* manifest() const {
@@ -160,11 +163,13 @@ public:
   size_t oopmap_size_in_bits()      const { assert_is_heap_region();     return _oopmap_size_in_bits; }
   size_t ptrmap_offset()            const { return _ptrmap_offset; }
   size_t ptrmap_size_in_bits()      const { return _ptrmap_size_in_bits; }
+  bool   in_reserved_space()        const { return _in_reserved_space; }
 
   void set_file_offset(size_t s)     { _file_offset = s; }
   void set_read_only(bool v)         { _read_only = v; }
   void set_mapped_base(char* p)      { _mapped_base = p; }
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
+  void set_in_reserved_space(bool is_reserved) { _in_reserved_space = is_reserved; }
   void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
             bool allow_exec, int crc);
   void init_oopmap(size_t offset, size_t size_in_bits);
@@ -228,7 +233,9 @@ private:
   bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
+  bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
+  bool   _has_archived_invokedynamic;   // Does the archive have aot-linked invokedynamic CP entries?
   HeapRootSegments _heap_root_segments; // Heap root segments info
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
@@ -273,6 +280,7 @@ public:
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
+  bool has_aot_linked_classes()            const { return _has_aot_linked_classes; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
@@ -476,7 +484,6 @@ public:
   void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
-  ReservedSpace reserve_shared_memory();
 
   // JVM/TI RedefineClasses() support:
   // Remap the shared readonly space to shared readwrite, private.
@@ -492,7 +499,8 @@ public:
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();
   bool validate_shared_path_table();
-  void validate_non_existent_class_paths();
+  bool validate_non_existent_class_paths();
+  bool validate_aot_class_linking();
   static void set_shared_path_table(FileMapInfo* info) {
     _shared_path_table = info->header()->shared_path_table();
   }
@@ -503,6 +511,10 @@ public:
 #if INCLUDE_JVMTI
   // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
+  static ClassFileStream* get_stream_from_class_loader(Handle class_loader,
+                                                       ClassPathEntry* cpe,
+                                                       const char* file_name,
+                                                       TRAPS);
 #endif
 
   static SharedClassPathEntry* shared_path(int index) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,60 +23,106 @@
 
 package jdk.jpackage.internal;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
+import static jdk.jpackage.internal.OverridableResource.Source.DefaultResource;
+import static jdk.jpackage.internal.OverridableResource.Source.ResourceDir;
 import jdk.jpackage.internal.resources.ResourceLocator;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThat;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
 
 public class OverridableResourceTest {
 
-    @Rule
-    public final TemporaryFolder tempFolder = new TemporaryFolder();
-
-    @Test
-    public void testDefault() throws IOException {
-        byte[] actualBytes = saveToFile(new OverridableResource(DEFAULT_NAME));
-
-        try (InputStream is = ResourceLocator.class.getResourceAsStream(
-                DEFAULT_NAME)) {
-            assertArrayEquals(is.readAllBytes(), actualBytes);
+    private static String[] saveResource(ResourceWriter resourceWriter, Path dstPath) throws IOException {
+        switch (dstPath.getFileName().toString()) {
+            case "file" -> {
+                return resourceWriter.saveToFile(dstPath);
+            }
+            case "dir" -> {
+                return resourceWriter.saveInDir(dstPath);
+            }
+            default -> {
+                throw new IllegalArgumentException();
+            }
         }
     }
 
-    @Test
-    public void testDefaultWithSubstitution() throws IOException {
-        OverridableResource resource = new OverridableResource(DEFAULT_NAME);
+    private static String[] saveResource(
+            OverridableResource resource, Path dstPath, boolean dstFileOverwrite)
+            throws IOException {
+        return saveResource(buildResourceWriter(resource).dstFileOverwrite(dstFileOverwrite), dstPath);
+    }
 
-        List<String> linesBeforeSubstitution = convertToStringList(saveToFile(
-                resource));
+    private static List<Object[]> data() {
+        List<Object[]> data = new ArrayList<>();
 
+        for (var dstPath : List.of("file", "dir")) {
+            for (var dstFileOverwrite : List.of(true, false)) {
+                data.add(new Object[]{Path.of(dstPath), dstFileOverwrite});
+            }
+        }
+
+        for (var dstPath : List.of("dir/file", "dir/dir")) {
+            data.add(new Object[]{Path.of(dstPath), false});
+        }
+
+        return data;
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testDefault(Path dstPath, boolean dstFileOverwrite,
+            @TempDir Path tempFolder) throws IOException {
+        final String[] content = saveResource(
+                new OverridableResource(DEFAULT_NAME), tempFolder.resolve(
+                        dstPath), dstFileOverwrite);
+
+        try (var resource = ResourceLocator.class.getResourceAsStream(DEFAULT_NAME);
+                var isr = new InputStreamReader(resource, StandardCharsets.ISO_8859_1);
+                var br = new BufferedReader(isr)) {
+            assertArrayEquals(br.lines().toArray(String[]::new), content);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testDefaultWithSubstitution(Path dstPath, boolean dstFileOverwrite,
+            @TempDir Path tempFolder) throws IOException {
         if (SUBSTITUTION_DATA.size() != 1) {
             // Test setup issue
             throw new IllegalArgumentException(
                     "Substitution map should contain only a single entry");
         }
 
+        OverridableResource resource = new OverridableResource(DEFAULT_NAME);
+
+        var linesBeforeSubstitution = List.of(saveResource(resource, tempFolder.resolve(dstPath), dstFileOverwrite));
+
         resource.setSubstitutionData(SUBSTITUTION_DATA);
-        List<String> linesAfterSubstitution = convertToStringList(saveToFile(
-                resource));
+        var linesAfterSubstitution = List.of(saveResource(resource, tempFolder.resolve(dstPath), dstFileOverwrite));
 
         assertEquals(linesBeforeSubstitution.size(), linesAfterSubstitution.size());
 
@@ -103,130 +149,239 @@ public class OverridableResourceTest {
         assertTrue(linesMismatch);
     }
 
-    @Test
-    public void testCustom() throws IOException {
-        testCustom(DEFAULT_NAME);
+    private static Stream<Object[]> dataWithResourceName() {
+        return data().stream().flatMap(origArgs -> {
+            return Stream.of(ResourceName.values()).map(defaultName -> {
+                Object[] args = new Object[origArgs.length + 1];
+                args[0] = defaultName;
+                System.arraycopy(origArgs, 0, args, 1, origArgs.length);
+                return args;
+            });
+        });
     }
 
-    @Test
-    public void testCustomNoDefault() throws IOException {
-        testCustom(null);
-    }
-
-    private void testCustom(String defaultName) throws IOException {
+    @ParameterizedTest
+    @MethodSource("dataWithResourceName")
+    public void testResourceDir(ResourceName defaultName, Path dstPath,
+            boolean dstFileOverwrite, @TempDir Path tempFolder) throws IOException {
         List<String> expectedResourceData = List.of("A", "B", "C");
 
-        Path customFile = createCustomFile("foo", expectedResourceData);
+        Path customFile = tempFolder.resolve("hello");
+        Files.write(customFile, expectedResourceData);
 
-        List<String> actualResourceData = convertToStringList(saveToFile(
-                new OverridableResource(defaultName)
+        final var actualResourceData = saveResource(buildResourceWriter(
+                new OverridableResource(defaultName.value)
                         .setPublicName(customFile.getFileName())
-                        .setResourceDir(customFile.getParent())));
+                        .setResourceDir(customFile.getParent())
+                ).dstFileOverwrite(dstFileOverwrite).expectedSource(ResourceDir),
+                tempFolder.resolve(dstPath));
 
-        assertArrayEquals(expectedResourceData.toArray(String[]::new),
-                actualResourceData.toArray(String[]::new));
+        assertArrayEquals(expectedResourceData.toArray(String[]::new), actualResourceData);
     }
 
-    @Test
-    public void testCustomtWithSubstitution() throws IOException {
-        testCustomtWithSubstitution(DEFAULT_NAME);
-    }
-
-    @Test
-    public void testCustomtWithSubstitutionNoDefault() throws IOException {
-        testCustomtWithSubstitution(null);
-    }
-
-    private void testCustomtWithSubstitution(String defaultName) throws IOException {
+    @ParameterizedTest
+    @MethodSource("dataWithResourceName")
+    public void testResourceDirWithSubstitution(ResourceName defaultName, Path dstPath,
+            boolean dstFileOverwrite, @TempDir Path tempFolder) throws IOException {
         final List<String> resourceData = List.of("A", "[BB]", "C", "Foo", "Foo",
                 "GoodbyeHello", "_B");
-        final Path customFile = createCustomFile("foo", resourceData);
 
-        final Map<String, String> substitutionData = new HashMap(Map.of("B",
-                "Bar", "Foo", "B", "_B", "JJ"));
+        final Path customFile = tempFolder.resolve("hello");
+        Files.write(customFile, resourceData);
+
+        final Map<String, String> substitutionData = new HashMap<>(Map.of(
+                "B", "Bar",
+                "Foo", "B",
+                "_B", "JJ"));
         substitutionData.put("Hello", null);
 
         final List<String> expectedResourceData = List.of("A", "[BarBar]", "C",
                 "Bar", "Bar", "Goodbye", "JJ");
 
-        final List<String> actualResourceData = convertToStringList(saveToFile(
-                new OverridableResource(defaultName)
-                        .setPublicName(customFile.getFileName())
+        final var actualResourceData = saveResource(buildResourceWriter(
+                new OverridableResource(defaultName.value)
                         .setSubstitutionData(substitutionData)
-                        .setResourceDir(customFile.getParent())));
-        assertArrayEquals(expectedResourceData.toArray(String[]::new),
-                actualResourceData.toArray(String[]::new));
+                        .setPublicName(customFile.getFileName())
+                        .setResourceDir(customFile.getParent())
+                ).dstFileOverwrite(dstFileOverwrite).expectedSource(ResourceDir),
+                tempFolder.resolve(dstPath));
 
-        // Don't call setPublicName()
-        final Path dstFile = tempFolder.newFolder().toPath().resolve(customFile.getFileName());
-        new OverridableResource(defaultName)
-                .setSubstitutionData(substitutionData)
-                .setResourceDir(customFile.getParent())
-                .saveToFile(dstFile);
-        assertArrayEquals(expectedResourceData.toArray(String[]::new),
-                convertToStringList(Files.readAllBytes(dstFile)).toArray(
-                        String[]::new));
-
-        // Verify setSubstitutionData() stores a copy of passed in data
-        Map<String, String> substitutionData2 = new HashMap(substitutionData);
-        var resource = new OverridableResource(defaultName)
-                .setResourceDir(customFile.getParent());
-
-        resource.setSubstitutionData(substitutionData2);
-        substitutionData2.clear();
-        Files.delete(dstFile);
-        resource.saveToFile(dstFile);
-        assertArrayEquals(expectedResourceData.toArray(String[]::new),
-                convertToStringList(Files.readAllBytes(dstFile)).toArray(
-                        String[]::new));
+        assertArrayEquals(expectedResourceData.toArray(String[]::new), actualResourceData);
     }
 
-    @Test
-    public void testNoDefault() throws IOException {
-        Path dstFolder = tempFolder.newFolder().toPath();
-        Path dstFile = dstFolder.resolve(Path.of("foo", "bar"));
+    // Test it can derive a file in the resource dir from the name of the output file if the public name is not set
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testPublicNameNotSet(boolean namesMatch, @TempDir Path tempFolder) throws IOException {
+        final List<String> expectedResourceData = List.of("A", "B", "C");
 
-        new OverridableResource(null).saveToFile(dstFile);
+        final Path customFile = tempFolder.resolve("hello");
+        Files.write(customFile, expectedResourceData);
 
-        assertFalse(dstFile.toFile().exists());
-    }
+        final Path outputDir = tempFolder.resolve("output");
 
-    private final static String DEFAULT_NAME;
-    private final static Map<String, String> SUBSTITUTION_DATA;
-    static {
-        if (OperatingSystem.isWindows()) {
-            DEFAULT_NAME = "WinLauncher.template";
-            SUBSTITUTION_DATA = Map.of("COMPANY_NAME", "Foo9090345");
-        } else if (OperatingSystem.isLinux()) {
-            DEFAULT_NAME = "template.control";
-            SUBSTITUTION_DATA = Map.of("APPLICATION_PACKAGE", "Package1967");
-        } else if (OperatingSystem.isMacOS()) {
-            DEFAULT_NAME = "Info-lite.plist.template";
-            SUBSTITUTION_DATA = Map.of("DEPLOY_BUNDLE_IDENTIFIER", "12345");
+        var resourceWriter = buildResourceWriter(
+                new OverridableResource(null).setResourceDir(customFile.getParent()));
+
+        if (namesMatch) {
+            final var actualResourceData = resourceWriter
+                    .expectedSource(ResourceDir)
+                    .saveToFile(outputDir.resolve(customFile.getFileName()));
+            assertArrayEquals(expectedResourceData.toArray(String[]::new), actualResourceData);
         } else {
-            throw new IllegalArgumentException("Unknown platform: " + OperatingSystem.current());
+            final var actualResourceData = resourceWriter
+                    .expectedSource(null)
+                    .saveToFile(outputDir.resolve("another"));
+            assertNull(actualResourceData);
         }
     }
 
-    private byte[] saveToFile(OverridableResource resource) throws IOException {
-        Path dstFile = tempFolder.newFile().toPath();
-        resource.saveToFile(dstFile);
-        assertThat(0, is(not(dstFile.toFile().length())));
+    // Test setSubstitutionData() stores a copy of passed in data
+    @Test
+    public void testSubstitutionDataCopied(@TempDir Path tempFolder) throws IOException {
+        final Path customFile = tempFolder.resolve("hello");
+        Files.write(customFile, List.of("Hello"));
 
-        return Files.readAllBytes(dstFile);
+        final Map<String, String> substitutionData = new HashMap<>(Map.of("Hello", "Goodbye"));
+
+        var resource = new OverridableResource(null)
+                .setSubstitutionData(substitutionData)
+                .setPublicName(customFile.getFileName())
+                .setResourceDir(customFile.getParent());
+
+        final var resourceWriter = buildResourceWriter(resource).expectedSource(ResourceDir);
+
+        var contents = resourceWriter.saveToFile(tempFolder.resolve("output"));
+        assertArrayEquals(new String[] { "Goodbye" }, contents);
+
+        substitutionData.put("Hello", "Ciao");
+        contents = resourceWriter.saveToFile(tempFolder.resolve("output"));
+        assertArrayEquals(new String[] { "Goodbye" }, contents);
+
+        resource.setSubstitutionData(substitutionData);
+        contents = resourceWriter.saveToFile(tempFolder.resolve("output"));
+        assertArrayEquals(new String[] { "Ciao" }, contents);
     }
 
-    private Path createCustomFile(String publicName, List<String> data) throws
-            IOException {
-        Path resourceFolder = tempFolder.newFolder().toPath();
-        Path customFile = resourceFolder.resolve(publicName);
+    @Test
+    public void testNoDefault(@TempDir Path tempFolder) throws IOException {
+        var resourceWriter = buildResourceWriter(new OverridableResource(null)).expectedSource(null);
+        assertEquals(null, resourceWriter.saveInDir(tempFolder));
 
-        Files.write(customFile, data);
-
-        return customFile;
+        var dstDir = tempFolder.resolve("foo");
+        assertEquals(null, resourceWriter.saveInDir(dstDir));
+        assertFalse(Files.exists(dstDir));
     }
 
-    private static List<String> convertToStringList(byte[] data) {
-        return List.of(new String(data, StandardCharsets.UTF_8).split("\\R"));
+    enum ResourceName {
+        DEFAULT_NAME(OverridableResourceTest.DEFAULT_NAME),
+        NULL_NAME(null);
+
+        ResourceName(String value) {
+            this.value = value;
+        }
+
+        private final String value;
+    }
+
+    private static final String DEFAULT_NAME;
+    private static final Map<String, String> SUBSTITUTION_DATA;
+    static {
+        switch (OperatingSystem.current()) {
+            case WINDOWS -> {
+                DEFAULT_NAME = "WinLauncher.template";
+                SUBSTITUTION_DATA = Map.of("COMPANY_NAME", "Foo9090345");
+            }
+
+            case LINUX -> {
+                DEFAULT_NAME = "template.control";
+                SUBSTITUTION_DATA = Map.of("APPLICATION_PACKAGE", "Package1967");
+            }
+
+            case MACOS -> {
+                DEFAULT_NAME = "Info-lite.plist.template";
+                SUBSTITUTION_DATA = Map.of("DEPLOY_BUNDLE_IDENTIFIER", "12345");
+            }
+
+            default -> {
+                throw new IllegalArgumentException("Unsupported platform: " + OperatingSystem.current());
+            }
+        }
+    }
+
+    static class ResourceWriter {
+
+        ResourceWriter(OverridableResource resource) {
+            this.resource = Objects.requireNonNull(resource);
+        }
+
+        ResourceWriter expectedSource(OverridableResource.Source v) {
+            expectedSource = v;
+            return this;
+        }
+
+        ResourceWriter dstFileOverwrite(boolean v) {
+            dstFileOverwrite = v;
+            return this;
+        }
+
+        String[] saveInDir(Path dstDir) throws IOException {
+            Path dstFile;
+            if (expectedSource != null) {
+                if (!Files.exists(dstDir)) {
+                    Files.createDirectories(dstDir);
+                }
+                dstFile = Files.createTempFile(dstDir, null, null);
+            } else if (!Files.exists(dstDir)) {
+                dstFile = dstDir.resolve("nonexistant");
+            } else {
+                dstFile = Files.createTempFile(dstDir, null, null);
+                Files.delete(dstFile);
+            }
+            return saveToFile(dstFile);
+        }
+
+        String[] saveToFile(Path dstFile) throws IOException {
+            saveResource(dstFile);
+            if (expectedSource == null) {
+                return null;
+            } else {
+                return Files.readAllLines(dstFile).toArray(String[]::new);
+            }
+        }
+
+        private void saveResource(Path dstFile) throws IOException {
+            if (dstFileOverwrite && !Files.exists(dstFile)) {
+                Files.writeString(dstFile, "abcABC");
+            } else if (!dstFileOverwrite && Files.exists(dstFile)) {
+                Files.delete(dstFile);
+            }
+
+            final byte[] dstFileContent;
+            if (expectedSource == null && Files.exists(dstFile)) {
+                dstFileContent = Files.readAllBytes(dstFile);
+            } else {
+                dstFileContent = null;
+            }
+
+            var actualSource = resource.saveToFile(dstFile);
+            assertEquals(expectedSource, actualSource);
+            if (actualSource != null) {
+                assertNotEquals(0, Files.size(dstFile));
+            } else if (dstFileContent == null) {
+                assertFalse(Files.exists(dstFile));
+            } else {
+                var actualDstFileContent = Files.readAllBytes(dstFile);
+                assertArrayEquals(dstFileContent, actualDstFileContent);
+            }
+        }
+
+        final OverridableResource resource;
+        OverridableResource.Source expectedSource = DefaultResource;
+        boolean dstFileOverwrite;
+    }
+
+    private static ResourceWriter buildResourceWriter(OverridableResource resource) {
+        return new ResourceWriter(resource);
     }
 }

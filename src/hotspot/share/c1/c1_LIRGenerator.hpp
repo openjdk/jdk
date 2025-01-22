@@ -28,9 +28,7 @@
 #include "c1/c1_Decorators.hpp"
 #include "c1/c1_Instruction.hpp"
 #include "c1/c1_LIR.hpp"
-#include "ci/ciMethodData.hpp"
 #include "gc/shared/barrierSet.hpp"
-#include "jfr/support/jfrIntrinsics.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/sizes.hpp"
 

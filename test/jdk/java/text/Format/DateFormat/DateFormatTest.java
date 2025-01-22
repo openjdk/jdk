@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,16 @@
 /**
  * @test
  * @bug 4052223 4089987 4469904 4326988 4486735 8008577 8045998 8140571
- *      8190748 8216969 8174269
+ *      8190748 8216969 8174269 8347841
  * @summary test DateFormat and SimpleDateFormat.
  * @modules jdk.localedata
  * @run junit DateFormatTest
  */
 
-import java.util.*;
+import java.time.ZoneId;
 import java.text.*;
+import java.util.*;
+import java.util.function.Predicate;
 import static java.util.GregorianCalendar.*;
 
 import org.junit.jupiter.api.Test;
@@ -89,7 +91,9 @@ public class DateFormatTest
         /*
          * A String array for the time zone ids.
          */
-        String[] ids = TimeZone.getAvailableIDs();
+        String[] ids = Arrays.stream(TimeZone.getAvailableIDs())
+                .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                .toArray(String[]::new);
         /*
          * How many ids do we have?
          */
@@ -183,7 +187,7 @@ public class DateFormatTest
         //logln(fmt.format(date)); // This shows what the current locale format is
         //logln(((SimpleDateFormat)fmt).toPattern());
         TimeZone save = TimeZone.getDefault();
-        TimeZone PST  = TimeZone.getTimeZone("PST");
+        TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
         String s = "03-Apr-04 2:20:47 o'clock AM PST";
         int hour = 2;
         try {
@@ -275,7 +279,7 @@ public class DateFormatTest
             "0034", "0012", "0513", "Pacific Daylight Time",
         };
         Date someDate = new Date(871508052513L);
-        TimeZone PST = TimeZone.getTimeZone("PST");
+        TimeZone PST = TimeZone.getTimeZone("America/Los_Angeles");
         for (int j = 0, exp = 0; j < dateFormats.length; ++j) {
             DateFormat df = dateFormats[j];
             if (!(df instanceof SimpleDateFormat)) {

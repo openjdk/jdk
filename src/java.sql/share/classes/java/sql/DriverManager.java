@@ -31,8 +31,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
@@ -98,22 +96,6 @@ public class DriverManager {
     /* Prevent the DriverManager class from being instantiated. */
     private DriverManager(){}
 
-    /**
-     * The {@code SQLPermission} constant that allows the
-     * setting of the logging stream.
-     * @since 1.3
-     */
-    static final SQLPermission SET_LOG_PERMISSION =
-        new SQLPermission("setLog");
-
-    /**
-     * The {@code SQLPermission} constant that allows the
-     * un-register a registered JDBC driver.
-     * @since 1.8
-     */
-    static final SQLPermission DEREGISTER_DRIVER_PERMISSION =
-        new SQLPermission("deregisterDriver");
-
     //--------------------------JDBC 2.0-----------------------------
 
     /**
@@ -140,14 +122,8 @@ public class DriverManager {
      * @since 1.2
      */
     public static void setLogWriter(java.io.PrintWriter out) {
-
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(SET_LOG_PERMISSION);
-        }
-            logStream = null;
-            logWriter = out;
+        logStream = null;
+        logWriter = out;
     }
 
 
@@ -367,12 +343,6 @@ public class DriverManager {
             return;
         }
 
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(DEREGISTER_DRIVER_PERMISSION);
-        }
-
         println("DriverManager.deregisterDriver: " + driver);
 
         DriverInfo aDriver = new DriverInfo(driver, null);
@@ -477,13 +447,6 @@ public class DriverManager {
      */
     @Deprecated(since="1.2")
     public static void setLogStream(java.io.PrintStream out) {
-
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(SET_LOG_PERMISSION);
-        }
-
         logStream = out;
         if ( out != null )
             logWriter = new java.io.PrintWriter(out);
@@ -549,7 +512,6 @@ public class DriverManager {
      * Load the initial JDBC drivers by checking the System property
      * jdbc.drivers and then use the {@code ServiceLoader} mechanism
      */
-    @SuppressWarnings("removal")
     private static void ensureDriversInitialized() {
         if (driversInitialized) {
             return;
@@ -561,11 +523,7 @@ public class DriverManager {
             }
             String drivers;
             try {
-                drivers = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty(JDBC_DRIVERS_PROPERTY);
-                    }
-                });
+                drivers = System.getProperty(JDBC_DRIVERS_PROPERTY);
             } catch (Exception ex) {
                 drivers = null;
             }
@@ -574,34 +532,29 @@ public class DriverManager {
             // exposed as a java.sql.Driver.class service.
             // ServiceLoader.load() replaces the sun.misc.Providers()
 
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
 
-                    ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
-                    Iterator<Driver> driversIterator = loadedDrivers.iterator();
+            ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
+            Iterator<Driver> driversIterator = loadedDrivers.iterator();
 
-                    /* Load these drivers, so that they can be instantiated.
-                     * It may be the case that the driver class may not be there
-                     * i.e. there may be a packaged driver with the service class
-                     * as implementation of java.sql.Driver but the actual class
-                     * may be missing. In that case a java.util.ServiceConfigurationError
-                     * will be thrown at runtime by the VM trying to locate
-                     * and load the service.
-                     *
-                     * Adding a try catch block to catch those runtime errors
-                     * if driver not available in classpath but it's
-                     * packaged as service and that service is there in classpath.
-                     */
-                    try {
-                        while (driversIterator.hasNext()) {
-                            driversIterator.next();
-                        }
-                    } catch (Throwable t) {
-                        // Do nothing
-                    }
-                    return null;
+            /* Load these drivers, so that they can be instantiated.
+             * It may be the case that the driver class may not be there
+             * i.e. there may be a packaged driver with the service class
+             * as implementation of java.sql.Driver but the actual class
+             * may be missing. In that case a java.util.ServiceConfigurationError
+             * will be thrown at runtime by the VM trying to locate
+             * and load the service.
+             *
+             * Adding a try catch block to catch those runtime errors
+             * if driver not available in classpath but it's
+             * packaged as service and that service is there in classpath.
+             */
+            try {
+                while (driversIterator.hasNext()) {
+                    driversIterator.next();
                 }
-            });
+            } catch (Throwable t) {
+                // Do nothing
+            }
 
             println("DriverManager.initialize: jdbc.drivers = " + drivers);
 

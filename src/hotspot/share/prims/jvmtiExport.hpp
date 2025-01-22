@@ -371,6 +371,7 @@ class JvmtiExport : public AllStatic {
   }
   static bool is_early_phase() NOT_JVMTI_RETURN_(false);
   static bool has_early_class_hook_env() NOT_JVMTI_RETURN_(false);
+  static bool has_early_vmstart_env() NOT_JVMTI_RETURN_(false);
   // Return true if the class was modified by the hook.
   static bool post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,

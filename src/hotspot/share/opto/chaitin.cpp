@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/oopMap.hpp"
 #include "memory/allocation.inline.hpp"
@@ -956,7 +955,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // Each entry is reg_pressure_per_value,number_of_regs
           //         RegL  RegI  RegFlags   RegF RegD    INTPRESSURE  FLOATPRESSURE
           // IA32     2     1     1          1    1          6           6
-          // IA64     1     1     1          1    1         50          41
           // SPARC    2     2     2          2    2         48 (24)     52 (26)
           // SPARCV9  2     2     2          2    2         48 (24)     52 (26)
           // AMD64    1     1     1          1    1         14          15
@@ -2564,6 +2562,9 @@ void PhaseChaitin::verify_base_ptrs(ResourceArea* a) const {
 void PhaseChaitin::verify(ResourceArea* a, bool verify_ifg) const {
   if (VerifyRegisterAllocator) {
     _cfg.verify();
+    if (C->failing()) {
+      return;
+    }
     verify_base_ptrs(a);
     if (verify_ifg) {
       _ifg->verify(this);

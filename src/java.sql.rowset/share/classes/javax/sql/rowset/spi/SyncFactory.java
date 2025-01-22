@@ -35,13 +35,8 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import javax.naming.*;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * The Service Provider Interface (SPI) mechanism that generates <code>SyncProvider</code>
@@ -237,11 +232,6 @@ public class SyncFactory {
     private static String ROWSET_PROPERTIES = "rowset.properties";
 
     /**
-     *  Permission required to invoke setJNDIContext and setLogger
-     */
-    private static final SQLPermission SET_SYNCFACTORY_PERMISSION =
-            new SQLPermission("setSyncFactory");
-    /**
      * The initial JNDI context where <code>SyncProvider</code> implementations can
      * be stored and from which they can be invoked.
      */
@@ -355,17 +345,7 @@ public class SyncFactory {
                 /*
                  * Dependent on application
                  */
-                String strRowsetProperties;
-                try {
-                    strRowsetProperties = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                        public String run() {
-                            return System.getProperty("rowset.properties");
-                        }
-                    }, null, new PropertyPermission("rowset.properties", "read"));
-                } catch (Exception ex) {
-                    System.out.println("errorget rowset.properties: " + ex);
-                    strRowsetProperties = null;
-                };
+                String strRowsetProperties = System.getProperty("rowset.properties");
 
                 if (strRowsetProperties != null) {
                     // Load user's implementation of SyncProvider
@@ -385,25 +365,17 @@ public class SyncFactory {
                         "rowset.properties";
 
                 try {
-                    AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                        InputStream in = SyncFactory.class.getModule().getResourceAsStream(ROWSET_PROPERTIES);
-                        if (in == null) {
-                            throw new SyncFactoryException("Resource " + ROWSET_PROPERTIES + " not found");
-                        }
-                        try (in) {
-                            properties.load(in);
-                        }
-                        return null;
-                    });
-                } catch (PrivilegedActionException ex) {
-                    Throwable e = ex.getException();
-                    if (e instanceof SyncFactoryException) {
-                      throw (SyncFactoryException) e;
-                    } else {
-                        SyncFactoryException sfe = new SyncFactoryException();
-                        sfe.initCause(ex.getException());
-                        throw sfe;
+                    InputStream in = SyncFactory.class.getModule().getResourceAsStream(ROWSET_PROPERTIES);
+                    if (in == null) {
+                        throw new SyncFactoryException("Resource " + ROWSET_PROPERTIES + " not found");
                     }
+                    try (in) {
+                        properties.load(in);
+                    }
+                } catch (IOException e) {
+                    SyncFactoryException sfe = new SyncFactoryException();
+                    sfe.initCause(e);
+                    throw sfe;
                 }
 
                 parseProperties(properties);
@@ -421,17 +393,7 @@ public class SyncFactory {
              * load additional properties from -D command line
              */
             properties.clear();
-            String providerImpls;
-            try {
-                providerImpls = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty(ROWSET_SYNC_PROVIDER);
-                    }
-                }, null, new PropertyPermission(ROWSET_SYNC_PROVIDER, "read"));
-            } catch (Exception ex) {
-                providerImpls = null;
-            }
-
+            String providerImpls = System.getProperty(ROWSET_SYNC_PROVIDER);
             if (providerImpls != null) {
                 int i = 0;
                 if (providerImpls.indexOf(colon) > 0) {
@@ -563,14 +525,6 @@ public class SyncFactory {
             return new com.sun.rowset.providers.RIOptimisticProvider();
         }
 
-        try {
-            ReflectUtil.checkPackageAccess(providerID);
-        } catch (@SuppressWarnings("removal") java.security.AccessControlException e) {
-            SyncFactoryException sfe = new SyncFactoryException();
-            sfe.initCause(e);
-            throw sfe;
-        }
-
         // Attempt to invoke classname from registered SyncProvider list
         Class<?> c = null;
         try {
@@ -626,12 +580,6 @@ public class SyncFactory {
      */
     public static void setLogger(Logger logger) {
 
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(SET_SYNCFACTORY_PERMISSION);
-        }
-
         if(logger == null){
             throw new NullPointerException("You must provide a Logger");
         }
@@ -652,12 +600,6 @@ public class SyncFactory {
      */
     public static void setLogger(Logger logger, Level level) {
         // singleton
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(SET_SYNCFACTORY_PERMISSION);
-        }
-
         if(logger == null){
             throw new NullPointerException("You must provide a Logger");
         }
@@ -692,11 +634,7 @@ public class SyncFactory {
      */
     public static synchronized void setJNDIContext(javax.naming.Context ctx)
             throws SyncFactoryException {
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-        if (sec != null) {
-            sec.checkPermission(SET_SYNCFACTORY_PERMISSION);
-        }
+
         if (ctx == null) {
             throw new SyncFactoryException("Invalid JNDI context supplied");
         }

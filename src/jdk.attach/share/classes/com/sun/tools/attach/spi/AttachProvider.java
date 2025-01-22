@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
-import com.sun.tools.attach.AttachPermission;
 import com.sun.tools.attach.AttachNotSupportedException;
 import java.util.ServiceLoader;
 
@@ -84,10 +83,6 @@ public abstract class AttachProvider {
      * Initializes a new instance of this class.
      */
     protected AttachProvider() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new AttachPermission("createAttachProvider"));
     }
 
     /**

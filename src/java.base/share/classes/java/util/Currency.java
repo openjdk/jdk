@@ -486,10 +486,7 @@ public final class Currency implements Serializable {
                 }
             }
         }
-
-        @SuppressWarnings("unchecked")
-        Set<Currency> result = (Set<Currency>) available.clone();
-        return result;
+        return new HashSet<>(available);
     }
 
     /**

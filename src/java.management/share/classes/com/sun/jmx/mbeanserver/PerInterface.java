@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.jmx.mbeanserver;
 
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -175,15 +174,7 @@ final class PerInterface<M> {
             throw exception; // No compatibility requirement here
 
         // Is the compatibility property set?
-        GetPropertyAction act = new GetPropertyAction("jmx.invoke.getters");
-        String invokeGettersS;
-        try {
-            invokeGettersS = AccessController.doPrivileged(act);
-        } catch (Exception e) {
-            // We don't expect an exception here but if we get one then
-            // we'll simply assume that the property is not set.
-            invokeGettersS = null;
-        }
+        String invokeGettersS = System.getProperty("jmx.invoke.getters");
         if (invokeGettersS == null)
             throw exception;
 
