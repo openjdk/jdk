@@ -399,6 +399,12 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
   entry = lookup_entry_prefixed(method, CHECK_NULL);
   if (entry != nullptr) return entry;
 
+  if (log_is_enabled(Trace, jni, resolve)) {
+    log_trace(jni, resolve)("[Dynamic-linking native method %s.%s ... FAILED]",
+                            method->method_holder()->external_name(),
+                            method->name()->as_C_string());
+  }
+
   if (THREAD->has_pending_exception()) {
     oop exception = THREAD->pending_exception();
     if (exception->is_a(vmClasses::IllegalCallerException_klass())) {

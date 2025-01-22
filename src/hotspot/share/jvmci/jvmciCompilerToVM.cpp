@@ -890,7 +890,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, bootstrapArgumentIndexAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint cpi, jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  return cp->bootstrap_argument_index_at(cpi, index);
+  return cp->bootstrap_methods_attribute_entry(cpi)->argument_index(index);
 C2V_END
 
 C2V_VMENTRY_0(jint, lookupNameAndTypeRefIndexInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, jint opcode))

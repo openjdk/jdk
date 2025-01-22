@@ -289,7 +289,9 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
 }
 
 
-void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
+void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse,
+                                     // current method:
+                                     Method* method) {
   address p = bcp + offset;
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
@@ -304,11 +306,12 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    Bytes::put_native_u4(p, (u2)_invokedynamic_index);
+    Bytes::put_native_u4(p, _invokedynamic_index);
     _invokedynamic_index++;
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
-    _initialized_indy_entries.push(ResolvedIndyEntry((u2)resolved_index, (u2)cp_index));
+    _initialized_indy_entries.push(ResolvedIndyEntry(resolved_index,
+                                                     cp_index));
   } else {
     // Should do nothing since we are not patching this bytecode
     int cache_index = Bytes::get_native_u4(p);
@@ -319,6 +322,23 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     Bytes::put_Java_u2(p, (u2)cp_index);
   }
 }
+
+// add a new entry to the resolved_references map (for invokedynamic and invokehandle only)
+int Rewriter::add_invokedynamic_resolved_references_entry(int cp_index, int cache_index) {
+  assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
+  int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
+  assert(ref_index >= _resolved_reference_limit, "");
+  if (cache_index < 0 && cp_index != 0) {
+    assert(_pool->tag_at(cp_index).value() == JVM_CONSTANT_InvokeDynamic, "");
+  }
+  if (cache_index >= 0) {
+    // FIXME: why is this called "invokedynamic_references" if it is only for invokehandle?
+    assert(_pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic, "");
+    _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
+  }
+  return ref_index;
+}
+
 
 // Rewrite some ldc bytecodes to _fast_aldc
 void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
@@ -479,7 +499,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
         rewrite_method_reference(bcp, prefix_length+1, reverse);
         break;
       case Bytecodes::_invokedynamic:
-        rewrite_invokedynamic(bcp, prefix_length+1, reverse);
+        rewrite_invokedynamic(bcp, prefix_length+1, reverse, method);
         break;
       case Bytecodes::_ldc:
       case Bytecodes::_fast_aldc:  // if reverse=true
