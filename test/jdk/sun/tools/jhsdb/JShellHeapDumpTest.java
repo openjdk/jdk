@@ -81,7 +81,10 @@ public class JShellHeapDumpTest {
             System.out.println("###### End of all output which took " + elapsedTime + "ms");
             output.shouldHaveExitValue(0);
         } catch (Exception ex) {
-            if (allowRetry) return false;
+            if (allowRetry) {
+                System.out.println("Exception " + ex + " in 'launch' occured. Allow one retry.");
+                return false;
+            }
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
             if (jShellProcess.isAlive()) {
