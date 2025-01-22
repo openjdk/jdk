@@ -41,6 +41,22 @@ import java.lang.foreign.*;
  */
 
 /*
+ * @test id=byte-buffer-direct-AlignVector
+ * @bug 8323582
+ * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress ByteBufferDirect AlignVector
+ */
+
+/*
+ * @test id=byte-buffer-direct-VerifyAlignVector
+ * @bug 8323582
+ * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress ByteBufferDirect VerifyAlignVector
+ */
+
+/*
  * @test id=native
  * @bug 8323582
  * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
@@ -48,10 +64,33 @@ import java.lang.foreign.*;
  * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress Native
  */
 
+/*
+ * @test id=native-AlignVector
+ * @bug 8323582
+ * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress Native AlignVector
+ */
+
+/*
+ * @test id=native-VerifyAlignVector
+ * @bug 8323582
+ * @summary Test vectorization of loops over MemorySegment, with native memory where the address is not always aligned.
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentUnalignedAddress Native VerifyAlignVector
+ */
+
 public class TestMemorySegmentUnalignedAddress {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestMemorySegmentUnalignedAddressImpl.class);
         framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
+        if (args.length > 1) {
+            switch (args[1]) {
+                case "AlignVector" ->       { framework.addFlags("-XX:+AlignVector"); }
+                case "VerifyAlignVector" -> { framework.addFlags("-XX:+AlignVector", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyAlignVector"); }
+                default ->                  { throw new RuntimeException("unexpected: " + args[1]); }
+            }
+        }
         framework.setDefaultWarmup(100);
         framework.start();
     }
