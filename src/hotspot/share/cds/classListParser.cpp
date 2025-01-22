@@ -42,6 +42,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
+#include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -109,6 +110,12 @@ ClassListParser::~ClassListParser() {
   delete _indy_items;
   delete _interfaces;
   _instance = nullptr;
+}
+
+void ClassListParser::parse_classlist(const char* classlist_path, ParseMode parse_mode, TRAPS) {
+  UnregisteredClasses::initialize(CHECK);
+  ClassListParser parser(classlist_path, parse_mode);
+  parser.parse(THREAD);
 }
 
 void ClassListParser::parse(TRAPS) {
@@ -387,6 +394,19 @@ bool ClassListParser::parse_uint_option(const char* option_name, int* value) {
   return false;
 }
 
+objArrayOop ClassListParser::get_specified_interfaces(TRAPS) {
+  const int n = _interfaces->length();
+  if (n == 0) {
+    return nullptr;
+  } else {
+    objArrayOop array = oopFactory::new_objArray(vmClasses::Class_klass(), n, CHECK_NULL);
+    for (int i = 0; i < n; i++) {
+      array->obj_at_put(i, lookup_class_by_id(_interfaces->at(i))->java_mirror());
+    }
+    return array;
+  }
+}
+
 void ClassListParser::print_specified_interfaces() {
   const int n = _interfaces->length();
   jio_fprintf(defaultStream::error_stream(), "Currently specified interfaces[%d] = {\n", n);
@@ -514,7 +534,17 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
 
   ResourceMark rm;
   char * source_path = os::strdup_check_oom(ClassLoader::uri_to_path(_source));
-  InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path, CHECK_NULL);
+  InstanceKlass* specified_super = lookup_class_by_id(_super);
+  Handle super_class(THREAD, specified_super->java_mirror());
+  objArrayOop r = get_specified_interfaces(CHECK_NULL);
+  objArrayHandle interfaces(THREAD, r);
+  InstanceKlass* k = UnregisteredClasses::load_class(class_name, source_path,
+                                                     super_class, interfaces, CHECK_NULL);
+  if (k->java_super() != specified_super) {
+    error("The specified super class %s (id %d) does not match actual super class %s",
+          specified_super->external_name(), _super,
+          k->java_super()->external_name());
+  }
   if (k->local_interfaces()->length() != _interfaces->length()) {
     print_specified_interfaces();
     print_actual_interfaces(k);
@@ -732,49 +762,6 @@ InstanceKlass* ClassListParser::lookup_class_by_id(int id) {
   }
   assert(*klass_ptr != nullptr, "must be");
   return *klass_ptr;
-}
-
-
-InstanceKlass* ClassListParser::lookup_super_for_current_class(Symbol* super_name) {
-  if (!is_loading_from_source()) {
-    return nullptr;
-  }
-
-  InstanceKlass* k = lookup_class_by_id(super());
-  if (super_name != k->name()) {
-    error("The specified super class %s (id %d) does not match actual super class %s",
-          k->name()->as_klass_external_name(), super(),
-          super_name->as_klass_external_name());
-  }
-  return k;
-}
-
-InstanceKlass* ClassListParser::lookup_interface_for_current_class(Symbol* interface_name) {
-  if (!is_loading_from_source()) {
-    return nullptr;
-  }
-
-  const int n = _interfaces->length();
-  if (n == 0) {
-    error("Class %s implements the interface %s, but no interface has been specified in the input line",
-          _class_name, interface_name->as_klass_external_name());
-    ShouldNotReachHere();
-  }
-
-  int i;
-  for (i=0; i<n; i++) {
-    InstanceKlass* k = lookup_class_by_id(_interfaces->at(i));
-    if (interface_name == k->name()) {
-      return k;
-    }
-  }
-
-  // interface_name is not specified by the "interfaces:" keyword.
-  print_specified_interfaces();
-  error("The interface %s implemented by class %s does not match any of the specified interface IDs",
-        interface_name->as_klass_external_name(), _class_name);
-  ShouldNotReachHere();
-  return nullptr;
 }
 
 InstanceKlass* ClassListParser::find_builtin_class_helper(JavaThread* current, Symbol* class_name_symbol, oop class_loader_oop) {
