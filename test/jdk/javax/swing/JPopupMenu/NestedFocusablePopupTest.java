@@ -39,10 +39,15 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.IllegalComponentStateException;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import jtreg.SkippedException;
 
@@ -64,71 +69,86 @@ public class NestedFocusablePopupTest {
 
         try {
             SwingUtilities.invokeAndWait(NestedFocusablePopupTest::initAndShowGui);
-            robot.waitForIdle();
-            robot.delay(500);
             test0();
-
-            robot.waitForIdle();
-            robot.delay(500);
             test1();
         } finally {
             SwingUtilities.invokeAndWait(frame::dispose);
         }
     }
 
+    public static void waitTillShown(final Component component, long msTimeout)
+            throws InterruptedException, TimeoutException {
+        long startTime = System.currentTimeMillis();
+
+        while (true) {
+            try {
+                Thread.sleep(50);
+                component.getLocationOnScreen();
+                break;
+            } catch (IllegalComponentStateException e) {
+                if (System.currentTimeMillis() - startTime > msTimeout) {
+                    throw new TimeoutException("Component not shown within the specified timeout");
+                }
+            }
+        }
+    }
+
+    static Point waitAndGetLocationOnEDT(Component component) throws Exception {
+        waitTillShown(component, 500);
+        robot.waitForIdle();
+
+        FutureTask<Point> task = new FutureTask<>(component::getLocationOnScreen);
+        SwingUtilities.invokeLater(task);
+        return task.get(500, TimeUnit.MILLISECONDS);
+    }
+
     static void test0() throws Exception {
-        Point frameLocation = frame.getLocationOnScreen();
+        Point frameLocation = waitAndGetLocationOnEDT(frame);
         robot.mouseMove(frameLocation.x + frame.getWidth() / 2,
                 frameLocation.y + frame.getHeight() / 2);
 
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
-        robot.waitForIdle();
-        robot.delay(100);
-
-        Point menuLocation = menuWithFocusableItem.getLocationOnScreen();
+        Point menuLocation = waitAndGetLocationOnEDT(menuWithFocusableItem);
         robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+
+        // give popup some time to disappear (in case of failure)
         robot.waitForIdle();
         robot.delay(200);
 
-        SwingUtilities.invokeAndWait(() -> {
-            boolean visible = popupMenu.isVisible();
-            popupMenu.setVisible(false);
-            if (!visible) {
-                throw new RuntimeException("Popup is not visible");
-            }
-        });
+        try {
+            waitTillShown(popupMenu, 500);
+        } catch (TimeoutException e) {
+            throw new RuntimeException("The popupMenu disappeared when it shouldn't have.");
+        }
     }
 
     static void test1() throws Exception {
-        Point frameLocation = frame.getLocationOnScreen();
+        Point frameLocation = waitAndGetLocationOnEDT(frame);
         robot.mouseMove(frameLocation.x + frame.getWidth() / 2,
                 frameLocation.y + frame.getHeight() / 2);
 
         robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
 
-        robot.waitForIdle();
-        robot.delay(100);
-
-        Point menuLocation = menuWithFocusableItem.getLocationOnScreen();
+        Point menuLocation = waitAndGetLocationOnEDT(menuWithFocusableItem);
         robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
         robot.waitForIdle();
         robot.delay(200);
 
-        menuLocation = menuWithNonFocusableItem.getLocationOnScreen();
+        menuLocation = waitAndGetLocationOnEDT(menuWithNonFocusableItem);
         robot.mouseMove(menuLocation.x + 5, menuLocation.y + 5);
+
+        // give popup some time to disappear (in case of failure)
         robot.waitForIdle();
         robot.delay(200);
 
-        SwingUtilities.invokeAndWait(() -> {
-            boolean visible = popupMenu.isVisible();
-            popupMenu.setVisible(false);
-            if (!visible) {
-                throw new RuntimeException("Popup is not visible");
-            }
-        });
+        try {
+            waitTillShown(popupMenu, 500);
+        } catch (TimeoutException e) {
+            throw new RuntimeException("The popupMenu disappeared when it shouldn't have.");
+        }
     }
 
     static JMenu getMenuWithMenuItem(boolean isSubmenuItemFocusable, String text) {
