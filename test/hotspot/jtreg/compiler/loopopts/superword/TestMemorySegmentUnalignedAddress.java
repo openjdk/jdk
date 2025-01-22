@@ -102,7 +102,7 @@ class TestMemorySegmentUnalignedAddressImpl {
     static final Random RANDOM = Utils.getRandomInstance();
 
     interface TestFunction {
-        Object run();
+        Object run(int i);
     }
 
     interface MemorySegmentProvider {
@@ -128,20 +128,36 @@ class TestMemorySegmentUnalignedAddressImpl {
 
     public TestMemorySegmentUnalignedAddressImpl () {
         // Generate two MemorySegments as inputs
-        MemorySegment a = newMemorySegment();
-        MemorySegment b = newMemorySegment();
+        MemorySegment a = sliceAligned(newMemorySegment());
+        MemorySegment b = sliceAligned(newMemorySegment());
         fillRandom(a);
         fillRandom(b);
 
         // Add all tests to list
-        // TODO add the real tests
-        tests.put("test",                           () -> test(sliceUnaligned(copy(a))));
+        tests.put("testAlwaysAligned", (int i) -> {
+            MemorySegment ms = newMemorySegment();
+            MemorySegment slice = sliceAligned(ms);
+            copy(a, slice);
+            return testAlwaysAligned(slice);
+        });
+        tests.put("testAlwaysUnaligned", (int i) -> {
+            MemorySegment ms = newMemorySegment();
+            MemorySegment slice = sliceUnaligned(ms);
+            copy(a, slice);
+            return testAlwaysUnaligned(slice);
+        });
+        tests.put("testMixedAlignedAndUnaligned", (int i) -> {
+            MemorySegment ms = newMemorySegment();
+            MemorySegment slice = (i % 2 == 0) ? sliceUnaligned(ms) : sliceAligned(ms);
+            copy(a, slice);
+            return testMixedAlignedAndUnaligned(slice);
+        });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
-            Object gold = test.run();
+            Object gold = test.run(0);
             golds.put(name, gold);
         }
     }
@@ -158,10 +174,8 @@ class TestMemorySegmentUnalignedAddressImpl {
         return provider.newMemorySegment();
     }
 
-    MemorySegment copy(MemorySegment src) {
-        MemorySegment dst = newMemorySegment();
+    static void copy(MemorySegment src, MemorySegment dst) {
         MemorySegment.copy(src, 0, dst, 0, src.byteSize());
-        return dst;
     }
 
     static MemorySegment newMemorySegmentOfByteBufferDirect() {
@@ -188,15 +202,20 @@ class TestMemorySegmentUnalignedAddressImpl {
         }
     }
 
-    @Run(test = {"test"})
+    static int runInvocationCounter = 0;
+
+    @Run(test = {"testAlwaysAligned",
+                 "testAlwaysUnaligned",
+                 "testMixedAlignedAndUnaligned"})
     void runTests() {
+        runInvocationCounter++;
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             // Recall gold value from before compilation
             Object gold = golds.get(name);
             // Compute new result
-            Object result = test.run();
+            Object result = test.run(runInvocationCounter);
             // Compare gold and new result
             verify(name, gold, result);
         }
@@ -208,7 +227,35 @@ class TestMemorySegmentUnalignedAddressImpl {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object test(MemorySegment ms) {
+    static Object testAlwaysAligned(MemorySegment ms) {
+        for (long i = 0; i < ms.byteSize(); i += 4) {
+            int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, i);
+            ms.set(ValueLayout.JAVA_INT_UNALIGNED, i, (int)(v + 1));
+        }
+        return new Object[]{ ms };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object testAlwaysUnaligned(MemorySegment ms) {
+        for (long i = 0; i < ms.byteSize(); i += 4) {
+            int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, i);
+            ms.set(ValueLayout.JAVA_INT_UNALIGNED, i, (int)(v + 1));
+        }
+        return new Object[]{ ms };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static Object testMixedAlignedAndUnaligned(MemorySegment ms) {
         for (long i = 0; i < ms.byteSize(); i += 4) {
             int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, i);
             ms.set(ValueLayout.JAVA_INT_UNALIGNED, i, (int)(v + 1));
