@@ -97,9 +97,9 @@ public class TestMemorySegmentUnalignedAddress {
 }
 
 class TestMemorySegmentUnalignedAddressImpl {
-    static final int BACKING_SIZE = 1024 * 8;
+    static final int SIZE = 10_000;
+    static final int BACKING_SIZE = 10_000 + 1;
     static final Random RANDOM = Utils.getRandomInstance();
-
 
     interface TestFunction {
         Object run();
@@ -135,7 +135,7 @@ class TestMemorySegmentUnalignedAddressImpl {
 
         // Add all tests to list
         // TODO add the real tests
-        tests.put("testIntLoop_iv_byte",                           () -> testIntLoop_iv_byte(copy(a)));
+        tests.put("testIntLoop_iv_byte",                           () -> testIntLoop_iv_byte(sliceUnaligned(copy(a))));
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -144,6 +144,14 @@ class TestMemorySegmentUnalignedAddressImpl {
             Object gold = test.run();
             golds.put(name, gold);
         }
+    }
+
+    MemorySegment sliceAligned(MemorySegment src) {
+        return src.asSlice(0, SIZE);
+    }
+
+    MemorySegment sliceUnaligned(MemorySegment src) {
+        return src.asSlice(1, SIZE);
     }
 
     MemorySegment newMemorySegment() {
@@ -167,8 +175,8 @@ class TestMemorySegmentUnalignedAddressImpl {
     }
 
     static void fillRandom(MemorySegment data) {
-        for (int i = 0; i < (int)data.byteSize(); i += 8) {
-            data.set(ValueLayout.JAVA_LONG_UNALIGNED, i, RANDOM.nextLong());
+        for (int i = 0; i < (int)data.byteSize(); i++) {
+            data.set(ValueLayout.JAVA_BYTE, i, (byte)RANDOM.nextInt());
         }
     }
 
