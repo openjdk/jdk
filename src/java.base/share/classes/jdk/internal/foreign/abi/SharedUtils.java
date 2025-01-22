@@ -383,15 +383,11 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
-    private static final CarrierThreadLocal<BufferStack> BUFFER_STACK = new CarrierThreadLocal<>() {
-        @Override
-        protected BufferStack initialValue() {
-            return new BufferStack(Arena.ofAuto().allocate(256));
-        }
-    };
+    private static final BufferStack LINKER_STACK = new BufferStack(256);
 
+    @ForceInline
     public static Arena newBoundedArena(long size) {
-        return BUFFER_STACK.get().reserve(size);
+        return LINKER_STACK.pushFrame(size, 8);
     }
 
     public static Arena newEmptyArena() {

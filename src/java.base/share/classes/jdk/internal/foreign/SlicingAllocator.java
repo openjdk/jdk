@@ -38,6 +38,22 @@ public final class SlicingAllocator implements SegmentAllocator {
         this.segment = segment;
     }
 
+    public long currentOffset() {
+        return sp;
+    }
+
+    public void resetTo(long offset) {
+        if (offset < 0 || offset > sp)
+            throw new IllegalArgumentException(String.format("offset %d should be in [0, %d] ", offset, sp));
+        this.sp = offset;
+    }
+
+    public boolean canAllocate(long byteSize, long byteAlignment) {
+        long min = segment.address();
+        long start = Utils.alignUp(min + sp, byteAlignment) - min;
+        return start + byteSize <= segment.byteSize();
+    }
+
     MemorySegment trySlice(long byteSize, long byteAlignment) {
         long min = segment.address();
         long start = Utils.alignUp(min + sp, byteAlignment) - min;
