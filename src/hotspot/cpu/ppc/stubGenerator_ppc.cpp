@@ -635,10 +635,20 @@ class StubGenerator: public StubCodeGenerator {
 // Generate stub for ghash process blocks.
 //
 // Arguments for generated stub:
-//      state:  R3_ARG1
-//      subkeyH:    R4_ARG2
-//      data: R5_ARG3
-//      blocks: R6_ARG4
+//      state:    R3_ARG1 (long[] state)
+//      subkeyH:  R4_ARG2 (long[] subH)
+//      data:     R5_ARG3 (byte[] data)
+//      blocks:   R6_ARG4 (number of 16-byte blocks to process)
+//
+// The polynomials are processed in bit-reflected order for efficiency reasons. 
+// This optimization leverages the structure of the Galois field arithmetic 
+// to minimize the number of bit manipulations required during multiplication.
+// For an explanation of how this works, refer :
+// Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich, 
+// Martin Dixon. "Optimized Galois-Counter-Mode Implementation on Intel® 
+// Architecture Processor"
+// http://web.archive.org/web/20130609111954/http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/communications-ia-galois-counter-mode-paper.pdf
+//
 //
 address generate_ghash_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "ghash");
@@ -678,8 +688,7 @@ address generate_ghash_processBlocks() {
 
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
-  __ vxor(vZero, vZero, vZero);
-  // Load the vector from memory into vConstC2
+  __ vspltisb(vZero, 0);
   __ mtvrd(vConstC2, temp1);
   __ lxvd2x(vH->to_vsr(), subkeyH);
   __ lxvd2x(vState->to_vsr(), state);
@@ -703,7 +712,26 @@ address generate_ghash_processBlocks() {
   #endif
   __ clrldi(blocks, blocks, 32);
   __ mtctr(blocks);
-  // Performing Karatsuba multiplication in Galois fields
+  // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation. 
+  //
+  // The Karatsuba method breaks the multiplication of two 128-bit numbers into smaller parts,
+  // performing three 128-bit multiplications and combining the results efficiently.
+  // 
+  // (C1:C0) = A1*B1, (D1:D0) = A0*B0, (E1:E0) = (A0+A1)(B0+B1)
+  // (A1:A0)(B1:B0) = C1:(C0+C1+D1+E1):(D1+C0+D0+E0):D0
+  //
+  // Inputs:
+  // - vH:       The data vector (state), containing both B0 (lower half) and B1 (higher half).
+  // - vLowerH:  Lower half of the subkey H (A0).
+  // - vHigherH: Higher half of the subkey H (A1).
+  // - vConstC2: Constant used for reduction (for final processing).
+  // 
+  // References:
+  // Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich, Martin Dixon. 
+  // "Optimized Galois-Counter-Mode Implementation on Intel® Architecture Processor"
+  // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
+  //
+  //
   Label loop;
   __ bind(loop);
     // Load immediate value 0 into temp
