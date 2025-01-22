@@ -105,7 +105,7 @@ JavaVM *jvm = NULL;
 /* Return a handle to the module containing this method, either a DLL in case
  * of a dynamic library build, or the .EXE in case of a static build.
  */
-HMODULE GetAwtModuleHandle() {
+static HMODULE GetAwtModuleHandle() {
     HMODULE hModule = NULL;
     GetModuleHandleEx(
         GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
