@@ -193,7 +193,7 @@ class os::Linux {
  private:
   static void numa_init();
 
-  static void disable_numa(const char* reason);
+  static void disable_numa(const char* reason, bool warning);
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
   typedef int (*numa_node_to_cpus_v2_func_t)(int node, void *mask);

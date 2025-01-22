@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
@@ -473,6 +472,21 @@ bool ObjectMonitor::enter(JavaThread* current) {
   return true;
 }
 
+void ObjectMonitor::notify_contended_enter(JavaThread *current) {
+  current->set_current_pending_monitor(this);
+
+  DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
+  if (JvmtiExport::should_post_monitor_contended_enter()) {
+    JvmtiExport::post_monitor_contended_enter(current, this);
+
+    // The current thread does not yet own the monitor and does not
+    // yet appear on any queues that would get it made the successor.
+    // This means that the JVMTI_EVENT_MONITOR_CONTENDED_ENTER event
+    // handler cannot accidentally consume an unpark() meant for the
+    // ParkEvent associated with this ObjectMonitor.
+  }
+}
+
 void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonitorContentionMark &cm) {
   assert(current == JavaThread::current(), "must be");
   assert(!has_owner(current), "must be");
@@ -492,47 +506,41 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
 
   freeze_result result;
 
-  { // Change java thread status to indicate blocked on monitor enter.
+  assert(current->current_pending_monitor() == nullptr, "invariant");
+
+  ContinuationEntry* ce = current->last_continuation();
+  bool is_virtual = ce != nullptr && ce->is_virtual_thread();
+  if (is_virtual) {
+    notify_contended_enter(current);
+    result = Continuation::try_preempt(current, ce->cont_oop(current));
+    if (result == freeze_ok) {
+      bool acquired = VThreadMonitorEnter(current);
+      if (acquired) {
+        // We actually acquired the monitor while trying to add the vthread to the
+        // _cxq so cancel preemption. We will still go through the preempt stub
+        // but instead of unmounting we will call thaw to continue execution.
+        current->set_preemption_cancelled(true);
+        if (JvmtiExport::should_post_monitor_contended_entered()) {
+          // We are going to call thaw again after this and finish the VMTS
+          // transition so no need to do it here. We will post the event there.
+          current->set_contended_entered_monitor(this);
+        }
+      }
+      current->set_current_pending_monitor(nullptr);
+      DEBUG_ONLY(int state = java_lang_VirtualThread::state(current->vthread()));
+      assert((acquired && current->preemption_cancelled() && state == java_lang_VirtualThread::RUNNING) ||
+             (!acquired && !current->preemption_cancelled() && state == java_lang_VirtualThread::BLOCKING), "invariant");
+      return;
+    }
+  }
+
+  {
+    // Change java thread status to indicate blocked on monitor enter.
     JavaThreadBlockedOnMonitorEnterState jtbmes(current, this);
 
-    assert(current->current_pending_monitor() == nullptr, "invariant");
-    current->set_current_pending_monitor(this);
-
-    DTRACE_MONITOR_PROBE(contended__enter, this, object(), current);
-    if (JvmtiExport::should_post_monitor_contended_enter()) {
-      JvmtiExport::post_monitor_contended_enter(current, this);
-
-      // The current thread does not yet own the monitor and does not
-      // yet appear on any queues that would get it made the successor.
-      // This means that the JVMTI_EVENT_MONITOR_CONTENDED_ENTER event
-      // handler cannot accidentally consume an unpark() meant for the
-      // ParkEvent associated with this ObjectMonitor.
+    if (!is_virtual) { // already notified contended_enter for virtual
+      notify_contended_enter(current);
     }
-
-    ContinuationEntry* ce = current->last_continuation();
-    if (ce != nullptr && ce->is_virtual_thread()) {
-      result = Continuation::try_preempt(current, ce->cont_oop(current));
-      if (result == freeze_ok) {
-        bool acquired = VThreadMonitorEnter(current);
-        if (acquired) {
-          // We actually acquired the monitor while trying to add the vthread to the
-          // _cxq so cancel preemption. We will still go through the preempt stub
-          // but instead of unmounting we will call thaw to continue execution.
-          current->set_preemption_cancelled(true);
-          if (JvmtiExport::should_post_monitor_contended_entered()) {
-            // We are going to call thaw again after this and finish the VMTS
-            // transition so no need to do it here. We will post the event there.
-            current->set_contended_entered_monitor(this);
-          }
-        }
-        current->set_current_pending_monitor(nullptr);
-        DEBUG_ONLY(int state = java_lang_VirtualThread::state(current->vthread()));
-        assert((acquired && current->preemption_cancelled() && state == java_lang_VirtualThread::RUNNING) ||
-               (!acquired && !current->preemption_cancelled() && state == java_lang_VirtualThread::BLOCKING), "invariant");
-        return;
-      }
-    }
-
     OSThreadContendState osts(current->osthread());
 
     assert(current->thread_state() == _thread_in_vm, "invariant");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public:
       // Reset size before deleting chunks.  Otherwise, the total
       // size could exceed the total chunk size.
       assert(size_in_bytes() > state._size_in_bytes,
-             "size: " SIZE_FORMAT ", saved size: " SIZE_FORMAT,
+             "size: %zu, saved size: %zu",
              size_in_bytes(), state._size_in_bytes);
       set_size_in_bytes(state._size_in_bytes);
       Chunk::next_chop(state._chunk);
