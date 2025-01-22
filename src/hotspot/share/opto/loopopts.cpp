@@ -4503,11 +4503,6 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 //       multiversion the loop, so that we can still have speculative
 //       runtime checks.
 //
-// Since multiversioning requires us to duplicate the loop, we would
-// like to only do this when we expect vectorization. For now, we
-// limit it to loops that have no control flow, and as such are good
-// candidates for auto-vectorization.
-//
 // We perform the multiversioning when the loop is still in its single
 // iteration form, even before we insert pre and post loops. This makes
 // the cloning much simpler. However, this means that both the fast
@@ -4539,12 +4534,6 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   const Predicates predicates(entry);
   const PredicateBlock* predicate_block = predicates.auto_vectorization_check_block();
   if (predicate_block->has_parse_predicate()) { return; }
-
-  // We only use the multiversioning in auto-vectorization for now. And we currently
-  // do not allow any CFG in auto-vectorization. Hence, only multiversion when we have
-  // no CFG in the loop.
-  // TODO does that work when we have RCE with unknown bounds?
-  if (cl->loopexit()->in(0) != cl) { return; }
 
   // Check node budget.
   uint estimate = lpt->est_loop_clone_sz(2);
