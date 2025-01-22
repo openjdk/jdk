@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,12 +105,12 @@ public final class ZoneOffsetTransitionRule implements Serializable {
     private static final long serialVersionUID = 6889046316657758795L;
 
     /**
-     * The month of the month-day of the first day of the cutover week.
+     * @serial The month of the month-day of the first day of the cutover week.
      * The actual date will be adjusted by the dowChange field.
      */
     private final Month month;
     /**
-     * The day-of-month of the month-day of the cutover week.
+     * @serial The day-of-month of the month-day of the cutover week.
      * If positive, it is the start of the week where the cutover can occur.
      * If negative, it represents the end of the week where cutover can occur.
      * The value is the number of days from the end of the month, such that
@@ -119,31 +119,31 @@ public final class ZoneOffsetTransitionRule implements Serializable {
      */
     private final byte dom;
     /**
-     * The cutover day-of-week, null to retain the day-of-month.
+     * @serial The cutover day-of-week, null to retain the day-of-month.
      */
     private final DayOfWeek dow;
     /**
-     * The cutover time in the 'before' offset.
+     * @serial The cutover time in the 'before' offset.
      */
     private final LocalTime time;
     /**
-     * Whether the cutover time is midnight at the end of day.
+     * @serial Whether the cutover time is midnight at the end of day.
      */
     private final boolean timeEndOfDay;
     /**
-     * The definition of how the local time should be interpreted.
+     * @serial The definition of how the local time should be interpreted.
      */
     private final TimeDefinition timeDefinition;
     /**
-     * The standard offset at the cutover.
+     * @serial The standard offset at the cutover.
      */
     private final ZoneOffset standardOffset;
     /**
-     * The offset before the cutover.
+     * @serial The offset before the cutover.
      */
     private final ZoneOffset offsetBefore;
     /**
-     * The offset after the cutover.
+     * @serial The offset after the cutover.
      */
     private final ZoneOffset offsetAfter;
 
