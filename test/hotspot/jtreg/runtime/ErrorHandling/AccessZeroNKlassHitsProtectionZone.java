@@ -178,7 +178,8 @@ public class AccessZeroNKlassHitsProtectionZone {
 
         ArrayList<Pattern> hsErrPatternList = new ArrayList<>();
         hsErrPatternList.add(Pattern.compile(".*(SIGBUS|SIGSEGV|EXCEPTION_ACCESS_VIOLATION).*"));
-        hsErrPatternList.add(Pattern.compile(".*(si_addr|ExceptionInformation).*" + expectedCrashAddressString + ".*"));
+        
+        hsErrPatternList.add(Pattern.compile(".*siginfo:.*" + expectedCrashAddressString + ".*"));
         hsErrPatternList.add(Pattern.compile(".*" + expectedCrashAddressString + ".*points into nKlass protection zone.*"));
         Pattern[] hsErrPattern = hsErrPatternList.toArray(new Pattern[0]);
         HsErrFileUtils.checkHsErrFileContent(hsErrFile, hsErrPattern, true);
