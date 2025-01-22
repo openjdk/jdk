@@ -642,8 +642,8 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
                 " to the corresponding log outputs by a standalone thread. Write operations at logsites are"
                 " guaranteed non-blocking.");
   out->print_cr(" A mode, either 'drop' or 'stall', may be provided. If 'drop' is provided then"
-                " messages will be dropped if there is no room in the intermediate buffer,"
-                " if 'stall' is provided then the log operation will wait for room to be made by the output thread."
+                " messages will be dropped if there is no room in the intermediate buffer."
+                " If 'stall' is provided then the log operation will wait for room to be made by the output thread, without dropping any messages."
                 " The default mode is 'drop'.");
 
   out->cr();
