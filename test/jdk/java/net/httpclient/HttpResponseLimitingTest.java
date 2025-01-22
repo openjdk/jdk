@@ -110,7 +110,17 @@ class HttpResponseLimitingTest {
         }
 
         private ServerClientPair {
-            server.start();
+            try {
+                server.start();
+            } catch (Exception serverException) {
+                try {
+                    client.close();
+                } catch (Exception clientException) {
+                    Exception localClientException = new RuntimeException("failed closing client", clientException);
+                    serverException.addSuppressed(localClientException);
+                }
+                throw new RuntimeException("failed closing server", serverException);
+            }
         }
 
         private static ServerClientPair of(HttpClient.Version version, boolean secure) {
@@ -174,9 +184,25 @@ class HttpResponseLimitingTest {
 
     @AfterAll
     static void closeServerClientPairs() {
-        for (var pair : new ServerClientPair[]{HTTP1, HTTPS1, HTTP2, HTTPS2}) {
-            pair.client.close();
-            pair.server.stop();
+        Exception[] exceptionRef = {null};
+        Stream
+                .of(HTTP1, HTTPS1, HTTP2, HTTPS2)
+                .flatMap(pair -> Stream.<Runnable>of(
+                        pair.client::close,
+                        pair.server::stop))
+                .forEach(closer -> {
+                    try {
+                        closer.run();
+                    } catch (Exception exception) {
+                        if (exceptionRef[0] == null) {
+                            exceptionRef[0] = exception;
+                        } else {
+                            exceptionRef[0].addSuppressed(exception);
+                        }
+                    }
+                });
+        if (exceptionRef[0] != null) {
+            throw new RuntimeException("failed closing one or more server-client pairs", exceptionRef[0]);
         }
     }
 
