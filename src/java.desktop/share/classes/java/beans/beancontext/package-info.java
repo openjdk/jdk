@@ -31,7 +31,7 @@
  * contains events and listener interface for beans being added and removed from
  * a bean context.
  * <p>
- * These APIs are now both obsolete and express an "anti-pattern" of component
+ * These APIs are now both obsolete and express an <em>anti-pattern</em> of component
  * assembly and interaction.
  * <p>
  * This package has been deprecated and may be removed in a future version of
