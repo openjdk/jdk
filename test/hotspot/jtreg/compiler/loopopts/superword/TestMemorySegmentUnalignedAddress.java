@@ -24,6 +24,7 @@
 package compiler.loopopts.superword;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
 import jdk.test.lib.Utils;
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -62,7 +63,7 @@ class TestMemorySegmentUnalignedAddressImpl {
 
 
     interface TestFunction {
-        Object[] run();
+        Object run();
     }
 
     interface MemorySegmentProvider {
@@ -84,7 +85,7 @@ class TestMemorySegmentUnalignedAddressImpl {
     Map<String, TestFunction> tests = new HashMap<>();
 
     // List of gold, the results from the first run before compilation
-    Map<String, Object[]> golds = new HashMap<>();
+    Map<String, Object> golds = new HashMap<>();
 
     public TestMemorySegmentUnalignedAddressImpl () {
         // Generate two MemorySegments as inputs
@@ -101,7 +102,7 @@ class TestMemorySegmentUnalignedAddressImpl {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
-            Object[] gold = test.run();
+            Object gold = test.run();
             golds.put(name, gold);
         }
     }
@@ -132,42 +133,11 @@ class TestMemorySegmentUnalignedAddressImpl {
         }
     }
 
-
-    static void verify(String name, Object[] gold, Object[] result) {
-        if (gold.length != result.length) {
-            throw new RuntimeException("verify " + name + ": not the same number of outputs: gold.length = " +
-                                       gold.length + ", result.length = " + result.length);
-        }
-        for (int i = 0; i < gold.length; i++) {
-            Object g = gold[i];
-            Object r = result[i];
-            if (g == r) {
-                throw new RuntimeException("verify " + name + ": should be two separate objects (with identical content):" +
-                                           " gold[" + i + "] == result[" + i + "]");
-            }
-
-            if (!(g instanceof MemorySegment && r instanceof MemorySegment)) {
-                throw new RuntimeException("verify " + name + ": only MemorySegment supported, i=" + i);
-            }
-
-            MemorySegment mg = (MemorySegment)g;
-            MemorySegment mr = (MemorySegment)r;
-
-            if (mg.byteSize() != mr.byteSize()) {
-                throw new RuntimeException("verify " + name + ": MemorySegment must have same byteSize:" +
-                                       " gold[" + i + "].byteSize = " + mg.byteSize() +
-                                       " result[" + i + "].byteSize = " + mr.byteSize());
-            }
-
-            for (int j = 0; j < (int)mg.byteSize(); j++) {
-                byte vg = mg.get(ValueLayout.JAVA_BYTE, j);
-                byte vr = mr.get(ValueLayout.JAVA_BYTE, j);
-                if (vg != vr) {
-                    throw new RuntimeException("verify " + name + ": MemorySegment must have same content:" +
-                                               " gold[" + i + "][" + j + "] = " + vg +
-                                               " result[" + i + "][" + j + "] = " + vr);
-                }
-            }
+    static void verify(String name, Object gold, Object result) {
+        try {
+            Verify.checkEQ(gold, result);
+        } catch (VerifyException e) {
+            throw new RuntimeException("Verify: wrong result in " + name, e);
         }
     }
 
@@ -177,9 +147,9 @@ class TestMemorySegmentUnalignedAddressImpl {
             String name = entry.getKey();
             TestFunction test = entry.getValue();
             // Recall gold value from before compilation
-            Object[] gold = golds.get(name);
+            Object gold = golds.get(name);
             // Compute new result
-            Object[] result = test.run();
+            Object result = test.run();
             // Compare gold and new result
             verify(name, gold, result);
         }
@@ -191,7 +161,7 @@ class TestMemorySegmentUnalignedAddressImpl {
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testIntLoop_iv_byte(MemorySegment a) {
+    static Object testIntLoop_iv_byte(MemorySegment a) {
         for (int i = 0; i < (int)a.byteSize(); i++) {
             long adr = i;
             byte v = a.get(ValueLayout.JAVA_BYTE, adr);
