@@ -4484,12 +4484,12 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 
 // Just before insert_pre_post_loops, we can multi-version the loop:
 //
-//              selector_if
+//              multiversion_if
 //               |       |
 //         fast_loop   slow_loop
 //
 // In the fast_loop we can make speculative assumptions, and put the
-// conditions into the selector_if. If the conditions hold at runtime,
+// conditions into the multiversion_if. If the conditions hold at runtime,
 // we enter the fast_loop, if the conditions fail, we take the slow_loop
 // instead which does not make any of the speculative assumptions.
 //
@@ -4514,15 +4514,18 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 // and the slow loop have to be optimized independently (adding pre
 // and post loops, unrolling the main loop, auto-vectorize etc.). And
 // we may end up not needing any speculative assumptions in the fast_loop
-// and then rejecting the slow_loop by constant folding the selector_if.
+// and then rejecting the slow_loop by constant folding the multiversion_if.
 //
 // Therefore, we "stall" the optimization of the slow_loop until we add
 // at least one speculative assumption for the fast_loop. If we never
 // add such a speculative runtime check, the OpaqueMultiversioningNode
-// of the selector_if constant folds to true after loop opts, and the
-// selector_if folds away the "stalled" slow_loop. If we add any
+// of the multiversion_if constant folds to true after loop opts, and the
+// multiversion_if folds away the "stalled" slow_loop. If we add any
 // speculative assumption, then we mark the OpaqueMultiversioningNode
 // with "unstall_slow_loop", so that the slow_loop can be optimized.
+//
+// Note: new runtime checks can be added to the multiversion_if with
+//       PhaseIdealLoop::create_new_if_for_multiversion
 void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new) {
   CountedLoopNode* cl = lpt->_head->as_CountedLoop();
   LoopNode* outer_loop = cl->skip_strip_mined();

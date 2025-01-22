@@ -40,12 +40,13 @@
 // - Speculative compilation:
 //   The selector If checks some assumptions which allow stronger optimization in the true-path-loop. If the assumptions
 //   do not hold, we can still execute in the false-path-loop, although with fewer optimizations.
+//   See: PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks
+//        PhaseIdealLoop::create_new_if_for_multiversion
 //
 // - Unswitching:
 //   The selector If has the same (loop invariant) condition as some unswitching candidate If inside the loop. This
 //   allows us to constant-fold the unswitching candidate If to true in the true-path-loop and to false in the
 //   false-path-loop, thus eliminating the unswitching candidate If from the loop.
-//
 //
 //
 // Loop Unswitching is a loop optimization to move an invariant, non-loop-exiting test in the loop body before the loop.
