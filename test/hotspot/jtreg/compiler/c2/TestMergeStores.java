@@ -1017,7 +1017,7 @@ public class TestMergeStores {
     @Test
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "4",  // Unmerged stores: offset + (2,3,16) , and 1 for uncommon trap
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "3",  // 1([+0,+1]) for platform order and 2([+4,+5], [+14,+15]) for reverse order
-                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",  // 1([+6,+9]) for platform order and 1([+10,+13]) for reverse order  
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2",  // 1([+6,+9]) for platform order and 1([+10,+13]) for reverse order
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.REVERSE_BYTES_I, "1",
                   IRNode.REVERSE_BYTES_S, "2"},
