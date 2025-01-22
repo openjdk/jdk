@@ -2789,11 +2789,24 @@ private:
   StoreNode* const _store;
   // State machine with initial state Unknown
   // Allowed transitions:
-  //   Unknown  -> Forward
-  //   Unknown  -> Backward
-  //   Forward  -> Forward
-  //   Backward -> Backward
-  enum ValueOrder : uint8_t { Unknown, Forward, Backward };
+  //   Unknown     -> Const
+  //   Unknown     -> Platform
+  //   Unknown     -> Reverse
+  //   Unknown     -> NotAdjacent
+  //   Const       -> Const
+  //   Const       -> NotAdjacent
+  //   Platform    -> Platform
+  //   Platform    -> NotAdjacent
+  //   Reverse     -> Reverse
+  //   Reverse     -> NotAdjacent
+  //   NotAdjacent -> NotAdjacent
+  enum ValueOrder : uint8_t {
+    Unknown,     // Initial state
+    Const,       // Input values are const
+    Platform,    // Platform order
+    Reverse,     // Reverse platform order
+    NotAdjacent  // Not adjacent
+  };
   ValueOrder  _value_order;
 
   NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
@@ -2808,8 +2821,8 @@ public:
 
 private:
   bool is_compatible_store(const StoreNode* other_store) const;
-  bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store);
-  bool is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size);
+  bool is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const;
+  bool is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const;
   static bool is_con_RShift(const Node* n, Node const*& base_out, jint& shift_out, PhaseGVN* phase);
   enum CFGStatus { SuccessNoRangeCheck, SuccessWithRangeCheck, Failure };
   static CFGStatus cfg_status_for_pair(const StoreNode* use_store, const StoreNode* def_store);
@@ -2846,14 +2859,15 @@ private:
 #endif
   };
 
-  Status find_adjacent_use_store(const StoreNode* def_store);
-  Status find_adjacent_def_store(const StoreNode* use_store);
+  enum ValueOrder find_adjacent_input_value_order(const Node* n1, const Node* n2, const int memory_size) const;
+  Status find_adjacent_use_store(const StoreNode* def_store) const;
+  Status find_adjacent_def_store(const StoreNode* use_store) const;
   Status find_use_store(const StoreNode* def_store) const;
   Status find_def_store(const StoreNode* use_store) const;
   Status find_use_store_unidirectional(const StoreNode* def_store) const;
   Status find_def_store_unidirectional(const StoreNode* use_store) const;
 
-  void collect_merge_list(Node_List& merge_list);
+  void collect_merge_list(Node_List& merge_list) const;
   Node* make_merged_input_value(const Node_List& merge_list);
   StoreNode* make_merged_store(const Node_List& merge_list, Node* merged_input_value);
 
@@ -2907,9 +2921,16 @@ StoreNode* MergePrimitiveStores::run() {
   // Check if we can merge with at least one def, so that we have at least 2 stores to merge.
   Status status_def = find_adjacent_def_store(_store);
   NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeStores] expect def: "); status_def.print_on(tty); })
-  if (status_def.found_store() == nullptr) {
+  Node* def_store = status_def.found_store();
+  if (def_store == nullptr) {
     return nullptr;
   }
+
+  // Initialize value order
+  _value_order = find_adjacent_input_value_order(def_store->in(MemNode::ValueIn),
+                                                 _store->in(MemNode::ValueIn),
+                                                 _store->memory_size());
+  assert(_value_order != ValueOrder::NotAdjacent && _value_order != ValueOrder::Unknown, "Order should be checked");
 
   ResourceMark rm;
   Node_List merge_list;
@@ -2938,7 +2959,7 @@ bool MergePrimitiveStores::is_compatible_store(const StoreNode* other_store) con
   return true;
 }
 
-bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) {
+bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const StoreNode* def_store) const {
   if (!is_adjacent_input_pair(def_store->in(MemNode::ValueIn),
                               use_store->in(MemNode::ValueIn),
                               def_store->memory_size())) {
@@ -2956,66 +2977,67 @@ bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const St
   return pointer_def.is_adjacent_to_and_before(pointer_use);
 }
 
-bool MergePrimitiveStores::is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) {
+// Check input values n1 and n2 can be merged and return the value order
+MergePrimitiveStores::ValueOrder MergePrimitiveStores::find_adjacent_input_value_order(const Node* n1, const Node* n2,
+                                                                                       const int memory_size) const {
   // Pattern: [n1 = ConI, n2 = ConI]
-  if (n1->Opcode() == Op_ConI) {
-    return n2->Opcode() == Op_ConI;
+  if (n1->Opcode() == Op_ConI && n2->Opcode() == Op_ConI) {
+    return ValueOrder::Const;
   }
 
-  // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
-#ifndef VM_LITTLE_ENDIAN
-  // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
-  // Swapping n1 with n2 gives same pattern as on little endian platforms.
-  swap(n1, n2);
-#endif // !VM_LITTLE_ENDIAN
-  Node const* base_n2;
+  Node const *base_n2;
   jint shift_n2;
   if (!is_con_RShift(n2, base_n2, shift_n2, _phase)) {
-    return false;
+    return ValueOrder::NotAdjacent;
   }
-  if (n1->Opcode() == Op_ConvL2I) {
-    // look through
-    n1 = n1->in(1);
-  }
-  Node const* base_n1;
+  Node const *base_n1;
   jint shift_n1;
-  if (n1 == base_n2) {
-    // n1 = base = base >> 0
-    base_n1 = n1;
-    shift_n1 = 0;
-  } else if (!is_con_RShift(n1, base_n1, shift_n1, _phase)) {
-    return false;
+  if (!is_con_RShift(n1, base_n1, shift_n1, _phase)) {
+    return ValueOrder::NotAdjacent;
   }
+
   int bits_per_store = memory_size * 8;
   if (base_n1 != base_n2 ||
       abs(shift_n1 - shift_n2) != bits_per_store ||
       shift_n1 % bits_per_store != 0) {
-    return false;
+    // Values are not adjacent
+    return ValueOrder::NotAdjacent;
   }
 
-  // Initial state "Unknown": check for transition to Forward or Backward.
-  if (_value_order == ValueOrder::Unknown) {
-    if (shift_n1 < shift_n2) {
-      _value_order = ValueOrder::Forward; // First pair has Forward order
+  // Detect value order
 #ifdef VM_LITTLE_ENDIAN
-    } else if (memory_size == 1 &&
-               Matcher::match_rule_supported(Op_ReverseBytesI) &&
-               Matcher::match_rule_supported(Op_ReverseBytesL)) {
-      _value_order = ValueOrder::Backward;  // only support reverse bytes
+  return shift_n1 < shift_n2 ? ValueOrder::Platform     // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
+                             : ValueOrder::Reverse;     // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
+#else
+  return shift_n1 > shift_n2 ? ValueOrder::Platform     // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
+                             : ValueOrder::NotAdjacent; // TODO: Reverse order in BE machine not tested
 #endif
-    } else {
-      return false;
-    }
-  }
+}
 
-  if ((_value_order == ValueOrder::Forward  && shift_n1 > shift_n2) ||
-      (_value_order == ValueOrder::Backward && shift_n1 < shift_n2)) {
-    // Wrong order: mixed Forward and Backward not allowed.
+bool MergePrimitiveStores::is_adjacent_input_pair(const Node* n1, const Node* n2, const int memory_size) const {
+  ValueOrder input_value_order = find_adjacent_input_value_order(n1, n2, memory_size);
+
+  if (input_value_order == ValueOrder::NotAdjacent) {
     return false;
   }
 
-  // both load from same value with correct shift
-  return true;
+  if (input_value_order == ValueOrder::Reverse &&
+      (memory_size != 1 ||
+       !Matcher::match_rule_supported(Op_ReverseBytesI) ||
+       !Matcher::match_rule_supported(Op_ReverseBytesL) ||
+       !Matcher::match_rule_supported(Op_ReverseBytesS)
+      )) {
+    // ReverseBytes are not supported by platform
+    return false;
+  }
+
+  if (_value_order == ValueOrder::Unknown) {
+    // Initial state is Unknown, and we find a valid input value order
+    return true;
+  }
+
+  // The value order can not be changed
+  return _value_order == input_value_order;
 }
 
 // Detect pattern: n = base_out >> shift_out
@@ -3041,6 +3063,7 @@ bool MergePrimitiveStores::is_con_RShift(const Node* n, Node const*& base_out, j
 
   if (phase->type(n)->isa_int()  != nullptr ||
       phase->type(n)->isa_long() != nullptr) {
+    // (base >> 0)
     base_out = n;
     shift_out = 0;
     return true;
@@ -3094,7 +3117,7 @@ MergePrimitiveStores::CFGStatus MergePrimitiveStores::cfg_status_for_pair(const 
   return CFGStatus::SuccessWithRangeCheck;
 }
 
-MergePrimitiveStores::Status MergePrimitiveStores::find_adjacent_use_store(const StoreNode* def_store) {
+MergePrimitiveStores::Status MergePrimitiveStores::find_adjacent_use_store(const StoreNode* def_store) const {
   Status status_use = find_use_store(def_store);
   StoreNode* use_store = status_use.found_store();
   if (use_store != nullptr && !is_adjacent_pair(use_store, def_store)) {
@@ -3103,7 +3126,7 @@ MergePrimitiveStores::Status MergePrimitiveStores::find_adjacent_use_store(const
   return status_use;
 }
 
-MergePrimitiveStores::Status MergePrimitiveStores::find_adjacent_def_store(const StoreNode* use_store) {
+MergePrimitiveStores::Status MergePrimitiveStores::find_adjacent_def_store(const StoreNode* use_store) const {
   Status status_def = find_def_store(use_store);
   StoreNode* def_store = status_def.found_store();
   if (def_store != nullptr && !is_adjacent_pair(use_store, def_store)) {
@@ -3168,7 +3191,7 @@ MergePrimitiveStores::Status MergePrimitiveStores::find_def_store_unidirectional
   return Status::make(def_store, cfg_status_for_pair(use_store, def_store));
 }
 
-void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) {
+void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
   // The merged store can be at most 8 bytes.
   const uint merge_list_max_size = 8 / _store->memory_size();
   assert(merge_list_max_size >= 2 &&
@@ -3211,6 +3234,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
   Node* first = merge_list.at(merge_list.size()-1);
   Node* merged_input_value = nullptr;
   if (_store->in(MemNode::ValueIn)->Opcode() == Op_ConI) {
+    assert(_value_order == ValueOrder::Const, "must match");
     // Pattern: [ConI, ConI, ...] -> new constant
     jlong con = 0;
     jlong bits_per_store = _store->memory_size() * 8;
@@ -3227,6 +3251,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
     }
     merged_input_value = _phase->longcon(con);
   } else {
+    assert(_value_order == ValueOrder::Platform || _value_order == ValueOrder::Reverse, "must match");
     // Pattern: [base >> 24, base >> 16, base >> 8, base] -> base
     //             |                                  |
     //           _store                             first
@@ -3238,7 +3263,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
     // `_store` and `first` are swapped in the diagram above
     swap(hi, lo);
 #endif // !VM_LITTLE_ENDIAN
-    if (_value_order == ValueOrder::Backward) {
+    if (_value_order == ValueOrder::Reverse) {
       swap(hi, lo);
     }
     Node const* hi_base;
@@ -3270,14 +3295,15 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
          (_phase->type(merged_input_value)->isa_long() != nullptr && new_memory_size == 8),
          "merged_input_value is either int or long, and new_memory_size is small enough");
 
-  if (_value_order == ValueOrder::Backward) {
+  if (_value_order == ValueOrder::Reverse) {
     assert(_store->memory_size() == 1, "only implemented for bytes");
     if (new_memory_size == 8) {
       merged_input_value = _phase->transform(new ReverseBytesLNode(merged_input_value));
     } else if (new_memory_size == 4) {
       merged_input_value = _phase->transform(new ReverseBytesINode(merged_input_value));
     } else {
-      return nullptr;
+      assert(new_memory_size == 2, "sanity check");
+      merged_input_value = _phase->transform(new ReverseBytesSNode(merged_input_value));
     }
   }
   return merged_input_value;

@@ -1465,6 +1465,16 @@ public class IRNode {
         beforeMatchingNameRegex(REVERSE_BYTES_L, "ReverseBytesL");
     }
 
+    public static final String REVERSE_BYTES_S = PREFIX + "REVERSE_BYTES_S" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_S, "ReverseBytesS");
+    }
+
+    public static final String REVERSE_BYTES_US = PREFIX + "REVERSE_BYTES_US" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(REVERSE_BYTES_US, "ReverseBytesUS");
+    }
+
     public static final String REVERSE_BYTES_VB = VECTOR_PREFIX + "REVERSE_BYTES_VB" + POSTFIX;
     static {
         vectorNode(REVERSE_BYTES_VB, "ReverseBytesV", TYPE_BYTE);
