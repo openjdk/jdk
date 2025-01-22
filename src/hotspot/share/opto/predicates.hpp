@@ -1171,8 +1171,8 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
 
   void replace_opaque_stride_input(const TemplateAssertionPredicate& template_assertion_predicate) const;
 
-  InitializedAssertionPredicate initialize_from_updated_template(
-    const TemplateAssertionPredicate& template_assertion_predicate) const;
+  InitializedAssertionPredicate
+  initialize_from_updated_template(const TemplateAssertionPredicate& template_assertion_predicate) const;
   void connect_initialized_assertion_predicate(Node* new_control_out, const InitializedAssertionPredicate& initialized_assertion_predicate) const;
 
  public:
