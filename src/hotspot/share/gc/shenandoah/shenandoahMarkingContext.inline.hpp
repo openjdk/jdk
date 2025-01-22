@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,16 +94,16 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
   HeapWord* new_tams = r->top();
 
   assert(new_tams >= old_tams,
-         "Region " SIZE_FORMAT", TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
+         "Region %zu, TAMS updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(old_tams), p2i(new_tams));
   assert((new_tams == r->bottom()) || (old_tams == r->bottom()) || (new_tams >= _top_bitmaps[idx]),
-         "Region " SIZE_FORMAT", top_bitmaps updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
+         "Region %zu, top_bitmaps updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(_top_bitmaps[idx]), p2i(new_tams));
   assert(old_tams == r->bottom() || is_bitmap_range_within_region_clear(old_tams, new_tams),
-         "Region " SIZE_FORMAT ", bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
+         "Region %zu, bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(old_tams), p2i(new_tams));
 
-  log_debug(gc)("Capturing TAMS for %s Region " SIZE_FORMAT ", was: " PTR_FORMAT ", now: " PTR_FORMAT,
+  log_debug(gc)("Capturing TAMS for %s Region %zu, was: " PTR_FORMAT ", now: " PTR_FORMAT,
                 r->affiliation_name(), idx, p2i(old_tams), p2i(new_tams));
 
   _top_at_mark_starts_base[idx] = new_tams;
@@ -119,7 +120,7 @@ inline HeapWord* ShenandoahMarkingContext::top_at_mark_start(const ShenandoahHea
 
 inline void ShenandoahMarkingContext::reset_top_bitmap(ShenandoahHeapRegion* r) {
   assert(is_bitmap_range_within_region_clear(r->bottom(), r->end()),
-         "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());
+         "Region %zu should have no marks in bitmap", r->index());
   _top_bitmaps[r->index()] = r->bottom();
 }
 
