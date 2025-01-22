@@ -40,6 +40,7 @@ import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
+import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
@@ -60,7 +61,6 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -383,51 +383,17 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    private static final CarrierThreadLocal<BufferStack> BUFFER_STACK = new CarrierThreadLocal<>() {
+        @Override
+        protected BufferStack initialValue() {
+            return new BufferStack(Arena.ofAuto().allocate(256));
+        }
+    };
+
     @ForceInline
     @SuppressWarnings("restricted")
     public static Arena newBoundedArena(long size) {
-        // JDK-8347997: buffer cache pinned section needs to happen outside of constructor and before
-        // confined session, otherwise scalar replacement breaks.
-        MemorySegment unscoped = CallBufferCache.acquireOrAllocate(size);
-        Arena scope = Arena.ofConfined();
-        MemorySegment source = unscoped.reinterpret(scope, null);
-        // Preferable we'd like to register this cleanup in the line above
-        // but it breaks scalar replacement.
-        return new BoundedArena(scope, source, CallBufferCache::releaseOrFree);
-    }
-
-    /** A confined arena slicing off an (unscoped) source segment. */
-    static final class BoundedArena implements Arena {
-        private final Arena scope;
-        private final MemorySegment source;
-        private final SegmentAllocator allocator;
-        private final Consumer<MemorySegment> cleanup;
-
-        @ForceInline
-        public BoundedArena(Arena scope, MemorySegment source, Consumer<MemorySegment> cleanup) {
-            this.scope = scope;
-            this.source = source;
-            this.allocator = SegmentAllocator.slicingAllocator(source);
-            this.cleanup = cleanup;
-        }
-
-        @Override
-        @ForceInline
-        public MemorySegment allocate(long byteSize, long byteAlignment) {
-            return allocator.allocate(byteSize, byteAlignment);
-        }
-
-        @Override
-        public Scope scope() {
-            return scope.scope();
-        }
-
-        @Override
-        @ForceInline
-        public void close() {
-            scope.close();
-            cleanup.accept(source);
-        }
+        return BUFFER_STACK.get().reserve(size);
     }
 
     public static Arena newEmptyArena() {
