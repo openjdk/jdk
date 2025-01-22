@@ -3256,7 +3256,6 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
     //             |                                  |
     //           _store                             first
     //
-    assert(_value_order != ValueOrder::Unknown, "sanity");
     Node* hi = _store->in(MemNode::ValueIn);
     Node* lo = first->in(MemNode::ValueIn);
 #ifndef VM_LITTLE_ENDIAN
