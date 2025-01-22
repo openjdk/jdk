@@ -21,19 +21,26 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.c2.gvn;
 
+import compiler.lib.generators.Generator;
+import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
  * @summary verify that constant folding is done on xor
+ * @bug 8347645
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.ConstFoldingTests
+ * @run driver compiler.c2.gvn.TestXorLong
  */
 
-public class ConstFoldingTests {
+public class TestXorLong {
+    private static final Generator<Long> G = Generators.G.longs();
+    private static final long CONST_1 = G.next();
+    private static final long CONST_2 = G.next();
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -41,37 +48,36 @@ public class ConstFoldingTests {
 
     @Test
     @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.CON_I, "1"})
-    // Checks (c1 ^c2)  => c3 (constant folded)
-    public int testConstXorI() {
-        int c = 42;
-        return c ^ 2025;
+    @IR(counts = {IRNode.CON_L, "1"})
+    // Checks (c ^ c)  => c (constant folded)
+    public long testConstXor() {
+        return CONST_1 ^ CONST_2;
+    }
+
+    @Check(test = "testConstXor")
+    public void checkTestConstXor(long result) {
+        Asserts.assertEquals(interpretedXor(CONST_1, CONST_2), result);
+    }
+
+    @DontCompile
+    private static long interpretedXor(long x, long y) {
+        return x ^ y;
     }
 
     @Test
     @IR(failOn = {IRNode.XOR})
     @IR(counts = {IRNode.CON_L, "1"})
-    // Checks (c1 ^ c2)  => c3 (constant folded)
-    public long testConstXorL() {
-        long c = 42;
-        return c ^ 2025L;
-    }
-
-    @Test
-    @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.CON_I, "1"})
-    // Checks (x ^ x)  => c3 (constant folded)
+    // Checks (x ^ x)  => c (constant folded)
     @Arguments(values = Argument.RANDOM_EACH)
-    public int testConstXorISelf(int x) {
+    public long testConstXorSelf(long x) {
         return x ^ x;
     }
 
-    @Test
-    @IR(failOn = {IRNode.XOR})
-    @IR(counts = {IRNode.CON_L, "1"})
-    // Checks (x ^ x)  => c3 (constant folded)
-    @Arguments(values = Argument.RANDOM_EACH)
-    public long testConstXorLSelf(long x) {
-        return x ^ x;
+    @Check(test = "testConstXorSelf")
+    public void checkTestConstXorSelf(long result) {
+        Asserts.assertEquals(0L, result);
     }
 }
+
+
+
