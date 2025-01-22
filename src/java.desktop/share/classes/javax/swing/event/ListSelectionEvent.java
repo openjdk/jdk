@@ -111,7 +111,7 @@ public class ListSelectionEvent extends EventObject
      * Returns a {@code String} that displays and identifies this
      * object's properties.
      *
-     * @return a String representation of this object
+     * @return a string representation of this object
      */
     public String toString() {
         String properties =
