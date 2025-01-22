@@ -190,11 +190,8 @@ void AbstractInterpreter::layout_activation(Method* method,
     // Note: the unextended_sp is required by nmethod::orig_pc_addr().
     assert(is_bottom_frame && (sender_sp == caller->unextended_sp()),
            "must initialize sender_sp of bottom skeleton frame when pushing it");
-  } else if (caller->is_upcall_stub_frame()) {
-    // deoptimization case, sender_sp as unextended_sp, see frame::sender_for_interpreter_frame()
-    sender_sp = caller->unextended_sp();
   } else {
-    assert(caller->is_entry_frame(), "is there a new frame type??");
+    assert(caller->is_entry_frame() || caller->is_upcall_stub_frame(), "is there a new frame type??");
     sender_sp = caller->sp(); // Call_stub only uses it's fp.
   }
 
@@ -204,6 +201,8 @@ void AbstractInterpreter::layout_activation(Method* method,
   interpreter_frame->interpreter_frame_set_monitor_end((BasicObjectLock *)monitor);
   *interpreter_frame->interpreter_frame_cache_addr() = method->constants()->cache();
   interpreter_frame->interpreter_frame_set_tos_address(tos);
-  interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
+  if (!is_bottom_frame) {
+    interpreter_frame->interpreter_frame_set_sender_sp(sender_sp);
+  }
   interpreter_frame->interpreter_frame_set_top_frame_sp(top_frame_sp);
 }
