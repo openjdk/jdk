@@ -224,9 +224,13 @@ class TestMemorySegmentUnalignedAddressImpl {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
+                  IRNode.STORE_VECTOR,  "> 0",
+                  "multiversion",       "= 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    // We never fail the alignment check in the auto vectorization Predicate,
+    // hence we never even create the multiversioned loops.
     static Object testAlwaysAligned(MemorySegment ms) {
         for (long i = 0; i < ms.byteSize(); i += 4) {
             int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, i);
@@ -238,9 +242,26 @@ class TestMemorySegmentUnalignedAddressImpl {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
+                  IRNode.STORE_VECTOR,  "> 0",
+                  "multiversion_fast",  "= 4",  // pre, main, drain, post
+                  "multiversion_slow",  "= 2"}, // main, post
+        applyIf = {"AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    // We add alignment checks to the auto vectorization Predicate. It fails
+    // at runtime, deopts, and recompiles with multiversioning.
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0",
+                  "multiversion_fast",  "= 0",
+                  "multiversion_slow",  "= 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    // We never add any conditions to the auto vectorization Predicate, so
+    // we also never deopt and never end up multiversioning.
     static Object testAlwaysUnaligned(MemorySegment ms) {
         for (long i = 0; i < ms.byteSize(); i += 4) {
             int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, i);
@@ -252,9 +273,26 @@ class TestMemorySegmentUnalignedAddressImpl {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
+                  IRNode.STORE_VECTOR,  "> 0",
+                  "multiversion_fast",  "= 4",  // pre, main, drain, post
+                  "multiversion_slow",  "= 2"}, // main, post
+        applyIf = {"AlignVector", "true"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    // We add alignment checks to the auto vectorization Predicate. It fails
+    // at runtime, deopts, and recompiles with multiversioning.
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
+                  IRNode.STORE_VECTOR,  "> 0",
+                  "multiversion_fast",  "= 0",
+                  "multiversion_slow",  "= 0"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        phase = CompilePhase.PRINT_IDEAL)
+    // We never add any conditions to the auto vectorization Predicate, so
+    // we also never deopt and never end up multiversioning.
     static Object testMixedAlignedAndUnaligned(MemorySegment ms) {
         for (long i = 0; i < ms.byteSize(); i += 4) {
             int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, i);
