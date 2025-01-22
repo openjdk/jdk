@@ -1918,7 +1918,7 @@ bool Matcher::match_rule_supported(int opcode) {
 
     case Op_ConvHF2F:
     case Op_ConvF2HF:
-      return UseZfh;
+      return UseZfh || UseZfhmin;
   }
 
   return true; // Per default match rules are supported.
@@ -7348,7 +7348,7 @@ instruct isInfiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7363,7 +7363,7 @@ instruct isInfiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7378,7 +7378,7 @@ instruct isFiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7393,7 +7393,7 @@ instruct isFiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::FClassBits::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 

@@ -552,24 +552,6 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, op, funct3)                                                                     \
-  void NAME(FloatRegister Rd, Register Rs, const int32_t offset) {                                 \
-    guarantee(is_simm12(offset), "offset is invalid.");                                            \
-    unsigned insn = 0;                                                                             \
-    uint32_t val = offset & 0xfff;                                                                 \
-    patch((address)&insn, 6, 0, op);                                                               \
-    patch((address)&insn, 14, 12, funct3);                                                         \
-    patch_reg((address)&insn, 15, Rs);                                                             \
-    patch_reg((address)&insn, 7, Rd);                                                              \
-    patch((address)&insn, 31, 20, val);                                                            \
-    emit(insn);                                                                                    \
-  }
-
-  INSN(flw,  0b0000111, 0b010);
-  INSN(_fld, 0b0000111, 0b011);
-
-#undef INSN
-
 #define INSN(NAME, op, funct3)                                                                           \
   void NAME(Register Rs1, Register Rs2, const int64_t offset) {                                          \
     guarantee(is_simm13(offset) && ((offset % 2) == 0), "offset is invalid.");                           \
@@ -813,26 +795,6 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   INSN(sc_d, 0b0101111, 0b011, 0b00011);
 #undef INSN
 
-#define INSN(NAME, op, funct5, funct7)                                                      \
-  void NAME(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {                   \
-    unsigned insn = 0;                                                                      \
-    patch((address)&insn, 6, 0, op);                                                        \
-    patch((address)&insn, 14, 12, rm);                                                      \
-    patch((address)&insn, 24, 20, funct5);                                                  \
-    patch((address)&insn, 31, 25, funct7);                                                  \
-    patch_reg((address)&insn, 7, Rd);                                                       \
-    patch_reg((address)&insn, 15, Rs1);                                                     \
-    emit(insn);                                                                             \
-  }
-
-  INSN(fsqrt_s,  0b1010011, 0b00000, 0b0101100);
-  INSN(fsqrt_d,  0b1010011, 0b00000, 0b0101101);
-  INSN(fcvt_s_h, 0b1010011, 0b00010, 0b0100000);
-  INSN(fcvt_h_s, 0b1010011, 0b00000, 0b0100010);
-  INSN(fcvt_s_d, 0b1010011, 0b00001, 0b0100000);
-  INSN(fcvt_d_s, 0b1010011, 0b00000, 0b0100001);
-#undef INSN
-
 // Immediate Instruction
 #define INSN(NAME, op, funct3)                                                              \
   void NAME(Register Rd, Register Rs1, int64_t imm) {                                       \
@@ -928,209 +890,408 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
 #undef INSN
 
-// Float and Double Rigster Instruction
-#define INSN(NAME, op, funct2)                                                                                     \
-  void NAME(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne) {    \
-    unsigned insn = 0;                                                                                             \
-    patch((address)&insn, 6, 0, op);                                                                               \
-    patch((address)&insn, 14, 12, rm);                                                                             \
-    patch((address)&insn, 26, 25, funct2);                                                                         \
-    patch_reg((address)&insn, 7, Rd);                                                                              \
-    patch_reg((address)&insn, 15, Rs1);                                                                            \
-    patch_reg((address)&insn, 20, Rs2);                                                                            \
-    patch_reg((address)&insn, 27, Rs3);                                                                            \
-    emit(insn);                                                                                                    \
+// ==========================
+// Floating Point Instructions
+// ==========================
+  static constexpr uint32_t OP_FP_MAJOR = 0b1010011;
+
+  enum FmtPrecision : uint8_t {
+    S_32_sp  = 0b00,
+    D_64_dp  = 0b01,
+    H_16_hp  = 0b10,
+    Q_128_qp = 0b11
+  };
+
+ private:
+
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(uint8_t Rd, uint8_t Rs1, uint8_t Rs2, RoundingMode rm) {
+    assert(Fmt != H_16_hp || UseZfh || UseZfhmin, "No half precision enabled");
+    assert_cond(Fmt != Q_128_qp);
+    guarantee(is_uimm3(rm), "Rounding mode is out of validity");
+    guarantee(is_uimm2(Fmt), "FMT is out of validity");
+    guarantee(is_uimm5(funct5), "Funct5 is out of validity");
+    uint32_t insn = 0;
+    patch((address)&insn,   6, 0, OP_FP_MAJOR);
+    patch((address)&insn, 11,  7, Rd);
+    patch((address)&insn, 14, 12, rm);
+    patch((address)&insn, 19, 15, Rs1);
+    patch((address)&insn, 24, 20, Rs2);
+    patch((address)&insn, 26, 25, Fmt);
+    patch((address)&insn, 31, 27, funct5);
+    emit(insn);
   }
 
-  INSN(fmadd_s,   0b1000011,  0b00);
-  INSN(fmsub_s,   0b1000111,  0b00);
-  INSN(fnmsub_s,  0b1001011,  0b00);
-  INSN(fnmadd_s,  0b1001111,  0b00);
-  INSN(fmadd_d,   0b1000011,  0b01);
-  INSN(fmsub_d,   0b1000111,  0b01);
-  INSN(fnmsub_d,  0b1001011,  0b01);
-  INSN(fnmadd_d,  0b1001111,  0b01);
-
-#undef INSN
-
-// Float and Double Rigster Instruction
-#define INSN(NAME, op, funct3, funct7)                                        \
-  void NAME(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {         \
-    unsigned insn = 0;                                                        \
-    patch((address)&insn, 6, 0, op);                                          \
-    patch((address)&insn, 14, 12, funct3);                                    \
-    patch((address)&insn, 31, 25, funct7);                                    \
-    patch_reg((address)&insn, 7, Rd);                                         \
-    patch_reg((address)&insn, 15, Rs1);                                       \
-    patch_reg((address)&insn, 20, Rs2);                                       \
-    emit(insn);                                                               \
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm) {
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2->raw_encoding(), rm);
   }
 
-  INSN(fsgnj_s,  0b1010011, 0b000, 0b0010000);
-  INSN(fsgnjn_s, 0b1010011, 0b001, 0b0010000);
-  INSN(fsgnjx_s, 0b1010011, 0b010, 0b0010000);
-  INSN(fmin_s,   0b1010011, 0b000, 0b0010100);
-  INSN(fmax_s,   0b1010011, 0b001, 0b0010100);
-  INSN(fsgnj_d,  0b1010011, 0b000, 0b0010001);
-  INSN(fsgnjn_d, 0b1010011, 0b001, 0b0010001);
-  INSN(fsgnjx_d, 0b1010011, 0b010, 0b0010001);
-  INSN(fmin_d,   0b1010011, 0b000, 0b0010101);
-  INSN(fmax_d,   0b1010011, 0b001, 0b0010101);
-
-#undef INSN
-
-// Float and Double Rigster Arith Instruction
-#define INSN(NAME, op, funct3, funct7)                                    \
-  void NAME(Register Rd, FloatRegister Rs1, FloatRegister Rs2) {          \
-    unsigned insn = 0;                                                    \
-    patch((address)&insn, 6, 0, op);                                      \
-    patch((address)&insn, 14, 12, funct3);                                \
-    patch((address)&insn, 31, 25, funct7);                                \
-    patch_reg((address)&insn, 7, Rd);                                     \
-    patch_reg((address)&insn, 15, Rs1);                                   \
-    patch_reg((address)&insn, 20, Rs2);                                   \
-    emit(insn);                                                           \
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, int8_t rm) {
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2->raw_encoding(), (RoundingMode)rm);
   }
 
-  INSN(feq_s,    0b1010011, 0b010, 0b1010000);
-  INSN(flt_s,    0b1010011, 0b001, 0b1010000);
-  INSN(fle_s,    0b1010011, 0b000, 0b1010000);
-  INSN(feq_d,    0b1010011, 0b010, 0b1010001);
-  INSN(fle_d,    0b1010011, 0b000, 0b1010001);
-  INSN(flt_d,    0b1010011, 0b001, 0b1010001);
-#undef INSN
-
-// Float and Double Arith Instruction
-#define INSN(NAME, op, funct7)                                                                  \
-  void NAME(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {    \
-    unsigned insn = 0;                                                                          \
-    patch((address)&insn, 6, 0, op);                                                            \
-    patch((address)&insn, 14, 12, rm);                                                          \
-    patch((address)&insn, 31, 25, funct7);                                                      \
-    patch_reg((address)&insn, 7, Rd);                                                           \
-    patch_reg((address)&insn, 15, Rs1);                                                         \
-    patch_reg((address)&insn, 20, Rs2);                                                         \
-    emit(insn);                                                                                 \
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(Register Rd, FloatRegister Rs1, FloatRegister Rs2, int8_t rm) {
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2->raw_encoding(), (RoundingMode)rm);
   }
 
-  INSN(fadd_s,   0b1010011, 0b0000000);
-  INSN(fsub_s,   0b1010011, 0b0000100);
-  INSN(fmul_s,   0b1010011, 0b0001000);
-  INSN(fdiv_s,   0b1010011, 0b0001100);
-  INSN(fadd_d,   0b1010011, 0b0000001);
-  INSN(fsub_d,   0b1010011, 0b0000101);
-  INSN(fmul_d,   0b1010011, 0b0001001);
-  INSN(fdiv_d,   0b1010011, 0b0001101);
-
-#undef INSN
-
-// Whole Float and Double Conversion Instruction
-#define INSN(NAME, op, funct5, funct7)                                  \
-  void NAME(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {    \
-    unsigned insn = 0;                                                  \
-    patch((address)&insn, 6, 0, op);                                    \
-    patch((address)&insn, 14, 12, rm);                                  \
-    patch((address)&insn, 24, 20, funct5);                              \
-    patch((address)&insn, 31, 25, funct7);                              \
-    patch_reg((address)&insn, 7, Rd);                                   \
-    patch_reg((address)&insn, 15, Rs1);                                 \
-    emit(insn);                                                         \
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(FloatRegister Rd, FloatRegister Rs1, int8_t Rs2, int8_t rm) {
+    guarantee(is_uimm5(Rs2), "Rs2 is out of validity");
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2, (RoundingMode)rm);
   }
 
-  INSN(fcvt_s_w,   0b1010011, 0b00000, 0b1101000);
-  INSN(fcvt_s_wu,  0b1010011, 0b00001, 0b1101000);
-  INSN(fcvt_s_l,   0b1010011, 0b00010, 0b1101000);
-  INSN(fcvt_s_lu,  0b1010011, 0b00011, 0b1101000);
-  INSN(fcvt_d_w,   0b1010011, 0b00000, 0b1101001);
-  INSN(fcvt_d_wu,  0b1010011, 0b00001, 0b1101001);
-  INSN(fcvt_d_l,   0b1010011, 0b00010, 0b1101001);
-  INSN(fcvt_d_lu,  0b1010011, 0b00011, 0b1101001);
-
-#undef INSN
-
-// Float and Double Conversion Instruction
-#define INSN(NAME, op, funct5, funct7)                                  \
-  void NAME(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {    \
-    unsigned insn = 0;                                                  \
-    patch((address)&insn, 6, 0, op);                                    \
-    patch((address)&insn, 14, 12, rm);                                  \
-    patch((address)&insn, 24, 20, funct5);                              \
-    patch((address)&insn, 31, 25, funct7);                              \
-    patch_reg((address)&insn, 7, Rd);                                   \
-    patch_reg((address)&insn, 15, Rs1);                                 \
-    emit(insn);                                                         \
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(FloatRegister Rd, Register Rs1, FloatRegister Rs2, RoundingMode rm) {
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2->raw_encoding(), rm);
   }
 
-  INSN(fcvt_w_s,   0b1010011, 0b00000, 0b1100000);
-  INSN(fcvt_l_s,   0b1010011, 0b00010, 0b1100000);
-  INSN(fcvt_wu_s,  0b1010011, 0b00001, 0b1100000);
-  INSN(fcvt_lu_s,  0b1010011, 0b00011, 0b1100000);
-  INSN(fcvt_w_d,   0b1010011, 0b00000, 0b1100001);
-  INSN(fcvt_wu_d,  0b1010011, 0b00001, 0b1100001);
-  INSN(fcvt_l_d,   0b1010011, 0b00010, 0b1100001);
-  INSN(fcvt_lu_d,  0b1010011, 0b00011, 0b1100001);
-
-#undef INSN
-
-// Float and Double Move Instruction
-#define INSN(NAME, op, funct3, funct5, funct7)       \
-  void NAME(FloatRegister Rd, Register Rs1) {        \
-    unsigned insn = 0;                               \
-    patch((address)&insn, 6, 0, op);                 \
-    patch((address)&insn, 14, 12, funct3);           \
-    patch((address)&insn, 20, funct5);               \
-    patch((address)&insn, 31, 25, funct7);           \
-    patch_reg((address)&insn, 7, Rd);                \
-    patch_reg((address)&insn, 15, Rs1);              \
-    emit(insn);                                      \
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(Register Rd, FloatRegister Rs1, uint8_t Rs2, RoundingMode rm) {
+    guarantee(is_uimm5(Rs2), "Rs2 is out of validity");
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2, rm);
   }
 
-  INSN(fmv_h_x,  0b1010011, 0b000, 0b00000, 0b1111010);
-  INSN(fmv_w_x,  0b1010011, 0b000, 0b00000, 0b1111000);
-  INSN(fmv_d_x,  0b1010011, 0b000, 0b00000, 0b1111001);
-
-#undef INSN
-
-enum fclass_mask {
-  minf       = 1 << 0,   // negative infinite
-  mnorm      = 1 << 1,   // negative normal number
-  msubnorm   = 1 << 2,   // negative subnormal number
-  mzero      = 1 << 3,   // negative zero
-  pzero      = 1 << 4,   // positive zero
-  psubnorm   = 1 << 5,   // positive subnormal number
-  pnorm      = 1 << 6,   // positive normal number
-  pinf       = 1 << 7,   // positive infinite
-  snan       = 1 << 8,   // signaling NaN
-  qnan       = 1 << 9,   // quiet NaN
-  zero       = mzero    | pzero,
-  subnorm    = msubnorm | psubnorm,
-  norm       = mnorm    | pnorm,
-  inf        = minf     | pinf,
-  nan        = snan     | qnan,
-  finite     = zero     | subnorm   | norm,
-};
-
-// Float and Double Conversion/Classify Instruction
-#define INSN(NAME, op, funct3, funct5, funct7)            \
-  void NAME(Register Rd, FloatRegister Rs1) {             \
-    unsigned insn = 0;                                    \
-    patch((address)&insn, 6, 0, op);                      \
-    patch((address)&insn, 14, 12, funct3);                \
-    patch((address)&insn, 20, funct5);                    \
-    patch((address)&insn, 31, 25, funct7);                \
-    patch_reg((address)&insn, 7, Rd);                     \
-    patch_reg((address)&insn, 15, Rs1);                   \
-    emit(insn);                                           \
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(Register Rd, FloatRegister Rs1, uint8_t Rs2, uint8_t rm) {
+    guarantee(is_uimm5(Rs2), "Rs2 is out of validity");
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2, (RoundingMode)rm);
   }
 
-  INSN(fclass_h, 0b1010011, 0b001, 0b00000, 0b1110010);
-  INSN(fclass_s, 0b1010011, 0b001, 0b00000, 0b1110000);
-  INSN(fclass_d, 0b1010011, 0b001, 0b00000, 0b1110001);
-  INSN(fmv_x_h,  0b1010011, 0b000, 0b00000, 0b1110010);
-  INSN(fmv_x_w,  0b1010011, 0b000, 0b00000, 0b1110000);
-  INSN(fmv_x_d,  0b1010011, 0b000, 0b00000, 0b1110001);
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(FloatRegister Rd, Register Rs1, uint8_t Rs2, RoundingMode rm) {
+    guarantee(is_uimm5(Rs2), "Rs2 is out of validity");
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2, rm);
+  }
 
-#undef INSN
+  template <FmtPrecision Fmt, uint8_t funct5>
+  void fp_base(FloatRegister Rd, Register Rs1, uint8_t Rs2, int8_t rm) {
+    guarantee(is_uimm5(Rs2), "Rs2 is out of validity");
+    fp_base<Fmt, funct5>(Rd->raw_encoding(), Rs1->raw_encoding(), Rs2, (RoundingMode)rm);
+  }
+
+ public:
+
+  enum FClassBits {
+    minf       = 1 << 0,   // negative infinite
+    mnorm      = 1 << 1,   // negative normal number
+    msubnorm   = 1 << 2,   // negative subnormal number
+    mzero      = 1 << 3,   // negative zero
+    pzero      = 1 << 4,   // positive zero
+    psubnorm   = 1 << 5,   // positive subnormal number
+    pnorm      = 1 << 6,   // positive normal number
+    pinf       = 1 << 7,   // positive infinite
+    snan       = 1 << 8,   // signaling NaN
+    qnan       = 1 << 9,   // quiet NaN
+    zero       = mzero    | pzero,
+    subnorm    = msubnorm | psubnorm,
+    norm       = mnorm    | pnorm,
+    inf        = minf     | pinf,
+    nan        = snan     | qnan,
+    finite     = zero     | subnorm   | norm,
+  };
+
+  void fsqrt_s(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b01011>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fsqrt_d(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b01011>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fcvt_s_d(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b01000>(Rd, Rs1, 0b00001, rm);
+  }
+
+  void fcvt_d_s(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b01000>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fsgnj_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b00100>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void fsgnjn_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b00100>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fsgnjx_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b00100>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmin_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void fmax_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b00101>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fsgnj_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b00100>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void fsgnjn_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b00100>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fsgnjx_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b00100>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fmin_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void fmax_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b00101>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void feq_s(Register Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b10100>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void flt_s(Register Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b10100>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fle_s(Register Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<S_32_sp, 0b10100>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void feq_d(Register Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b10100>(Rd, Rs1, Rs2, 0b010);
+  }
+
+  void fle_d(Register Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b10100>(Rd, Rs1, Rs2, 0b000);
+  }
+
+  void flt_d(Register Rd, FloatRegister Rs1, FloatRegister Rs2) {
+    fp_base<D_64_dp, 0b10100>(Rd, Rs1, Rs2, 0b001);
+  }
+
+  void fadd_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b00000>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsub_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b00001>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fmul_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b00010>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fdiv_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b00011>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fadd_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b00000>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fsub_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b00001>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fmul_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b00010>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fdiv_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b00011>(Rd, Rs1, Rs2, rm);
+  }
+
+  void fcvt_s_w(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b11010>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fcvt_s_wu(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b11010>(Rd, Rs1, 0b00001, rm);
+  }
+
+  void fcvt_s_l(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b11010>(Rd, Rs1, 0b00010, rm);
+  }
+
+  void fcvt_s_lu(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<S_32_sp, 0b11010>(Rd, Rs1, 0b00011, rm);
+  }
+
+  void fcvt_d_w(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b11010>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fcvt_d_wu(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b11010>(Rd, Rs1, 0b00001, rm);
+  }
+
+  void fcvt_d_l(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b11010>(Rd, Rs1, 0b00010, rm);
+  }
+
+  void fcvt_d_lu(FloatRegister Rd, Register Rs1, RoundingMode rm = rne) {
+    fp_base<D_64_dp, 0b11010>(Rd, Rs1, 0b00011, rm);
+  }
+
+  void fcvt_w_s(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<S_32_sp, 0b11000>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fcvt_l_s(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<S_32_sp, 0b11000>(Rd, Rs1, 0b00010, rm);
+  }
+
+  void fcvt_wu_s(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<S_32_sp, 0b11000>(Rd, Rs1, 0b00001, rm);
+  }
+
+  void fcvt_lu_s(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<S_32_sp, 0b11000>(Rd, Rs1, 0b00011, rm);
+  }
+
+  void fcvt_w_d(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<D_64_dp, 0b11000>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fcvt_wu_d(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<D_64_dp, 0b11000>(Rd, Rs1, 0b00001, rm);
+  }
+
+  void fcvt_l_d(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<D_64_dp, 0b11000>(Rd, Rs1, 0b00010, rm);
+  }
+
+  void fcvt_lu_d(Register Rd, FloatRegister Rs1, RoundingMode rm = rtz) {
+    fp_base<D_64_dp, 0b11000>(Rd, Rs1, 0b00011, rm);
+  }
+
+  void fmv_w_x(FloatRegister Rd, Register Rs1) {
+    fp_base<S_32_sp, 0b11110>(Rd, Rs1, 0b00000, 0b000);
+  }
+
+  void fmv_d_x(FloatRegister Rd, Register Rs1) {
+    fp_base<D_64_dp, 0b11110>(Rd, Rs1, 0b00000, 0b000);
+  }
+
+  void fclass_s(Register Rd, FloatRegister Rs1) {
+    fp_base<S_32_sp, 0b11100>(Rd, Rs1, 0b00000, 0b001);
+  }
+
+  void fclass_d(Register Rd, FloatRegister Rs1) {
+    fp_base<D_64_dp, 0b11100>(Rd, Rs1, 0b00000, 0b001);
+  }
+
+  void fmv_x_w(Register Rd, FloatRegister Rs1) {
+    fp_base<S_32_sp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
+  }
+
+  void fmv_x_d(Register Rd, FloatRegister Rs1) {
+    fp_base<D_64_dp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
+  }
+
+ private:
+  static constexpr unsigned int OP_LOAD_FP = 0b0000111;
+
+  template <int8_t FpWidth>
+  void fp_load(FloatRegister Rd, Register Rs, const int32_t offset) {
+    guarantee(is_uimm3(FpWidth), "Rounding mode is out of validity");
+    guarantee(is_simm12(offset), "offset is invalid.");
+    unsigned insn = 0;
+    uint32_t val = offset & 0xfff;
+    patch((address)&insn,   6, 0, OP_LOAD_FP);
+    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn, 14, 12, FpWidth);
+    patch_reg((address)&insn, 15, Rs);
+    patch((address)&insn, 31, 20, val);
+    emit(insn);
+  }
+
+ public:
+
+  void  flw(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b010>(Rd, Rs, offset); }
+  void _fld(FloatRegister Rd, Register Rs, const int32_t offset) { fp_load<0b011>(Rd, Rs, offset); }
+
+ private:
+  template <FmtPrecision Fmt, uint8_t OpVal>
+  void fp_fm(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm) {
+    assert_cond(Fmt != Q_128_qp);
+    guarantee(is_uimm3(rm), "Rounding mode is out of validity");
+    guarantee(is_uimm2(Fmt), "FMT is out of validity");
+    unsigned insn = 0;
+    patch((address)&insn,   6, 0, OpVal);
+    patch_reg((address)&insn,  7, Rd);
+    patch((address)&insn, 14, 12, rm);
+    patch_reg((address)&insn, 15, Rs1);
+    patch_reg((address)&insn, 20, Rs2);
+    patch((address)&insn, 26, 25, Fmt);
+    patch_reg((address)&insn, 27, Rs3);
+    emit(insn);
+  }
+
+ public:
+  void fmadd_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne)  {
+    fp_fm<S_32_sp, 0b1000011>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+  void fmsub_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne)  {
+    fp_fm<S_32_sp, 0b1000111>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+  void fnmsub_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne) {
+    fp_fm<S_32_sp, 0b1001011>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+  void fnmadd_s(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne) {
+    fp_fm<S_32_sp, 0b1001111>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+  void fmadd_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne)  {
+    fp_fm<D_64_dp, 0b1000011>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+  void fmsub_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne)  {
+    fp_fm<D_64_dp, 0b1000111>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+  void fnmsub_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne) {
+    fp_fm<D_64_dp, 0b1001011>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+  void fnmadd_d(FloatRegister Rd, FloatRegister Rs1, FloatRegister Rs2, FloatRegister Rs3, RoundingMode rm = rne) {
+    fp_fm<D_64_dp, 0b1001111>(Rd, Rs1, Rs2, Rs3, rm);
+  }
+
+// --------------  ZFH Instruction Definitions  --------------
+// Zfh Standard Extensions for Half-Precision Floating-Point
+  void fclass_h(Register Rd, FloatRegister Rs1) {
+    assert_cond(UseZfh);
+    fp_base<H_16_hp, 0b11100>(Rd, Rs1, 0b00000, 0b001);
+  }
+
+// Zfh and Zfhmin Half-Precision Floating-Point
+  void fcvt_s_h(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    assert_cond(UseZfh || UseZfhmin);
+    fp_base<S_32_sp, 0b01000>(Rd, Rs1, 0b00010, rm);
+  }
+
+  void fcvt_h_s(FloatRegister Rd, FloatRegister Rs1, RoundingMode rm = rne) {
+    assert_cond(UseZfh || UseZfhmin);
+    fp_base<H_16_hp, 0b01000>(Rd, Rs1, 0b00000, rm);
+  }
+
+  void fmv_h_x(FloatRegister Rd, Register Rs1) {
+    assert_cond(UseZfh || UseZfhmin);
+    fp_base<H_16_hp, 0b11110>(Rd, Rs1, 0b00000, 0b000);
+  }
+
+  void fmv_x_h(Register Rd, FloatRegister Rs1) {
+    assert_cond(UseZfh || UseZfhmin);
+    fp_base<H_16_hp, 0b11100>(Rd, Rs1, 0b00000, 0b000);
+  }
 
 // ==========================
 // RISC-V Vector Extension
@@ -3402,6 +3563,7 @@ public:
   static bool is_simm18(int64_t x);
   static bool is_simm21(int64_t x);
 
+  static bool is_uimm2(uint64_t x);
   static bool is_uimm3(uint64_t x);
   static bool is_uimm5(uint64_t x);
   static bool is_uimm6(uint64_t x);
