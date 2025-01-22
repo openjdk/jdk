@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -680,7 +680,7 @@ inline bool ConcurrentHashTable<CONFIG, MT>::
         odd = aux->next_ptr();
       } else {
         const char* msg = "Cannot resize table: Node hash code has changed possibly due to corruption of the contents.";
-        DEBUG_ONLY(fatal("%s Node hash code changed from " SIZE_FORMAT " to " SIZE_FORMAT, msg, aux->saved_hash(), aux_hash);)
+        DEBUG_ONLY(fatal("%s Node hash code changed from %zu to %zu", msg, aux->saved_hash(), aux_hash);)
         NOT_DEBUG(fatal("%s", msg);)
       }
     }

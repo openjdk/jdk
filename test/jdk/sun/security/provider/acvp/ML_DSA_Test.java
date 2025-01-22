@@ -76,8 +76,8 @@ public class ML_DSA_Test {
                 var kp = g.generateKeyPair();
                 var pk = f.getKeySpec(kp.getPublic(), EncodedKeySpec.class).getEncoded();
                 var sk = f.getKeySpec(kp.getPrivate(), EncodedKeySpec.class).getEncoded();
-                Asserts.assertEqualsByteArray(pk, toByteArray(c.get("pk").asString()));
-                Asserts.assertEqualsByteArray(sk, toByteArray(c.get("sk").asString()));
+                Asserts.assertEqualsByteArray(toByteArray(c.get("pk").asString()), pk);
+                Asserts.assertEqualsByteArray(toByteArray(c.get("sk").asString()), sk);
             }
             System.out.println();
         }
@@ -104,7 +104,7 @@ public class ML_DSA_Test {
                 s.update(toByteArray(c.get("message").asString()));
                 var sig = s.sign();
                 Asserts.assertEqualsByteArray(
-                        sig, toByteArray(c.get("signature").asString()));
+                        toByteArray(c.get("signature").asString()), sig);
             }
             System.out.println();
         }

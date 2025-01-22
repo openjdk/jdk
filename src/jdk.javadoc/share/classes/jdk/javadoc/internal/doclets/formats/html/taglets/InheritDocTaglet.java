@@ -133,7 +133,7 @@ public class InheritDocTaglet extends BaseTaglet {
                 }
             } catch (DocFinder.NoOverriddenMethodFound e) {
                 String signature = utils.getSimpleName(method)
-                        + utils.flatSignature(method, writer.getCurrentPageElement());
+                        + utils.flatSignature(method, writer.getCurrentTypeElement());
                 messages.warning(method, "doclet.noInheritedDoc", signature);
             }
             return replacement;
@@ -157,7 +157,7 @@ public class InheritDocTaglet extends BaseTaglet {
             }
         } else {
             String signature = utils.getSimpleName(method)
-                    + utils.flatSignature(method, writer.getCurrentPageElement());
+                    + utils.flatSignature(method, writer.getCurrentTypeElement());
             messages.warning(method, "doclet.noInheritedDoc", signature);
         }
         return replacement;

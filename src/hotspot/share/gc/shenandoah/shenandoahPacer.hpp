@@ -97,13 +97,13 @@ public:
   void setup_for_idle();
   void setup_for_mark();
   void setup_for_evac();
-  void setup_for_updaterefs();
+  void setup_for_update_refs();
 
   void setup_for_reset();
 
   inline void report_mark(size_t words);
   inline void report_evac(size_t words);
-  inline void report_updaterefs(size_t words);
+  inline void report_update_refs(size_t words);
 
   inline void report_alloc(size_t words);
 

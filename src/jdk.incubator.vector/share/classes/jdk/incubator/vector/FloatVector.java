@@ -2269,6 +2269,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     <S extends VectorShuffle<Float>>
     FloatVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, float.class, length(),
             this, shuffle, null,
@@ -2294,7 +2295,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, float.class, length(),

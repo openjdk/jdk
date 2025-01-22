@@ -2428,6 +2428,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     final
     <S extends VectorShuffle<Short>>
     ShortVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, short.class, length(),
             this, shuffle, null,
@@ -2453,7 +2454,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, short.class, length(),
@@ -2869,6 +2870,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (short) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (short) Math.max(a, b)));
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (short) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (short) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((short)-1, m, (i, a, b) -> (short)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
