@@ -2599,8 +2599,7 @@ bool MacroAssembler::can_fp_imm_load(float imm) {
   if (f_bits == 0) {
     return true;
   }
-  int dummy;
-  return can_zfa_zli_float(imm, &dummy);
+  return can_zfa_zli_float(imm);
 }
 
 bool MacroAssembler::can_dp_imm_load(double imm) {
@@ -2608,8 +2607,7 @@ bool MacroAssembler::can_dp_imm_load(double imm) {
   if (d_bits == 0) {
     return true;
   }
-  int dummy;
-  return can_zfa_zli_double(imm, &dummy);
+  return can_zfa_zli_double(imm);
 }
 
 void MacroAssembler::fli_s(FloatRegister Rd, float imm) {
@@ -2618,8 +2616,8 @@ void MacroAssembler::fli_s(FloatRegister Rd, float imm) {
     fmv_w_x(Rd, zr);
     return;
   }
-  int Rs = -1;
-  can_zfa_zli_float(imm, &Rs);
+  int Rs = zfa_zli_lookup_float(f_bits);
+  assert(Rs != -1, "Must be");
   _fli_s(Rd, Rs);
 }
 
@@ -2629,8 +2627,8 @@ void MacroAssembler::fli_d(FloatRegister Rd, double imm) {
     fmv_d_x(Rd, zr);
     return;
   }
-  int Rs = -1;
-  can_zfa_zli_double(imm, &Rs);
+  int Rs = zfa_zli_lookup_double(d_bits);
+  assert(Rs != -1, "Must be");
   _fli_d(Rd, Rs);
 }
 
@@ -5927,7 +5925,7 @@ void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register t
   fclass_##FLOATSIG(tmp, src);                                                            \
   mv(dst, zr);                                                                            \
   /* check if src is NaN */                                                               \
-  andi(tmp, tmp, fclass_mask::nan);                                                       \
+  andi(tmp, tmp, FClassBits::nan);                                                        \
   bnez(tmp, done);                                                                        \
   FLOATCVT(dst, src);                                                                     \
   bind(done);                                                                             \
