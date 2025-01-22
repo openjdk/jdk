@@ -769,9 +769,9 @@ address generate_ghash_processBlocks() {
     __ vxor(vTmp6, vTmp6, vTmp9);               // HH + HH : Combine H and mH (partial result for upper half)
     __ vsldoi(vTmp4, vTmp4, vTmp4, 8);          // swap
     __ vxor(vTmp4, vTmp4, vTmp7);               // reduction using  the reduction constant
-    __ vsldoi(vTmp10, vTmp4, vTmp4, 8);          // swap
+    __ vsldoi(vTmp10, vTmp4, vTmp4, 8);         // swap
     __ vpmsumd(vTmp4, vTmp4, vConstC2);         // reduction using the reduction constant
-    __ vxor(vTmp10, vTmp10, vTmp6);               // Combine the reduced Low and High products
+    __ vxor(vTmp10, vTmp10, vTmp6);             // Combine the reduced Low and High products
     __ vxor(vZero, vTmp4, vTmp10);
     __ vmr(vState, vZero);
     __ addi(data, data, 16);
