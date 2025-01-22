@@ -677,8 +677,7 @@ public class Annotate {
 
         // Scan the annotation element value and then attribute nested annotations if present
         if (tree.type != null && tree.type.tsym != null) {
-            queueScanTreeAndTypeAnnotate(tree, env, tree.type.tsym,
-              Optional.<JCTree>ofNullable(env.enclMethod).orElse(env.enclClass));
+            queueScanTreeAndTypeAnnotate(tree, env, tree.type.tsym, null);
         }
 
         result = cfolder.coerce(result, expectedElementType);

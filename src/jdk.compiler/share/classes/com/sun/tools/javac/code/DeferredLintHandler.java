@@ -27,10 +27,9 @@ package com.sun.tools.javac.code;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import com.sun.tools.javac.tree.JCTree;
@@ -85,7 +84,7 @@ public class DeferredLintHandler {
     /**
      * Are we in parsing mode or non-parsing mode?
      */
-    private boolean parsing;
+    private boolean parsingMode;
 
     /**
      * Registered lexical {@link Deferral}s for the source file currently being parsed.
@@ -123,28 +122,34 @@ public class DeferredLintHandler {
      * Enter parsing mode.
      */
     public void enterParsingMode() {
-        Assert.check(!parsing);
+        Assert.check(!parsingMode);
         Assert.check(parsingDeferrals.isEmpty());
-        parsing = true;
+        parsingMode = true;
     }
 
     /**
-     * Exit parsing mode and resolve each of the {@link Deferral}s accumulated during parsing to the
-     * innermost containing declaration in the given tree.
+     * Exit parsing mode and resolve each of the lexical {@link Deferral}s accumulated during parsing
+     * to the innermost containing declaration in the given tree.
      *
      * <p>
-     * Any {@link Deferral}s that are not encompassed by a declaration are emitted using the root
-     * {@link Lint} instance.
+     * Any lexical {@link Deferral}s that are not encompassed by a declaration are emitted using
+     * the root {@link Lint} instance.
      *
-     * @param tree top level node, or null if parsing failed
+     * @param tree top level node, or null to clean up after parsing failed
      */
     public void exitParsingMode(JCCompilationUnit tree) {
-        Assert.check(parsing || tree == null);
-        parsing = false;
-        parsingDeferrals.sort(Comparator.comparingInt(Deferral::pos));          // sort deferrals by position
-        if (tree != null) {
-            new LexicalDeferralMapper(tree).map();                              // map them into deferralMap
-            parsingDeferrals.forEach(deferral -> deferral.report(rootLint));    // report any leftovers
+        Assert.check(parsingMode || tree == null);
+        parsingMode = false;
+        if (tree != null && !parsingDeferrals.isEmpty()) {
+
+            // Map lexical Deferral's to corresponding declarations
+            new LexicalDeferralMapper(tree).mapLexicalDeferrals();
+
+            // Report any remainders immediately (must be outside the top level declaration)
+            Optional.ofNullable(deferralMap.remove(null))
+              .stream()
+              .flatMap(ArrayList::stream)
+              .forEach(deferral -> deferral.logger().report(rootLint));
         }
         parsingDeferrals.clear();
     }
@@ -162,7 +167,7 @@ public class DeferredLintHandler {
      * @see #pop
      */
     public void push(int pos) {
-        Assert.check(parsing);
+        Assert.check(parsingMode);
         reporterStack.push(logger -> parsingDeferrals.add(new Deferral(logger, pos)));
     }
 
@@ -171,25 +176,24 @@ public class DeferredLintHandler {
      *
      * <p>
      * This is normally only invoked when in non-parsing mode, but it can also be invoked in
-     * parsing mode if the declaration is known (e.g., see handling for "dangling-doc-comments").
+     * parsing mode if the declaration is known (e.g., see "dangling-doc-comments" handling).
      *
      * @param decl module, package, class, method, or variable declaration
      * @see #pop
      */
     public void push(JCTree decl) {
-        //Assert.check(!parsing);
         Assert.check(decl.getTag() == Tag.MODULEDEF
                   || decl.getTag() == Tag.PACKAGEDEF
                   || decl.getTag() == Tag.CLASSDEF
                   || decl.getTag() == Tag.METHODDEF
                   || decl.getTag() == Tag.VARDEF);
-        reporterStack.push(logger ->
-            deferralMap.computeIfAbsent(decl, s -> new ArrayList<>())
-              .add(new Deferral(logger, decl.getPreferredPosition())));
+        reporterStack.push(logger -> deferralMap
+                                        .computeIfAbsent(decl, s -> new ArrayList<>())
+                                        .add(new Deferral(logger)));
     }
 
     /**
-     * Enter "immediate" mode so that reported warnings are emitted synchonously.
+     * Enter "immediate" mode so that {@link #report}ed warnings are emitted synchonously.
      *
      * @param lint lint configuration to use for reported warnings
      */
@@ -229,13 +233,13 @@ public class DeferredLintHandler {
      * @param lint lint configuration corresponding to {@code decl}
      */
     public void flush(JCTree decl, Lint lint) {
-        Assert.check(!parsing);
-        ArrayList<Deferral> deferrals = deferralMap.remove(decl);
-        if (deferrals != null) {
-            for (Deferral deferral : deferrals) {
-                deferral.report(lint);
-            }
-        }
+        Assert.check(!parsingMode);
+        Optional.of(decl)
+          .map(deferralMap::remove)
+          .stream()
+          .flatMap(ArrayList::stream)
+          .map(Deferral::logger)
+          .forEach(logger -> logger.report(lint));
     }
 
 // LintLogger
@@ -257,33 +261,24 @@ public class DeferredLintHandler {
 
     /**
      * Represents a deferred warning.
+     *
+     * @param logger the logger that will report the warning
+     * @param pos character offset in the source file (parsing mode only)
      */
-    private static class Deferral {
+    private record Deferral(LintLogger logger, int pos) {
 
-        private final LintLogger logger;
-        private final int pos;
-
-        Deferral(LintLogger logger, int pos) {
-            this.logger = logger;
-            this.pos = pos;
+        // Create an instance in non-parsing mode
+        Deferral(LintLogger logger) {
+            this(logger, -1);
         }
 
-        int pos() {
-            return pos;
-        }
-
-        void report(Lint lint) {
-            logger.report(lint);
-        }
-
-        // Does the position fit into the given range?
-        boolean matches(int minPos, int maxPos) {
-            return pos == minPos || (pos > minPos && pos < maxPos);
-        }
-
-        // Create a binary search key
-        static Deferral key(int pos) {
-            return new Deferral(null, pos);
+        // Compare our position to the given declaration range. Only used for lexical deferrals.
+        int compareToRange(int minPos, int maxPos) {
+            if (pos() < minPos)
+                return -1;
+            if (pos() == minPos || (pos() > minPos && pos() < maxPos))
+                return 0;
+            return 1;
         }
     }
 
@@ -295,12 +290,34 @@ public class DeferredLintHandler {
 
         private final JCCompilationUnit tree;
 
+        private JCTree[] declMap;
+        private int currentDeferral;
+
         LexicalDeferralMapper(JCCompilationUnit tree) {
             this.tree = tree;
         }
 
-        void map() {
-            scan(tree);
+        void mapLexicalDeferrals() {
+
+            // Sort lexical deferrals by position so our "online" algorithm works.
+            // We also depend on TreeScanner visiting declarations in lexical order.
+            parsingDeferrals.sort(Comparator.comparingInt(Deferral::pos));
+
+            // Initialize our mapping table
+            declMap = new JCTree[parsingDeferrals.size()];
+            currentDeferral = 0;
+
+            // Scan declarations and map lexical deferrals to them
+            try {
+                scan(tree);
+            } catch (ShortCircuitException e) {
+                // got done early
+            }
+
+            // Move lexical deferrals to their corresponding declarations (or null for remainders)
+            for (int i = 0; i < declMap.length; i++) {
+                deferralMap.computeIfAbsent(declMap[i], s -> new ArrayList<>()).add(parsingDeferrals.get(i));
+            }
         }
 
     // TreeScanner methods
@@ -332,25 +349,48 @@ public class DeferredLintHandler {
 
         private <T extends JCTree> void scanDecl(T decl, Consumer<? super T> recursion) {
 
-            // We recurse *first* so the innermost matching declaration wins
-            recursion.accept(decl);
-
             // Get the lexical extent of this declaration
             int minPos = decl.getPreferredPosition();
             int maxPos = decl.getEndPosition(tree.endPositions);
 
-            // Find matching lexical Deferral's, if any, and move them into deferralMap
-            int index = Collections.binarySearch(parsingDeferrals,
-              Deferral.key(minPos), Comparator.comparingInt(Deferral::pos));
-            if (index < 0)
-                index = ~index;
-            while (index < parsingDeferrals.size()) {
-                Deferral deferral = parsingDeferrals.get(index);
-                if (!deferral.matches(minPos, maxPos))
-                    break;
-                parsingDeferrals.remove(index);
-                deferralMap.computeIfAbsent(decl, s -> new ArrayList<>()).add(deferral);
+            // Skip forward through lexical deferrals until we hit this declaration
+            while (true) {
+
+                // We can stop scanning once we pass the last lexical deferral
+                if (currentDeferral >= parsingDeferrals.size()) {
+                    throw new ShortCircuitException();
+                }
+
+                // Get the deferral currently under consideration
+                Deferral deferral = parsingDeferrals.get(currentDeferral);
+
+                // Is its position prior to this declaration?
+                int relativePosition = deferral.compareToRange(minPos, maxPos);
+                if (relativePosition < 0) {
+                    currentDeferral++;      // already past it
+                    continue;
+                }
+
+                // Is its position after this declaration?
+                if (relativePosition > 0) {
+                    break;                  // stop for now; a subsequent declaration might match
+                }
+
+                // Deferral's position is within this declaration - we should map it.
+                // Note this declaration may not be the innermost containing declaration,
+                // but if not, that's OK: the narrower declaration will follow and overwrite.
+                declMap[currentDeferral] = decl;
+                break;
             }
+
+            // Recurse
+            recursion.accept(decl);
         }
+    }
+
+// ShortCircuitException
+
+    @SuppressWarnings("serial")
+    private static class ShortCircuitException extends RuntimeException {
     }
 }

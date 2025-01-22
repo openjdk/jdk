@@ -11,7 +11,7 @@ public class TextBlockSuppress {
         public void method() {
             String s = """
                 trailing space here:\u0020
-                """;
+                """;        // SHOULD get a warning here
         }
     }
 
@@ -20,7 +20,7 @@ public class TextBlockSuppress {
         public void method() {
             String s = """
                 trailing space here:\u0020
-                """;
+                """;        // SHOULD NOT get a warning here
         }
     }
 
@@ -29,7 +29,7 @@ public class TextBlockSuppress {
         public void method() {
             String s = """
                 trailing space here:\u0020
-                """;
+                """;        // SHOULD NOT get a warning here
         }
     }
 
@@ -37,7 +37,7 @@ public class TextBlockSuppress {
         {
             String s = """
                 trailing space here:\u0020
-                """;
+                """;        // SHOULD get a warning here
         }
     }
 
@@ -46,7 +46,16 @@ public class TextBlockSuppress {
         {
             String s = """
                 trailing space here:\u0020
-                """;
+                """;        // SHOULD NOT get a warning here
+        }
+    }
+
+    public static class Example6 {
+        public void method() {
+            @SuppressWarnings("text-blocks")
+            String s = """
+                trailing space here:\u0020
+                """;        // SHOULD NOT get a warning here
         }
     }
 }

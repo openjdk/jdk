@@ -198,9 +198,9 @@ public class Preview {
         Assert.check(isPreview(feature));
         markUsesPreview(pos);
 
-        // For preview warnings, even if a warning occurs inside the scope of @SuppressWarnings("preview"),
-        // we still want to output the aggregated "recompile" note at the end of compilation. So we always
-        // invoke previewHandler.report() here but override its "verbose" setting using the current Lint.
+        // For preview warnings, even if a warning is suppressed by of @SuppressWarnings("preview"), we
+        // still need the "recompile" note at the end of compilation. To ensure that happens, we invoke
+        // previewHandler.report() in all cases, but with "verbose" set to false if "preview" is suppressed.
         previewHandler.report(pos, feature.isPlural() ?
             LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
             LintWarnings.PreviewFeatureUse(feature.nameFragment()),

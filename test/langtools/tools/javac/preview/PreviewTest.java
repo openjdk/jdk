@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -800,8 +800,9 @@ public class PreviewTest extends TestRunner {
                           package preview.api;
                           @jdk.internal.javac.PreviewFeature(feature=jdk.internal.javac.PreviewFeature.Feature.TEST)
                           public class Preview {
-                              public int field;
-                              public static void test() {}
+                              public static int test() {
+                                return 0;
+                              }
                           }
                           """);
         Path apiClasses = base.resolve("api-classes");
@@ -824,35 +825,40 @@ public class PreviewTest extends TestRunner {
 
                             public static class Example1 {
                                 public void method() {
-                                    Preview.test();
+                                    Preview.test();         // SHOULD get a warning here
                                 }
                             }
 
                             @SuppressWarnings("preview")
                             public static class Example2 {
                                 public void method() {
-                                    Preview.test();
+                                    Preview.test();         // SHOULD NOT get a warning here
                                 }
                             }
 
                             public static class Example3 {
                                 @SuppressWarnings("preview")
                                 public void method() {
-                                    Preview.test();
+                                    Preview.test();         // SHOULD NOT get a warning here
                                 }
                             }
 
                             public static class Example4 {
                                 {
-                                    Preview.test();
+                                    Preview.test();         // SHOULD get a warning here
                                 }
                             }
 
                             @SuppressWarnings("preview")
                             public static class Example5 {
                                 {
-                                    Preview.test();
+                                    Preview.test();         // SHOULD NOT get a warning here
                                 }
+                            }
+
+                            public static class Example6 {
+                                @SuppressWarnings("preview")
+                                int x = Preview.test();     // SHOULD NOT get a warning here
                             }
                           }
                           """);
