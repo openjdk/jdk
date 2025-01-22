@@ -1175,7 +1175,7 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         assert(bol->is_OpaqueNotNull() ||
                bol->is_OpaqueTemplateAssertionPredicate() ||
                bol->is_OpaqueInitializedAssertionPredicate() ||
-               bol->is_OpaqueMultiversioning(), // TODO should we fold this?
+               bol->is_OpaqueMultiversioning(),
                "Opaque node of a non-null-check or an Assertion Predicate or Multiversioning");
         continue;
       }
