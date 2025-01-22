@@ -28,6 +28,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/rbTree.hpp"
+#include <utility> // for std::swap
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::replace_child(
@@ -477,7 +478,7 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::remove(RBNode* node) {
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <typename F>
-inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) {
+inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::visit_in_order(F f) const {
   RBNode* to_visit[64];
   int stack_idx = 0;
   RBNode* head = _root;

@@ -271,7 +271,7 @@ public:
 
   // Visit all RBNodes in ascending order, calling f on each node.
   template <typename F>
-  void visit_in_order(F f);
+  void visit_in_order(F f) const;
 
   // Visit all RBNodes in ascending order whose keys are in range [from, to), calling f on each node.
   template <typename F>
@@ -284,11 +284,11 @@ public:
 
 };
 
-template <MemTag mt>
+template <MemTag mem_tag>
 class RBTreeCHeapAllocator {
 public:
   void* allocate(size_t sz) {
-    void* allocation = os::malloc(sz, mt);
+    void* allocation = os::malloc(sz, mem_tag);
     if (allocation == nullptr) {
       vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR,
                             "red-black tree failed allocation");
@@ -299,7 +299,7 @@ public:
   void free(void* ptr) { os::free(ptr); }
 };
 
-template <typename K, typename V, typename COMPARATOR, MemTag mt>
-using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mt>>;
+template <typename K, typename V, typename COMPARATOR, MemTag mem_tag>
+using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mem_tag>>;
 
 #endif // SHARE_UTILITIES_RBTREE_HPP
