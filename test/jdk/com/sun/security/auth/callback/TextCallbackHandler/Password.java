@@ -25,52 +25,116 @@
  * @test
  * @bug 6825240 6829785
  * @summary Password.readPassword() echos the input when System.Console is null
- * @modules java.base/java.lang:+open
- * @run main/othervm Password
+ * @library /test/lib
+ * @run main/manual Password
  */
 
 import com.sun.security.auth.callback.TextCallbackHandler;
 
 
 import javax.security.auth.callback.*;
-import java.io.*;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import javax.swing.*;
 
-import jdk.test.lib.Asserts;
+import jdk.test.lib.UIBuilder;
+
+import java.util.Arrays;
 
 public class Password {
-    private static final String VISIBLE_LINE = "lineVisible";
 
-    public static void main(String args[]) throws Exception {
+    private static final int TIMEOUT_MS = 240000;
+    private volatile boolean failed = false;
+    private volatile boolean aborted = false;
+    private Thread currentThread = null;
 
-        InputStream originalInput = System.in;
+    public static void password() throws Exception {
 
-        // setting the initial input stream from the System class
-        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(System.class, MethodHandles.lookup());
-        VarHandle initialIn = lookup.findStaticVarHandle(System.class, "initialIn", InputStream.class);
-
-        // setting the input stream and the output stream
-        ByteArrayInputStream inputStream = (new ByteArrayInputStream((VISIBLE_LINE + "\nlineInvisible\n").getBytes()));
-        System.setIn(inputStream);
-        initialIn.set(inputStream);
-
-        // handling the password callbacks, as the input stream is here the invisible should not echo and should be null
         TextCallbackHandler h = new TextCallbackHandler();
         PasswordCallback nc = new PasswordCallback("Invisible: ", false);
         PasswordCallback nc2 = new PasswordCallback("Visible: ", true);
-
-        System.out.println("Two passwords will be prompted for. They will automatically be populated. " +
-                "The invisible password will remain null with this input stream configuration.");
+        System.out.println("Two passwords will be prompted for. The first one " +
+                "should have echo off, the second one on. Otherwise, this test fails");
         Callback[] callbacks = {nc, nc2};
         h.handle(callbacks);
+        System.out.println("You input " + new String(nc.getPassword()) +
+                " and " + new String(nc2.getPassword()));
+    }
 
-        //reverting everything back
-        initialIn.set(originalInput);
-        System.setIn(originalInput);
+    public static void main(String[] args) throws Exception {
+        if (Arrays.asList(args).contains("--password")) {
+            password();
+        } else {
+            final String instructions = String.format("%s/bin/java -cp \n%s \nPassword  \n--password",
+                    System.getProperty("java.home"),
+                    System.getProperty("java.class.path")
+            );
 
+            boolean testFailed = new Password().validate(
+                    "Please copy and execute the following script in the terminal/cmd, " +
+                            "then follow the instructions. \n" +
+                            "Once the test is complete please select weather the test has passed.",
+                    instructions);
 
-        Asserts.assertNull(nc.getPassword());
-        Asserts.assertEquals(VISIBLE_LINE, new String(nc2.getPassword()));
+            if (testFailed) {
+                throw new RuntimeException("Test has failed");
+            }
+        }
+    }
+
+    public boolean validate(String instruction, String message) {
+        failed = false;
+        currentThread = Thread.currentThread();
+        final JDialog dialog = new UIBuilder.DialogBuilder()
+                .setTitle("Password")
+                .setInstruction(instruction)
+                .setMessage(message)
+                .setPassAction(e -> pass())
+                .setFailAction(e -> fail())
+                .setCloseAction(this::abort)
+                .build();
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                dialog.setVisible(true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            Thread.sleep(TIMEOUT_MS);
+            //Timed out, so fail the test
+            throw new RuntimeException(
+                    "Timed out after " + TIMEOUT_MS / 1000 + " seconds");
+        } catch (final InterruptedException e) {
+            if (aborted) {
+                throw new RuntimeException("TEST ABORTED");
+            }
+
+            if (failed) {
+                System.out.println("TEST FAILED");
+                System.out.println(message);
+            } else {
+                System.out.println("TEST PASSED");
+            }
+        } finally {
+            dialog.dispose();
+        }
+
+        return failed;
+    }
+
+    public void pass() {
+        failed = false;
+        currentThread.interrupt();
+    }
+
+    public void fail() {
+        failed = true;
+        currentThread.interrupt();
+    }
+
+    public void abort() {
+        aborted = true;
+        currentThread.interrupt();
     }
 }
