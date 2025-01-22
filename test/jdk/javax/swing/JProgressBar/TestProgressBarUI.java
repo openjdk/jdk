@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8318577
- * @summary Tests that tab movement is correct in RTL component orientation.
+ * @summary Tests JProgressBarUI renders correctly in Windows L&F
  * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
