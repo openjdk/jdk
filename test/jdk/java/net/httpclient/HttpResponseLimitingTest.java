@@ -220,9 +220,7 @@ class HttpResponseLimitingTest {
         HttpResponse<InputStream> response = pair.request(BodyHandlers.ofInputStream(), sufficientCapacity);
         verifyHeaders(response.headers());
         try (InputStream responseBodyStream = response.body()) {
-            byte[] responseBodyBuffer = new byte[RESPONSE_BODY.length];
-            int responseBodyBufferLength = responseBodyStream.read(responseBodyBuffer);
-            assertEquals(responseBodyBuffer.length, responseBodyBufferLength);
+            byte[] responseBodyBuffer = responseBodyStream.readAllBytes();
             assertArrayEquals(RESPONSE_BODY, responseBodyBuffer);
         }
     }
@@ -251,9 +249,7 @@ class HttpResponseLimitingTest {
         HttpResponse<InputStream> response = pair.request(BodyHandlers.ofInputStream(), insufficientCapacity);
         verifyHeaders(response.headers());
         try (InputStream responseBodyStream = response.body()) {
-            var exception = assertThrows(
-                    IOException.class,
-                    () -> responseBodyStream.read(new byte[RESPONSE_BODY.length]));
+            var exception = assertThrows(IOException.class, responseBodyStream::readAllBytes);
             assertNotNull(exception.getCause());
             assertEquals(exception.getCause().getMessage(), "body exceeds capacity: " + insufficientCapacity);
         }
