@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,6 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
                 // Do not paint the standard stripes from the skin, because they obscure
                 // the text
                 g.setColor(progressBar.getForeground());
-                barRectHeight -= 2;
-                barRectWidth -= 2;
 
                 if (barRectWidth <= 0 || barRectHeight <= 0) {
                     return;
@@ -151,8 +149,8 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
                                              BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
                 if (!vertical) {
                     if (isLeftToRight) {
-                        g2.drawLine(2,              barRectHeight / 2 + 1,
-                                    amountFull - 2, barRectHeight / 2 + 1);
+                        g2.drawLine(0,          barRectHeight / 2,
+                                    amountFull, barRectHeight / 2);
                     } else {
                         g2.drawLine(2 + barRectWidth,
                                     barRectHeight / 2 + 1,
