@@ -34,9 +34,10 @@
  * @run junit HttpResponseLimitingTest
  */
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.net.SimpleSSLContext;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -44,6 +45,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -77,10 +79,100 @@ class HttpResponseLimitingTest {
 
     private static final byte[] RESPONSE_BODY = "random non-empty body".getBytes(UTF_8);
 
+    private static final ServerClientPair HTTP1 = ServerClientPair.of(HttpClient.Version.HTTP_1_1, false);
+
+    private static final ServerClientPair HTTPS1 = ServerClientPair.of(HttpClient.Version.HTTP_1_1, true);
+
+    private static final ServerClientPair HTTP2 = ServerClientPair.of(HttpClient.Version.HTTP_2, false);
+
+    private static final ServerClientPair HTTPS2 = ServerClientPair.of(HttpClient.Version.HTTP_2, true);
+
+    private record ServerClientPair(HttpTestServer server, HttpClient client, HttpRequest request) {
+
+        private static final SSLContext SSL_CONTEXT = createSslContext();
+
+        private static SSLContext createSslContext() {
+            try {
+                return new SimpleSSLContext().get();
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+        }
+
+        private ServerClientPair {
+            server.start();
+        }
+
+        private static ServerClientPair of(HttpClient.Version version, boolean secure) {
+
+            // Create the server and the request URI
+            SSLContext sslContext = secure ? SSL_CONTEXT : null;
+            HttpTestServer server = createServer(version, sslContext);
+            String handlerPath = "/";
+            String requestUriScheme = secure ? "https" : "http";
+            URI requestUri = URI.create(requestUriScheme + "://" + server.serverAuthority() + handlerPath);
+
+            // Register the request handler
+            server.addHandler(
+                    (exchange) -> {
+                        exchange.sendResponseHeaders(200, RESPONSE_BODY.length);
+                        try (var outputStream = exchange.getResponseBody()) {
+                            outputStream.write(RESPONSE_BODY);
+                        }
+                        exchange.close();
+                    },
+                    handlerPath);
+
+            // Create the client and the request
+            HttpClient client = createClient(version, sslContext);
+            HttpRequest request = HttpRequest.newBuilder(requestUri).version(version).build();
+
+            // Create the pair
+            return new ServerClientPair(server, client, request);
+
+        }
+
+        private static HttpTestServer createServer(HttpClient.Version version, SSLContext sslContext) {
+            try {
+                return HttpTestServer.create(version, sslContext);
+            } catch (IOException exception) {
+                throw new UncheckedIOException(exception);
+            }
+        }
+
+        private static HttpClient createClient(HttpClient.Version version, SSLContext sslContext) {
+            HttpClient.Builder builder = HttpClient.newBuilder().version(version).proxy(NO_PROXY);
+            if (sslContext != null) {
+                builder.sslContext(sslContext);
+            }
+            return builder.build();
+        }
+
+        private HttpResponse<byte[]> requestBytes(long capacity) throws Exception {
+            var handler = BodyHandlers.limiting(BodyHandlers.ofByteArray(), capacity);
+            return client.send(request, handler);
+        }
+
+        @Override
+        public String toString() {
+            String version = client.version().toString();
+            return client.sslContext() != null ? version.replaceFirst("_", "S_") : version;
+        }
+
+    }
+
+    @AfterAll
+    static void closeServerClientPairs() {
+        for (var pair : new ServerClientPair[]{HTTP1, HTTPS1, HTTP2, HTTPS2}) {
+            pair.client.close();
+            pair.server.stop();
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("sufficientCapacities")
-    void testSuccessOnSufficientCapacity(HttpClient.Version version, boolean secure, long sufficientCapacity) throws Exception {
-        HttpResponse<byte[]> response = requestBytes(version, secure, sufficientCapacity);
+    void testSuccessOnSufficientCapacity(ServerClientPair pair, long sufficientCapacity) throws Exception {
+        HttpResponse<byte[]> response = pair.requestBytes(sufficientCapacity);
         assertArrayEquals(RESPONSE_BODY, response.body());
     }
 
@@ -93,8 +185,8 @@ class HttpResponseLimitingTest {
 
     @ParameterizedTest
     @MethodSource("insufficientCapacities")
-    void testFailureOnInsufficientCapacity(HttpClient.Version version, boolean secure, long insufficientCapacity) {
-        var exception = assertThrows(IOException.class, () -> requestBytes(version, secure, insufficientCapacity));
+    void testFailureOnInsufficientCapacity(ServerClientPair pair, long insufficientCapacity) {
+        var exception = assertThrows(IOException.class, () -> pair.requestBytes(insufficientCapacity));
         assertEquals(exception.getMessage(), "body exceeds capacity: " + insufficientCapacity);
     }
 
@@ -144,68 +236,11 @@ class HttpResponseLimitingTest {
 
     private static Arguments[] capacityArgs(long... capacities) {
         return Stream
-                .of(HttpClient.Version.HTTP_1_1, HttpClient.Version.HTTP_2)
-                .flatMap(version -> Stream
-                        .of(true, false)
-                        .flatMap(secure -> Arrays
+                .of(HTTP1, HTTPS1, HTTP2, HTTPS2)
+                .flatMap(pair -> Arrays
                                 .stream(capacities)
-                                .mapToObj(capacity -> Arguments.of(version, secure, capacity))))
+                                .mapToObj(capacity -> Arguments.of(pair, capacity)))
                 .toArray(Arguments[]::new);
-    }
-
-    private static HttpResponse<byte[]> requestBytes(
-            HttpClient.Version version,
-            boolean secure,
-            long capacity)
-            throws Exception {
-
-        // Create the server and the request URI
-        SSLContext sslContext;
-        HttpServerAdapters.HttpTestServer server;
-        String handlerPath = "/";
-        URI requestUri;
-        if (secure) {
-            sslContext = new SimpleSSLContext().get();
-            server = HttpServerAdapters.HttpTestServer.create(version, sslContext);
-            requestUri = URI.create("https://" + server.serverAuthority() + handlerPath);
-        } else {
-            sslContext = null;
-            server = HttpServerAdapters.HttpTestServer.create(version);
-            requestUri = URI.create("http://" + server.serverAuthority() + handlerPath);
-        }
-
-        // Register the request handler
-        server.addHandler(
-                (exchange) -> {
-                    exchange.sendResponseHeaders(200, RESPONSE_BODY.length);
-                    try (var outputStream = exchange.getResponseBody()) {
-                        outputStream.write(RESPONSE_BODY);
-                    }
-                    exchange.close();
-                },
-                handlerPath);
-
-        // Start the server and the client
-        server.start();
-        try (var client = createClient(version, sslContext)) {
-
-            // Issue the request
-            var request = HttpRequest.newBuilder(requestUri).version(version).build();
-            var handler = BodyHandlers.limiting(BodyHandlers.ofByteArray(), capacity);
-            return client.send(request, handler);
-
-        } finally {
-            server.stop();
-        }
-
-    }
-
-    private static HttpClient createClient(HttpClient.Version version, SSLContext sslContext) {
-        HttpClient.Builder builder = HttpClient.newBuilder().version(version).proxy(NO_PROXY);
-        if (sslContext != null) {
-            builder.sslContext(sslContext);
-        }
-        return builder.build();
     }
 
     @Test
