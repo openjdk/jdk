@@ -108,33 +108,3 @@ TEST_VM(CompressedKlass, test_good_address) {
   addr = CompressedKlassPointers::klass_range_end() - alignment;
   ASSERT_TRUE(CompressedKlassPointers::is_encodable(addr));
 }
-
-// This tests the protection zone mechanism. If the encoding base is not zero, VM should have
-// established a protection zone. Decoding an nKlass==0 should result in a Klass* that, upon
-// access, causes a SIGSEGV
-static bool test_nklass_protection_zone() {
-  if (!UseCompressedClassPointers) {
-    tty->print_cr("UseCompressedClassPointers is off, test not possible");
-    return true; // skipped
-  } else if (CompressedKlassPointers::base() == nullptr) {
-    tty->print_cr("Zero-based encoding; test not needed");
-    return true; // skipped
-  } else {
-    constexpr narrowKlass nk = 0;
-    Klass* const k = CompressedKlassPointers::decode_not_null_without_asserts(nk, CompressedKlassPointers::base(), CompressedKlassPointers::shift());
-    assert(k == (Klass*) CompressedKlassPointers::base(), "Sanity? (" PTR_FORMAT " vs " PTR_FORMAT ")",
-           p2i(k), p2i(CompressedKlassPointers::base()));
-    // Now call a virtual function on that klass.
-    k->print_on(tty); // << loading vtable ptr from protected page, crash expected here
-    return false;
-  }
-}
-
-// This does not work yet, since gtest death tests don't work with real signals. That needs to be fixed first (see JDK-8348028).
-TEST_VM_FATAL_ERROR_MSG(CompressedKlass, DISABLED_test_nklass_protection_zone_death_test, ".*SIGSEGV.*") {
-  if (test_nklass_protection_zone()) {
-    // Still alive but returned true, so we skipped the test.
-    // Do a fake assert that matches the regex above to satisfy the death test
-    guarantee(false, "fake message ignore this - SIGSEGV");
-  }
-}

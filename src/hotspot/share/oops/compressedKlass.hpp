@@ -153,6 +153,8 @@ class CompressedKlassPointers : public AllStatic {
     assert(var != (T)-1, "Not yet initialized");
   }
 
+  static inline Klass* decode_not_null_without_asserts(narrowKlass v, address base, int shift);
+
 public:
 
   // Initialization sequence:
@@ -231,7 +233,7 @@ public:
   static bool is_null(narrowKlass v) { return v == 0; }
 
   // Versions without asserts
-  static inline Klass* decode_not_null_without_asserts(narrowKlass v, address base, int shift);
+  static inline Klass* decode_not_null_without_asserts(narrowKlass v);
   static inline Klass* decode_without_asserts(narrowKlass v);
   static inline Klass* decode_not_null(narrowKlass v);
   static inline Klass* decode(narrowKlass v);
