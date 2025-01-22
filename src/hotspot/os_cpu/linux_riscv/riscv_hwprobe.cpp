@@ -24,6 +24,8 @@
  */
 
 #include "logging/log.hpp"
+#include "logging/logMessage.hpp"
+#include "os_linux.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -163,7 +165,18 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_C.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_V)) {
-    VM_Version::ext_V.enable_feature();
+    // Linux signal return bug when using vector with vlen > 128b in pre 6.9.
+    long major, minor;
+    os::Linux::kernel_version(&major, &minor);
+    if (!(major > 6 || (major == 6 && minor >= 9))) {
+      LogMessage(os) log;
+      if (log.is_info()) {
+        log.info("Linux kernels before 6.9 (current %ld.%ld) have a known bug when using Vector and signals.", major, minor);
+        log.info("Vector not enabled automatically via hwprobe, but can be turned on with -XX:+UseRVV.");
+      }
+    } else {
+      VM_Version::ext_V.enable_feature();
+    }
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
     VM_Version::ext_Zba.enable_feature();
