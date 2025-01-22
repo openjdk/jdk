@@ -21,7 +21,6 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -30,7 +29,6 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
 VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
@@ -338,6 +336,8 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   assert(base_addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
+
   ReservedMemoryRegion  rgn(base_addr, size, stack, mem_tag);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
 
@@ -416,6 +416,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 void VirtualMemoryTracker::set_reserved_region_type(address addr, MemTag mem_tag) {
   assert(addr != nullptr, "Invalid address");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion   rgn(addr, 1);
   ReservedMemoryRegion*  reserved_rgn = _reserved_regions->find(rgn);
@@ -434,6 +435,7 @@ bool VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
@@ -454,6 +456,7 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
@@ -469,6 +472,7 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
 bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
   assert(rgn != nullptr, "Sanity check");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   // uncommit regions within the released region
   ReservedMemoryRegion backup(*rgn);
@@ -490,6 +494,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
   assert(addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
+  MemTracker::assert_locked();
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
@@ -621,6 +626,9 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
+    if (MemTracker::NmtVirtualMemoryLocker::is_safe_to_use()) {
+      assert_lock_strong(NmtVirtualMemory_lock);
+    }
     if (rgn->mem_tag() == mtThreadStack) {
       address stack_bottom = rgn->thread_stack_uncommitted_bottom();
       address committed_start;
@@ -661,7 +669,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != nullptr, "Sanity check");
-  ThreadCritical tc;
+  MemTracker::NmtVirtualMemoryLocker nvml;
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != nullptr) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2025, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
@@ -649,6 +648,12 @@ void VMError::report(outputStream* st, bool _verbose) {
   address lastpc = nullptr;
 
   BEGIN
+  if (MemTracker::enabled() &&
+      NmtVirtualMemory_lock != nullptr &&
+      NmtVirtualMemory_lock->owned_by_self()) {
+    // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
+    NmtVirtualMemory_lock->unlock();
+  }
 
   STEP("printing fatal error message")
     st->print_cr("#");
@@ -1545,6 +1550,12 @@ void VMError::report_and_die(Thread* thread, const void* context, const char* fi
 
 void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, const void* siginfo, const void* context)
 {
+  if (ExecutingUnitTests) {
+    // See TEST_VM_CRASH_SIGNAL gtest macro
+    char tmp[64];
+    fprintf(stderr, "signaled: %s", os::exception_name(sig, tmp, sizeof(tmp)));
+  }
+
   report_and_die(thread, sig, pc, siginfo, context, "%s", "");
 }
 

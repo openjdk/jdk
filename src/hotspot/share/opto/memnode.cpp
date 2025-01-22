@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -2859,16 +2858,16 @@ private:
     return is_trace(TraceMergeStores::Tag::BASIC);
   }
 
-  bool is_trace_pointer() const {
-    return is_trace(TraceMergeStores::Tag::POINTER);
+  bool is_trace_pointer_parsing() const {
+    return is_trace(TraceMergeStores::Tag::POINTER_PARSING);
   }
 
-  bool is_trace_aliasing() const {
-    return is_trace(TraceMergeStores::Tag::ALIASING);
+  bool is_trace_pointer_aliasing() const {
+    return is_trace(TraceMergeStores::Tag::POINTER_ALIASING);
   }
 
-  bool is_trace_adjacency() const {
-    return is_trace(TraceMergeStores::Tag::ADJACENCY);
+  bool is_trace_pointer_adjacency() const {
+    return is_trace(TraceMergeStores::Tag::POINTER_ADJACENCY);
   }
 
   bool is_trace_success() const {
@@ -2939,12 +2938,13 @@ bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const St
 
   ResourceMark rm;
 #ifndef PRODUCT
-  const TraceMemPointer trace(is_trace_pointer(),
-                              is_trace_aliasing(),
-                              is_trace_adjacency());
+  const TraceMemPointer trace(is_trace_pointer_parsing(),
+                              is_trace_pointer_aliasing(),
+                              is_trace_pointer_adjacency(),
+                              true);
 #endif
-  const MemPointer pointer_use(use_store NOT_PRODUCT( COMMA trace ));
-  const MemPointer pointer_def(def_store NOT_PRODUCT( COMMA trace ));
+  const MemPointer pointer_use(use_store NOT_PRODUCT(COMMA trace));
+  const MemPointer pointer_def(def_store NOT_PRODUCT(COMMA trace));
   return pointer_def.is_adjacent_to_and_before(pointer_use);
 }
 

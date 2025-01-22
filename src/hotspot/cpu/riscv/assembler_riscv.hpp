@@ -3070,42 +3070,63 @@ public:
 #undef INSN
 
 // Cache Management Operations
-#define INSN(NAME, funct)                                                                    \
-  void NAME(Register Rs1) {                                                                  \
-    unsigned insn = 0;                                                                       \
-    patch((address)&insn, 6,  0, 0b0001111);                                                 \
-    patch((address)&insn, 14, 12, 0b010);                                                    \
-    patch_reg((address)&insn, 15, Rs1);                                                      \
-    patch((address)&insn, 31, 20, funct);                                                    \
-    emit(insn);                                                                              \
+// These instruction may be turned off for user space.
+ private:
+  enum CBO_FUNCT : unsigned int {
+    CBO_INVAL = 0b0000000000000,
+    CBO_CLEAN = 0b0000000000001,
+    CBO_FLUSH = 0b0000000000010,
+    CBO_ZERO  = 0b0000000000100
+  };
+
+  template <CBO_FUNCT FUNCT>
+  void cbo_base(Register Rs1) {
+    assert((UseZicbom && FUNCT != CBO_ZERO) || UseZicboz, "sanity");
+    unsigned insn = 0;
+    patch((address)&insn, 6,  0, 0b0001111);
+    patch((address)&insn, 14, 12, 0b010);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 31, 20, FUNCT);
+    emit(insn);
   }
 
-  INSN(cbo_inval, 0b0000000000000);
-  INSN(cbo_clean, 0b0000000000001);
-  INSN(cbo_flush, 0b0000000000010);
-  INSN(cbo_zero,  0b0000000000100);
+  // This instruction have some security implication.
+  // At this time it's not likely to be enabled for user mode.
+  void cbo_inval(Register Rs1) { cbo_base<CBO_INVAL>(Rs1); }
+ public:
+  // Zicbom
+  void cbo_clean(Register Rs1) { cbo_base<CBO_CLEAN>(Rs1); }
+  void cbo_flush(Register Rs1) { cbo_base<CBO_FLUSH>(Rs1); }
+  // Zicboz
+  void cbo_zero(Register Rs1)  { cbo_base<CBO_ZERO>(Rs1); }
 
-#undef INSN
+ private:
+  enum PREFETCH_FUNCT : unsigned int {
+    PREFETCH_I = 0b0000000000000,
+    PREFETCH_R = 0b0000000000001,
+    PREFETCH_W = 0b0000000000011
+  };
 
-#define INSN(NAME, funct)                                                                    \
-  void NAME(Register Rs1, int32_t offset) {                                                  \
-    guarantee((offset & 0x1f) == 0, "offset lowest 5 bits must be zero");                    \
-    int32_t upperOffset = offset >> 5;                                                       \
-    unsigned insn = 0;                                                                       \
-    patch((address)&insn, 6,  0, 0b0010011);                                                 \
-    patch((address)&insn, 14, 12, 0b110);                                                    \
-    patch_reg((address)&insn, 15, Rs1);                                                      \
-    patch((address)&insn, 24, 20, funct);                                                    \
-    upperOffset &= 0x7f;                                                                     \
-    patch((address)&insn, 31, 25, upperOffset);                                              \
-    emit(insn);                                                                              \
+  template <PREFETCH_FUNCT FUNCT>
+  void prefetch_base(Register Rs1, int32_t offset) {
+    assert_cond(UseZicbop);
+    guarantee((offset & 0x1f) == 0, "offset lowest 5 bits must be zero");
+    int32_t upperOffset = offset >> 5;
+    unsigned insn = 0;
+    patch((address)&insn, 6,  0, 0b0010011);
+    patch((address)&insn, 14, 12, 0b110);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 24, 20, FUNCT);
+    upperOffset &= 0x7f;
+    patch((address)&insn, 31, 25, upperOffset);
+    emit(insn);
   }
 
-  INSN(prefetch_i, 0b0000000000000);
-  INSN(prefetch_r, 0b0000000000001);
-  INSN(prefetch_w, 0b0000000000011);
-
-#undef INSN
+ public:
+  // Zicbop
+  void prefetch_i(Register Rs1, int32_t offset) { prefetch_base<PREFETCH_I>(Rs1, offset); }
+  void prefetch_r(Register Rs1, int32_t offset) { prefetch_base<PREFETCH_R>(Rs1, offset); }
+  void prefetch_w(Register Rs1, int32_t offset) { prefetch_base<PREFETCH_W>(Rs1, offset); }
 
 // --------------  Zicond Instruction Definitions  --------------
 // Zicond conditional operations extension
