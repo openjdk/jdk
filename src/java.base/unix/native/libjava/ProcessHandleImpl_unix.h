@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,16 +56,11 @@ extern jfieldID ProcessHandleImpl_Info_userID;
  * 'total' will contain the running time of 'pid' in nanoseconds.
  * 'start' will contain the start time of 'pid' in milliseconds since epoch.
  */
-extern pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
-                                         jlong *total, jlong *start);
 extern pid_t os_getParentPidAndTimings(JNIEnv *env, pid_t pid,
                                        jlong *total, jlong *start);
 
-extern void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid);
 extern void os_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid);
 
-extern jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray array,
-                             jlongArray jparentArray, jlongArray jstimesArray);
 extern jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray array,
                            jlongArray jparentArray, jlongArray jstimesArray);
 
