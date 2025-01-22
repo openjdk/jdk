@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package javax.swing.event;
 
 import java.util.EventObject;
-import javax.swing.*;
+import javax.swing.ListSelectionModel;
 
 
 /**
- * An event that characterizes a change in selection. The change is limited to a
+ * An event that characterizes a change in selection. The change is limited to
  * a single inclusive interval. The selection of at least one index within the
  * range will have changed. A decent {@code ListSelectionModel} implementation
  * will keep the range as small as possible. {@code ListSelectionListeners} will
