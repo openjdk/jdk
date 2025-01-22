@@ -110,6 +110,7 @@ void AsyncLogWriter::enqueue_locked(LogFileStreamOutput* output, const LogDecora
     }
     new (ptr) Message(output, decorations, msg, msg_len);
     _stalled_message = (Message*)ptr;
+    clocker.notify();
     while (_stalled_message != nullptr) {
       clocker.wait();
     }
@@ -155,7 +156,7 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
+bool AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
   int req = 0;
   auto it = _buffer_staging->iterator();
   while (it.hasNext()) {
@@ -183,8 +184,9 @@ void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
 
   if (req > 0) {
     assert(req == 1, "Only one token is allowed in queue. AsyncLogWriter::flush() is NOT MT-safe!");
-    _flush_sem.signal(req);
+    return true;
   }
+  return false;
 }
 
 void AsyncLogWriter::run() {
@@ -193,10 +195,10 @@ void AsyncLogWriter::run() {
     AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
     {
       ConsumerLocker clocker;
-
       while (!_data_available && _stalled_message == nullptr) {
         clocker.wait();
       }
+
       // Only doing a swap and statistics under the lock to
       // guarantee that I/O jobs don't block logsites.
       _buffer_staging->reset();
@@ -214,7 +216,7 @@ void AsyncLogWriter::run() {
       _data_available = false;
     }
 
-    write(snapshot);
+    bool saw_flush_token = write(snapshot);
 
     if (_stalled_message != nullptr) {
       assert(LogConfiguration::async_mode() == LogConfiguration::AsyncMode::Stall, "must be");
@@ -223,6 +225,9 @@ void AsyncLogWriter::run() {
       m->output()->write_blocking(m->decorations(), m->message());
       _stalled_message = nullptr;
       clocker.notify();
+    }
+    if (saw_flush_token) {
+      _flush_sem.signal(1);
     }
   }
 }
@@ -295,4 +300,36 @@ AsyncLogWriter::BufferUpdater::~BufferUpdater() {
     p->_buffer = _buf1;
     p->_buffer_staging = _buf2;
   }
+}
+
+bool AsyncLogWriter::enqueue_if_initialized(LogFileStreamOutput& output,
+                                            const LogDecorations& decorations, const char* msg) {
+  AsyncLogWriter* instance = AsyncLogWriter::instance();
+  if (instance != nullptr) {
+    if ((uintptr_t)instance == (uintptr_t)Thread::current_or_null()) {
+      // If logging from the consuming thread then fall back on synchronous logging.
+      // Otherwise, the consuming thread may wait on itself to print the message,
+      // this obviously leads to a deadlocked system.
+      return false;
+    }
+    instance->enqueue(output, decorations, msg);
+    return true;
+  }
+  return false;
+}
+
+bool AsyncLogWriter::enqueue_if_initialized(LogFileStreamOutput& output,
+                                            LogMessageBuffer::Iterator msg_iterator) {
+  AsyncLogWriter* instance = AsyncLogWriter::instance();
+  if (instance != nullptr) {
+    if ((uintptr_t)instance == (uintptr_t)Thread::current_or_null()) {
+      // If logging from the consuming thread then fall back on synchronous logging.
+      // Otherwise, the consuming thread may wait on itself to print the message,
+      // this obviously leads to a deadlocked system.
+      return false;
+    }
+    instance->enqueue(output, msg_iterator);
+    return true;
+  }
+  return false;
 }

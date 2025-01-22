@@ -174,9 +174,8 @@ int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const
 }
 
 int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, decorations, msg);
+  bool did_write = AsyncLogWriter::enqueue_if_initialized(*this, decorations, msg);
+  if (did_write) {
     return 0;
   }
 
@@ -187,9 +186,8 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
-  if (aio_writer != nullptr) {
-    aio_writer->enqueue(*this, msg_iterator);
+  bool did_write = AsyncLogWriter::enqueue_if_initialized(*this, msg_iterator);
+  if (did_write) {
     return 0;
   }
 

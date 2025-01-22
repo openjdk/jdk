@@ -167,6 +167,7 @@ class AsyncLogWriter : public NonJavaThread {
   PlatformMonitor _producer_lock;
   PlatformMonitor _consumer_lock;
   bool _data_available;
+  // _initialized is set to true if the constructor succeeds
   volatile bool _initialized;
   AsyncLogMap<AnyObj::C_HEAP> _stats;
 
@@ -184,7 +185,7 @@ class AsyncLogWriter : public NonJavaThread {
 
   AsyncLogWriter();
   void enqueue_locked(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
-  void write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
+  bool write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot);
   void run() override;
   void pre_run() override {
     NonJavaThread::pre_run();
@@ -213,6 +214,11 @@ class AsyncLogWriter : public NonJavaThread {
 
   static AsyncLogWriter* instance();
   static void initialize();
+  // Returns true if initialized, otherwise false
+  static bool enqueue_if_initialized(LogFileStreamOutput& output, const LogDecorations& decorations,
+                                     const char* msg);
+  static bool enqueue_if_initialized(LogFileStreamOutput& output,
+                                     LogMessageBuffer::Iterator msg_iterator);
   static void flush();
 
   const char* name() const override { return "AsyncLog Thread"; }
