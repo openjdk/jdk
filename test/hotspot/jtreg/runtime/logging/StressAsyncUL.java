@@ -25,6 +25,7 @@
  * @test
  * @summary Stress test async UL in dropping and stalling mode
  * @requires vm.flagless
+ * @requires vm.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run driver StressAsyncUL
@@ -43,6 +44,10 @@ public class StressAsyncUL {
     public static void main(String[] args) throws Exception {
         analyze_output("-Xlog:async:drop", "-Xlog:all=trace", InnerClass.class.getName());
         analyze_output("-Xlog:async:stall", "-Xlog:all=trace", InnerClass.class.getName());
+        // Stress test with a very small buffer. Note: Any valid buffer size must be able to hold a flush token.
+        // Therefore the size of the buffer cannot be zero.
+        analyze_output("-Xlog:async:drop", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=96", InnerClass.class.getName());
+        analyze_output("-Xlog:async:stall", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=96", InnerClass.class.getName());
     }
 
     public static class InnerClass {
