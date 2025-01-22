@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -41,11 +40,9 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * @test
  * @bug 8158246 8316383
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow sax.XMLReaderTest
  * @run testng/othervm sax.XMLReaderTest
  * @summary This class contains tests that cover the creation of XMLReader.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class XMLReaderTest {
     private final String SAX_PROPNAME = "org.xml.sax.driver";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
         content = XContentWindow.createContent(this);
 
-        if (warningWindow != null) {
-            warningWindow.toFront();
-        }
         focusProxy = createFocusProxy();
     }
 
@@ -843,7 +840,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
         reconfigureContentWindow(newDimensions);
         updateChildrenSizes();
 
-        repositionSecurityWarning();
     }
 
     private void checkShellRectSize(Rectangle shellRect) {

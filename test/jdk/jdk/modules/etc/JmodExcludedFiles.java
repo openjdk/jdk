@@ -25,6 +25,7 @@
  * @test
  * @bug 8159927
  * @modules java.base/jdk.internal.util
+ * @requires jlink.packagedModules
  * @run main JmodExcludedFiles
  * @summary Test that JDK JMOD files do not include native debug symbols
  */

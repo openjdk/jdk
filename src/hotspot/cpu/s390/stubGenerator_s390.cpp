@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "registerSaver_s390.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -635,9 +634,9 @@ class StubGenerator: public StubCodeGenerator {
         r_result       = Z_R11;
     address start = __ pc();
 
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     r_bitmap, r_result, super_klass_index);
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           r_array_base, r_array_length, r_array_index,
+                                           r_bitmap, r_result, super_klass_index);
 
     __ z_br(Z_R14);
 
@@ -659,7 +658,7 @@ class StubGenerator: public StubCodeGenerator {
         r_result       = Z_R11;
 
     __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base,
-                                               r_array_index, r_bitmap, r_result, r_temp1);
+                                               r_array_index, r_bitmap, r_temp1, r_result, /* is_stub */ true);
 
     __ z_br(Z_R14);
 
@@ -688,7 +687,7 @@ class StubGenerator: public StubCodeGenerator {
     // code (code_size == 0) confuses opjitconv
     // StubCodeMark mark(this, "StubRoutines", "verify_oop_stub");
 
-    address start = 0;
+    address start = nullptr;
 
 #if !defined(PRODUCT)
     start = CAST_FROM_FN_PTR(address, verify_oop_helper);

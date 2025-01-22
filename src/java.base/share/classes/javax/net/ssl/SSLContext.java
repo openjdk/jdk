@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,12 @@ import sun.security.jca.GetInstance;
  * secure random bytes.
  *
  * <p> Every implementation of the Java platform is required to support the
- * following standard {@code SSLContext} protocol:
+ * following standard {@code SSLContext} protocols:
  * <ul>
  * <li>{@code TLSv1.2}</li>
+ * <li>{@code TLSv1.3}</li>
  * </ul>
- * This protocol is described in the <a href=
+ * These protocols are described in the <a href=
  * "{@docRoot}/../specs/security/standard-names.html#sslcontext-algorithms">
  * SSLContext section</a> of the
  * Java Security Standard Algorithm Names Specification.
@@ -123,19 +124,11 @@ public class SSLContext {
      *
      * @param context the SSLContext
      * @throws  NullPointerException if context is null
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method does not allow
-     *          {@code SSLPermission("setDefaultSSLContext")}
      * @since 1.6
      */
     public static void setDefault(SSLContext context) {
         if (context == null) {
             throw new NullPointerException();
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SSLPermission("setDefaultSSLContext"));
         }
 
         defaultContext = context;

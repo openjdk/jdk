@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,6 +218,14 @@ inline int64_t java_lang_Thread::thread_id(oop java_thread) {
 inline oop java_lang_VirtualThread::vthread_scope() {
   oop base = vmClasses::VirtualThread_klass()->static_field_base_raw();
   return base->obj_field(static_vthread_scope_offset);
+}
+
+inline ObjectWaiter* java_lang_VirtualThread::objectWaiter(oop vthread) {
+  return (ObjectWaiter*)vthread->address_field(_objectWaiter_offset);
+}
+
+inline void java_lang_VirtualThread::set_objectWaiter(oop vthread, ObjectWaiter* value) {
+  vthread->address_field_put(_objectWaiter_offset, (address)value);
 }
 
 #if INCLUDE_JFR

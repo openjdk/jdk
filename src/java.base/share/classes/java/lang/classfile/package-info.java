@@ -546,9 +546,6 @@
  *     | CharacterRange(int rangeStart, int rangeEnd, int flags, Label startScope, Label endScope)
  * }
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile;
-
-import jdk.internal.javac.PreviewFeature;

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +23,7 @@
  *
  */
 
-/* @test
+/* @test id=default
  * @summary test JNI critical arrays support in Shenandoah
  * @key randomness
  * @requires vm.gc.Shenandoah
@@ -31,6 +32,16 @@
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+ShenandoahVerify                 TestJNICritical
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive TestJNICritical
  */
+
+ /* @test id=generational
+  * @summary test JNI critical arrays support in Shenandoah
+  * @key randomness
+  * @requires vm.gc.Shenandoah
+  * @library /test/lib
+  *
+  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+ShenandoahVerify TestJNICritical
+  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational                       TestJNICritical
+  */
 
 import java.util.Arrays;
 import java.util.Random;

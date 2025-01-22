@@ -39,7 +39,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
 
 import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.VM;
@@ -74,7 +73,6 @@ public final class SourceLauncher {
     public static void main(String... args) throws Throwable {
         try {
             new SourceLauncher(System.err)
-                    .checkSecurityManager()
                     .run(VM.getRuntimeArguments(), args);
         } catch (Fault f) {
             System.err.println(f.getMessage());
@@ -106,19 +104,6 @@ public final class SourceLauncher {
      */
     public SourceLauncher(PrintWriter out) {
         this.out = out;
-    }
-
-    /**
-     * Checks if a security manager is present and throws an exception if so.
-     * @return this object
-     * @throws Fault if a security manager is present
-     */
-    @SuppressWarnings("removal")
-    private SourceLauncher checkSecurityManager() throws Fault {
-        if (System.getSecurityManager() != null) {
-            throw new Fault(Errors.SecurityManager);
-        }
-        return this;
     }
 
     /**

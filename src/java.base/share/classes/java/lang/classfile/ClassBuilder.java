@@ -39,7 +39,6 @@ import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedClassBuilder;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A builder for classfiles.  Builders are not created directly; they are passed
@@ -50,9 +49,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see ClassTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassBuilder
         extends ClassFileBuilder<ClassElement, ClassBuilder>
         permits ChainedClassBuilder, DirectClassBuilder {

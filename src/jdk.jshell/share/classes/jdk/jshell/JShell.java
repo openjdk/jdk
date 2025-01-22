@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -678,6 +678,12 @@ public class JShell implements AutoCloseable {
      * Return the diagnostics of the most recent evaluation of the snippet.
      * The evaluation can either because of an explicit {@code eval()} call or
      * an automatic update triggered by a dependency.
+     *
+     * <p>This method will return best-effort diagnostics for snippets returned
+     * from {@link SourceCodeAnalysis#sourceToSnippets(java.lang.String) }. The
+     * diagnostics returned for such snippets may differ from diagnostics provided
+     * after the snippet is {@link #eval(java.lang.String) }-ed.
+     *
      * @param snippet the {@code Snippet} to look up
      * @return the diagnostics corresponding to this snippet.  This does not
      * include unresolvedDependencies references reported in {@code unresolvedDependencies()}.
@@ -686,7 +692,7 @@ public class JShell implements AutoCloseable {
      * this {@code JShell} instance.
      */
     public Stream<Diag> diagnostics(Snippet snippet) {
-        return checkValidSnippet(snippet).diagnostics().stream();
+        return checkValidSnippet(snippet, true).diagnostics().stream();
     }
 
     /**
@@ -901,10 +907,22 @@ public class JShell implements AutoCloseable {
      * @return the input Snippet (for chained calls)
      */
     private Snippet checkValidSnippet(Snippet sn) {
+        return checkValidSnippet(sn, false);
+    }
+
+    /**
+     * Check a Snippet parameter coming from the API user
+     * @param sn the Snippet to check
+     * @param acceptUnassociated  accept snippets that are unassociated
+     * @throws NullPointerException if Snippet parameter is null
+     * @throws IllegalArgumentException if Snippet is not from this JShell
+     * @return the input Snippet (for chained calls)
+     */
+    private Snippet checkValidSnippet(Snippet sn, boolean acceptUnassociated) {
         if (sn == null) {
             throw new NullPointerException(messageFormat("jshell.exc.null"));
         } else {
-            if (sn.key().state() != this || sn.id() == Snippet.UNASSOCIATED_ID) {
+            if (sn.key().state() != this || (!acceptUnassociated && sn.id() == Snippet.UNASSOCIATED_ID)) {
                 throw new IllegalArgumentException(messageFormat("jshell.exc.alien", sn.toString()));
             }
             return sn;

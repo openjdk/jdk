@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package javax.security.auth.kerberos;
 
 import java.io.File;
-import java.security.AccessControlException;
 import java.util.Objects;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KerberosSecrets;
@@ -55,14 +54,6 @@ import sun.security.krb5.RealmException;
  * created with either of these methods are considered to be bound to an
  * unknown principal, which means, its {@link #isBound()} returns true and
  * {@link #getPrincipal()} returns null.
- * <p>
- * It might be necessary for the application to be granted a
- * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access the {@code KeyTab}
- * instance from a {@code Subject}. This permission is not needed when the
- * application depends on the default JGSS Kerberos mechanism to access the
- * {@code KeyTab}. In that case, however, the application will need an appropriate
- * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.
  * <p>
  * The keytab file format is described at
  * <a href="http://www.ioplex.com/utilities/keytab.txt">
@@ -218,20 +209,7 @@ public final class KeyTab {
     // Takes a snapshot of the keytab content. This method is called by
     // JavaxSecurityAuthKerberosAccessImpl so no more private
     sun.security.krb5.internal.ktab.KeyTab takeSnapshot() {
-        try {
-            return sun.security.krb5.internal.ktab.KeyTab.getInstance(file);
-        } catch (@SuppressWarnings("removal") AccessControlException ace) {
-            if (file != null) {
-                // It's OK to show the name if caller specified it
-                throw ace;
-            } else {
-                @SuppressWarnings("removal")
-                AccessControlException ace2 = new AccessControlException(
-                        "Access to default keytab denied (modified exception)");
-                ace2.setStackTrace(ace.getStackTrace());
-                throw ace2;
-            }
-        }
+        return sun.security.krb5.internal.ktab.KeyTab.getInstance(file);
     }
 
     /**
@@ -272,8 +250,6 @@ public final class KeyTab {
      * @return the keys (never null, may be empty)
      * @throws NullPointerException if the {@code principal}
      * argument is null
-     * @throws SecurityException if a security manager exists and the read
-     * access to the keytab file is not permitted
      */
     public KerberosKey[] getKeys(KerberosPrincipal principal) {
         try {
@@ -308,8 +284,6 @@ public final class KeyTab {
      * keytab file.
      *
      * @return true if the keytab file exists; false otherwise.
-     * @throws SecurityException if a security manager exists and the read
-     * access to the keytab file is not permitted
      */
     public boolean exists() {
         return !takeSnapshot().isMissing();

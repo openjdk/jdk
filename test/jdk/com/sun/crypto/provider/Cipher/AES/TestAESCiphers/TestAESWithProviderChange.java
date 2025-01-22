@@ -1,4 +1,4 @@
-/* Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.security.Security;
  * @summary Test AES ciphers with different modes and padding schemes after
  *  remove then add provider.
  * @modules java.base/com.sun.crypto.provider
- * @run main/othervm/policy=testAES.policy TestAESWithProviderChange
  */
 
 public class TestAESWithProviderChange extends Dynamic {

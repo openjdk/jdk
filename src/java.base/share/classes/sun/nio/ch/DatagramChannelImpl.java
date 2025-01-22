@@ -60,8 +60,6 @@ import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.SelectorProvider;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,7 +73,6 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.invoke.MhUtil;
-import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
 
@@ -196,7 +193,6 @@ class DatagramChannelImpl
         FileDescriptor fd = null;
         NativeSocketAddress[] sockAddrs = null;
 
-        ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
             this.interruptible = interruptible;
@@ -219,7 +215,6 @@ class DatagramChannelImpl
             if (!initialized) {
                 if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
                 if (fd != null) nd.close(fd);
-                ResourceManager.afterUdpClose();
             }
         }
 
@@ -234,7 +229,6 @@ class DatagramChannelImpl
 
         NativeSocketAddress[] sockAddrs = null;
 
-        ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
             this.interruptible = true;
@@ -259,7 +253,6 @@ class DatagramChannelImpl
             if (!initialized) {
                 if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
                 nd.close(fd);
-                ResourceManager.afterUdpClose();
             }
         }
 
@@ -293,8 +286,7 @@ class DatagramChannelImpl
     public SocketAddress getLocalAddress() throws IOException {
         synchronized (stateLock) {
             ensureOpen();
-            // Perform security check before returning address
-            return Net.getRevealedLocalAddress(localAddress);
+            return localAddress;
         }
     }
 
@@ -573,24 +565,16 @@ class DatagramChannelImpl
                 SocketAddress remote = beginRead(blocking, false);
                 configureSocketNonBlockingIfVirtualThread();
                 boolean connected = (remote != null);
-                @SuppressWarnings("removal")
-                SecurityManager sm = System.getSecurityManager();
-                if (connected || (sm == null)) {
-                    // connected or no security manager
-                    int n = receive(dst, connected);
-                    if (blocking) {
-                        while (IOStatus.okayToRetry(n) && isOpen()) {
-                            park(Net.POLLIN);
-                            n = receive(dst, connected);
-                        }
+                int n = receive(dst, connected);
+                if (blocking) {
+                    while (IOStatus.okayToRetry(n) && isOpen()) {
+                        park(Net.POLLIN);
+                        n = receive(dst, connected);
                     }
-                    if (n > 0 || (n == 0 && isOpen())) {
-                        // sender address is in socket address buffer
-                        sender = sourceSocketAddress();
-                    }
-                } else {
-                    // security manager and unconnected
-                    sender = untrustedReceive(dst);
+                }
+                if (n > 0 || (n == 0 && isOpen())) {
+                    // sender address is in socket address buffer
+                    sender = sourceSocketAddress();
                 }
                 return sender;
             } finally {
@@ -598,49 +582,6 @@ class DatagramChannelImpl
             }
         } finally {
             readLock.unlock();
-        }
-    }
-
-    /**
-     * Receives a datagram into an untrusted buffer. When there is a security
-     * manager set, and the socket is not connected, datagrams have to be received
-     * into a buffer that is not accessible to the user. The datagram is copied
-     * into the user's buffer when the sender address is accepted by the security
-     * manager.
-     */
-    private SocketAddress untrustedReceive(ByteBuffer dst) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        assert readLock.isHeldByCurrentThread()
-                && sm != null && remoteAddress == null;
-
-        boolean blocking = isBlocking();
-        for (;;) {
-            int n;
-            ByteBuffer bb = Util.getTemporaryDirectBuffer(dst.remaining());
-            try {
-                n = receive(bb, false);
-                if (n >= 0) {
-                    // sender address is in socket address buffer
-                    InetSocketAddress isa = sourceSocketAddress();
-                    try {
-                        sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
-                        bb.flip();
-                        dst.put(bb);
-                        return isa;
-                    } catch (SecurityException se) {
-                        // ignore datagram
-                    }
-                }
-            } finally {
-                Util.releaseTemporaryDirectBuffer(bb);
-            }
-
-            if (blocking && IOStatus.okayToRetry(n) && isOpen()) {
-                park(Net.POLLIN);
-            } else {
-                return null;
-            }
         }
     }
 
@@ -653,8 +594,7 @@ class DatagramChannelImpl
      * @throws SocketTimeoutException if the timeout elapses
      */
     void blockingReceive(DatagramPacket p, long nanos) throws IOException {
-        Objects.requireNonNull(p);
-        assert nanos >= 0;
+        assert Thread.holdsLock(p) && nanos >= 0;
 
         readLock.lock();
         try {
@@ -669,65 +609,31 @@ class DatagramChannelImpl
                 configureSocketNonBlockingIfVirtualThread();
             }
 
-            // p.bufLength is the maximum size of the datagram that can be received
-            int bufLength;
-            synchronized (p) {
-                bufLength = DatagramPackets.getBufLength(p);
-            }
-
-            long startNanos = System.nanoTime();
-            long remainingNanos = nanos;
-            SocketAddress sender = null;
+            boolean completed = false;
             try {
                 SocketAddress remote = beginRead(true, false);
                 boolean connected = (remote != null);
-                do {
-                    ByteBuffer dst = tryBlockingReceive(connected, bufLength, remainingNanos);
 
-                    // if datagram received then get sender and copy to DatagramPacket
-                    if (dst != null) {
-                        try {
-                            // sender address is in socket address buffer
-                            sender = sourceSocketAddress();
-
-                            // check sender when security manager set and not connected
-                            @SuppressWarnings("removal")
-                            SecurityManager sm = System.getSecurityManager();
-                            if (sm != null && !connected) {
-                                InetSocketAddress isa = (InetSocketAddress) sender;
-                                try {
-                                    sm.checkAccept(isa.getAddress().getHostAddress(), isa.getPort());
-                                } catch (SecurityException e) {
-                                    sender = null;
-                                }
-                            }
-
-                            if (sender != null) {
-                                // copy bytes to the DatagramPacket, and set length and sender
-                                synchronized (p) {
-                                    // re-read p.bufLength in case DatagramPacket changed
-                                    int len = Math.min(dst.limit(), DatagramPackets.getBufLength(p));
-                                    dst.get(p.getData(), p.getOffset(), len);
-                                    DatagramPackets.setLength(p, len);
-                                    p.setSocketAddress(sender);
-                                }
-                            } else {
-                                // need to retry, adjusting timeout if needed
-                                if (nanos > 0) {
-                                    remainingNanos = nanos - (System.nanoTime() - startNanos);
-                                    if (remainingNanos <= 0) {
-                                        throw new SocketTimeoutException("Receive timed out");
-                                    }
-                                }
-                            }
-                        } finally {
-                            Util.offerFirstTemporaryDirectBuffer(dst);
-                        }
+                // p.bufLength is the maximum size of the datagram that can be received
+                int bufLength = DatagramPackets.getBufLength(p);
+                ByteBuffer dst = tryBlockingReceive(connected, bufLength, nanos);
+                if (dst != null) {
+                    // copy to DatagramPacket, set length and sender
+                    try {
+                        int len = dst.limit();
+                        dst.get(p.getData(), p.getOffset(), len);
+                        DatagramPackets.setLength(p, len);
+                        p.setSocketAddress(sourceSocketAddress());
+                    } finally {
+                        Util.offerFirstTemporaryDirectBuffer(dst);
                     }
-                } while (sender == null && isOpen());
+                    completed = true;
+                }
+
             } finally {
-                endRead(true, (sender != null));
+                endRead(true, completed);
             }
+
         } finally {
             readLock.unlock();
         }
@@ -884,16 +790,7 @@ class DatagramChannelImpl
                     completed = (n > 0);
                 } else {
                     // not connected
-                    @SuppressWarnings("removal")
-                    SecurityManager sm = System.getSecurityManager();
                     InetAddress ia = isa.getAddress();
-                    if (sm != null) {
-                        if (ia.isMulticastAddress()) {
-                            sm.checkMulticast(ia);
-                        } else {
-                            sm.checkConnect(ia.getHostAddress(), isa.getPort());
-                        }
-                    }
                     if (ia.isLinkLocalAddress())
                         isa = IPAddressUtil.toScopedAddress(isa);
                     if (isa.getPort() == 0)
@@ -926,7 +823,7 @@ class DatagramChannelImpl
      * @throws IllegalBlockingModeException if the channel is non-blocking
      */
     void blockingSend(DatagramPacket p) throws IOException {
-        Objects.requireNonNull(p);
+        assert Thread.holdsLock(p);
 
         writeLock.lock();
         try {
@@ -934,38 +831,34 @@ class DatagramChannelImpl
             if (!isBlocking())
                 throw new IllegalBlockingModeException();
 
-            ByteBuffer src = null;
+            int len = p.getLength();
+            ByteBuffer src = Util.getTemporaryDirectBuffer(len);
             try {
+                // copy bytes to temporary direct buffer
+                src.put(p.getData(), p.getOffset(), len);
+                src.flip();
+
+                // target address
                 InetSocketAddress target;
-                synchronized (p) {
-                    int len = p.getLength();
-                    src = Util.getTemporaryDirectBuffer(len);
-
-                    // copy bytes to temporary direct buffer
-                    src.put(p.getData(), p.getOffset(), len);
-                    src.flip();
-
-                    // target address
-                    if (p.getAddress() == null) {
-                        InetSocketAddress remote = remoteAddress();
-                        if (remote == null) {
-                            throw new IllegalArgumentException("Address not set");
-                        }
-                        // set address/port to be compatible with long standing behavior
-                        p.setAddress(remote.getAddress());
-                        p.setPort(remote.getPort());
-                        target = remote;
-                    } else {
-                        target = (InetSocketAddress) p.getSocketAddress();
+                if (p.getAddress() == null) {
+                    InetSocketAddress remote = remoteAddress();
+                    if (remote == null) {
+                        throw new IllegalArgumentException("Address not set");
                     }
+                    // set address/port to be compatible with long-standing behavior
+                    p.setAddress(remote.getAddress());
+                    p.setPort(remote.getPort());
+                    target = remote;
+                } else {
+                    target = (InetSocketAddress) p.getSocketAddress();
                 }
 
                 // send the datagram (does not block)
                 send(src, target);
-
             } finally {
-                if (src != null) Util.offerFirstTemporaryDirectBuffer(src);
+                Util.offerFirstTemporaryDirectBuffer(src);
             }
+
         } finally {
             writeLock.unlock();
         }
@@ -1344,10 +1237,6 @@ class DatagramChannelImpl
         } else {
             isa = Net.checkAddress(local, family);
         }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkListen(isa.getPort());
 
         Net.bind(family, fd, isa.getAddress(), isa.getPort());
         localAddress = Net.localAddress(fd);
@@ -1373,17 +1262,6 @@ class DatagramChannelImpl
      */
     DatagramChannel connect(SocketAddress sa, boolean check) throws IOException {
         InetSocketAddress isa = Net.checkAddress(sa, family);
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            InetAddress ia = isa.getAddress();
-            if (ia.isMulticastAddress()) {
-                sm.checkMulticast(ia);
-            } else {
-                sm.checkConnect(ia.getHostAddress(), isa.getPort());
-                sm.checkAccept(ia.getHostAddress(), isa.getPort());
-            }
-        }
 
         readLock.lock();
         try {
@@ -1589,17 +1467,13 @@ class DatagramChannelImpl
     /**
      * Defines static methods to access AbstractSelectableChannel non-public members.
      */
-    @SuppressWarnings("removal")
     private static class AbstractSelectableChannels {
         private static final Method FOREACH;
         static {
             try {
-                PrivilegedExceptionAction<Method> pae = () -> {
-                    Method m = AbstractSelectableChannel.class.getDeclaredMethod("forEach", Consumer.class);
-                    m.setAccessible(true);
-                    return m;
-                };
-                FOREACH = AccessController.doPrivileged(pae);
+                Method m = AbstractSelectableChannel.class.getDeclaredMethod("forEach", Consumer.class);
+                m.setAccessible(true);
+                FOREACH = m;
             } catch (Exception e) {
                 throw new InternalError(e);
             }
@@ -1645,11 +1519,6 @@ class DatagramChannelImpl
             if (source.getClass() != group.getClass())
                 throw new IllegalArgumentException("Source address is different type to group");
         }
-
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkMulticast(group);
 
         synchronized (stateLock) {
             ensureOpen();
@@ -2035,8 +1904,7 @@ class DatagramChannelImpl
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             } finally {
-                // decrement socket count and release memory
-                ResourceManager.afterUdpClose();
+                // release memory
                 NativeSocketAddress.freeAll(sockAddrs);
             }
         };
@@ -2051,10 +1919,7 @@ class DatagramChannelImpl
         private static final VarHandle BUF_LENGTH;
         static {
             try {
-                PrivilegedExceptionAction<MethodHandles.Lookup> pa = () ->
-                    MethodHandles.privateLookupIn(DatagramPacket.class, MethodHandles.lookup());
-                @SuppressWarnings("removal")
-                MethodHandles.Lookup l = AccessController.doPrivileged(pa);
+                MethodHandles.Lookup l = MethodHandles.privateLookupIn(DatagramPacket.class, MethodHandles.lookup());
                 LENGTH = l.findVarHandle(DatagramPacket.class, "length", int.class);
                 BUF_LENGTH = l.findVarHandle(DatagramPacket.class, "bufLength", int.class);
             } catch (Exception e) {

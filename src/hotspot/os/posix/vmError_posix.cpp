@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "os_posix.hpp"
@@ -84,8 +83,8 @@ static void crash_handler(int sig, siginfo_t* info, void* context) {
 
   // Needed because asserts may happen in error handling too.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if ((sig == SIGSEGV || sig == SIGBUS) && info != nullptr && info->si_addr == g_assert_poison) {
-    if (handle_assert_poison_fault(context, info->si_addr)) {
+  if (VMError::was_assert_poison_crash(info)) {
+    if (handle_assert_poison_fault(context)) {
       return;
     }
   }
@@ -126,4 +125,15 @@ void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
     }
   }
 #endif
+}
+
+bool VMError::was_assert_poison_crash(const void* siginfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (siginfo == nullptr) {
+    return false;
+  }
+  const siginfo_t* const si = (siginfo_t*)siginfo;
+  return (si->si_signo == SIGSEGV || si->si_signo == SIGBUS) && si->si_addr == g_assert_poison_read_only;
+#endif
+  return false;
 }

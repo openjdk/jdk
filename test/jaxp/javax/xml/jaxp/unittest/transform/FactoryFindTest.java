@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,18 @@
 
 package transform;
 
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
-
 import java.net.URL;
 import java.net.URLClassLoader;
-
 import javax.xml.transform.TransformerFactory;
-
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.FactoryFindTest
  * @run testng/othervm transform.FactoryFindTest
  * @summary Test creating TransformerFactory with ContextClassLoader.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class FactoryFindTest {
 
     boolean myClassLoaderUsed = false;
@@ -51,11 +44,11 @@ public class FactoryFindTest {
         TransformerFactory factory = TransformerFactory.newInstance();
         Assert.assertTrue(factory.getClass().getClassLoader() == null);
 
-        runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(null));
+        Thread.currentThread().setContextClassLoader(null);
         factory = TransformerFactory.newInstance();
         Assert.assertTrue(factory.getClass().getClassLoader() == null);
 
-        runWithAllPerm(() -> Thread.currentThread().setContextClassLoader(new MyClassLoader()));
+        Thread.currentThread().setContextClassLoader(new MyClassLoader());
         factory = TransformerFactory.newInstance();
         if (System.getSecurityManager() == null)
             Assert.assertTrue(myClassLoaderUsed);

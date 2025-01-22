@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,10 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.lang.ref.WeakReference;
-import java.security.*;
+import java.security.KeyStore;
 import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
-import sun.security.action.*;
 import sun.security.util.FilePaths;
 import sun.security.validator.TrustStoreUtil;
 
@@ -75,7 +74,7 @@ final class TrustStoreManager {
     private static final class TrustStoreDescriptor {
         private static final String fileSep = File.separator;
         private static final String defaultStorePath =
-                GetPropertyAction.privilegedGetProperty("java.home") +
+                System.getProperty("java.home") +
                 fileSep + "lib" + fileSep + "security";
         private static final String defaultStore = FilePaths.cacerts();
         private static final String jsseDefaultStore =
@@ -122,57 +121,50 @@ final class TrustStoreManager {
          * Create an instance of TrustStoreDescriptor for the default
          * trusted KeyStore.
          */
-        @SuppressWarnings({"removal","Convert2Lambda"})
+        @SuppressWarnings("Convert2Lambda")
         static TrustStoreDescriptor createInstance() {
-             return AccessController.doPrivileged(
-                    new PrivilegedAction<TrustStoreDescriptor>() {
+            // Get the system properties for trust store.
+            String storePropName = System.getProperty(
+                    "javax.net.ssl.trustStore", jsseDefaultStore);
+            String storePropType = System.getProperty(
+                    "javax.net.ssl.trustStoreType",
+                    KeyStore.getDefaultType());
+            String storePropProvider = System.getProperty(
+                    "javax.net.ssl.trustStoreProvider", "");
+            String storePropPassword = System.getProperty(
+                    "javax.net.ssl.trustStorePassword", "");
 
-                @Override
-                public TrustStoreDescriptor run() {
-                    // Get the system properties for trust store.
-                    String storePropName = System.getProperty(
-                            "javax.net.ssl.trustStore", jsseDefaultStore);
-                    String storePropType = System.getProperty(
-                            "javax.net.ssl.trustStoreType",
-                            KeyStore.getDefaultType());
-                    String storePropProvider = System.getProperty(
-                            "javax.net.ssl.trustStoreProvider", "");
-                    String storePropPassword = System.getProperty(
-                            "javax.net.ssl.trustStorePassword", "");
+            String temporaryName = "";
+            File temporaryFile = null;
+            long temporaryTime = 0L;
+            if (!"NONE".equals(storePropName)) {
+                String[] fileNames =
+                        new String[] {storePropName, defaultStore};
+                for (String fileName : fileNames) {
+                    File f = new File(fileName);
+                    if (f.isFile() && f.canRead()) {
+                        temporaryName = fileName;
+                        temporaryFile = f;
+                        temporaryTime = f.lastModified();
 
-                    String temporaryName = "";
-                    File temporaryFile = null;
-                    long temporaryTime = 0L;
-                    if (!"NONE".equals(storePropName)) {
-                        String[] fileNames =
-                                new String[] {storePropName, defaultStore};
-                        for (String fileName : fileNames) {
-                            File f = new File(fileName);
-                            if (f.isFile() && f.canRead()) {
-                                temporaryName = fileName;
-                                temporaryFile = f;
-                                temporaryTime = f.lastModified();
-
-                                break;
-                            }
-
-                            // Not break, the file is inaccessible.
-                            if (SSLLogger.isOn &&
-                                    SSLLogger.isOn("trustmanager")) {
-                                SSLLogger.fine(
-                                        "Inaccessible trust store: " +
-                                        fileName);
-                            }
-                        }
-                    } else {
-                        temporaryName = storePropName;
+                        break;
                     }
 
-                    return new TrustStoreDescriptor(
-                            temporaryName, storePropType, storePropProvider,
-                            storePropPassword, temporaryFile, temporaryTime);
+                    // Not break, the file is inaccessible.
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("trustmanager")) {
+                        SSLLogger.fine(
+                                "Inaccessible trust store: " +
+                                fileName);
+                    }
                 }
-            });
+            } else {
+                temporaryName = storePropName;
+            }
+
+            return new TrustStoreDescriptor(
+                    temporaryName, storePropType, storePropProvider,
+                    storePropPassword, temporaryFile, temporaryTime);
         }
 
         @Override
@@ -384,8 +376,8 @@ final class TrustStoreManager {
             }
 
             if (!"NONE".equals(descriptor.storeName)) {
-                try (@SuppressWarnings("removal") FileInputStream fis = AccessController.doPrivileged(
-                        new OpenFileInputStreamAction(descriptor.storeFile))) {
+                try (FileInputStream fis =
+                        new FileInputStream(descriptor.storeFile)) {
                     ks.load(fis, password);
                 } catch (FileNotFoundException fnfe) {
                     // No file available, no KeyStore available.

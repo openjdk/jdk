@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -985,11 +985,8 @@ public final class Arrays {
      * circular dependencies. To be removed in a future release.
      */
     static final class LegacyMergeSort {
-        @SuppressWarnings("removal")
         private static final boolean userRequested =
-            java.security.AccessController.doPrivileged(
-                new sun.security.action.GetBooleanAction(
-                    "java.util.Arrays.useLegacyMergeSort")).booleanValue();
+                Boolean.getBoolean("java.util.Arrays.useLegacyMergeSort");
     }
 
     /**
@@ -4192,6 +4189,7 @@ public final class Arrays {
     {
         @java.io.Serial
         private static final long serialVersionUID = -2764017481108945198L;
+        /** @serial */
         @SuppressWarnings("serial") // Conditionally serializable
         private final E[] a;
 

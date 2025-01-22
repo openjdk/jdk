@@ -25,8 +25,6 @@
 
 /**
  * Provides the classes and interfaces for the security framework.
- * This includes classes that implement an easily configurable,
- * fine-grained access control security architecture.
  * This package also supports
  * the generation and storage of cryptographic public key pairs,
  * as well as a number of exportable cryptographic operations
@@ -66,12 +64,6 @@
  *
  *   <li> {@extLink security_guide_impl_provider
  *     How to Implement a Provider in the Java Cryptography Architecture}</li>
- *
- *   <li> {@extLink security_guide_default_policy
- *     Default Policy Implementation and Policy File Syntax}</li>
- *
- *   <li> {@extLink security_guide_permissions
- *     Permissions in the Java Development Kit (JDK)}</li>
  *
  *   <li> {@extLink security_guide_tools
  *     Summary of Tools for Java Platform Security}

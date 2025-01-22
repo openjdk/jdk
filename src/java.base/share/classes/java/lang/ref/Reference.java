@@ -330,11 +330,6 @@ public abstract sealed class Reference<T>
             public void runFinalization() {
                 Finalizer.runFinalization();
             }
-
-            @Override
-            public <T> ReferenceQueue<T> newNativeReferenceQueue() {
-                return new NativeReferenceQueue<T>();
-            }
         });
     }
 

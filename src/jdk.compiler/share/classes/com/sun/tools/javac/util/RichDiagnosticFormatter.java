@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -652,7 +652,6 @@ public class RichDiagnosticFormatter extends
         /** set of enabled rich formatter's features */
         protected java.util.EnumSet<RichFormatterFeature> features;
 
-        @SuppressWarnings("fallthrough")
         public RichConfiguration(Options options, AbstractDiagnosticFormatter formatter) {
             super(formatter.getConfiguration());
             features = formatter.isRaw() ? EnumSet.noneOf(RichFormatterFeature.class) :

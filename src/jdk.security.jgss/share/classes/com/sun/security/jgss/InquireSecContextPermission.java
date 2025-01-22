@@ -28,12 +28,13 @@ package com.sun.security.jgss;
 import java.security.BasicPermission;
 
 /**
- * This class is used to protect various attributes of an established
- * GSS security context that can be accessed using the
- * {@link com.sun.security.jgss.ExtendedGSSContext#inquireSecContext}
- * method.
+ * This class is for GSS security context permissions.
  *
  * <p>The target name is the {@link InquireType} allowed.
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.7
  */

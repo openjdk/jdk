@@ -22,8 +22,6 @@
  */
 
 import java.nio.file.Path;
-import java.io.File;
-import java.util.Map;
 import java.lang.invoke.MethodHandles;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.FileAssociations;
@@ -109,6 +107,6 @@ public class AddLShortcutTest {
         packageTest.run();
     }
 
-    private final static Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
+    private static final Path GOLDEN_ICON = TKit.TEST_SRC_ROOT.resolve(Path.of(
             "resources", "icon" + TKit.ICON_SUFFIX));
 }

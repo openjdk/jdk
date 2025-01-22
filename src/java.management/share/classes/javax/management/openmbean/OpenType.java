@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
 
 package javax.management.openmbean;
 
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -193,14 +190,11 @@ public abstract class OpenType<T> implements Serializable {
         this.isArray     = isArray;
     }
 
-    @SuppressWarnings("removal")
     private void checkClassNameOverride() throws SecurityException {
         if (this.getClass().getClassLoader() == null)
             return;  // We trust bootstrap classes.
         if (overridesGetClassName(this.getClass())) {
-            final GetPropertyAction getExtendOpenTypes =
-                new GetPropertyAction("jmx.extend.open.types");
-            if (AccessController.doPrivileged(getExtendOpenTypes) == null) {
+            if (System.getProperty("jmx.extend.open.types") == null) {
                 throw new SecurityException("Cannot override getClassName() " +
                         "unless -Djmx.extend.open.types");
             }
@@ -209,16 +203,11 @@ public abstract class OpenType<T> implements Serializable {
 
     @SuppressWarnings("removal")
     private static boolean overridesGetClassName(final Class<?> c) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-            public Boolean run() {
-                try {
-                    return (c.getMethod("getClassName").getDeclaringClass() !=
-                            OpenType.class);
-                } catch (Exception e) {
-                    return true;  // fail safe
-                }
-            }
-        });
+        try {
+            return (c.getMethod("getClassName").getDeclaringClass() != OpenType.class);
+        } catch (Exception e) {
+            return true;  // fail safe
+        }
     }
 
     private static String validClassName(String className) throws OpenDataException {

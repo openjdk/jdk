@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,6 @@
 
 package javax.security.auth.login;
 
-import javax.security.auth.AuthPermission;
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
@@ -190,19 +184,6 @@ public abstract class Configuration {
 
     private static Configuration configuration;
 
-    @SuppressWarnings("removal")
-    private final java.security.AccessControlContext acc =
-            java.security.AccessController.getContext();
-
-    private static void checkPermission(String type) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new AuthPermission
-                                ("createLoginConfiguration." + type));
-        }
-    }
-
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
      * implicit.)
@@ -217,69 +198,31 @@ public abstract class Configuration {
      *          then that object is returned.  Otherwise, a default
      *          Configuration object is returned.
      *
-     * @exception SecurityException if the caller does not have permission
-     *                          to retrieve the Configuration.
-     *
      * @see #setConfiguration
      */
-    @SuppressWarnings("removal")
     public static Configuration getConfiguration() {
-
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new AuthPermission("getLoginConfiguration"));
 
         synchronized (Configuration.class) {
             if (configuration == null) {
-                String config_class = null;
-                config_class = AccessController.doPrivileged
-                    (new PrivilegedAction<>() {
-                    public String run() {
-                        return java.security.Security.getProperty
-                                    ("login.configuration.provider");
-                    }
-                });
+                String config_class = Security.getProperty
+                            ("login.configuration.provider");
                 if (config_class == null) {
                     config_class = "sun.security.provider.ConfigFile";
                 }
 
                 try {
-                    final String finalClass = config_class;
-                    Configuration untrustedImpl = AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<>() {
-                                public Configuration run() throws ClassNotFoundException,
-                                        InstantiationException,
-                                        IllegalAccessException {
-                                    Class<? extends Configuration> implClass = Class.forName(
-                                            finalClass, false,
-                                            Thread.currentThread().getContextClassLoader()
-                                    ).asSubclass(Configuration.class);
-                                    @SuppressWarnings("deprecation")
-                                    Configuration result = implClass.newInstance();
-                                    return result;
-                                }
-                            });
-                    AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<>() {
-                                public Void run() {
-                                    setConfiguration(untrustedImpl);
-                                    return null;
-                                }
-                            }, Objects.requireNonNull(untrustedImpl.acc)
-                    );
-                } catch (PrivilegedActionException e) {
-                    Exception ee = e.getException();
-                    if (ee instanceof InstantiationException) {
-                        throw new SecurityException
-                                    ("Configuration error:" +
-                                     ee.getCause().getMessage() +
-                                     "\n", ee.getCause());
-                    } else {
-                        throw new SecurityException
-                                    ("Configuration error: " +
-                                     ee.toString() +
-                                     "\n", ee);
-                    }
+                    Class<? extends Configuration> implClass = Class.forName(
+                            config_class, false,
+                            Thread.currentThread().getContextClassLoader()
+                    ).asSubclass(Configuration.class);
+                    @SuppressWarnings("deprecation")
+                    Configuration result = implClass.newInstance();
+                    setConfiguration(result);
+                } catch (ReflectiveOperationException e) {
+                    throw new SecurityException
+                                ("Configuration error: " +
+                                 e.toString() +
+                                 "\n", e);
                 }
             }
             return configuration;
@@ -291,16 +234,9 @@ public abstract class Configuration {
      *
      * @param configuration the new {@code Configuration}
      *
-     * @exception SecurityException if the current thread does not have
-     *                  Permission to set the {@code Configuration}.
-     *
      * @see #getConfiguration
      */
     public static void setConfiguration(Configuration configuration) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new AuthPermission("setLoginConfiguration"));
         Configuration.configuration = configuration;
     }
 
@@ -343,9 +279,6 @@ public abstract class Configuration {
      *
      * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @throws SecurityException if the caller does not have permission
-     *         to get a {@code Configuration} instance for the specified type
-     *
      * @see Provider
      *
      * @since 1.6
@@ -355,7 +288,6 @@ public abstract class Configuration {
                 throws NoSuchAlgorithmException {
 
         Objects.requireNonNull(type, "null type name");
-        checkPermission(type);
         try {
             GetInstance.Instance instance = GetInstance.getInstance
                                                         ("Configuration",
@@ -408,9 +340,6 @@ public abstract class Configuration {
      *
      * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @throws SecurityException if the caller does not have permission
-     *         to get a {@code Configuration} instance for the specified type
-     *
      * @see Provider
      * @since 1.6
      */
@@ -424,7 +353,6 @@ public abstract class Configuration {
             throw new IllegalArgumentException("missing provider");
         }
 
-        checkPermission(type);
         try {
             GetInstance.Instance instance = GetInstance.getInstance
                                                         ("Configuration",
@@ -472,9 +400,6 @@ public abstract class Configuration {
      *
      * @throws NullPointerException if {@code type} is {@code null}
      *
-     * @throws SecurityException if the caller does not have permission
-     *         to get a {@code Configuration} instance for the specified type
-     *
      * @see Provider
      * @since 1.6
      */
@@ -488,7 +413,6 @@ public abstract class Configuration {
             throw new IllegalArgumentException("missing provider");
         }
 
-        checkPermission(type);
         try {
             GetInstance.Instance instance = GetInstance.getInstance
                                                         ("Configuration",
@@ -583,9 +507,6 @@ public abstract class Configuration {
      * <p> The default implementation of this method does nothing.
      * This method should be overridden if a refresh operation is supported
      * by the implementation.
-     *
-     * @exception SecurityException if the caller does not have permission
-     *                          to refresh its Configuration.
      */
     public void refresh() { }
 

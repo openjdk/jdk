@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.util.FileUtils;
 
 
 /**
@@ -232,7 +233,7 @@ final class PathGroup {
             for (var entry: entries) {
                 Path srcFile = entry.getKey();
                 if (Files.isDirectory(srcFile)) {
-                    IOUtils.deleteRecursive(srcFile);
+                    FileUtils.deleteRecursive(srcFile);
                 }
             }
         }

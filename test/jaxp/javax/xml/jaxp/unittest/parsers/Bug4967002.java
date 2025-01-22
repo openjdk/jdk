@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 
@@ -41,14 +40,12 @@ import org.xml.sax.InputSource;
  * @test
  * @bug 4967002
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug4967002
  * @run testng/othervm parsers.Bug4967002
  * @summary Test DocumentBuilderFactory.newDocumentBuilder() throws ParserConfigurationException
  * when it uses the "http://java.sun.com/xml/jaxp/properties/schemaSource" property
  * and/or the "http://java.sun.com/xml/jaxp/properties/schemaLanguage" property
  * in conjunction with setting a Schema object.
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4967002 {
     String schemaSource = "<?xml version='1.0'?>\n" + "<xsd:schema xmlns:xsd='http://www.w3.org/2001/XMLSchema'>\n" + "  <xsd:element name='test101'>\n"
             + "    <xsd:complexType>\n" + "      <xsd:attribute name='attr'/>\n" + "      <xsd:attribute name='attr2' default='DEF'/>\n"

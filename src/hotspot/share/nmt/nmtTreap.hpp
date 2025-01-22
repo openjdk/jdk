@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <type_traits>
 
 // A Treap is a self-balanced binary tree where each node is equipped with a
 // priority. It adds the invariant that the priority of a parent P is strictly larger
@@ -228,10 +229,16 @@ public:
   : _allocator(),
     _root(nullptr),
     _prng_seed(_initial_seed),
-    _node_count(0) {}
+    _node_count(0) {
+    static_assert(std::is_trivially_destructible<K>::value, "must be");
+  }
 
   ~Treap() {
     this->remove_all();
+  }
+
+  int size() {
+    return _node_count;
   }
 
   void upsert(const K& k, const V& v) {
@@ -262,6 +269,7 @@ public:
     if (second_split.right != nullptr) {
       // The key k existed, we delete it.
       _node_count--;
+      second_split.right->_value.~V();
       _allocator.free(second_split.right);
     }
     // Merge together everything
@@ -279,6 +287,7 @@ public:
       if (head == nullptr) continue;
       to_delete.push(head->_left);
       to_delete.push(head->_right);
+      head->_value.~V();
       _allocator.free(head);
     }
     _root = nullptr;
@@ -302,6 +311,38 @@ public:
       }
     }
     return candidate;
+  }
+
+  TreapNode* closest_gt(const K& key) {
+    TreapNode* candidate = nullptr;
+    TreapNode* pos = _root;
+    while (pos != nullptr) {
+      int cmp_r = COMPARATOR::cmp(pos->key(), key);
+      if (cmp_r > 0) {
+        // Found a match, try to find a better one.
+        candidate = pos;
+        pos = pos->_left;
+      } else if (cmp_r <= 0) {
+        pos = pos->_right;
+      }
+    }
+    return candidate;
+  }
+
+  struct Range {
+    TreapNode* start;
+    TreapNode* end;
+    Range(TreapNode* start, TreapNode* end)
+    : start(start), end(end) {}
+  };
+
+  // Return the range [start, end)
+  // where start->key() <= addr < end->key().
+  // Failure to find the range leads to start and/or end being null.
+  Range find_enclosing_range(K addr) {
+    TreapNode* start = closest_leq(addr);
+    TreapNode* end = closest_gt(addr);
+    return Range(start, end);
   }
 
   // Visit all TreapNodes in ascending key order.
