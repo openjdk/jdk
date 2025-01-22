@@ -46,11 +46,9 @@ final class PackageFile {
     }
 
     void save(ApplicationLayout appLayout) throws IOException {
-        Path dstDir = appLayout.appDirectory();
-        if (dstDir != null) {
-            Files.createDirectories(dstDir);
-            Files.writeString(dstDir.resolve(FILENAME), packageName);
-        }
+        final var dstDir = appLayout.appDirectory();
+        Files.createDirectories(dstDir);
+        Files.writeString(dstDir.resolve(FILENAME), packageName);
     }
 
     private final String packageName;
