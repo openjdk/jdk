@@ -724,7 +724,7 @@ address generate_ghash_processBlocks() {
   // - vLowerH:  Lower half of the subkey H (A0).
   // - vHigherH: Higher half of the subkey H (A1).
   // - vConstC2: Constant used for reduction (for final processing).
-  // 
+  //
   // References:
   // Shay Gueron, Michael E. Kounavis.
   // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
