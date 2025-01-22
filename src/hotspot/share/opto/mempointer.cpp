@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/mempointer.hpp"
 #include "opto/addnode.hpp"
 #include "utilities/resourceHash.hpp"
