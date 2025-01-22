@@ -87,7 +87,7 @@ class HttpResponseLimitingTest {
     /**
      * A header value larger than {@link #RESPONSE_BODY} to verify that {@code limiting()} doesn't affect header parsing.
      */
-    private static final String RESPONSE_HEADER_VALUE = "!".repeat(RESPONSE_BODY.length);
+    private static final String RESPONSE_HEADER_VALUE = "!".repeat(RESPONSE_BODY.length + 1);
 
     private static final ServerClientPair HTTP1 = ServerClientPair.of(HttpClient.Version.HTTP_1_1, false);
 
