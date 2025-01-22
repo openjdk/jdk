@@ -727,10 +727,9 @@ address generate_ghash_processBlocks() {
   // - vConstC2: Constant used for reduction (for final processing).
   // 
   // References:
-  // Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich, Martin Dixon. 
-  // "Optimized Galois-Counter-Mode Implementation on Intel® Architecture Processor"
+  // Shay Gueron, Michael E. Kounavis. 
+  // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
   // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
-  //
   //
   Label loop;
   __ bind(loop);
