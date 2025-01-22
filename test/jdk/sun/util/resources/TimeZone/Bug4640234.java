@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4640234 4946057 4938151 4873691 5023181
+ * @bug 4640234 4946057 4938151 4873691 5023181 8347841
  * @summary Verifies the translation of time zone names, this test will catch
  *          presence of country name for english and selected locales for all
  *          ISO country codes.
@@ -42,6 +42,8 @@
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 
+import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Enumeration;
@@ -49,6 +51,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 
 import sun.util.resources.LocaleData;
 
@@ -83,7 +86,9 @@ public class Bug4640234  {
             StringBuffer errors = new StringBuffer("");
             StringBuffer warnings = new StringBuffer("");
 
-            String[] timezones = TimeZone.getAvailableIDs();
+            String[] timezones = Arrays.stream(TimeZone.getAvailableIDs())
+                    .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                    .toArray(String[]::new);
             String[] countries = locEn.getISOCountries();
             String[] languages = locEn.getISOLanguages();
 
