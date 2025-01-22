@@ -39,18 +39,10 @@ class Address {
   intptr_t _disp;         // Displacement.
 
  public:
-  Address(Register b, Register i, address d = 0)
-    : _base(b), _index(i), _disp((intptr_t)d) {
-    assert(i == noreg || d == 0, "can't have both");
-  }
-
-  Address(Register b, address d = 0)
-    : _base(b), _index(noreg), _disp((intptr_t)d) {}
-
   Address(Register b, ByteSize d)
     : _base(b), _index(noreg), _disp((intptr_t)d) {}
 
-  Address(Register b, intptr_t d)
+  Address(Register b, intptr_t d = 0)
     : _base(b), _index(noreg), _disp(d) {}
 
   Address(Register b, RegisterOrConstant roc)

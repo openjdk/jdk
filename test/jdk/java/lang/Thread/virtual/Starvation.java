@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @requires vm.continuations
  * @library /test/lib
  * @bug 8345294
  * @run main/othervm --enable-native-access=ALL-UNNAMED Starvation 100000

@@ -71,6 +71,33 @@ public class CompressedClassPointersEncodingScheme {
         output.shouldContain("Narrow klass base: " + expectedEncodingBaseString + ", Narrow klass shift: " + expectedEncodingShift);
     }
 
+    private static void testFailure(String forceAddressString) throws IOException {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-Xshare:off", // to make CompressedClassSpaceBaseAddress work
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:CompressedClassSpaceBaseAddress=" + forceAddressString,
+                "-Xmx128m",
+                "-Xlog:metaspace*",
+                "-version");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        output.reportDiagnosticSummary();
+
+        // We ignore cases where we were not able to map at the force address
+        if (!output.contains("Successfully forced class space address to " + forceAddressString)) {
+            throw new SkippedException("Skipping because we cannot force ccs to " + forceAddressString);
+        }
+
+        if (Platform.isAArch64()) {
+            output.shouldHaveExitValue(1);
+            output.shouldContain("Error occurred during initialization of VM");
+            output.shouldContain("CompressedClassSpaceBaseAddress=" + forceAddressString +
+                                 " given with shift 0, cannot be used to encode class pointers");
+        } else {
+            output.shouldHaveExitValue(0);
+        }
+    }
+
     final static long K = 1024;
     final static long M = K * 1024;
     final static long G = M * 1024;
@@ -123,5 +150,9 @@ public class CompressedClassPointersEncodingScheme {
             expectedShift = 10;
             test(forceAddress, true, ccsSize, forceAddress, expectedShift);
         }
+
+        // Test failure for -XX:CompressedClassBaseAddress and -Xshare:off
+        testFailure("0x0000040001000000");
+
     }
 }

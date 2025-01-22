@@ -130,8 +130,8 @@ public final class StringSupport {
                                  final long toOffset) {
         final long length = toOffset - fromOffset;
         segment.checkBounds(fromOffset, length);
-        if (length == 0) {
-            // The state has to be checked explicitly for zero-length segments
+        if (length < Byte.BYTES) {
+            // There can be no null terminator present
             segment.scope.checkValidState();
             throw nullNotFound(segment, fromOffset, toOffset);
         }
@@ -164,7 +164,8 @@ public final class StringSupport {
                                   final long toOffset) {
         final long length = toOffset - fromOffset;
         segment.checkBounds(fromOffset, length);
-        if (length == 0) {
+        if (length < Short.BYTES) {
+            // There can be no null terminator present
             segment.scope.checkValidState();
             throw nullNotFound(segment, fromOffset, toOffset);
         }
@@ -199,19 +200,23 @@ public final class StringSupport {
                                 final long toOffset) {
         final long length = toOffset - fromOffset;
         segment.checkBounds(fromOffset, length);
-        if (length == 0) {
+        if (length < Integer.BYTES) {
+            // There can be no null terminator present
             segment.scope.checkValidState();
             throw nullNotFound(segment, fromOffset, toOffset);
         }
-        final long longBytes = length & LONG_MASK;
-        final long longLimit = fromOffset + longBytes;
         long offset = fromOffset;
-        for (; offset < longLimit; offset += Long.BYTES) {
-            long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
-            if (mightContainZeroInt(val)) {
-                for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
-                    if (SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
-                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+        // For quad byte strings, it does not pay off to use long scanning on x64
+        if (!Architecture.isX64()) {
+            final long longBytes = length & LONG_MASK;
+            final long longLimit = fromOffset + longBytes;
+            for (; offset < longLimit; offset += Long.BYTES) {
+                long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
+                if (mightContainZeroInt(val)) {
+                    for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
+                        if (SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
+                            return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                        }
                     }
                 }
             }

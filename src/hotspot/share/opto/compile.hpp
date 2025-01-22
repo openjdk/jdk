@@ -946,11 +946,9 @@ private:
   Node_Notes* default_node_notes() const        { return _default_node_notes; }
   void    set_default_node_notes(Node_Notes* n) { _default_node_notes = n; }
 
-  Node_Notes*       node_notes_at(int idx) {
-    return locate_node_notes(_node_note_array, idx, false);
-  }
-  inline bool   set_node_notes_at(int idx, Node_Notes* value);
+  Node_Notes*       node_notes_at(int idx);
 
+  inline bool   set_node_notes_at(int idx, Node_Notes* value);
   // Copy notes from source to dest, if they exist.
   // Overwrite dest only if source provides something.
   // Return true if information was moved.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "c1/c1_CodeStubs.hpp"
 #include "c1/c1_Defs.hpp"
@@ -147,7 +146,7 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
     const int arg1_sp_offset = 0;
     const int arg2_sp_offset = 1;
     const int arg3_sp_offset = 2;
-    addi(sp, sp, -(arg_num + 1) * wordSize);
+    subi(sp, sp, (arg_num + 1) * wordSize);
     sd(arg1, Address(sp, arg1_sp_offset * wordSize));
     sd(arg2, Address(sp, arg2_sp_offset * wordSize));
     sd(arg3, Address(sp, arg3_sp_offset * wordSize));
@@ -301,14 +300,14 @@ static OopMap* save_live_registers(StubAssembler* sasm,
 
   if (save_fpu_registers) {
     // float registers
-    __ addi(sp, sp, -(FrameMap::nof_fpu_regs * wordSize));
+    __ subi(sp, sp, FrameMap::nof_fpu_regs * wordSize);
     for (int i = 0; i < FrameMap::nof_fpu_regs; i++) {
       __ fsd(as_FloatRegister(i), Address(sp, i * wordSize));
     }
   } else {
     // we define reg_save_layout = 62 as the fixed frame size,
     // we should also sub 32 * wordSize to sp when save_fpu_registers == false
-    __ addi(sp, sp, -32 * wordSize);
+    __ subi(sp, sp, 32 * wordSize);
   }
 
   return generate_oop_map(sasm, save_fpu_registers);
@@ -543,7 +542,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // Save our return address because
   // exception_handler_for_return_address will destroy it.  We also
   // save exception_oop
-  __ addi(sp, sp, -2 * wordSize);
+  __ subi(sp, sp, 2 * wordSize);
   __ sd(exception_oop, Address(sp, wordSize));
   __ sd(ra, Address(sp));
 
@@ -883,7 +882,13 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ ld(x10, Address(sp, (sup_k_off) * VMRegImpl::stack_slot_size)); // super klass
 
         Label miss;
-        __ check_klass_subtype_slow_path(x14, x10, x12, x15, nullptr, &miss);
+        __ check_klass_subtype_slow_path(x14,     /*sub_klass*/
+                                         x10,     /*super_klass*/
+                                         x12,     /*tmp1_reg*/
+                                         x15,     /*tmp2_reg*/
+                                         nullptr, /*L_success*/
+                                         &miss    /*L_failure*/);
+        // Need extras for table lookup: x7, x11, x13
 
         // fallthrough on success:
         __ mv(t0, 1);

@@ -33,6 +33,7 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.Note;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
@@ -126,8 +127,9 @@ public class MandatoryWarningHandler {
     /**
      * Report a mandatory warning.
      */
-    public void report(DiagnosticPosition pos, Warning warnKey) {
+    public void report(DiagnosticPosition pos, LintWarning warnKey) {
         JavaFileObject currentSource = log.currentSourceFile();
+        Assert.check(warnKey.getLintCategory() == lintCategory);
 
         if (verbose) {
             if (sourcesWithReportedWarnings == null)
@@ -259,9 +261,9 @@ public class MandatoryWarningHandler {
     private void logMandatoryWarning(DiagnosticPosition pos, Warning warnKey) {
         // Note: the following log methods are safe if lintCategory is null.
         if (enforceMandatory)
-            log.mandatoryWarning(lintCategory, pos, warnKey);
+            log.mandatoryWarning(pos, warnKey);
         else
-            log.warning(lintCategory, pos, warnKey);
+            log.warning(pos, warnKey);
     }
 
     /**

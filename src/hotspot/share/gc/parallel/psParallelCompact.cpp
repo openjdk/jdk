@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -70,6 +69,7 @@
 #include "gc/shared/workerUtils.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -240,11 +240,14 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t raw_bytes = count * element_size;
   const size_t page_sz = os::page_size_for_region_aligned(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
-  _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
+  const size_t rs_align = MAX2(page_sz, granularity);
 
-  const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
-    MAX2(page_sz, granularity);
-  ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
+  _reserved_byte_size = align_up(raw_bytes, rs_align);
+
+  ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
+                                             rs_align,
+                                             page_sz);
+
   os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
                        rs.size(), page_sz);
 
@@ -257,7 +260,10 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
     }
     delete vspace;
     // Release memory reserved in the space.
-    rs.release();
+    if (rs.is_reserved()) {
+      MemoryReserver::release(rs);
+      rs = {};
+    }
   }
 
   return nullptr;
@@ -577,16 +583,16 @@ bool PSParallelCompact::initialize_aux_data() {
 
   if (!_mark_bitmap.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB bitmaps for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB bitmaps for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _mark_bitmap.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
 
   if (!_summary_data.initialize(mr)) {
     vm_shutdown_during_initialization(
-      err_msg("Unable to allocate " SIZE_FORMAT "KB card tables for parallel "
-      "garbage collection for the requested " SIZE_FORMAT "KB heap.",
+      err_msg("Unable to allocate %zuKB card tables for parallel "
+      "garbage collection for the requested %zuKB heap.",
       _summary_data.reserved_byte_size()/K, mr.byte_size()/K));
     return false;
   }
@@ -1068,7 +1074,7 @@ bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
 
     if (UseAdaptiveSizePolicy) {
       log_debug(gc, ergo)("AdaptiveSizeStart: collection: %d ", heap->total_collections());
-      log_trace(gc, ergo)("old_gen_capacity: " SIZE_FORMAT " young_gen_capacity: " SIZE_FORMAT,
+      log_trace(gc, ergo)("old_gen_capacity: %zu young_gen_capacity: %zu",
                           old_gen->capacity_in_bytes(), young_gen->capacity_in_bytes());
 
       // Don't check if the size_policy is ready here.  Let
@@ -1681,7 +1687,7 @@ private:
 public:
   FillableRegionLogger() : _next_index(0), _enabled(log_develop_is_enabled(Trace, gc, compaction)), _total_regions(0) { }
   ~FillableRegionLogger() {
-    log.trace(SIZE_FORMAT " initially fillable regions", _total_regions);
+    log.trace("%zu initially fillable regions", _total_regions);
   }
 
   void print_line() {
@@ -1690,7 +1696,7 @@ public:
     }
     FormatBuffer<> line("Fillable: ");
     for (int i = 0; i < _next_index; i++) {
-      line.append(" " SIZE_FORMAT_W(7), _regions[i]);
+      line.append(" %7zu", _regions[i]);
     }
     log.trace("%s", line.buffer());
     _next_index = 0;
@@ -2137,13 +2143,9 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
   }
 
   if (src_region_ptr < top_region_ptr) {
-    // The next source region is in the current space.  Update src_region_idx
-    // and the source address to match src_region_ptr.
+    // Found the first non-empty region in the same space.
     src_region_idx = sd.region(src_region_ptr);
-    HeapWord* const src_region_addr = sd.region_to_addr(src_region_idx);
-    if (src_region_addr > closure.source()) {
-      closure.set_source(src_region_addr);
-    }
+    closure.set_source(sd.region_to_addr(src_region_idx));
     return src_region_idx;
   }
 
@@ -2167,13 +2169,10 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
       RegionData* cur = sd.region(cur_region);
       if (cur->live_obj_size() > 0) {
         HeapWord* region_start_addr = sd.region_to_addr(cur_region);
-        HeapWord* region_end_addr = region_start_addr + ParallelCompactData::RegionSize;
-        HeapWord* first_live_word = mark_bitmap()->find_obj_beg(region_start_addr, region_end_addr);
-        assert(first_live_word < region_end_addr, "inv");
 
         src_space_id = SpaceId(space_id);
         src_space_top = top;
-        closure.set_source(first_live_word);
+        closure.set_source(region_start_addr);
         return cur_region;
       }
     }

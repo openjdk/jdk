@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic;
@@ -165,6 +166,11 @@ public class Arguments {
         }
 
         @Override
+        public void initialize() {
+            options.initialize();
+        }
+
+        @Override
         public void addFile(Path p) {
             files.add(p);
         }
@@ -218,6 +224,11 @@ public class Arguments {
         @Override
         public Log getLog() {
             return Arguments.this.log;
+        }
+
+        @Override
+        public void initialize() {
+            options.initialize();
         }
     };
 
@@ -497,7 +508,7 @@ public class Arguments {
                     if (lintPaths) {
                         Path outDirParent = outDir.getParent();
                         if (outDirParent != null && Files.exists(outDirParent.resolve("module-info.class"))) {
-                            log.warning(LintCategory.PATH, Warnings.OutdirIsInExplodedModule(outDir));
+                            log.warning(LintWarnings.OutdirIsInExplodedModule(outDir));
                         }
                     }
                 }
@@ -571,10 +582,10 @@ public class Arguments {
             if (fm instanceof BaseFileManager baseFileManager) {
                 if (source.compareTo(Source.JDK8) <= 0) {
                     if (baseFileManager.isDefaultBootClassPath())
-                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoBootclasspath(source.name, releaseNote(source, targetString)));
+                        log.warning(LintWarnings.SourceNoBootclasspath(source.name, releaseNote(source, targetString)));
                 } else {
                     if (baseFileManager.isDefaultSystemModulesPath())
-                        log.warning(LintCategory.OPTIONS, Warnings.SourceNoSystemModulesPath(source.name, releaseNote(source, targetString)));
+                        log.warning(LintWarnings.SourceNoSystemModulesPath(source.name, releaseNote(source, targetString)));
                 }
             }
         }
@@ -584,14 +595,14 @@ public class Arguments {
         if (source.compareTo(Source.MIN) < 0) {
             log.error(Errors.OptionRemovedSource(source.name, Source.MIN.name));
         } else if (source == Source.MIN && lintOptions) {
-            log.warning(LintCategory.OPTIONS, Warnings.OptionObsoleteSource(source.name));
+            log.warning(LintWarnings.OptionObsoleteSource(source.name));
             obsoleteOptionFound = true;
         }
 
         if (target.compareTo(Target.MIN) < 0) {
             log.error(Errors.OptionRemovedTarget(target, Target.MIN));
         } else if (target == Target.MIN && lintOptions) {
-            log.warning(LintCategory.OPTIONS, Warnings.OptionObsoleteTarget(target));
+            log.warning(LintWarnings.OptionObsoleteTarget(target));
             obsoleteOptionFound = true;
         }
 
@@ -625,7 +636,7 @@ public class Arguments {
         }
 
         if (obsoleteOptionFound && lintOptions) {
-            log.warning(LintCategory.OPTIONS, Warnings.OptionObsoleteSuppression);
+            log.warning(LintWarnings.OptionObsoleteSuppression);
         }
 
         SourceVersion sv = Source.toSourceVersion(source);
@@ -636,7 +647,7 @@ public class Arguments {
         validateDefaultModuleForCreatedFiles(sv);
 
         if (lintOptions && options.isSet(Option.ADD_OPENS)) {
-            log.warning(LintCategory.OPTIONS, Warnings.AddopensIgnored);
+            log.warning(LintWarnings.AddopensIgnored);
         }
 
         return !errors && (log.nerrors == 0);

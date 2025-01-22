@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,7 @@
  * The class uses the ClassFile library to validate the contents of
  * the URLs and streams returned by the methods being tested.
  *
- * $ java \
- *      --enable-preview
- *      /path/to/CLTest.java
+ * $ java /path/to/CLTest.java
  */
 package p.q;
 
