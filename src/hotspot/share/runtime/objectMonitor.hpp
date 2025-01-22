@@ -378,6 +378,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   bool      enter_is_async_deflating();
   void      notify_contended_enter(JavaThread *current);
+  void      post_monitor_wait(JavaThread *current, jlong millis);
  public:
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);

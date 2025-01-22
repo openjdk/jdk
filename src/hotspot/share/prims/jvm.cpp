@@ -626,6 +626,7 @@ JVM_END
 
 JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
   Handle obj(THREAD, JNIHandles::resolve_non_null(handle));
+#if 0
   if (JvmtiExport::should_post_monitor_wait()) {
     JvmtiExport::post_monitor_wait(thread, obj(), ms);
 
@@ -635,6 +636,7 @@ JVM_ENTRY(void, JVM_MonitorWait(JNIEnv* env, jobject handle, jlong ms))
     // event handler cannot accidentally consume an unpark() meant for
     // the ParkEvent associated with this ObjectMonitor.
   }
+#endif
   ObjectSynchronizer::wait(obj, ms, CHECK);
 JVM_END
 
