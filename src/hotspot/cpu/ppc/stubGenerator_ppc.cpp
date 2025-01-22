@@ -1,7 +1,6 @@
 /*
-
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -640,12 +639,12 @@ class StubGenerator: public StubCodeGenerator {
 //      data:     R5_ARG3 (byte[] data)
 //      blocks:   R6_ARG4 (number of 16-byte blocks to process)
 //
-// The polynomials are processed in bit-reflected order for efficiency reasons. 
-// This optimization leverages the structure of the Galois field arithmetic 
+// The polynomials are processed in bit-reflected order for efficiency reasons.
+// This optimization leverages the structure of the Galois field arithmetic
 // to minimize the number of bit manipulations required during multiplication.
 // For an explanation of how this works, refer :
-// Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich, 
-// Martin Dixon. "Optimized Galois-Counter-Mode Implementation on Intel® 
+// Vinodh Gopal, Erdinc Ozturk, Wajdi Feghali, Jim Guilford, Gil Wolrich,
+// Martin Dixon. "Optimized Galois-Counter-Mode Implementation on Intel®
 // Architecture Processor"
 // http://web.archive.org/web/20130609111954/http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/communications-ia-galois-counter-mode-paper.pdf
 //
@@ -712,11 +711,11 @@ address generate_ghash_processBlocks() {
   #endif
   __ clrldi(blocks, blocks, 32);
   __ mtctr(blocks);
-  // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation. 
+  // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
   //
   // The Karatsuba method breaks the multiplication of two 128-bit numbers into smaller parts,
   // performing three 128-bit multiplications and combining the results efficiently.
-  // 
+  //
   // (C1:C0) = A1*B1, (D1:D0) = A0*B0, (E1:E0) = (A0+A1)(B0+B1)
   // (A1:A0)(B1:B0) = C1:(C0+C1+D1+E1):(D1+C0+D0+E0):D0
   //
@@ -727,7 +726,7 @@ address generate_ghash_processBlocks() {
   // - vConstC2: Constant used for reduction (for final processing).
   // 
   // References:
-  // Shay Gueron, Michael E. Kounavis. 
+  // Shay Gueron, Michael E. Kounavis.
   // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
   // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
   //
