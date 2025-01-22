@@ -135,7 +135,7 @@ class TestMemorySegmentUnalignedAddressImpl {
 
         // Add all tests to list
         // TODO add the real tests
-        tests.put("testIntLoop_iv_byte",                           () -> testIntLoop_iv_byte(sliceUnaligned(copy(a))));
+        tests.put("test",                           () -> test(sliceUnaligned(copy(a))));
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -188,7 +188,7 @@ class TestMemorySegmentUnalignedAddressImpl {
         }
     }
 
-    @Run(test = {"testIntLoop_iv_byte"})
+    @Run(test = {"test"})
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -203,17 +203,16 @@ class TestMemorySegmentUnalignedAddressImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
+                  IRNode.ADD_VI,        "> 0",
                   IRNode.STORE_VECTOR,  "> 0"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object testIntLoop_iv_byte(MemorySegment a) {
-        for (int i = 0; i < (int)a.byteSize(); i++) {
-            long adr = i;
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
+    static Object test(MemorySegment ms) {
+        for (long i = 0; i < ms.byteSize(); i += 4) {
+            int v = ms.get(ValueLayout.JAVA_INT_UNALIGNED, i);
+            ms.set(ValueLayout.JAVA_INT_UNALIGNED, i, (int)(v + 1));
         }
-        return new Object[]{ a };
+        return new Object[]{ ms };
     }
 }
