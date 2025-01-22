@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8341293
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
- * @requires vm.debug == true & vm.flagless & vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.EliminateAllocations
+ * @requires vm.debug == true & vm.compiler2.enabled
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesNestedPhiTests
  */
 public class AllocationMergesNestedPhiTests {
@@ -149,7 +149,10 @@ public class AllocationMergesNestedPhiTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1"}, phase = CompilePhase.ITER_GVN_AFTER_EA)
+    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1"},
+        phase = CompilePhase.ITER_GVN_AFTER_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testRematerialize_SingleObj_C2(boolean cond1,int x, int y) throws Exception { return testRematerialize_SingleObj(cond1, x, y); }
 
     @DontCompile
@@ -172,7 +175,10 @@ public class AllocationMergesNestedPhiTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1",  IRNode.SAFEPOINT_SCALAR_OBJECT, ">=2"}, phase = CompilePhase.ITER_GVN_AFTER_EA)
+    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1",  IRNode.SAFEPOINT_SCALAR_OBJECT, ">=2"},
+        phase = CompilePhase.ITER_GVN_AFTER_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testRematerialize_TryCatch_C2(boolean cond1, int n, int x, int y) { return testRematerialize_TryCatch(cond1, n, x, y); }
 
     @DontCompile
@@ -199,7 +205,10 @@ public class AllocationMergesNestedPhiTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=2"}, phase = CompilePhase.ITER_GVN_AFTER_EA)
+    @IR(counts = { IRNode.ALLOC, ">=2"},
+        phase = CompilePhase.ITER_GVN_AFTER_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testMerge_TryCatchFinally_C2(boolean cond1, int n, int x, int y) { return testMerge_TryCatchFinally(cond1, n, x, y); }
 
     @DontCompile
@@ -232,7 +241,10 @@ public class AllocationMergesNestedPhiTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1", IRNode.SAFEPOINT_SCALAR_OBJECT, ">=2"}, phase= CompilePhase.ITER_GVN_AFTER_EA)
+    @IR(counts = { IRNode.ALLOC, ">=1", IRNode.SAFEPOINT_SCALAR_MERGE, ">=1", IRNode.SAFEPOINT_SCALAR_OBJECT, ">=2"},
+        phase= CompilePhase.ITER_GVN_AFTER_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testRematerialize_MultiObj_C2(boolean cond1, boolean cond2, int x, int y) { return testRematerialize_MultiObj(cond1, cond2, x, y); }
 
     @DontCompile
@@ -264,7 +276,10 @@ public class AllocationMergesNestedPhiTests {
     int testGlobalEscapeInThread_Intrep(boolean cond1, int n, int x, int y) { return testGlobalEscapeInThread(cond1, n, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=4"}, phase= CompilePhase.ITER_GVN_AFTER_EA)
+    @IR(counts = { IRNode.ALLOC, ">=4"},
+        phase= CompilePhase.ITER_GVN_AFTER_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testGlobalEscapeInThread_C2(boolean cond1, int n, int x, int y) { return testGlobalEscapeInThread(cond1, n, x, y); }
 
     //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -306,7 +321,10 @@ public class AllocationMergesNestedPhiTests {
     int testFieldEscapeWithMerge_Intrep(boolean cond1, int x, int y) { return testFieldEscapeWithMerge(cond1, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=1"}, phase= CompilePhase.ITER_GVN_AFTER_EA)
+    @IR(counts = { IRNode.ALLOC, ">=1"},
+        phase= CompilePhase.ITER_GVN_AFTER_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testFieldEscapeWithMerge_C2(boolean cond1, int x, int y) { return testFieldEscapeWithMerge(cond1, x, y); }
 
     //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -325,8 +343,14 @@ public class AllocationMergesNestedPhiTests {
     }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "3" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "0" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "3" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "0" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testNestedPhi_FieldLoad_C2(boolean cond1, boolean cond2, int x, int y) {
        return testNestedPhi_FieldLoad(cond1, cond2, x, y);
     }
@@ -342,8 +366,14 @@ public class AllocationMergesNestedPhiTests {
     int testThreeLevelNestedPhi_Interp(boolean cond1, boolean cond2, int x, int y) { return testThreeLevelNestedPhi(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "3" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "2" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "3" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "2" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testThreeLevelNestedPhi_C2(boolean cond1, boolean cond2, int x, int y) { return testThreeLevelNestedPhi(cond1, cond2, x, y); }
 
     @ForceInline
@@ -372,8 +402,14 @@ public class AllocationMergesNestedPhiTests {
     int testNestedPhiProcessOrder_Interp(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiProcessOrder(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "0" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "2" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "0" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testNestedPhiProcessOrder_C2(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiProcessOrder(cond1, cond2, x, y); }
 
     @ForceInline
@@ -396,8 +432,14 @@ public class AllocationMergesNestedPhiTests {
     int testNestedPhi_TryCatch_Interp(boolean cond1, boolean cond2, int x, int y) { return testNestedPhi_TryCatch(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "2" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "0" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "2" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "0" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testNestedPhi_TryCatch_C2(boolean cond1, boolean cond2, int x, int y) { return testNestedPhi_TryCatch(cond1, cond2, x, y); }
 
     @ForceInline
@@ -421,8 +463,14 @@ public class AllocationMergesNestedPhiTests {
     int testBailOut_Interp(boolean cond1, boolean cond2, int x, int y) { return testBailOut(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "3" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "0" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "3" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "0" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testBailOut_C2(boolean cond1, boolean cond2, int x, int y) { return testBailOut(cond1, cond2, x, y); }
 
     @ForceInline
@@ -449,8 +497,14 @@ public class AllocationMergesNestedPhiTests {
     int testNestedPhiPolymorphic_Interp(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiPolymorphic(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "3" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "0" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "3" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "0" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testNestedPhiPolymorphic_C2(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiPolymorphic(cond1, cond2, x, y); }
 
     @ForceInline
@@ -470,8 +524,14 @@ public class AllocationMergesNestedPhiTests {
     int testNestedPhiWithTrap_Interp(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiWithTrap(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "3" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "2" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "3" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "2" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testNestedPhiWithTrap_C2(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiWithTrap(cond1, cond2, x, y); }
 
     @ForceInline
@@ -494,8 +554,14 @@ public class AllocationMergesNestedPhiTests {
     int testNestedPhiWithLambda_Interp(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiWithLambda(cond1, cond2, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, "4" }, phase = CompilePhase.PHASEIDEAL_BEFORE_EA)
-    @IR(counts = { IRNode.ALLOC, "0" }, phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION)
+    @IR(counts = { IRNode.ALLOC, "4" },
+        phase = CompilePhase.PHASEIDEAL_BEFORE_EA,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
+    @IR(counts = { IRNode.ALLOC, "0" },
+        phase = CompilePhase.ITER_GVN_AFTER_ELIMINATION,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"EliminateAllocations", "true"})
     int testNestedPhiWithLambda_C2(boolean cond1, boolean cond2, int x, int y) { return testNestedPhiWithLambda(cond1, cond2, x, y); }
 
     @ForceInline
