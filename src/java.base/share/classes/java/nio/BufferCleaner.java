@@ -45,7 +45,7 @@ class BufferCleaner {
         return canary;
     }
 
-    public static class Canary implements Runnable {
+    static class Canary implements Runnable {
         volatile boolean dead;
 
         @Override

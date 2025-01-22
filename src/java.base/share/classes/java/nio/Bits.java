@@ -157,7 +157,6 @@ class Bits {                            // package-private
                     sleepTime *= 2;
                 } catch (InterruptedException e) {
                     interrupted = true;
-                    break;
                 }
             }
 
