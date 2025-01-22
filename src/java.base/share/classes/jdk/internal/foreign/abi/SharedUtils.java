@@ -390,8 +390,6 @@ public final class SharedUtils {
         }
     };
 
-    @ForceInline
-    @SuppressWarnings("restricted")
     public static Arena newBoundedArena(long size) {
         return BUFFER_STACK.get().reserve(size);
     }
