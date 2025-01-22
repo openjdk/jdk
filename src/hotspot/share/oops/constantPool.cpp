@@ -2017,138 +2017,6 @@ const char* ConstantPool::printable_name_at(int cp_index) {
 #endif // PRODUCT
 
 
-// JVMTI GetConstantPool support
-
-// For debugging of constant pool
-const bool debug_cpool = false;
-
-#define DBG(code) do { if (debug_cpool) { (code); } } while(0)
-
-static void print_cpool_bytes(jint cnt, u1 *bytes) {
-  const char* WARN_MSG = "Must not be such entry!";
-  jint size = 0;
-  u2   idx1, idx2;
-
-  for (jint idx = 1; idx < cnt; idx++) {
-    jint ent_size = 0;
-    u1   tag  = *bytes++;
-    size++;                       // count tag
-
-    printf("const #%03d, tag: %02d ", idx, tag);
-    switch(tag) {
-      case JVM_CONSTANT_Invalid: {
-        printf("Invalid");
-        break;
-      }
-      case JVM_CONSTANT_Unicode: {
-        printf("Unicode      %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_Utf8: {
-        u2 len = Bytes::get_Java_u2(bytes);
-        char str[128];
-        if (len > 127) {
-           len = 127;
-        }
-        strncpy(str, (char *) (bytes+2), len);
-        str[len] = '\0';
-        printf("Utf8          \"%s\"", str);
-        ent_size = 2 + len;
-        break;
-      }
-      case JVM_CONSTANT_Integer: {
-        u4 val = Bytes::get_Java_u4(bytes);
-        printf("int          %d", *(int *) &val);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_Float: {
-        u4 val = Bytes::get_Java_u4(bytes);
-        printf("float        %5.3ff", *(float *) &val);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_Long: {
-        u8 val = Bytes::get_Java_u8(bytes);
-        printf("long         " INT64_FORMAT, (int64_t) *(jlong *) &val);
-        ent_size = 8;
-        idx++; // Long takes two cpool slots
-        break;
-      }
-      case JVM_CONSTANT_Double: {
-        u8 val = Bytes::get_Java_u8(bytes);
-        printf("double       %5.3fd", *(jdouble *)&val);
-        ent_size = 8;
-        idx++; // Double takes two cpool slots
-        break;
-      }
-      case JVM_CONSTANT_Class: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        printf("class        #%03d", idx1);
-        ent_size = 2;
-        break;
-      }
-      case JVM_CONSTANT_String: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        printf("String       #%03d", idx1);
-        ent_size = 2;
-        break;
-      }
-      case JVM_CONSTANT_Fieldref: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("Field        #%03d, #%03d", (int) idx1, (int) idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_Methodref: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("Method       #%03d, #%03d", idx1, idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_InterfaceMethodref: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("InterfMethod #%03d, #%03d", idx1, idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_NameAndType: {
-        idx1 = Bytes::get_Java_u2(bytes);
-        idx2 = Bytes::get_Java_u2(bytes+2);
-        printf("NameAndType  #%03d, #%03d", idx1, idx2);
-        ent_size = 4;
-        break;
-      }
-      case JVM_CONSTANT_ClassIndex: {
-        printf("ClassIndex  %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_UnresolvedClass: {
-        printf("UnresolvedClass: %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_UnresolvedClassInError: {
-        printf("UnresolvedClassInErr: %s", WARN_MSG);
-        break;
-      }
-      case JVM_CONSTANT_StringIndex: {
-        printf("StringIndex: %s", WARN_MSG);
-        break;
-      }
-    }
-    printf(";\n");
-    bytes += ent_size;
-    size  += ent_size;
-  }
-  printf("Cpool size: %d\n", size);
-  fflush(nullptr);
-  return;
-} /* end print_cpool_bytes */
-
-
 // Returns size of constant pool entry.
 jint ConstantPool::cpool_entry_size(jint idx) {
   switch(tag_at(idx).value()) {
@@ -2211,7 +2079,6 @@ jint ConstantPool::hash_entries_to(SymbolHash *symmap,
       case JVM_CONSTANT_Utf8: {
         Symbol* sym = symbol_at(idx);
         symmap->add_if_absent(sym, idx);
-        DBG(printf("adding symbol entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
       case JVM_CONSTANT_Class:
@@ -2219,7 +2086,6 @@ jint ConstantPool::hash_entries_to(SymbolHash *symmap,
       case JVM_CONSTANT_UnresolvedClassInError: {
         Symbol* sym = klass_name_at(idx);
         classmap->add_if_absent(sym, idx);
-        DBG(printf("adding class entry %s = %d\n", sym->as_utf8(), idx));
         break;
       }
       case JVM_CONSTANT_Long:
@@ -2253,15 +2119,12 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
     assert(size + ent_size <= cpool_size, "Size mismatch");
 
     *bytes = tag;
-    DBG(printf("#%03hd tag=%03hd, ", (short)idx, (short)tag));
     switch(tag) {
       case JVM_CONSTANT_Invalid: {
-        DBG(printf("JVM_CONSTANT_Invalid"));
         break;
       }
       case JVM_CONSTANT_Unicode: {
         assert(false, "Wrong constant pool tag: JVM_CONSTANT_Unicode");
-        DBG(printf("JVM_CONSTANT_Unicode"));
         break;
       }
       case JVM_CONSTANT_Utf8: {
@@ -2273,7 +2136,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         for (int i = 0; i < len; i++) {
             bytes[3+i] = (u1) str[i];
         }
-        DBG(printf("JVM_CONSTANT_Utf8: %s ", str));
         break;
       }
       case JVM_CONSTANT_Integer: {
@@ -2306,7 +2168,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx1 = tbl->symbol_to_value(sym);
         assert(idx1 != 0, "Have not found a hashtable entry");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_Class: idx=#%03hd, %s", idx1, sym->as_utf8()));
         break;
       }
       case JVM_CONSTANT_String: {
@@ -2315,7 +2176,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx1 = tbl->symbol_to_value(sym);
         assert(idx1 != 0, "Have not found a hashtable entry");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_String: idx=#%03hd, %s", idx1, sym->as_utf8()));
         break;
       }
       case JVM_CONSTANT_Fieldref:
@@ -2325,7 +2185,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx2 = uncached_name_and_type_ref_index_at(idx);
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_Methodref: %hd %hd", idx1, idx2));
         break;
       }
       case JVM_CONSTANT_NameAndType: {
@@ -2333,21 +2192,18 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx2 = signature_ref_index_at(idx);
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_NameAndType: %hd %hd", idx1, idx2));
         break;
       }
       case JVM_CONSTANT_ClassIndex: {
         *bytes = JVM_CONSTANT_Class;
         idx1 = checked_cast<u2>(klass_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_ClassIndex: %hd", idx1));
         break;
       }
       case JVM_CONSTANT_StringIndex: {
         *bytes = JVM_CONSTANT_String;
         idx1 = checked_cast<u2>(string_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_StringIndex: %hd", idx1));
         break;
       }
       case JVM_CONSTANT_MethodHandle:
@@ -2357,7 +2213,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         idx1 = checked_cast<u2>(method_handle_index_at(idx));
         *(bytes+1) = (unsigned char) kind;
         Bytes::put_Java_u2((address) (bytes+2), idx1);
-        DBG(printf("JVM_CONSTANT_MethodHandle: %d %hd", kind, idx1));
         break;
       }
       case JVM_CONSTANT_MethodType:
@@ -2365,7 +2220,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         *bytes = JVM_CONSTANT_MethodType;
         idx1 = checked_cast<u2>(method_type_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
-        DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
         break;
       }
       case JVM_CONSTANT_Dynamic:
@@ -2376,7 +2230,6 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_Dynamic: %hd %hd", idx1, idx2));
         break;
       }
       case JVM_CONSTANT_InvokeDynamic: {
@@ -2386,22 +2239,16 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
         assert(idx2 == bootstrap_name_and_type_ref_index_at(idx), "correct half of u4");
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         Bytes::put_Java_u2((address) (bytes+3), idx2);
-        DBG(printf("JVM_CONSTANT_InvokeDynamic: %hd %hd", idx1, idx2));
         break;
       }
     }
-    DBG(printf("\n"));
     bytes += ent_size;
     size  += ent_size;
   }
   assert(size == cpool_size, "Size mismatch");
 
-  // Keep temporarily for debugging until it's stable.
-  DBG(print_cpool_bytes(cnt, start_bytes));
   return (int)(bytes - start_bytes);
 } /* end copy_cpool_bytes */
-
-#undef DBG
 
 bool ConstantPool::is_maybe_on_stack() const {
   // This method uses the similar logic as nmethod::is_maybe_on_stack()
