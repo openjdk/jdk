@@ -46,7 +46,7 @@ import javax.swing.UIManager;
 public class TestProgressBarUI {
 
     private static final String instructionsText = """
-            Two progressbar "Good" and "Bad" 
+            Two progressbar "Good" and "Bad"
             will be shown with different preferred size,
             If the "Bad" progressbar is rendered at the same
             height as "Good" progressbar,
@@ -94,4 +94,4 @@ public class TestProgressBarUI {
         frame.setLocationByPlatform(true);
         return frame;
     }
-} 
+}
