@@ -36,7 +36,7 @@
  */
 
 /*
- * EE@test id=no_coh_cds
+ * @test id=no_coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @library /test/lib
@@ -48,7 +48,7 @@
  */
 
 /*
- * EE@test id=coh_no_cds
+ * @test id=coh_no_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @library /test/lib
@@ -60,7 +60,7 @@
  */
 
 /*
- * EE@test id=coh_cds
+ * @test id=coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
  * @requires vm.bits == 64 & vm.debug == true & vm.flagless
  * @library /test/lib
@@ -125,21 +125,23 @@ public class AccessZeroNKlassHitsProtectionZone {
         if (CDS) {
             output = run_test(COH, CDS, "");
         } else {
-            long[] tryTheseForceBases = { 0x8_0000_0000L, 0xc_0000_0000L, 0x10_0000_0000L, 0x18_0000_0000L}; // all > 32g
-            for (long thisBase: tryTheseForceBases) {
-                String thisBaseString = String.format("0x%016X", thisBase).toLowerCase();
+            long g4 = 0x1_0000_0000L;
+            long start = g4 * 8; // 32g
+            long step = g4;
+            long end = start + step * 16;
+            for (forceBase = start; forceBase < end; forceBase += step) {
+                String thisBaseString = String.format("0x%016X", forceBase).toLowerCase();
                 output = run_test(COH, CDS, thisBaseString);
                 if (output.contains("CompressedClassSpaceBaseAddress=" + thisBaseString + " given, but reserving class space failed.")) {
                     // try next one
                 } else if (output.contains("Successfully forced class space address to " + thisBaseString)) {
-                    forceBase = thisBase;
                     break;
                 } else {
                     throw new RuntimeException("Unexpected");
                 }
             }
-            if (forceBase == -1) {
-                throw new SkippedException("Failed to force ccs to any of the given bases. Skipping test.");
+            if (forceBase >= end) {
+// testtest                throw new SkippedException("Failed to force ccs to any of the given bases. Skipping test.");
             }
         }
 
