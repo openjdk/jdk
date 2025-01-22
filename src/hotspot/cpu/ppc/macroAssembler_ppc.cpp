@@ -2117,6 +2117,7 @@ void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
   const Register temp      = temp2_reg;
 
   assert_different_registers(sub_klass, super_klass, array_ptr, temp);
+  assert(L_success == nullptr || result_reg == noreg, "can't have both");
 
   int source_offset = in_bytes(Klass::secondary_supers_offset());
   int target_offset = in_bytes(Klass::secondary_super_cache_offset());
@@ -2131,7 +2132,7 @@ void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
   // TODO: PPC port: assert(4 == arrayOopDesc::length_length_in_bytes(), "precondition violated.");
   lwz(temp, length_offset, array_ptr);
   cmpwi(CCR0, temp, 0);
-  beq(CCR0, result_reg!=noreg ? failure : fallthru); // length 0
+  beq(CCR0, (L_success == nullptr) ? failure : fallthru); // indicate failure if length 0
 
   mtctr(temp); // load ctr
 
@@ -2144,19 +2145,19 @@ void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
   bdnz(loop);
 
   bind(failure);
-  if (result_reg!=noreg) li(result_reg, 1); // load non-zero result (indicates a miss)
+  if (result_reg != noreg) {
+    li(result_reg, 1); // load non-zero result (indicates a miss)
+  } else if (L_success == nullptr) {
+    crandc(CCR0, Assembler::equal, CCR0, Assembler::equal); // miss indicated by CR0.ne
+  }
   b(fallthru);
 
   bind(hit);
   std(super_klass, target_offset, sub_klass); // save result to cache
   if (result_reg != noreg) { li(result_reg, 0); } // load zero result (indicates a hit)
   if (L_success != nullptr) { b(*L_success); }
-  else if (result_reg == noreg) { blr(); } // return with CR0.eq if neither label nor result reg provided
 
   bind(fallthru);
-  if (L_success != nullptr && result_reg == noreg) {
-    crandc(CCR0, Assembler::equal, CCR0, Assembler::equal); // failed: CR0.ne
-  }
 }
 
 Register MacroAssembler::allocate_if_noreg(Register r,
