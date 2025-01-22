@@ -572,7 +572,7 @@ public final class RequestPublishers {
                 }
                 subscription.cancel();
             }
-            // This nethod is called when cancel is true, so
+            // This method is called when cancel is true, so
             // we should always stop the scheduler here
             scheduler.stop();
             return subscription != null;
