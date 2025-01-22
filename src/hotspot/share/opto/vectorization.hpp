@@ -199,6 +199,10 @@ public:
   bool is_trace_vpointers() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
+
+  bool is_trace_speculative_runtime_checks() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
+  }
 #endif
 
   // Is the node in the basic block of the loop?

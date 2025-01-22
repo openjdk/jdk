@@ -538,11 +538,6 @@ class SuperWord : public ResourceObj {
     return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
   }
-
-  bool is_trace_speculative_runtime_checks() const {
-    return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
-  }
 #endif
 
   bool     do_vector_loop()        { return _do_vector_loop; }

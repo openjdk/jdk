@@ -124,7 +124,7 @@ VStatus VLoop::check_preconditions_helper() {
       _multiversioning_fast_proj = before_predicates;
     }
 #ifndef PRODUCT
-    if (is_trace_preconditions()) {
+    if (is_trace_preconditions() || is_trace_speculative_runtime_checks()) {
       tty->print_cr(" Infrastructure for speculative runtime-checks:");
       if (_auto_vectorization_parse_predicate_proj != nullptr) {
         tty->print_cr("  auto_vectorization_parse_predicate_proj: speculate and trap");
