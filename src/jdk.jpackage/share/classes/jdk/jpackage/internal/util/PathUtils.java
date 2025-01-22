@@ -50,4 +50,12 @@ public final class PathUtils {
     public static Path resolveNullablePath(Path base, Path path) {
         return Optional.ofNullable(path).map(base::resolve).orElse(null);
     }
+
+    public static Path normalizedAbsolutePath(Path path) {
+        return path.normalize().toAbsolutePath();
+    }
+
+    public static String normalizedAbsolutePathString(Path path) {
+        return normalizedAbsolutePath(path).toString();
+    }
 }
