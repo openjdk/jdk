@@ -1323,7 +1323,12 @@ private:
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
 
-  // TODO desc
+  // For native bases, we have no alignment guarantee. This means we cannot in
+  // general guarantee alignment statically. But we can check alignment with a
+  // speculative runtime check, see VTransform::apply_speculative_runtime_checks.
+  // For this, we need find the Predicate for auto vectorization checks, or else
+  // we need to find the multiversion_if. If we cannot find either, then we
+  // cannot make any speculative runtime checks.
   const bool     _are_speculative_checks_possible;
 
   DEBUG_ONLY( const bool _is_trace; );

@@ -4482,7 +4482,19 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   return AutoVectorizeStatus::Success;
 }
 
-// TODO desc
+// Just before insert_pre_post_loops, we can multi-version the loop:
+//
+//              selector_if
+//               |       |
+//         fast_loop   slow_loop
+//
+// In the fast_loop we can make speculative assumptions, and put the
+// conditions into the selector_if. If the conditions hold at runtime,
+// we enter the fast_loop, if the conditions fail, we take the slow_loop
+// instead which does not make any of the speculative assumptions.
+//
+// TODO talk about CFG
+// TODO talk about stalling? - OpaqueMultiversioningNode
 void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new) {
   CountedLoopNode* cl = lpt->_head->as_CountedLoop();
   LoopNode* outer_loop = cl->skip_strip_mined();
@@ -4500,6 +4512,7 @@ void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(Id
   // We only use the multiversioning in auto-vectorization for now. And we currently
   // do not allow any CFG in auto-vectorization. Hence, only multiversion when we have
   // no CFG in the loop.
+  // TODO does that work when we have RCE with unknown bounds?
   if (cl->loopexit()->in(0) != cl) { return; }
 
   // Check node budget.

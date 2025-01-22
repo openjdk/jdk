@@ -553,9 +553,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   6) The "C_main * main_iter" term represents how much the iv is increased
   //      during "main_iter" main-loop iterations.
 
-  // For native memory, we must add a runtime-check that "base % ObjectAlignmentInBytes", to
-  // ensure (BASE_ALIGNED). If we cannot add this runtime-check, we have no guarantee on its
-  // alignment.
+  // For native memory, we must add a runtime-check that "base % ObjectAlignmentInBytes = ",
+  // to ensure (BASE_ALIGNED). If we cannot add this runtime-check, we have no guarantee on
+  // its alignment.
   if (!_vpointer.mem_pointer().base().is_object() && !_are_speculative_checks_possible) {
     return new EmptyAlignmentSolution("Cannot add speculative check for native memory alignment.");
   }
