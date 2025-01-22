@@ -1055,12 +1055,11 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
             Extension certExt = null;
             CertificateExtensions exts = info.getExtensions();
 
+            if (exts == null) {
+                return null;
+            }
             if (extAlias == null) { // may be unknown
                 // get the extensions, search through' for this oid
-                if (exts == null) {
-                    return null;
-                }
-
                 for (Extension ex : exts.getAllExtensions()) {
                     ObjectIdentifier inCertOID = ex.getExtensionId();
                     if (inCertOID.equals(findOID)) {
@@ -1069,7 +1068,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                     }
                 }
             } else { // there's subclass that can handle this extension
-                certExt = getInfo().getExtensions().getExtension(extAlias);
+                certExt = exts.getExtension(extAlias);
             }
             if (certExt == null) {
                 if (exts != null) {
@@ -1098,8 +1097,12 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      */
     public boolean[] getKeyUsage() {
         try {
+            CertificateExtensions extensions = getInfo().getExtensions();
+            if (extensions == null) {
+                return null;
+            }
             KeyUsageExtension certExt = (KeyUsageExtension)
-                    getInfo().getExtensions().getExtension(KeyUsageExtension.NAME);
+                    extensions.getExtension(KeyUsageExtension.NAME);
             if (certExt == null)
                 return null;
 
