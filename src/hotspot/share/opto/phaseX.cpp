@@ -64,7 +64,7 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
 
 //-----------------------------------------------------------------------------
 
-bool NodeHash::check_for_collision(const Node* n, const Node* k) const {
+bool NodeHash::have_equivalent_inputs(const Node* n, const Node* k) const {
   // For commutative operations with same controlling edge
   // perform order agnostic input edge comparison to promote
   // node sharing.
@@ -75,16 +75,16 @@ bool NodeHash::check_for_collision(const Node* n, const Node* k) const {
     if ((k->in(0) != n->in(0)) ||
         ((k->in(1) != n->in(1) || k->in(2) != n->in(2)) &&
          (k->in(1) != n->in(2) || k->in(2) != n->in(1)))) {
-      return true;
+      return false;
     }
   } else {
-    for(uint i=0; i<req; i++) {
-      if(n->in(i) != k->in(i)) { // Different inputs?
-        return true;
+    for (uint i = 0; i < req; i++) {
+      if (n->in(i) != k->in(i)) { // Different inputs?
+        return false;
       }
     }
   }
-  return false;
+  return true;
 }
 
 //------------------------------hash_find--------------------------------------
@@ -110,12 +110,12 @@ Node *NodeHash::hash_find( const Node *n ) {
   while( 1 ) {                  // While probing hash table
     if( k->req() == req &&      // Same count of inputs
         k->Opcode() == op ) {   // Same Opcode
-      bool collision = check_for_collision(n, k);
-      if (collision == false && n->cmp(*k)) {  // Check for any special bits
+      if (have_equivalent_inputs(n, k) && n->cmp(*k)) {  // Check for any special bits
         NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
+    // k was not a hit. Find another candidate and try again.
     NOT_PRODUCT( _look_probes++ );
     key = (key + stride/*7*/) & (_max-1); // Stride through table with relative prime
     k = _table[key];            // Get hashed value
@@ -159,12 +159,12 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   while( 1 ) {                  // While probing hash table
     if( k->req() == req &&      // Same count of inputs
         k->Opcode() == op ) {   // Same Opcode
-      bool collision = check_for_collision(n, k);
-      if (collision == false && n->cmp(*k)) {        // Check for any special bits
+      if (have_equivalent_inputs(n, k) && n->cmp(*k)) {  // Check for any special bits
         NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
+    // k was not a hit. Find another candidate and try again.
     NOT_PRODUCT( _look_probes++ );
     key = (key + stride) & (_max-1); // Stride through table w/ relative prime
     k = _table[key];            // Get hashed value
