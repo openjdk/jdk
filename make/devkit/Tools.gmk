@@ -725,6 +725,14 @@ ifeq ($(TARGET), $(HOST))
       ld.gold nm objcopy objdump ranlib readelf size strings strip)
 endif
 
+# Add link to work around "plugin needed to handle lto object" (JDK-8344272)
+$(PREFIX)/lib/bfd-plugins/liblto_plugin.so: $(PREFIX)/libexec/gcc/$(TARGET)/$(GCC_VER)/liblto_plugin.so
+	@echo 'Creating missing $(@F) soft link'
+	@mkdir -p $(@D)
+	ln -s $$(realpath -s --relative-to=$(@D) $<) $@
+
+missing-links += $(PREFIX)/lib/bfd-plugins/liblto_plugin.so
+
 ################################################################################
 
 bfdlib : $(bfdlib)
