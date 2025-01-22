@@ -91,7 +91,10 @@ public:
   IfNode* if_node() const;
 };
 
-// TODO where to find more info, how stalling works etc
+// This node is used to mark the auto vectorization Predicate, and
+// allow the multiversion fast_loop to notify the slow_loop when
+// the slow_loop is to be "unstalled".
+// See PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks
 class OpaqueMultiversioningNode : public Opaque1Node {
 private:
   bool _is_stall_slow_loop;

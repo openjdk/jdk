@@ -4493,8 +4493,36 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 // we enter the fast_loop, if the conditions fail, we take the slow_loop
 // instead which does not make any of the speculative assumptions.
 //
-// TODO talk about CFG
-// TODO talk about stalling? - OpaqueMultiversioningNode
+// Note: we only multiversion the loop if the loop does not have any
+//       auto vectorization check Predicate. If we have that predicate,
+//       then we can simply add the speculative assumption checks to
+//       that Predicate. This means we do not need to duplicate the
+//       loop - we have a smaller graph and save compile time. Should
+//       the conditions ever fail, then we deopt / trap at the Predicate
+//       and recompile without that Predicate. At that point we will
+//       multiversion the loop, so that we can still have speculative
+//       runtime checks.
+//
+// Since multiversioning requires us to duplicate the loop, we would
+// like to only do this when we expect vectorization. For now, we
+// limit it to loops that have no control flow, and as such are good
+// candidates for auto-vectorization.
+//
+// We perform the multiversioning when the loop is still in its single
+// iteration form, even before we insert pre and post loops. This makes
+// the cloning much simpler. However, this means that both the fast
+// and the slow loop have to be optimized independently (adding pre
+// and post loops, unrolling the main loop, auto-vectorize etc.). And
+// we may end up not needing any speculative assumptions in the fast_loop
+// and then rejecting the slow_loop by constant folding the selector_if.
+//
+// Therefore, we "stall" the optimization of the slow_loop until we add
+// at least one speculative assumption for the fast_loop. If we never
+// add such a speculative runtime check, the OpaqueMultiversioningNode
+// of the selector_if constant folds to true after loop opts, and the
+// selector_if folds away the "stalled" slow_loop. If we add any
+// speculative assumption, then we mark the OpaqueMultiversioningNode
+// with "unstall_slow_loop", so that the slow_loop can be optimized.
 void PhaseIdealLoop::maybe_multiversion_for_auto_vectorization_runtime_checks(IdealLoopTree* lpt, Node_List& old_new) {
   CountedLoopNode* cl = lpt->_head->as_CountedLoop();
   LoopNode* outer_loop = cl->skip_strip_mined();
