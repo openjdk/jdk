@@ -35,9 +35,13 @@ import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.time.Duration;
+import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
 public class TestBufferStack {
     @Test
@@ -94,5 +98,25 @@ public class TestBufferStack {
             segment11.get(JAVA_INT, 0);
             segment12.get(JAVA_INT, 0);
         }
+    }
+
+    @Test
+    public void stress() throws InterruptedException {
+        BufferStack stack = new BufferStack(256);
+        Thread[] vThreads = IntStream.range(0, 1024).mapToObj(_ ->
+                Thread.ofVirtual().start(() -> {
+                    long threadId = Thread.currentThread().threadId();
+                    while (true) {
+                        try (Arena arena = stack.pushFrame(JAVA_LONG.byteSize(), JAVA_LONG.byteAlignment())) {
+                            // Try to assert no two vThreads get allocated the same stack space.
+                            MemorySegment segment = arena.allocate(JAVA_LONG);
+                            JAVA_LONG.varHandle().setVolatile(segment, 0L, threadId);
+                            Assert.assertEquals(threadId, (long) JAVA_LONG.varHandle().getVolatile(segment, 0L));
+                        }
+                    }
+                })).toArray(Thread[]::new);
+        Thread.sleep(Duration.of(10, SECONDS));
+        Arrays.stream(vThreads).forEach(
+                thread -> Assert.assertTrue(thread.isAlive()));
     }
 }
