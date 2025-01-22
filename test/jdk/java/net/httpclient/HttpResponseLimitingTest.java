@@ -49,6 +49,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
@@ -80,6 +81,13 @@ class HttpResponseLimitingTest {
     private static final Random RANDOM = RandomFactory.getRandom();
 
     private static final byte[] RESPONSE_BODY = "random non-empty body".getBytes(UTF_8);
+
+    private static final String RESPONSE_HEADER_NAME = "X-Excessive-Data";
+
+    /**
+     * A header value larger than {@link #RESPONSE_BODY} to verify that {@code limiting()} doesn't affect header parsing.
+     */
+    private static final String RESPONSE_HEADER_VALUE = "!".repeat(RESPONSE_BODY.length);
 
     private static final ServerClientPair HTTP1 = ServerClientPair.of(HttpClient.Version.HTTP_1_1, false);
 
@@ -117,6 +125,7 @@ class HttpResponseLimitingTest {
             // Register the request handler
             server.addHandler(
                     (exchange) -> {
+                        exchange.getResponseHeaders().addHeader(RESPONSE_HEADER_NAME, RESPONSE_HEADER_VALUE);
                         exchange.sendResponseHeaders(200, RESPONSE_BODY.length);
                         try (var outputStream = exchange.getResponseBody()) {
                             outputStream.write(RESPONSE_BODY);
@@ -175,6 +184,7 @@ class HttpResponseLimitingTest {
     @MethodSource("sufficientCapacities")
     void testSuccessOnSufficientCapacityForByteArray(ServerClientPair pair, long sufficientCapacity) throws Exception {
         HttpResponse<byte[]> response = pair.request(BodyHandlers.ofByteArray(), sufficientCapacity);
+        verifyHeaders(response.headers());
         assertArrayEquals(RESPONSE_BODY, response.body());
     }
 
@@ -182,6 +192,7 @@ class HttpResponseLimitingTest {
     @MethodSource("sufficientCapacities")
     void testSuccessOnSufficientCapacityForInputStream(ServerClientPair pair, long sufficientCapacity) throws Exception {
         HttpResponse<InputStream> response = pair.request(BodyHandlers.ofInputStream(), sufficientCapacity);
+        verifyHeaders(response.headers());
         try (InputStream responseBodyStream = response.body()) {
             byte[] responseBodyBuffer = new byte[RESPONSE_BODY.length];
             int responseBodyBufferLength = responseBodyStream.read(responseBodyBuffer);
@@ -200,9 +211,11 @@ class HttpResponseLimitingTest {
     @ParameterizedTest
     @MethodSource("insufficientCapacities")
     void testFailureOnInsufficientCapacityForByteArray(ServerClientPair pair, long insufficientCapacity) {
-        var exception = assertThrows(
-                IOException.class,
-                () -> pair.request(BodyHandlers.ofByteArray(), insufficientCapacity));
+        BodyHandler<byte[]> handler = responseInfo -> {
+            verifyHeaders(responseInfo.headers());
+            return BodySubscribers.limiting(BodySubscribers.ofByteArray(), insufficientCapacity);
+        };
+        var exception = assertThrows(IOException.class, () -> pair.request(handler, insufficientCapacity));
         assertEquals(exception.getMessage(), "body exceeds capacity: " + insufficientCapacity);
     }
 
@@ -210,6 +223,7 @@ class HttpResponseLimitingTest {
     @MethodSource("insufficientCapacities")
     void testFailureOnInsufficientCapacityForInputStream(ServerClientPair pair, long insufficientCapacity) throws Exception {
         HttpResponse<InputStream> response = pair.request(BodyHandlers.ofInputStream(), insufficientCapacity);
+        verifyHeaders(response.headers());
         try (InputStream responseBodyStream = response.body()) {
             var exception = assertThrows(
                     IOException.class,
@@ -224,6 +238,11 @@ class HttpResponseLimitingTest {
         long maxExtremeCapacity = RESPONSE_BODY.length - 1;
         long nonExtremeCapacity = RANDOM.nextLong(minExtremeCapacity + 1, maxExtremeCapacity);
         return capacityArgs(minExtremeCapacity, nonExtremeCapacity, maxExtremeCapacity);
+    }
+
+    private static void verifyHeaders(HttpHeaders responseHeaders) {
+        List<String> responseHeaderValues = responseHeaders.allValues(RESPONSE_HEADER_NAME);
+        assertEquals(List.of(RESPONSE_HEADER_VALUE), responseHeaderValues);
     }
 
     @ParameterizedTest
