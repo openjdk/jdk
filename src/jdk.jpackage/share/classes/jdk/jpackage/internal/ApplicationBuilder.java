@@ -69,7 +69,7 @@ final class ApplicationBuilder {
 
         return new Application.Stub(
                 effectiveName,
-                Optional.ofNullable(description).orElseGet(DEFAULTS::description),
+                Optional.ofNullable(description).orElse(effectiveName),
                 Optional.ofNullable(version).orElseGet(DEFAULTS::version),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
@@ -147,7 +147,10 @@ final class ApplicationBuilder {
         return this;
     }
 
-    private record Defaults(String description, String version, String vendor, String copyright) {
+    private record Defaults(String version, String vendor) {
+        String copyright() {
+            return I18N.format("param.copyright.default", new Date());
+        }
     }
 
     private String name;
@@ -162,8 +165,6 @@ final class ApplicationBuilder {
     private ApplicationLaunchers launchers;
 
     private static final Defaults DEFAULTS = new Defaults(
-            I18N.getString("param.description.default"),
             "1.0",
-            I18N.getString("param.vendor.default"),
-            I18N.format("param.copyright.default", new Date()));
+            I18N.getString("param.vendor.default"));
 }
