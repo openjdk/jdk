@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"

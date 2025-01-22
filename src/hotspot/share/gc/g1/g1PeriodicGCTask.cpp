@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"

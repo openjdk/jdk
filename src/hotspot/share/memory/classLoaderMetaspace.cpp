@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace.hpp"

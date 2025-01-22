@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/filemap.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"

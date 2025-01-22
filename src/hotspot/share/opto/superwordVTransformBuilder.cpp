@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
 
@@ -315,4 +314,3 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTra
     vtn->add_dependency(dependency); // Add every dependency only once per vtn.
   }
 }
-
