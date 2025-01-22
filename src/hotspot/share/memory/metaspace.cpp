@@ -810,7 +810,12 @@ void Metaspace::global_initialize() {
     // After narrowKlass encoding scheme is decided: if the encoding base points to class space start,
     // establish a protection zone.
     if (CompressedKlassPointers::base() == (address)rs.base()) {
-      const size_t protzone_size = os::vm_page_size();
+      // Let the protection zone be a whole commit granule. Otherwise, buddy allocator may later place neighboring
+      // chunks in the same granule, see that the granule is not yet committed, and commit it, which would replace
+      // the protection mapping and make the zone readable.
+      // Alternatively, we could commit the chunk right now, but that is a tiny bit more fiddly, since we are not
+      // fully set up yet at this point.
+      const size_t protzone_size = metaspace::Settings::commit_granule_bytes(); // granule size >= page size
       const size_t protzone_wordsize = protzone_size / BytesPerWord;
       const metaspace::chunklevel_t lvl = metaspace::chunklevel::level_fitting_word_size(protzone_wordsize);
       metaspace::Metachunk* const chunk = MetaspaceContext::context_class()->cm()->get_chunk(lvl);
@@ -821,7 +826,7 @@ void Metaspace::global_initialize() {
     }
   }
 
-#endif
+#endif // _LP64
 
   // Initialize non-class virtual space list, and its chunk manager:
   MetaspaceContext::initialize_nonclass_space_context();
