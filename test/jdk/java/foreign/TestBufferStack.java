@@ -25,7 +25,7 @@
  * @test
  * @modules java.base/jdk.internal.foreign.abi
  * @build NativeTestHelper TestBufferStack
- * @run testng TestBufferStack
+ * @run testng/othervm --enable-native-access=ALL-UNNAMED TestBufferStack
  */
 
 import jdk.internal.foreign.abi.BufferStack;
