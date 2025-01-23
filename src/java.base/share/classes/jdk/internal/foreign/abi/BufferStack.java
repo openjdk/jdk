@@ -78,7 +78,7 @@ public class BufferStack {
         private class Frame implements Arena {
             private final boolean locked;
             private final long parentOffset;
-            private final long tos;
+            private final long topOfStack;
             private final Arena scope = Arena.ofConfined();
             private final SegmentAllocator frame;
 
@@ -88,13 +88,13 @@ public class BufferStack {
 
                 parentOffset = stack.currentOffset();
                 MemorySegment frameSegment = stack.allocate(byteSize, byteAlignment);
-                tos = stack.currentOffset();
+                topOfStack = stack.currentOffset();
                 frame = new SlicingAllocator(frameSegment.reinterpret(scope, null));
             }
 
             private void assertOrder() {
-                if (tos != stack.currentOffset())
-                    throw new IllegalStateException("Out of order access: frame not TOS");
+                if (topOfStack != stack.currentOffset())
+                    throw new IllegalStateException("Out of order access: frame not top-of-stack");
             }
 
             @Override
