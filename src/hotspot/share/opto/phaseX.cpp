@@ -1314,6 +1314,18 @@ bool PhaseIterGVN::verify_node_Ideal(Node* n, bool can_reshape) {
     case Op_SubL:
       return false;
 
+    // SubINode::Ideal does
+    // Convert "x - (y+c0)" into "(x-y) - c0" AND
+    // Convert "c1 - (y+c0)" into "(c1-c0) - y"
+    //
+    // Investigate why this does not yet happen during IGVN.
+    //
+    // Found with:
+    //   test/hotspot/jtreg/compiler/c2/IVTest.java
+    //   -XX:VerifyIterativeGVN=1110
+    case Op_SubI:
+      return false;
+
     // AddNode::IdealIL does transform like:
     //   Convert x + (con - y) into "(x - y) + con"
     //
