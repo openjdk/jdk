@@ -1158,6 +1158,10 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   }
 
   heap->rebuild_free_set(true /*concurrent*/);
+#define KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+  log_info(gc)("start_idle_span() at end of concurrent gc");
+#endif
   heap->heuristics()->start_idle_span();
 }
 

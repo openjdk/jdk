@@ -303,7 +303,8 @@ void ShenandoahDegenGC::op_degenerated() {
   metrics.snap_after();
 
   // Check for futility and fail. There is no reason to do several back-to-back Degenerated cycles,
-  // because that probably means the heap is overloaded and/or fragmented.
+  // because that probably means the heap is overloaded and/or fragmented, or it may just mean there
+  // is an overabundance of floating garbage.
   if (!metrics.is_good_progress()) {
     heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
     op_degenerated_futile();
@@ -311,6 +312,11 @@ void ShenandoahDegenGC::op_degenerated() {
     heap->notify_gc_progress();
     heap->shenandoah_policy()->record_success_degenerated(_generation->is_young(), _abbreviated);
     _generation->heuristics()->record_success_degenerated();
+#define KELVIN_IDLE_SPAN
+#ifdef KELVIN_IDLE_SPAN
+    log_info(gc)("start_idle_span() at end of degen gc");
+#endif
+    heap->start_idle_span();
   }
 }
 
@@ -420,7 +426,6 @@ void ShenandoahDegenGC::op_update_roots() {
   }
 
   heap->rebuild_free_set(false /*concurrent*/);
-  heap->start_idle_span();
 }
 
 void ShenandoahDegenGC::op_cleanup_complete() {

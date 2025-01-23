@@ -181,13 +181,15 @@ double ShenandoahAdaptiveHeuristics::get_planned_sleep_interval() const {
 
 #undef KELVIN_VERBOSE
 
+#define KELVIN_IDLE_SPAN
+
 void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_available) {
   // The trigger threshold represents mutator available - "head room".
   // We plan for GC to finish before the amount of allocated memory exceeds trigger threshold.  This is the same  as saying we
   // intend to finish GC before the amount of available memory is less than the allocation headroom.  Headroom is the planned
   // safety buffer to allow a small amount of additional allocation to take place in case we were overly optimistic in delaying
   // our trigger.
-#ifdef KELVIN_VISIBLE
+#ifdef KELVIN_IDLE_SPAN
   log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT ") for _space_info: %s",
                mutator_available, _space_info->name());
 #endif
@@ -195,13 +197,13 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   size_t spike_headroom = capacity / 100 * ShenandoahAllocSpikeFactor;
   size_t penalties      = capacity / 100 * _gc_time_penalties;
 
-#ifdef KELVIN_VERBOSE
+#ifdef KELVIN_IDLE_SPAN
   size_t original_mutator_available = mutator_available;
 #endif
 
   // make headroom adjustments
   size_t headroom_adjustments = spike_headroom + penalties;
-#ifdef KELVIN_VISIBLE
+#ifdef KELVIN_IDLE_SPAN
   log_info(gc)("@recalculate_trigger_threshold(mutator_available: " SIZE_FORMAT "), spike_headroom: " SIZE_FORMAT
                ", penalties: " SIZE_FORMAT, mutator_available, spike_headroom, penalties);
 #endif
@@ -225,14 +227,14 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
   // _trigger_threshold is expressed in words
   _trigger_threshold = mutator_available / HeapWordSize;
 
-#ifdef KELVIN_VERBOSE
+#ifdef KELVIN_IDLE_SPAN
   log_info(gc)("%s: recalculate trigger, capacity: " SIZE_FORMAT ", original_mutator_available: " SIZE_FORMAT
                ", spike_headroom: " SIZE_FORMAT ", penalties: " SIZE_FORMAT
                ", used: " SIZE_FORMAT ", reserved: " SIZE_FORMAT ", final answer: " SIZE_FORMAT,
                _space_info->name(), capacity, original_mutator_available, spike_headroom, penalties, _space_info->used(),
                _freeset->reserved(), _trigger_threshold);
 #endif
-#ifdef KELVIN_VISIBLE
+#ifdef KELVIN_IDLE_SPAN
   log_info(gc)(" recalculated _trigger_threshold: " SIZE_FORMAT, _trigger_threshold);
 #endif
 }
@@ -240,8 +242,7 @@ void ShenandoahAdaptiveHeuristics::recalculate_trigger_threshold(size_t mutator_
 void ShenandoahAdaptiveHeuristics::start_idle_span() {
   size_t mutator_available = _freeset->capacity() - _freeset->used();
 
-#undef KELVIN_VERBOSE
-#ifdef KELVIN_VERBOSE
+#ifdef KELVIN_IDLE_SPAN
   log_info(gc)("Made it to ShenanoahAdaptiveHeuristics:%s::start_idle_span() with available " SIZE_FORMAT,
                _space_info->name(), mutator_available);
 #endif
