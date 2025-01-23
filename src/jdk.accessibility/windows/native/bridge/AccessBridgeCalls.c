@@ -228,7 +228,7 @@ extern "C" {
             if (result == 0) {
                 error = GetLastError();
             }
-            return result == 0 ? TRUE : FALSE;
+            return result != 0 ? TRUE : FALSE;
         }
         ((void) error); // Temporary useless code to mark error as being flagged by the compiler
         return FALSE;
