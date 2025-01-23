@@ -183,7 +183,7 @@ bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // On ECore, restore with signaling flags enabled
       MxCsr |= 0x3F;
     }
-    
+
     // we can't use StubRoutines::x86::addr_mxcsr_std()
     // because in Win64 mxcsr is not saved there
     if (MxCsr != ctx->MxCsr) {
