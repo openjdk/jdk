@@ -46,8 +46,8 @@ public class StressAsyncUL {
         analyze_output("-Xlog:async:stall", "-Xlog:all=trace", InnerClass.class.getName());
         // Stress test with a very small buffer. Note: Any valid buffer size must be able to hold a flush token.
         // Therefore the size of the buffer cannot be zero.
-        analyze_output("-Xlog:async:drop", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=96", InnerClass.class.getName());
-        analyze_output("-Xlog:async:stall", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=96", InnerClass.class.getName());
+        analyze_output("-Xlog:async:drop", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=128", InnerClass.class.getName());
+        analyze_output("-Xlog:async:stall", "-Xlog:all=trace", "-XX:AsyncLogBufferSize=128", InnerClass.class.getName());
     }
 
     public static class InnerClass {
