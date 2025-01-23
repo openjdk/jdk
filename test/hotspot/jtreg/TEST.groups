@@ -112,6 +112,9 @@ hotspot_vector_2 = \
   compiler/vectorapi/VectorRebracket128Test.java \
   -compiler/intrinsics/string/TestStringLatin1IndexOfChar.java
 
+hotspot_compiler_arraycopy = \
+  compiler/arraycopy/stress
+
 tier1_loom = \
   :tier1_loom_runtime \
   :tier1_loom_serviceability
