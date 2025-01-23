@@ -58,6 +58,11 @@ bool ShenandoahStaticHeuristics::should_start_gc() {
                  byte_size_in_proper_unit(threshold_available), proper_unit_for_byte_size(threshold_available));
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering J: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
   return ShenandoahHeuristics::should_start_gc();

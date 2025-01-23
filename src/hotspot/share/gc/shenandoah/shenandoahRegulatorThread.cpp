@@ -131,7 +131,22 @@ bool ShenandoahRegulatorThread::start_old_cycle() {
 }
 
 bool ShenandoahRegulatorThread::start_young_cycle() {
+
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  if (_young_heuristics->should_start_gc()) {
+    if (request_concurrent_gc(YOUNG)) {
+      return true;
+    } else {
+      log_info(gc)("RegulatorThread wants to start young gc, but request failed!");
+      return false;
+    }
+  } else {
+    return false;
+  }
+#else
   return _young_heuristics->should_start_gc() && request_concurrent_gc(YOUNG);
+#endif
 }
 
 bool ShenandoahRegulatorThread::start_global_cycle() {

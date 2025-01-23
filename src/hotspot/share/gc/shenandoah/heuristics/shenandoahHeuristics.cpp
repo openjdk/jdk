@@ -47,6 +47,7 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
 }
 
 ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
+  _start_gc_is_pending(false),
   _declined_trigger_count(0),
   _previous_trigger_declinations(0),
   _space_info(space_info),
@@ -187,12 +188,20 @@ void ShenandoahHeuristics::record_cycle_end() {
 }
 
 bool ShenandoahHeuristics::should_start_gc() {
+  if (_start_gc_is_pending) {
+    return true;
+  }
   // Perform GC to cleanup metaspace
   if (has_metaspace_oom()) {
     // Some of vmTestbase/metaspace tests depend on following line to count GC cycles
     log_trigger("%s", GCCause::to_string(GCCause::_metadata_GC_threshold));
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering H: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
@@ -203,10 +212,18 @@ bool ShenandoahHeuristics::should_start_gc() {
                    last_time_ms, _guaranteed_gc_interval);
       _previous_trigger_declinations = _declined_trigger_count;
       _declined_trigger_count = 0;
+      _start_gc_is_pending = true;
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering I: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
       return true;
     }
   }
   _declined_trigger_count++;
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("Declining trigger, count: " SIZE_FORMAT, _declined_trigger_count);
+#endif
   return false;
 }
 
@@ -218,8 +235,12 @@ void ShenandoahHeuristics::adjust_penalty(intx step) {
   assert(0 <= _gc_time_penalties && _gc_time_penalties <= 100,
          "In range before adjustment: %zd", _gc_time_penalties);
 
-  if ((_previous_trigger_declinations < 5) && (step > 0)) {
-    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow 5 checks following
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("adjusting penalties(%ld): _previous_trigger_declinations is " SIZE_FORMAT, step, _previous_trigger_declinations);
+#endif
+  if ((_previous_trigger_declinations < 16) && (step > 0)) {
+    // Don't penalize if heuristics are not responsible for a negative outcome.  Allow 16 checks following
     // previous GC for self calibration without penalty.
     step = 0;
   }
@@ -256,6 +277,7 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
 }
 
 void ShenandoahHeuristics::record_success_concurrent() {
+  _start_gc_is_pending = false;
   _gc_cycle_time_history->add(elapsed_cycle_time());
   _gc_times_learned++;
 
@@ -263,10 +285,12 @@ void ShenandoahHeuristics::record_success_concurrent() {
 }
 
 void ShenandoahHeuristics::record_success_degenerated() {
+  _start_gc_is_pending = false;
   adjust_penalty(Degenerated_Penalty);
 }
 
 void ShenandoahHeuristics::record_success_full() {
+  _start_gc_is_pending = false;
   adjust_penalty(Full_Penalty);
 }
 

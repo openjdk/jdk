@@ -121,7 +121,11 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     if (old_generation->is_preparing_for_mark() || old_generation->is_concurrent_mark_in_progress()) {
       size_t old_time_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
-        _declined_trigger_count++;
+        // Do not increment _declined_trigger_count when waiting for minimum quantum of Old-gen marking
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+        log_info(gc)("Declining trigger for old-generation marking, count: " SIZE_FORMAT, _declined_trigger_count);
+#endif
         return false;
       }
     }
@@ -129,8 +133,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
 
   // inherited triggers have already decided to start a cycle, so no further evaluation is required
   if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
-    _previous_trigger_declinations = _declined_trigger_count;
-    _declined_trigger_count = 0;
     return true;
   }
 
@@ -147,6 +149,10 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     log_trigger("Expedite promotion of " PROPERFMT, PROPERFMTARGS(promo_potential));
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering K: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
@@ -159,10 +165,15 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     log_trigger("Expedite mixed evacuation of %zu regions", mixed_candidates);
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering L: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
-  _declined_trigger_count++;
+  // Don't increment _declined_trigger_count.  That was done in ShenandoahAdaptiveHeuristics::should_start_gc()
   return false;
 }
 

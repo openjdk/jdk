@@ -241,6 +241,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);
 
+  if (_start_gc_is_pending) {
+    return true;
+  }
+
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
@@ -252,6 +256,11 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                  byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering A: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
@@ -266,6 +275,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
                    byte_size_in_proper_unit(init_threshold), proper_unit_for_byte_size(init_threshold));
       _previous_trigger_declinations = _declined_trigger_count;
       _declined_trigger_count = 0;
+      _start_gc_is_pending = true;
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering B: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
       return true;
     }
   }
@@ -300,6 +313,10 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     _last_trigger = RATE;
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering C: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
@@ -313,10 +330,19 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     _last_trigger = SPIKE;
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering D: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
-  return ShenandoahHeuristics::should_start_gc();
+  if (ShenandoahHeuristics::should_start_gc()) {
+    _start_gc_is_pending = true;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 void ShenandoahAdaptiveHeuristics::adjust_last_trigger_parameters(double amount) {

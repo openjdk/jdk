@@ -64,6 +64,11 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#undef KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering F: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
@@ -74,6 +79,10 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
     _previous_trigger_declinations = _declined_trigger_count;
     _declined_trigger_count = 0;
+    _start_gc_is_pending = true;
+#ifdef KELVIN_DEBUG
+    log_info(gc)("Triggering G: _previous_trigger_declinations set to " SIZE_FORMAT, _previous_trigger_declinations);
+#endif
     return true;
   }
 
