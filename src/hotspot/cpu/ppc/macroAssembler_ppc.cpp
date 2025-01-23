@@ -2154,8 +2154,11 @@ void MacroAssembler::check_klass_subtype_slow_path_linear(Register sub_klass,
 
   bind(hit);
   std(super_klass, target_offset, sub_klass); // save result to cache
-  if (result_reg != noreg) { li(result_reg, 0); } // load zero result (indicates a hit)
-  if (L_success != nullptr) { b(*L_success); }
+  if (result_reg != noreg) {
+    li(result_reg, 0); // load zero result (indicates a hit)
+  } else if (L_success != nullptr) {
+    b(*L_success);
+  }
 
   bind(fallthru);
 }
