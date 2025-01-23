@@ -50,9 +50,9 @@ import jdk.xml.internal.SecuritySupport;
  * <strong><em>only</em></strong> the Namespace URI and local part.</p>
  *
  * <p>If not specified, the Namespace URI is set to {@link
- * javax.xml.XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI}.
+ * XMLConstants#NULL_NS_URI XMLConstants.NULL_NS_URI}.
  * If not specified, the prefix is set to {@link
- * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+ * XMLConstants#DEFAULT_NS_PREFIX
  * XMLConstants.DEFAULT_NS_PREFIX}.</p>
  *
  * <p><code>QName</code> is immutable.</p>
@@ -89,13 +89,13 @@ public class QName implements Serializable {
      * and local part.</p>
      *
      * <p>If the Namespace URI is <code>null</code>, it is set to
-     * {@link javax.xml.XMLConstants#NULL_NS_URI
+     * {@link XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI}.  This value represents no
      * explicitly defined Namespace as defined by the <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">Namespaces
      * in XML</a> specification.  This action preserves compatible
      * behavior with QName 1.0.  Explicitly providing the {@link
-     * javax.xml.XMLConstants#NULL_NS_URI
+     * XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI} value is the preferred coding
      * style.</p>
      *
@@ -105,7 +105,7 @@ public class QName implements Serializable {
      * compatible behavior with QName 1.0. </p>
      *
      * <p>When using this constructor, the prefix is set to {@link
-     * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+     * XMLConstants#DEFAULT_NS_PREFIX
      * XMLConstants.DEFAULT_NS_PREFIX}.</p>
      *
      * <p>The Namespace URI is not validated as a
@@ -134,13 +134,13 @@ public class QName implements Serializable {
      * local part and prefix.</p>
      *
      * <p>If the Namespace URI is <code>null</code>, it is set to
-     * {@link javax.xml.XMLConstants#NULL_NS_URI
+     * {@link XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI}.  This value represents no
      * explicitly defined Namespace as defined by the <a
      * href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">Namespaces
      * in XML</a> specification.  This action preserves compatible
      * behavior with QName 1.0.  Explicitly providing the {@link
-     * javax.xml.XMLConstants#NULL_NS_URI
+     * XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI} value is the preferred coding
      * style.</p>
      *
@@ -151,7 +151,7 @@ public class QName implements Serializable {
      *
      * <p>If the prefix is <code>null</code>, an
      * <code>IllegalArgumentException</code> is thrown.  Use {@link
-     * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+     * XMLConstants#DEFAULT_NS_PREFIX
      * XMLConstants.DEFAULT_NS_PREFIX} to explicitly indicate that no
      * prefix is present or the prefix is not relevant.</p>
      *
@@ -204,9 +204,9 @@ public class QName implements Serializable {
      * compatible behavior with QName 1.0. </p>
      *
      * <p>When using this constructor, the Namespace URI is set to
-     * {@link javax.xml.XMLConstants#NULL_NS_URI
+     * {@link XMLConstants#NULL_NS_URI
      * XMLConstants.NULL_NS_URI} and the prefix is set to {@link
-     * javax.xml.XMLConstants#DEFAULT_NS_PREFIX
+     * XMLConstants#DEFAULT_NS_PREFIX
      * XMLConstants.DEFAULT_NS_PREFIX}.</p>
      *
      * <p><em>In an XML context, all Element and Attribute names exist
@@ -353,7 +353,7 @@ public class QName implements Serializable {
      *     {NamespaceURI}LocalPart
      * }</pre>
      * Since the {@code Prefix} is not represented in the string form, it will be
-     * set to {@link javax.xml.XMLConstants#DEFAULT_NS_PREFIX XMLConstants.DEFAULT_NS_PREFIX}.
+     * set to {@link XMLConstants#DEFAULT_NS_PREFIX XMLConstants.DEFAULT_NS_PREFIX}.
      *
      * @apiNote This method does not perform full validation of the resulting
      * {@code QName}. The {@code NamespaceURI} is not validated as a
