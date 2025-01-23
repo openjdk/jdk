@@ -100,6 +100,9 @@ public class DeferredLintHandler {
     /**Sets the current declaration to the provided {@code decl}. {@link LintLogger}s
      * passed to subsequent invocations of {@link #report(LintLogger) } will be associated
      * with the given declaration.
+     *
+     * @param decl new current declaration, or null to restore immediate mode
+     * @return previous current declaration, or null if previously in immediate mode
      */
     public JCTree setDecl(JCTree decl) {
         Assert.check(decl == null
