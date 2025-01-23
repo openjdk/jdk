@@ -1033,7 +1033,7 @@ public sealed interface CodeBuilder
      * Generates an instruction to load a {@link TypeKind#REFERENCE reference}
      * from a local variable.
      * <p>
-     * This may also generate {@link Opcode#ALOAD_0 aload_<N>} and {@link
+     * This may also generate {@link Opcode#ALOAD_0 aload_&lt;N&gt;} and {@link
      * Opcode#ALOAD_W wide aload} instructions.
      *
      * @param slot the local variable slot
@@ -1103,8 +1103,8 @@ public sealed interface CodeBuilder
      * into a local variable.  Such an instruction can also store a {@link
      * TypeKind##returnAddress returnAddress}.
      * <p>
-     * This may also generate {@link Opcode#ASTORE_0 astore_<N>} and {@link
-     * Opcode#ASTORE_W wide astore} instructions.
+     * This may also generate {@link Opcode#ASTORE_0 astore_&lt;N&gt;} and
+     * {@link Opcode#ASTORE_W wide astore} instructions.
      *
      * @param slot the local variable slot
      * @return this builder
@@ -1359,7 +1359,7 @@ public sealed interface CodeBuilder
      * Generates an instruction to load a {@link TypeKind#DOUBLE double} from a
      * local variable.
      * <p>
-     * This may also generate {@link Opcode#DLOAD_0 dload_<N>} and {@link
+     * This may also generate {@link Opcode#DLOAD_0 dload_&lt;N&gt;} and {@link
      * Opcode#DLOAD_W wide dload} instructions.
      *
      * @param slot the local variable slot
@@ -1424,8 +1424,8 @@ public sealed interface CodeBuilder
      * Generates an instruction to store a {@link TypeKind#DOUBLE double} into a
      * local variable.
      * <p>
-     * This may also generate {@link Opcode#DSTORE_0 dstore_<N>} and {@link
-     * Opcode#DSTORE_W wide dstore} instructions.
+     * This may also generate {@link Opcode#DSTORE_0 dstore_&lt;N&gt;} and
+     * {@link Opcode#DSTORE_W wide dstore} instructions.
      *
      * @param slot the local variable slot
      * @return this builder
@@ -1671,7 +1671,7 @@ public sealed interface CodeBuilder
      * Generates an instruction to load a {@link TypeKind#FLOAT float} from a
      * local variable.
      * <p>
-     * This may also generate {@link Opcode#FLOAD_0 fload_<N>} and {@link
+     * This may also generate {@link Opcode#FLOAD_0 fload_&lt;N&gt;} and {@link
      * Opcode#FLOAD_W wide fload} instructions.
      *
      * @param slot the local variable slot
@@ -1736,8 +1736,8 @@ public sealed interface CodeBuilder
      * Generates an instruction to store a {@link TypeKind#FLOAT float} into a
      * local variable.
      * <p>
-     * This may also generate {@link Opcode#FSTORE_0 fstore_<N>} and {@link
-     * Opcode#FSTORE_W wide fstore} instructions.
+     * This may also generate {@link Opcode#FSTORE_0 fstore_&lt;N&gt;} and
+     * {@link Opcode#FSTORE_W wide fstore} instructions.
      *
      * @param slot the local variable slot
      * @return this builder
@@ -2173,6 +2173,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IF_ICMPLE
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2190,6 +2191,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IF_ICMPLT
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2207,6 +2209,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IF_ICMPNE
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2224,6 +2227,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFNONNULL
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2241,6 +2245,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFNULL
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2258,6 +2263,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFEQ
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2275,6 +2281,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFGE
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2292,6 +2299,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFGT
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2309,6 +2317,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFLE
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2326,6 +2335,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFLT
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2343,6 +2353,7 @@ public sealed interface CodeBuilder
      * target} cannot be encoded as a BCI offset in {@code [-32768, 32767]}.
      *
      * @param target the branch target
+     * @return this builder
      * @see Opcode#IFNE
      * @see #branch(Opcode, Label)
      * @see BranchInstruction
@@ -2374,8 +2385,8 @@ public sealed interface CodeBuilder
      * Generates an instruction to load an {@link TypeKind#INT int} from a local
      * variable.
      * <p>
-     * This may also generate {@link Opcode#ILOAD_0 iload_<N>} and
-     * {@link Opcode#ILOAD_W wide iload} instructions.
+     * This may also generate {@link Opcode#ILOAD_0 iload_&lt;N&gt;} and {@link
+     * Opcode#ILOAD_W wide iload} instructions.
      *
      * @param slot the local variable slot
      * @return this builder
@@ -2727,7 +2738,7 @@ public sealed interface CodeBuilder
      * Generates an instruction to store an {@link TypeKind#INT int} into a
      * local variable.
      * <p>
-     * This may also generate {@link Opcode#ISTORE_0 istore_<N>} and
+     * This may also generate {@link Opcode#ISTORE_0 istore_&lt;N&gt;} and
      * {@link Opcode#ISTORE_W wide istore} instructions.
      *
      * @param slot the local variable slot
@@ -2965,8 +2976,8 @@ public sealed interface CodeBuilder
      * Generates an instruction to load a {@link TypeKind#LONG long} from a
      * local variable.
      * <p>
-     * This may also generate {@link Opcode#LLOAD_0 lload_<N>} and
-     * {@link Opcode#LLOAD_W wide lload} instructions.
+     * This may also generate {@link Opcode#LLOAD_0 lload_&lt;N&gt;} and {@link
+     * Opcode#LLOAD_W wide lload} instructions.
      *
      * @param slot the local variable slot
      * @return this builder
@@ -3067,8 +3078,8 @@ public sealed interface CodeBuilder
      * Generates an instruction to store a {@link TypeKind#LONG long} into a
      * local variable.
      * <p>
-     * This may also generate {@link Opcode#LSTORE_0 lstore_<N>} and {@link
-     * Opcode#LSTORE_W wide lstore} instructions.
+     * This may also generate {@link Opcode#LSTORE_0 lstore_&lt;N&gt;} and
+     * {@link Opcode#LSTORE_W wide lstore} instructions.
      *
      * @param slot the local variable slot
      * @return this builder

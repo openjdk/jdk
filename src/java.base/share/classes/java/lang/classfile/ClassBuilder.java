@@ -239,7 +239,7 @@ public sealed interface ClassBuilder
      * {@snippet lang=java :
      * // @link substring=withField target="#withField(Utf8Entry, Utf8Entry, Consumer)" :
      * withField(field.fieldName(), field.fieldType(),
-     *           b -> b.transform(field, transform)) // @link regex="transform(?=\()" target="FieldBuilder#transform"
+     *           fb -> fb.transform(field, transform)) // @link regex="transform(?=\()" target="FieldBuilder#transform"
      * }
      *
      * @param field the field to be transformed
@@ -351,7 +351,7 @@ public sealed interface ClassBuilder
      * {@snippet lang=java :
      * // @link substring=withMethod target="#withMethod(Utf8Entry, Utf8Entry, int, Consumer)" :
      * withMethod(method.methodName(), method.methodType(), method.flags().flagMask(),
-     *            mb -> mb.transform(method, transform)) // @link regex=transform(?=\() target=MethodBuilder#transform
+     *            mb -> mb.transform(method, transform)) // @link regex="transform(?=\()" target="MethodBuilder#transform"
      * }
      *
      * @param method the method to be transformed

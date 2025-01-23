@@ -667,8 +667,7 @@ public sealed interface ClassFile
      * this class, as well as a {@link ClassBuilder} for building the new class.
      * The transform is free to preserve, remove, or replace elements as it
      * sees fit.
-     *
-     * @apiNote
+     * <p>
      * This method behaves as if:
      * {@snippet lang=java :
      * ConstantPoolBuilder cpb = null; // @replace substring=null; replacement=...
@@ -676,7 +675,8 @@ public sealed interface ClassFile
      *            clb -> clb.transform(model, transform));
      * }
      * where {@code cpb} is determined by {@link ConstantPoolSharingOption}.
-     * <p>
+     *
+     * @apiNote
      * This is named {@code transformClass} instead of {@code transform} for
      * consistency with {@link ClassBuilder#transformField}, {@link
      * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
@@ -724,15 +724,15 @@ public sealed interface ClassFile
      * this class, as well as a {@link ClassBuilder} for building the new class.
      * The transform is free to preserve, remove, or replace elements as it
      * sees fit.
-     *
-     * @apiNote
+     * <p>
      * This method behaves as if:
      * {@snippet lang=java :
      * ConstantPoolBuilder cpb = null; // @replace substring=null; replacement=...
      * this.build(newClassName, cpb, clb -> clb.transform(model, transform));
      * }
      * where {@code cpb} is determined by {@link ConstantPoolSharingOption}.
-     * <p>
+     *
+     * @apiNote
      * This is named {@code transformClass} instead of {@code transform} for
      * consistency with {@link ClassBuilder#transformField}, {@link
      * ClassBuilder#transformMethod}, and {@link MethodBuilder#transformCode},
