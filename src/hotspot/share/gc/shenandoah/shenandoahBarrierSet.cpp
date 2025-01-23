@@ -117,7 +117,7 @@ void ShenandoahBarrierSet::on_thread_attach(Thread *thread) {
 
   if (ShenandoahCardBarrier) {
     // Every thread always have a pointer to the _current_ _write_ version of the card table.
-    // The JIT'ed code will use this address (+card entry offset) to marke card's as dirty.
+    // The JIT'ed code will use this address (+card entry offset) to mark the card as dirty.
     ShenandoahThreadLocalData::set_card_table(thread, _card_table->write_byte_map_base());
   }
 

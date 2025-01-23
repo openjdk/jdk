@@ -596,8 +596,7 @@ void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register b
     __ add(base, ind_or_offs.as_register(), base);
   }
 
-  __ ld(tmp, in_bytes(ShenandoahThreadLocalData::card_table_offset()), R16_thread);
-  __ add(tmp, /* card_table_base */ tmp, R0);
+  __ ld(tmp, in_bytes(ShenandoahThreadLocalData::card_table_offset()), R16_thread); /* tmp = *[R16_thread + card_table_offset] */
   __ srdi(base, base, CardTable::card_shift());
   __ li(R0, CardTable::dirty_card_val());
   __ stbx(R0, tmp, base);
@@ -796,7 +795,8 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   __ srdi(addr, addr, CardTable::card_shift());
   __ srdi(count, count, CardTable::card_shift());
   __ subf(count, addr, count);
-  __ add_const_optimized(addr, addr, (address)ct->byte_map_base(), R0);
+  __ ld(R0, in_bytes(ShenandoahThreadLocalData::card_table_offset()), R16_thread);
+  __ add(addr, addr, R0);
   __ addi(count, count, 1);
   __ li(R0, 0);
   __ mtctr(count);

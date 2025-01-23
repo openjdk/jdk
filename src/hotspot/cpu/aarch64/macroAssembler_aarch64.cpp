@@ -5699,13 +5699,6 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_off
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
-#if INCLUDE_SHENANDOAHGC
-  if (UseShenandoahGC) {
-      Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
-      ldr(reg, curr_ct_holder_addr);
-    return ;
-  }
-#endif
   CardTable::CardValue* byte_map_base =
     ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base();
 

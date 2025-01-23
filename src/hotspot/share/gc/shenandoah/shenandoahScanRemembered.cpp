@@ -119,7 +119,7 @@ void ShenandoahDirectCardMarkRememberedSet::mark_read_table_as_clean() {
   CardValue* bp = &(read_table)[0];
   CardValue* end_bp = &(read_table)[_card_table->last_valid_index()];
 
-  while (bp < end_bp) {
+  while (bp <= end_bp) {
     *bp++ = CardTable::clean_card_val();
   }
 
@@ -629,7 +629,7 @@ void ShenandoahDirectCardMarkRememberedSet::swap_card_tables() {
   CardValue* start_bp = &(_card_table->write_byte_map())[0];
   CardValue* end_bp = &(new_ptr)[_card_table->last_valid_index()];
 
-  while (start_bp < end_bp) {
+  while (start_bp <= end_bp) {
     assert(*start_bp == CardTable::clean_card_val(), "Should be clean: " PTR_FORMAT, p2i(start_bp));
     start_bp++;
   }
