@@ -778,10 +778,9 @@ public interface Elements {
      *                           elements.getTypeElement("I"));
      * }
      *
-     * @apiNote This method implements the overrides relation as specified in JLS {@jls 8.4.8.1}.
-     * It may not implement the additional compile-time checks that Java compilers follow,
-     * specified in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3}. In particular, the additional constraints
-     * on exception types, return types, and method modifiers do not affect the overriding relation.
+     * @apiNote It may not implement the additional compile-time checks on exception types,
+     * return types, and method modifiers specified in JLS {@jls 8.4.8.1} and {@jls 8.4.8.3},
+     * although implementations of this method are allowed to implement these additional checks.
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden

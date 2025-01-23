@@ -36,10 +36,6 @@ import javax.lang.model.element.TypeElement;
 
 import static javax.lang.model.element.ElementKind.METHOD;
 
-/*
- * This test models a few cases where Elements.overrides produces a false
- * positive which warrants @apiNote.
- */
 public class TestOverrides extends JavacTestingAbstractProcessor {
 
     @Override
@@ -51,7 +47,7 @@ public class TestOverrides extends JavacTestingAbstractProcessor {
                 var tm = mIn(t);
                 if (!elements.overrides(tm, sm, t))
                     messager.printError(String.format(
-                            "%s does not override %s from %s", tm, sm, t.getQualifiedName()));
+                            "%s does not override from %s method %s", tm,  t.getQualifiedName(),sm));
             }
         }
         return true;
