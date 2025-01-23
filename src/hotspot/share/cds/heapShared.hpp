@@ -356,7 +356,6 @@ private:
   }
 
   static int archive_exception_instance(oop exception);
-  static void write_heap(ArchiveHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
@@ -403,6 +402,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void write_heap(ArchiveHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
