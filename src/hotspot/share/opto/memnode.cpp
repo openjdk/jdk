@@ -3250,6 +3250,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
 #endif // VM_LITTLE_ENDIAN
     }
     merged_input_value = _phase->longcon(con);
+    NOT_PRODUCT( if (is_trace_basic()) { tty->print_cr("[TraceMergeStores] Value is con: %ld", con); })
   } else {
     assert(_value_order == ValueOrder::Platform || _value_order == ValueOrder::Reverse, "must match");
     // Pattern: [base >> 24, base >> 16, base >> 8, base] -> base
@@ -3262,21 +3263,32 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
     // `_store` and `first` are swapped in the diagram above
     swap(hi, lo);
 #endif // !VM_LITTLE_ENDIAN
-    if (_value_order == ValueOrder::Reverse) {
-      swap(hi, lo);
-    }
-    Node const* hi_base;
-    jint hi_shift;
-    merged_input_value = lo;
+    Node const* hi_base, *lo_base, *base;
+    jint hi_shift, lo_shift;
     bool is_true = is_con_RShift(hi, hi_base, hi_shift, _phase);
     assert(is_true, "must detect con RShift");
-    if (merged_input_value != hi_base && merged_input_value->Opcode() == Op_ConvL2I) {
+    is_true = is_con_RShift(lo, lo_base, lo_shift, _phase);
+    assert(is_true, "must detect con RShift");
+    if (lo_base != hi_base) {
+      // different base
+      NOT_PRODUCT( if (is_trace_basic()) { tty->print_cr("[TraceMergeStores] fail: Input values are based different"); hi_base->dump(); lo_base->dump(); tty->cr(); })
+      return nullptr;
+    }
+    if (_value_order == ValueOrder::Reverse) {
+      // Pattern of Reverse order (LE)
+      // a[0] = (byte)(vL >> 24)    <--  first, lo
+      // a[1] = (byte)(vL >> 16)
+      // a[2] = (byte)(vL >>  8)
+      // a[3] = (byte)(vL >>  0)    <-- _store, hi
+      merged_input_value = hi;
+      base = hi_base;
+    } else {
+      merged_input_value = lo;
+      base = lo_base;
+    }
+    if (merged_input_value != base && merged_input_value->Opcode() == Op_ConvL2I) {
       // look through
       merged_input_value = merged_input_value->in(1);
-    }
-    if (merged_input_value != hi_base) {
-      // merged_input_value is not the base
-      return nullptr;
     }
   }
 
@@ -3305,6 +3317,7 @@ Node* MergePrimitiveStores::make_merged_input_value(const Node_List& merge_list)
       merged_input_value = _phase->transform(new ReverseBytesSNode(merged_input_value));
     }
   }
+  NOT_PRODUCT( if (is_trace_basic()) { tty->print("[TraceMergeStores] Merged value:"); merged_input_value->dump(); tty->cr(); })
   return merged_input_value;
 }
 
