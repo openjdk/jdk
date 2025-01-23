@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_FrameMap.hpp"
@@ -779,13 +778,11 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_floatToFloat16: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ f2hf(src, dst, tmp);
           break;
         }
         case vmIntrinsics::_float16ToFloat: {
           LIR_Opr tmp = new_register(T_FLOAT);
-          __ move(LIR_OprFact::floatConst(-0.0), tmp);
           __ hf2f(src, dst, tmp);
           break;
         }
