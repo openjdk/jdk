@@ -24,6 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign.abi
+ * @build NativeTestHelper TestBufferStack
  * @run testng TestBufferStack
  */
 
@@ -32,16 +33,20 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.invoke.MethodHandle;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
+import static java.lang.foreign.MemoryLayout.structLayout;
+import static java.lang.foreign.ValueLayout.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
-public class TestBufferStack {
+public class TestBufferStack extends NativeTestHelper {
     @Test
     public void testScopedAllocation() {
         int stackSize = 128;
@@ -116,5 +121,31 @@ public class TestBufferStack {
         Thread.sleep(Duration.of(10, SECONDS));
         Arrays.stream(vThreads).forEach(
                 thread -> Assert.assertTrue(thread.isAlive()));
+    }
+
+    static {
+        System.loadLibrary("TestBufferStack");
+    }
+
+    private static final MemoryLayout HVAPoint3D = structLayout(NativeTestHelper.C_DOUBLE, C_DOUBLE, C_DOUBLE);
+    private static final MemorySegment UPCALL_MH = upcallStub(TestBufferStack.class, "recurse", FunctionDescriptor.of(HVAPoint3D, C_INT));
+    private static final MethodHandle DOWNCALL_MH = downcallHandle("recurse", FunctionDescriptor.of(HVAPoint3D, C_INT, ADDRESS));
+
+    public static MemorySegment recurse(int depth) {
+        try {
+            return (MemorySegment) DOWNCALL_MH.invokeExact((SegmentAllocator) Arena.ofAuto(), depth, UPCALL_MH);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testDeepStack() throws Throwable {
+        // Each downcall and upcall require 48 bytes of stack.
+        // After five allocations we start falling back.
+        MemorySegment point = recurse(10);
+        Assert.assertEquals(point.getAtIndex(C_DOUBLE, 0), 12.0);
+        Assert.assertEquals(point.getAtIndex(C_DOUBLE, 1), 11.0);
+        Assert.assertEquals(point.getAtIndex(C_DOUBLE, 2), 10.0);
     }
 }
