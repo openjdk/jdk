@@ -109,7 +109,7 @@ public class QName implements Serializable {
      * XMLConstants.DEFAULT_NS_PREFIX}.</p>
      *
      * <p>The Namespace URI is not validated as a
-     * <a href="http://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
+     * <a href="https://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
      * The local part is not validated as a
      * <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">NCName</a>
      * as specified in <a href="http://www.w3.org/TR/REC-xml-names/">Namespaces
@@ -156,7 +156,7 @@ public class QName implements Serializable {
      * prefix is present or the prefix is not relevant.</p>
      *
      * <p>The Namespace URI is not validated as a
-     * <a href="http://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
+     * <a href="https://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
      * The local part and prefix are not validated as a
      * <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">NCName</a>
      * as specified in <a href="http://www.w3.org/TR/REC-xml-names/">Namespaces
@@ -329,7 +329,7 @@ public class QName implements Serializable {
     }
 
     /**
-     * Returns the string representation of this {@code QName}.
+     * {@return the string representation of this {@code QName}}
      * The format is:
      * <pre> {@code
      *     {NamespaceURI}LocalPart
@@ -337,8 +337,6 @@ public class QName implements Serializable {
      * If {@code NamespaceURI} is {@code null}, only {@code LocalPart} is returned.
      *
      * @apiNote The {@code Prefix} is not returned in the string representation.
-     *
-     *  @return the string representation of this {@code QName}
      */
     public String toString() {
         if (namespaceURI.equals(XMLConstants.NULL_NS_URI)) {
@@ -349,7 +347,7 @@ public class QName implements Serializable {
     }
 
     /**
-     * Returns a {@code QName} from its string representation.
+     * {@return a {@code QName} from its string representation}
      * The string representation must be in the format returned by {@link #toString()}:
      * <pre> {@code
      *     {NamespaceURI}LocalPart
@@ -359,15 +357,13 @@ public class QName implements Serializable {
      *
      * @apiNote This method does not perform full validation of the resulting
      * {@code QName}. The {@code NamespaceURI} is not validated as a
-     * <a href="http://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
+     * <a href="https://www.ietf.org/rfc/rfc2396.txt">URI reference</a>.
      * The {@code LocalPart} is not validated as a
      * <a href="http://www.w3.org/TR/REC-xml-names/#NT-NCName">NCName</a>
      * as specified in
      * <a href="http://www.w3.org/TR/REC-xml-names/">Namespaces in XML</a>.
      *
      * @param qNameAsString the string representation of the {@code QName}
-     *
-     * @return a {@code QName} from its string representation
      * @throws IllegalArgumentException if {@code qNameAsString} is {@code null}
      * or malformed
      * @see #toString() QName.toString()
