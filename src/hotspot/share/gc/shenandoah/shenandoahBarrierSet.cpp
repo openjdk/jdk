@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetClone.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"

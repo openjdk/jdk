@@ -111,6 +111,9 @@ private:
 
   bool is_young_gc_safe() const;
 
+  void gc_prologue(bool full);
+  void gc_epilogue(bool full);
+
 public:
   // Returns JNI_OK on success
   jint initialize() override;
@@ -225,10 +228,6 @@ public:
     SO_AllCodeCache        =  0x8,
     SO_ScavengeCodeCache   = 0x10
   };
-
- protected:
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
 
  public:
   // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.

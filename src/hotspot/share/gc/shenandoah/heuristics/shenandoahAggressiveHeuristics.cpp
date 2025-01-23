@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"

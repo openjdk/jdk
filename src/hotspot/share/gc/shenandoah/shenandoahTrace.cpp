@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahEvacInfo.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "jfr/jfrEvents.hpp"

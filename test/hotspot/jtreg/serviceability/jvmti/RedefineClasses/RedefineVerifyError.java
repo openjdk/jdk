@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Redefine VerifyError to get a VerifyError should not throw SOE
  * @requires vm.jvmti
  * @library /test/lib
+ * @library /testlibrary/asm
  * @modules java.base/jdk.internal.misc
- *          java.base/jdk.internal.org.objectweb.asm
  *          java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
@@ -39,19 +39,19 @@
  *         RedefineVerifyError
  */
 
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.Attribute;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.ConstantDynamic;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.Handle;
-import jdk.internal.org.objectweb.asm.Label;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.RecordComponentVisitor;
-import jdk.internal.org.objectweb.asm.Type;
-import jdk.internal.org.objectweb.asm.TypePath;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.ConstantDynamic;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.RecordComponentVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.TypePath;
 
 public class RedefineVerifyError implements Opcodes {
 
