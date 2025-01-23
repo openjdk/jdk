@@ -885,7 +885,8 @@ public class TestVM {
         if (VERBOSE || PRINT_TIMES) {
             System.out.println(System.lineSeparator() + System.lineSeparator() + "Test execution times:");
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                System.out.format("%-10s%15d ns%n", entry.getValue() + ":", entry.getKey());
+                TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
+                        "", true);
             }
         }
 
