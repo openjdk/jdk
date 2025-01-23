@@ -50,6 +50,10 @@ public class TestShiftAndMask {
     static final int INT_MASK2 = 1 + RANDOM.nextInt(INT_MAX_MASK);
     static final int INT_ZERO_CONST = RANDOM.nextInt() << INT_MASK_WIDTH;
 
+    static final int INT_RANDOM_CONST = RANDOM.nextInt();
+    static final int INT_RANDOM_SHIFT = RANDOM.nextInt();
+    static final int INT_RANDOM_MASK = RANDOM.nextInt();
+
     // any X << LONG_MASK_WIDTH is zero under any LONG_MASK
     static final int LONG_MASK_WIDTH = 1 + RANDOM.nextInt(62);
     static final long LONG_MAX_MASK = (1L << LONG_MASK_WIDTH) - 1;
@@ -57,7 +61,24 @@ public class TestShiftAndMask {
     static final long LONG_MASK2 = 1 + RANDOM.nextLong(LONG_MAX_MASK);
     static final long LONG_ZERO_CONST = RANDOM.nextLong() << LONG_MASK_WIDTH;
 
-    static final int ADD_CONST = RANDOM.nextInt();
+    static final long LONG_RANDOM_CONST = RANDOM.nextLong();
+    static final long LONG_RANDOM_SHIFT = RANDOM.nextLong();
+    static final long LONG_RANDOM_MASK = RANDOM.nextLong();
+
+    @Test
+    public static int intSumAndMask(int i, int j) {
+        return (j + i << INT_RANDOM_SHIFT + INT_RANDOM_CONST) & INT_RANDOM_MASK;
+    }
+
+    @Run(test = { "intSumAndMask" })
+    public static void checkIntSumAndMask() {
+        int j = RANDOM.nextInt();
+        int i = RANDOM.nextInt();
+        int res = intSumAndMask(i, j);
+        if (res != ((j + i << INT_RANDOM_SHIFT + INT_RANDOM_CONST) & INT_RANDOM_MASK)) {
+            throw new RuntimeException("incorrect result: " + res);
+        }
+    }
 
     @Test
     @Arguments(values = Argument.RANDOM_EACH)
@@ -69,6 +90,21 @@ public class TestShiftAndMask {
     @Check(test = "shiftMaskInt")
     public static void checkShiftMaskInt(int res) {
         if (res != 0) {
+            throw new RuntimeException("incorrect result: " + res);
+        }
+    }
+
+    @Test
+    public static long longSumAndMask(long i, long j) {
+        return (j + i << LONG_RANDOM_SHIFT + LONG_RANDOM_CONST) & LONG_RANDOM_MASK;
+    }
+
+    @Run(test = { "longSumAndMask" })
+    public static void checkLongSumAndMask() {
+        long j = RANDOM.nextLong();
+        long i = RANDOM.nextLong();
+        long res = longSumAndMask(i, j);
+        if (res != ((j + i << LONG_RANDOM_SHIFT + LONG_RANDOM_CONST) & LONG_RANDOM_MASK)) {
             throw new RuntimeException("incorrect result: " + res);
         }
     }
@@ -153,7 +189,7 @@ public class TestShiftAndMask {
     @IR(counts = { IRNode.AND_I, "1" })
     @IR(failOn = { IRNode.ADD_I, IRNode.LSHIFT_I })
     public static int addShiftPlusConstMaskInt(int i, int j) {
-        return (j + ((i + ADD_CONST) << INT_MASK_WIDTH)) & INT_MASK; // transformed to: return j & INT_MASK;
+        return (j + ((i + INT_RANDOM_CONST) << INT_MASK_WIDTH)) & INT_MASK; // transformed to: return j & INT_MASK;
     }
 
     @Run(test = "addShiftPlusConstMaskInt")
@@ -256,7 +292,7 @@ public class TestShiftAndMask {
     @IR(counts = { IRNode.AND_L, "1" })
     @IR(failOn = { IRNode.ADD_L, IRNode.LSHIFT_L })
     public static long addShiftPlusConstMaskLong(long i, long j) {
-        return (j + ((i - 5) << LONG_MASK_WIDTH)) & LONG_MASK; // transformed to: return j & INT_MASK;
+        return (j + ((i + LONG_RANDOM_CONST) << LONG_MASK_WIDTH)) & LONG_MASK; // transformed to: return j & LONG_MASK;
     }
 
     @Run(test = "addShiftPlusConstMaskLong")
