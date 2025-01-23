@@ -67,6 +67,10 @@ final class AppImageBuilder {
             return addItem(v, Scope.APPLICATION_ONLY);
         }
 
+        Builder addPackageItem(AppImageItem v) {
+            return addItem(v, Scope.PACKAGE_ONLY);
+        }
+
         Builder itemGroup(AppImageItemGroup v) {
             Objects.requireNonNull(v);
             curGroup = v;
@@ -119,6 +123,7 @@ final class AppImageBuilder {
         PACKAGE;
 
         final static Set<Scope> APPLICATION_ONLY = Set.of(APPLICATION);
+        final static Set<Scope> PACKAGE_ONLY = Set.of(PACKAGE);
         final static Set<Scope> ALL = EnumSet.allOf(Scope.class);
     }
 
