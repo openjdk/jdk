@@ -27,9 +27,21 @@ package java.lang.classfile;
 import java.lang.classfile.attribute.*;
 
 /**
- * A marker interface for elements that can appear when traversing
- * a {@link ClassModel} or be presented to a {@link ClassBuilder}.
+ * Marker interface for a member element of a {@link ClassModel}.  Such an
+ * element can appear when traversing a {@link ClassModel} unless otherwise
+ * specified, be supplied to a {@link ClassBuilder}, and be processed by a
+ * {@link ClassTransform}.
+ * <p>
+ * {@link AccessFlags}, and {@link ClassFileVersion} are member elements of a
+ * class that appear exactly once during the traversal of a {@link ClassModel}.
+ * {@link Superclass} and {@link Interfaces} may be absent or appear at most
+ * once.  A {@link ClassBuilder} may provide an alternative superclass if it is
+ * not defined but required.
  *
+ * @see ClassFileElement##membership Membership Elements
+ * @see MethodElement
+ * @see FieldElement
+ * @see CodeElement
  * @sealedGraph
  * @since 24
  */

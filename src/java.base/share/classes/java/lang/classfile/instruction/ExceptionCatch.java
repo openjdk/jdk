@@ -54,6 +54,7 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
  * }
  *
  * @see CodeBuilder#exceptionCatch CodeBuilder::exceptionCatch
+ * @see CodeAttribute#exceptionHandlers()
  * @jvms 4.7.3 The {@code Code} Attribute
  * @since 24
  */
