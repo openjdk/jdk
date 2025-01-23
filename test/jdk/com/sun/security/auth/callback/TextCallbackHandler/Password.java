@@ -63,7 +63,7 @@ public class Password {
         if (Arrays.asList(args).contains("--password")) {
             password();
         } else {
-            final String instructions = String.format("%s/bin/java -cp \n%s \nPassword  \n--password",
+            final String instructions = String.format("%s/bin/java -cp \\\n%s \\\nPassword  \\\n--password",
                     System.getProperty("java.home"),
                     System.getProperty("java.class.path")
             );
@@ -71,7 +71,7 @@ public class Password {
             boolean testFailed = new Password().validate(
                     "Please copy and execute the following script in the terminal/cmd, " +
                             "then follow the instructions. \n" +
-                            "Once the test is complete please select weather the test has passed.",
+                            "Once the test is complete please select whether the test has passed.",
                     instructions);
 
             if (testFailed) {
