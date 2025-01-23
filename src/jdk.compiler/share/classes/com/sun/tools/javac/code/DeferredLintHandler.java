@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,10 @@ package com.sun.tools.javac.code;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.ListBuffer;
 
 /**
@@ -53,98 +52,72 @@ public class DeferredLintHandler {
     }
 
     /** The Lint to use when {@link #immediate(Lint)} is used,
-     * instead of {@link #setPos(DiagnosticPosition)}. */
+     * instead of {@link #setDecl(JCTree)}. */
     private Lint immediateLint;
 
     @SuppressWarnings("this-escape")
     protected DeferredLintHandler(Context context) {
         context.put(deferredLintHandlerKey, this);
-        this.currentPos = IMMEDIATE_POSITION;
         immediateLint = Lint.instance(context);
     }
 
     /**An interface for deferred lint reporting - loggers passed to
      * {@link #report(LintLogger) } will be called when
-     * {@link #flush(DiagnosticPosition) } is invoked.
+     * {@link #flush(JCTree)} is invoked.
      */
     public interface LintLogger {
         void report(Lint lint);
     }
 
-    private DiagnosticPosition currentPos;
-    private Map<DiagnosticPosition, ListBuffer<LintLogger>> loggersQueue = new HashMap<>();
+    private JCTree currentDecl;     // null means "immediate mode"
+    private Map<JCTree, ListBuffer<LintLogger>> loggersQueue = new HashMap<>();
 
-    /**Associate the given logger with the current position as set by {@link #setPos(DiagnosticPosition) }.
-     * Will be invoked when {@link #flush(DiagnosticPosition) } will be invoked with the same position.
+    /**Associate the given logger with the current declaration as set by {@link #setDecl(JCTree)}.
+     * Will be invoked when {@link #flush(JCTree)} is invoked with the same declaration.
      * <br>
      * Will invoke the logger synchronously if {@link #immediate() } was called
-     * instead of {@link #setPos(DiagnosticPosition) }.
+     * instead of {@link #setDecl(JCTree)}.
      */
     public void report(LintLogger logger) {
-        if (currentPos == IMMEDIATE_POSITION) {
+        if (currentDecl == null) {
             logger.report(immediateLint);
         } else {
-            ListBuffer<LintLogger> loggers = loggersQueue.get(currentPos);
-            if (loggers == null) {
-                loggersQueue.put(currentPos, loggers = new ListBuffer<>());
-            }
-            loggers.append(logger);
+            loggersQueue.computeIfAbsent(currentDecl, d -> new ListBuffer<>()).append(logger);
         }
     }
 
-    /**Invoke all {@link LintLogger}s that were associated with the provided {@code pos}.
+    /**Invoke all {@link LintLogger}s that were associated with the provided declaration.
      */
-    public void flush(DiagnosticPosition pos, Lint lint) {
-        ListBuffer<LintLogger> loggers = loggersQueue.get(pos);
+    public void flush(JCTree decl, Lint lint) {
+        ListBuffer<LintLogger> loggers = loggersQueue.remove(decl);
         if (loggers != null) {
             for (LintLogger lintLogger : loggers) {
                 lintLogger.report(lint);
             }
-            loggersQueue.remove(pos);
         }
     }
 
-    /**Sets the current position to the provided {@code currentPos}. {@link LintLogger}s
+    /**Sets the current declaration to the provided {@code decl}. {@link LintLogger}s
      * passed to subsequent invocations of {@link #report(LintLogger) } will be associated
-     * with the given position.
+     * with the given declaration.
      */
-    public DiagnosticPosition setPos(DiagnosticPosition currentPos) {
-        DiagnosticPosition prevPosition = this.currentPos;
-        this.currentPos = currentPos;
-        return prevPosition;
+    public JCTree setDecl(JCTree decl) {
+        Assert.check(decl == null
+                  || decl.getTag() == Tag.MODULEDEF
+                  || decl.getTag() == Tag.PACKAGEDEF
+                  || decl.getTag() == Tag.CLASSDEF
+                  || decl.getTag() == Tag.METHODDEF
+                  || decl.getTag() == Tag.VARDEF);
+        JCTree prevDecl = this.currentDecl;
+        this.currentDecl = decl;
+        return prevDecl;
     }
 
     /**{@link LintLogger}s passed to subsequent invocations of
      * {@link #report(LintLogger) } will be invoked immediately.
      */
-    public DiagnosticPosition immediate(Lint lint) {
+    public JCTree immediate(Lint lint) {
         immediateLint = lint;
-        return setPos(IMMEDIATE_POSITION);
+        return setDecl(null);
     }
-
-    private static final DiagnosticPosition IMMEDIATE_POSITION = new DiagnosticPosition() {
-        @Override
-        public JCTree getTree() {
-            Assert.error();
-            return null;
-        }
-
-        @Override
-        public int getStartPosition() {
-            Assert.error();
-            return -1;
-        }
-
-        @Override
-        public int getPreferredPosition() {
-            Assert.error();
-            return -1;
-        }
-
-        @Override
-        public int getEndPosition(EndPosTable endPosTable) {
-            Assert.error();
-            return -1;
-        }
-    };
 }
