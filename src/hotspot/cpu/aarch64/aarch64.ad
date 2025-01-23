@@ -2786,14 +2786,6 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
     }
   }
 
-bool flivver() {
-  static int blah;
-  if (getenv("APH_FOO_BAR")) {
-    blah++;
-  }
-  return (blah >= 500);
-}
-
 %}
 
 
@@ -6683,15 +6675,7 @@ instruct loadN(iRegNNoSp dst, memory4 mem)
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed ptr" %}
 
-   ins_encode %{
-     if (flivver()) {
-       __ nop();
-     } else {
-       loadStore(masm, &MacroAssembler::ldrw, as_Register($dst$$reg), $mem->opcode(),
-               as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
-     }
-     %}
-   // ins_encode(aarch64_enc_ldrw(dst, mem));
+  ins_encode(aarch64_enc_ldrw(dst, mem));
 
   ins_pipe(iload_reg_mem);
 %}
