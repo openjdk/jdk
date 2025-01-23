@@ -37,13 +37,13 @@ class AsyncLogWriter::ProducerLocker : public StackObj {
  public:
   ProducerLocker() {
     assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    assert(_instance->_producer_lock_holder != Thread::current(), "Recursive locking not allowed");
+    assert(_instance->_producer_lock_holder != Thread::current_or_null(), "Recursive locking not allowed");
     _instance->_producer_lock.lock();
-    _instance->_producer_lock_holder = Thread::current();
+    _instance->_producer_lock_holder = Thread::current_or_null();
   }
 
   ~ProducerLocker() {
-    assert(_instance->_producer_lock_holder != Thread::current(), "Must be");
+    assert(_instance->_producer_lock_holder != Thread::current_or_null(), "Must be");
     _instance->_producer_lock_holder = nullptr;
     _instance->_producer_lock.unlock();
   }
@@ -314,7 +314,10 @@ AsyncLogWriter::BufferUpdater::~BufferUpdater() {
 bool AsyncLogWriter::enqueue_if_initialized(LogFileStreamOutput& output,
                                             const LogDecorations& decorations, const char* msg) {
   AsyncLogWriter* instance = AsyncLogWriter::instance();
-  Thread* current = Thread::current();
+  Thread* current = Thread::current_or_null();
+  if (current == nullptr) {
+    return false;
+  }
   if (instance != nullptr) {
     if (static_cast<Thread*>(instance) == current ||
         instance->_producer_lock_holder == current) {
@@ -335,7 +338,10 @@ bool AsyncLogWriter::enqueue_if_initialized(LogFileStreamOutput& output,
 bool AsyncLogWriter::enqueue_if_initialized(LogFileStreamOutput& output,
                                             LogMessageBuffer::Iterator msg_iterator) {
   AsyncLogWriter* instance = AsyncLogWriter::instance();
-  Thread* current = Thread::current();
+  Thread* current = Thread::current_or_null();
+  if (current == nullptr) {
+    return false;
+  }
   if (instance != nullptr) {
     if (static_cast<Thread*>(instance) == current ||
         instance->_producer_lock_holder == current) {
