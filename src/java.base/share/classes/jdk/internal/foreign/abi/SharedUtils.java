@@ -40,7 +40,6 @@ import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
-import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
@@ -383,7 +382,8 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
-    private static final BufferStack LINKER_STACK = new BufferStack(256);
+    private static final int LINKER_STACK_SIZE = Integer.getInteger("jdk.internal.foreign.LINKER_STACK_SIZE", 256);
+    private static final BufferStack LINKER_STACK = new BufferStack(LINKER_STACK_SIZE);
 
     @ForceInline
     public static Arena newBoundedArena(long size) {
