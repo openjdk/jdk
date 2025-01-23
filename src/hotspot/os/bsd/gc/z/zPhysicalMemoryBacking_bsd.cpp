@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -102,7 +101,7 @@ bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
   assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Committing memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const uintptr_t addr = _base + untype(offset);
@@ -149,7 +148,7 @@ size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
   assert(is_aligned(untype(offset), os::vm_page_size()), "Invalid offset");
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
-  log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
+  log_trace(gc, heap)("Uncommitting memory: %zuM-%zuM (%zuM)",
                       untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const uintptr_t start = _base + untype(offset);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -875,7 +875,7 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
-    /** Attribute type reference in an `extends' or `implements' clause.
+    /** Attribute type reference in an `extends', `implements', or 'permits' clause.
      *  Supertypes of anonymous inner classes are usually already attributed.
      *
      *  @param tree              The tree making up the type reference.
@@ -5407,6 +5407,10 @@ public class Attr extends JCTree.Visitor {
                     Set<Symbol> permittedTypes = new HashSet<>();
                     boolean sealedInUnnamed = c.packge().modle == syms.unnamedModule || c.packge().modle == syms.noModule;
                     for (Type subType : c.getPermittedSubclasses()) {
+                        if (subType.isErroneous()) {
+                            // the type already caused errors, don't produce more potentially misleading errors
+                            continue;
+                        }
                         boolean isTypeVar = false;
                         if (subType.getTag() == TYPEVAR) {
                             isTypeVar = true; //error recovery

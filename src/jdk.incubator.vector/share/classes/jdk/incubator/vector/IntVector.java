@@ -2412,6 +2412,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     <S extends VectorShuffle<Integer>>
     IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, int.class, length(),
             this, shuffle, null,
@@ -2437,7 +2438,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, int.class, length(),

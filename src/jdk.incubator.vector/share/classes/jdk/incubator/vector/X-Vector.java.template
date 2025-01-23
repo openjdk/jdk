@@ -2824,6 +2824,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     final
     <S extends VectorShuffle<$Boxtype$>>
     $abstractvectortype$ rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, $type$.class, length(),
             this, shuffle, null,
@@ -2849,7 +2850,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, $type$.class, length(),

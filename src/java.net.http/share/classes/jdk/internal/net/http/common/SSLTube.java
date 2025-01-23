@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,8 @@ public class SSLTube implements FlowTube {
     private final SSLFlowDelegate sslDelegate;
     private final SSLEngine engine;
     private volatile boolean finished;
+    private final AtomicReference<Throwable> errorRef
+            = new AtomicReference<>();
 
     public SSLTube(SSLEngine engine, Executor executor, FlowTube tube) {
         this(engine, executor, null, tube);
@@ -155,6 +157,13 @@ public class SSLTube implements FlowTube {
         protected Throwable checkForHandshake(Throwable t) {
             return SSLTube.this.checkForHandshake(t);
         }
+    }
+
+    private Throwable error(Throwable error) {
+        if (errorRef.compareAndSet(null, error)) {
+            return error;
+        }
+        return errorRef.get();
     }
 
     public CompletableFuture<String> getALPN() {
@@ -297,8 +306,6 @@ public class SSLTube implements FlowTube {
                 new AtomicReference<>();
         private volatile DelegateWrapper subscribed;
         private volatile boolean onCompleteReceived;
-        private final AtomicReference<Throwable> errorRef
-                = new AtomicReference<>();
 
         @Override
         public String toString() {
@@ -335,7 +342,7 @@ public class SSLTube implements FlowTube {
             synchronized (this) {
                 previous = pendingDelegate.getAndSet(delegateWrapper);
                 subscription = readSubscription;
-                handleNow = this.errorRef.get() != null || onCompleteReceived;
+                handleNow = errorRef.get() != null || onCompleteReceived;
             }
             if (previous != null) {
                 previous.dropSubscription();
@@ -468,7 +475,7 @@ public class SSLTube implements FlowTube {
             // onError before onSubscribe. It also prevents race conditions
             // if onError is invoked concurrently with setDelegate.
             synchronized (this) {
-                failed = this.errorRef.get();
+                failed = errorRef.get();
                 completed = onCompleteReceived;
                 subscribed = subscriberImpl;
             }
@@ -665,7 +672,7 @@ public class SSLTube implements FlowTube {
     @Override
     public void onError(Throwable throwable) {
         Objects.requireNonNull(throwable);
-        sslDelegate.upstreamWriter().onError(throwable);
+        sslDelegate.upstreamWriter().onError(error(throwable));
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,10 @@ package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.security.AccessControlContext;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -44,7 +42,6 @@ import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.PlatformRecording;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.management.StreamBarrier;
 
@@ -58,7 +55,6 @@ public final class EventDirectoryStream extends AbstractEventStream {
     private static final Comparator<? super RecordedEvent> EVENT_COMPARATOR = JdkJfrConsumer.instance().eventComparator();
 
     private final RepositoryFiles repositoryFiles;
-    private final FileAccess fileAccess;
     private final PlatformRecording recording;
     private final StreamBarrier barrier = new StreamBarrier();
     private final AtomicLong streamId = new AtomicLong();
@@ -69,20 +65,13 @@ public final class EventDirectoryStream extends AbstractEventStream {
     private volatile Consumer<Long> onCompleteHandler;
 
     public EventDirectoryStream(
-            @SuppressWarnings("removal")
-            AccessControlContext acc,
             Path p,
-            FileAccess fileAccess,
             PlatformRecording recording,
             List<Configuration> configurations,
             boolean allowSubDirectories) throws IOException {
-        super(acc, configurations);
+        super(configurations);
         this.recording = recording;
-        if (p != null && SecuritySupport.PRIVILEGED == fileAccess) {
-            throw new SecurityException("Priviliged file access not allowed with potentially malicious Path implementation");
-        }
-        this.fileAccess = Objects.requireNonNull(fileAccess);
-        this.repositoryFiles = new RepositoryFiles(fileAccess, p, allowSubDirectories);
+        this.repositoryFiles = new RepositoryFiles(p, allowSubDirectories);
         this.streamId.incrementAndGet();
         Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Stream " + streamId + " started.");
     }
@@ -153,7 +142,7 @@ public final class EventDirectoryStream extends AbstractEventStream {
             return;
         }
         currentChunkStartNanos = repositoryFiles.getTimestamp(path);
-        try (RecordingInput input = new RecordingInput(path.toFile(), fileAccess)) {
+        try (RecordingInput input = new RecordingInput(path.toFile())) {
             input.setStreamed();
             currentParser = new ChunkParser(input, disp.parserConfiguration, parserState());
             long segmentStart = currentParser.getStartNanos() + currentParser.getChunkDuration();

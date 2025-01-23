@@ -2427,6 +2427,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     final
     <S extends VectorShuffle<Byte>>
     ByteVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
+        Objects.requireNonNull(shuffle);
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, byte.class, length(),
             this, shuffle, null,
@@ -2452,7 +2453,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                                            Class<M> masktype,
                                            S shuffle,
                                            M m) {
-
+        Objects.requireNonNull(shuffle);
         m.check(masktype, this);
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, byte.class, length(),

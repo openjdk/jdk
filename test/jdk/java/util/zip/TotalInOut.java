@@ -27,7 +27,7 @@
  * @key randomness
  */
 
-import java.io.*;
+
 import java.util.*;
 import java.util.zip.*;
 
@@ -40,39 +40,40 @@ public class TotalInOut {
          if (args.length > 0 && "large".equals(args[0]))
              dataSize = 5L * 1024L * 1024L * 1024L; //  5GB
 
-         Deflater deflater = new Deflater();
-         Inflater inflater = new Inflater();
+         try (final Deflater deflater = new Deflater();
+            final Inflater inflater = new Inflater()) {
 
-         byte[] dataIn = new byte[BUF_SIZE];
-         byte[] dataOut = new byte[BUF_SIZE];
-         byte[] tmp = new byte[BUF_SIZE];
+             byte[] dataIn = new byte[BUF_SIZE];
+             byte[] dataOut = new byte[BUF_SIZE];
+             byte[] tmp = new byte[BUF_SIZE];
 
-         Random r = new Random();
-         r.nextBytes(dataIn);
-         long bytesReadDef    = 0;
-         long bytesWrittenDef = 0;
-         long bytesReadInf    = 0;
-         long bytesWrittenInf = 0;
+             Random r = new Random();
+             r.nextBytes(dataIn);
+             long bytesReadDef = 0;
+             long bytesWrittenDef = 0;
+             long bytesReadInf = 0;
+             long bytesWrittenInf = 0;
 
-         deflater.setInput(dataIn, 0, dataIn.length);
-         while (bytesReadDef < dataSize || bytesWrittenInf < dataSize) {
-             int len = r.nextInt(BUF_SIZE/2) + BUF_SIZE / 2;
-             if (deflater.needsInput()) {
-                 bytesReadDef += dataIn.length;
-                 check(bytesReadDef == deflater.getBytesRead());
-                 deflater.setInput(dataIn, 0, dataIn.length);
+             deflater.setInput(dataIn, 0, dataIn.length);
+             while (bytesReadDef < dataSize || bytesWrittenInf < dataSize) {
+                 int len = r.nextInt(BUF_SIZE / 2) + BUF_SIZE / 2;
+                 if (deflater.needsInput()) {
+                     bytesReadDef += dataIn.length;
+                     check(bytesReadDef == deflater.getBytesRead());
+                     deflater.setInput(dataIn, 0, dataIn.length);
+                 }
+                 int n = deflater.deflate(tmp, 0, len);
+                 bytesWrittenDef += n;
+                 check(bytesWrittenDef == deflater.getBytesWritten());
+
+                 inflater.setInput(tmp, 0, n);
+                 bytesReadInf += n;
+                 while (!inflater.needsInput()) {
+                     bytesWrittenInf += inflater.inflate(dataOut, 0, dataOut.length);
+                     check(bytesWrittenInf == inflater.getBytesWritten());
+                 }
+                 check(bytesReadInf == inflater.getBytesRead());
              }
-             int n = deflater.deflate(tmp, 0, len);
-             bytesWrittenDef += n;
-             check(bytesWrittenDef == deflater.getBytesWritten());
-
-             inflater.setInput(tmp, 0, n);
-             bytesReadInf += n;
-             while (!inflater.needsInput()) {
-                 bytesWrittenInf += inflater.inflate(dataOut, 0, dataOut.length);
-                 check(bytesWrittenInf == inflater.getBytesWritten());
-             }
-             check(bytesReadInf == inflater.getBytesRead());
          }
      }
 

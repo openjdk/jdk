@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@ import java.net.UnknownHostException;
 import java.net.URLClassLoader;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXBuilderParameters;
-import java.security.interfaces.ECKey;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.NamedParameterSpec;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.*;
@@ -1242,14 +1243,14 @@ public class Main {
 
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
-                        rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
+                        rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk..It.will.be.disabled.in.a.future.update."),
+                        fullDisplayKeyName(privateKey)));
             }
 
             if ((disabledAlg & 8) == 8) {
                 errors.add(String.format(
-                        rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk.and.is.disabled."),
-                        KeyUtil.fullDisplayAlgName(privateKey), KeyUtil.getKeySize(privateKey)));
+                        rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk.and.is.disabled."),
+                        fullDisplayKeyName(privateKey)));
             }
         } else {
             if ((legacyAlg & 1) != 0) {
@@ -1272,8 +1273,8 @@ public class Main {
 
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
-                        rb.getString("The.1.signing.key.has.a.keysize.of.2.which.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
-                        KeyUtil.fullDisplayAlgName(weakPublicKey), KeyUtil.getKeySize(weakPublicKey)));
+                        rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk..It.will.be.disabled.in.a.future.update."),
+                        fullDisplayKeyName(weakPublicKey)));
             }
         }
 
@@ -1448,35 +1449,53 @@ public class Main {
     }
 
     private String verifyWithWeak(PublicKey key, JarConstraintsParameters jcp) {
-        int kLen = KeyUtil.getKeySize(key);
+        String fullName = fullDisplayKeyName(key);
         try {
             JAR_DISABLED_CHECK.permits(key.getAlgorithm(), jcp, true);
         } catch (CertPathValidatorException e) {
             disabledAlgFound = true;
-            if (key instanceof ECKey) {
-                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
-                        KeyUtil.fullDisplayAlgName(key));
-            } else {
-                return String.format(rb.getString("key.bit.disabled"), kLen);
-            }
+            return String.format(rb.getString("key.bit.disabled"), fullName);
         }
         try {
             LEGACY_CHECK.permits(key.getAlgorithm(), jcp, true);
-            if (kLen >= 0) {
-                return String.format(rb.getString("key.bit"), kLen);
-            } else {
-                return rb.getString("unknown.size");
-            }
+            return String.format(rb.getString("key.bit"), fullName);
         } catch (CertPathValidatorException e) {
             weakPublicKey = key;
             legacyAlg |= 8;
-            if (key instanceof ECKey) {
-                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
-                        KeyUtil.fullDisplayAlgName(key));
-            } else {
-                return String.format(rb.getString("key.bit.weak"), kLen);
+            return String.format(rb.getString("key.bit.weak"), fullName);
+        }
+    }
+
+    /**
+     * Returns the full display name of the given key object. Could be
+     * - "X25519", if its getParams() is NamedParameterSpec
+     * - "EC (secp256r1)", if it's an EC key
+     * - "1024-bit RSA", other known keys
+     * - plain algorithm name, otherwise
+     *
+     * Note: the same method appears in keytool and jarsigner which uses
+     * same resource string defined in their own Resources.java.
+     *
+     * @param key the key object, cannot be null
+     * @return the full name
+     */
+    private static String fullDisplayKeyName(Key key) {
+        var alg = key.getAlgorithm();
+        if (key instanceof AsymmetricKey ak) {
+            var params = ak.getParams();
+            if (params instanceof NamedParameterSpec nps) {
+                return nps.getName(); // directly return
+            } else if (params instanceof ECParameterSpec eps) {
+                var nc = CurveDB.lookup(eps);
+                if (nc != null) {
+                    alg += " (" + nc.getNameAndAliases()[0] + ")"; // append name
+                }
             }
         }
+        var size = KeyUtil.getKeySize(key);
+        return size >= 0
+                ? String.format(rb.getString("size.bit.alg"), size, alg)
+                : alg;
     }
 
     private void checkWeakSign(String alg, Set<CryptoPrimitive> primitiveSet,
@@ -1524,31 +1543,17 @@ public class Main {
     }
 
     private static String checkWeakKey(PublicKey key, CertPathConstraintsParameters cpcp) {
-        int kLen = KeyUtil.getKeySize(key);
+        String fullName = fullDisplayKeyName(key);
         try {
             CERTPATH_DISABLED_CHECK.permits(key.getAlgorithm(), cpcp, true);
         } catch (CertPathValidatorException e) {
-            if (key instanceof ECKey) {
-                return String.format(rb.getString("key.bit.eccurve.disabled"), kLen,
-                        KeyUtil.fullDisplayAlgName(key));
-            } else {
-                return String.format(rb.getString("key.bit.disabled"), kLen);
-            }
+            return String.format(rb.getString("key.bit.disabled"), fullName);
         }
         try {
             LEGACY_CHECK.permits(key.getAlgorithm(), cpcp, true);
-            if (kLen >= 0) {
-                return String.format(rb.getString("key.bit"), kLen);
-            } else {
-                return rb.getString("unknown.size");
-            }
+            return String.format(rb.getString("key.bit"), fullName);
         } catch (CertPathValidatorException e) {
-            if (key instanceof ECKey) {
-                return String.format(rb.getString("key.bit.eccurve.weak"), kLen,
-                        KeyUtil.fullDisplayAlgName(key));
-            } else {
-                return String.format(rb.getString("key.bit.weak"), kLen);
-            }
+            return String.format(rb.getString("key.bit.weak"), fullName);
         }
     }
 
