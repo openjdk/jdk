@@ -172,7 +172,7 @@
  * classfile option.  Implementations of custom attributes should extend {@link
  * CustomAttribute}.
  *
- * <h3>Options</h3>
+ * <h3 id="options">Options</h3>
  * <p>
  * {@link ClassFile#of(ClassFile.Option[])}
  * accepts a list of options.  {@link ClassFile.Option} is a base interface
@@ -200,6 +200,13 @@
  *   <li>{@link ClassFile.StackMapsOption}
  * -- generate stackmaps (default is {@code STACK_MAPS_WHEN_REQUIRED})</li>
  * </ul>
+ * <p>
+ * {@link ClassFile.AttributeMapperOption} and {@link ClassFile.ClassHierarchyResolverOption}
+ * are critical to the correctness of {@code class} file parsing and generation.
+ * The attribute mapper is required to parse custom attributes.  A correct
+ * resolver is required to generate {@code class} files that refer to classes
+ * not available to the system class loader in its bytecode, or in corner cases,
+ * when generation wishes to avoid loading system classes, such as in agents.
  * <p>
  * Most options allow you to request that certain parts of the classfile be
  * skipped during traversal, such as debug information or unrecognized
