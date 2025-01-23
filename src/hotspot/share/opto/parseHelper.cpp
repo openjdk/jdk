@@ -156,7 +156,7 @@ void Parse::array_store_check() {
   int klass_offset = oopDesc::klass_offset_in_bytes();
   Node* p = basic_plus_adr( ary, ary, klass_offset );
   // p's type is array-of-OOPS plus klass_offset
-  Node* array_klass = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS));
+  Node* array_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p, TypeInstPtr::KLASS));
   // Get the array klass
   const TypeKlassPtr *tak = _gvn.type(array_klass)->is_klassptr();
 
@@ -225,12 +225,8 @@ void Parse::array_store_check() {
 
   // Extract the array element class
   int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-  Node *p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
-  // We are allowed to use the constant type only if cast succeeded. If always_see_exact_class is true,
-  // we must set a control edge from the IfTrue node created by the uncommon_trap above to the
-  // LoadKlassNode.
-  Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, always_see_exact_class ? control() : nullptr,
-                                                       immutable_memory(), p2, tak));
+  Node* p2 = basic_plus_adr(array_klass, array_klass, element_klass_offset);
+  Node* a_e_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), p2, tak));
 
   // Check (the hard way) and throw if not a subklass.
   // Result is ignored, we just need the CFG effects.
