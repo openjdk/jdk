@@ -1041,9 +1041,8 @@ public class Annotate {
         try {
             annotateNow(s, annotations, env, true, isTypeParam);
         } finally {
-            if (deferDecl != null) {
+            if (deferDecl != null)
                 deferredLintHandler.pop();
-            }
             log.useSource(prev);
         }
     }

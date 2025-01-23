@@ -58,7 +58,7 @@ import com.sun.tools.javac.util.Context;
  * can be applied when the warning is eventually generated. During parsing, no {@link JCTree} nodes exist
  * yet, so warnings are stored by file character offset. Once parsing completes, these offsets are resolved
  * to the innermost containing declaration. This class therefore operates in two distinct modes: parsing mode
- * and non-parsing mode. Warnings are actually emitted when the correpsonding declaration is {@link #flush}ed.
+ * and non-parsing mode. Warnings are emitted when the correpsonding declaration is {@link #flush}ed.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -114,6 +114,21 @@ public class DeferredLintHandler {
         context.put(deferredLintHandlerKey, this);
         rootLint = Lint.instance(context);
         pushImmediate(rootLint);            // default to "immediate" mode
+    }
+
+// LintLogger
+
+    /**
+     * Callback interface for deferred lint reporting.
+     */
+    public interface LintLogger {
+
+        /**
+         * Generate a warning if appropriate.
+         *
+         * @param lint the applicable lint configuration
+         */
+        void report(Lint lint);
     }
 
 // Mode Switching
@@ -240,21 +255,6 @@ public class DeferredLintHandler {
           .flatMap(ArrayList::stream)
           .map(Deferral::logger)
           .forEach(logger -> logger.report(lint));
-    }
-
-// LintLogger
-
-    /**
-     * Callback interface for deferred lint reporting.
-     */
-    public interface LintLogger {
-
-        /**
-         * Generate a warning if appropriate.
-         *
-         * @param lint the applicable lint configuration
-         */
-        void report(Lint lint);
     }
 
 // Deferral
