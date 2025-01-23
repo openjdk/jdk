@@ -648,11 +648,11 @@ public class JavacParser implements Parser {
     void reportDanglingComments(JCTree tree, Comment dc) {
         var list = danglingComments.remove(dc);
         if (list != null) {
-            var prevDecl = deferredLintHandler.setDecl(tree);
+            deferredLintHandler.push(tree);
             try {
                 list.forEach(this::reportDanglingDocComment);
             } finally {
-                deferredLintHandler.setDecl(prevDecl);
+                deferredLintHandler.pop();
             }
         }
     }

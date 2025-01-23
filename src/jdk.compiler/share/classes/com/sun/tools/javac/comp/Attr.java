@@ -853,7 +853,7 @@ public class Attr extends JCTree.Visitor {
     public Object attribLazyConstantValue(Env<AttrContext> env,
                                       JCVariableDecl variable,
                                       Type type) {
-        JCTree prevLintDecl = deferredLintHandler.setDecl(variable);
+        deferredLintHandler.push(variable);
         final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             Type itype = attribExpr(variable.init, env, type);
@@ -868,7 +868,7 @@ public class Attr extends JCTree.Visitor {
             }
         } finally {
             log.useSource(prevSource);
-            deferredLintHandler.setDecl(prevLintDecl);
+            deferredLintHandler.pop();
         }
     }
 

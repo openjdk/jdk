@@ -251,10 +251,11 @@ public class Annotate {
             // been handled, meaning that the set of annotations pending completion is now empty.
             Assert.check(s.kind == PCK || s.annotationsPendingCompletion());
             JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
-            JCTree prevLintDecl =
-                    deferDecl != null
-                            ? deferredLintHandler.setDecl(deferDecl)
-                            : deferredLintHandler.immediate(lint);
+            if (deferDecl != null) {
+                deferredLintHandler.push(deferDecl);
+            } else {
+                deferredLintHandler.pushImmediate(lint);
+            }
             Lint prevLint = deferDecl != null ? null : chk.setLint(lint);
             try {
                 if (s.hasAnnotations() && annotations.nonEmpty())
@@ -268,7 +269,7 @@ public class Annotate {
             } finally {
                 if (prevLint != null)
                     chk.setLint(prevLint);
-                deferredLintHandler.setDecl(prevLintDecl);
+                deferredLintHandler.pop();
                 log.useSource(prev);
             }
         });
@@ -290,11 +291,11 @@ public class Annotate {
     {
         normal(() -> {
             JavaFileObject prev = log.useSource(localEnv.toplevel.sourcefile);
-            JCTree prevLintDecl = deferredLintHandler.setDecl(deferDecl);
+            deferredLintHandler.push(deferDecl);
             try {
                 enterDefaultValue(defaultValue, localEnv, m);
             } finally {
-                deferredLintHandler.setDecl(prevLintDecl);
+                deferredLintHandler.pop();
                 log.useSource(prev);
             }
         });
@@ -1033,16 +1034,15 @@ public class Annotate {
     {
         Assert.checkNonNull(s, "Symbol argument to actualEnterTypeAnnotations is nul/");
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-        JCTree prevLintDecl = null;
 
         if (deferDecl != null) {
-            prevLintDecl = deferredLintHandler.setDecl(deferDecl);
+            deferredLintHandler.push(deferDecl);
         }
         try {
             annotateNow(s, annotations, env, true, isTypeParam);
         } finally {
             if (deferDecl != null)
-                deferredLintHandler.setDecl(prevLintDecl);
+                deferredLintHandler.pop();
             log.useSource(prev);
         }
     }

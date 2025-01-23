@@ -194,7 +194,7 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         Env<AttrContext> localEnv = methodEnv(tree, env);
-        JCTree prevLintDecl = deferredLintHandler.setDecl(tree);
+        deferredLintHandler.push(tree);
         try {
             // Compute the method type
             m.type = signature(m, tree.typarams, tree.params,
@@ -202,7 +202,7 @@ public class MemberEnter extends JCTree.Visitor {
                                tree.thrown,
                                localEnv);
         } finally {
-            deferredLintHandler.setDecl(prevLintDecl);
+            deferredLintHandler.pop();
         }
 
         if (types.isSignaturePolymorphic(m)) {
@@ -263,7 +263,7 @@ public class MemberEnter extends JCTree.Visitor {
             localEnv = env.dup(tree, env.info.dup());
             localEnv.info.staticLevel++;
         }
-        JCTree prevLintDecl = deferredLintHandler.setDecl(tree);
+        deferredLintHandler.push(tree);
 
         try {
             if (TreeInfo.isEnumInit(tree)) {
@@ -274,7 +274,7 @@ public class MemberEnter extends JCTree.Visitor {
                     checkReceiver(tree, localEnv);
             }
         } finally {
-            deferredLintHandler.setDecl(prevLintDecl);
+            deferredLintHandler.pop();
         }
 
         if ((tree.mods.flags & VARARGS) != 0) {

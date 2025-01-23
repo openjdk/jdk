@@ -274,7 +274,7 @@ public class TypeEnter implements Completer {
                 queue.add(env);
 
                 JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-                JCTree prevLintDecl = deferredLintHandler.setDecl(tree);
+                deferredLintHandler.push(tree);
                 try {
                     dependencies.push(env.enclClass.sym, phaseName);
                     runPhase(env);
@@ -282,7 +282,7 @@ public class TypeEnter implements Completer {
                     chk.completionError(tree.pos(), ex);
                 } finally {
                     dependencies.pop();
-                    deferredLintHandler.setDecl(prevLintDecl);
+                    deferredLintHandler.pop();
                     log.useSource(prev);
                 }
             }
@@ -365,7 +365,7 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            JCTree prevLintDecl = deferredLintHandler.immediate(lint);
+            deferredLintHandler.pushImmediate(lint);
             Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
@@ -390,12 +390,12 @@ public class TypeEnter implements Completer {
                 handleImports(tree.getImports());
 
                 if (decl != null) {
-                    JCTree prevCheckDeprecatedLintDecl = deferredLintHandler.setDecl(decl);
+                    deferredLintHandler.push(decl);
                     try {
                         //check @Deprecated:
                         markDeprecated(decl.sym, decl.mods.annotations, env);
                     } finally {
-                        deferredLintHandler.setDecl(prevCheckDeprecatedLintDecl);
+                        deferredLintHandler.pop();
                     }
                     // process module annotations
                     annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, decl);
@@ -403,7 +403,7 @@ public class TypeEnter implements Completer {
             } finally {
                 this.env = prevEnv;
                 chk.setLint(prevLint);
-                deferredLintHandler.setDecl(prevLintDecl);
+                deferredLintHandler.pop();
                 this.staticImportFilter = prevStaticImportFilter;
                 this.typeImportFilter = prevTypeImportFilter;
             }

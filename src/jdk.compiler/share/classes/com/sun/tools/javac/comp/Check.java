@@ -1322,11 +1322,11 @@ public class Check {
     }
 
     private void warnOnExplicitStrictfp(JCTree tree) {
-        JCTree prevLintDecl = deferredLintHandler.setDecl(tree);
+        deferredLintHandler.push(tree);
         try {
             deferredLintHandler.report(_ -> lint.logIfEnabled(log, tree.pos(), LintWarnings.Strictfp));
         } finally {
-            deferredLintHandler.setDecl(prevLintDecl);
+            deferredLintHandler.pop();
         }
     }
 

@@ -746,7 +746,7 @@ public class Modules extends JCTree.Visitor {
                 ModuleVisitor v = new ModuleVisitor();
                 JavaFileObject prev = log.useSource(tree.sourcefile);
                 JCModuleDecl moduleDecl = tree.getModuleDecl();
-                JCTree prevLintDecl = deferredLintHandler.setDecl(moduleDecl);
+                deferredLintHandler.push(moduleDecl);
 
                 try {
                     moduleDecl.accept(v);
@@ -754,7 +754,7 @@ public class Modules extends JCTree.Visitor {
                     checkCyclicDependencies(moduleDecl);
                 } finally {
                     log.useSource(prev);
-                    deferredLintHandler.setDecl(prevLintDecl);
+                    deferredLintHandler.pop();
                     msym.flags_field &= ~UNATTRIBUTED;
                 }
             }
@@ -991,13 +991,13 @@ public class Modules extends JCTree.Visitor {
             UsesProvidesVisitor v = new UsesProvidesVisitor(msym, env);
             JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
             JCModuleDecl decl = env.toplevel.getModuleDecl();
-            JCTree prevLintDecl = deferredLintHandler.setDecl(decl);
+            deferredLintHandler.push(decl);
 
             try {
                 decl.accept(v);
             } finally {
                 log.useSource(prev);
-                deferredLintHandler.setDecl(prevLintDecl);
+                deferredLintHandler.pop();
             }
         };
     }
