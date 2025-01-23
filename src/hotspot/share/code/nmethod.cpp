@@ -3767,7 +3767,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
   if (block_begin == entry_point()) {
     Method* m = method();
     if (m != nullptr) {
-      stream->print("  # ");
+      stream->print("  %s ", comment_prefix);
       m->print_value_on(stream);
       stream->cr();
     }
@@ -3804,9 +3804,9 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
         BasicType t = (at_this ? T_OBJECT : ss.type());
         assert(t == sig_bt[sig_index], "sigs in sync");
         if (at_this)
-          stream->print("  # this: ");
+          stream->print("  %s this: ", comment_prefix);
         else
-          stream->print("  # parm%d: ", arg_index);
+          stream->print("  %s parm%d: ", comment_prefix, arg_index);
         stream->move_to(tab1);
         VMReg fst = regs[sig_index].first();
         VMReg snd = regs[sig_index].second();
@@ -3823,8 +3823,13 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
           stream->print("reg%d:%d??", (int)(intptr_t)fst, (int)(intptr_t)snd);
         }
         stream->print(" ");
+        if (AbstractDisassembler::print_platform_asm() && stream->position() > tab2) {
+          // Make sure that continuation comment lines are prefixed by
+          // the platform comment prefix
+          stream->cr();
+          stream->print("  %s ", comment_prefix);
+        }
         stream->move_to(tab2);
-        AbstractDisassembler::print_pd_comment_prefix(stream);
         stream->print("= ");
         if (at_this) {
           m->method_holder()->print_value_on(stream);
@@ -3848,7 +3853,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
         if (!at_this)  ss.next();
       }
       if (!did_old_sp) {
-        stream->print("  # ");
+        stream->print("  %s ", comment_prefix);
         stream->move_to(tab1);
         stream->print("[%s+0x%x]", spname, stack_slot_offset);
         stream->print("  (%s of caller)", spname);
