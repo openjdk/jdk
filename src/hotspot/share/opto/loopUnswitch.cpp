@@ -628,12 +628,12 @@ void PhaseIdealLoop::trace_loop_multiversioning_result(const LoopSelector& loop_
 #endif
 
 // When unswitching a counted loop, we need to convert it back to a normal loop since it's not a proper pre, main or,
-// post loop anymore after loop unswitching.
+// post loop anymore after loop unswitching. We also lose the multiversion structure, with access to the multiversion_if.
 void PhaseIdealLoop::revert_to_normal_loop(const LoopNode* loop_head) {
   CountedLoopNode* cl = loop_head->isa_CountedLoop();
-  if (cl != nullptr && !cl->is_normal_loop()) {
-    cl->set_normal_loop();
-  }
+  if (cl == nullptr) { return; }
+  if (!cl->is_normal_loop()) { cl->set_normal_loop(); }
+  if (cl->is_multiversion()) { cl->set_no_multiversion(); }
 }
 
 // Hoist invariant CheckCastPPNodes out of each unswitched loop version to the appropriate loop selector If projection.

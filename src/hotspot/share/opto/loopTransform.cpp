@@ -745,6 +745,11 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
     cl->set_trip_count(cl->trip_count() - 1);
     if (cl->is_main_loop()) {
       cl->set_normal_loop();
+      if (cl->is_multiversion()) {
+        // Peeling also destroys the connection of the main loop
+        // to the multiversion_if.
+        cl->set_no_multiversion();
+      }
 #ifndef PRODUCT
       if (PrintOpto && VerifyLoopOptimizations) {
         tty->print("Peeling a 'main' loop; resetting to 'normal' ");
