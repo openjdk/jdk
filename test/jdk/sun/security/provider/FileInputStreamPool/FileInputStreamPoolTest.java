@@ -25,6 +25,7 @@
  * @test
  * @bug 8047769
  * @modules java.base/java.io:open
+ *          java.base/java.lang.ref:open
  *          java.base/sun.security.provider:open
  * @summary SecureRandom should be more frugal with file descriptors
  */
@@ -132,9 +133,11 @@ public class FileInputStreamPoolTest {
     /**
      * A proxy for (package)private static methods:
      *   sun.security.provider.FileInputStreamPool.getInputStream
+     *   java.lang.ref.Reference.waitForReferenceProcessing
      */
     static class TestProxy {
         private static final Method getInputStreamMethod;
+        private static final Method waitForReferenceProcessingMethod;
         private static final Field inField;
 
         static {
@@ -145,6 +148,10 @@ public class FileInputStreamPoolTest {
                     fileInputStreamPoolClass.getDeclaredMethod(
                         "getInputStream", File.class);
                 getInputStreamMethod.setAccessible(true);
+
+                waitForReferenceProcessingMethod =
+                    Reference.class.getDeclaredMethod("waitForReferenceProcessing");
+                waitForReferenceProcessingMethod.setAccessible(true);
 
                 inField = FilterInputStream.class.getDeclaredField("in");
                 inField.setAccessible(true);
@@ -161,6 +168,25 @@ public class FileInputStreamPoolTest {
                 Throwable te = e.getTargetException();
                 if (te instanceof IOException) {
                     throw (IOException) te;
+                } else if (te instanceof RuntimeException) {
+                    throw (RuntimeException) te;
+                } else if (te instanceof Error) {
+                    throw (Error) te;
+                } else {
+                    throw new UndeclaredThrowableException(te);
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        static boolean Reference_waitForReferenceProcessing() {
+            try {
+                return (boolean) waitForReferenceProcessingMethod.invoke(null);
+            } catch (InvocationTargetException e) {
+                Throwable te = e.getTargetException();
+                if (te instanceof InterruptedException) {
+                    return true;
                 } else if (te instanceof RuntimeException) {
                     throw (RuntimeException) te;
                 } else if (te instanceof Error) {
