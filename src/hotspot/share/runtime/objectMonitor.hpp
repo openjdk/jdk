@@ -204,13 +204,16 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Only perform a PerfData operation if the PerfData object has been
   // allocated and if the PerfDataManager has not freed the PerfData
-  // objects which can happen at normal VM shutdown.
+  // objects which can happen at normal VM shutdown. Additionally, we
+  // have to enter the critical section to resolve the deletion races.
   //
   #define OM_PERFDATA_OP(f, op_str)                 \
     do {                                            \
-      if (ObjectMonitor::_sync_ ## f != nullptr &&  \
-          PerfDataManager::has_PerfData()) {        \
-        ObjectMonitor::_sync_ ## f->op_str;         \
+      if (ObjectMonitor::_sync_ ## f != nullptr) {  \
+        GlobalCounter::CriticalSection cs(Thread::current()); \
+        if (PerfDataManager::has_PerfData()) {      \
+          ObjectMonitor::_sync_ ## f->op_str;       \
+        }                                           \
       }                                             \
     } while (0)
 

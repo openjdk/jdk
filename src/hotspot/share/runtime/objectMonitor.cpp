@@ -58,6 +58,7 @@
 #include "services/threadService.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
+#include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
