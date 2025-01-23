@@ -937,7 +937,6 @@ clearStep(jthread thread, StepRequest *step)
         }
 
         if (needsSuspending) {
-            tty_message("clearStep: resuming thread");
             error = JVMTI_FUNC_PTR(gdata->jvmti,ResumeThread)
                 (gdata->jvmti, thread);
             if (error != JVMTI_ERROR_NONE) {

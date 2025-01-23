@@ -27,9 +27,9 @@
  * @test
  * @bug 8229012
  * @summary Verify that during single stepping a method is not compiled and
- *          after single stepping it is compiled..
+ *          after single stepping it is compiled.
  * @requires vm.compMode == "Xmixed"
- * @library /test/lib /
+ * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
@@ -197,14 +197,14 @@ public class SingleStepCompilationTest extends TestScaffold {
 
     protected void runTests() throws Exception {
         /*
-         * Get to the top of main() to determine targetClass and mainThread
+         * Get to the top of main() to determine targetClass and mainThread.
          */
         BreakpointEvent bpe = startToMain("TestTarg");
         targetClass = (ClassType)bpe.location().declaringType();
         mainThread = bpe.thread();
         erm = vm().eventRequestManager();
 
-        // The BKPT_LINE is the line we will STEP_OVER
+        // The BKPT_LINE is the line we will STEP_OVER.
         Location loc1 = findLocation(targetClass, TestTarg.BKPT_LINE);
         bkptRequest = erm.createBreakpointRequest(loc1);
         bkptRequest.enable();
@@ -225,7 +225,7 @@ public class SingleStepCompilationTest extends TestScaffold {
 
         /*
          * Deal with results of test. If anything has called failure("foo")
-         * then testFailed will be true
+         * then testFailed will be true.
          */
         if (!testFailed) {
             System.out.println("SingleStepCompilationTest: passed");
