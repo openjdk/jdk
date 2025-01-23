@@ -360,6 +360,8 @@ AC_DEFUN([UTIL_SETUP_TOOL],
           fi
           $1="$tool_command"
         fi
+        # Make sure we add fixpath if needed
+        UTIL_FIXUP_EXECUTABLE($1)
         if test "x$tool_args" != x; then
           # If we got arguments, re-append them to the command after the fixup.
           $1="[$]$1 $tool_args"
