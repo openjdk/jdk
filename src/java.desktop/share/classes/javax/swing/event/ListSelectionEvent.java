@@ -53,9 +53,9 @@ import javax.swing.ListSelectionModel;
 @SuppressWarnings("serial") // Same-version serialization only
 public class ListSelectionEvent extends EventObject
 {
-    private int firstIndex;
-    private int lastIndex;
-    private boolean isAdjusting;
+    private final int firstIndex;
+    private final int lastIndex;
+    private final boolean isAdjusting;
 
     /**
      * Represents a change in selection status between {@code firstIndex} and
