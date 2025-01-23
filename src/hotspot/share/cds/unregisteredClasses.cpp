@@ -69,7 +69,7 @@ InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path,
   Handle ext_class_name = java_lang_String::externalize_classname(name, CHECK_NULL);
 
   JavaValue result(T_OBJECT);
-  JavaCallArguments args(2);
+  JavaCallArguments args(3);
   args.set_receiver(classloader);
   args.push_oop(ext_class_name);
   args.push_oop(super_class);
