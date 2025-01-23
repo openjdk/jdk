@@ -77,7 +77,10 @@ AC_DEFUN([UTIL_FIXUP_PATH],
           imported_path=""
         fi
       fi
-      if test "x$imported_path" != "x$path"; then
+      [ imported_path_lower=`$ECHO $imported_path | $TR '[:upper:]' '[:lower:]'` ]
+      [ orig_path_lower=`$ECHO $path | $TR '[:upper:]' '[:lower:]'` ]
+      # If only case differs, keep original path
+      if test "x$imported_path_lower" != "x$orig_path_lower"; then
         $1="$imported_path"
       fi
     else
