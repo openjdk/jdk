@@ -47,7 +47,7 @@ public class TestOverrides extends JavacTestingAbstractProcessor {
                 var tm = mIn(t);
                 if (!elements.overrides(tm, sm, t))
                     messager.printError(String.format(
-                            "%s does not override from %s method %s", tm,  t.getQualifiedName(),sm));
+                            "%s does not override from %s method %s", tm, t.getQualifiedName(), sm));
             }
         }
         return true;
