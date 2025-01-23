@@ -1011,11 +1011,6 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
     return t1x->meet(t2x);
   }
 
-  // Complementing a boolean?
-  if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
-                               || r1 == TypeInt::BOOL))
-    return TypeInt::BOOL;
-
   return TypeInt::INT;        // Any integer, but still no symbols.
 }
 
