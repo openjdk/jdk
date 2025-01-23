@@ -43,7 +43,7 @@ class AsyncLogWriter::ProducerLocker : public StackObj {
   }
 
   ~ProducerLocker() {
-    assert(_instance->_producer_lock_holder != Thread::current_or_null(), "Must be");
+    assert(_instance->_producer_lock_holder == Thread::current_or_null(), "Must be");
     _instance->_producer_lock_holder = nullptr;
     _instance->_producer_lock.unlock();
   }
