@@ -223,7 +223,7 @@ public sealed interface CodeBuilder
      * @param thenHandler handler that receives a {@linkplain BlockCodeBuilder}
      *                    to generate the body of the {@code if}
      * @return this builder
-     * @see #ifThen(Opcode, Consumer)  
+     * @see #ifThen(Opcode, Consumer)
      */
     default CodeBuilder ifThen(Consumer<BlockCodeBuilder> thenHandler) {
         return ifThen(Opcode.IFNE, thenHandler);
@@ -274,7 +274,7 @@ public sealed interface CodeBuilder
      * @param elseHandler handler that receives a {@link BlockCodeBuilder} to
      *                    generate the body of the {@code else}
      * @return this builder
-     * @see #ifThenElse(Opcode, Consumer, Consumer) 
+     * @see #ifThenElse(Opcode, Consumer, Consumer)
      */
     default CodeBuilder ifThenElse(Consumer<BlockCodeBuilder> thenHandler,
                                    Consumer<BlockCodeBuilder> elseHandler) {
@@ -1080,7 +1080,7 @@ public sealed interface CodeBuilder
      *
      * @return this builder
      * @see Opcode#ARETURN
-     * @see #return_(TypeKind) 
+     * @see #return_(TypeKind)
      * @see ReturnInstruction
      */
     default CodeBuilder areturn() {
@@ -1134,7 +1134,7 @@ public sealed interface CodeBuilder
      *
      * @return this builder
      * @see Opcode#BALOAD
-     * @see #arrayLoad(TypeKind) 
+     * @see #arrayLoad(TypeKind)
      * @see ArrayLoadInstruction
      */
     default CodeBuilder baload() {
@@ -1413,7 +1413,7 @@ public sealed interface CodeBuilder
      *
      * @return this builder
      * @see Opcode#DRETURN
-     * @see #return_(TypeKind) 
+     * @see #return_(TypeKind)
      * @see ReturnInstruction
      */
     default CodeBuilder dreturn() {

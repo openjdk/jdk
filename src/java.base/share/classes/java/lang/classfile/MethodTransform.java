@@ -44,7 +44,7 @@ import static java.util.Objects.requireNonNull;
  * elements to the builders.
  *
  * @see MethodModel
- * @see ClassBuilder#transformMethod 
+ * @see ClassBuilder#transformMethod
  * @since 24
  */
 @FunctionalInterface
