@@ -209,11 +209,6 @@ public abstract sealed class Reference<T>
     private static native Reference<?> getAndClearReferencePendingList();
 
     /*
-     * Test whether the VM's pending-Reference list contains any entries.
-     */
-    private static native boolean hasReferencePendingList();
-
-    /*
      * Wait until the VM's pending-Reference list may be non-null.
      */
     private static native void waitForReferencePendingList();
