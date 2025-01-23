@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1614,9 +1614,8 @@ public class PSPrinterJob extends RasterPrinterJob {
                 execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
-                for (String option : options.trim().split(" ")) {
-                    execCmd[n++] = "-o " + option;
-                }
+                execCmd[n++] = "-o " + options.trim().
+                        replaceAll("\\s+", " -o ");
             }
         } else {
             ncomps+=1; //add 1 arg for lp
@@ -1639,9 +1638,8 @@ public class PSPrinterJob extends RasterPrinterJob {
                 execCmd[n++] = "-o job-sheets=standard";
             }
             if ((pFlags & OPTIONS) != 0) {
-                for (String option : options.trim().split(" ")) {
-                    execCmd[n++] = "-o " + option;
-                }
+                execCmd[n++] = "-o " + options.trim().
+                        replaceAll("\\s+", " -o ");
             }
         }
         execCmd[n++] = spoolFile;
