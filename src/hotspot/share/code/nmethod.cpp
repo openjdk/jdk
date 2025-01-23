@@ -3824,6 +3824,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
         }
         stream->print(" ");
         stream->move_to(tab2);
+        AbstractDisassembler::print_pd_comment_prefix(stream);
         stream->print("= ");
         if (at_this) {
           m->method_holder()->print_value_on(stream);
