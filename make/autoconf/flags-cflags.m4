@@ -520,12 +520,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # clang compiler on aix needs -ffunction-sections
     TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -ftls-model -fno-math-errno -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-ffunction-sections -fsigned-char -fstack-protector"
-    # clang 17 compiler on aix needs -Wno-tentative-definitions,
-    # otherwise variable definitions in headers are forbidden (only extern declaration is allowed)
-    if test "x$CC_VERSION_NUMBER" = "x17.0.6"; then
-      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -Wno-tentative-definitions"
-      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -Wno-tentative-definitions"
-    fi
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
