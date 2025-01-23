@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
+import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
@@ -83,7 +83,7 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder initFromAppImage(AppImageFile2 appImageFile,
+    ApplicationBuilder initFromAppImage(AppImageFile appImageFile,
             Function<LauncherInfo, Launcher> mapper) {
         if (version == null) {
             version = appImageFile.getAppVersion();

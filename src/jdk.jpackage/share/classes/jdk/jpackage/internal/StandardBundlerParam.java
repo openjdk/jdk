@@ -96,11 +96,11 @@ final class StandardBundlerParam {
                     null
             );
 
-    static final BundlerParamInfo<AppImageFile2> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
-            AppImageFile2.class, params -> {
+    static final BundlerParamInfo<AppImageFile> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
+            AppImageFile.class, params -> {
                 if (hasPredefinedAppImage(params)) {
                     var appImage = getPredefinedAppImage(params);
-                    return AppImageFile2.load(appImage, PLATFORM_APPLICATION_LAYOUT);
+                    return AppImageFile.load(appImage, PLATFORM_APPLICATION_LAYOUT);
                 } else {
                     return null;
                 }

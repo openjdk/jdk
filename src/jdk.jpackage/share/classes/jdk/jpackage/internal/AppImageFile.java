@@ -55,13 +55,13 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 
-final class AppImageFile2 {
+final class AppImageFile {
 
-    AppImageFile2(Application app) {
+    AppImageFile(Application app) {
         this(new ApplicationData(app));
     }
 
-    private AppImageFile2(ApplicationData app) {
+    private AppImageFile(ApplicationData app) {
 
         appVersion = app.version();
         launcherName = app.mainLauncherName();
@@ -171,7 +171,7 @@ final class AppImageFile2 {
      * @param appImageDir - path at which to resolve the given application layout
      * @param appLayout - application layout
      */
-    static AppImageFile2 load(Path appImageDir, ApplicationLayout appLayout) throws ConfigException, IOException {
+    static AppImageFile load(Path appImageDir, ApplicationLayout appLayout) throws ConfigException, IOException {
         var srcFilePath = getPathInAppImage(appLayout.resolveAt(appImageDir));
         try {
             final Document doc = XmlUtils.initDocumentBuilder().parse(Files.newInputStream(srcFilePath));
@@ -206,7 +206,7 @@ final class AppImageFile2 {
                 }
             }).toList();
 
-            return new AppImageFile2(new ApplicationData(props.get("app-version"), props.get("main-launcher"),
+            return new AppImageFile(new ApplicationData(props.get("app-version"), props.get("main-launcher"),
                     props.get("main-class"), props.getExtra(), additionalLaunchers));
 
         } catch (XPathExpressionException ex) {
@@ -223,7 +223,7 @@ final class AppImageFile2 {
         }
     }
 
-    static boolean getBooleanExtraFieldValue(String fieldId, AppImageFile2 appImageFile) {
+    static boolean getBooleanExtraFieldValue(String fieldId, AppImageFile appImageFile) {
         Objects.requireNonNull(fieldId);
         Objects.requireNonNull(appImageFile);
         return Optional.ofNullable(appImageFile.getExtra().get(fieldId)).map(Boolean::parseBoolean).orElse(false);

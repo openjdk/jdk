@@ -24,13 +24,13 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.AppImageFile2.getBooleanExtraFieldValue;
+import static jdk.jpackage.internal.AppImageFile.getBooleanExtraFieldValue;
 
 import jdk.jpackage.internal.model.MacApplication.ExtraAppImageFileField;
 
 record MacAppImageFileExtras(boolean signed) {
 
-    MacAppImageFileExtras(AppImageFile2 appImageFile) {
+    MacAppImageFileExtras(AppImageFile appImageFile) {
         this(getBooleanExtraFieldValue(ExtraAppImageFileField.SIGNED.fieldName(), appImageFile));
     }
 }

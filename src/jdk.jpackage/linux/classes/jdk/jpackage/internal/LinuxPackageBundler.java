@@ -133,7 +133,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
 
                 if (srcLayout instanceof ApplicationLayout appLayout) {
                     // Copy app layout omitting application image info file.
-                    srcLayoutPathGroup.ghostPath(AppImageFile2.getPathInAppImage(appLayout));
+                    srcLayoutPathGroup.ghostPath(AppImageFile.getPathInAppImage(appLayout));
                 }
 
                 srcLayoutPathGroup.copy(AppImageLayout.toPathGroup(

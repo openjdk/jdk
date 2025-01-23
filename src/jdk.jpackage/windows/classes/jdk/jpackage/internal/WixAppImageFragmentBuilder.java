@@ -201,7 +201,7 @@ final class WixAppImageFragmentBuilder extends WixFragmentBuilder {
 
         if (srcAppImageLayout instanceof ApplicationLayout appLayout) {
             // Don't want app image info file in installed application.
-            var appImageFile = AppImageFile2.getPathInAppImage(appLayout);
+            var appImageFile = AppImageFile.getPathInAppImage(appLayout);
             appImagePathGroup.ghostPath(appImageFile);
 
             installedAppImage = (ApplicationLayout)installedAppImageLayout;

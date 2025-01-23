@@ -271,7 +271,7 @@ final class AppImageBuilder {
 
     private static AppImageItem createAppImageFileAppImageItem() {
         return (env, app, appLayout) -> {
-            new AppImageFile2(app).save(appLayout);
+            new AppImageFile(app).save(appLayout);
         };
     }
 

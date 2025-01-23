@@ -57,7 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
+import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;

@@ -39,7 +39,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.AppImageFile2.LauncherInfo;
+import jdk.jpackage.internal.AppImageFile.LauncherInfo;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
@@ -106,7 +106,7 @@ public class AppImageFileTest {
             return addlauncher(name, false, extra);
         }
 
-        AppImageFile2 create() {
+        AppImageFile create() {
             final var additionalLaunchers = addLauncherInfos.stream().map(li -> {
                 return (Launcher)new Launcher.Stub(li.name(), Optional.empty(),
                         List.of(), li.service(), null, Optional.empty(), null, li.extra());
@@ -120,14 +120,14 @@ public class AppImageFileTest {
                     Optional.empty(), List.of(), null, Optional.empty(),
                     new ApplicationLaunchers(mainLauncher, additionalLaunchers).asList(), extra);
 
-            return new AppImageFile2(app);
+            return new AppImageFile(app);
         }
 
         void createInDir(Path dir) {
             final var file = create();
             final var copy = toSupplier(() -> {
                 file.save(DUMMY_LAYOUT.resolveAt(dir));
-                return AppImageFile2.load(dir, DUMMY_LAYOUT);
+                return AppImageFile.load(dir, DUMMY_LAYOUT);
             }).get();
 
             assertEquals(file, copy);
@@ -183,7 +183,7 @@ public class AppImageFileTest {
 
     @ParameterizedTest
     @MethodSource
-    public void testValidXml(AppImageFile2 expected, List<String> xmlData) throws IOException, ConfigException {
+    public void testValidXml(AppImageFile expected, List<String> xmlData) throws IOException, ConfigException {
         final var actual = createFromXml(xmlData);
         assertEquals(expected, actual);
     }
@@ -234,8 +234,8 @@ public class AppImageFileTest {
         );
     }
 
-    private AppImageFile2 createFromXml(List<String> xmlData) throws IOException, ConfigException {
-        Path path = AppImageFile2.getPathInAppImage(DUMMY_LAYOUT.resolveAt(tempFolder));
+    private AppImageFile createFromXml(List<String> xmlData) throws IOException, ConfigException {
+        Path path = AppImageFile.getPathInAppImage(DUMMY_LAYOUT.resolveAt(tempFolder));
         path.toFile().mkdirs();
         Files.delete(path);
 
@@ -246,20 +246,20 @@ public class AppImageFileTest {
         Files.write(path, data, StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING);
 
-        AppImageFile2 image = AppImageFile2.load(tempFolder, DUMMY_LAYOUT);
+        AppImageFile image = AppImageFile.load(tempFolder, DUMMY_LAYOUT);
         return image;
     }
 
-    private static void assertEquals(AppImageFile2 expected, AppImageFile2 actual) {
-        assertPropertyEquals(expected, actual, AppImageFile2::getAppVersion);
-        assertPropertyEquals(expected, actual, AppImageFile2::getLauncherName);
-        assertPropertyEquals(expected, actual, AppImageFile2::getMainClass);
-        assertPropertyEquals(expected, actual, AppImageFile2::getExtra);
+    private static void assertEquals(AppImageFile expected, AppImageFile actual) {
+        assertPropertyEquals(expected, actual, AppImageFile::getAppVersion);
+        assertPropertyEquals(expected, actual, AppImageFile::getLauncherName);
+        assertPropertyEquals(expected, actual, AppImageFile::getMainClass);
+        assertPropertyEquals(expected, actual, AppImageFile::getExtra);
         Assertions.assertEquals(additionaLaunchersAsMap(expected), additionaLaunchersAsMap(actual));
     }
 
-    private static Map<String, AppImageFile2.LauncherInfo> additionaLaunchersAsMap(AppImageFile2 file) {
-        return file.getAddLaunchers().stream().collect(Collectors.toMap(AppImageFile2.LauncherInfo::name, x -> x));
+    private static Map<String, AppImageFile.LauncherInfo> additionaLaunchersAsMap(AppImageFile file) {
+        return file.getAddLaunchers().stream().collect(Collectors.toMap(AppImageFile.LauncherInfo::name, x -> x));
     }
 
     private static <T, U> void assertPropertyEquals(T expected, T actual, Function<T, U> getProperty) {
@@ -268,7 +268,7 @@ public class AppImageFileTest {
 
     private static final List<String> createXml(String ...xml) {
         final List<String> content = new ArrayList<>();
-        content.add(String.format("<jpackage-state platform=\"%s\" version=\"%s\">", AppImageFile2.getPlatform(), AppImageFile2.getVersion()));
+        content.add(String.format("<jpackage-state platform=\"%s\" version=\"%s\">", AppImageFile.getPlatform(), AppImageFile.getVersion()));
         content.addAll(List.of(xml));
         content.add("</jpackage-state>");
         return content;
