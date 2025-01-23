@@ -109,18 +109,24 @@ public class TestBufferStack extends NativeTestHelper {
         Thread[] vThreads = IntStream.range(0, 1024).mapToObj(_ ->
                 Thread.ofVirtual().start(() -> {
                     long threadId = Thread.currentThread().threadId();
-                    while (true) {
-                        try (Arena arena = stack.pushFrame(JAVA_LONG.byteSize(), JAVA_LONG.byteAlignment())) {
-                            // Try to assert no two vThreads get allocated the same stack space.
-                            MemorySegment segment = arena.allocate(JAVA_LONG);
-                            JAVA_LONG.varHandle().setVolatile(segment, 0L, threadId);
-                            Assert.assertEquals(threadId, (long) JAVA_LONG.varHandle().getVolatile(segment, 0L));
+                    while (!Thread.interrupted()) {
+                        for (int i = 0; i < 1_000_000; i++) {
+                            try (Arena arena = stack.pushFrame(JAVA_LONG.byteSize(), JAVA_LONG.byteAlignment())) {
+                                // Try to assert no two vThreads get allocated the same stack space.
+                                MemorySegment segment = arena.allocate(JAVA_LONG);
+                                JAVA_LONG.varHandle().setVolatile(segment, 0L, threadId);
+                                Assert.assertEquals(threadId, (long) JAVA_LONG.varHandle().getVolatile(segment, 0L));
+                            }
                         }
+                        Thread.yield(); // make sure the driver thread gets a chance.
                     }
                 })).toArray(Thread[]::new);
         Thread.sleep(Duration.of(10, SECONDS));
         Arrays.stream(vThreads).forEach(
-                thread -> Assert.assertTrue(thread.isAlive()));
+                thread -> {
+                    Assert.assertTrue(thread.isAlive());
+                    thread.interrupt();
+                });
     }
 
     static {
