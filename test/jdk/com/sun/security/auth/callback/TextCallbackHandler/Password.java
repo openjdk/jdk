@@ -26,7 +26,7 @@
  * @bug 6825240 6829785
  * @summary Password.readPassword() echos the input when System.Console is null
  * @library /test/lib
- * @run main/manual Password
+ * @run main/manual/othervm Password
  */
 
 import com.sun.security.auth.callback.TextCallbackHandler;
@@ -51,8 +51,9 @@ public class Password {
         TextCallbackHandler h = new TextCallbackHandler();
         PasswordCallback nc = new PasswordCallback("Invisible: ", false);
         PasswordCallback nc2 = new PasswordCallback("Visible: ", true);
-        System.out.println("Two passwords will be prompted for. The first one " +
-                "should have echo off, the second one on. Otherwise, this test fails");
+        System.out.println("Two passwords will be prompted for.\n" +
+                "Enter something at each prompt and press Enter/Return.\n" +
+                "If the first input is invisible and the second is visible, this test PASSES.");
         Callback[] callbacks = {nc, nc2};
         h.handle(callbacks);
         System.out.println("You input " + new String(nc.getPassword()) +
@@ -63,13 +64,13 @@ public class Password {
         if (Arrays.asList(args).contains("--password")) {
             password();
         } else {
-            final String instructions = String.format("%s/bin/java -cp \\\n%s \\\nPassword  \\\n--password",
+            final String instructions = String.format("%s/bin/java -cp %s Password --password",
                     System.getProperty("java.home"),
                     System.getProperty("java.class.path")
             );
 
             boolean testFailed = new Password().validate(
-                    "Please copy and execute the following script in the terminal/cmd, " +
+                    "Please copy and execute the following script in the terminal / Windows Command Prompt window, " +
                             "then follow the instructions. \n" +
                             "Once the test is complete please select whether the test has passed.",
                     instructions);
