@@ -364,6 +364,11 @@ void AbstractDisassembler::decode_range_abstract(address range_start, address ra
 // it respects the actual instruction length where possible.
 void AbstractDisassembler::decode_abstract(address start, address end, outputStream* ost,
                                            const int max_instr_size_in_bytes) {
+  if (AbstractDisassembler::print_platform_asm()) {
+    decode_platform(start, end, ost);
+    return;
+  }
+
   int     idx = 0;
   address pos = start;
 
@@ -378,4 +383,31 @@ void AbstractDisassembler::decode_abstract(address start, address end, outputStr
   //---<  Close the output (Marker for post-mortem disassembler)  >---
   st->bol();
   st->print_cr("[/MachCode]");
+}
+
+// As decode_abstract(), but in a platform-assembler-compatible format.
+void AbstractDisassembler::decode_platform(address start, address end, outputStream* ost) {
+  address p = start;
+  //---<  Open the output (Marker for post-mortem disassembler)  >---
+  ost->print_cr("[MachCode]");
+  ost->move_to(28);
+  ost->print("%s ", AbstractDisassembler::pd_start_text_command());
+  ost->bol();
+  while ((p < end) && (p != nullptr)) {
+    if (ost->position() == 0) {
+      ost->print("%s ", AbstractDisassembler::pd_inline_comment_open());
+      ost->print(PTR_FORMAT, p2i(p));
+      ost->print(" %s  ", AbstractDisassembler::pd_inline_comment_close());
+      ost->print("%s ", AbstractDisassembler::pd_insns_start());
+    } else {
+      ost->print(", ");
+    }
+    ost->print("%s%02x", AbstractDisassembler::pd_hex_prefix(), *p++);
+    if (ost->position() >= 80) {
+      ost->bol();
+    }
+  }
+  //---<  Close the output (Marker for post-mortem disassembler)  >---
+  ost->bol();
+  ost->print_cr("[/MachCode]");
 }

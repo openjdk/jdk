@@ -3381,19 +3381,10 @@ void nmethod::decode_platform(outputStream* ost) const {
 
   ResourceMark rm;
 
-  ost = tty;
-
-  // Compressed undisassembled disassembly format.
-  // The following status values are defined/supported:
-  //   = 0 - currently at bol() position, nothing printed yet on current line.
-  //   = 1 - currently at position after print_location().
-  //   > 1 - in the midst of printing instruction stream bytes.
-  int        code_comment_column      = 0;
-  const uint tabspacing               = 8;
+  int code_comment_column = 0;
   unsigned char* start = this->code_begin();
   unsigned char* p     = this->code_begin();
   unsigned char* end   = this->code_end();
-  unsigned char* pss   = p; // start of a code section (used for offsets)
 
   if ((start == nullptr) || (end == nullptr)) {
     ost->print_cr("PrintAssembly not possible due to uninitialized section pointers");
@@ -3406,7 +3397,8 @@ void nmethod::decode_platform(outputStream* ost) const {
   //---<  Open the output (Marker for post-mortem disassembler)  >---
   st->print_cr("[MachCode]");
   st->move_to(28);
-  st->print("%s ", AbstractDisassembler::pd_start_text_command());
+  st->print("%s", AbstractDisassembler::pd_start_text_command());
+  st->bol();
   while ((p < end) && (p != nullptr)) {
     //---<  Block comments for nmethod. Interrupts instruction stream, if any.  >---
     // Outputs a bol() before and a cr() after, but only if a comment is printed.
@@ -3432,17 +3424,20 @@ void nmethod::decode_platform(outputStream* ost) const {
       st->print("%s ", AbstractDisassembler::pd_inline_comment_open());
       st->print(PTR_FORMAT, p2i(p));
       st->print(" %s  ", AbstractDisassembler::pd_inline_comment_close());
-      code_comment_column = st->position();
       st->print("%s ", AbstractDisassembler::pd_insns_start());
+      code_comment_column = st->position();
+    } else {
+      st->print(", ");
     }
-
     st->print("%s%02x", AbstractDisassembler::pd_hex_prefix(), *p++);
     if (st->position() >= 80) {
       st->bol();
-    } else if (p < end) {
-      st->print(", ");
     }
   }
+  //---<  Close the output (Marker for post-mortem disassembler)  >---
+  st->bol();
+  st->print_cr("[/MachCode]");
+
 #endif
 }
 
@@ -3512,9 +3507,8 @@ void nmethod::decode2(outputStream* ost) const {
 #if defined(SUPPORT_ABSTRACT_ASSEMBLY)
   if (AbstractDisassembler::print_platform_asm()) {
     nmethod::decode_platform(ost);
-    // return;
+    return;
   }
-
 
   //---<  plain abstract disassembly, no comments or anything, just section headers  >---
   if (use_compressed_format && ! compressed_with_comments) {

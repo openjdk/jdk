@@ -139,6 +139,8 @@ class AbstractDisassembler {
   static void decode_abstract(address start, address end,
                               outputStream* st,
                               const int max_instr_size_in_bytes = abstract_instruction_maxsize_in_bytes);
+  // Ditto, but in a platform-dependent format.
+  static void decode_platform(address start, address end, outputStream* st);
 };
 
 #endif // SHARE_COMPILER_ABSTRACTDISASSEMBLER_HPP
