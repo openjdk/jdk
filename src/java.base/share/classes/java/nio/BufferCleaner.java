@@ -28,23 +28,46 @@ package java.nio;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
 
+/**
+ * Handles buffer cleaners.
+ */
 class BufferCleaner {
     private static final Cleaner CLEANER = Cleaner.create();
 
-    static Cleanable register(Object buffer, Runnable action) {
+    private BufferCleaner() {
+        // No instantiation.
+    }
+
+    /**
+     * Register a new cleanable for object and associated action.
+     *
+     * @param obj object to track
+     * @param action cleanup action
+     * @return associated cleanable
+     */
+    static Cleanable register(Object obj, Runnable action) {
         if (action != null) {
-            return CLEANER.register(buffer, action);
+            return CLEANER.register(obj, action);
         } else {
             return null;
         }
     }
 
+    /**
+     * Sets up a new canary on the same cleaner. When canary is dead,
+     * it is a signal that cleaner had acted.
+     *
+     * @return a canary
+     */
     static Canary newCanary() {
         Canary canary = new Canary();
         register(new Object(), canary);
         return canary;
     }
 
+    /**
+     * A canary.
+     */
     static class Canary implements Runnable {
         volatile boolean dead;
 
