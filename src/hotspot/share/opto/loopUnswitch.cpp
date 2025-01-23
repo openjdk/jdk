@@ -423,6 +423,7 @@ void PhaseIdealLoop::do_multiversioning(IdealLoopTree* lpt, Node_List& old_new) 
   set_ctrl(one, C->root());
   Node* opaque = new OpaqueMultiversioningNode(C, one);
   set_ctrl(opaque, C->root());
+  _igvn.register_new_node_with_optimizer(opaque);
   _igvn.set_type(opaque, TypeInt::BOOL);
 
   const LoopSelector loop_selector(lpt, opaque, PROB_FAIR, COUNT_UNKNOWN);
