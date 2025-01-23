@@ -112,9 +112,7 @@ public final class ItemEventTest extends Frame {
     }
 
     private void performTest() {
-        synchronized (actualSelectionOrder) {
-            actualSelectionOrder.delete(0, actualSelectionOrder.length());
-        }
+        actualSelectionOrder.setLength(0);
 
         final Rectangle rect = getListBoundsOnScreen();
         final int dY = rect.height / list.getItemCount();
