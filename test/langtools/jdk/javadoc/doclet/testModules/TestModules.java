@@ -621,7 +621,7 @@ public class TestModules extends JavadocTester {
                     estpkgmdltags"><code>TestClassInModuleTags</code></a>.""",
                 """
                     Member Link: <a href="testpkgmdltags/TestClassInModuleTags.html#testMethod(java.\
-                    lang.String)"><code>testMethod(String)</code></a>.""",
+                    lang.String)"><code>TestClassInModuleTags.testMethod(String)</code></a>.""",
                 """
                     Package Link: <a href="testpkgmdltags/package-summary.html"><code>testpkgmdltags</code></a>.""",
                 """
@@ -892,7 +892,7 @@ public class TestModules extends JavadocTester {
                      Type Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html" title\
                     ="class in testpkgmdltags"><code>TestClassInModuleTags</code></a>.<br>
                      Member Link: <a href="moduletags/testpkgmdltags/TestClassInModuleTags.html#test\
-                    Method(java.lang.String)"><code>testMethod(String)</code></a>.<br>
+                    Method(java.lang.String)"><code>TestClassInModuleTags.testMethod(String)</code></a>.<br>
                      Package Link: <a href="moduletags/testpkgmdltags/package-summary.html"><code>testpkgmdltags</code></a>.<br></div>
                     </div>""");
         checkOutput("moduleA/module-summary.html", true,

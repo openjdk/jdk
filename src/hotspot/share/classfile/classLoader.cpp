@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
@@ -303,10 +302,11 @@ ClassFileStream* ClassPathDirEntry::open_stream(JavaThread* current, const char*
 }
 
 ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name,
-                                     bool is_boot_append, bool from_class_path_attr) : ClassPathEntry() {
+                                     bool is_boot_append, bool from_class_path_attr, bool multi_release) : ClassPathEntry() {
   _zip = zip;
   _zip_name = copy_path(zip_name);
   _from_class_path_attr = from_class_path_attr;
+  _multi_release = multi_release;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -750,7 +750,8 @@ jzfile* ClassLoader::open_zip_file(const char* canonical_path, char** error_msg,
 ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
                                                      const char *path, const struct stat* st,
                                                      bool is_boot_append,
-                                                     bool from_class_path_attr) {
+                                                     bool from_class_path_attr,
+                                                     bool is_multi_release) {
   ClassPathEntry* new_entry = nullptr;
   if ((st->st_mode & S_IFMT) == S_IFREG) {
     ResourceMark rm(current);
@@ -763,7 +764,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(JavaThread* current,
     char* error_msg = nullptr;
     jzfile* zip = open_zip_file(canonical_path, &error_msg, current);
     if (zip != nullptr && error_msg == nullptr) {
-      new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr);
+      new_entry = new ClassPathZipEntry(zip, path, is_boot_append, from_class_path_attr, is_multi_release);
     } else {
 #if INCLUDE_CDS
       ClassLoaderExt::set_has_non_jar_in_classpath();
@@ -796,7 +797,7 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path, bo
         jzfile* zip = open_zip_file(canonical_path, &error_msg, thread);
         if (zip != nullptr && error_msg == nullptr) {
           // create using canonical path
-          return new ClassPathZipEntry(zip, canonical_path, is_boot_append, false);
+          return new ClassPathZipEntry(zip, canonical_path, is_boot_append, false, false);
         }
       }
     }

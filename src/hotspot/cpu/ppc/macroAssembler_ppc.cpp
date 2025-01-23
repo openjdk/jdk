@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
@@ -3296,7 +3295,7 @@ void MacroAssembler::get_vm_result_2(Register metadata_result) {
 
 Register MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided.
-  if (CompressedKlassPointers::base() != 0) {
+  if (CompressedKlassPointers::base() != nullptr) {
     // Use dst as temp if it is free.
     sub_const_optimized(dst, current, CompressedKlassPointers::base(), R0);
     current = dst;
@@ -3356,11 +3355,11 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   if (src == noreg) src = dst;
   Register shifted_src = src;
   if (CompressedKlassPointers::shift() != 0 ||
-      (CompressedKlassPointers::base() == 0 && src != dst)) {  // Move required.
+      (CompressedKlassPointers::base() == nullptr && src != dst)) {  // Move required.
     shifted_src = dst;
     sldi(shifted_src, src, CompressedKlassPointers::shift());
   }
-  if (CompressedKlassPointers::base() != 0) {
+  if (CompressedKlassPointers::base() != nullptr) {
     add_const_optimized(dst, shifted_src, CompressedKlassPointers::base(), R0);
   }
 }

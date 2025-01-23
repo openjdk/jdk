@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8134384 8234347 8236548
+ * @bug 8134384 8234347 8236548 8347841
  * @summary Tests CLDR TimeZoneNames has English names for all tzids
  * @run main/othervm -Djava.locale.providers=CLDR Bug8134384
  */
@@ -38,6 +38,9 @@ public class Bug8134384 {
 
         try {
             for (String tz : TimeZone.getAvailableIDs() ) {
+                if (ZoneId.SHORT_IDS.containsKey(tz)) {
+                    continue;
+                }
                 TimeZone.setDefault(TimeZone.getTimeZone(tz));
                 // Summer solstice
                 String date1 = Date.from(Instant.parse("2015-06-21T00:00:00.00Z")).toString();
