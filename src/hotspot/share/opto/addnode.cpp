@@ -991,31 +991,32 @@ const Type *XorINode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeInt *r0 = t0->is_int(); // Handy access
   const TypeInt *r1 = t1->is_int();
 
-  if( !r0->is_con() || !r1->is_con() ) {
-    //not a constant
-
-    // result of xor can only have bits sets where any of the
-    // inputs have bits set. lo can always become 0.
-
-    if ((r0->_lo >= 0) &&
-        (r0->_hi > 0)  &&
-        (r1->_lo >= 0) &&
-        (r1->_hi > 0)) {
-      // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-      const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
-      const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
-      return t1x->meet(t2x);
-    }
-
-    // Complementing a boolean?
-    if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
-                                 || r1 == TypeInt::BOOL))
-      return TypeInt::BOOL;
-
-    return TypeInt::INT;        // Any integer, but still no symbols.
+  if( r0->is_con() && r1->is_con() ){
+    // just XOR them bits.
+    return TypeInt::make( r0->get_con() ^ r1->get_con() );
   }
-  // Otherwise just XOR them bits.
-  return TypeInt::make( r0->get_con() ^ r1->get_con() );
+
+  // not constants
+
+  // result of xor can only have bits sets where any of the
+  // inputs have bits set. lo can always become 0.
+
+  if ( (r0->_lo >= 0) &&
+      (r0->_hi > 0)  &&
+      (r1->_lo >= 0) &&
+      (r1->_hi > 0) ) {
+    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
+    const TypeInt* t1x = TypeInt::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
+    const TypeInt* t2x = TypeInt::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
+    return t1x->meet(t2x);
+  }
+
+  // Complementing a boolean?
+  if( r0 == TypeInt::BOOL && ( r1 == TypeInt::ONE
+                               || r1 == TypeInt::BOOL))
+    return TypeInt::BOOL;
+
+  return TypeInt::INT;        // Any integer, but still no symbols.
 }
 
 //=============================================================================
@@ -1024,27 +1025,27 @@ const Type *XorLNode::add_ring( const Type *t0, const Type *t1 ) const {
   const TypeLong *r0 = t0->is_long(); // Handy access
   const TypeLong *r1 = t1->is_long();
 
-  if( !r0->is_con() || !r1->is_con() ) {
-    //not a constant
-
-    // result of xor can only have bits sets where any of the
-    // inputs have bits set. lo can always become 0.
-
-    if ((r0->_lo >= 0) &&
-        (r0->_hi > 0)  &&
-        (r1->_lo >= 0) &&
-        (r1->_hi > 0)) {
-      // hi - set all bits below the highest bit. Using round_down to avoid overflow.
-      const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
-      const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
-      return t1x->meet(t2x);
-    }
-
-    return TypeLong::LONG;      // Any integer, but still no symbols.
+  if( r0->is_con() && r1->is_con() ){
+    // just XOR them bits.
+    return TypeLong::make( r0->get_con() ^ r1->get_con() );
   }
 
-  // Otherwise just XOR them bits.
-  return TypeLong::make( r0->get_con() ^ r1->get_con() );
+  // not constants
+
+  // result of xor can only have bits sets where any of the
+  // inputs have bits set. lo can always become 0.
+
+  if ( (r0->_lo >= 0) &&
+      (r0->_hi > 0)  &&
+      (r1->_lo >= 0) &&
+      (r1->_hi > 0) ) {
+    // hi - set all bits below the highest bit. Using round_down to avoid overflow.
+    const TypeLong* t1x = TypeLong::make(0, round_down_power_of_2(r0->_hi) + (round_down_power_of_2(r0->_hi) - 1), r0->_widen);
+    const TypeLong* t2x = TypeLong::make(0, round_down_power_of_2(r1->_hi) + (round_down_power_of_2(r1->_hi) - 1), r1->_widen);
+    return t1x->meet(t2x);
+  }
+
+  return TypeLong::LONG;      // Any integer, but still no symbols.
 }
 
 Node* XorLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
