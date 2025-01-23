@@ -68,7 +68,12 @@ bool NodeHash::have_equivalent_inputs(const Node* n, const Node* k) const {
   // perform order agnostic input edge comparison to promote
   // node sharing.
   uint req = n->req();
-  if (n->is_commutative_vector_operation()) {
+  // Predicated vector operations are sensitive to ordering of inputs.
+  // When the mask corresponding to a vector lane is false then
+  // the result of the operation is corresponding lane of its first operand.
+  //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
+  //        RES = VEC1.BLEND(VEC1.lanewise(OPER, VEC2), MASK)
+  if (n->is_commutative_vector_operation() && !n->is_predicated_vector()) {
     assert(req == 3, "");
     assert(k->is_commutative_vector_operation(), "");
     if ((k->in(0) != n->in(0)) ||

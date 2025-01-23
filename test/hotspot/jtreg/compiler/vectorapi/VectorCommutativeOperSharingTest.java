@@ -543,4 +543,32 @@ public class VectorCommutativeOperSharingTest {
             Verify.checkEQ(ir1[i], (ib[i] + ib[i]) + (ib[i] + ia[i]));
         }
     }
+
+    @Test
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx512vl", "true", "sve", "true"})
+    public void testVectorIRSharing19(int index) {
+        VectorMask<Integer> VMASK = VectorMask.fromLong(I_SPECIES, ((1 << 4) - 1));
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // PRED:(vec1 + vec2) + PRED:(vec2 + vec1)
+        vec1.lanewise(VectorOperators.ADD, vec2, VMASK)
+            .lanewise(VectorOperators.ADD, vec2.lanewise(VectorOperators.ADD, vec1, VMASK))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing19")
+    public void testVectorIRSharingDriver19() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing19(i);
+        }
+        checkVectorIRSharing19();
+    }
+
+    public void checkVectorIRSharing19() {
+        VectorMask<Integer> VMASK = VectorMask.fromLong(I_SPECIES, ((1 << 4) - 1));
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            boolean mask = VMASK.laneIsSet(i & (I_SPECIES.length() - 1));
+            Verify.checkEQ(ir1[i], (mask ? ia[i] + ib[i] : ia[i]) + (mask ? ib[i] + ia[i] : ib[i]));
+        }
+    }
 }

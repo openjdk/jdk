@@ -74,7 +74,7 @@ class VectorNode : public TypeNode {
   }
 
   virtual uint hash() const {
-    if (is_commutative_vector_operation()) {
+    if (is_commutative_vector_operation() && !is_predicated_vector()) {
       assert(req() == 3, "");
       return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
     } else {
