@@ -66,7 +66,6 @@ public:
 #ifdef ASSERT
   ~NodeHash();                  // Unlock all nodes upon destruction of table.
 #endif
-  bool   have_equivalent_inputs(const Node* n, const Node* k) const;
   Node  *hash_find(const Node*);// Find an equivalent version in hash table
   Node  *hash_find_insert(Node*);// If not in table insert else return found node
   void   hash_insert(Node*);    // Insert into hash table

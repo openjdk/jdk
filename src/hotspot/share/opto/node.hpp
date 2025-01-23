@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -831,8 +831,7 @@ public:
     Flag_for_post_loop_opts_igvn     = 1 << 15,
     Flag_is_removed_by_peephole      = 1 << 16,
     Flag_is_predicated_using_blend   = 1 << 17,
-    Flag_is_commutative_vector_op    = 1 << 18,
-    _last_flag                       = Flag_is_commutative_vector_op
+    _last_flag                       = Flag_is_predicated_using_blend
   };
 
   class PD;
@@ -1068,8 +1067,6 @@ public:
   bool is_predicated_vector() const { return (_flags & Flag_is_predicated_vector) != 0; }
 
   bool is_predicated_using_blend() const { return (_flags & Flag_is_predicated_using_blend) != 0; }
-
-  bool is_commutative_vector_operation() const { return (_flags & Flag_is_commutative_vector_op) != 0; }
 
   // Used in lcm to mark nodes that have scheduled
   bool is_scheduled() const { return (_flags & Flag_is_scheduled) != 0; }

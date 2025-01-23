@@ -61,37 +61,6 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   memset(_table,0,sizeof(Node*)*_max);
 }
 
-//-----------------------------------------------------------------------------
-
-bool NodeHash::have_equivalent_inputs(const Node* n, const Node* k) const {
-  // For commutative operations with same controlling edge
-  // perform order agnostic input edge comparison to promote
-  // node sharing.
-  uint req = n->req();
-  // Predicated vector operations are sensitive to ordering of inputs.
-  // When the mask corresponding to a vector lane is false then
-  // the result of the operation is corresponding lane of its first operand.
-  //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
-  //        RES = VEC1.BLEND(VEC1.lanewise(OPER, VEC2), MASK)
-  // Here, first operand "VEC1" represents both source and destination vector.
-  if (n->is_commutative_vector_operation() && !n->is_predicated_vector()) {
-    assert(req == 3, "");
-    assert(k->is_commutative_vector_operation(), "");
-    if ((k->in(0) != n->in(0)) ||
-        ((k->in(1) != n->in(1) || k->in(2) != n->in(2)) &&
-         (k->in(1) != n->in(2) || k->in(2) != n->in(1)))) {
-      return false;
-    }
-  } else {
-    for (uint i = 0; i < req; i++) {
-      if (n->in(i) != k->in(i)) { // Different inputs?
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 //------------------------------hash_find--------------------------------------
 // Find in hash table
 Node *NodeHash::hash_find( const Node *n ) {
@@ -115,12 +84,15 @@ Node *NodeHash::hash_find( const Node *n ) {
   while( 1 ) {                  // While probing hash table
     if( k->req() == req &&      // Same count of inputs
         k->Opcode() == op ) {   // Same Opcode
-      if (have_equivalent_inputs(n, k) && n->cmp(*k)) {  // Check for any special bits
+      for( uint i=0; i<req; i++ )
+        if( n->in(i)!=k->in(i)) // Different inputs?
+          goto collision;       // "goto" is a speed hack...
+      if( n->cmp(*k) ) {        // Check for any special bits
         NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
-    // k was not a hit. Find another candidate and try again.
+  collision:
     NOT_PRODUCT( _look_probes++ );
     key = (key + stride/*7*/) & (_max-1); // Stride through table with relative prime
     k = _table[key];            // Get hashed value
@@ -164,12 +136,15 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   while( 1 ) {                  // While probing hash table
     if( k->req() == req &&      // Same count of inputs
         k->Opcode() == op ) {   // Same Opcode
-      if (have_equivalent_inputs(n, k) && n->cmp(*k)) {  // Check for any special bits
+      for( uint i=0; i<req; i++ )
+        if( n->in(i)!=k->in(i)) // Different inputs?
+          goto collision;       // "goto" is a speed hack...
+      if( n->cmp(*k) ) {        // Check for any special bits
         NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
-    // k was not a hit. Find another candidate and try again.
+  collision:
     NOT_PRODUCT( _look_probes++ );
     key = (key + stride) & (_max-1); // Stride through table w/ relative prime
     k = _table[key];            // Get hashed value
