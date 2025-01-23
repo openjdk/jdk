@@ -2376,16 +2376,17 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst, Register rscratch
   }
 }
 
-void MacroAssembler::cmp_mxcsr(Address mxcsr_save, Register tmp, Register rscratch) {
+void MacroAssembler::cmp32_mxcsr_std(Address mxcsr_save, Register tmp, Register rscratch) {
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
   assert(rscratch != noreg || always_reachable(mxcsr_std), "missing");
 
   stmxcsr(mxcsr_save);
   movl(tmp, mxcsr_save);
+  // Mask out any pending exceptions (only check control and mask bits)
   if (EnableX86ECoreOpts) {
-    orl(tmp, 0x003f);  // Set exceptions bits, addr_mxcsr_std has them set for ECore
+    orl(tmp, 0x003f);  // On Ecore, exception bits are set by default
   } else {
-    andl(tmp, 0xFFC0); // Mask out any pending exceptions (only check control and mask bits)
+    andl(tmp, 0xFFC0);
   }
   cmp32(tmp, mxcsr_std, rscratch);
 }

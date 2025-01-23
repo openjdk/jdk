@@ -113,9 +113,9 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   {
     const Address mxcsr_save(rsp, offset);
     Label skip_ldmx;
-    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
-    __ cmp_mxcsr(mxcsr_save, rax, rscratch1);
+    __ cmp32_mxcsr_std(mxcsr_save, rax, rscratch1);
     __ jcc(Assembler::equal, skip_ldmx);
+    ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
     __ ldmxcsr(mxcsr_std, rscratch1);
     __ bind(skip_ldmx);
   }

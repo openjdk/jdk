@@ -174,7 +174,7 @@ class StubGenerator: public StubCodeGenerator {
     // save and initialize %mxcsr
     if (sse_save) {
       Label skip_ldmx;
-      __ cmp_mxcsr(mxcsr_save, rax, noreg);
+      __ cmp32_mxcsr_std(mxcsr_save, rax);
       __ jcc(Assembler::equal, skip_ldmx);
       __ ldmxcsr(mxcsr_std);
       __ bind(skip_ldmx);
@@ -457,14 +457,14 @@ class StubGenerator: public StubCodeGenerator {
 
     if (CheckJNICalls && UseSSE > 0 ) {
       Label ok_ret;
-      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ push(rax);
       __ subptr(rsp, wordSize);      // allocate a temp location
-      __ cmp_mxcsr(mxcsr_save, rax);
+      __ cmp32_mxcsr_std(mxcsr_save, rax);
       __ jcc(Assembler::equal, ok_ret);
 
       __ warn("MXCSR changed by native JNI code.");
 
+      ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
       __ ldmxcsr(mxcsr_std);
 
       __ bind(ok_ret);
