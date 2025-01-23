@@ -105,11 +105,11 @@
  * pool</em>. {@link ClassModel} provides a lazily-inflated,
  * read-only view of the constant pool via {@link ClassModel#constantPool()}.
  * Descriptions of classfile content is often exposed in the form of various
- * subtypes of {@link java.lang.classfile.constantpool.PoolEntry}, such as {@link
- * java.lang.classfile.constantpool.ClassEntry} or {@link java.lang.classfile.constantpool.Utf8Entry}.
+ * subtypes of {@link PoolEntry}, such as {@link
+ * ClassEntry} or {@link Utf8Entry}.
  * <p>
  * Constant pool entries are also exposed through models and elements; in the
- * above traversal example, the {@link java.lang.classfile.instruction.InvokeInstruction}
+ * above traversal example, the {@link InvokeInstruction}
  * element exposed a method for {@code owner} that corresponds to a {@code
  * Constant_Class_info} entry in the constant pool.
  *
@@ -117,7 +117,7 @@
  * Much of the contents of a classfile is stored in attributes; attributes are
  * found on classes, methods, fields, record components, and on the {@code Code}
  * attribute.  Most attributes are surfaced as elements; for example, {@link
- * java.lang.classfile.attribute.SignatureAttribute} is a {@link
+ * SignatureAttribute} is a {@link
  * ClassElement}, {@link MethodElement}, and {@link
  * FieldElement} since it can appear in all of those places, and is
  * included when iterating the elements of the corresponding model.
@@ -139,9 +139,9 @@
  * Each standard attribute has an interface (in {@code java.lang.classfile.attribute})
  * which exposes the contents of the attribute and provides factories to
  * construct the attribute.  For example, the {@code Signature} attribute is
- * defined by the {@link java.lang.classfile.attribute.SignatureAttribute} class, and
- * provides accessors for {@link java.lang.classfile.attribute.SignatureAttribute#signature()}
- * as well as factories taking {@link java.lang.classfile.constantpool.Utf8Entry} or
+ * defined by the {@link SignatureAttribute} class, and
+ * provides accessors for {@link SignatureAttribute#signature()}
+ * as well as factories taking {@link Utf8Entry} or
  * {@link String}.
  *
  * <h3>Custom attributes</h3>
@@ -163,12 +163,12 @@
  * JDK such as {@code CharacterRangeTable}.
  * <p>
  * Unrecognized attributes are delivered as elements of type {@link
- * java.lang.classfile.attribute.UnknownAttribute}, which provide access only to the
+ * UnknownAttribute}, which provide access only to the
  * {@code byte[]} contents of the attribute.
  * <p>
  * For nonstandard attributes, user-provided attribute mappers can be specified
  * through the use of the {@link
- * ClassFile.AttributeMapperOption#of(java.util.function.Function)}}
+ * ClassFile.AttributeMapperOption#of(Function)}}
  * classfile option.  Implementations of custom attributes should extend {@link
  * CustomAttribute}.
  *
@@ -179,7 +179,7 @@
  * for some statically enumerated options, as well as factories for more complex options,
  * including:
  * <ul>
- *   <li>{@link ClassFile.AttributeMapperOption#of(java.util.function.Function)}
+ *   <li>{@link ClassFile.AttributeMapperOption#of(Function)}
  * -- specify format of custom attributes</li>
  *   <li>{@link ClassFile.AttributesProcessingOption}
  * -- unrecognized or problematic original attributes (default is {@code PASS_ALL_ATTRIBUTES})</li>
@@ -231,10 +231,10 @@
  * Builders often support multiple ways of expressing the same entity at
  * different levels of abstraction.  For example, the {@code invokevirtual}
  * instruction invoking {@code println} could have been generated with {@link
- * CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
- * String, java.lang.constant.MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
+ * CodeBuilder#invokevirtual(ClassDesc,
+ * String, MethodTypeDesc) CodeBuilder.invokevirtual}, {@link
  * CodeBuilder#invoke(Opcode,
- * java.lang.constant.ClassDesc, String, java.lang.constant.MethodTypeDesc,
+ * ClassDesc, String, MethodTypeDesc,
  * boolean) CodeBuilder.invoke}, or {@link
  * CodeBuilder#with(ClassFileElement)
  * CodeBuilder.with}.
@@ -252,13 +252,13 @@
  *
  * <h3>Symbolic information</h3>
  * To describe symbolic information for classes and types, the API uses the
- * nominal descriptor abstractions from {@code java.lang.constant} such as {@link
- * java.lang.constant.ClassDesc} and {@link java.lang.constant.MethodTypeDesc},
+ * nominal descriptor abstractions from {@link java.lang.constant} such as {@link
+ * ClassDesc} and {@link MethodTypeDesc},
  * which is less error-prone than using raw strings.
  * <p>
  * If a constant pool entry has a nominal representation then it provides a
  * method returning the corresponding nominal descriptor type e.g.
- * method {@link java.lang.classfile.constantpool.ClassEntry#asSymbol} returns
+ * method {@link ClassEntry#asSymbol} returns
  * {@code ClassDesc}.
  * <p>
  * Where appropriate builders provide two methods for building an element with
@@ -278,7 +278,7 @@
  * ClassFile API library based on the actual context. Also these nominal
  * descriptors are validated during their construction, so it is not possible to
  * create them with invalid content by mistake. Following example pass class
- * name to the {@link java.lang.constant.ClassDesc#of} method for validation
+ * name to the {@link ClassDesc#of} method for validation
  * and the library performs automatic conversion to the right internal form of
  * the class name when serialized in the constant pool as a class entry.
  * {@snippet lang=java :
@@ -435,14 +435,14 @@
  * corresponding interface to describe that element, and factory methods to
  * create that element.  Some element kinds also have convenience methods on the
  * corresponding builder (e.g., {@link
- * CodeBuilder#invokevirtual(java.lang.constant.ClassDesc,
- * String, java.lang.constant.MethodTypeDesc)}).
+ * CodeBuilder#invokevirtual(ClassDesc,
+ * String, MethodTypeDesc)}).
  * <p>
  * Most symbolic information in elements is represented by constant pool entries
  * (for example, the owner of a field is represented by a {@link
- * java.lang.classfile.constantpool.ClassEntry}.) Factories and builders also
- * accept nominal descriptors from {@code java.lang.constant} (e.g., {@link
- * java.lang.constant.ClassDesc}.)
+ * ClassEntry}.) Factories and builders also
+ * accept nominal descriptors from {@link java.lang.constant} (e.g., {@link
+ * ClassDesc}.)
  *
  * <h2><a id="data_model"></a>Data model</h2>
  * We define each kind of element by its name, an optional arity indicator (zero
@@ -555,3 +555,13 @@
  * @since 24
  */
 package java.lang.classfile;
+
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.attribute.UnknownAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.util.function.Function;
