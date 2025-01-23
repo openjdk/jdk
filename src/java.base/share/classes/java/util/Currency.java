@@ -139,7 +139,7 @@ public final class Currency implements Serializable {
     // class data: instance map
 
     private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
-    private static volatile HashSet<Currency> available;
+    private static HashSet<Currency> available;
 
     // Class data: currency data obtained from currency.data file.
     // Purpose:
@@ -464,57 +464,50 @@ public final class Currency implements Serializable {
     }
 
     // Returns the set of available Currencies which are lazily initialized
-    private static HashSet<Currency> getCurrencies() {
-        HashSet<Currency> result = available;
-        if (result != null) {
-            return result;
-        }
+    private static synchronized HashSet<Currency> getCurrencies() {
+        if (available == null) {
+            available = HashSet.newHashSet(256);
 
-        synchronized (Currency.class) {
-            if (available == null) {
-                available = HashSet.newHashSet(256);
+            // Add simple currencies first
+            for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
+                for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
+                    int tableEntry = getMainTableEntry(c1, c2);
+                    if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
+                            && tableEntry != INVALID_COUNTRY_ENTRY) {
+                        char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
+                        int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
+                        int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(c1);
+                        sb.append(c2);
+                        sb.append(finalChar);
+                        available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
+                    } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
+                            && tableEntry != INVALID_COUNTRY_ENTRY
+                            && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
+                        int index = SpecialCaseEntry.toIndex(tableEntry);
+                        SpecialCaseEntry scEntry = specialCasesList.get(index);
 
-                // Add simple currencies first
-                for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
-                    for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
-                        int tableEntry = getMainTableEntry(c1, c2);
-                        if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
-                                && tableEntry != INVALID_COUNTRY_ENTRY) {
-                            char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
-                            int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
-                            int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
-                            StringBuilder sb = new StringBuilder();
-                            sb.append(c1);
-                            sb.append(c2);
-                            sb.append(finalChar);
-                            available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
-                        } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
-                                && tableEntry != INVALID_COUNTRY_ENTRY
-                                && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
-                            int index = SpecialCaseEntry.toIndex(tableEntry);
-                            SpecialCaseEntry scEntry = specialCasesList.get(index);
-
-                            if (scEntry.cutOverTime == Long.MAX_VALUE
-                                    || System.currentTimeMillis() < scEntry.cutOverTime) {
-                                available.add(getInstance(scEntry.oldCurrency,
-                                        scEntry.oldCurrencyFraction,
-                                        scEntry.oldCurrencyNumericCode));
-                            } else {
-                                available.add(getInstance(scEntry.newCurrency,
-                                        scEntry.newCurrencyFraction,
-                                        scEntry.newCurrencyNumericCode));
-                            }
+                        if (scEntry.cutOverTime == Long.MAX_VALUE
+                                || System.currentTimeMillis() < scEntry.cutOverTime) {
+                            available.add(getInstance(scEntry.oldCurrency,
+                                    scEntry.oldCurrencyFraction,
+                                    scEntry.oldCurrencyNumericCode));
+                        } else {
+                            available.add(getInstance(scEntry.newCurrency,
+                                    scEntry.newCurrencyFraction,
+                                    scEntry.newCurrencyNumericCode));
                         }
                     }
                 }
-
-                // Now add other currencies
-                for (OtherCurrencyEntry entry : otherCurrenciesList) {
-                    available.add(getInstance(entry.currencyCode));
-                }
             }
-            return available;
+
+            // Now add other currencies
+            for (OtherCurrencyEntry entry : otherCurrenciesList) {
+                available.add(getInstance(entry.currencyCode));
+            }
         }
+        return available;
     }
 
     /**
