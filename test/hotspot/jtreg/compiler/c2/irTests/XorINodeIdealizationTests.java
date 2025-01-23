@@ -33,6 +33,11 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.XorINodeIdealizationTests
  */
 public class XorINodeIdealizationTests {
+    private static final int CONST_1 = RunInfo.getRandom().nextInt();
+    private static final int CONST_2 = RunInfo.getRandom().nextInt();
+    private static final boolean CONST_BOOL_1 = RunInfo.getRandom().nextBoolean();
+    private static final boolean CONST_BOOL_2 = RunInfo.getRandom().nextBoolean();
+
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -42,24 +47,27 @@ public class XorINodeIdealizationTests {
                  "test7", "test8", "test9",
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
-                 "test16", "test17"})
+                 "test16", "test17",
+                 "testConstXor", "testXorSelf",
+                 "testConstXorBool", "testXorSelfBool"
+    })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
         int c = RunInfo.getRandom().nextInt();
-        int d = RunInfo.getRandom().nextInt();
+        boolean d = RunInfo.getRandom().nextBoolean();
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
 
-        assertResult(0, 0, 0, 0);
+        assertResult(0, 0, 0, false);
         assertResult(a, b, c, d);
-        assertResult(min, min, min, min);
-        assertResult(max, max, max, max);
+        assertResult(min, min, min, false);
+        assertResult(max, max, max, true);
     }
 
     @DontCompile
-    public void assertResult(int a, int b, int c, int d) {
+    public void assertResult(int a, int b, int c, boolean d) {
         Asserts.assertEQ(b - a              , test1(a, b));
         Asserts.assertEQ(a - b              , test2(a, b));
         Asserts.assertEQ(b - a              , test3(a, b));
@@ -76,7 +84,10 @@ public class XorINodeIdealizationTests {
         Asserts.assertEQ(~a                 , test14(a));
         Asserts.assertEQ(~a                 , test15(a));
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
-        Asserts.assertEQ(-2023 - a          , test17(a));
+        Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
+        Asserts.assertEQ(0                  , testXorSelf(a));
+        Asserts.assertEQ(CONST_BOOL_1 ^ CONST_BOOL_2  , testConstXorBool());
+        Asserts.assertEQ(false              , testXorSelfBool(d));
     }
 
     @Test
@@ -216,5 +227,37 @@ public class XorINodeIdealizationTests {
     // Checks ~(x + c) => (-c-1) - x
     public int test17(int x) {
         return ~(x + 2022);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    // Checks (c ^c)  => c (constant folded)
+    public int testConstXor() {
+        return CONST_1 ^ CONST_2;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    // Checks (x ^ x)  => c (constant folded)
+    public int testXorSelf(int x) {
+        return x ^ x;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    // Checks (c ^c)  => c (constant folded)
+    public boolean testConstXorBool() {
+        return CONST_BOOL_1 ^ CONST_BOOL_2;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_I, "1"})
+    // Checks (x ^ x)  => c (constant folded)
+    public boolean testXorSelfBool(boolean x) {
+        return x ^ x;
     }
 }

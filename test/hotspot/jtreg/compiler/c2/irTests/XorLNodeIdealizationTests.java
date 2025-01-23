@@ -33,6 +33,10 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.XorLNodeIdealizationTests
  */
 public class XorLNodeIdealizationTests {
+
+    private static final long CONST_1 = RunInfo.getRandom().nextLong();
+    private static final long CONST_2 = RunInfo.getRandom().nextLong();
+
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -42,7 +46,9 @@ public class XorLNodeIdealizationTests {
                  "test7", "test8", "test9",
                  "test10", "test11", "test12",
                  "test13", "test14", "test15",
-                 "test16", "test17"})
+                 "test16", "test17",
+                 "testConstXor", "testXorSelf"
+    })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -77,6 +83,8 @@ public class XorLNodeIdealizationTests {
         Asserts.assertEQ(~a                 , test15(a));
         Asserts.assertEQ((~a + b) + (~a | c), test16(a, b, c));
         Asserts.assertEQ(-2023 - a          , test17(a));
+        Asserts.assertEQ(CONST_1 ^ CONST_2  , testConstXor());
+        Asserts.assertEQ(0L                  , testXorSelf(a));
     }
 
     @Test
@@ -216,5 +224,21 @@ public class XorLNodeIdealizationTests {
     // Checks ~(x + c) => (-c-1) - x
     public long test17(long x) {
         return ~(x + 2022);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_L, "1"})
+    // Checks (c ^c)  => c (constant folded)
+    public long testConstXor() {
+        return CONST_1 ^ CONST_2;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.XOR})
+    @IR(counts = {IRNode.CON_L, "1"})
+    // Checks (x ^ x)  => c (constant folded)
+    public long testXorSelf(long x) {
+        return x ^ x;
     }
 }
