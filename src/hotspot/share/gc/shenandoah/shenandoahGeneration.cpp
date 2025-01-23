@@ -1025,15 +1025,19 @@ size_t ShenandoahGeneration::decrease_capacity(size_t decrement) {
 
   _max_capacity -= decrement;
 
-  // This detects arithmetic wraparound on _used
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() >= used()),
-         "Affiliated regions must hold more than what is currently used");
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (_used <= _max_capacity), "Cannot use more than capacity");
-  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-         (used_regions_size() <= _max_capacity),
-         "Cannot use more than capacity");
+#ifdef ASSERT
+  if (!ShenandoahHeap::heap()->is_full_gc_in_progress()) {
+    assert(used_regions_size() >= used(),
+           "Affiliated regions (" PROPERFMT ") must at least hold what is currently used (" PROPERFMT ")",
+           PROPERFMTARGS(used_regions_size()), PROPERFMTARGS(used()));
+    assert(_used <= _max_capacity,
+           "Cannot use (" PROPERFMT ") more than capacity (" PROPERFMT ")",
+           PROPERFMTARGS(_used), PROPERFMTARGS(_max_capacity));
+    assert(used_regions_size() <= _max_capacity,
+           "Affiliated regions (" PROPERFMT ") cannot use more than capacity (" PROPERFMT ")",
+           PROPERFMTARGS(used_regions_size()),PROPERFMTARGS(_max_capacity));
+  }
+#endif
   return _max_capacity;
 }
 
