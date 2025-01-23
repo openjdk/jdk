@@ -4210,6 +4210,13 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var);
         }
         annotate.flush();
+        Lint lint = env.info.lint.augment(tree.var.sym);
+        Lint prevLint = chk.setLint(lint);
+        try {
+            deferredLintHandler.flush(tree.var, lint);
+        } finally {
+            chk.setLint(prevLint);
+        }
         result = tree.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
