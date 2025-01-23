@@ -34,11 +34,12 @@ import java.awt.Robot;
  */
 
 public class MouseMoveOffScreen {
+    private static final Point STARTING_LOC = new Point(200, 200);
     private static final Point OFF_SCREEN_LOC = new Point(20000, 200);
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
-        robot.mouseMove(200, 200);
+        robot.mouseMove(STARTING_LOC.x, STARTING_LOC.y);
         robot.delay(500);
         robot.mouseMove(OFF_SCREEN_LOC.x, OFF_SCREEN_LOC.y);
         robot.delay(500);

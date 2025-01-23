@@ -82,7 +82,7 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * contents, even application owned content,or to perform even limited
  * synthesizing of events.</li>
  * </ul>
- *
+ * <p>
  * The Robot API specification requires that approvals for these be granted
  * for full operation.
  * If they are not granted, the API will be degraded as discussed here.
@@ -98,15 +98,15 @@ import static sun.java2d.SunGraphicsEnvironment.toDeviceSpaceAbs;
  * <li>be associated with a specific binary application,
  * or a class of binary applications.</li>
  * </ul>
- *
+ * <p>
  * When such approvals need to given interactively, it may impede the normal
  * operation of the application until approved, and if approval is denied
  * or not possible, or cannot be made persistent then it will degrade
  * the functionality of this class and in turn any part of the operation
  * of the application which is dependent on it.
  *
- * @author      Robi Khan
- * @since       1.3
+ * @author Robi Khan
+ * @since 1.3
  */
 public class Robot {
     private static final int MAX_DELAY = 60000;
@@ -114,22 +114,22 @@ public class Robot {
     private boolean isAutoWaitForIdle = false;
     private int autoDelay = 0;
     private static int LEGAL_BUTTON_MASK = 0;
-    private static Rectangle screenBounds;
+    private static Rectangle[] allScreenBounds;
 
     private DirectColorModel screenCapCM = null;
 
     /**
      * Constructs a Robot object in the coordinate system of the primary screen.
      *
-     * @throws  AWTException if the platform configuration does not allow
-     * low-level input control.  This exception is always thrown when
-     * GraphicsEnvironment.isHeadless() returns true
-     * @see     java.awt.GraphicsEnvironment#isHeadless
+     * @throws AWTException if the platform configuration does not allow
+     *                      low-level input control.  This exception is always thrown when
+     *                      GraphicsEnvironment.isHeadless() returns true
+     * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public Robot() throws AWTException {
         checkHeadless();
         init(GraphicsEnvironment.getLocalGraphicsEnvironment()
-            .getDefaultScreenDevice());
+                .getDefaultScreenDevice());
     }
 
     /**
@@ -146,15 +146,15 @@ public class Robot {
      * If screen devices are reconfigured such that the coordinate system is
      * affected, the behavior of existing Robot objects is undefined.
      *
-     * @param screen    A screen GraphicsDevice indicating the coordinate
-     *                  system the Robot will operate in.
-     * @throws  AWTException if the platform configuration does not allow
-     * low-level input control.  This exception is always thrown when
-     * GraphicsEnvironment.isHeadless() returns true.
-     * @throws  IllegalArgumentException if {@code screen} is not a screen
-     *          GraphicsDevice.
-     * @see     java.awt.GraphicsEnvironment#isHeadless
-     * @see     GraphicsDevice
+     * @param screen A screen GraphicsDevice indicating the coordinate
+     *               system the Robot will operate in.
+     * @throws AWTException             if the platform configuration does not allow
+     *                                  low-level input control.  This exception is always thrown when
+     *                                  GraphicsEnvironment.isHeadless() returns true.
+     * @throws IllegalArgumentException if {@code screen} is not a screen
+     *                                  GraphicsDevice.
+     * @see java.awt.GraphicsEnvironment#isHeadless
+     * @see GraphicsDevice
      */
     public Robot(GraphicsDevice screen) throws AWTException {
         checkHeadless();
@@ -165,10 +165,14 @@ public class Robot {
     private void init(GraphicsDevice screen) throws AWTException {
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof ComponentFactory) {
-            peer = ((ComponentFactory)toolkit).createRobot(screen);
+            peer = ((ComponentFactory) toolkit).createRobot(screen);
         }
         initLegalButtonMask();
-        screenBounds = screen.getDefaultConfiguration().getBounds();
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice[] gs = ge.getScreenDevices();
+        for (int i = 0; i < gs.length; i++) {
+            allScreenBounds[i] = gs[i].getDefaultConfiguration().getBounds();
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -176,20 +180,20 @@ public class Robot {
         if (LEGAL_BUTTON_MASK != 0) return;
 
         int tmpMask = 0;
-        if (Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()){
+        if (Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()) {
             if (Toolkit.getDefaultToolkit() instanceof SunToolkit) {
-                final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
-                for (int i = 0; i < buttonsNumber; i++){
-                    tmpMask |= InputEvent.getMaskForButton(i+1);
+                final int buttonsNumber = ((SunToolkit) (Toolkit.getDefaultToolkit())).getNumberOfButtons();
+                for (int i = 0; i < buttonsNumber; i++) {
+                    tmpMask |= InputEvent.getMaskForButton(i + 1);
                 }
             }
         }
-        tmpMask |= InputEvent.BUTTON1_MASK|
-            InputEvent.BUTTON2_MASK|
-            InputEvent.BUTTON3_MASK|
-            InputEvent.BUTTON1_DOWN_MASK|
-            InputEvent.BUTTON2_DOWN_MASK|
-            InputEvent.BUTTON3_DOWN_MASK;
+        tmpMask |= InputEvent.BUTTON1_MASK |
+                InputEvent.BUTTON2_MASK |
+                InputEvent.BUTTON3_MASK |
+                InputEvent.BUTTON1_DOWN_MASK |
+                InputEvent.BUTTON2_DOWN_MASK |
+                InputEvent.BUTTON3_DOWN_MASK;
         LEGAL_BUTTON_MASK = tmpMask;
     }
 
@@ -216,12 +220,41 @@ public class Robot {
      * while the subsequent mousePress and mouseRelease can be
      * delivered to the correct location
      *
-     * @param x         X position
-     * @param y         Y position
+     * @param x X position
+     * @param y Y position
      */
     public synchronized void mouseMove(int x, int y) {
-        peer.mouseMove(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width),
-                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height));
+        int leastXDiff = Integer.MAX_VALUE;
+        int leastYDiff = Integer.MAX_VALUE;
+        int finX, finY;
+
+        for (Rectangle screenBounds : allScreenBounds) {
+            int closestX = Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width);
+            int closestY = Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height);
+
+            int currXDiff = Math.abs(x - closestX);
+            int currYDiff = Math.abs(y - closestY);
+
+            if ((currXDiff == 0) && (currYDiff == 0)) {
+                finX = x;
+                finY = y;
+                break;
+            } else if (currXDiff < leastXDiff) {
+                finX = closestX;
+                finY = closestY;
+                leastXDiff = currXDiff;
+                leastYDiff = currYDiff;
+            } else if (currYDiff < leastYDiff) {
+                finX = closestX;
+                finY = closestY;
+                leastXDiff = currXDiff;
+                leastYDiff = currYDiff;
+            }
+        }
+
+        peer.mouseMove(finX, finY);
+//        peer.mouseMove(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width),
+//                Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height));
         afterEvent();
     }
 
@@ -230,47 +263,47 @@ public class Robot {
      * be released using the {@link #mouseRelease(int)} method.
      *
      * @param buttons the Button mask; a combination of one or more
-     * mouse button masks.
-     * <p>
-     * It is allowed to use only a combination of valid values as a {@code buttons} parameter.
-     * A valid combination consists of {@code InputEvent.BUTTON1_DOWN_MASK},
-     * {@code InputEvent.BUTTON2_DOWN_MASK}, {@code InputEvent.BUTTON3_DOWN_MASK}
-     * and values returned by the
-     * {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)} method.
-     *
-     * The valid combination also depends on a
-     * {@link Toolkit#areExtraMouseButtonsEnabled() Toolkit.areExtraMouseButtonsEnabled()} value as follows:
-     * <ul>
-     * <li> If support for extended mouse buttons is
-     * {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
-     * then it is allowed to use only the following standard button masks:
-     * {@code InputEvent.BUTTON1_DOWN_MASK}, {@code InputEvent.BUTTON2_DOWN_MASK},
-     * {@code InputEvent.BUTTON3_DOWN_MASK}.
-     * <li> If support for extended mouse buttons is
-     * {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
-     * then it is allowed to use the standard button masks
-     * and masks for existing extended mouse buttons, if the mouse has more then three buttons.
-     * In that way, it is allowed to use the button masks corresponding to the buttons
-     * in the range from 1 to {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
-     * <br>
-     * It is recommended to use the {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)}
-     * method to obtain the mask for any mouse button by its number.
-     * </ul>
-     * <p>
-     * The following standard button masks are also accepted:
-     * <ul>
-     * <li>{@code InputEvent.BUTTON1_MASK}
-     * <li>{@code InputEvent.BUTTON2_MASK}
-     * <li>{@code InputEvent.BUTTON3_MASK}
-     * </ul>
-     * However, it is recommended to use {@code InputEvent.BUTTON1_DOWN_MASK},
-     * {@code InputEvent.BUTTON2_DOWN_MASK},  {@code InputEvent.BUTTON3_DOWN_MASK} instead.
-     * Either extended {@code _DOWN_MASK} or old {@code _MASK} values
-     * should be used, but both those models should not be mixed.
+     *                mouse button masks.
+     *                <p>
+     *                It is allowed to use only a combination of valid values as a {@code buttons} parameter.
+     *                A valid combination consists of {@code InputEvent.BUTTON1_DOWN_MASK},
+     *                {@code InputEvent.BUTTON2_DOWN_MASK}, {@code InputEvent.BUTTON3_DOWN_MASK}
+     *                and values returned by the
+     *                {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)} method.
+     *                <p>
+     *                The valid combination also depends on a
+     *                {@link Toolkit#areExtraMouseButtonsEnabled() Toolkit.areExtraMouseButtonsEnabled()} value as follows:
+     *                <ul>
+     *                <li> If support for extended mouse buttons is
+     *                {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     *                then it is allowed to use only the following standard button masks:
+     *                {@code InputEvent.BUTTON1_DOWN_MASK}, {@code InputEvent.BUTTON2_DOWN_MASK},
+     *                {@code InputEvent.BUTTON3_DOWN_MASK}.
+     *                <li> If support for extended mouse buttons is
+     *                {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     *                then it is allowed to use the standard button masks
+     *                and masks for existing extended mouse buttons, if the mouse has more then three buttons.
+     *                In that way, it is allowed to use the button masks corresponding to the buttons
+     *                in the range from 1 to {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
+     *                <br>
+     *                It is recommended to use the {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)}
+     *                method to obtain the mask for any mouse button by its number.
+     *                </ul>
+     *                <p>
+     *                The following standard button masks are also accepted:
+     *                <ul>
+     *                <li>{@code InputEvent.BUTTON1_MASK}
+     *                <li>{@code InputEvent.BUTTON2_MASK}
+     *                <li>{@code InputEvent.BUTTON3_MASK}
+     *                </ul>
+     *                However, it is recommended to use {@code InputEvent.BUTTON1_DOWN_MASK},
+     *                {@code InputEvent.BUTTON2_DOWN_MASK},  {@code InputEvent.BUTTON3_DOWN_MASK} instead.
+     *                Either extended {@code _DOWN_MASK} or old {@code _MASK} values
+     *                should be used, but both those models should not be mixed.
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
-     *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     *                                  and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
-     *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     *                                  that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
      * @see #mouseRelease(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -287,47 +320,47 @@ public class Robot {
      * Releases one or more mouse buttons.
      *
      * @param buttons the Button mask; a combination of one or more
-     * mouse button masks.
-     * <p>
-     * It is allowed to use only a combination of valid values as a {@code buttons} parameter.
-     * A valid combination consists of {@code InputEvent.BUTTON1_DOWN_MASK},
-     * {@code InputEvent.BUTTON2_DOWN_MASK}, {@code InputEvent.BUTTON3_DOWN_MASK}
-     * and values returned by the
-     * {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)} method.
-     *
-     * The valid combination also depends on a
-     * {@link Toolkit#areExtraMouseButtonsEnabled() Toolkit.areExtraMouseButtonsEnabled()} value as follows:
-     * <ul>
-     * <li> If the support for extended mouse buttons is
-     * {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
-     * then it is allowed to use only the following standard button masks:
-     * {@code InputEvent.BUTTON1_DOWN_MASK}, {@code InputEvent.BUTTON2_DOWN_MASK},
-     * {@code InputEvent.BUTTON3_DOWN_MASK}.
-     * <li> If the support for extended mouse buttons is
-     * {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
-     * then it is allowed to use the standard button masks
-     * and masks for existing extended mouse buttons, if the mouse has more then three buttons.
-     * In that way, it is allowed to use the button masks corresponding to the buttons
-     * in the range from 1 to {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
-     * <br>
-     * It is recommended to use the {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)}
-     * method to obtain the mask for any mouse button by its number.
-     * </ul>
-     * <p>
-     * The following standard button masks are also accepted:
-     * <ul>
-     * <li>{@code InputEvent.BUTTON1_MASK}
-     * <li>{@code InputEvent.BUTTON2_MASK}
-     * <li>{@code InputEvent.BUTTON3_MASK}
-     * </ul>
-     * However, it is recommended to use {@code InputEvent.BUTTON1_DOWN_MASK},
-     * {@code InputEvent.BUTTON2_DOWN_MASK},  {@code InputEvent.BUTTON3_DOWN_MASK} instead.
-     * Either extended {@code _DOWN_MASK} or old {@code _MASK} values
-     * should be used, but both those models should not be mixed.
+     *                mouse button masks.
+     *                <p>
+     *                It is allowed to use only a combination of valid values as a {@code buttons} parameter.
+     *                A valid combination consists of {@code InputEvent.BUTTON1_DOWN_MASK},
+     *                {@code InputEvent.BUTTON2_DOWN_MASK}, {@code InputEvent.BUTTON3_DOWN_MASK}
+     *                and values returned by the
+     *                {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)} method.
+     *                <p>
+     *                The valid combination also depends on a
+     *                {@link Toolkit#areExtraMouseButtonsEnabled() Toolkit.areExtraMouseButtonsEnabled()} value as follows:
+     *                <ul>
+     *                <li> If the support for extended mouse buttons is
+     *                {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     *                then it is allowed to use only the following standard button masks:
+     *                {@code InputEvent.BUTTON1_DOWN_MASK}, {@code InputEvent.BUTTON2_DOWN_MASK},
+     *                {@code InputEvent.BUTTON3_DOWN_MASK}.
+     *                <li> If the support for extended mouse buttons is
+     *                {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     *                then it is allowed to use the standard button masks
+     *                and masks for existing extended mouse buttons, if the mouse has more then three buttons.
+     *                In that way, it is allowed to use the button masks corresponding to the buttons
+     *                in the range from 1 to {@link java.awt.MouseInfo#getNumberOfButtons() MouseInfo.getNumberOfButtons()}.
+     *                <br>
+     *                It is recommended to use the {@link InputEvent#getMaskForButton(int) InputEvent.getMaskForButton(button)}
+     *                method to obtain the mask for any mouse button by its number.
+     *                </ul>
+     *                <p>
+     *                The following standard button masks are also accepted:
+     *                <ul>
+     *                <li>{@code InputEvent.BUTTON1_MASK}
+     *                <li>{@code InputEvent.BUTTON2_MASK}
+     *                <li>{@code InputEvent.BUTTON3_MASK}
+     *                </ul>
+     *                However, it is recommended to use {@code InputEvent.BUTTON1_DOWN_MASK},
+     *                {@code InputEvent.BUTTON2_DOWN_MASK},  {@code InputEvent.BUTTON3_DOWN_MASK} instead.
+     *                Either extended {@code _DOWN_MASK} or old {@code _MASK} values
+     *                should be used, but both those models should not be mixed.
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
-     *         and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     *                                  and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws IllegalArgumentException if the {@code buttons} mask contains the mask for extra mouse button
-     *         that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
+     *                                  that does not exist on the mouse and support for extended mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled} by Java
      * @see #mousePress(int)
      * @see InputEvent#getMaskForButton(int)
      * @see Toolkit#areExtraMouseButtonsEnabled()
@@ -341,7 +374,7 @@ public class Robot {
     }
 
     private static void checkButtonsArgument(int buttons) {
-        if ( (buttons|LEGAL_BUTTON_MASK) != LEGAL_BUTTON_MASK ) {
+        if ((buttons | LEGAL_BUTTON_MASK) != LEGAL_BUTTON_MASK) {
             throw new IllegalArgumentException("Invalid combination of button flags");
         }
     }
@@ -349,10 +382,9 @@ public class Robot {
     /**
      * Rotates the scroll wheel on wheel-equipped mice.
      *
-     * @param wheelAmt  number of "notches" to move the mouse wheel
-     *                  Negative values indicate movement up/away from the user,
-     *                  positive values indicate movement down/towards the user.
-     *
+     * @param wheelAmt number of "notches" to move the mouse wheel
+     *                 Negative values indicate movement up/away from the user,
+     *                 positive values indicate movement down/towards the user.
      * @since 1.4
      */
     public synchronized void mouseWheel(int wheelAmt) {
@@ -368,11 +400,11 @@ public class Robot {
      * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
      * left or right shift key) will map to the left key.
      *
-     * @param   keycode Key to press (e.g. {@code KeyEvent.VK_A})
-     * @throws  IllegalArgumentException if {@code keycode} is not
-     *          a valid key
-     * @see     #keyRelease(int)
-     * @see     java.awt.event.KeyEvent
+     * @param keycode Key to press (e.g. {@code KeyEvent.VK_A})
+     * @throws IllegalArgumentException if {@code keycode} is not
+     *                                  a valid key
+     * @see #keyRelease(int)
+     * @see java.awt.event.KeyEvent
      */
     public synchronized void keyPress(int keycode) {
         checkKeycodeArgument(keycode);
@@ -387,11 +419,11 @@ public class Robot {
      * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
      * left or right shift key) will map to the left key.
      *
-     * @param   keycode Key to release (e.g. {@code KeyEvent.VK_A})
-     * @throws  IllegalArgumentException if {@code keycode} is not a
-     *          valid key
-     * @see  #keyPress(int)
-     * @see     java.awt.event.KeyEvent
+     * @param keycode Key to release (e.g. {@code KeyEvent.VK_A})
+     * @throws IllegalArgumentException if {@code keycode} is not a
+     *                                  valid key
+     * @see #keyPress(int)
+     * @see java.awt.event.KeyEvent
      */
     public synchronized void keyRelease(int keycode) {
         checkKeycodeArgument(keycode);
@@ -417,20 +449,20 @@ public class Robot {
      * then a {@code SecurityException} may be thrown,
      * or the content of the returned {@code Color} is undefined.
      * </p>
+     *
+     * @param x X position of pixel
+     * @param y Y position of pixel
+     * @return Color of the pixel
+     * @throws SecurityException if access to the screen is denied
+     *                           by the desktop environment
      * @apiNote It is recommended to avoid calling this method on
      * the AWT Event Dispatch Thread since screen capture may be a lengthy
      * operation, particularly if acquiring permissions is needed and involves
      * user interaction.
-     *
-     * @param   x       X position of pixel
-     * @param   y       Y position of pixel
-     * @throws  SecurityException if access to the screen is denied
-     *          by the desktop environment
-     * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
         Point point = peer.useAbsoluteCoordinates() ? toDeviceSpaceAbs(x, y)
-                                                    : toDeviceSpace(x, y);
+                : toDeviceSpace(x, y);
         return new Color(peer.getRGBPixel(point.x, point.y));
     }
 
@@ -442,17 +474,17 @@ public class Robot {
      * then a {@code SecurityException} may be thrown,
      * or the contents of the returned {@code BufferedImage} are undefined.
      * </p>
+     *
+     * @param screenRect Rect to capture in screen coordinates
+     * @return The captured image
+     * @throws IllegalArgumentException if {@code screenRect} width and height
+     *                                  are not greater than zero
+     * @throws SecurityException        if access to the screen is denied
+     *                                  by the desktop environment
      * @apiNote It is recommended to avoid calling this method on
      * the AWT Event Dispatch Thread since screen capture may be a lengthy
      * operation, particularly if acquiring permissions is needed and involves
      * user interaction.
-     *
-     * @param   screenRect      Rect to capture in screen coordinates
-     * @return  The captured image
-     * @throws  IllegalArgumentException if {@code screenRect} width and height
-     *          are not greater than zero
-     * @throws  SecurityException if access to the screen is denied
-     *          by the desktop environment
      */
     public synchronized BufferedImage createScreenCapture(Rectangle screenRect) {
         return createCompatibleImage(screenRect, false)[0];
@@ -490,24 +522,24 @@ public class Robot {
      *          nativeResImage = resolutionVariants.get(0);
      *      }
      * }</pre>
-     * @param   screenRect     Rect to capture in screen coordinates
-     * @return  The captured image
-     * @throws  IllegalArgumentException if {@code screenRect} width and height
-     *          are not greater than zero
-     * @throws  SecurityException if access to the screen is denied
-     *          by the desktop environment
      *
+     * @param screenRect Rect to capture in screen coordinates
+     * @return The captured image
+     * @throws IllegalArgumentException if {@code screenRect} width and height
+     *                                  are not greater than zero
+     * @throws SecurityException        if access to the screen is denied
+     *                                  by the desktop environment
      * @since 9
      */
     public synchronized MultiResolutionImage
-            createMultiResolutionScreenCapture(Rectangle screenRect) {
+    createMultiResolutionScreenCapture(Rectangle screenRect) {
 
         return new BaseMultiResolutionImage(
                 createCompatibleImage(screenRect, true));
     }
 
     private synchronized BufferedImage[]
-            createCompatibleImage(Rectangle screenRect, boolean isHiDPI) {
+    createCompatibleImage(Rectangle screenRect, boolean isHiDPI) {
 
         checkValidRect(screenRect);
 
@@ -604,7 +636,7 @@ public class Robot {
                     0, 0, scaledRect.width, scaledRect.height, null);
             g.dispose();
 
-            if(!isHiDPI) {
+            if (!isHiDPI) {
                 imageArray = new BufferedImage[1];
                 imageArray[0] = lowResolutionImage;
             } else {
@@ -635,6 +667,7 @@ public class Robot {
     /**
      * Returns whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
+     *
      * @return Whether {@code waitForIdle} is automatically called
      */
     public synchronized boolean isAutoWaitForIdle() {
@@ -644,7 +677,8 @@ public class Robot {
     /**
      * Sets whether this Robot automatically invokes {@code waitForIdle}
      * after generating an event.
-     * @param   isOn    Whether {@code waitForIdle} is automatically invoked
+     *
+     * @param isOn Whether {@code waitForIdle} is automatically invoked
      */
     public synchronized void setAutoWaitForIdle(boolean isOn) {
         isAutoWaitForIdle = isOn;
@@ -671,9 +705,9 @@ public class Robot {
     /**
      * Sets the number of milliseconds this Robot sleeps after generating an event.
      *
-     * @param  ms the delay duration in milliseconds
+     * @param ms the delay duration in milliseconds
      * @throws IllegalArgumentException If {@code ms}
-     *         is not between 0 and 60,000 milliseconds inclusive
+     *                                  is not between 0 and 60,000 milliseconds inclusive
      */
     public synchronized void setAutoDelay(int ms) {
         checkDelayArgument(ms);
@@ -695,9 +729,9 @@ public class Robot {
      * already set, this method returns immediately with the interrupt status
      * set.
      *
-     * @param  ms time to sleep in milliseconds
+     * @param ms time to sleep in milliseconds
      * @throws IllegalArgumentException if {@code ms} is not between {@code 0}
-     *         and {@code 60,000} milliseconds inclusive
+     *                                  and {@code 60,000} milliseconds inclusive
      */
     public void delay(int ms) {
         checkDelayArgument(ms);
@@ -719,7 +753,8 @@ public class Robot {
 
     /**
      * Waits until all events currently on the event queue have been processed.
-     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
+     *
+     * @throws IllegalThreadStateException if called on the AWT event dispatching thread
      */
     public synchronized void waitForIdle() {
         checkNotDispatchThread();
@@ -736,11 +771,11 @@ public class Robot {
     /**
      * Returns a string representation of this Robot.
      *
-     * @return  the string representation.
+     * @return the string representation.
      */
     @Override
     public synchronized String toString() {
-        String params = "autoDelay = "+getAutoDelay()+", "+"autoWaitForIdle = "+isAutoWaitForIdle();
+        String params = "autoDelay = " + getAutoDelay() + ", " + "autoWaitForIdle = " + isAutoWaitForIdle();
         return getClass().getName() + "[ " + params + " ]";
     }
 }
