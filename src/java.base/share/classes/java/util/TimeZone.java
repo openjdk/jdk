@@ -649,7 +649,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * not create a copy of the {@code TimeZone} IDs array.
      *
      * @param rawOffset the given time zone GMT offset in milliseconds.
-     * @return an array of IDs, where the time zone for that ID has
+     * @return a stream of IDs, where the time zone for that ID has
      * the specified GMT offset. For example, "America/Phoenix" and "America/Denver"
      * both have GMT-07:00, but differ in daylight saving behavior.
      * @see #getRawOffset()
