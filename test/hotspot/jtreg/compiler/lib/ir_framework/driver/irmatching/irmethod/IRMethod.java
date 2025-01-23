@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static compiler.lib.ir_framework.TestFramework.PRINT_RULE_MATCHING_TIME;
-import static compiler.lib.ir_framework.TestFramework.VERBOSE;
 
 /**
  * This class represents a {@link Test @Test} annotated method that has an associated non-empty list of applicable
