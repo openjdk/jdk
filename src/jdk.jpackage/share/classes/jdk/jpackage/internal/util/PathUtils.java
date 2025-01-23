@@ -52,10 +52,18 @@ public final class PathUtils {
     }
 
     public static Path normalizedAbsolutePath(Path path) {
-        return path.normalize().toAbsolutePath();
+        if (path != null) {
+            return path.normalize().toAbsolutePath();
+        } else {
+            return null;
+        }
     }
 
     public static String normalizedAbsolutePathString(Path path) {
-        return normalizedAbsolutePath(path).toString();
+        if (path != null) {
+            return normalizedAbsolutePath(path).toString();
+        } else {
+            return null;
+        }
     }
 }
