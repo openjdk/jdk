@@ -1586,7 +1586,6 @@ public class Attr extends JCTree.Visitor {
                 setSyntheticVariableType(tree.var, inferredType);
             }
             attribStat(tree.var, loopEnv);
-            flushDeferredLintHandler(tree.var);
             chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);
             loopEnv.tree = tree; // before, we were not in loop!
             attribStat(tree.body, loopEnv);
@@ -4211,22 +4210,11 @@ public class Attr extends JCTree.Visitor {
             annotate.queueScanTreeAndTypeAnnotate(tree.var.vartype, env, v, tree.var);
         }
         annotate.flush();
-        flushDeferredLintHandler(tree.var);
         result = tree.type;
         if (v.isUnnamedVariable()) {
             matchBindings = MatchBindingsComputer.EMPTY;
         } else {
             matchBindings = new MatchBindings(List.of(v), List.nil());
-        }
-    }
-
-    private void flushDeferredLintHandler(JCVariableDecl varDef) {
-        Lint lint = env.info.lint.augment(varDef.sym);
-        Lint prevLint = chk.setLint(lint);
-        try {
-            deferredLintHandler.flush(varDef, lint);
-        } finally {
-            chk.setLint(prevLint);
         }
     }
 
