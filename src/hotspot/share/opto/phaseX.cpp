@@ -73,6 +73,7 @@ bool NodeHash::have_equivalent_inputs(const Node* n, const Node* k) const {
   // the result of the operation is corresponding lane of its first operand.
   //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
   //        RES = VEC1.BLEND(VEC1.lanewise(OPER, VEC2), MASK)
+  // Here, first operand "VEC1" represents both source and destination vector.
   if (n->is_commutative_vector_operation() && !n->is_predicated_vector()) {
     assert(req == 3, "");
     assert(k->is_commutative_vector_operation(), "");

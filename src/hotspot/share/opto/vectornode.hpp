@@ -74,6 +74,12 @@ class VectorNode : public TypeNode {
   }
 
   virtual uint hash() const {
+    // Predicated vector operations are sensitive to ordering of inputs.
+    // When the mask corresponding to a vector lane is false then
+    // the result of the operation is corresponding lane of its first operand.
+    //   i.e. RES = VEC1.lanewise(OPER, VEC2, MASK) is semantically equivalent to
+    //        RES = VEC1.BLEND(VEC1.lanewise(OPER, VEC2), MASK)
+    // Here, first operand "VEC1" represents both source and destination vector.
     if (is_commutative_vector_operation() && !is_predicated_vector()) {
       assert(req() == 3, "");
       return (uintptr_t)in(1) + (uintptr_t)in(2) + Opcode();
