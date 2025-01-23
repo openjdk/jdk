@@ -164,6 +164,9 @@ class AsyncLogWriter : public NonJavaThread {
   // Producers take both locks in the order producer lock and then consumer lock.
   // The consumer protects the buffers and performs all communication between producer and consumer via wait/notify.
   // This allows a producer to await progress from the consumer thread (by only releasing the producer lock)), whilst preventing all other producers from progressing.
+  // The _producer_lock_holder allows us to gracefully degrade to synchronous logging in the case of recursive logging inside
+  // of a producer's critical section.
+  Thread* _producer_lock_holder;
   PlatformMonitor _producer_lock;
   PlatformMonitor _consumer_lock;
   bool _data_available;
