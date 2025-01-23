@@ -102,7 +102,7 @@ public class JShellHeapDumpTest {
         throws IOException {
 
         boolean res = launch(expectedMessage, Arrays.asList(toolArgs), true);
-        if (!res) { // try once more
+        if (!res && !doSleep) {
             launch(expectedMessage, Arrays.asList(toolArgs), false);
         }
     }
