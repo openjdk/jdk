@@ -656,7 +656,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @see #getAvailableIDs(int)
      * @since 25
      */
-    public static synchronized Stream<String> availableIDs(int rawOffset) {
+    public static Stream<String> availableIDs(int rawOffset) {
         return ZoneInfo.availableIDs(rawOffset);
     }
 
@@ -669,7 +669,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @since 25
      * @see #getAvailableIDs()
      */
-    public static synchronized Stream<String> availableIDs() {
+    public static Stream<String> availableIDs() {
         return ZoneInfo.availableIDs();
     }
 
