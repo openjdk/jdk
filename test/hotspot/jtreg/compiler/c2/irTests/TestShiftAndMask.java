@@ -174,6 +174,13 @@ public class TestShiftAndMask {
     }
 
     @Test
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(counts = { IRNode.ADD_I, "1", IRNode.LSHIFT_I, "1" })
+    public static int addShiftPlusConstOverlyLargeShift(int i, int j) {
+        return (j + i << 129) & 32; // NOT transformed, only lower 5 bits of shift count.
+    }
+
+    @Test
     @IR(counts = { IRNode.AND_I, "1" })
     @IR(failOn = { IRNode.ADD_I, IRNode.LSHIFT_I })
     public static int addSshiftNonConstMaskInt(int i, int j, boolean flag) {
