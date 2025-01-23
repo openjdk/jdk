@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
@@ -230,4 +229,3 @@ void MallocLimitHandler::print_on(outputStream* st) {
     st->print_cr("MallocLimit: unset");
   }
 }
-

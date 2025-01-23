@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -1707,6 +1706,12 @@ public:
   }
 
   ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
+  ~ThreadDumper() {
+    for (int index = 0; index < _frames->length(); index++) {
+      delete _frames->at(index);
+    }
+    delete _frames;
+  }
 
   // affects frame_count
   void add_oom_frame(Method* oome_constructor) {
@@ -2349,11 +2354,10 @@ void VM_HeapDumper::dump_threads(AbstractDumpWriter* writer) {
 }
 
 bool VM_HeapDumper::doit_prologue() {
-  if (_gc_before_heap_dump && UseZGC) {
-    // ZGC cannot perform a synchronous GC cycle from within the VM thread.
-    // So ZCollectedHeap::collect_as_vm_thread() is a noop. To respect the
-    // _gc_before_heap_dump flag a synchronous GC cycle is performed from
-    // the caller thread in the prologue.
+  if (_gc_before_heap_dump && (UseZGC || UseShenandoahGC)) {
+    // ZGC and Shenandoah cannot perform a synchronous GC cycle from within the VM thread.
+    // So collect_as_vm_thread() is a noop. To respect the _gc_before_heap_dump flag a
+    // synchronous GC cycle is performed from the caller thread in the prologue.
     Universe::heap()->collect(GCCause::_heap_dump);
   }
   return VM_GC_Operation::doit_prologue();

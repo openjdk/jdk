@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,44 @@
 
 package java.lang.classfile.attribute;
 
-import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassElement;
-import java.lang.classfile.CodeElement;
-import java.lang.classfile.FieldElement;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.TypeAnnotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.classfile.*;
+import java.lang.classfile.AttributeMapper.AttributeStability;
+import java.lang.reflect.AnnotatedType;
 import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code RuntimeVisibleTypeAnnotations} attribute (JVMS {@jvms 4.7.20}), which
- * can appear on classes, methods, fields, and code attributes. Delivered as a
- * {@link java.lang.classfile.ClassElement}, {@link java.lang.classfile.FieldElement},
- * {@link java.lang.classfile.MethodElement}, or {@link CodeElement} when traversing
- * the corresponding model type.
+ * Models the {@link Attributes#runtimeVisibleTypeAnnotations()
+ * RuntimeVisibleTypeAnnotations} attribute (JVMS {@jvms 4.7.20}), which
+ * stores type-use annotations for the annotated uses of types in this
+ * structure that are visible to both {@code class} file consumers and
+ * {@linkplain AnnotatedType core reflection}.  Its delivery in the traversal of
+ * a {@link CodeModel} may be toggled by {@link ClassFile.DebugElementsOption}.
  * <p>
- * The attribute does not permit multiple instances in a given location.
- * Subsequent occurrence of the attribute takes precedence during the attributed
- * element build or transformation.
+ * This attribute appears on classes, fields, methods, {@code Code} attributes,
+ * and record components, and does not permit {@linkplain
+ * AttributeMapper#allowMultiple multiple instances} in one structure.  It has a
+ * data dependency on {@linkplain AttributeStability#UNSTABLE arbitrary indices}
+ * in the {@code class} file format, so users must take great care to ensure
+ * this attribute is still correct after a {@code class} file has been transformed.
  * <p>
- * The attribute was introduced in the Java SE Platform version 8.
+ * The attribute was introduced in the Java SE Platform version 8, major version
+ * {@value ClassFile#JAVA_8_VERSION}.
  *
+ * @see Attributes#runtimeVisibleTypeAnnotations()
+ * @see java.compiler/javax.lang.model.type.TypeMirror
+ * @see AnnotatedType
+ * @see ElementType#TYPE_PARAMETER
+ * @see ElementType#TYPE_USE
+ * @see RetentionPolicy#RUNTIME
+ * @jvms 4.7.20 the {@code RuntimeVisibleTypeAnnotations} Attribute
  * @since 24
  */
+@SuppressWarnings("doclint:reference")
 public sealed interface RuntimeVisibleTypeAnnotationsAttribute
         extends Attribute<RuntimeVisibleTypeAnnotationsAttribute>,
                 ClassElement, MethodElement, FieldElement, CodeElement
@@ -58,12 +70,14 @@ public sealed interface RuntimeVisibleTypeAnnotationsAttribute
                 UnboundAttribute.UnboundRuntimeVisibleTypeAnnotationsAttribute {
 
     /**
-     * {@return the runtime-visible type annotations on parts of this class, field, or method}
+     * {@return the run-time visible annotations on uses of types in this
+     * structure}
      */
     List<TypeAnnotation> annotations();
 
     /**
      * {@return a {@code RuntimeVisibleTypeAnnotations} attribute}
+     *
      * @param annotations the annotations
      */
     static RuntimeVisibleTypeAnnotationsAttribute of(List<TypeAnnotation> annotations) {
@@ -72,6 +86,7 @@ public sealed interface RuntimeVisibleTypeAnnotationsAttribute
 
     /**
      * {@return a {@code RuntimeVisibleTypeAnnotations} attribute}
+     *
      * @param annotations the annotations
      */
     static RuntimeVisibleTypeAnnotationsAttribute of(TypeAnnotation... annotations) {

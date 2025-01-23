@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -355,6 +355,8 @@ class SerializeClosure;
   template(jdk_internal_foreign_abi_VMStorage_array_signature,       "[Ljdk/internal/foreign/abi/VMStorage;") \
   template(jdk_internal_foreign_abi_VMStorage_array_array_signature, "[[Ljdk/internal/foreign/abi/VMStorage;") \
   template(jdk_internal_foreign_abi_CallConv,                        "jdk/internal/foreign/abi/UpcallLinker$CallRegs") \
+                                                                                                  \
+  template(jdk_internal_foreign_NativeMemorySegmentImpl,             "jdk/internal/foreign/NativeMemorySegmentImpl") \
                                                                                                   \
   /* Support for JVMCI */                                                                         \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
