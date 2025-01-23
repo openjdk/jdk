@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -393,23 +393,13 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     private List<Consumer<Action>> createPackageTypeHandlers() {
-        return NATIVE.stream()
-                .map(type -> {
-                    Handler handler = handlers.entrySet().stream()
-                        .filter(entry -> !entry.getValue().isVoid())
-                        .filter(entry -> entry.getKey() == type)
-                        .map(entry -> entry.getValue())
-                        .findAny().orElse(null);
-                    Map.Entry<PackageType, Handler> result = null;
-                    if (handler != null) {
-                        result = Map.entry(type, handler);
-                    }
-                    return result;
-                })
-                .filter(Objects::nonNull)
-                .map(entry -> createPackageTypeHandler(
-                        entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+        return handlers.entrySet().stream()
+                .filter(entry -> !entry.getValue().isVoid())
+                .filter(entry -> NATIVE.contains(entry.getKey()))
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .map(entry -> {
+                    return  createPackageTypeHandler(entry.getKey(), entry.getValue());
+                }).toList();
     }
 
     private Consumer<Action> createPackageTypeHandler(
