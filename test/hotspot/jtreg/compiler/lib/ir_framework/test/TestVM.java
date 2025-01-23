@@ -38,6 +38,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static compiler.lib.ir_framework.shared.TestFrameworkSocket.PRINT_TIMES_TAG;
+
 /**
  * This class' main method is called from {@link TestFramework} and represents the so-called "test VM". The class is
  * the heart of the framework and is responsible for executing all the specified tests in the test class. It uses the
@@ -886,7 +888,7 @@ public class TestVM {
             System.out.println(System.lineSeparator() + System.lineSeparator() + "Test execution times:");
             for (Map.Entry<Long, String> entry : durations.entrySet()) {
                 TestFrameworkSocket.write(String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()),
-                        "", true);
+                        PRINT_TIMES_TAG, true);
             }
         }
 

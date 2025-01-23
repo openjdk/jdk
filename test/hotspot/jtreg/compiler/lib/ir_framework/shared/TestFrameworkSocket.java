@@ -43,6 +43,7 @@ public class TestFrameworkSocket implements AutoCloseable {
     public static final String STDOUT_PREFIX = "[STDOUT]";
     public static final String TESTLIST_TAG = "[TESTLIST]";
     public static final String DEFAULT_REGEX_TAG = "[DEFAULT_REGEX]";
+    public static final String PRINT_TIMES_TAG = "[PRINT_TIMES]";
 
     // Static fields used for test VM only.
     private static final String SERVER_PORT_PROPERTY = "ir.framework.server.port";
