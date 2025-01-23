@@ -694,17 +694,17 @@ address generate_ghash_processBlocks() {
   // Operations to obtain lower and higher bytes of subkey H.
   __ vspltisb(vTmp7, 1);
   __ vspltisb(vTmp10, 7);
-  __ vsldoi(vTmp8, vZero, vTmp7, 1);          // 0x1
+  __ vsldoi(vTmp8, vZero, vTmp7, 1);            // 0x1
   __ vor(vTmp8, vConstC2, vTmp8);               // 0xC2...1
-  __ vsplt(vTmp9, 0, vH);                        // MSB of H
-  __ vsl(vH, vH, vTmp7);                // Carry = H<<7
+  __ vsplt(vTmp9, 0, vH);                       // MSB of H
+  __ vsl(vH, vH, vTmp7);                        // Carry = H<<7
   __ vsrab(vTmp9, vTmp9, vTmp10);
-  __ vand(vTmp9, vTmp9, vTmp8);                   // Carry
+  __ vand(vTmp9, vTmp9, vTmp8);                 // Carry
   __ vxor(vTmp10, vH, vTmp9);
   __ vsldoi(vConstC2, vZero, vConstC2, 8);
-  __ vsldoi(vTmp11, vTmp10, vTmp10, 8);        // swap Lower and Higher Halves of subkey H
-  __ vsldoi(vLowerH, vZero, vTmp11, 8);      // H.L
-  __ vsldoi(vHigherH, vTmp11, vZero, 8);     // H.H
+  __ vsldoi(vTmp11, vTmp10, vTmp10, 8);         // swap Lower and Higher Halves of subkey H
+  __ vsldoi(vLowerH, vZero, vTmp11, 8);         // H.L
+  __ vsldoi(vHigherH, vTmp11, vZero, 8);        // H.H
   #ifdef ASSERT
     __ cmpwi(CCR0, blocks, 0);
     __ beq(CCR0, L_error);
@@ -732,12 +732,11 @@ address generate_ghash_processBlocks() {
   //
   Label loop;
   __ bind(loop);
-    // Load immediate value 0 into temp
-    __ vxor(vZero, vZero, vZero);
+    __ vspltisb(vZero, 0);
     __ li(temp1, 0);
     __ andi(temp1, data, 15);
     __ cmpwi(CCR0, temp1, 0);
-    __ beq(CCR0, L_aligned);                      // Check if address is aligned (mask lower 4 bits)
+    __ beq(CCR0, L_aligned);                    // Check if address is aligned (mask lower 4 bits)
     __ li(temp1, 0);
     __ lvx(vHigh, temp1, data);
     __ lvsl(loadOrder, temp1, data);
@@ -758,7 +757,7 @@ address generate_ghash_processBlocks() {
     #endif
     __ vec_perm(vH, vH, vH, loadOrder);
     __ vxor(vH, vH, vState);
-      // Perform GCM multiplication
+    // Perform GCM multiplication
     __ vpmsumd(vTmp4, vLowerH, vH);             // L : Lower Half of subkey H
     __ vpmsumd(vTmp5, vTmp11, vH);              // M : Combined halves of subkey H
     __ vpmsumd(vTmp6, vHigherH, vH);            // H :  Higher Half of subkeyH
