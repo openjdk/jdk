@@ -151,11 +151,9 @@ define SetupCompilerFlags
     $1_EXTRA_ASFLAGS += $$(ASFLAGS_DEBUG_SYMBOLS)
   endif
 
-  # Pass the library name for static JNI library naming
-  ifeq ($$($1_TYPE), STATIC_LIBRARY)
-    $1_EXTRA_CFLAGS += -DLIBRARY_NAME=$$($1_NAME)
-    $1_EXTRA_CXXFLAGS += -DLIBRARY_NAME=$$($1_NAME)
-  endif
+  # Pass the library name
+  $1_EXTRA_CFLAGS += -DLIBRARY_NAME=$$($1_NAME)
+  $1_EXTRA_CXXFLAGS += -DLIBRARY_NAME=$$($1_NAME)
 
   # Pick up disabled warnings, if possible on this platform.
   ifneq ($(DISABLE_WARNING_PREFIX), )
