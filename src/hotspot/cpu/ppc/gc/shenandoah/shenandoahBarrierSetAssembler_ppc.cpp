@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gc_globals.hpp"

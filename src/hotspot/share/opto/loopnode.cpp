@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciMethodData.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -6433,8 +6432,6 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_DivF:
     case Op_DivD:
     case Op_ModI:
-    case Op_ModF:
-    case Op_ModD:
     case Op_LoadB:              // Same with Loads; they can sink
     case Op_LoadUB:             // during loop optimizations.
     case Op_LoadUS:

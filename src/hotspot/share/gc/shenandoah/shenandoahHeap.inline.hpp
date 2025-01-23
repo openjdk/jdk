@@ -472,7 +472,7 @@ inline bool ShenandoahHeap::is_evacuation_in_progress() const {
 }
 
 inline bool ShenandoahHeap::is_update_refs_in_progress() const {
-  return is_gc_state(UPDATEREFS);
+  return is_gc_state(UPDATE_REFS);
 }
 
 inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,7 @@ class PredicateVisitor : public StackObj {
 // Interface to check whether a node is in a loop body or not.
 class NodeInLoopBody : public StackObj {
  public:
-  virtual bool check(Node* node) const = 0;
+  virtual bool check_node_in_loop_body(Node* node) const = 0;
 };
 
 // Class to represent Assertion Predicates (i.e. either Initialized and/or Template Assertion Predicates).
@@ -963,13 +963,52 @@ class NodeInOriginalLoopBody : public NodeInLoopBody {
 
   // Check if 'node' is not a cloned node (i.e. "< _first_node_index_in_cloned_loop_body") and if we've created a
   // clone from 'node' (i.e. _old_new entry is non-null). Then we know that 'node' belongs to the original loop body.
-  bool check(Node* node) const override {
+  bool check_node_in_loop_body(Node* node) const override {
     if (node->_idx < _first_node_index_in_cloned_loop_body) {
       Node* cloned_node = _old_new[node->_idx];
+      // Check that the clone is actually part of the cloned loop body and not from some earlier cloning.
       return cloned_node != nullptr && cloned_node->_idx >= _first_node_index_in_cloned_loop_body;
-    } else {
-      return false;
     }
+    return false;
+  }
+};
+
+// This class checks whether a node is in the main loop body and not the pre loop body. We cannot use the
+// NodeInOriginalLoopBody class because PhaseIdealLoop::clone_up_backedge_goo() could clone additional nodes that
+// should be pinned at the main loop body entry. The check in NodeInOriginalLoopBody will ignore these.
+class NodeInMainLoopBody : public NodeInLoopBody {
+  const uint _first_node_index_in_pre_loop_body;
+  const uint _last_node_index_in_pre_loop_body;
+  DEBUG_ONLY(const uint _last_node_index_from_backedge_goo;)
+  const Node_List& _old_new;
+
+  public:
+  NodeInMainLoopBody(const uint first_node_index_in_pre_loop_body, const uint last_node_index_in_pre_loop_body,
+                     DEBUG_ONLY(const uint last_node_index_from_backedge_goo COMMA) const Node_List& old_new)
+      : _first_node_index_in_pre_loop_body(first_node_index_in_pre_loop_body),
+        _last_node_index_in_pre_loop_body(last_node_index_in_pre_loop_body),
+        DEBUG_ONLY(_last_node_index_from_backedge_goo(last_node_index_from_backedge_goo) COMMA)
+        _old_new(old_new) {}
+  NONCOPYABLE(NodeInMainLoopBody);
+
+  // Check if 'node' is not a cloned node (i.e. "< _first_node_index_in_cloned_loop_body") and if we've created a
+  // clone from 'node' (i.e. _old_new entry is non-null). Then we know that 'node' belongs to the original loop body.
+  // Additionally check if a node was cloned after the pre loop was created. This indicates that it was created by
+  // PhaseIdealLoop::clone_up_backedge_goo(). These nodes should also be pinned at the main loop entry.
+  bool check_node_in_loop_body(Node* node) const override {
+    if (node->_idx < _first_node_index_in_pre_loop_body) {
+      Node* cloned_node = _old_new[node->_idx];
+      // Check that the clone is actually part of the cloned loop body and not from some earlier cloning.
+      bool cloned_node_in_pre_loop_body = cloned_node != nullptr && cloned_node->_idx >= _first_node_index_in_pre_loop_body;
+      assert(!cloned_node_in_pre_loop_body || cloned_node->_idx <= _last_node_index_in_pre_loop_body,
+             "clone must be part of pre loop body");
+      return cloned_node_in_pre_loop_body;
+    }
+    // Created in PhaseIdealLoop::clone_up_backedge_goo()?
+    bool node_created_by_backedge_goo = node->_idx > _last_node_index_in_pre_loop_body;
+    assert(!node_created_by_backedge_goo || node->_idx <= _last_node_index_from_backedge_goo,
+           "cloned node must have been created in PhaseIdealLoop::clone_up_backedge_goo()");
+    return node_created_by_backedge_goo;
   }
 };
 
@@ -984,7 +1023,7 @@ class NodeInClonedLoopBody : public NodeInLoopBody {
 
   // Check if 'node' is a clone. This can easily be achieved by comparing its node index to the first node index
   // inside the cloned loop body (all of them are clones).
-  bool check(Node* node) const override {
+  bool check_node_in_loop_body(Node* node) const override {
     return node->_idx >= _first_node_index_in_cloned_loop_body;
   }
 };

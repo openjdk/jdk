@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -1268,7 +1267,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   // A cancellation at this point means the degenerated cycle must resume from update-refs.
   set_gc_state_concurrent(EVACUATION, false);
   set_gc_state_concurrent(WEAK_ROOTS, false);
-  set_gc_state_concurrent(UPDATEREFS, true);
+  set_gc_state_concurrent(UPDATE_REFS, true);
 
   // This will propagate the gc state and retire gclabs and plabs for threads that require it.
   ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
@@ -1507,6 +1506,18 @@ size_t ShenandoahHeap::max_tlab_size() const {
   return ShenandoahHeapRegion::max_tlab_size_words();
 }
 
+void ShenandoahHeap::collect_as_vm_thread(GCCause::Cause cause) {
+  // These requests are ignored because we can't easily have Shenandoah jump into
+  // a synchronous (degenerated or full) cycle while it is in the middle of a concurrent
+  // cycle. We _could_ cancel the concurrent cycle and then try to run a cycle directly
+  // on the VM thread, but this would confuse the control thread mightily and doesn't
+  // seem worth the trouble. Instead, we will have the caller thread run (and wait for) a
+  // concurrent cycle in the prologue of the heap inspect/dump operation. This is how
+  // other concurrent collectors in the JVM handle this scenario as well.
+  assert(Thread::current()->is_VM_thread(), "Should be the VM thread");
+  guarantee(cause == GCCause::_heap_dump || cause == GCCause::_heap_inspection, "Invalid cause");
+}
+
 void ShenandoahHeap::collect(GCCause::Cause cause) {
   control_thread()->request_gc(cause);
 }
@@ -1591,7 +1602,9 @@ void ShenandoahHeap::set_active_generation() {
 void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
   shenandoah_policy()->record_collection_cause(cause);
 
-  assert(gc_cause()  == GCCause::_no_gc, "Over-writing cause");
+  const GCCause::Cause current = gc_cause();
+  assert(current == GCCause::_no_gc, "Over-writing cause: %s, with: %s",
+         GCCause::to_string(current), GCCause::to_string(cause));
   assert(_gc_generation == nullptr, "Over-writing _gc_generation");
 
   set_gc_cause(cause);
@@ -2033,9 +2046,9 @@ void ShenandoahHeap::set_concurrent_young_mark_in_progress(bool in_progress) {
 
 void ShenandoahHeap::set_concurrent_old_mark_in_progress(bool in_progress) {
 #ifdef ASSERT
-  // has_forwarded_objects() iff UPDATEREFS or EVACUATION
+  // has_forwarded_objects() iff UPDATE_REFS or EVACUATION
   bool has_forwarded = has_forwarded_objects();
-  bool updating_or_evacuating = _gc_state.is_set(UPDATEREFS | EVACUATION);
+  bool updating_or_evacuating = _gc_state.is_set(UPDATE_REFS | EVACUATION);
   bool evacuating = _gc_state.is_set(EVACUATION);
   assert ((has_forwarded == updating_or_evacuating) || (evacuating && !has_forwarded && collection_set()->is_empty()),
           "Updating or evacuating iff has forwarded objects, or if evacuation phase is promoting in place without forwarding");
@@ -2187,7 +2200,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   DEBUG_ONLY(MetaspaceUtils::verify();)
 }
 
-// Weak roots are either pre-evacuated (final mark) or updated (final updaterefs),
+// Weak roots are either pre-evacuated (final mark) or updated (final update refs),
 // so they should not have forwarded oops.
 // However, we do need to "null" dead oops in the roots, if can not be done
 // in concurrent cycles.
@@ -2271,7 +2284,7 @@ void ShenandoahHeap::set_full_gc_move_in_progress(bool in_progress) {
 }
 
 void ShenandoahHeap::set_update_refs_in_progress(bool in_progress) {
-  set_gc_state_at_safepoint(UPDATEREFS, in_progress);
+  set_gc_state_at_safepoint(UPDATE_REFS, in_progress);
 }
 
 void ShenandoahHeap::register_nmethod(nmethod* nm) {
@@ -2417,7 +2430,7 @@ private:
       if (r->is_active() && !r->is_cset()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         if (ShenandoahPacing) {
-          _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
+          _heap->pacer()->report_update_refs(pointer_delta(update_watermark, r->bottom()));
         }
       }
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
