@@ -3449,14 +3449,17 @@ public class ForkJoinPool extends AbstractExecutorService
         }
 
         public final void run() {
-            try {
-                ThreadLocalRandom.localInit();
-                heap = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
-                runScheduler(pool);
-                cancelAll();
-            } finally {
-                schedulerState = STOPPED;
-                pool.tryTerminate(false, false);
+            ForkJoinPool p;
+            if ((p = pool) != null) {
+                try {
+                    ThreadLocalRandom.localInit();
+                    heap = new DelayedTask<?>[INITIAL_HEAP_CAPACITY];
+                    runScheduler(p);
+                    cancelAll();
+                } finally {
+                    schedulerState = STOPPED;
+                    p.tryTerminate(false, false);
+                }
             }
         }
 
@@ -3470,8 +3473,7 @@ public class ForkJoinPool extends AbstractExecutorService
                             removedPeriodic = true;
                             removePeriodicTasks();
                         }
-                        if (waitTime == 0L &&
-                            (schedulerState & (ACTIVE | WORKING)) == 0 &&
+                        if ((schedulerState & (ACTIVE | WORKING)) == 0 &&
                             (p.tryTerminate(false, false) & STOP) != 0L)
                             break;
                     }
@@ -3494,8 +3496,6 @@ public class ForkJoinPool extends AbstractExecutorService
                     }
                     else {
                         idle = false;
-                        if (waitTime != 0L) // 1 usec minumum timed wait
-                            waitTime = Math.max(waitTime, 1000L);
                         if (!Thread.interrupted() &&
                             (schedulerState & ACTIVE) == 0)
                             U.park(false, waitTime);
@@ -3565,51 +3565,48 @@ public class ForkJoinPool extends AbstractExecutorService
             int s = hs;
             if (p != null && h != null) {
                 for (;;) {
-                    DelayedTask<?> t = null, next;
-                    if (removals != null)
-                        t = (DelayedTask<?>)
-                            U.getAndSetReference(this, REMOVALS, null);
-                    else if (additions != null)
-                        t = (DelayedTask<?>)
-                            U.getAndSetReference(this, ADDITIONS, null);
+                    DelayedTask<?> t =
+                        (removals != null) ?
+                        (DelayedTask<?>)U.getAndSetReference(this, REMOVALS, null):
+                        (additions != null) ?
+                        (DelayedTask<?>)U.getAndSetReference(this, ADDITIONS, null):
+                        null;
                     if (t == null)
                         break;
-                    long now = now();
-                    do {
-                        int idx, cap = h.length, newCap;
+                    for (;;) {
+                        DelayedTask<?> next; int idx, cap, newCap;
                         if ((next = t.nextPending) != null)
                             t.nextPending = null;
                         if ((idx = t.heapIndex) < 0) {
                             if (t.nextDelay != 0L && p.isShutdown())
                                 t.trySetCancelled();
-                            else if (t.status < 0)
-                                ;
-                            else if (t.when - now <= 0L)
-                                pushReadyTask(t, p);
-                            else {
-                                if (s >= cap && (newCap = cap << 1) > cap) {
+                            else if (t.status >= 0) {
+                                if (s >= (cap = h.length) &&
+                                    (newCap = cap << 1) > cap) {
                                     try {
-                                        h = heap = Arrays.copyOf(heap, newCap);
+                                        heap = h = Arrays.copyOf(heap, newCap);
                                         cap = h.length;
                                     } catch (Error | RuntimeException ex) {
                                     }
                                 }
-                                if (s >= cap)  // can't grow
+                                if (s >= cap || cap <= 0)  // can't grow
                                     t.trySetCancelled();
                                 else if (s > 0)
                                     s = heapAdd(h, s, t);
-                                else if (cap > 0) {
+                                else {
                                     h[0] = t;
                                     s = 1;
                                 }
                             }
                         }
-                        else if (idx < s && s <= cap && h[idx] == t) {
+                        else if (idx < s && idx < h.length && h[idx] == t) {
                             h[idx] = null;
                             t.heapIndex = -1;
                             s = (s > 1) ? heapReplace(h, idx, s) : 0;
                         }
-                    } while ((t = next) != null);
+                        if ((t = next) == null)
+                            break;
+                    }
                 }
             }
             if (s != hs)
@@ -3620,18 +3617,18 @@ public class ForkJoinPool extends AbstractExecutorService
         private static int heapAdd(DelayedTask<?>[] h,
                                    int s, DelayedTask<?> t) {
             if (h != null && s >= 0 && s < h.length && t != null) {
-                DelayedTask<?> u, p;
+                DelayedTask<?> u, par;
                 while (s > 0 && (u = h[s - 1]) != null && u.status < 0) {
                     u.heapIndex = -1; // clear trailing cancelled tasks
                     h[--s] = null;
                 }
-                int k = s++, parent, ck;
+                int k = s++, pk;
                 long d = t.when;
-                while (k > 0 && (p = h[parent = (k - 1) >>> 1]) != null &&
-                       (p.status < 0 || d < p.when)) {
-                    p.heapIndex = k;
-                    h[k] = p;
-                    k = parent;
+                while (k > 0 && (par = h[pk = (k - 1) >>> 1]) != null &&
+                       (d < par.when || par.status < 0)) {
+                    par.heapIndex = k;
+                    h[k] = par;
+                    k = pk;
                 }
                 t.heapIndex = k;
                 h[k] = t;
@@ -3654,21 +3651,21 @@ public class ForkJoinPool extends AbstractExecutorService
                     }
                 }
                 if (t != null) {
-                    int child, right; DelayedTask<?> c, r;
+                    int ck, rk; DelayedTask<?> c, r;
                     long d = t.when, rd;
-                    while ((child = (k << 1) + 1) < s && (c = h[child]) != null) {
+                    while ((ck = (k << 1) + 1) < s && (c = h[ck]) != null) {
                         long cd = (c.status < 0) ? Long.MAX_VALUE : c.when;
-                        if ((right = child + 1) < s && (r = h[right]) != null &&
+                        if ((rk = ck + 1) < s && (r = h[rk]) != null &&
                             r.status >= 0 && (rd = r.when) < cd) {
                             cd = rd;
                             c = r;
-                            child = right;
+                            ck = rk;
                         }
                         if (d <= cd)
                             break;
                         c.heapIndex = k;
                         h[k] = c;
-                        k = child;
+                        k = ck;
                     }
                     t.heapIndex = k;
                     h[k] = t;
@@ -3681,7 +3678,6 @@ public class ForkJoinPool extends AbstractExecutorService
             DelayedTask<?>[] h; int s;
             if ((s = heapSize) > 0 && (h = heap) != null && h.length >= s) {
                 DelayedTask<?> t; int stat;
-                long now = System.nanoTime();
                 for (int i = 0; i < s && (t = h[s]) != null; ) {
                     if ((stat = t.status) < 0 || t.nextDelay != 0L) {
                         h[i] = null;
