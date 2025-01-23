@@ -186,5 +186,4 @@ final class FromParams {
     }
 
     static final BundlerParamInfo<Application> APPLICATION = createApplicationBundlerParam(null);
-    static final BundlerParamInfo<jdk.jpackage.internal.model.Package> PACKAGE = createPackageBundlerParam(null);
 }

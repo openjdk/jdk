@@ -25,24 +25,40 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ConfigException;
+import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
+import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
+
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
-import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
+import jdk.jpackage.internal.model.ConfigException;
 
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
-        setAppImageSupplier((params, imageOutDir) -> {
-            var builder = new MacAppImageBuilder(imageOutDir, isDependentTask());
-            builder.prepareApplicationFiles(params);
-        });
-        setParamsValidator(MacAppBundler::doValidate);
+         setAppImageSupplier((params, output) -> {
+
+             // Order is important!
+             final var app = MacFromParams.APPLICATION.fetchFrom(params);
+             final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+
+             final var appImageBuilderBuilder = MacAppImageBuilder2.build().excludeDirFromCopying(output.getParent());
+
+             if (isDependentTask()) {
+                 final var pkg = Optional.of(MacFromParams.PACKAGE.fetchFrom(params));
+                 appImageBuilderBuilder.addItem((theEnv, theApp, appLayout) -> {
+                     new PackageFile(pkg.orElseThrow().packageName()).save(appLayout);
+                 });
+             }
+
+             final var appImageBuilder = appImageBuilderBuilder.create(app);
+
+             appImageBuilder.execute(BuildEnv.withAppImageDir(env, output));
+         });
+         setParamsValidator(MacAppBundler::doValidate);
     }
 
     public static final BundlerParamInfo<String> DEVELOPER_ID_APP_SIGNING_KEY =
@@ -93,7 +109,9 @@ public class MacAppBundler extends AppImageBundler {
 
     static String getIdentifier(Map<String, ? super Object> params) {
         String s = MAIN_CLASS.fetchFrom(params);
-        if (s == null) return null;
+        if (s == null) {
+            return null;
+        }
 
         int idx = s.lastIndexOf(".");
         if (idx >= 1) {

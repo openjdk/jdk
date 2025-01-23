@@ -45,7 +45,7 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import jdk.tools.jlink.internal.LinkableRuntimeImage;
+//import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 /*
@@ -59,6 +59,12 @@ import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
  */
 
 public final class BasicTest {
+
+    private static class LinkableRuntimeImage {
+        static boolean isLinkableRuntime() {
+            return false;
+        }
+    }
 
     public static Collection addModulesParams() {
         List<Object[][]> params = new ArrayList<>();

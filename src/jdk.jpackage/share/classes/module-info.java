@@ -53,7 +53,7 @@
 module jdk.jpackage {
     requires jdk.internal.opt;
     requires jdk.jlink;
-
+    requires java.naming;
     requires java.desktop;
 
     uses jdk.jpackage.internal.Bundler;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,38 +22,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.jpackage.internal.model;
 
-import java.util.List;
+import java.nio.file.Path;
+import java.util.Optional;
 
-public interface MacFileAssociationMixin {
+public interface SigningConfig {
 
-    String cfBundleTypeName();
+    Optional<SigningIdentifier> identifier();
 
-    String cfBundleTypeRole();
+    Optional<Path> entitlements();
 
-    String lsHandlerRank();
+    String entitlementsResourceName();
 
-    boolean lsTypeIsPackage();
+    Optional<Path> keyChain();
 
-    String nsDocumentClass();
-
-    String nsPersistentStoreTypeKey();
-
-    boolean lsSupportsOpeningDocumentsInPlace();
-
-    boolean uiSupportsDocumentBrowser();
-
-    List<String> utTypeConformsTo();
-
-    List<String> nsExportableTypes();
-
-    record Stub(String cfBundleTypeName, String cfBundleTypeRole,
-            String lsHandlerRank, boolean lsTypeIsPackage, String nsDocumentClass,
-            String nsPersistentStoreTypeKey,
-            boolean lsSupportsOpeningDocumentsInPlace,
-            boolean uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
-            List<String> nsExportableTypes) implements MacFileAssociationMixin {
-
+    record Stub(Optional<SigningIdentifier> identifier, Optional<Path> entitlements,
+            Optional<Path> keyChain, String entitlementsResourceName) implements SigningConfig {
     }
 }

@@ -25,12 +25,19 @@
 
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.ApplicationLayout;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
+import static jdk.jpackage.internal.StandardBundlerParam.ICON;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
+import static jdk.jpackage.internal.StandardBundlerParam.createResource;
+import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
@@ -38,10 +45,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,54 +57,26 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.internal.util.OperatingSystem;
 import jdk.internal.util.OSVersion;
-import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
-import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
-import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
-import static jdk.jpackage.internal.StandardBundlerParam.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
-import static jdk.jpackage.internal.StandardBundlerParam.FA_CONTENT_TYPE;
-import static jdk.jpackage.internal.StandardBundlerParam.FA_DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.FA_EXTENSIONS;
-import static jdk.jpackage.internal.StandardBundlerParam.FA_ICON;
-import static jdk.jpackage.internal.StandardBundlerParam.FILE_ASSOCIATIONS;
-import static jdk.jpackage.internal.StandardBundlerParam.ICON;
-import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
-import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
-import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
-import static jdk.jpackage.internal.StandardBundlerParam.createResource;
 
-public class MacAppImageBuilder extends AbstractAppImageBuilder {
+public class MacAppImageBuilder {
 
     private static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.MacResources");
 
-    private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
-    private static final String OS_TYPE_CODE = "APPL";
-    private static final String TEMPLATE_INFO_PLIST_LITE =
-            "Info-lite.plist.template";
-    private static final String TEMPLATE_RUNTIME_INFO_PLIST =
-            "Runtime-Info.plist.template";
-
-    private final Path root;
-    private final Path contentsDir;
-    private final Path resourcesDir;
-    private final Path macOSDir;
-    private final Path runtimeDir;
-    private final Path runtimeRoot;
-
-    private final boolean withPackageFile;
-
     private static List<String> keyChains;
+
+    static final BundlerParamInfo<Boolean> APP_STORE =
+            new BundlerParamInfo<>(
+            Arguments.CLIOptions.MAC_APP_STORE.getId(),
+            Boolean.class,
+            params -> {
+                return false;
+            },
+            // valueOf(null) is false, we actually do want null in some cases
+            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
+                    null : Boolean.valueOf(s)
+        );
 
     public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME =
             new BundlerParamInfo<>(
@@ -156,7 +133,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             params -> {
                 try {
                     Path path = CONFIG_ROOT.fetchFrom(params).resolve(
-                        getLauncherName(params) + ".entitlements");
+                        APP_NAME.fetchFrom(params) + ".entitlements");
                     String defPath = (APP_STORE.fetchFrom(params) ?
                         "sandbox.plist" : "entitlements.plist");
                     createResource(defPath, params)
@@ -170,454 +147,6 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             },
             (s, p) -> Path.of(s)
         );
-
-    private static final BundlerParamInfo<String> FA_MAC_CFBUNDLETYPEROLE =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_CFBUNDLETYPEROLE,
-                     String.class,
-                     params -> "Editor",
-                     (s, p) -> s
-     );
-
-     private static final BundlerParamInfo<String> FA_MAC_LSHANDLERRANK =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_LSHANDLERRANK,
-                     String.class,
-                     params -> "Owner",
-                     (s, p) -> s
-     );
-
-     private static final BundlerParamInfo<String> FA_MAC_NSSTORETYPEKEY =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_NSSTORETYPEKEY,
-                     String.class,
-                     params -> null,
-                     (s, p) -> s
-     );
-
-     private static final BundlerParamInfo<String> FA_MAC_NSDOCUMENTCLASS =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_NSDOCUMENTCLASS,
-                     String.class,
-                     params -> null,
-                     (s, p) -> s
-     );
-
-     private static final BundlerParamInfo<String> FA_MAC_LSTYPEISPACKAGE =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_LSTYPEISPACKAGE,
-                     String.class,
-                     params -> null,
-                     (s, p) -> s
-     );
-
-     private static final BundlerParamInfo<String> FA_MAC_LSDOCINPLACE =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_LSDOCINPLACE,
-                     String.class,
-                     params -> null,
-                     (s, p) -> s
-     );
-
-     private static final BundlerParamInfo<String> FA_MAC_UIDOCBROWSER =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_UIDOCBROWSER,
-                     String.class,
-                     params -> null,
-                     (s, p) -> s
-     );
-
-     @SuppressWarnings("unchecked")
-     private static final BundlerParamInfo<List<String>> FA_MAC_NSEXPORTABLETYPES =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_NSEXPORTABLETYPES,
-                     (Class<List<String>>) (Object) List.class,
-                     params -> null,
-                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
-             );
-
-     @SuppressWarnings("unchecked")
-     private static final BundlerParamInfo<List<String>> FA_MAC_UTTYPECONFORMSTO =
-             new BundlerParamInfo<>(
-                     Arguments.MAC_UTTYPECONFORMSTO,
-                     (Class<List<String>>) (Object) List.class,
-                     params -> Arrays.asList("public.data"),
-                     (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
-             );
-
-    public MacAppImageBuilder(Path imageOutDir, boolean withPackageFile) {
-        super(imageOutDir);
-
-        this.root = imageOutDir;
-        this.withPackageFile = withPackageFile;
-        this.contentsDir = root.resolve("Contents");
-        this.resourcesDir = appLayout.destktopIntegrationDirectory();
-        this.macOSDir = appLayout.launchersDirectory();
-        this.runtimeDir = appLayout.runtimeDirectory();
-        this.runtimeRoot = this.runtimeDir.resolve("Contents/Home");
-    }
-
-    private void writeEntry(InputStream in, Path dstFile) throws IOException {
-        Files.createDirectories(dstFile.getParent());
-        Files.copy(in, dstFile);
-    }
-
-    @Override
-    public void prepareApplicationFiles(Map<String, ? super Object> params)
-            throws IOException {
-        // If predefined app image is provided, then just sign it and return.
-        Path predefinedAppImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
-        if (predefinedAppImage != null) {
-            // Mark app image as signed, before we signing it.
-            AppImageFile appImageFile =
-                AppImageFile.load(predefinedAppImage);
-            if (!appImageFile.isSigned()) {
-                appImageFile.copyAsSigned().save(predefinedAppImage);
-            } else {
-                appImageFile = null;
-            }
-
-            try {
-                doSigning(params);
-            } catch (Exception ex) {
-                // Restore original app image file if signing failed
-                if (appImageFile != null) {
-                    appImageFile.save(predefinedAppImage);
-                }
-
-                throw ex;
-            }
-
-            return;
-        }
-
-        Files.createDirectories(macOSDir);
-
-        Map<String, ? super Object> originalParams = new HashMap<>(params);
-        // Generate PkgInfo
-        Path pkgInfoFile = contentsDir.resolve("PkgInfo");
-        Files.createFile(pkgInfoFile);
-        writePkgInfo(pkgInfoFile);
-
-        Path executable = macOSDir.resolve(getLauncherName(params));
-
-        // create the main app launcher
-        try (InputStream is_launcher =
-                getResourceAsStream("jpackageapplauncher")) {
-            // Copy executable and library to MacOS folder
-            writeEntry(is_launcher, executable);
-        }
-        executable.toFile().setExecutable(true, false);
-        // generate main app launcher config file
-        writeCfgFile(params);
-
-        // create additional app launcher(s) and config file(s)
-        List<Map<String, ? super Object>> entryPoints =
-                ADD_LAUNCHERS.fetchFrom(params);
-        for (Map<String, ? super Object> entryPoint : entryPoints) {
-            Map<String, ? super Object> tmp =
-                    AddLauncherArguments.merge(originalParams, entryPoint);
-
-            // add executable for add launcher
-            Path addExecutable = macOSDir.resolve(getLauncherName(tmp));
-            try (InputStream is = getResourceAsStream("jpackageapplauncher");) {
-                writeEntry(is, addExecutable);
-            }
-            addExecutable.toFile().setExecutable(true, false);
-
-            // add config file for add launcher
-            writeCfgFile(tmp);
-        }
-
-        // Copy class path entries to Java folder
-        copyApplication(params);
-
-        if (withPackageFile) {
-            new PackageFile(APP_NAME.fetchFrom(params)).save(
-                    ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(root));
-        }
-
-        /*********** Take care of "config" files *******/
-
-        createResource(TEMPLATE_BUNDLE_ICON, params)
-                .setCategory("icon")
-                .setExternal(ICON_ICNS.fetchFrom(params))
-                .saveToFile(resourcesDir.resolve(APP_NAME.fetchFrom(params)
-                        + ".icns"));
-
-        // copy file association icons
-        for (Map<String, ?
-                super Object> fa : FILE_ASSOCIATIONS.fetchFrom(params)) {
-            Path f = FA_ICON.fetchFrom(fa);
-            if (IOUtils.exists(f)) {
-                IOUtils.copyFile(f, resourcesDir.resolve(f.getFileName()));
-
-            }
-        }
-
-        copyRuntimeFiles(params);
-
-        doSigning(params);
-    }
-
-    private void copyRuntimeFiles(Map<String, ? super Object> params)
-            throws IOException {
-        // Generate Info.plist
-        writeInfoPlist(contentsDir.resolve("Info.plist"), params);
-
-        // generate java runtime info.plist
-        writeRuntimeInfoPlist(
-                runtimeDir.resolve("Contents/Info.plist"), params);
-
-        // copy library
-        Path runtimeMacOSDir = Files.createDirectories(
-                runtimeDir.resolve("Contents/MacOS"));
-
-        final Path jliName = Path.of("libjli.dylib");
-        try (Stream<Path> walk = Files.walk(runtimeRoot.resolve("lib"))) {
-            final Path jli = walk
-                    .filter(file -> file.getFileName().equals(jliName))
-                    .findFirst()
-                    .get();
-            Files.copy(jli, runtimeMacOSDir.resolve(jliName));
-        }
-    }
-
-    private void doSigning(Map<String, ? super Object> params)
-            throws IOException {
-
-        if (Optional.ofNullable(
-                SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.TRUE)) {
-            try {
-                addNewKeychain(params);
-            } catch (InterruptedException e) {
-                Log.error(e.getMessage());
-            }
-            String signingIdentity = null;
-            // Try --mac-app-image-sign-identity first if set
-            if (!APP_IMAGE_SIGN_IDENTITY.getIsDefaultValue(params)) {
-                signingIdentity = APP_IMAGE_SIGN_IDENTITY.fetchFrom(params);
-            } else {
-                // Check if INSTALLER_SIGN_IDENTITY is set and if it is set
-                // then do not sign app image, otherwise use --mac-signing-key-user-name
-                if (INSTALLER_SIGN_IDENTITY.getIsDefaultValue(params)) {
-                    // --mac-sign and/or --mac-signing-key-user-name case
-                    signingIdentity = DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
-                }
-            }
-            if (signingIdentity != null) {
-                signAppBundle(params, root, signingIdentity,
-                        BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
-                        ENTITLEMENTS.fetchFrom(params));
-            } else {
-                // Case when user requested to sign installer only
-                signAppBundle(params, root, "-", null, null);
-            }
-            restoreKeychainList(params);
-        } else if (OperatingSystem.isMacOS()) {
-            signAppBundle(params, root, "-", null, null);
-        } else {
-            // Calling signAppBundle() without signingIdentity will result in
-            // unsigning app bundle
-            signAppBundle(params, root, null, null, null);
-        }
-    }
-
-    private static String getLauncherName(Map<String, ? super Object> params) {
-        return APP_NAME.fetchFrom(params);
-    }
-
-    private String getBundleName(Map<String, ? super Object> params) {
-        if (MAC_CF_BUNDLE_NAME.fetchFrom(params) != null) {
-            String bn = MAC_CF_BUNDLE_NAME.fetchFrom(params);
-            if (bn.length() > 16) {
-                Log.error(MessageFormat.format(I18N.getString(
-                        "message.bundle-name-too-long-warning"),
-                        MAC_CF_BUNDLE_NAME.getID(), bn));
-            }
-            return MAC_CF_BUNDLE_NAME.fetchFrom(params);
-        } else if (APP_NAME.fetchFrom(params) != null) {
-            return APP_NAME.fetchFrom(params);
-        } else {
-            String nm = MAIN_CLASS.fetchFrom(params);
-            if (nm.length() > 16) {
-                nm = nm.substring(0, 16);
-            }
-            return nm;
-        }
-    }
-
-    private void writeRuntimeInfoPlist(Path file,
-            Map<String, ? super Object> params) throws IOException {
-        Map<String, String> data = new HashMap<>();
-        String identifier = StandardBundlerParam.isRuntimeInstaller(params) ?
-                MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params) :
-                "com.oracle.java." + MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
-        data.put("CF_BUNDLE_IDENTIFIER", identifier);
-        String name = StandardBundlerParam.isRuntimeInstaller(params) ?
-                getBundleName(params): "Java Runtime Image";
-        data.put("CF_BUNDLE_NAME", name);
-        String ver = VERSION.fetchFrom(params);
-        String sver = ver;
-        int index = ver.indexOf(".");
-        if (index > 0 && ((index + 1) < ver.length())) {
-            index = ver.indexOf(".", index + 1);
-            if (index > 0 ) {
-                sver = ver.substring(0, index);
-            }
-        }
-        data.put("CF_BUNDLE_VERSION", ver);
-        data.put("CF_BUNDLE_SHORT_VERSION_STRING", sver);
-
-        createResource(TEMPLATE_RUNTIME_INFO_PLIST, params)
-                .setPublicName("Runtime-Info.plist")
-                .setCategory(I18N.getString("resource.runtime-info-plist"))
-                .setSubstitutionData(data)
-                .saveToFile(file);
-    }
-
-    private void writeStringArrayPlist(StringBuilder sb, String key,
-            List<String> values) {
-        if (values != null && !values.isEmpty()) {
-            sb.append("  <key>").append(key).append("</key>\n").append("   <array>\n");
-            values.forEach((value) -> {
-                sb.append("    <string>").append(value).append("</string>\n");
-            });
-            sb.append("   </array>\n");
-        }
-    }
-
-    private void writeStringPlist(StringBuilder sb, String key, String value) {
-        if (value != null && !value.isEmpty()) {
-            sb.append("  <key>").append(key).append("</key>\n").append("  <string>")
-                    .append(value).append("</string>\n").append("\n");
-         }
-    }
-
-    private void writeBoolPlist(StringBuilder sb, String key, String value) {
-        if (value != null && !value.isEmpty()) {
-            sb.append("  <key>").append(key).append("</key>\n").append("  <")
-                    .append(value).append("/>\n").append("\n");
-         }
-    }
-
-    private void writeInfoPlist(Path file, Map<String, ? super Object> params)
-            throws IOException {
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-info-plist"), file.toAbsolutePath()));
-
-        //prepare config for exe
-        //Note: do not need CFBundleDisplayName if we don't support localization
-        Map<String, String> data = new HashMap<>();
-        data.put("DEPLOY_ICON_FILE", APP_NAME.fetchFrom(params) + ".icns");
-        data.put("DEPLOY_BUNDLE_IDENTIFIER",
-                MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params));
-        data.put("DEPLOY_BUNDLE_NAME",
-                getBundleName(params));
-        data.put("DEPLOY_BUNDLE_COPYRIGHT", COPYRIGHT.fetchFrom(params));
-        data.put("DEPLOY_LAUNCHER_NAME", getLauncherName(params));
-        data.put("DEPLOY_BUNDLE_SHORT_VERSION", VERSION.fetchFrom(params));
-        data.put("DEPLOY_BUNDLE_CFBUNDLE_VERSION", VERSION.fetchFrom(params));
-        data.put("DEPLOY_APP_CATEGORY", "public.app-category." +
-                APP_CATEGORY.fetchFrom(params));
-
-        StringBuilder bundleDocumentTypes = new StringBuilder();
-        StringBuilder exportedTypes = new StringBuilder();
-        for (Map<String, ? super Object>
-                fileAssociation : FILE_ASSOCIATIONS.fetchFrom(params)) {
-
-            List<String> extensions = FA_EXTENSIONS.fetchFrom(fileAssociation);
-            if (extensions == null) {
-                Log.verbose(I18N.getString(
-                        "message.creating-association-with-null-extension"));
-            }
-
-            String itemContentType = MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params)
-                    + "." + ((extensions == null || extensions.isEmpty())
-                    ? "mime" : extensions.get(0));
-            String description = FA_DESCRIPTION.fetchFrom(fileAssociation);
-            Path icon = FA_ICON.fetchFrom(fileAssociation);
-
-            bundleDocumentTypes.append(" <dict>\n");
-            writeStringArrayPlist(bundleDocumentTypes, "LSItemContentTypes",
-                    Arrays.asList(itemContentType));
-            writeStringPlist(bundleDocumentTypes, "CFBundleTypeName", description);
-            writeStringPlist(bundleDocumentTypes, "LSHandlerRank",
-                    FA_MAC_LSHANDLERRANK.fetchFrom(fileAssociation));
-            writeStringPlist(bundleDocumentTypes, "CFBundleTypeRole",
-                    FA_MAC_CFBUNDLETYPEROLE.fetchFrom(fileAssociation));
-            writeStringPlist(bundleDocumentTypes, "NSPersistentStoreTypeKey",
-                    FA_MAC_NSSTORETYPEKEY.fetchFrom(fileAssociation));
-            writeStringPlist(bundleDocumentTypes, "NSDocumentClass",
-                    FA_MAC_NSDOCUMENTCLASS.fetchFrom(fileAssociation));
-            writeBoolPlist(bundleDocumentTypes, "LSIsAppleDefaultForType",
-                    "true");
-            writeBoolPlist(bundleDocumentTypes, "LSTypeIsPackage",
-                    FA_MAC_LSTYPEISPACKAGE.fetchFrom(fileAssociation));
-            writeBoolPlist(bundleDocumentTypes, "LSSupportsOpeningDocumentsInPlace",
-                    FA_MAC_LSDOCINPLACE.fetchFrom(fileAssociation));
-            writeBoolPlist(bundleDocumentTypes, "UISupportsDocumentBrowser",
-                    FA_MAC_UIDOCBROWSER.fetchFrom(fileAssociation));
-            if (IOUtils.exists(icon)) {
-                writeStringPlist(bundleDocumentTypes, "CFBundleTypeIconFile",
-                        icon.getFileName().toString());
-            }
-            bundleDocumentTypes.append("  </dict>\n");
-
-            exportedTypes.append("  <dict>\n");
-            writeStringPlist(exportedTypes, "UTTypeIdentifier",
-                    itemContentType);
-            writeStringPlist(exportedTypes, "UTTypeDescription",
-                    description);
-            writeStringArrayPlist(exportedTypes, "UTTypeConformsTo",
-                    FA_MAC_UTTYPECONFORMSTO.fetchFrom(fileAssociation));
-
-            if (IOUtils.exists(icon)) {
-                writeStringPlist(exportedTypes, "UTTypeIconFile",
-                        icon.getFileName().toString());
-            }
-            exportedTypes.append("\n")
-                    .append("  <key>UTTypeTagSpecification</key>\n")
-                    .append("  <dict>\n")
-                    .append("\n");
-            writeStringArrayPlist(exportedTypes, "public.filename-extension",
-                    extensions);
-            writeStringArrayPlist(exportedTypes, "public.mime-type",
-                    FA_CONTENT_TYPE.fetchFrom(fileAssociation));
-            writeStringArrayPlist(exportedTypes, "NSExportableTypes",
-                    FA_MAC_NSEXPORTABLETYPES.fetchFrom(fileAssociation));
-            exportedTypes.append("  </dict>\n").append(" </dict>\n");
-        }
-        String associationData;
-        if (bundleDocumentTypes.length() > 0) {
-            associationData =
-                    "\n  <key>CFBundleDocumentTypes</key>\n  <array>\n"
-                    + bundleDocumentTypes.toString()
-                    + "  </array>\n\n"
-                    + "  <key>UTExportedTypeDeclarations</key>\n  <array>\n"
-                    + exportedTypes.toString()
-                    + "  </array>\n";
-        } else {
-            associationData = "";
-        }
-        data.put("DEPLOY_FILE_ASSOCIATIONS", associationData);
-
-        createResource(TEMPLATE_INFO_PLIST_LITE, params)
-                .setCategory(I18N.getString("resource.app-info-plist"))
-                .setSubstitutionData(data)
-                .setPublicName("Info.plist")
-                .saveToFile(file);
-    }
-
-    private void writePkgInfo(Path file) throws IOException {
-        //hardcoded as it does not seem we need to change it ever
-        String signature = "????";
-
-        try (Writer out = Files.newBufferedWriter(file)) {
-            out.write(OS_TYPE_CODE + signature);
-            out.flush();
-        }
-    }
 
     public static void addNewKeychain(Map<String, ? super Object> params)
                                     throws IOException, InterruptedException {

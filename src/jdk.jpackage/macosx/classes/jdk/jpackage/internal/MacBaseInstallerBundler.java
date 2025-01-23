@@ -39,11 +39,24 @@ import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALLER_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import jdk.jpackage.internal.util.FileUtils;
 
 public abstract class MacBaseInstallerBundler extends AbstractBundler {
+
+    static final BundlerParamInfo<Path> IMAGES_ROOT =
+            new BundlerParamInfo<>(
+            "imagesRoot",
+            Path.class,
+            params -> {
+                // Order is important
+                MacFromParams.APPLICATION.fetchFrom(params);
+                final var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+                return env.buildRoot().resolve("images");
+            },
+            (s, p) -> null);
 
     private final BundlerParamInfo<Path> APP_IMAGE_TEMP_ROOT =
             new BundlerParamInfo<>(
@@ -156,7 +169,8 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
                         I18N.getString(
                             "message.app-image-requires-app-name.advice"));
             }
-            if (AppImageFile.load(applicationImage).isSigned()) {
+
+            if (new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params)).signed()) {
                 var appLayout = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(applicationImage);
                 if (!Files.exists(
                         PackageFile.getPathInAppImage(appLayout))) {
@@ -191,7 +205,7 @@ public abstract class MacBaseInstallerBundler extends AbstractBundler {
 
             // Create PackageFile if predefined app image is not signed
             if (!StandardBundlerParam.isRuntimeInstaller(params) &&
-                    !AppImageFile.load(predefinedImage).isSigned()) {
+                    !new MacAppImageFileExtras(PREDEFINED_APP_IMAGE_FILE.fetchFrom(params)).signed()) {
                 new PackageFile(APP_NAME.fetchFrom(params)).save(
                         ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT.resolveAt(appDir));
                 // We need to re-sign app image after adding ".package" to it.

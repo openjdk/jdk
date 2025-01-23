@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -31,15 +33,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import static java.util.stream.Collectors.joining;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.model.Application;
-import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 
-final class Codesign {
+public final class Codesign {
 
-    final static class CodesignException extends Exception {
+    public final static class CodesignException extends Exception {
 
         CodesignException(String[] output) {
             this.output = output;
@@ -54,16 +54,16 @@ final class Codesign {
         private static final long serialVersionUID = 1L;
     }
 
-    final static class Builder {
+    public final static class Builder {
 
-        private Builder(SigningConfig signingCfg) {
-            this.signingCfg = Objects.requireNonNull(signingCfg);
+        private Builder(Supplier<List<String>> args) {
+            this.args = Objects.requireNonNull(args);
         }
 
         Codesign create() {
             List<String> cmdline = new ArrayList<>();
             cmdline.add("/usr/bin/codesign");
-            cmdline.addAll(signingCfg.toCodesignArgs());
+            cmdline.addAll(args.get());
             if (force) {
                 cmdline.add("--force");
             }
@@ -73,26 +73,26 @@ final class Codesign {
             } : null);
         }
 
-        Builder force(boolean v) {
+        public Builder force(boolean v) {
             force = v;
             return this;
         }
 
-        Builder quiet(boolean v) {
+        public Builder quiet(boolean v) {
             quiet = v;
             return this;
         }
 
-        private final SigningConfig signingCfg;
+        private final Supplier<List<String>> args;
         private boolean force;
         private boolean quiet;
     }
 
-    static Builder build(SigningConfig signingCfg) {
-        return new Builder(signingCfg);
+    public static Builder build(Supplier<List<String>> args) {
+        return new Builder(args);
     }
 
-    void applyTo(Path path) throws IOException, CodesignException {
+    public void applyTo(Path path) throws IOException, CodesignException {
 
         var exec = Executor.of(Stream.concat(
                 cmdline.stream(),
@@ -105,45 +105,13 @@ final class Codesign {
         }
     }
 
-    Consumer<Path> asConsumer() {
+    public Consumer<Path> asConsumer() {
         return toConsumer(this::applyTo);
-    }
-
-    static CodesignException handleCodesignException(Application app, CodesignException ex) {
-        // Log output of "codesign" in case of error. It should help
-        // user to diagnose issues when using --mac-app-image-sign-identity.
-        // In addition add possible reason for failure. For example
-        // "--app-content" can fail "codesign".
-
-        if (!Optional.ofNullable(app.contentDirs()).orElseGet(List::of).isEmpty()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.app.content"));
-        }
-
-        // Signing might not work without Xcode with command line
-        // developer tools. Show user if Xcode is missing as possible
-        // reason.
-        if (!isXcodeDevToolsInstalled()) {
-            Log.info(I18N.getString("message.codesign.failed.reason.xcode.tools"));
-        }
-
-        // Log "codesign" output
-        Log.info(I18N.format("error.tool.failed.with.output", "codesign"));
-        Log.info(Stream.of(ex.getOutput()).collect(joining("\n")).strip());
-
-        return ex;
     }
 
     private Codesign(List<String> cmdline, Consumer<Executor> configureExecutor) {
         this.cmdline = Objects.requireNonNull(cmdline);
         this.configureExecutor = Optional.ofNullable(configureExecutor);
-    }
-
-    private static boolean isXcodeDevToolsInstalled() {
-        try {
-            return Executor.of("/usr/bin/xcrun", "--help").execute() == 0;
-        } catch (IOException ex) {
-            return false;
-        }
     }
 
     private final List<String> cmdline;

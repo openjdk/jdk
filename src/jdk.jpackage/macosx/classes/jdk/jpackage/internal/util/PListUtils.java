@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal;
+package jdk.jpackage.internal.util;
 
-import java.io.IOException;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import jdk.jpackage.internal.util.XmlConsumer;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 
-final class PListUtils {
+import java.io.IOException;
 
-    static void writeBoolean(XMLStreamWriter xml, String key, boolean value)
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
+public final class PListUtils {
+
+    public static void writeBoolean(XMLStreamWriter xml, String key, boolean value)
             throws XMLStreamException {
         writeKey(xml, key);
         xml.writeEmptyElement(Boolean.toString(value));
     }
 
-    static void writeString(XMLStreamWriter xml, String key, Object value)
+    public static void writeString(XMLStreamWriter xml, String key, Object value)
             throws XMLStreamException {
         writeKey(xml, key);
         writeString(xml, value);
     }
 
-    static void writeStringArray(XMLStreamWriter xml, String key, Iterable<?> values)
+    public static void writeStringArray(XMLStreamWriter xml, String key, Iterable<?> values)
             throws XMLStreamException, IOException {
         writeKey(xml, key);
         writeArray(xml, toXmlConsumer(() -> {
@@ -54,7 +55,7 @@ final class PListUtils {
         }));
     }
 
-    static void writeStringArray(XMLStreamWriter xml, String key, Object... values)
+    public static void writeStringArray(XMLStreamWriter xml, String key, Object... values)
             throws XMLStreamException, IOException {
         writeKey(xml, key);
         writeArray(xml, toXmlConsumer(() -> {
@@ -64,17 +65,17 @@ final class PListUtils {
         }));
     }
 
-    static void writeDict(XMLStreamWriter xml, XmlConsumer content)
+    public static void writeDict(XMLStreamWriter xml, XmlConsumer content)
             throws XMLStreamException, IOException {
         writeElement(xml, "dict", content);
     }
 
-    static void writeArray(XMLStreamWriter xml, XmlConsumer content)
+    public static void writeArray(XMLStreamWriter xml, XmlConsumer content)
             throws XMLStreamException, IOException {
         writeElement(xml, "array", content);
     }
 
-    static void writePList(XMLStreamWriter xml, XmlConsumer content)
+    public static void writePList(XMLStreamWriter xml, XmlConsumer content)
             throws XMLStreamException, IOException {
         xml.writeDTD("plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"https://www.apple.com/DTDs/PropertyList-1.0.dtd\"");
         xml.writeStartElement("plist");
@@ -83,7 +84,7 @@ final class PListUtils {
         xml.writeEndElement();
     }
 
-    static void writeKey(XMLStreamWriter xml, String key)
+    public static void writeKey(XMLStreamWriter xml, String key)
             throws XMLStreamException {
         writeElement(xml, "key", key);
     }

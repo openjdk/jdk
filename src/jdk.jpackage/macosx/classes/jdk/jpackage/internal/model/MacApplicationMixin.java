@@ -25,10 +25,11 @@
 package jdk.jpackage.internal.model;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 public interface MacApplicationMixin {
 
-    Path icon();
+    Optional<Path> icon();
 
     String bundleName();
 
@@ -36,15 +37,9 @@ public interface MacApplicationMixin {
 
     String category();
 
-    boolean signed();
+    Optional<SigningConfig> signingConfig();
 
-    boolean appStore();
-
-    Path entitlements();
-
-    record Stub(Path icon, String bundleName, String bundleIdentifier, String category,
-            boolean signed, boolean appStore, Path entitlements) implements
-            MacApplicationMixin {
-
+    record Stub(Optional<Path> icon, String bundleName, String bundleIdentifier,
+            String category, Optional<SigningConfig> signingConfig) implements MacApplicationMixin {
     }
 }

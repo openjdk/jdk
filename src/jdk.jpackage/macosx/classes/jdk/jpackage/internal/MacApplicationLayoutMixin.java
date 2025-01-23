@@ -22,38 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
-import java.util.List;
+import java.nio.file.Path;
 
-public interface MacFileAssociationMixin {
+// Must be publc to allow access from AppImageLayout.toPathGroup()
+public interface MacApplicationLayoutMixin {
 
-    String cfBundleTypeName();
+    /**
+     * Path to the root Java runtime directory in the application image.
+     * The root Java runtime directory should have "Contents/Home" subdirectory.
+     */
+    Path runtimeRootDirectory();
 
-    String cfBundleTypeRole();
-
-    String lsHandlerRank();
-
-    boolean lsTypeIsPackage();
-
-    String nsDocumentClass();
-
-    String nsPersistentStoreTypeKey();
-
-    boolean lsSupportsOpeningDocumentsInPlace();
-
-    boolean uiSupportsDocumentBrowser();
-
-    List<String> utTypeConformsTo();
-
-    List<String> nsExportableTypes();
-
-    record Stub(String cfBundleTypeName, String cfBundleTypeRole,
-            String lsHandlerRank, boolean lsTypeIsPackage, String nsDocumentClass,
-            String nsPersistentStoreTypeKey,
-            boolean lsSupportsOpeningDocumentsInPlace,
-            boolean uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
-            List<String> nsExportableTypes) implements MacFileAssociationMixin {
-
-    }
+    record Stub(Path runtimeRootDirectory) implements MacApplicationLayoutMixin {}
 }

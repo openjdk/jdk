@@ -22,38 +22,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.jpackage.internal.model;
+package jdk.jpackage.internal;
 
-import java.util.List;
+import static jdk.jpackage.internal.util.PathUtils.resolveNullablePath;
 
-public interface MacFileAssociationMixin {
+import java.nio.file.Path;
+import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.util.CompositeProxy;
 
-    String cfBundleTypeName();
+interface MacApplicationLayout extends ApplicationLayout, MacApplicationLayoutMixin {
 
-    String cfBundleTypeRole();
+    static MacApplicationLayout create(ApplicationLayout layout, Path runtimeRootDir) {
+        return CompositeProxy.build()
+                .invokeTunnel(CompositeProxyTunnel.INSTANCE)
+                .create(MacApplicationLayout.class, layout, new MacApplicationLayoutMixin.Stub(runtimeRootDir));
+    }
 
-    String lsHandlerRank();
-
-    boolean lsTypeIsPackage();
-
-    String nsDocumentClass();
-
-    String nsPersistentStoreTypeKey();
-
-    boolean lsSupportsOpeningDocumentsInPlace();
-
-    boolean uiSupportsDocumentBrowser();
-
-    List<String> utTypeConformsTo();
-
-    List<String> nsExportableTypes();
-
-    record Stub(String cfBundleTypeName, String cfBundleTypeRole,
-            String lsHandlerRank, boolean lsTypeIsPackage, String nsDocumentClass,
-            String nsPersistentStoreTypeKey,
-            boolean lsSupportsOpeningDocumentsInPlace,
-            boolean uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
-            List<String> nsExportableTypes) implements MacFileAssociationMixin {
-
+    @Override
+    default MacApplicationLayout resolveAt(Path root) {
+        return create(ApplicationLayout.super.resolveAt(root),
+                resolveNullablePath(root, runtimeRootDirectory()));
     }
 }

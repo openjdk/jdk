@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,16 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.util.PListUtils.writeArray;
+import static jdk.jpackage.internal.util.PListUtils.writeBoolean;
+import static jdk.jpackage.internal.util.PListUtils.writeDict;
+import static jdk.jpackage.internal.util.PListUtils.writeKey;
+import static jdk.jpackage.internal.util.PListUtils.writeString;
+import static jdk.jpackage.internal.util.PListUtils.writeStringArray;
+import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -38,25 +48,18 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.AppImageBuilder.AppImageItem;
 import jdk.jpackage.internal.AppImageBuilder.AppImageItemGroup;
-import static jdk.jpackage.internal.PListUtils.writeArray;
-import jdk.jpackage.internal.model.MacApplication;
-import jdk.jpackage.internal.model.MacFileAssociation;
-import static jdk.jpackage.internal.PListUtils.writeBoolean;
-import static jdk.jpackage.internal.PListUtils.writeDict;
-import static jdk.jpackage.internal.PListUtils.writeKey;
-import static jdk.jpackage.internal.PListUtils.writeString;
-import static jdk.jpackage.internal.PListUtils.writeStringArray;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.FileAssociation;
-import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+import jdk.jpackage.internal.model.MacApplication;
+import jdk.jpackage.internal.model.MacFileAssociation;
+import jdk.jpackage.internal.model.SigningConfig;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 final class MacAppImageBuilder2 {
 
     static AppImageBuilder.Builder build() {
-        return new AppImageBuilder.Builder()
+        return AppImageBuilder.build()
                 .itemGroup(AppImageItemGroup.RUNTIME)
                 .addItem(MacAppImageBuilder2::writeRuntimeInfoPlist)
                 .addItem(MacAppImageBuilder2::copyJliLib)
@@ -64,19 +67,25 @@ final class MacAppImageBuilder2 {
                 .addItem(new ApplicationIcon())
                 .addItem(MacAppImageBuilder2::writePkgInfoFile)
                 .addItem(MacAppImageBuilder2::writeFileAssociationIcons)
-                .addItem(MacAppImageBuilder2::writeAppInfoPlist);
+                .addItem(MacAppImageBuilder2::writeAppInfoPlist)
+                .itemGroup(AppImageItemGroup.END)
+                .addItem(MacAppImageBuilder2::sign);
     }
 
     private static void copyJliLib(BuildEnv env, Application app,
             ApplicationLayout appLayout) throws IOException {
 
-        final Path jliName = Path.of("libjli.dylib");
-        try (var walk = Files.walk(appLayout.runtimeDirectory().resolve("Contents/Home/lib"))) {
-            final Path jli = walk
+        final var runtimeMacOSDir = ((MacApplicationLayout)appLayout).runtimeRootDirectory().resolve("Contents/MacOS");
+
+        final var jliName = Path.of("libjli.dylib");
+
+        try (var walk = Files.walk(appLayout.runtimeDirectory().resolve("lib"))) {
+            final var jli = walk
                     .filter(file -> file.getFileName().equals(jliName))
                     .findFirst()
-                    .get();
-            Files.copy(jli, appLayout.launchersDirectory().resolve(jliName));
+                    .orElseThrow();
+            Files.createDirectories(runtimeMacOSDir);
+            Files.copy(jli, runtimeMacOSDir.resolve(jliName));
         }
     }
 
@@ -95,7 +104,7 @@ final class MacAppImageBuilder2 {
                 .setPublicName("Runtime-Info.plist")
                 .setCategory(I18N.getString("resource.runtime-info-plist"))
                 .setSubstitutionData(data)
-                .saveToFile(appLayout.runtimeDirectory().resolve("Contents/Info.plist"));
+                .saveToFile(((MacApplicationLayout)appLayout).runtimeRootDirectory().resolve("Contents/Info.plist"));
     }
 
     private static void writeAppInfoPlist(BuildEnv env, Application app,
@@ -129,6 +138,35 @@ final class MacAppImageBuilder2 {
                 .setSubstitutionData(data)
                 .setPublicName("Info.plist")
                 .saveToFile(appLayout.contentDirectory().resolve("Info.plist"));
+    }
+
+    private static void sign(BuildEnv env, Application app, ApplicationLayout appLayout) throws IOException {
+
+        final var macApp = ((MacApplication)app);
+
+        final var codesignConfigBuilder = CodesignConfig.build();
+        macApp.signingConfig().ifPresent(codesignConfigBuilder::from);
+
+        if (macApp.sign() && macApp.signingConfig().flatMap(SigningConfig::entitlements).isEmpty()) {
+            final var entitlementsDefaultResource = macApp.signingConfig().map(
+                    SigningConfig::entitlementsResourceName).orElseThrow();
+
+            final var entitlementsFile = env.configDir().resolve(app.name() + ".entitlements");
+
+            env.createResource(entitlementsDefaultResource)
+                    .setCategory(I18N.getString("resource.entitlements"))
+                    .saveToFile(entitlementsFile);
+
+            codesignConfigBuilder.entitlements(entitlementsFile);
+        }
+
+        final Runnable signAction = () -> {
+            AppImageSigner.createSigner(macApp, codesignConfigBuilder.create()).accept(env.appImageDir());
+        };
+
+        macApp.signingConfig().flatMap(SigningConfig::keyChain).ifPresentOrElse(keyChain -> {
+            toBiConsumer(TempKeychain::withKeychain).accept(keyChain, unused -> signAction.run());
+        }, signAction);
     }
 
     private static void writeCFBundleDocumentTypes(XMLStreamWriter xml,
@@ -209,10 +247,11 @@ final class MacAppImageBuilder2 {
         @Override
         public void write(BuildEnv env, Application app, ApplicationLayout appLayout)
                 throws IOException {
-            env.createResource("JavaApp.icns")
-                    .setCategory("icon")
-                    .setExternal(((MacApplication)app).icon())
-                    .saveToFile(getPath(app, appLayout));
+            final var resource = env.createResource("JavaApp.icns").setCategory("icon");
+
+            ((MacApplication)app).icon().ifPresent(resource::setExternal);
+
+            resource.saveToFile(getPath(app, appLayout));
         }
     }
 
@@ -231,4 +270,7 @@ final class MacAppImageBuilder2 {
         Files.write(appLayout.contentDirectory().resolve("PkgInfo"),
                 "APPL????".getBytes(StandardCharsets.ISO_8859_1));
     }
+
+    final static MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(
+            ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
 }

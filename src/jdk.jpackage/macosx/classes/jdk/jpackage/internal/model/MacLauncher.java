@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,36 +24,11 @@
  */
 package jdk.jpackage.internal.model;
 
-import java.util.List;
+import jdk.jpackage.internal.util.CompositeProxy;
 
-public interface MacFileAssociationMixin {
+public interface MacLauncher extends Launcher {
 
-    String cfBundleTypeName();
-
-    String cfBundleTypeRole();
-
-    String lsHandlerRank();
-
-    boolean lsTypeIsPackage();
-
-    String nsDocumentClass();
-
-    String nsPersistentStoreTypeKey();
-
-    boolean lsSupportsOpeningDocumentsInPlace();
-
-    boolean uiSupportsDocumentBrowser();
-
-    List<String> utTypeConformsTo();
-
-    List<String> nsExportableTypes();
-
-    record Stub(String cfBundleTypeName, String cfBundleTypeRole,
-            String lsHandlerRank, boolean lsTypeIsPackage, String nsDocumentClass,
-            String nsPersistentStoreTypeKey,
-            boolean lsSupportsOpeningDocumentsInPlace,
-            boolean uiSupportsDocumentBrowser, List<String> utTypeConformsTo,
-            List<String> nsExportableTypes) implements MacFileAssociationMixin {
-
+    public static MacLauncher create(Launcher launcher) {
+        return CompositeProxy.create(MacLauncher.class, launcher);
     }
 }

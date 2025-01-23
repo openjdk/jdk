@@ -40,14 +40,6 @@ import jdk.jpackage.internal.util.FileUtils;
  */
 abstract class AbstractBundler implements Bundler {
 
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new BundlerParamInfo<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
-
     @Override
     public String toString() {
         return getName();

@@ -67,19 +67,8 @@ final class StandardBundlerParam {
             "--no-man-pages",
             "--no-header-files"};
 
-    static final BundlerParamInfo<LauncherData> LAUNCHER_DATA =
-            new BundlerParamInfo<>(
-                    "launcherData",
-                    LauncherData.class,
-                    params -> {
-                        try {
-                            return LauncherData.create(params);
-                        } catch (ConfigException | IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    },
-                    null
-            );
+    static final BundlerParamInfo<LauncherData> LAUNCHER_DATA = BundlerParamInfo.createBundlerParam(
+            LauncherData.class, LauncherData::create);
 
     static final BundlerParamInfo<Path> SOURCE_DIR =
             new BundlerParamInfo<>(
@@ -107,6 +96,16 @@ final class StandardBundlerParam {
                     null
             );
 
+    static final BundlerParamInfo<AppImageFile2> PREDEFINED_APP_IMAGE_FILE = BundlerParamInfo.createBundlerParam(
+            AppImageFile2.class, params -> {
+                if (hasPredefinedAppImage(params)) {
+                    var appImage = getPredefinedAppImage(params);
+                    return AppImageFile2.load(appImage, PLATFORM_APPLICATION_LAYOUT);
+                } else {
+                    return null;
+                }
+            });
+
     static final BundlerParamInfo<String> MAIN_CLASS =
             new BundlerParamInfo<>(
                     Arguments.CLIOptions.APPCLASS.getId(),
@@ -115,9 +114,7 @@ final class StandardBundlerParam {
                         if (isRuntimeInstaller(params)) {
                             return null;
                         } else if (hasPredefinedAppImage(params)) {
-                            var appImage = getPredefinedAppImage(params);
-                            return toBiFunction(AppImageFile2::load).apply(
-                                    appImage, PLATFORM_APPLICATION_LAYOUT).getMainClass();
+                            PREDEFINED_APP_IMAGE_FILE.fetchFrom(params).getMainClass();
                         }
                         return LAUNCHER_DATA.fetchFrom(params).qualifiedClassName();
                     },
@@ -155,12 +152,9 @@ final class StandardBundlerParam {
                     "application-name",
                     String.class,
                     params -> {
-                        Path appImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
                         String appName = NAME.fetchFrom(params);
-                        if (appImage != null) {
-                            String name = toBiFunction(AppImageFile2::load).apply(
-                                    appImage, PLATFORM_APPLICATION_LAYOUT).getLauncherName();
-                            appName  = (name != null) ? name : appName;
+                        if (hasPredefinedAppImage(params)) {
+                            appName = PREDEFINED_APP_IMAGE_FILE.fetchFrom(params).getLauncherName();
                         } else if (appName == null) {
                             String s = MAIN_CLASS.fetchFrom(params);
                             if (s != null) {
@@ -527,22 +521,6 @@ final class StandardBundlerParam {
                     null : Boolean.valueOf(s)
         );
 
-    static final BundlerParamInfo<Boolean> APP_STORE =
-            new BundlerParamInfo<>(
-            Arguments.CLIOptions.MAC_APP_STORE.getId(),
-            Boolean.class,
-            params -> {
-                if (hasPredefinedAppImage(params)) {
-                    return AppImageFile.load(getPredefinedAppImage(params))
-                            .isAppStore();
-                }
-                return false;
-            },
-            // valueOf(null) is false, we actually do want null in some cases
-            (s, p) -> (s == null || "null".equalsIgnoreCase(s)) ?
-                    null : Boolean.valueOf(s)
-        );
-
     static boolean isRuntimeInstaller(Map<String, ? super Object> params) {
         if (params.containsKey(MODULE.getID()) ||
                 params.containsKey(MAIN_JAR.getID()) ||
@@ -572,8 +550,13 @@ final class StandardBundlerParam {
 
     static OverridableResource createResource(String defaultName,
             Map<String, ? super Object> params) {
-        return new OverridableResource(defaultName, ResourceLocator.class).setResourceDir(
-                RESOURCE_DIR.fetchFrom(params));
+        final OverridableResource resource;
+        if (defaultName == null) {
+            resource = new OverridableResource();
+        } else {
+            resource = new OverridableResource(defaultName, ResourceLocator.class);
+        }
+        return resource.setResourceDir(RESOURCE_DIR.fetchFrom(params));
     }
 
     private static String getDefaultAppVersion(Map<String, ? super Object> params) {
