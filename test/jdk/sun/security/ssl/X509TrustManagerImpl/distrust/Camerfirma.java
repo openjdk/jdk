@@ -55,6 +55,9 @@ public class Camerfirma {
             LocalDate.of(2025, 04, 16).atStartOfDay(ZoneOffset.UTC);
 
     public static void main(String[] args) throws Exception {
+
+        // All of the test certificates are signed with SHA-1 so we need
+        // to remove the constraint that disallows SHA-1 certificates.
         String prop = Security.getProperty("jdk.certpath.disabledAlgorithms");
         String newProp = prop.replace(", SHA1 jdkCA & usage TLSServer", "");
         Security.setProperty("jdk.certpath.disabledAlgorithms", newProp);
