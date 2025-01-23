@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class TestGCCauseWithG1FullCollection {
         String[] vmFlags = {"-XX:+UseG1GC"};
         String[] gcNames = {GCHelper.gcG1New, GCHelper.gcG1Old, GCHelper.gcG1Full};
         String[] gcCauses = {"Metadata GC Threshold", "G1 Evacuation Pause", "G1 Preventive Collection",
-                             "G1 Compaction Pause", "System.gc()"};
+                             "G1 Compaction Pause", "CodeCache GC Threshold", "System.gc()"};
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
     }
 }

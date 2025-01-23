@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@
 #include "oops/methodFlags.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
-#include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
@@ -76,8 +75,8 @@ class Method : public Metadata {
   MethodData*       _method_data;
   MethodCounters*   _method_counters;
   AdapterHandlerEntry* _adapter;
-  AccessFlags       _access_flags;               // Access flags
   int               _vtable_index;               // vtable index of this method (see VtableIndexFlag)
+  AccessFlags       _access_flags;               // Access flags
   MethodFlags       _flags;
 
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
@@ -122,6 +121,7 @@ class Method : public Metadata {
 #if INCLUDE_CDS
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+  static void restore_archived_method_handle_intrinsic(methodHandle m, TRAPS);
 #endif
 
   // accessors for instance variables
@@ -576,9 +576,6 @@ public:
   // returns true if the method does nothing but return a constant of primitive type
   bool is_constant_getter() const;
 
-  // returns true if the method is an initializer (<init> or <clinit>).
-  bool is_initializer() const;
-
   // returns true if the method is static OR if the classfile version < 51
   bool has_valid_initializer_flags() const;
 
@@ -588,6 +585,9 @@ public:
 
   // returns true if the method name is <init>
   bool is_object_initializer() const;
+
+  // returns true if the method name is wait0
+  bool is_object_wait0() const;
 
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
@@ -748,6 +748,9 @@ public:
 
   bool changes_current_thread() const { return constMethod()->changes_current_thread(); }
   void set_changes_current_thread() { constMethod()->set_changes_current_thread(); }
+
+  bool jvmti_hide_events() const { return constMethod()->jvmti_hide_events(); }
+  void set_jvmti_hide_events() { constMethod()->set_jvmti_hide_events(); }
 
   bool jvmti_mount_transition() const { return constMethod()->jvmti_mount_transition(); }
   void set_jvmti_mount_transition() { constMethod()->set_jvmti_mount_transition(); }

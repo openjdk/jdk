@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
@@ -375,26 +374,6 @@ Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
   if (mismatched) {
     st->as_Store()->set_mismatched_access();
   }
-  st = transform(st);
-  set_memory(st, adr_idx);
-
-  return st;
-}
-
-// Card mark store. Must be ordered so that it will come after the store of
-// the oop.
-Node* IdealKit::storeCM(Node* ctl, Node* adr, Node *val, Node* oop_store, int oop_adr_idx,
-                        BasicType bt,
-                        int adr_idx) {
-  assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
-  const TypePtr* adr_type = nullptr;
-  debug_only(adr_type = C->get_adr_type(adr_idx));
-  Node *mem = memory(adr_idx);
-
-  // Add required edge to oop_store, optimizer does not support precedence edges.
-  // Convert required edge to precedence edge before allocation.
-  Node* st = new StoreCMNode(ctl, mem, adr, adr_type, val, oop_store, oop_adr_idx);
-
   st = transform(st);
   set_memory(st, adr_idx);
 

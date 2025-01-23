@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #include "runtime/globals.hpp"
@@ -35,7 +34,6 @@
 
 void Compile::pd_compiler2_init() {
 
-  // Power7 and later.
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_ERGO(UsePopCountInstruction, true);
   }
@@ -48,5 +46,7 @@ void Compile::pd_compiler2_init() {
     warning("OptimizeFill is not supported on this CPU.");
     FLAG_SET_DEFAULT(OptimizeFill, false);
   }
+
+  guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "");
 
 }

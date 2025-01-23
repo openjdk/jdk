@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Thread)
-@Fork(value = 2, jvmArgsAppend = "--add-opens=java.base/java.net=ALL-UNNAMED")
+@Fork(value = 2, jvmArgs = "--add-opens=java.base/java.net=ALL-UNNAMED")
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 public class NetworkInterfaceLookup {

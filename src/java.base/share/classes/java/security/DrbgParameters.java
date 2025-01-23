@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,6 +226,9 @@ import java.util.Objects;
  * <p>
  * Calling {@link SecureRandom#generateSeed(int)} will directly read
  * from this system default entropy source.
+ *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf
+ *      Recommendation for Random Number Generation Using Deterministic Random Bit Generators
  *
  * @since 9
  */

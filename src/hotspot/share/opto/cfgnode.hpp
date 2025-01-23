@@ -324,7 +324,7 @@ class IfNode : public MultiBranchNode {
   float _fcnt;                           // Frequency counter
 
  private:
-  NOT_PRODUCT(AssertionPredicateType _assertion_predicate_type;)
+  AssertionPredicateType _assertion_predicate_type;
 
   void init_node(Node* control, Node* bol) {
     init_class_id(Class_If);
@@ -347,7 +347,6 @@ class IfNode : public MultiBranchNode {
   bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
   bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
-  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
   bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
@@ -427,7 +426,7 @@ public:
   // gen_subtype_check() and catch_inline_exceptions().
 
   IfNode(Node* control, Node* bol, float p, float fcnt);
-  NOT_PRODUCT(IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);)
+  IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);
 
   static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
 
@@ -442,17 +441,18 @@ public:
   static Node* up_one_dom(Node* curr, bool linear_only = false);
   bool is_zero_trip_guard() const;
   Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes);
+  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
   // Returns null is it couldn't improve the type.
   static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
 
-#ifndef PRODUCT
   AssertionPredicateType assertion_predicate_type() const {
     return _assertion_predicate_type;
   }
 
+#ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
 
@@ -468,12 +468,10 @@ public:
     init_class_id(Class_RangeCheck);
   }
 
-#ifndef PRODUCT
   RangeCheckNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type)
       : IfNode(control, bol, p, fcnt, assertion_predicate_type) {
     init_class_id(Class_RangeCheck);
   }
-#endif // NOT PRODUCT
 
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);

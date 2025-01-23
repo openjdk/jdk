@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -48,8 +47,6 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.Serial;
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
@@ -64,7 +61,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * A representation of color profile data for device independent and device
  * dependent color spaces based on the International Color Consortium
  * Specification ICC.1:2001-12, File Format for Color Profiles, (see
- * <a href="http://www.color.org"> http://www.color.org</a>).
+ * <a href="https://www.color.org"> https://www.color.org</a>).
  * <p>
  * An {@code ICC_ColorSpace} object can be constructed from an appropriate
  * {@code ICC_Profile}. Typically, an {@code ICC_ColorSpace} would be associated
@@ -859,8 +856,6 @@ public sealed class ICC_Profile implements Serializable
      *         error occurs while reading the file
      * @throws IllegalArgumentException If the file does not contain valid ICC
      *         Profile data
-     * @throws SecurityException If a security manager is installed and it does
-     *         not permit read access to the given file
      * @throws NullPointerException if {@code fileName} is {@code null}
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {
@@ -1343,13 +1338,8 @@ public sealed class ICC_Profile implements Serializable
      * fileName. If there is no built-in profile with such name, then the method
      * returns {@code null}.
      */
-    @SuppressWarnings("removal")
     private static InputStream getStandardProfileInputStream(String fileName) {
-        return AccessController.doPrivileged(
-            (PrivilegedAction<InputStream>) () -> {
-                return PCMM.class.getResourceAsStream("profiles/" + fileName);
-            }, null, new FilePermission("<<ALL FILES>>", "read"),
-                     new RuntimePermission("accessSystemModules"));
+        return PCMM.class.getResourceAsStream("profiles/" + fileName);
     }
 
     /**

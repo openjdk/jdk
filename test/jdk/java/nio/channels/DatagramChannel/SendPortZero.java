@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.net.SocketPermission;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.security.AccessControlException;
-import java.security.Permission;
-import java.security.PermissionCollection;
-import java.security.Permissions;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,30 +46,25 @@ import static org.testng.Assert.assertThrows;
  * @bug 8236105 8240533
  * @library /test/lib
  * @build jdk.test.lib.net.IPSupport
- * @summary Check that DatagramChannel throws expected Exception when sending to
- *          port 0
- * @run testng/othervm -Djava.security.manager=allow SendPortZero
- * @run testng/othervm -Djava.security.manager=allow -Djava.net.preferIPv4Stack=true SendPortZero
+ * @summary Check that DatagramChannel throws expected Exception when sending to port 0
+ * @run testng/othervm SendPortZero
+ * @run testng/othervm -Djava.net.preferIPv4Stack=true SendPortZero
  */
 
 public class SendPortZero {
     private ByteBuffer buf;
     private List<Object[]> channels;
     private InetSocketAddress loopbackZeroAddr, wildcardZeroAddr;
-    private DatagramChannel datagramChannel, datagramChannelIPv4,
-    datagramChannelIPv6;
+    private DatagramChannel datagramChannel, datagramChannelIPv4, datagramChannelIPv6;
 
     private static final Class<SocketException> SE = SocketException.class;
-    private static final Class<AccessControlException> ACE =
-            AccessControlException.class;
 
     @BeforeTest
     public void setUp() throws IOException {
         buf = ByteBuffer.wrap("test".getBytes());
 
         wildcardZeroAddr = new InetSocketAddress(0);
-        loopbackZeroAddr = new
-                InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+        loopbackZeroAddr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
 
         channels = new ArrayList<>();
 
@@ -101,31 +89,6 @@ public class SendPortZero {
     public void testChannelSend(DatagramChannel dc) {
         assertThrows(SE, () -> dc.send(buf, loopbackZeroAddr));
         assertThrows(SE, () -> dc.send(buf, wildcardZeroAddr));
-    }
-
-    @Test(dataProvider = "data")
-    public void testSendWithSecurityManager(DatagramChannel dc) {
-        Policy defaultPolicy = Policy.getPolicy();
-        try {
-            Policy.setPolicy(new NoSendPolicy());
-            System.setSecurityManager(new SecurityManager());
-
-            assertThrows(ACE, () -> dc.send(buf, loopbackZeroAddr));
-            assertThrows(ACE, () -> dc.send(buf, wildcardZeroAddr));
-        } finally {
-            System.setSecurityManager(null);
-            Policy.setPolicy(defaultPolicy);
-        }
-    }
-
-    static class NoSendPolicy extends Policy {
-        final PermissionCollection perms = new Permissions();
-        { perms.add(
-                new SocketPermission("*:0", "connect")); }
-
-        public boolean implies(ProtectionDomain domain, Permission perm) {
-            return !perms.implies(perm);
-        }
     }
 
     @AfterTest

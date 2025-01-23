@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -142,8 +141,7 @@ Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
   // - the payload size (length) must be aligned to 64-bit, which takes care of 64-bit
   //   aligning (D)
 
-  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: "
-         SIZE_FORMAT ".", length);
+  assert(is_aligned(length, ARENA_AMALLOC_ALIGNMENT), "chunk payload length misaligned: %zu.", length);
   // Try to reuse a freed chunk from the pool
   ChunkPool* pool = ChunkPool::get_pool_for_size(length);
   Chunk* chunk = nullptr;
@@ -222,8 +220,8 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) :
-  _flags(flag), _tag(tag),
+Arena::Arena(MemTag mem_tag, Tag tag, size_t init_size) :
+  _mem_tag(mem_tag), _tag(tag),
   _size_in_bytes(0),
   _first(nullptr), _chunk(nullptr),
   _hwm(nullptr), _max(nullptr)
@@ -233,13 +231,13 @@ Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) :
   _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  MemTracker::record_new_arena(flag);
+  MemTracker::record_new_arena(mem_tag);
   set_size_in_bytes(init_size);
 }
 
 Arena::~Arena() {
   destruct_contents();
-  MemTracker::record_arena_free(_flags);
+  MemTracker::record_arena_free(_mem_tag);
 }
 
 // Destroy this arenas contents and reset to empty
@@ -259,8 +257,8 @@ void Arena::set_size_in_bytes(size_t size) {
   if (_size_in_bytes != size) {
     ssize_t delta = size - size_in_bytes();
     _size_in_bytes = size;
-    MemTracker::record_arena_size_change(delta, _flags);
-    if (CompilationMemoryStatistic::enabled() && _flags == mtCompiler) {
+    MemTracker::record_arena_size_change(delta, _mem_tag);
+    if (CompilationMemoryStatistic::enabled() && _mem_tag == mtCompiler) {
       Thread* const t = Thread::current();
       if (t != nullptr && t->is_Compiler_thread()) {
         CompilationMemoryStatistic::on_arena_change(delta, this);
@@ -286,7 +284,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
-  if (MemTracker::check_exceeds_limit(x, _flags)) {
+  if (MemTracker::check_exceeds_limit(x, _mem_tag)) {
     return nullptr;
   }
 

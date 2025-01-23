@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -182,9 +182,9 @@ public class AttributeList extends ArrayList<Object> {
      * size())} a RuntimeOperationsException should be raised, wrapping the
      * java.lang.IndexOutOfBoundsException thrown.
      *
-     * @param object  The <CODE>Attribute</CODE> object to be inserted.
      * @param index The position in the list where the new {@code Attribute}
      * object is to be inserted.
+     * @param object  The <CODE>Attribute</CODE> object to be inserted.
      */
     public void add(int index, Attribute object)  {
         try {
@@ -202,8 +202,8 @@ public class AttributeList extends ArrayList<Object> {
      * out of range {@literal (index < 0 || index > size())} a RuntimeOperationsException
      * should be raised, wrapping the java.lang.IndexOutOfBoundsException thrown.
      *
-     * @param object  The value to which the attribute element should be set.
      * @param index  The position specified.
+     * @param object  The value to which the attribute element should be set.
      */
     public void set(int index, Attribute object)  {
         try {
@@ -238,9 +238,9 @@ public class AttributeList extends ArrayList<Object> {
      * RuntimeOperationsException should be raised, wrapping the
      * java.lang.IndexOutOfBoundsException thrown.
      *
-     * @param list  Elements to be inserted into the list.
      * @param index  Position at which to insert the first element from the
      * <CODE>AttributeList</CODE> specified.
+     * @param list  Elements to be inserted into the list.
      *
      * @return true if this list changed as a result of the call.
      *

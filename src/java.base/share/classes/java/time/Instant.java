@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,11 +252,11 @@ public final class Instant
     private static final long serialVersionUID = -665713676816604388L;
 
     /**
-     * The number of seconds from the epoch of 1970-01-01T00:00:00Z.
+     * @serial The number of seconds from the epoch of 1970-01-01T00:00:00Z.
      */
     private final long seconds;
     /**
-     * The number of nanoseconds, later along the time-line, from the seconds field.
+     * @serial The number of nanoseconds, later along the time-line, from the seconds field.
      * This is always positive, and never exceeds 999,999,999.
      */
     private final int nanos;

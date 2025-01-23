@@ -32,7 +32,6 @@
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
- * @enablePreview
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common

@@ -27,10 +27,10 @@
 #define SHARE_SERVICES_MEMMAPPRINTER_HPP
 
 #include "memory/allStatic.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 class outputStream;
 class CachedNMTInformation;

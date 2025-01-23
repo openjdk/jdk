@@ -34,7 +34,7 @@ define(access, `
 define(load,`
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_$2($1 dst, memory mem) %{dnl
+  enc_class aarch64_enc_$2($1 dst, memory$5 mem) %{dnl
 access(dst,$2,$3,$4,$5)')dnl
 load(iRegI,ldrsbw,,,1)
 load(iRegI,ldrsb,,,1)
@@ -53,12 +53,12 @@ load(vRegD,ldrd,Float,,8)
 define(STORE,`
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_$2($1 src, memory mem) %{dnl
+  enc_class aarch64_enc_$2($1 src, memory$5 mem) %{dnl
 access(src,$2,$3,$4,$5)')dnl
 define(STORE0,`
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_$2`'0(memory mem) %{
+  enc_class aarch64_enc_$2`'0(memory$4 mem) %{
     choose(masm,zr,$2,$mem->opcode(),
         as_$3Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$4)')dnl
 STORE(iRegI,strb,,,1)
@@ -82,7 +82,7 @@ STORE(vRegD,strd,Float,,8)
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strb0_ordered(memory mem) %{
+  enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
       __ membar(Assembler::StoreStore);
       loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);

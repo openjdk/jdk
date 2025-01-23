@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,11 @@ import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -119,10 +119,6 @@ public class ClassReader {
      */
     boolean allowRecords;
 
-   /** Lint option: warn about classfile issues
-     */
-    boolean lintClassfile;
-
     /** Switch: warn (instead of error) on illegal UTF-8
      */
     boolean warnOnIllegalUtf8;
@@ -142,6 +138,9 @@ public class ClassReader {
 
     /** The symbol table. */
     Symtab syms;
+
+    /** The root Lint config. */
+    Lint lint;
 
     Types types;
 
@@ -198,6 +197,9 @@ public class ClassReader {
     int majorVersion;
     /** The minor version number of the class file being read. */
     int minorVersion;
+
+    /** true if the class file being read is a preview class file. */
+    boolean previewClassFile;
 
     /** UTF-8 validation level */
     Convert.Validation utf8validation;
@@ -301,7 +303,7 @@ public class ClassReader {
 
         typevars = WriteableScope.create(syms.noSymbol);
 
-        lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
+        lint = Lint.instance(context);
 
         initAttributeReaders();
     }
@@ -849,11 +851,11 @@ public class ClassReader {
                 if (majorVersion > version.major || (majorVersion == version.major && minorVersion >= version.minor))
                     return true;
 
-                if (lintClassfile && !warnedAttrs.contains(name)) {
+                if (!warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
-                                    Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
+                        lint.logIfEnabled(log,
+                                    LintWarnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
                     }
@@ -1200,7 +1202,9 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE)) {
+                                if (flags.contains(RequiresFlag.TRANSITIVE) &&
+                                    (majorVersion != Version.MAX().major || !previewClassFile) &&
+                                    !preview.participatesInPreview(syms, msym)) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
                                 }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {
@@ -1604,9 +1608,7 @@ public class ClassReader {
         } else if (parameterAnnotations.length != numParameters) {
             //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
             //provide annotations for a different number of parameters, ignore:
-            if (lintClassfile) {
-                log.warning(LintCategory.CLASSFILE, Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
-            }
+            lint.logIfEnabled(log, LintWarnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
             for (int pnum = 0; pnum < numParameters; pnum++) {
                 readAnnotations();
             }
@@ -2071,14 +2073,12 @@ public class ClassReader {
             // The method wasn't found: emit a warning and recover
             JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
             try {
-                if (lintClassfile) {
-                    if (failure == null) {
-                        log.warning(Warnings.AnnotationMethodNotFound(container, name));
-                    } else {
-                        log.warning(Warnings.AnnotationMethodNotFoundReason(container,
+                if (failure == null) {
+                    lint.logIfEnabled(log, LintWarnings.AnnotationMethodNotFound(container, name));
+                } else {
+                    lint.logIfEnabled(log, LintWarnings.AnnotationMethodNotFoundReason(container,
                                                                             name,
                                                                             failure.getDetailValue()));//diagnostic, if present
-                    }
                 }
             } finally {
                 log.useSource(prevSource);
@@ -2192,7 +2192,7 @@ public class ClassReader {
 
         Type resolvePossibleProxyType(Type t) {
             if (t instanceof ProxyType proxyType) {
-                Assert.check(requestingOwner.owner.kind == MDL);
+                Assert.check(requestingOwner.owner instanceof ModuleSymbol);
                 ModuleSymbol prevCurrentModule = currentModule;
                 currentModule = (ModuleSymbol) requestingOwner.owner;
                 try {
@@ -2352,6 +2352,12 @@ public class ClassReader {
             this.attributes = attributes;
         }
 
+        /**
+         * A supertype_index value of 65535 specifies that the annotation appears on the superclass
+         * in an extends clause of a class declaration, see JVMS 4.7.20.1
+         */
+        public static final int SUPERCLASS_INDEX = 65535;
+
         @Override
         public Void visitClassSymbol(Symbol.ClassSymbol s, Void unused) {
             ClassType t = (ClassType) s.type;
@@ -2361,7 +2367,7 @@ public class ClassReader {
                 interfaces.add(addTypeAnnotations(itf, classExtends(i++)));
             }
             t.interfaces_field = interfaces.toList();
-            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
+            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(SUPERCLASS_INDEX));
             if (t.typarams_field != null) {
                 t.typarams_field =
                         rewriteTypeParameters(
@@ -2948,9 +2954,7 @@ public class ClassReader {
 
     private void dropParameterAnnotations() {
         parameterAnnotations = null;
-        if (lintClassfile) {
-            log.warning(LintCategory.CLASSFILE, Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
-        }
+        lint.logIfEnabled(log, LintWarnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
     }
     /**
      * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.
@@ -3179,7 +3183,7 @@ public class ClassReader {
         majorVersion = nextChar();
         int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
-        boolean previewClassFile =
+        previewClassFile =
                 minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <

@@ -57,11 +57,10 @@ import static java.lang.constant.ConstantDescs.INIT_NAME;
  * @key jfr
  * @summary Verifies that corresponding JFR events are emitted in case of inlining.
  * @requires vm.hasJFR
- *
+ * @requires vm.compMode == "Xmixed"
  * @requires vm.opt.Inline == true | vm.opt.Inline == null
  * @library /test/lib
  * @modules jdk.jfr
- * @enablePreview
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

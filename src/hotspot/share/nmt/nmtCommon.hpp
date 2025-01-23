@@ -28,7 +28,7 @@
 #define SHARE_NMT_NMTCOMMON_HPP
 
 #include "memory/allStatic.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -75,37 +75,37 @@ const int NMT_TrackingStackDepth = 4;
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
  public:
-  // Check if index is a valid MEMFLAGS enum value (including mtNone)
-  static inline bool flag_index_is_valid(int index) {
-    return index >= 0 && index < mt_number_of_types;
+  // Check if index is a valid MemTag enum value (including mtNone)
+  static inline bool tag_index_is_valid(int index) {
+    return index >= 0 && index < mt_number_of_tags;
   }
 
-  // Check if flag value is a valid MEMFLAGS enum value (including mtNone)
-  static inline bool flag_is_valid(MEMFLAGS flag) {
-    const int index = static_cast<int>(flag);
-    return flag_index_is_valid(index);
+  // Check if tag value is a valid MemTag enum value (including mtNone)
+  static inline bool tag_is_valid(MemTag mem_tag) {
+    const int index = static_cast<int>(mem_tag);
+    return tag_index_is_valid(index);
   }
 
-  // Map memory type to index
-  static inline int flag_to_index(MEMFLAGS flag) {
-    assert(flag_is_valid(flag), "Invalid flag (%u)", (unsigned)flag);
-    return static_cast<int>(flag);
+  // Map memory tag to index
+  static inline int tag_to_index(MemTag mem_tag) {
+    assert(tag_is_valid(mem_tag), "Invalid type (%u)", (unsigned)mem_tag);
+    return static_cast<int>(mem_tag);
   }
 
-  // Map memory type to human readable name
-  static const char* flag_to_name(MEMFLAGS flag) {
-    return _strings[flag_to_index(flag)].human_readable;
+  // Map memory tag to human readable name
+  static const char* tag_to_name(MemTag mem_tag) {
+    return _strings[tag_to_index(mem_tag)].human_readable;
   }
 
-  // Map memory type to literalized enum name (e.g. "mtTest")
-  static const char* flag_to_enum_name(MEMFLAGS flag) {
-    return _strings[flag_to_index(flag)].enum_s;
+  // Map memory tag to literalized enum name (e.g. "mtTest")
+  static const char* tag_to_enum_name(MemTag mem_tag) {
+    return _strings[tag_to_index(mem_tag)].enum_s;
   }
 
-  // Map an index to memory type
-  static MEMFLAGS index_to_flag(int index) {
-    assert(flag_index_is_valid(index), "Invalid flag index (%d)", index);
-    return static_cast<MEMFLAGS>(index);
+  // Map an index to memory tag
+  static MemTag index_to_tag(int index) {
+    assert(tag_index_is_valid(index), "Invalid type index (%d)", index);
+    return static_cast<MemTag>(index);
   }
 
   // Memory size scale
@@ -121,10 +121,10 @@ class NMTUtil : AllStatic {
   // string is not a valid level.
   static NMT_TrackingLevel parse_tracking_level(const char* s);
 
-  // Given a string, return associated flag. mtNone if name is invalid.
+  // Given a string, return associated mem_tag. mtNone if name is invalid.
   // String can be either the human readable name or the
   // stringified enum (with or without leading "mt". In all cases, case is ignored.
-  static MEMFLAGS string_to_flag(const char* name);
+  static MemTag string_to_mem_tag(const char* name);
 
   // Returns textual representation of a tracking level.
   static const char* tracking_level_to_string(NMT_TrackingLevel level);
@@ -134,7 +134,7 @@ class NMTUtil : AllStatic {
     const char* enum_s; // e.g. "mtNMT"
     const char* human_readable; // e.g. "Native Memory Tracking"
   };
-  static S _strings[mt_number_of_types];
+  static S _strings[mt_number_of_tags];
 };
 
 

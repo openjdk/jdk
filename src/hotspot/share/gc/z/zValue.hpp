@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ private:
   static uintptr_t _end;
 
 public:
-  static const size_t offset = 4 * K;
+  static const size_t Offset = 4 * K;
 
   static uintptr_t alloc(size_t size);
 };

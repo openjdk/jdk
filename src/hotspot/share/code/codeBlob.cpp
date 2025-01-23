@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/relocInfo.hpp"
@@ -41,7 +40,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaFrameAnchor.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -623,7 +622,7 @@ UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receive
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 
-  trace_new_stub(blob, "UpcallStub");
+  trace_new_stub(blob, "UpcallStub - ", name);
 
   return blob;
 }
@@ -772,6 +771,10 @@ void UpcallStub::verify() {
 void UpcallStub::print_on(outputStream* st) const {
   RuntimeBlob::print_on(st);
   print_value_on(st);
+  st->print_cr("Frame data offset: %d", (int) _frame_data_offset);
+  oop recv = JNIHandles::resolve(_receiver);
+  st->print("Receiver MH=");
+  recv->print_on(st);
   Disassembler::decode((RuntimeBlob*)this, st);
 }
 

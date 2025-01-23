@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileBroker.hpp"
@@ -343,6 +342,7 @@ narrowKlass CodeInstaller::record_narrow_metadata_reference(CodeSection* section
   int index = _oop_recorder->find_index(klass);
   section->relocate(dest, metadata_Relocation::spec(index));
   JVMCI_event_3("narrowKlass[%d of %d] = %s", index, _oop_recorder->metadata_count(), klass->name()->as_C_string());
+  guarantee(CompressedKlassPointers::is_encodable(klass), "klass cannot be compressed: %s", klass->external_name());
   return CompressedKlassPointers::encode(klass);
 }
 #endif

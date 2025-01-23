@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
@@ -92,7 +91,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Roop, Rmark, Rscratch, slow_int);
+    lightweight_lock(Rbox, Roop, Rmark, Rscratch, slow_int);
   } else if (LockingMode == LM_LEGACY) {
     // ... and mark it unlocked.
     ori(Rmark, Rmark, markWord::unlocked_value);
@@ -114,6 +113,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
              /*check without membar and ldarx first*/true);
     // If compare/exchange succeeded we found an unlocked object and we now have locked it
     // hence we are done.
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
   b(done);
 
@@ -131,7 +132,9 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   }
 
   bind(done);
-  inc_held_monitor_count(Rmark /*tmp*/);
+  if (LockingMode == LM_LEGACY) {
+    inc_held_monitor_count(Rmark /*tmp*/);
+  }
 }
 
 
@@ -168,6 +171,8 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
              MacroAssembler::cmpxchgx_hint_release_lock(),
              noreg,
              &slow_int);
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
   b(done);
   bind(slow_int);
@@ -175,7 +180,9 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
 
   // Done
   bind(done);
-  dec_held_monitor_count(Rmark /*tmp*/);
+  if (LockingMode == LM_LEGACY) {
+    dec_held_monitor_count(Rmark /*tmp*/);
+  }
 }
 
 
@@ -197,12 +204,19 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register t1, Register t2) {
   assert_different_registers(obj, klass, len, t1, t2);
-  load_const_optimized(t1, (intx)markWord::prototype().value());
-  std(t1, oopDesc::mark_offset_in_bytes(), obj);
-  store_klass(obj, klass);
+
+  if (UseCompactObjectHeaders) {
+    ld(t1, in_bytes(Klass::prototype_header_offset()), klass);
+    std(t1, oopDesc::mark_offset_in_bytes(), obj);
+  } else {
+    load_const_optimized(t1, (intx)markWord::prototype().value());
+    std(t1, oopDesc::mark_offset_in_bytes(), obj);
+    store_klass(obj, klass);
+  }
+
   if (len->is_valid()) {
     stw(len, arrayOopDesc::length_offset_in_bytes(), obj);
-  } else if (UseCompressedClassPointers) {
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     // Otherwise length is in the class gap.
     store_klass_gap(obj);
   }
@@ -293,7 +307,7 @@ void C1_MacroAssembler::initialize_object(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
 //    assert(obj == O0, "must be");
-//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)),
+//    call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
 //         relocInfo::runtime_call_type);
   }
 
@@ -369,7 +383,7 @@ void C1_MacroAssembler::allocate_array(
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
     //assert(obj == O0, "must be");
-    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)),
+    //call(CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)),
     //     relocInfo::runtime_call_type);
   }
 
@@ -398,7 +412,7 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
   if (TrapBasedNullChecks) { // SIGTRAP based
     trap_null_check(r);
   } else { // explicit
-    //const address exception_entry = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
+    //const address exception_entry = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
     assert(Lnull != nullptr, "must have Label for explicit check");
     cmpdi(CCR0, r, 0);
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::equal), *Lnull);

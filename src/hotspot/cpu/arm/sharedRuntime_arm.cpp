@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
@@ -38,6 +37,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -1355,6 +1355,11 @@ uint SharedRuntime::in_preserve_stack_slots() {
 
 uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
+}
+
+VMReg SharedRuntime::thread_register() {
+  Unimplemented();
+  return nullptr;
 }
 
 //------------------------------generate_deopt_blob----------------------------

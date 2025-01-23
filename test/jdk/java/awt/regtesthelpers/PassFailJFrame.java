@@ -24,6 +24,7 @@
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -44,6 +45,7 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -69,24 +71,88 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
+import javax.swing.border.Border;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 import static java.util.Collections.unmodifiableList;
+import static javax.swing.BorderFactory.createEmptyBorder;
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
 /**
- * Provides a framework for manual tests to display test instructions and
- * Pass/Fail buttons.
+ * A framework for manual tests to display test instructions and
+ * <i>Pass</i> / <i>Fail</i> buttons. The framework automatically
+ * creates a frame to display the instructions, provides buttons
+ * to select the test result, and handles test timeout.
+ *
+ * <p id="timeOutTimer">
+ * The instruction UI frame displays a timer at the top which indicates
+ * how much time is left. The timer can be paused using the <i>Pause</i>
+ * button to the right of the time; the title of the button changes to
+ * <i>Resume</i>. To resume the timer, use the <i>Resume</i> button.
+ *
+ * <p id="instructionText">
+ * In the center, the instruction UI frame displays instructions for the
+ * tester. The instructions can be either plain text or HTML. If the
+ * text of the instructions starts with {@code "<html>"}, the
+ * instructions are displayed as HTML, as supported by Swing, which
+ * provides richer formatting options.
  * <p>
- * Instructions for the user can be either plain text or HTML as supported
- * by Swing. If the instructions start with {@code <html>}, the
- * instructions are displayed as HTML.
+ * The instructions are displayed in a text component with word-wrapping
+ * so that there's no horizontal scroll bar. If the text doesn't fit, a
+ * vertical scroll bar is shown. Use {@code rows} and {@code columns}
+ * parameters to change the size of this text component.
+ * If possible, choose the number of rows and columns so that
+ * the instructions fit and no scroll bars are shown.
+ *
+ * <p id="passFailButtons">
+ * At the bottom, the instruction UI frame displays the
+ * <i>Pass</i> and <i>Fail</i> buttons. The tester clicks either <i>Pass</i>
+ * or <i>Fail</i> button to finish the test. When the tester clicks the
+ * <i>Fail</i> button, the framework displays a dialog box prompting for
+ * a reason why the test fails. The tester enters the reason and clicks
+ * <i>OK</i> to close the dialog and fail the test,
+ * or simply closes the dialog to fail the test without providing any reason.
+ *
+ * <p id="screenCapture">
+ * If you enable the screenshot feature, a <i>Screenshot</i> button is
+ * added  to the right of the <i>Fail</i> button. The tester can choose either
+ * <i>Capture Full Screen</i> (default) or <i>Capture Frames</i> and click the
+ * <i>Screenshot</i> button to take a screenshot.
+ * If there are multiple screens, screenshots of each screen are created.
+ * If the tester selects the <i>Capture Frames</i> mode, screenshots of all
+ * the windows or frames registered in the {@code PassFailJFrame} framework
+ * are created.
+ *
+ * <p id="logArea">
+ * If you enable a log area, the instruction UI frame adds a text component
+ * to display log messages below the buttons.
+ * Use {@link #log(String) log}, {@link #logSet(String) logSet}
+ * and {@link #logClear() logClear} static methods of {@code PassFailJFrame}
+ * to add or clear messages from the log area.
+ *
+ * <p id="awaitTestResult">
+ * After you create an instance of {@code PassFailJFrame}, call the
+ * {@link #awaitAndCheck() awaitAndCheck} method to stop the current thread
+ * (usually the main thread) and wait until the tester clicks
+ * either <i>Pass</i> or <i>Fail</i> button,
+ * or until the test times out.
  * <p>
+ * The call to the {@code awaitAndCheck} method is usually the last
+ * statement in the {@code main} method of your test.
+ * If the test fails, an exception is thrown to signal the failure to jtreg.
+ * The test fails if the tester clicks the <i>Fail</i> button,
+ * if the timeout occurs,
+ * or if any window or frame is closed.
+ * <p>
+ * Before returning from {@code awaitAndCheck}, the framework disposes of
+ * all the windows and frames.
+ *
+ * <h2 id="sampleManualTest">Sample Manual Test</h2>
  * A simple test would look like this:
- * <pre>{@code
+ * {@snippet id='sampleManualTestCode' lang='java':
  * public class SampleManualTest {
  *     private static final String INSTRUCTIONS =
  *             "Click Pass, or click Fail if the test failed.";
@@ -94,7 +160,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *     public static void main(String[] args) throws Exception {
  *         PassFailJFrame.builder()
  *                       .instructions(INSTRUCTIONS)
- *                       .testUI(() -> createTestUI())
+ *                       .testUI(SampleManualTest::createTestUI)
  *                       .build()
  *                       .awaitAndCheck();
  *     }
@@ -105,39 +171,89 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *         return testUI;
  *     }
  * }
- * }</pre>
+ * }
  * <p>
- * The above example uses the {@link Builder Builder} to set the parameters of
- * the instruction frame. It is the recommended way.
+ * The above example uses the {@link Builder Builder} class to set
+ * the parameters of the instruction frame.
+ * It is <em>the recommended way</em>.
+ *
  * <p>
- * The framework will create instruction UI, it will call
- * the provided {@code createTestUI} on the Event Dispatch Thread (EDT),
- * and it will automatically position the test UI and make it visible.
+ * The framework will create an instruction UI frame, it will call
+ * the provided {@code createTestUI} on the Event Dispatch Thread (<dfn>EDT</dfn>),
+ * and it will automatically position the test UI frame and make it visible.
+ *
+ * <p id="jtregTagsForTest">
+ * Add the following jtreg tags before the test class declaration
+ * <pre><code>
+ * /*
+ *  * &#64;test
+ *  * @summary Sample manual test
+ *  * @library /java/awt/regtesthelpers
+ *  * @build PassFailJFrame
+ *  * @run main/manual SampleManualTest
+ *  *&#47;
+ * </code></pre>
  * <p>
+ * The {@code @library} tag points to the location of the
+ * {@code PassFailJFrame} class in the source code;
+ * the {@code @build} tag makes jtreg compile the {@code PassFailJFrame} class,
+ * and finally the {@code @run} tag specifies it is a manual
+ * test and the class to run.
+ * <p>
+ * Don't forget to update the name of the class to run in the {@code @run} tag.
+ *
+ * <h2 id="usingBuilder">Using {@code Builder}</h2>
+ * Use methods of the {@link Builder Builder} class to set or change
+ * parameters of {@code PassFailJFrame} and its instruction UI:
+ * <ul>
+ *     <li>{@link Builder#title(String) title} sets
+ *         the title of the instruction UI
+ *         (the default is {@value #TITLE});</li>
+ *     <li>{@link Builder#testTimeOut(long) testTimeOut} sets
+ *         the timeout of the test
+ *         (the default is {@value #TEST_TIMEOUT});</li>
+ *     <li>{@link Builder#rows(int) rows} and
+ *         {@link Builder#columns(int) columns} control the size
+ *         the text component which displays the instructions
+ *         (the default number of rows is the number of lines in the text
+ *         of the instructions,
+ *         the default number of columns is {@value #COLUMNS});</li>
+ *     <li>{@link Builder#logArea() logArea} adds a log area;</li>
+ *     <li>{@link Builder#screenCapture() screenCapture}
+ *         enables screenshots.</li>
+ * </ul>
+ *
+ * <h3 id="builderTestUI">Using {@code testUI} and {@code splitUI}</h3>
  * The {@code Builder.testUI} methods accept interfaces which create one window
  * or a list of windows if the test needs multiple windows,
  * or directly a single window, an array of windows or a list of windows.
  * <p>
- * For simple test UI, use {@code Builder.splitUI}, or explicitly
- * {@code Builder.splitUIRight} or {@code Builder.splitUIBottom} with
- * a {@code PanelCreator}. The framework will call the provided
- * {@code createUIPanel} to create the component with test UI and
+ * For simple test UI, use {@link Builder#splitUI(PanelCreator) splitUI},
+ * or explicitly
+ * {@link Builder#splitUIRight(PanelCreator) splitUIRight} or
+ * {@link Builder#splitUIBottom(PanelCreator) splitUIBottom} with
+ * a {@link PanelCreator PanelCreator}.
+ * The framework will call the provided
+ * {@code createUIPanel} method to create the component with test UI and
  * will place it as the right or bottom component in a split pane
  * along with instruction UI.
  * <p>
+ * Note: <em>support for multiple windows is incomplete</em>.
+ *
+ * <h2 id="obsoleteSampleTest">Obsolete Sample Test</h2>
  * Alternatively, use one of the {@code PassFailJFrame} constructors to
  * create an object, then create secondary test UI, register it
  * with {@code PassFailJFrame}, position it and make it visible.
  * The following sample demonstrates it:
- * <pre>{@code
- * public class SampleOldManualTest {
+ * {@snippet id='obsoleteSampleTestCode' lang='java':
+ * public class ObsoleteManualTest {
  *     private static final String INSTRUCTIONS =
  *             "Click Pass, or click Fail if the test failed.";
  *
  *     public static void main(String[] args) throws Exception {
  *         PassFailJFrame passFail = new PassFailJFrame(INSTRUCTIONS);
  *
- *         SwingUtilities.invokeAndWait(() -> createTestUI());
+ *         SwingUtilities.invokeAndWait(ObsoleteManualTest::createTestUI);
  *
  *         passFail.awaitAndCheck();
  *     }
@@ -150,31 +266,54 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *         testUI.setVisible(true);
  *     }
  * }
- * }</pre>
+ * }
  * <p>
- * Use methods of the {@code Builder} class or constructors of the
- * {@code PassFailJFrame} class to control other parameters:
- * <ul>
- *     <li>the title of the instruction UI,</li>
- *     <li>the timeout of the test,</li>
- *     <li>the size of the instruction UI via rows and columns, and</li>
- *     <li>to add a log area</li>,
- *     <li>to enable screenshots.</li>
- * </ul>
+ * This sample uses {@link #PassFailJFrame(String) a constructor} of
+ * {@code PassFailJFrame} to create its instance,
+ * there are several overloads provided which allow changing other parameters.
+ * <p>
+ * When you use the constructors, you have to explicitly create
+ * your test UI window on EDT. After you create the window,
+ * you need to register it with the framework using
+ * {@link #addTestWindow(Window) addTestWindow}
+ * to ensure the window is disposed of when the test completes.
+ * Before showing the window, you have to call
+ * {@link #positionTestWindow(Window, Position) positionTestWindow}
+ * to position the test window near the instruction UI frame provided
+ * by the framework. And finally you have to explicitly show the test UI
+ * window by calling {@code setVisible(true)}.
+ * <p>
+ * To avoid the complexity, use the {@link Builder Builder} class
+ * which provides a streamlined way to configure and create an
+ * instance of {@code PassFailJFrame}.
+ * <p>
+ * Consider updating tests which use {@code PassFailJFrame} constructors to
+ * use the builder pattern.
  */
 public final class PassFailJFrame {
 
-    private static final String TITLE = "Test Instruction Frame";
+    /** A default title for the instruction frame. */
+    private static final String TITLE = "Test Instructions";
+
+    /** A default test timeout. */
     private static final long TEST_TIMEOUT = 5;
+
+    /** A default number of rows for displaying the test instructions. */
     private static final int ROWS = 10;
+    /** A default number of columns for displaying the test instructions. */
     private static final int COLUMNS = 40;
+
+    /**
+     * A gap between windows.
+     */
+    public static final int WINDOW_GAP = 8;
 
     /**
      * Prefix for the user-provided failure reason.
      */
     private static final String FAILURE_REASON = "Failure Reason:\n";
     /**
-     * The failure reason message when the user didn't provide one.
+     * The failure reason message when the user doesn't provide one.
      */
     private static final String EMPTY_REASON = "(no reason provided)";
 
@@ -212,90 +351,172 @@ public final class PassFailJFrame {
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
-    public PassFailJFrame(String instructions) throws InterruptedException,
-            InvocationTargetException {
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons with the given instructions, and
+     * the default timeout of {@value #TEST_TIMEOUT} minutes,
+     * the default title of {@value #TITLE} and
+     * the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param instructions the instructions for the tester
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
+    public PassFailJFrame(String instructions)
+            throws InterruptedException, InvocationTargetException {
         this(instructions, TEST_TIMEOUT);
     }
 
-    public PassFailJFrame(String instructions, long testTimeOut) throws
-            InterruptedException, InvocationTargetException {
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given instructions and timeout as well as
+     * the default title of {@value #TITLE}
+     * and the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
+    public PassFailJFrame(String instructions, long testTimeOut)
+            throws InterruptedException, InvocationTargetException {
         this(TITLE, instructions, testTimeOut);
     }
 
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given title, instructions and timeout as well as
+     * the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * The screenshot feature is not enabled, if you use this constructor.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param title        the title of the instruction frame
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
     public PassFailJFrame(String title, String instructions,
-                          long testTimeOut) throws InterruptedException,
-            InvocationTargetException {
+                          long testTimeOut)
+            throws InterruptedException, InvocationTargetException {
         this(title, instructions, testTimeOut, ROWS, COLUMNS);
     }
 
     /**
-     * Constructs a JFrame with a given title & serves as test instructional
-     * frame where the user follows the specified test instruction in order
-     * to test the test case & mark the test pass or fail. If the expected
-     * result is seen then the user click on the 'Pass' button else click
-     * on the 'Fail' button and the reason for the failure should be
-     * specified in the JDialog JTextArea.
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given title, instructions, timeout, number of rows and columns.
+     * The screenshot feature is not enabled, if you use this constructor.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
      *
-     * @param title        title of the Frame.
-     * @param instructions the instruction for the tester on how to test
-     *                     and what is expected (pass) and what is not
-     *                     expected (fail).
-     * @param testTimeOut  test timeout where time is specified in minutes.
-     * @param rows         number of visible rows of the JTextArea where the
-     *                     instruction is show.
-     * @param columns      Number of columns of the instructional
-     *                     JTextArea
-     * @throws InterruptedException      exception thrown when thread is
-     *                                   interrupted
+     * @param title        the title of the instruction frame
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     * @param rows         the number of rows for the text component
+     *                     which displays test instructions
+     * @param columns      the number of columns for the text component
+     *                     which displays test instructions
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
      * @throws InvocationTargetException if an exception is thrown while
-     *                                   creating the test instruction frame on
-     *                                   EDT
+     *              creating UI components on EDT
      */
-    public PassFailJFrame(String title, String instructions, long testTimeOut,
-                          int rows, int columns) throws InterruptedException,
-            InvocationTargetException {
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut,
+                          int rows, int columns)
+            throws InterruptedException, InvocationTargetException {
         this(title, instructions, testTimeOut, rows, columns, false);
     }
 
     /**
-     * Constructs a JFrame with a given title & serves as test instructional
-     * frame where the user follows the specified test instruction in order
-     * to test the test case & mark the test pass or fail. If the expected
-     * result is seen then the user click on the 'Pass' button else click
-     * on the 'Fail' button and the reason for the failure should be
-     * specified in the JDialog JTextArea.
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * as well as supporting UI components with the given title, instructions,
+     * timeout, number of rows and columns,
+     * and screen capture functionality.
+     * All the UI components are created on the EDT, so it is safe to call
+     * the constructor on the main thread.
      * <p>
-     * The test instruction frame also provides a way for the tester to take
-     * a screenshot (full screen or individual frame) if this feature
-     * is enabled by passing {@code true} as {@code  enableScreenCapture}
-     * parameter.
+     * After you create a test UI window, register the window using
+     * {@link #addTestWindow(Window) addTestWindow} for disposal, and
+     * position it close to the instruction frame using
+     * {@link #positionTestWindow(Window, Position) positionTestWindow}.
+     * As the last step, make your test UI window visible.
+     * <p>
+     * Call the {@link #awaitAndCheck() awaitAndCheck} method on the instance
+     * of {@code PassFailJFrame} when you set up the testing environment.
+     * <p>
+     * If the tester clicks the <i>Fail</i> button, a dialog prompting for
+     * a description of the problem is displayed, and then an exception
+     * is thrown which fails the test.
+     * If the tester clicks the <i>Pass</i> button, the test completes
+     * successfully.
+     * If the timeout occurs or the instruction frame is closed,
+     * the test fails.
+     * <p>
+     * The {@code rows} and {@code columns} parameters control
+     * the size of a text component which displays the instructions.
+     * The preferred size of the instructions is calculated by
+     * creating {@code new JTextArea(rows, columns)}.
+     * <p>
+     * If you enable screenshots by setting the {@code screenCapture}
+     * parameter to {@code true}, a <i>Screenshot</i> button is added.
+     * Clicking the <i>Screenshot</i> button takes screenshots of
+     * all the monitors or all the windows registered with
+     * {@code PassFailJFrame}.
      *
-     * @param title        title of the Frame.
-     * @param instructions the instruction for the tester on how to test
-     *                     and what is expected (pass) and what is not
-     *                     expected (fail).
-     * @param testTimeOut  test timeout where time is specified in minutes.
-     * @param rows         number of visible rows of the JTextArea where the
-     *                     instruction is show.
-     * @param columns      Number of columns of the instructional
-     *                     JTextArea
-     * @param enableScreenCapture if set to true, 'Capture Screen' button & its
-     *                            associated UIs are added to test instruction
-     *                            frame
-     * @throws InterruptedException      exception thrown when thread is
-     *                                   interrupted
+     * @param title        the title of the instruction frame
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     * @param rows         the number of rows for the text component
+     *                     which displays test instructions
+     * @param columns      the number of columns for the text component
+     *                     which displays test instructions
+     * @param screenCapture if set to {@code true}, enables screen capture
+     *                      functionality
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
      * @throws InvocationTargetException if an exception is thrown while
-     *                                   creating the test instruction frame on
-     *                                   EDT
+     *              creating UI components on EDT
+     *
+     * @see JTextArea#JTextArea(int,int) JTextArea(int rows, int columns)
+     * @see Builder Builder
      */
-    public PassFailJFrame(String title, String instructions, long testTimeOut,
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut,
                           int rows, int columns,
-                          boolean enableScreenCapture)
+                          boolean screenCapture)
             throws InterruptedException, InvocationTargetException {
         invokeOnEDT(() -> createUI(title, instructions,
                                    testTimeOut,
                                    rows, columns,
-                                   enableScreenCapture));
+                                   screenCapture));
     }
 
     /**
@@ -348,11 +569,9 @@ public final class PassFailJFrame {
                         builder.positionWindows
                                .positionTestWindows(unmodifiableList(builder.testWindows),
                                                     builder.instructionUIHandler));
-            } else if (builder.testWindows.size() == 1) {
+            } else {
                 Window window = builder.testWindows.get(0);
                 positionTestWindow(window, builder.position);
-            } else {
-                positionTestWindow(null, builder.position);
             }
         }
         showAllWindows();
@@ -447,6 +666,8 @@ public final class PassFailJFrame {
                                                        boolean addLogArea,
                                                        int logAreaRows) {
         JPanel main = new JPanel(new BorderLayout());
+        main.setBorder(createFrameBorder());
+
         timeoutHandlerPanel = new TimeoutHandlerPanel(testTimeOut);
         main.add(timeoutHandlerPanel, BorderLayout.NORTH);
 
@@ -455,7 +676,11 @@ public final class PassFailJFrame {
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
 
-        main.add(new JScrollPane(text), BorderLayout.CENTER);
+        JPanel textPanel = new JPanel(new BorderLayout());
+        textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
+        textPanel.add(new JScrollPane(text), BorderLayout.CENTER);
+
+        main.add(textPanel, BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
@@ -469,7 +694,8 @@ public final class PassFailJFrame {
             timeoutHandlerPanel.stop();
         });
 
-        JPanel buttonsPanel = new JPanel();
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
+                                                        GAP, 0));
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
@@ -480,10 +706,12 @@ public final class PassFailJFrame {
         if (addLogArea) {
             logArea = new JTextArea(logAreaRows, columns);
             logArea.setEditable(false);
+            logArea.setBorder(createTextBorder());
 
             Box buttonsLogPanel = Box.createVerticalBox();
 
             buttonsLogPanel.add(buttonsPanel);
+            buttonsLogPanel.add(Box.createVerticalStrut(GAP));
             buttonsLogPanel.add(new JScrollPane(logArea));
 
             main.add(buttonsLogPanel, BorderLayout.SOUTH);
@@ -501,6 +729,7 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
+        text.setBorder(createTextBorder());
         return text;
     }
 
@@ -520,6 +749,29 @@ public final class PassFailJFrame {
         styles.addRule("code { font-size: inherit }");
 
         return text;
+    }
+
+    /** A default gap between components. */
+    private static final int GAP = 4;
+
+    /**
+     * Creates a default border for frames or dialogs.
+     * It uses the default gap of {@value GAP}.
+     *
+     * @return the border for frames and dialogs
+     */
+    private static Border createFrameBorder() {
+        return createEmptyBorder(GAP, GAP, GAP, GAP);
+    }
+
+    /**
+     * Creates a border set to text area.
+     * It uses the default gap of {@value GAP}.
+     *
+     * @return the border for text area
+     */
+    private static Border createTextBorder() {
+        return createEmptyBorder(GAP, GAP, GAP, GAP);
     }
 
 
@@ -587,7 +839,7 @@ public final class PassFailJFrame {
          * @param testWindows the list of test windows
          * @param instructionUI information about the instruction frame
          */
-        void positionTestWindows(List<? extends Window> testWindows,
+        void positionTestWindows(List<Window> testWindows,
                                  InstructionUI instructionUI);
     }
 
@@ -735,7 +987,7 @@ public final class PassFailJFrame {
     private static JComponent createCapturePanel() {
         JComboBox<CaptureType> screenShortType = new JComboBox<>(CaptureType.values());
 
-        JButton capture = new JButton("ScreenShot");
+        JButton capture = new JButton("Screenshot");
         capture.addActionListener((e) ->
                 captureScreen((CaptureType) screenShortType.getSelectedItem()));
 
@@ -747,7 +999,7 @@ public final class PassFailJFrame {
 
     private enum CaptureType {
         FULL_SCREEN("Capture Full Screen"),
-        WINDOWS("Capture Individual Frame");
+        WINDOWS("Capture Frames");
 
         private final String type;
         CaptureType(String type) {
@@ -873,26 +1125,30 @@ public final class PassFailJFrame {
      * Requests the description of the test failure reason from the tester.
      */
     private static void requestFailureReason() {
-        final JDialog dialog = new JDialog(frame, "Test Failure ", true);
-        dialog.setTitle("Failure reason");
-        JPanel jPanel = new JPanel(new BorderLayout());
-        JTextArea jTextArea = new JTextArea(5, 20);
+        final JDialog dialog = new JDialog(frame, "Failure reason", true);
+
+        JTextArea reason = new JTextArea(5, 20);
+        reason.setBorder(createTextBorder());
 
         JButton okButton = new JButton("OK");
         okButton.addActionListener((ae) -> {
-            String text = jTextArea.getText();
+            String text = reason.getText();
             setFailureReason(FAILURE_REASON
                              + (!text.isEmpty() ? text : EMPTY_REASON));
             dialog.setVisible(false);
         });
 
-        jPanel.add(new JScrollPane(jTextArea), BorderLayout.CENTER);
-
-        JPanel okayBtnPanel = new JPanel();
+        JPanel okayBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
+                                                        GAP, 0));
+        okayBtnPanel.setBorder(createEmptyBorder(GAP, 0, 0, 0));
         okayBtnPanel.add(okButton);
 
-        jPanel.add(okayBtnPanel, BorderLayout.SOUTH);
-        dialog.add(jPanel);
+        JPanel main = new JPanel(new BorderLayout());
+        main.setBorder(createFrameBorder());
+        main.add(new JScrollPane(reason), BorderLayout.CENTER);
+        main.add(okayBtnPanel, BorderLayout.SOUTH);
+
+        dialog.add(main);
         dialog.setLocationRelativeTo(frame);
         dialog.pack();
         dialog.setVisible(true);
@@ -925,13 +1181,13 @@ public final class PassFailJFrame {
 
         switch (position) {
             case HORIZONTAL:
-                int newX = ((screenSize.width / 2) - frame.getWidth());
+                int newX = (((screenSize.width + WINDOW_GAP) / 2) - frame.getWidth());
                 frame.setLocation((newX + screenInsets.left),
                                   (frame.getY() + screenInsets.top));
                 break;
 
             case VERTICAL:
-                int newY = ((screenSize.height / 2) - frame.getHeight());
+                int newY = (((screenSize.height + WINDOW_GAP) / 2) - frame.getHeight());
                 frame.setLocation((frame.getX() + screenInsets.left),
                                   (newY + screenInsets.top));
                 break;
@@ -979,13 +1235,13 @@ public final class PassFailJFrame {
             switch (position) {
                 case HORIZONTAL:
                 case TOP_LEFT_CORNER:
-                    testWindow.setLocation((frame.getX() + frame.getWidth() + 5),
+                    testWindow.setLocation((frame.getX() + frame.getWidth() + WINDOW_GAP),
                                            frame.getY());
                     break;
 
                 case VERTICAL:
                     testWindow.setLocation(frame.getX(),
-                                           (frame.getY() + frame.getHeight() + 5));
+                                           (frame.getY() + frame.getHeight() + WINDOW_GAP));
                     break;
             }
         }
@@ -1111,9 +1367,10 @@ public final class PassFailJFrame {
 
     /**
      * Adds a {@code message} to the log area, if enabled by
-     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     * {@link Builder#logArea() logArea()} or
+     * {@link Builder#logArea(int) logArea(int)}.
      *
-     * @param message to log
+     * @param message the message to log
      */
     public static void log(String message) {
         System.out.println("PassFailJFrame: " + message);
@@ -1122,7 +1379,8 @@ public final class PassFailJFrame {
 
     /**
      * Clears the log area, if enabled by
-     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     * {@link Builder#logArea() logArea()} or
+     * {@link Builder#logArea(int) logArea(int)}.
      */
     public static void logClear() {
         System.out.println("\nPassFailJFrame: log cleared\n");
@@ -1131,7 +1389,9 @@ public final class PassFailJFrame {
 
     /**
      * Replaces the log area content with provided {@code text}, if enabled by
-     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     * {@link Builder#logArea() logArea()} or
+     * {@link Builder#logArea(int) logArea(int)}.
+     *
      * @param text new text for the log area
      */
     public static void logSet(String text) {
@@ -1182,11 +1442,45 @@ public final class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Sets the number of rows for displaying the instruction text.
+         * The default value is the number of lines in the text plus 1:
+         * {@code ((int) instructions.lines().count() + 1)}.
+         *
+         * @param rows the number of rows for instruction text
+         * @return this builder
+         */
         public Builder rows(int rows) {
             this.rows = rows;
             return this;
         }
 
+        private int getDefaultRows() {
+            return (int) instructions.lines().count() + 1;
+        }
+
+        /**
+         * Adds a certain number of rows for displaying the instruction text.
+         *
+         * @param rowsAdd the number of rows to add to the number of rows
+         * @return this builder
+         * @see #rows
+         */
+        public Builder rowsAdd(int rowsAdd) {
+            if (rows == 0) {
+                rows = getDefaultRows();
+            }
+            rows += rowsAdd;
+
+            return this;
+        }
+
+        /**
+         * Sets the number of columns for displaying the instruction text.
+         *
+         * @param columns the number of columns for instruction text
+         * @return this builder
+         */
         public Builder columns(int columns) {
             this.columns = columns;
             return this;
@@ -1249,6 +1543,101 @@ public final class PassFailJFrame {
             this.windowListCreator = () -> List.of(windowCreator.createTestUI());
             return this;
         }
+
+
+        /**
+         * Adds an implementation of {@link PositionWindows PositionWindows}
+         * which the framework will use to position multiple test UI windows.
+         *
+         * @param positionWindows an implementation of {@code PositionWindows}
+         *                        to position multiple test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if the {@code positionWindows}
+         *              parameter is {@code null}
+         * @throws IllegalStateException if the {@code positionWindows} field
+         *              is already set
+         */
+        public Builder positionTestUI(PositionWindows positionWindows) {
+            if (positionWindows == null) {
+                throw new IllegalArgumentException("positionWindows parameter can't be null");
+            }
+            if (this.positionWindows != null) {
+                throw new IllegalStateException("PositionWindows is already set");
+            }
+            this.positionWindows = positionWindows;
+            return this;
+        }
+
+        /**
+         * Positions the test UI windows in a row to the right of
+         * the instruction frame. The top of the windows is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIRightRow() {
+            return position(Position.HORIZONTAL)
+                   .positionTestUI(WindowLayouts::rightOneRow);
+        }
+
+        /**
+         * Positions the test UI windows in a column to the right of
+         * the instruction frame. The top of the first window is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIRightColumn() {
+            return position(Position.HORIZONTAL)
+                   .positionTestUI(WindowLayouts::rightOneColumn);
+        }
+
+        /**
+         * Positions the test UI windows in a column to the right of
+         * the instruction frame centering the stack of the windows.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIRightColumnCentered() {
+            return position(Position.HORIZONTAL)
+                   .positionTestUI(WindowLayouts::rightOneColumnCentered);
+        }
+
+        /**
+         * Positions the test UI windows in a row to the bottom of
+         * the instruction frame. The left of the first window is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIBottomRow() {
+            return position(Position.VERTICAL)
+                   .positionTestUI(WindowLayouts::bottomOneRow);
+        }
+
+        /**
+         * Positions the test UI windows in a row to the bottom of
+         * the instruction frame centering the row of the windows.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIBottomRowCentered() {
+            return position(Position.VERTICAL)
+                   .positionTestUI(WindowLayouts::bottomOneRowCentered);
+        }
+
+        /**
+         * Positions the test UI windows in a column to the bottom of
+         * the instruction frame. The left of the first window is aligned to
+         * that of the instruction frame.
+         *
+         * @return this builder
+         */
+        public Builder positionTestUIBottomColumn() {
+            return position(Position.VERTICAL)
+                   .positionTestUI(WindowLayouts::bottomOneColumn);
+        }
+
 
         /**
          * Adds a {@code WindowListCreator} which the framework will use
@@ -1352,6 +1741,7 @@ public final class PassFailJFrame {
             return this;
         }
 
+
         /**
          * Adds a {@code PanelCreator} which the framework will use
          * to create a component with test UI and display it in a split pane.
@@ -1443,9 +1833,41 @@ public final class PassFailJFrame {
             return new PassFailJFrame(this);
         }
 
+        /**
+         * Returns the file name of the test, if the {@code test.file} property
+         * is defined, concatenated with {@code " - "} which serves as a prefix
+         * to the default instruction frame title;
+         * or an empty string if the {@code test.file} property is not defined.
+         *
+         * @return the prefix to the default title:
+         *         either the file name of the test or an empty string
+         *
+         * @see <a href="https://openjdk.org/jtreg/tag-spec.html#testvars">jtreg
+         * test-specific system properties and environment variables</a>
+         */
+        private static String getTestFileNamePrefix() {
+            String testFile = System.getProperty("test.file");
+            if (testFile == null) {
+                return "";
+            }
+
+            return Paths.get(testFile).getFileName().toString()
+                   + " - ";
+        }
+
+        /**
+         * Validates the state of the builder and
+         * expands parameters that have no assigned values
+         * to their default values.
+         *
+         * @throws IllegalStateException if no instructions are provided,
+         *              or if {@code PositionWindows} implementation is
+         *              provided but neither window creator nor
+         *              test window list are set
+         */
         private void validate() {
             if (title == null) {
-                title = TITLE;
+                title = getTestFileNamePrefix() + TITLE;
             }
 
             if (instructions == null || instructions.isEmpty()) {
@@ -1458,7 +1880,7 @@ public final class PassFailJFrame {
             }
 
             if (rows == 0) {
-                rows = ROWS;
+                rows = getDefaultRows();
             }
 
             if (columns == 0) {

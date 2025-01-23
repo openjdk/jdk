@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE supplementalData SYSTEM '../../common/dtd/ldmlSupplemental.dtd'>
 <!--
-	Copyright © 1991-2022 Unicode, Inc.
+	Copyright © 1991-2024 Unicode, Inc.
 	For terms of use, see http://www.unicode.org/copyright.html
 	SPDX-License-Identifier: Unicode-3.0
 	CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -28,7 +28,7 @@
 			<pluralRange start="other" end="one"   result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="az de el gl gsw hu kk ky lij ml mn ne nl sc scn sq sw ta te tk tr ug uz">
+		<pluralRanges locales="az de el gl gsw hu kk ky lij ml mn ne nl sc sq sw ta te tk tr ug uz">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>
@@ -114,7 +114,7 @@
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="other" result="other"/>
 		</pluralRanges>
-		<pluralRanges locales="it">
+		<pluralRanges locales="it scn">
 			<pluralRange start="one"   end="other" result="other"/>
 			<pluralRange start="other" end="one"   result="one"/>
 			<pluralRange start="other" end="other" result="other"/>

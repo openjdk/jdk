@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/pcDesc.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -92,10 +91,10 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
                                      bool stop_at_java_call_stub)
-    : vframeStreamCommon(RegisterMap(jt,
-                                     RegisterMap::UpdateMap::skip,
-                                     RegisterMap::ProcessFrames::skip,
-                                     RegisterMap::WalkContinuation::skip)) {
+    : vframeStreamCommon(jt,
+                         RegisterMap::UpdateMap::skip,
+                         RegisterMap::ProcessFrames::skip,
+                         RegisterMap::WalkContinuation::skip) {
   _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;

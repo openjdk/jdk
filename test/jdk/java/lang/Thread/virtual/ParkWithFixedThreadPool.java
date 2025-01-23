@@ -30,14 +30,16 @@
  * @run main ParkWithFixedThreadPool
  */
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 import jdk.test.lib.thread.VThreadScheduler;
 
 public class ParkWithFixedThreadPool {
     public static void main(String[] args) throws Exception {
-        try (ExecutorService scheduler = Executors.newFixedThreadPool(8)) {
+        try (var scheduler = new Scheduler(8)) {
             int vthreadCount = 300;
             Thread[] vthreads = new Thread[vthreadCount];
             Runnable target = new Runnable() {
@@ -72,6 +74,29 @@ public class ParkWithFixedThreadPool {
             for (int i = 0; i < vthreadCount; i++) {
                 vthreads[i].join();
             }
+        }
+    }
+
+    static class Scheduler implements Executor, AutoCloseable {
+        private final ExecutorService pool;
+
+        Scheduler(int poolSize) {
+            pool = Executors.newFixedThreadPool(poolSize);
+        }
+
+        @Override
+        public void execute(Runnable task) {
+            try {
+                pool.execute(task);
+            } finally {
+                // ExecutorService::execute may consume parking permit
+                LockSupport.unpark(Thread.currentThread());
+            }
+        }
+
+        @Override
+        public void close() {
+            pool.close();
         }
     }
 }

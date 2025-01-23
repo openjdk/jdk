@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
@@ -328,7 +327,7 @@ static void test_snprintf(PrintFn pf, bool expect_count) {
     size_t test_size = sizes_to_test[i];
     ResourceMark rm;
     stringStream s;
-    s.print("test_size: " SIZE_FORMAT, test_size);
+    s.print("test_size: %zu", test_size);
     SCOPED_TRACE(s.as_string());
     size_t prefix_size = padding_size;
     guarantee(test_size <= (sizeof(buffer) - prefix_size), "invariant");
@@ -403,6 +402,86 @@ TEST_VM(os, jio_vsnprintf) {
 
 TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
+}
+
+#ifndef MAX_PATH
+#define MAX_PATH    (2 * K)
+#endif
+
+TEST_VM(os, realpath) {
+  // POSIX requires that the file exists; Windows tests for a valid drive letter
+  // but may or may not test if the file exists. */
+  static const char* nosuchpath = "/1234567890123456789";
+  static const char* tmppath = "/tmp";
+
+  char buffer[MAX_PATH];
+
+  // Test a non-existant path, but provide a short buffer.
+  errno = 0;
+  const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
+  // Reports ENOENT on Linux, ENAMETOOLONG on Windows.
+  EXPECT_TRUE(returnedBuffer == nullptr);
+#ifdef _WINDOWS
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+#else
+  EXPECT_TRUE(errno == ENOENT);
+#endif
+
+  // Test a non-existant path, but provide an adequate buffer.
+  errno = 0;
+  buffer[0] = 0;
+  returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
+  // Reports ENOENT on Linux, may return 0 (and report an error) or buffer on some versions of Windows.
+#ifdef _WINDOWS
+  if (returnedBuffer != nullptr) {
+    EXPECT_TRUE(returnedBuffer == buffer);
+  } else {
+    EXPECT_TRUE(errno != 0);
+  }
+#else
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENOENT);
+#endif
+
+  // Test an existing path using a large buffer.
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
+  EXPECT_TRUE(returnedBuffer == buffer);
+
+  // Test an existing path using a buffer that is too small on a normal macOS install.
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3);
+  // On MacOS, /tmp is a symlink to /private/tmp, so doesn't fit in a small buffer.
+#ifndef __APPLE__
+  EXPECT_TRUE(returnedBuffer == buffer);
+#else
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+#endif
+
+  // Test an existing path using a buffer that is too small.
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) - 1);
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+
+  // The following tests cause an assert inside os::realpath() in fastdebug mode:
+#ifndef ASSERT
+  errno = 0;
+  returnedBuffer = os::realpath(nullptr, buffer, sizeof(buffer));
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
+
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, nullptr, sizeof(buffer));
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
+
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, 0);
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == EINVAL);
+#endif
 }
 
 #ifdef __APPLE__
@@ -951,7 +1030,7 @@ TEST_VM(os, trim_native_heap) {
   os::size_change_t sc;
   sc.before = sc.after = (size_t)-1;
   EXPECT_TRUE(os::trim_native_heap(&sc));
-  tty->print_cr(SIZE_FORMAT "->" SIZE_FORMAT, sc.before, sc.after);
+  tty->print_cr("%zu->%zu", sc.before, sc.after);
   // Regardless of whether we freed memory, both before and after
   // should be somewhat believable numbers (RSS).
   const size_t min = 5 * M;

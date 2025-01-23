@@ -24,8 +24,6 @@
  */
 package sun.security.validator;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.EnumSet;
@@ -57,7 +55,7 @@ enum CADistrustPolicy {
 
     /**
      * Distrust TLS Server certificates anchored by an Entrust root CA and
-     * issued after October 31, 2024. If enabled, this policy is currently
+     * issued after November 11, 2024. If enabled, this policy is currently
      * enforced by the PKIX and SunX509 TrustManager implementations
      * of the SunJSSE provider implementation.
      */
@@ -86,15 +84,8 @@ enum CADistrustPolicy {
     // The policies set in the jdk.security.caDistrustPolicies property.
     static final EnumSet<CADistrustPolicy> POLICIES = parseProperty();
     private static EnumSet<CADistrustPolicy> parseProperty() {
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                @Override
-                public String run() {
-                    return Security.getProperty(
-                        "jdk.security.caDistrustPolicies");
-                }
-            });
+        String property = Security.getProperty(
+                "jdk.security.caDistrustPolicies");
         EnumSet<CADistrustPolicy> set = EnumSet.noneOf(CADistrustPolicy.class);
         // if property is null or empty, the restrictions are not enforced
         if (property == null || property.isEmpty()) {

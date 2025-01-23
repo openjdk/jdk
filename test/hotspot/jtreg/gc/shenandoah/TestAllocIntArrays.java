@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +101,23 @@
  */
 
 /*
+ * @test id=generational
+ * @summary Acceptance tests: collector can withstand allocation
+ * @key randomness
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestAllocIntArrays
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx1g -Xms1g
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      TestAllocIntArrays
+ */
+
+/*
  * @test id=static
  * @summary Acceptance tests: collector can withstand allocation
  * @key randomness
@@ -147,9 +165,14 @@ public class TestAllocIntArrays {
     public static void main(String[] args) throws Exception {
         final int min = 0;
         final int max = 384 * 1024;
+        // Each allocated int array is assumed to consume 16 bytes for alignment and header, plus
+        //  an average of 4 * the average number of elements in the array.
         long count = TARGET_MB * 1024 * 1024 / (16 + 4 * (min + (max - min) / 2));
 
         Random r = Utils.getRandomInstance();
+        // Repeatedly, allocate an array of int having between 0 and 384K elements, until we have
+        // allocated approximately TARGET_MB.  The largest allocated array consumes 384K*4 + 16, which is 1.5 M,
+        // which is well below the heap size of 1g.
         for (long c = 0; c < count; c++) {
             sink = new int[min + r.nextInt(max - min)];
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package sun.rmi.transport;
 
 import java.io.ObjectInputFilter;
-import java.net.SocketPermission;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.dgc.DGC;
@@ -36,11 +35,6 @@ import java.rmi.server.ObjID;
 import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UID;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,28 +62,20 @@ import sun.rmi.server.Util;
 final class DGCImpl implements DGC {
 
     /* dgc system log */
-    @SuppressWarnings("removal")
     static final Log dgcLog = Log.getLog("sun.rmi.dgc", "dgc",
-        LogStream.parseLevel(AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.dgc.logLevel"))));
+        LogStream.parseLevel(System.getProperty("sun.rmi.dgc.logLevel")));
 
     /** lease duration to grant to clients */
-    @SuppressWarnings("removal")
     private static final long leaseValue =              // default 10 minutes
-        AccessController.doPrivileged(
-            (PrivilegedAction<Long>) () -> Long.getLong("java.rmi.dgc.leaseValue", 600000));
+        Long.getLong("java.rmi.dgc.leaseValue", 600000);
 
     /** lease check interval; default is half of lease grant duration */
-    @SuppressWarnings("removal")
     private static final long leaseCheckInterval =
-        AccessController.doPrivileged(
-            (PrivilegedAction<Long>) () -> Long.getLong("sun.rmi.dgc.checkInterval", leaseValue / 2));
+        Long.getLong("sun.rmi.dgc.checkInterval", leaseValue / 2);
 
     /** thread pool for scheduling delayed tasks */
-    @SuppressWarnings("removal")
     private static final ScheduledExecutorService scheduler =
-        AccessController.doPrivileged(
-            new RuntimeUtil.GetInstanceAction()).getScheduler();
+        RuntimeUtil.getInstance().getScheduler();
 
     /** remote implementation of DGC interface for this VM */
     private static DGCImpl dgc;
@@ -124,9 +110,7 @@ final class DGCImpl implements DGC {
      * The dgcFilter created from the value of the {@code  "sun.rmi.transport.dgcFilter"}
      * property.
      */
-    @SuppressWarnings("removal")
-    private static final ObjectInputFilter dgcFilter =
-            AccessController.doPrivileged((PrivilegedAction<ObjectInputFilter>)DGCImpl::initDgcFilter);
+    private static final ObjectInputFilter dgcFilter = initDgcFilter();
 
     /**
      * Initialize the dgcFilter from the security properties or system property; if any
@@ -323,59 +307,35 @@ final class DGCImpl implements DGC {
         exportSingleton();
     }
 
-    @SuppressWarnings("removal")
     private static void exportSingleton() {
         /*
          * "Export" the singleton DGCImpl in a context isolated from
          * the arbitrary current thread context.
          */
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                ClassLoader savedCcl =
-                    Thread.currentThread().getContextClassLoader();
-                try {
-                    Thread.currentThread().setContextClassLoader(
-                        ClassLoader.getSystemClassLoader());
+        ClassLoader savedCcl = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(ClassLoader.getSystemClassLoader());
 
-                    /*
-                     * Put remote collector object in table by hand to prevent
-                     * listen on port.  (UnicastServerRef.exportObject would
-                     * cause transport to listen.)
-                     */
-                    try {
-                        dgc = new DGCImpl();
-                        ObjID dgcID = new ObjID(ObjID.DGC_ID);
-                        LiveRef ref = new LiveRef(dgcID, 0);
-                        UnicastServerRef disp = new UnicastServerRef(ref,
-                                DGCImpl::checkInput);
-                        Remote stub =
-                            Util.createProxy(DGCImpl.class,
-                                             new UnicastRef(ref), true);
-                        disp.setSkeleton(dgc);
-
-                        Permissions perms = new Permissions();
-                        perms.add(new SocketPermission("*", "accept,resolve"));
-                        ProtectionDomain[] pd = { new ProtectionDomain(null, perms) };
-                        AccessControlContext acceptAcc = new AccessControlContext(pd);
-
-                        Target target = AccessController.doPrivileged(
-                            new PrivilegedAction<Target>() {
-                                public Target run() {
-                                    return new Target(dgc, disp, stub, dgcID, true);
-                                }
-                            }, acceptAcc);
-
-                        ObjectTable.putTarget(target);
-                    } catch (RemoteException e) {
-                        throw new Error(
-                            "exception initializing server-side DGC", e);
-                    }
-                } finally {
-                    Thread.currentThread().setContextClassLoader(savedCcl);
-                }
-                return null;
+            /*
+             * Put remote collector object in table by hand to prevent
+             * listen on port.  (UnicastServerRef.exportObject would
+             * cause transport to listen.)
+             */
+            try {
+                dgc = new DGCImpl();
+                ObjID dgcID = new ObjID(ObjID.DGC_ID);
+                LiveRef ref = new LiveRef(dgcID, 0);
+                UnicastServerRef disp = new UnicastServerRef(ref, DGCImpl::checkInput);
+                Remote stub = Util.createProxy(DGCImpl.class, new UnicastRef(ref), true);
+                disp.setSkeleton(dgc);
+                Target target = new Target(dgc, disp, stub, dgcID, true);
+                ObjectTable.putTarget(target);
+            } catch (RemoteException e) {
+                throw new Error("exception initializing server-side DGC", e);
             }
-        });
+        } finally {
+            Thread.currentThread().setContextClassLoader(savedCcl);
+        }
     }
 
     /**

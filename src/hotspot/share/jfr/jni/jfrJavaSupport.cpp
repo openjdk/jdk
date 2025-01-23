@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/symbolTable.hpp"
@@ -299,6 +298,24 @@ void JfrJavaSupport::set_array_element(jobjectArray arr, jobject element, int in
 /*
  *  Field access
  */
+static void write_bool_field(const Handle& h_oop, fieldDescriptor* fd, jboolean value) {
+  assert(h_oop.not_null(), "invariant");
+  assert(fd != nullptr, "invariant");
+  h_oop->bool_field_put(fd->offset(), value);
+}
+
+static void write_char_field(const Handle& h_oop, fieldDescriptor* fd, jchar value) {
+  assert(h_oop.not_null(), "invariant");
+  assert(fd != nullptr, "invariant");
+  h_oop->char_field_put(fd->offset(), value);
+}
+
+static void write_short_field(const Handle& h_oop, fieldDescriptor* fd, jshort value) {
+  assert(h_oop.not_null(), "invariant");
+  assert(fd != nullptr, "invariant");
+  h_oop->short_field_put(fd->offset(), value);
+}
+
 static void write_int_field(const Handle& h_oop, fieldDescriptor* fd, jint value) {
   assert(h_oop.not_null(), "invariant");
   assert(fd != nullptr, "invariant");
@@ -341,8 +358,14 @@ static void write_specialized_field(JfrJavaArguments* args, const Handle& h_oop,
 
   switch(fd->field_type()) {
     case T_BOOLEAN:
+      write_bool_field(h_oop, fd, args->param(1).get_jboolean());
+      break;
     case T_CHAR:
+      write_char_field(h_oop, fd, args->param(1).get_jchar());
+      break;
     case T_SHORT:
+      write_short_field(h_oop, fd, args->param(1).get_jshort());
+      break;
     case T_INT:
       write_int_field(h_oop, fd, args->param(1).get_jint());
       break;
@@ -374,8 +397,14 @@ static void read_specialized_field(JavaValue* result, const Handle& h_oop, field
 
   switch(fd->field_type()) {
     case T_BOOLEAN:
+      result->set_jint(h_oop->bool_field(fd->offset()));
+      break;
     case T_CHAR:
+      result->set_jint(h_oop->char_field(fd->offset()));
+      break;
     case T_SHORT:
+      result->set_jint(h_oop->short_field(fd->offset()));
+      break;
     case T_INT:
       result->set_jint(h_oop->int_field(fd->offset()));
       break;

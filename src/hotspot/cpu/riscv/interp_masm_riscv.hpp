@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -58,6 +58,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code) {}
 
   void load_earlyret_value(TosState state);
+
+  void call_VM_preemptable(Register oop_result,
+                           address entry_point,
+                           Register arg_1);
+  void restore_after_resume(bool is_native);
 
   void jump_to_entry(address entry);
 

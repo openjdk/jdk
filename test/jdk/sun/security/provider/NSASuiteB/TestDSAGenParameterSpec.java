@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,8 @@ import java.security.spec.InvalidParameterSpecException;
 public class TestDSAGenParameterSpec {
 
     private static final String ALGORITHM_NAME = "DSA";
-    private static final String PROVIDER_NAME = "SUN";
+    private static final String PROVIDER_NAME =
+                System.getProperty("test.provider.name", "SUN");
 
     private static void testDSAGenParameterSpec(DataTuple dataTuple)
             throws NoSuchAlgorithmException, NoSuchProviderException,

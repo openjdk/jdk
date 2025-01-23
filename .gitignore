@@ -20,3 +20,5 @@ NashornProfile.txt
 /.settings/
 /compile_commands.json
 /.cache
+/.gdbinit
+/.lldbinit

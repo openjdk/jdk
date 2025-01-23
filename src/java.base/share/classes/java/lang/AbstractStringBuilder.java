@@ -640,14 +640,11 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         byte[] val = this.value;
         if (isLatin1()) {
-            val[count++] = 'n';
-            val[count++] = 'u';
-            val[count++] = 'l';
-            val[count++] = 'l';
+            StringLatin1.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         } else {
-            count = StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
+            StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         }
-        this.count = count;
+        this.count = count + 4;
         return this;
     }
 
@@ -772,25 +769,18 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         byte[] val = this.value;
         if (isLatin1()) {
             if (b) {
-                val[count++] = 't';
-                val[count++] = 'r';
-                val[count++] = 'u';
-                val[count++] = 'e';
+                StringLatin1.putCharsAt(val, count, 't', 'r', 'u', 'e');
             } else {
-                val[count++] = 'f';
-                val[count++] = 'a';
-                val[count++] = 'l';
-                val[count++] = 's';
-                val[count++] = 'e';
+                StringLatin1.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         } else {
             if (b) {
-                count = StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
+                StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
             } else {
-                count = StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         }
-        this.count = count;
+        this.count = count + (b ? 4 : 5);
         return this;
     }
 
