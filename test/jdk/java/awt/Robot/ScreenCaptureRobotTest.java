@@ -44,6 +44,17 @@ import javax.imageio.ImageIO;
  * @bug 8342098
  * @summary Verify that the image captured from the screen using a Robot
  * and the source image are same.
+ * @requires os.family == "mac"
+ * @run main/othervm ScreenCaptureRobotTest
+ */
+
+/*
+ * @test
+ * @key headful
+ * @bug 8342098
+ * @summary Verify that the image captured from the screen using a Robot
+ * and the source image are same.
+ * @requires os.family != "mac"
  * @run main/othervm -Dsun.java2d.uiScale=1 ScreenCaptureRobotTest
  */
 public class ScreenCaptureRobotTest {
@@ -104,6 +115,7 @@ public class ScreenCaptureRobotTest {
         Rectangle rect = new Rectangle(point.x + OFFSET, point.y + OFFSET,
                 IMAGE_WIDTH, IMAGE_HEIGHT);
 
+        robot.mouseMove(0,0);
         BufferedImage capturedImage = robot.createScreenCapture(rect);
 
         if (!compareImages(capturedImage, realImage)) {
