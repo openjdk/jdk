@@ -37,7 +37,9 @@ class AsyncLogWriter::ProducerLocker : public StackObj {
  public:
   ProducerLocker() {
     assert(_instance != nullptr, "AsyncLogWriter::_lock is unavailable");
-    assert(_instance->_producer_lock_holder != Thread::current_or_null(), "Recursive locking not allowed");
+    assert(_instance->_producer_lock_holder != Thread::current_or_null() ||
+           Thread::current_or_null() == nullptr,
+           "Recursive locking not allowed");
     _instance->_producer_lock.lock();
     _instance->_producer_lock_holder = Thread::current_or_null();
   }
