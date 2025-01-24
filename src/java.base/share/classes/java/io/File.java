@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,6 +245,13 @@ public class File
      */
     public static final String pathSeparator = String.valueOf(pathSeparatorChar);
 
+    /**
+     * The {@code File} object representing the current directory.
+     */
+    private static final File CWD = new File(".");
+    static File getCWD() {
+        return CWD;
+    }
 
     /* -- Constructors -- */
 
@@ -778,8 +785,7 @@ public class File
 
     /**
      * Tests whether the file or directory denoted by this abstract pathname
-     * exists. If this abstract pathname is the empty abstract pathname then
-     * this method returns {@code false}.
+     * exists.
      *
      * @return  {@code true} if and only if the file or directory denoted
      *          by this abstract pathname exists; {@code false} otherwise
