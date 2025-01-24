@@ -77,7 +77,7 @@ public class TestContinuationPinningAndEA {
   static void test_Crashes() throws Throwable {
     for (int i = 0; i < 10_000; ++i) {
       new Crashes();
-    }  
+    }
   }
 
   public static void main(String[] args) throws Throwable {
