@@ -1287,8 +1287,8 @@ public class DataFlavor implements Externalizable, Cloneable {
     /**
      * Serializes this {@code DataFlavor}.
      *
-     * @serialData The "mimeType" field with the "humanPresentableName" parameter set,
-     * followed by the "representationClass" field
+     * @serialData The {@code mimeType} field with the {@code humanPresentableName} parameter set,
+     * followed by the {@code representationClass} field
      */
    public synchronized void writeExternal(ObjectOutput os) throws IOException {
        if (mimeType != null) {
