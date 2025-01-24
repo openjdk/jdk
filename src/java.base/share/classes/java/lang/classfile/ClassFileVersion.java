@@ -60,7 +60,8 @@ public sealed interface ClassFileVersion
         extends ClassElement
         permits ClassFileVersionImpl {
     /**
-     * {@return the major version, as an unsigned short}
+     * {@return the major version}  It is in the range of unsigned short, {@code
+     * [0, 65535]}.
      *
      * @apiNote
      * Constants in {@link ClassFile} named {@code Java_#_VERSION}, where # is
@@ -70,7 +71,8 @@ public sealed interface ClassFileVersion
     int majorVersion();
 
     /**
-     * {@return the minor version, as an unsigned short}
+     * {@return the minor version}  It is in the range of unsigned short, {@code
+     * [0, 65535]}.
      */
     int minorVersion();
 

@@ -84,14 +84,16 @@ public sealed interface ClassModel
     ClassEntry thisClass();
 
     /**
-     * {@return the major version of this class}
+     * {@return the major version of this class}  It is in the range of unsigned
+     * short, {@code [0, 65535]}.
      *
      * @see ClassFileVersion
      */
     int majorVersion();
 
     /**
-     * {@return the minor version of this class}
+     * {@return the minor version of this class}  It is in the range of unsigned
+     * short, {@code [0, 65535]}.
      *
      * @see ClassFileVersion
      */
