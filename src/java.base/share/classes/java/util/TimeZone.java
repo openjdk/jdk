@@ -545,7 +545,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * cannot be understood.
      * @throws NullPointerException if {@code ID} is {@code null}
      */
-    public static synchronized TimeZone getTimeZone(String ID) {
+    public static TimeZone getTimeZone(String ID) {
         return getTimeZone(ID, true);
     }
 
@@ -621,7 +621,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * both have GMT-07:00, but differ in daylight saving behavior.
      * @see #getRawOffset()
      */
-    public static synchronized String[] getAvailableIDs(int rawOffset) {
+    public static String[] getAvailableIDs(int rawOffset) {
         return ZoneInfo.getAvailableIDs(rawOffset);
     }
 
@@ -629,7 +629,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Gets all the available IDs supported.
      * @return an array of IDs.
      */
-    public static synchronized String[] getAvailableIDs() {
+    public static String[] getAvailableIDs() {
         return ZoneInfo.getAvailableIDs();
     }
 
