@@ -31,7 +31,6 @@ import compiler.lib.ir_framework.*;
  * @bug 8341293
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
- * @requires vm.debug == true & vm.compiler2.enabled
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesNestedPhiTests
  */
 public class AllocationMergesNestedPhiTests {
@@ -41,7 +40,8 @@ public class AllocationMergesNestedPhiTests {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
 
-        Scenario scenario0 = new Scenario(0, "-XX:+UnlockDiagnosticVMOptions",
+        Scenario scenario0 = new Scenario(0, "-XX:+IgnoreUnrecognizedVMOptions",
+                                             "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
@@ -53,7 +53,8 @@ public class AllocationMergesNestedPhiTests {
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        Scenario scenario1 = new Scenario(1, "-XX:+UnlockDiagnosticVMOptions",
+        Scenario scenario1 = new Scenario(1, "-XX:+IgnoreUnrecognizedVMOptions",
+                                             "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
@@ -65,7 +66,8 @@ public class AllocationMergesNestedPhiTests {
                                              "-XX:CompileCommand=inline,*Nested::*",
                                              "-XX:CompileCommand=exclude,*::dummy*");
 
-        Scenario scenario2 = new Scenario(2, "-XX:+UnlockDiagnosticVMOptions",
+        Scenario scenario2 = new Scenario(2, "-XX:+IgnoreUnrecognizedVMOptions",
+                                             "-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+ReduceAllocationMerges",
                                              "-XX:+TraceReduceAllocationMerges",
                                              "-XX:+DeoptimizeALot",
