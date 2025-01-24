@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -49,7 +48,6 @@
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 #if INCLUDE_ZGC
-#include "gc/x/xBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #endif
 
@@ -623,7 +621,7 @@ class StubGenerator: public StubCodeGenerator {
   // Don't generate, rather use C++ code.
   address generate_verify_oop() {
     // this is actually a `FunctionDescriptor*'.
-    address start = 0;
+    address start = nullptr;
 
 #if !defined(PRODUCT)
     start = CAST_FROM_FN_PTR(address, verify_oop_helper);
@@ -1976,7 +1974,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_conjoint_int_copy_core(aligned);
     } else {
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
         zbs->generate_conjoint_oop_copy(_masm, dest_uninitialized);
       } else
@@ -2019,7 +2017,7 @@ class StubGenerator: public StubCodeGenerator {
       generate_disjoint_int_copy_core(aligned);
     } else {
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         ZBarrierSetAssembler *zbs = (ZBarrierSetAssembler*)bs;
         zbs->generate_disjoint_oop_copy(_masm, dest_uninitialized);
       } else
@@ -2040,7 +2038,8 @@ class StubGenerator: public StubCodeGenerator {
   void generate_type_check(Register sub_klass,
                            Register super_check_offset,
                            Register super_klass,
-                           Register temp,
+                           Register temp1,
+                           Register temp2,
                            Label& L_success) {
     assert_different_registers(sub_klass, super_check_offset, super_klass);
 
@@ -2048,9 +2047,9 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_miss;
 
-    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp, R0, &L_success, &L_miss, nullptr,
+    __ check_klass_subtype_fast_path(sub_klass, super_klass, temp1, temp2, &L_success, &L_miss, nullptr,
                                      super_check_offset);
-    __ check_klass_subtype_slow_path(sub_klass, super_klass, temp, R0, &L_success);
+    __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1, temp2, &L_success);
 
     // Fall through on failure!
     __ bind(L_miss);
@@ -2080,8 +2079,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register R10_oop   = R10_ARG8;     // actual oop copied
     const Register R11_klass = R11_scratch1; // oop._klass
     const Register R12_tmp   = R12_scratch2;
-
-    const Register R2_minus1 = R2;
+    const Register R2_tmp    = R2;
 
     //__ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
@@ -2119,7 +2117,6 @@ class StubGenerator: public StubCodeGenerator {
     Label load_element, store_element, store_null, success, do_epilogue;
     __ or_(R9_remain, R5_count, R5_count); // Initialize loop index, and test it.
     __ li(R8_offset, 0);                   // Offset from start of arrays.
-    __ li(R2_minus1, -1);
     __ bne(CCR0, load_element);
 
     // Empty array: Nothing to do.
@@ -2137,7 +2134,7 @@ class StubGenerator: public StubCodeGenerator {
     } else {
       __ bind(store_null);
 #if INCLUDE_ZGC
-      if (UseZGC && ZGenerational) {
+      if (UseZGC) {
         __ store_heap_oop(R10_oop, R8_offset, R4_to, R11_scratch1, R12_tmp, noreg,
                           MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
                           dest_uninitialized ? IS_DEST_UNINITIALIZED : 0);
@@ -2147,13 +2144,13 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ addi(R8_offset, R8_offset, heapOopSize);   // Step to next offset.
-    __ add_(R9_remain, R2_minus1, R9_remain);     // Decrement the count.
+    __ addic_(R9_remain, R9_remain, -1);          // Decrement the count.
     __ beq(CCR0, success);
 
     // ======== loop entry is here ========
     __ bind(load_element);
 #if INCLUDE_ZGC
-    if (UseZGC && ZGenerational) {
+    if (UseZGC) {
       __ load_heap_oop(R10_oop, R8_offset, R3_from,
                        R11_scratch1, R12_tmp,
                        MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS,
@@ -2167,7 +2164,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_klass(R11_klass, R10_oop); // Query the object klass.
 
-    generate_type_check(R11_klass, R6_ckoff, R7_ckval, R12_tmp,
+    generate_type_check(R11_klass, R6_ckoff, R7_ckval, R12_tmp, R2_tmp,
                         // Branch to this on success:
                         store_element);
     // ======== end loop ========
@@ -2501,7 +2498,7 @@ class StubGenerator: public StubCodeGenerator {
       int sco_offset = in_bytes(Klass::super_check_offset_offset());
       __ lwz(sco_temp, sco_offset, dst_klass);
       generate_type_check(src_klass, sco_temp, dst_klass,
-                          temp, L_disjoint_plain_copy);
+                          temp, /* temp */ R10_ARG8, L_disjoint_plain_copy);
 
       // Fetch destination element klass from the ObjArrayKlass header.
       int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
@@ -3448,6 +3445,24 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", is_crc32c ? "CRC32C_updateBytes" : "CRC32_updateBytes");
     address start = __ function_entry();  // Remember stub start address (is rtn value).
     __ crc32(R3_ARG1, R4_ARG2, R5_ARG3, R2, R6, R7, R8, R9, R10, R11, R12, is_crc32c);
+    __ blr();
+    return start;
+  }
+
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    address start = __ function_entry();
+    __ f2hf(R3_RET, F1_ARG1, F0);
+    __ blr();
+    return start;
+  }
+
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    address start = __ function_entry();
+    __ hf2f(F1_RET, R3_ARG1);
     __ blr();
     return start;
   }
@@ -4441,9 +4456,9 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
       r_bitmap       = R11_scratch1,
       result         = R8_ARG6;
 
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     r_bitmap, result, super_klass_index);
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           r_array_base, r_array_length, r_array_index,
+                                           r_bitmap, result, super_klass_index);
     __ blr();
 
     return start;
@@ -4483,6 +4498,10 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     FloatRegister nvftmp = F20; // nonvolatile fp tmp register
 
     address start = __ pc();
+
+    if (kind == Continuation::thaw_top) {
+      __ clobber_nonvolatile_registers(); // Except R16_thread and R29_TOC
+    }
 
     if (return_barrier) {
       __ mr(nvtmp, R3_RET); __ fmr(nvftmp, F1_RET); // preserve possible return value from a method returning to the return barrier
@@ -4572,6 +4591,41 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
   }
 
+  address generate_cont_preempt_stub() {
+    if (!Continuations::enabled()) return nullptr;
+    StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+    address start = __ pc();
+
+    __ clobber_nonvolatile_registers(); // Except R16_thread and R29_TOC
+
+    __ reset_last_Java_frame(false /*check_last_java_sp*/);
+
+    // Set sp to enterSpecial frame, i.e. remove all frames copied into the heap.
+    __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
+
+    Label preemption_cancelled;
+    __ lbz(R11_scratch1, in_bytes(JavaThread::preemption_cancelled_offset()), R16_thread);
+    __ cmpwi(CCR0, R11_scratch1, 0);
+    __ bne(CCR0, preemption_cancelled);
+
+    // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+    SharedRuntime::continuation_enter_cleanup(_masm);
+    __ pop_frame();
+    __ restore_LR(R11_scratch1);
+    __ blr();
+
+    // We acquired the monitor after freezing the frames so call thaw to continue execution.
+    __ bind(preemption_cancelled);
+    __ li(R11_scratch1, 0); // false
+    __ stb(R11_scratch1, in_bytes(JavaThread::preemption_cancelled_offset()), R16_thread);
+    int simm16_offs = __ load_const_optimized(R11_scratch1, ContinuationEntry::thaw_call_pc_address(), R0, true);
+    __ ld(R11_scratch1, simm16_offs, R11_scratch1);
+    __ mtctr(R11_scratch1);
+    __ bctr();
+
+    return start;
+  }
+
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
@@ -4583,6 +4637,30 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     __ load_const_optimized(R12_scratch2, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception), R0);
     __ call_c(R12_scratch2);
     __ should_not_reach_here();
+
+    return start;
+  }
+
+  // load Method* target of MethodHandle
+  // R3_ARG1 = jobject receiver
+  // R19_method = result Method*
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(R3_ARG1, R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS);
+    // Load target method from receiver
+    __ load_heap_oop(R19_method, java_lang_invoke_MethodHandle::form_offset(), R3_ARG1,
+                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ load_heap_oop(R19_method, java_lang_invoke_LambdaForm::vmentry_offset(), R19_method,
+                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ load_heap_oop(R19_method, java_lang_invoke_MemberName::method_offset(), R19_method,
+                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ ld(R19_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset(), R19_method);
+    __ std(R19_method, in_bytes(JavaThread::callee_target_offset()), R16_thread); // just in case callee is deoptimized
+
+    __ blr();
 
     return start;
   }
@@ -4616,6 +4694,12 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
       StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
+
+    if (VM_Version::supports_float16()) {
+      // For results consistency both intrinsics should be enabled.
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
+    }
   }
 
   void generate_continuation_stubs() {
@@ -4623,6 +4707,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_preempt_stub  = generate_cont_preempt_stub();
   }
 
   void generate_final_stubs() {
@@ -4651,6 +4736,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
 
   void generate_compiler_stubs() {

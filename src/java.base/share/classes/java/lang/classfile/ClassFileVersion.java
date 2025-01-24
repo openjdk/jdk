@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,14 @@
 package java.lang.classfile;
 
 import jdk.internal.classfile.impl.ClassFileVersionImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the classfile version information for a class.  Delivered as a {@link
  * java.lang.classfile.ClassElement} when traversing the elements of a {@link
  * ClassModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileVersion
         extends ClassElement
         permits ClassFileVersionImpl {

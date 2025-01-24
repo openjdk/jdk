@@ -140,6 +140,11 @@ import java.util.regex.Pattern;
  * <li>{@link SecureRandomSpi#engineReseed(SecureRandomParameters)}
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc4086
+ *      RFC 4086: Randomness Requirements for Security
+ * @spec https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf
+ *      Security Requirements for Cryptographic Modules
+ *
  * @see java.security.SecureRandomSpi
  * @see java.util.Random
  *
@@ -225,8 +230,8 @@ public class SecureRandom extends java.util.Random {
         if (provider == null || algorithm == null) {
             return false;
         } else {
-            return Boolean.parseBoolean(provider.getProperty(
-                    "SecureRandom." + algorithm + " ThreadSafe", "false"));
+            Service service = provider.getService("SecureRandom", algorithm);
+            return Boolean.parseBoolean(service.getAttribute("ThreadSafe"));
         }
     }
 
@@ -937,11 +942,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstanceStrong()
             throws NoSuchAlgorithmException {
 
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> Security.getProperty(
-                    "securerandom.strongAlgorithms"));
-
+        String property = Security.getProperty("securerandom.strongAlgorithms");
         if (property == null || property.isEmpty()) {
             throw new NoSuchAlgorithmException(
                 "Null/empty securerandom.strongAlgorithms Security Property");

@@ -62,13 +62,13 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
     }
 
     @Override
-    public final void writeAttribute(BufWriter buf, T attr) {
-        buf.writeIndex(buf.constantPool().utf8Entry(name));
-        buf.writeInt(0);
-        int start = buf.size();
+    public final void writeAttribute(BufWriter writer, T attr) {
+        BufWriterImpl buf = (BufWriterImpl) writer;
+        buf.writeIndex(attr.attributeName());
+        int lengthIndex = buf.skip(4);
         writeBody(buf, attr);
-        int written = buf.size() - start;
-        buf.patchInt(start - 4, 4, written);
+        int written = buf.size() - lengthIndex - 4;
+        buf.patchInt(lengthIndex, written);
     }
 
     @Override
@@ -140,14 +140,13 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, CharacterRangeTableAttribute attr) {
+        protected void writeBody(BufWriter bufWriter, CharacterRangeTableAttribute attr) {
             List<CharacterRangeInfo> ranges = attr.characterRangeTable();
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
             buf.writeU2(ranges.size());
             for (CharacterRangeInfo info : ranges) {
-                buf.writeU2(info.startPc());
-                buf.writeU2(info.endPc());
-                buf.writeInt(info.characterRangeStart());
-                buf.writeInt(info.characterRangeEnd());
+                buf.writeU2U2(info.startPc(), info.endPc());
+                buf.writeIntInt(info.characterRangeStart(), info.characterRangeEnd());
                 buf.writeU2(info.flags());
             }
         }
@@ -238,9 +237,10 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, EnclosingMethodAttribute attr) {
-            buf.writeIndex(attr.enclosingClass());
-            buf.writeIndexOrZero(attr.enclosingMethod().orElse(null));
+        protected void writeBody(BufWriter bufWriter, EnclosingMethodAttribute attr) {
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
+            buf.writeU2U2(buf.cpIndex(attr.enclosingClass()),
+                    buf.cpIndexOrZero(attr.enclosingMethod().orElse(null)));
         }
     }
 
@@ -275,13 +275,14 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, InnerClassesAttribute attr) {
+        protected void writeBody(BufWriter bufWriter, InnerClassesAttribute attr) {
             List<InnerClassInfo> classes = attr.classes();
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
             buf.writeU2(classes.size());
             for (InnerClassInfo ic : classes) {
-                buf.writeIndex(ic.innerClass());
-                buf.writeIndexOrZero(ic.outerClass().orElse(null));
-                buf.writeIndexOrZero(ic.innerName().orElse(null));
+                buf.writeU2U2U2(buf.cpIndex(ic.innerClass()),
+                        buf.cpIndexOrZero(ic.outerClass().orElse(null)),
+                        buf.cpIndexOrZero(ic.innerName().orElse(null)));
                 buf.writeU2(ic.flagsMask());
             }
         }
@@ -300,12 +301,12 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, LineNumberTableAttribute attr) {
+        protected void writeBody(BufWriter bufWriter, LineNumberTableAttribute attr) {
             List<LineNumberInfo> lines = attr.lineNumbers();
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
             buf.writeU2(lines.size());
             for (LineNumberInfo line : lines) {
-                buf.writeU2(line.startPc());
-                buf.writeU2(line.lineNumber());
+                buf.writeU2U2(line.startPc(), line.lineNumber());
             }
         }
     }
@@ -323,15 +324,13 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, LocalVariableTableAttribute attr) {
+        protected void writeBody(BufWriter bufWriter, LocalVariableTableAttribute attr) {
             List<LocalVariableInfo> infos = attr.localVariables();
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
             buf.writeU2(infos.size());
             for (LocalVariableInfo info : infos) {
-                buf.writeU2(info.startPc());
-                buf.writeU2(info.length());
-                buf.writeIndex(info.name());
-                buf.writeIndex(info.type());
-                buf.writeU2(info.slot());
+                buf.writeU2U2(info.startPc(), info.length());
+                buf.writeU2U2U2(buf.cpIndex(info.name()), buf.cpIndex(info.type()), info.slot());
             }
         }
     }
@@ -349,15 +348,13 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, LocalVariableTypeTableAttribute attr) {
+        protected void writeBody(BufWriter bufWriter, LocalVariableTypeTableAttribute attr) {
             List<LocalVariableTypeInfo> infos = attr.localVariableTypes();
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
             buf.writeU2(infos.size());
             for (LocalVariableTypeInfo info : infos) {
-                buf.writeU2(info.startPc());
-                buf.writeU2(info.length());
-                buf.writeIndex(info.name());
-                buf.writeIndex(info.signature());
-                buf.writeU2(info.slot());
+                buf.writeU2U2(info.startPc(), info.length());
+                buf.writeU2U2U2(buf.cpIndex(info.name()), buf.cpIndex(info.signature()), info.slot());
             }
         }
     }
@@ -375,12 +372,13 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, MethodParametersAttribute attr) {
+        protected void writeBody(BufWriter bufWriter, MethodParametersAttribute attr) {
             List<MethodParameterInfo> parameters = attr.parameters();
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
             buf.writeU1(parameters.size());
             for (MethodParameterInfo info : parameters) {
-                buf.writeIndexOrZero(info.name().orElse(null));
-                buf.writeU2(info.flagsMask());
+                buf.writeU2U2(buf.cpIndexOrZero(info.name().orElse(null)),
+                        info.flagsMask());
             }
         }
     }
@@ -398,26 +396,27 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, ModuleAttribute attr) {
-            buf.writeIndex(attr.moduleName());
-            buf.writeU2(attr.moduleFlagsMask());
-            buf.writeIndexOrZero(attr.moduleVersion().orElse(null));
+        protected void writeBody(BufWriter bufWriter, ModuleAttribute attr) {
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
+            buf.writeU2U2U2(buf.cpIndex(attr.moduleName()),
+                    attr.moduleFlagsMask(),
+                    buf.cpIndexOrZero(attr.moduleVersion().orElse(null)));
             buf.writeU2(attr.requires().size());
             for (ModuleRequireInfo require : attr.requires()) {
-                buf.writeIndex(require.requires());
-                buf.writeU2(require.requiresFlagsMask());
-                buf.writeIndexOrZero(require.requiresVersion().orElse(null));
+                buf.writeU2U2U2(buf.cpIndex(require.requires()),
+                        require.requiresFlagsMask(),
+                        buf.cpIndexOrZero(require.requiresVersion().orElse(null)));
             }
             buf.writeU2(attr.exports().size());
             for (ModuleExportInfo export : attr.exports()) {
-                buf.writeIndex(export.exportedPackage());
-                buf.writeU2(export.exportsFlagsMask());
+                buf.writeU2U2(buf.cpIndex(export.exportedPackage()),
+                        export.exportsFlagsMask());
                 Util.writeListIndices(buf, export.exportsTo());
             }
             buf.writeU2(attr.opens().size());
             for (ModuleOpenInfo open : attr.opens()) {
-                buf.writeIndex(open.openedPackage());
-                buf.writeU2(open.opensFlagsMask());
+                buf.writeU2U2(buf.cpIndex(open.openedPackage()),
+                        open.opensFlagsMask());
                 Util.writeListIndices(buf, open.opensTo());
             }
             Util.writeListIndices(buf, attr.uses());
@@ -442,13 +441,13 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, ModuleHashesAttribute attr) {
-            buf.writeIndex(attr.algorithm());
+        protected void writeBody(BufWriter bufWriter, ModuleHashesAttribute attr) {
             List<ModuleHashInfo> hashes = attr.hashes();
-            buf.writeU2(hashes.size());
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
+            buf.writeU2U2(buf.cpIndex(attr.algorithm()), hashes.size());
             for (ModuleHashInfo hash : hashes) {
-                buf.writeIndex(hash.moduleName());
-                buf.writeU2(hash.hash().length);
+                buf.writeU2U2(buf.cpIndex(hash.moduleName()),
+                        hash.hash().length);
                 buf.writeBytes(hash.hash());
             }
         }
@@ -593,13 +592,14 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         }
 
         @Override
-        protected void writeBody(BufWriter buf, RecordAttribute attr) {
+        protected void writeBody(BufWriter bufWriter, RecordAttribute attr) {
             List<RecordComponentInfo> components = attr.components();
+            BufWriterImpl buf = (BufWriterImpl) bufWriter;
             buf.writeU2(components.size());
             for (RecordComponentInfo info : components) {
-                buf.writeIndex(info.name());
-                buf.writeIndex(info.descriptor());
-                Util.writeAttributes((BufWriterImpl) buf, info.attributes());
+                buf.writeU2U2(buf.cpIndex(info.name()),
+                        buf.cpIndex(info.descriptor()));
+                Util.writeAttributes(buf, info.attributes());
             }
         }
     }

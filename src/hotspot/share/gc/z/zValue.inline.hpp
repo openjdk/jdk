@@ -44,7 +44,7 @@ template <typename T> uintptr_t ZValueStorage<T>::_top = 0;
 
 template <typename S>
 uintptr_t ZValueStorage<S>::alloc(size_t size) {
-  assert(size <= offset, "Allocation too large");
+  assert(size <= Offset, "Allocation too large");
 
   // Allocate entry in existing memory block
   const uintptr_t addr = align_up(_top, S::alignment());
@@ -56,10 +56,10 @@ uintptr_t ZValueStorage<S>::alloc(size_t size) {
   }
 
   // Allocate new block of memory
-  const size_t block_alignment = offset;
-  const size_t block_size = offset * S::count();
+  const size_t block_alignment = Offset;
+  const size_t block_size = Offset * S::count();
   _top = ZUtils::alloc_aligned_unfreeable(block_alignment, block_size);
-  _end = _top + offset;
+  _end = _top + Offset;
 
   // Retry allocation
   return alloc(size);
@@ -119,7 +119,7 @@ inline uint32_t ZPerWorkerStorage::id() {
 
 template <typename S, typename T>
 inline uintptr_t ZValue<S, T>::value_addr(uint32_t value_id) const {
-  return _addr + (value_id * S::offset);
+  return _addr + (value_id * S::Offset);
 }
 
 template <typename S, typename T>

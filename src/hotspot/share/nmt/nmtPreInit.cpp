@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -132,7 +131,7 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
     num_entries += chain_len;
     longest_chain = MAX2(chain_len, longest_chain);
   }
-  st->print("entries: %d (primary: %d, empties: %d), sum bytes: " SIZE_FORMAT
+  st->print("entries: %d (primary: %d, empties: %d), sum bytes: %zu"
             ", longest chain length: %d",
             num_entries, num_primary_entries, table_size - num_primary_entries,
             sum_bytes, longest_chain);
@@ -143,7 +142,7 @@ void NMTPreInitAllocationTable::print_map(outputStream* st) const {
   for (int i = 0; i < table_size; i++) {
     st->print("[%d]: ", i);
     for (NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
-      st->print( PTR_FORMAT "(" SIZE_FORMAT ") ", p2i(a->payload), a->size);
+      st->print( PTR_FORMAT "(%zu) ", p2i(a->payload), a->size);
     }
     st->cr();
   }
@@ -198,8 +197,8 @@ void NMTPreInit::create_table() {
 }
 
 // Allocate with os::malloc (hidden to prevent having to include os.hpp)
-void* NMTPreInit::do_os_malloc(size_t size, MEMFLAGS memflags) {
-  return os::malloc(size, memflags);
+void* NMTPreInit::do_os_malloc(size_t size, MemTag mem_tag) {
+  return os::malloc(size, mem_tag);
 }
 
 // Switches from NMT pre-init state to NMT post-init state;

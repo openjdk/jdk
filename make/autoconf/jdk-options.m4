@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 # Set the debug level
 #    release: no debug information, all optimizations, no asserts.
 #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
@@ -81,7 +81,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
   AC_SUBST(DEBUG_LEVEL)
 ])
 
-###############################################################################
+################################################################################
 #
 # Should we build only OpenJDK even if closed sources are present?
 #
@@ -121,7 +121,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$DOT" != "x"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
@@ -129,7 +129,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$ENABLE_PANDOC" = "xtrue"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
@@ -235,8 +235,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   else
     HOTSPOT_OVERRIDE_LIBPATH=${with_jni_libpath}
     if test "x$OPENJDK_TARGET_OS" != "xlinux" &&
-         test "x$OPENJDK_TARGET_OS" != "xbsd" &&
-         test "x$OPENJDK_TARGET_OS" != "xaix"; then
+        test "x$OPENJDK_TARGET_OS" != "xbsd" &&
+        test "x$OPENJDK_TARGET_OS" != "xaix"; then
       AC_MSG_RESULT([fail])
       AC_MSG_ERROR([Overriding JNI library path is supported only on Linux, BSD and AIX.])
     fi
@@ -246,7 +246,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
 ])
 
-###############################################################################
+################################################################################
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
@@ -369,6 +369,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $GCOV_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $GCOV_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $GCOV_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $GCOV_LDFLAGS"
       ])
   AC_SUBST(GCOV_ENABLED)
 
@@ -410,7 +411,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
   AC_SUBST(JCOV_FILTERS)
 ])
 
-###############################################################################
+################################################################################
 #
 # AddressSanitizer
 #
@@ -421,8 +422,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-           test "x$TOOLCHAIN_TYPE" = "xclang" ||
-           test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+            test "x$TOOLCHAIN_TYPE" = "xclang" ||
+            test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           AC_MSG_RESULT([yes])
         else
           AC_MSG_RESULT([no])
@@ -431,7 +432,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       ],
       IF_ENABLED: [
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-           test "x$TOOLCHAIN_TYPE" = "xclang"; then
+            test "x$TOOLCHAIN_TYPE" = "xclang"; then
           # ASan is simply incompatible with gcc -Wstringop-truncation. See
           # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
           # It's harmless to be suppressed in clang as well.
@@ -445,6 +446,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
           fi
           if test "x$TOOLCHAIN_TYPE" = "xclang"; then
             ASAN_CFLAGS="$ASAN_CFLAGS -fsanitize-address-use-after-return=never"
+            ASAN_LDFLAGS="$ASAN_LDFLAGS -shared-libasan"
           fi
         elif test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           # -Oy- is equivalent to -fno-omit-frame-pointer in GCC/Clang.
@@ -463,11 +465,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $ASAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $ASAN_LDFLAGS"
       ])
   AC_SUBST(ASAN_ENABLED)
 ])
 
-###############################################################################
+################################################################################
 #
 # LeakSanitizer
 #
@@ -496,11 +499,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $LSAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $LSAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $LSAN_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $LSAN_LDFLAGS"
       ])
   AC_SUBST(LSAN_ENABLED)
 ])
 
-###############################################################################
+################################################################################
 #
 # UndefinedBehaviorSanitizer
 #
@@ -538,6 +542,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $UBSAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $UBSAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $UBSAN_LDFLAGS"
+        LDFLAGS_STATIC_JDK="$LDFLAGS_STATIC_JDK $UBSAN_LDFLAGS"
       ])
   if test "x$UBSAN_ENABLED" = xfalse; then
     UBSAN_CFLAGS=""
@@ -586,13 +591,42 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JMOD_OPTIONS],
 ################################################################################
 #
 # jlink options.
-# We always keep packaged modules in JDK image.
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
 [
-  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: true,
+
+  ################################################################################
+  #
+  # Configure option for building a JDK that is suitable for linking from the
+  # run-time image without JMODs.
+  #
+  # Determines whether or not a suitable run-time image is being produced from
+  # packaged modules. If set to 'true, changes the *default* of packaged
+  # modules to 'false'.
+  #
+  UTIL_ARG_ENABLE(NAME: linkable-runtime, DEFAULT: false,
+      RESULT: JLINK_PRODUCE_LINKABLE_RUNTIME,
+      DESC: [enable a JDK build suitable for linking from the run-time image],
+      CHECKING_MSG: [whether or not a JDK suitable for linking from the run-time image should be produced])
+  AC_SUBST(JLINK_PRODUCE_LINKABLE_RUNTIME)
+
+  if test "x$JLINK_PRODUCE_LINKABLE_RUNTIME" = xtrue; then
+    DEFAULT_PACKAGED_MODULES=false
+  else
+    DEFAULT_PACKAGED_MODULES=true
+  fi
+
+  ################################################################################
+  #
+  # Configure option for packaged modules
+  #
+  # We keep packaged modules in the JDK image unless --enable-linkable-runtime is
+  # requested.
+  #
+  UTIL_ARG_ENABLE(NAME: keep-packaged-modules, DEFAULT: $DEFAULT_PACKAGED_MODULES,
       RESULT: JLINK_KEEP_PACKAGED_MODULES,
       DESC: [enable keeping of packaged modules in jdk image],
+      DEFAULT_DESC: [enabled by default unless --enable-linkable-runtime is set],
       CHECKING_MSG: [if packaged modules are kept])
   AC_SUBST(JLINK_KEEP_PACKAGED_MODULES)
 ])
@@ -638,14 +672,11 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
 
 ################################################################################
 #
-# Optionally disable man pages
+# Optionally disable man pages (deprecated)
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
 [
-  UTIL_ARG_ENABLE(NAME: manpages, DEFAULT: true, RESULT: BUILD_MANPAGES,
-      DESC: [enable copying of static man pages],
-      CHECKING_MSG: [if static man pages should be copied])
-  AC_SUBST(BUILD_MANPAGES)
+  UTIL_DEPRECATED_ARG_ENABLE(manpages)
 ])
 
 ################################################################################
@@ -671,6 +702,37 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
         fi
       ])
   AC_SUBST(BUILD_CDS_ARCHIVE)
+])
+
+################################################################################
+#
+# Enable or disable the default CDS archive generation for Compact Object Headers
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: auto, RESULT: BUILD_CDS_ARCHIVE_COH,
+      DESC: [enable generation of default CDS archives for compact object headers (requires --enable-cds-archive)],
+      DEFAULT_DESC: [auto],
+      CHECKING_MSG: [if default CDS archives for compact object headers should be generated],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive with compact object headers is available])
+        if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
+          AC_MSG_RESULT([no (CDS default archive generation is disabled)])
+          AVAILABLE=false
+        elif test "x$OPENJDK_TARGET_CPU" != "xx86_64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xaarch64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xppc64le" &&
+             test "x$OPENJDK_TARGET_CPU" != "xriscv64" &&
+             test "x$OPENJDK_TARGET_CPU" != "xs390x"; then
+          AC_MSG_RESULT([no (compact object headers not supported for this platform)])
+          AVAILABLE=false
+        else
+          AC_MSG_RESULT([yes])
+          AVAILABLE=true
+        fi
+      ])
+  AC_SUBST(BUILD_CDS_ARCHIVE_COH)
 ])
 
 ################################################################################
@@ -707,9 +769,8 @@ AC_DEFUN([JDKOPT_ALLOW_ABSOLUTE_PATHS_IN_OUTPUT],
 [
   AC_ARG_ENABLE([absolute-paths-in-output],
       [AS_HELP_STRING([--disable-absolute-paths-in-output],
-       [Set to disable to prevent any absolute paths from the build to end up in
-        any of the build output. @<:@disabled in release builds, otherwise enabled@:>@])
-      ])
+      [Set to disable to prevent any absolute paths from the build to end up in
+      any of the build output. @<:@disabled in release builds, otherwise enabled@:>@])])
 
   AC_MSG_CHECKING([if absolute paths should be allowed in the build output])
   if test "x$enable_absolute_paths_in_output" = "xno"; then

@@ -101,10 +101,10 @@ public class TableOfContents {
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
         }
         content.add(header);
-        content.add(new HtmlTree(HtmlTag.BUTTON).addStyle(HtmlStyles.hideSidebar)
+        content.add(HtmlTree.BUTTON(HtmlStyles.hideSidebar)
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
                 .add(Entity.LEFT_POINTING_ANGLE));
-        content.add(new HtmlTree(HtmlTag.BUTTON).addStyle(HtmlStyles.showSidebar)
+        content.add(HtmlTree.BUTTON(HtmlStyles.showSidebar)
                 .add(Entity.RIGHT_POINTING_ANGLE)
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
         return content.add(listBuilder);

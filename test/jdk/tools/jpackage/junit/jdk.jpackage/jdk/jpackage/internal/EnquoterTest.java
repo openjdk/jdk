@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,30 +23,49 @@
 
 package jdk.jpackage.internal;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import java.util.stream.Stream;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 
 public class EnquoterTest {
 
-    @Test
-    public void testForShellLiterals() {
-        var enquoter = Enquoter.forShellLiterals();
-
-        assertEquals(null, "''", enquoter.applyTo(""));
-        assertEquals(null, "'foo'", enquoter.applyTo("foo"));
-        assertEquals(null, "' foo '", enquoter.applyTo(" foo "));
-        assertEquals(null, "'foo bar'", enquoter.applyTo("foo bar"));
-        assertEquals(null, "'foo\\' bar'", enquoter.applyTo("foo' bar"));
+    @ParameterizedTest
+    @MethodSource
+    public void testForShellLiterals(String expected, String input) {
+        var actual = Enquoter.forShellLiterals().applyTo(input);
+        assertEquals(expected, actual);
     }
 
-    @Test
-    public void testForPropertyValues() {
-        var enquoter = Enquoter.forPropertyValues();
+    @ParameterizedTest
+    @MethodSource
+    public void testForPropertyValues(String expected, String input) {
+        var actual = Enquoter.forPropertyValues().applyTo(input);
+        assertEquals(expected, actual);
+    }
 
-        assertEquals(null, "", enquoter.applyTo(""));
-        assertEquals(null, "foo", enquoter.applyTo("foo"));
-        assertEquals(null, "\" foo \"", enquoter.applyTo(" foo "));
-        assertEquals(null, "\"foo bar\"", enquoter.applyTo("foo bar"));
-        assertEquals(null, "\"foo' bar\"", enquoter.applyTo("foo' bar"));
+    private static Stream<org.junit.jupiter.params.provider.Arguments> testForShellLiterals() {
+        return Stream.of(
+                makeArguments("''", ""),
+                makeArguments("'foo'", "foo"),
+                makeArguments("' foo '", " foo "),
+                makeArguments("'foo bar'", "foo bar"),
+                makeArguments("'foo\\' bar'", "foo' bar")
+        );
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> testForPropertyValues() {
+        return Stream.of(
+                makeArguments("", ""),
+                makeArguments("foo", "foo"),
+                makeArguments("\" foo \"", " foo "),
+                makeArguments("\"foo bar\"", "foo bar"),
+                makeArguments("\"foo' bar\"", "foo' bar")
+        );
+    }
+
+    static org.junit.jupiter.params.provider.Arguments makeArguments(Object ... args) {
+        return org.junit.jupiter.params.provider.Arguments.of(args);
     }
 }

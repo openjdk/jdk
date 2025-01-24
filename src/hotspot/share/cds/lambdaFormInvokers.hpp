@@ -38,7 +38,7 @@ class LambdaFormInvokers : public AllStatic {
  private:
   static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
   // For storing LF form lines (LF_RESOLVE only) in read only table.
-  static Array<Array<char>*>* _static_archive_invokers;
+  static Array<u4>* _static_archive_invokers;
   static void regenerate_class(char* name, ClassFileStream& st, TRAPS);
  public:
   static void append(char* line);

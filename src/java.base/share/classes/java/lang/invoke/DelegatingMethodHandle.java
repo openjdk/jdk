@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ abstract sealed class DelegatingMethodHandle extends MethodHandle
         final int PRE_ACTION   = hasPreAction ? nameCursor++ : -1;
         final int NEXT_MH     = customized ? -1 : nameCursor++;
         final int REINVOKE    = nameCursor++;
-        LambdaForm.Name[] names = LambdaForm.arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        LambdaForm.Name[] names = LambdaForm.invokeArguments(nameCursor - ARG_LIMIT, mtype);
         assert(names.length == nameCursor);
         names[THIS_DMH] = names[THIS_DMH].withConstraint(constraint);
         Object[] targetArgs;

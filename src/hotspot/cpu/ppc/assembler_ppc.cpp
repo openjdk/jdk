@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -448,7 +447,6 @@ int Assembler::load_const_optimized(Register d, long x, Register tmp, bool retur
       xa = (x >> 48) & 0xffff;
       xb = (x >> 32) & 0xffff; // No sign compensation, we use lis+ori or li to allow usage of R0.
       bool xa_loaded = (xb & 0x8000) ? (xa != -1) : (xa != 0);
-      bool return_xd = false;
 
       if (xa_loaded) { lis(tmp, xa); }
       if (xc) { lis(d, xc); }

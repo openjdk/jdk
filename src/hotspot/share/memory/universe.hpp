@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_UNIVERSE_HPP
 
 #include "gc/shared/verifyOption.hpp"
+#include "memory/reservedSpace.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
 #include "runtime/handles.hpp"
@@ -42,7 +43,6 @@
 class CollectedHeap;
 class DeferredObjAllocEvent;
 class OopStorage;
-class ReservedHeapSpace;
 class SerializeClosure;
 
 class Universe: AllStatic {
@@ -51,7 +51,6 @@ class Universe: AllStatic {
   friend class oopDesc;
   friend class ClassLoader;
   friend class SystemDictionary;
-  friend class ReservedHeapSpace;
   friend class VMStructs;
   friend class VM_PopulateDumpSharedSpace;
   friend class Metaspace;
@@ -230,6 +229,9 @@ class Universe: AllStatic {
   static oop          null_ptr_exception_instance();
   static oop          arithmetic_exception_instance();
   static oop          internal_error_instance();
+  static oop          array_index_out_of_bounds_exception_instance();
+  static oop          array_store_exception_instance();
+  static oop          class_cast_exception_instance();
   static oop          vm_exception()                  { return internal_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array; }

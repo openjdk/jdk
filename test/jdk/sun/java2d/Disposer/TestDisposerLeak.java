@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.java2d.DisposerRecord;
  * @test
  * @bug 8129457
  * @summary Check Disposer disposes all objects without any memory leaks
- * @run main/othervm -mx128m TestDisposerLeak
+ * @run main/othervm -Xmx128m TestDisposerLeak
  * @modules java.desktop/sun.java2d
  */
 public final class TestDisposerLeak {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,8 +49,15 @@ private:
   ReallocMark _nesting; // Safety checks for arena reallocation
 
   void init(Arena* arena);
+
   // Grow vector to required word capacity
+  void maybe_grow(uint new_word_capacity) {
+    if (new_word_capacity >= _size) {
+      grow(new_word_capacity);
+    }
+  }
   void grow(uint new_word_capacity);
+
 public:
   VectorSet();
   VectorSet(Arena* arena);
@@ -78,7 +85,7 @@ public:
   //
   bool test_set(uint elem) {
     uint32_t word = elem >> word_bits;
-    grow(word);
+    maybe_grow(word);
     uint32_t mask = 1U << (elem & bit_mask);
     uint32_t data = _data[word];
     _data[word] = data | mask;
@@ -107,7 +114,7 @@ public:
   // Fast inlined set
   void set(uint elem) {
     uint32_t word = elem >> word_bits;
-    grow(word);
+    maybe_grow(word);
     uint32_t mask = 1U << (elem & bit_mask);
     _data[word] |= mask;
   }

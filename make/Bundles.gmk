@@ -284,7 +284,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
   ifeq ($(MACOSX_CODESIGN_MODE), hardened)
     # Macosx release build and code signing available.
 
-    ################################################################################
+    ############################################################################
     # JDK bundle
     $(eval $(call SetupCopyFiles, CREATE_JDK_BUNDLE_DIR_SIGNED, \
         SRC := $(JDK_IMAGE_DIR), \
@@ -313,7 +313,7 @@ ifneq ($(filter product-bundles% legacy-bundles, $(MAKECMDGOALS)), )
 
     PRODUCT_TARGETS += $(BUILD_JDK_BUNDLE)
 
-    ################################################################################
+    ############################################################################
     # JRE bundle
     $(eval $(call SetupCopyFiles, CREATE_JRE_BUNDLE_DIR_SIGNED, \
         SRC := $(JRE_IMAGE_DIR), \

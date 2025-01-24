@@ -281,6 +281,7 @@ class StubRoutines: AllStatic {
   static address _dlibm_reduce_pi04l;
   static address _dlibm_tan_cot_huge;
   static address _dtan;
+  static address _dtanh;
   static address _fmod;
 
   static address _f2hf;
@@ -291,12 +292,14 @@ class StubRoutines: AllStatic {
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
+  static address _cont_preempt_stub;
 
   // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
+  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
+  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
 
   static address _upcall_stub_exception_handler;
+  static address _upcall_stub_load_target;
 
   static address _lookup_secondary_supers_table_stubs[];
   static address _lookup_secondary_supers_table_slow_path_stub;
@@ -404,7 +407,7 @@ class StubRoutines: AllStatic {
 
   static address unsafe_setmemory()     { return _unsafe_setmemory; }
 
-  typedef void (*UnsafeSetMemoryStub)(const void* src, size_t count, char byte);
+  typedef void (*UnsafeSetMemoryStub)(void* dst, size_t count, char byte);
   static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
@@ -472,6 +475,7 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+  static address dtanh()               { return _dtanh; }
 
   // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
   // methods which perform the same operations as the intrinsic version.
@@ -498,10 +502,16 @@ class StubRoutines: AllStatic {
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
+  static address cont_preempt_stub()   { return _cont_preempt_stub; }
 
   static address upcall_stub_exception_handler() {
     assert(_upcall_stub_exception_handler != nullptr, "not implemented");
     return _upcall_stub_exception_handler;
+  }
+
+  static address upcall_stub_load_target() {
+    assert(_upcall_stub_load_target != nullptr, "not implemented");
+    return _upcall_stub_load_target;
   }
 
   static address lookup_secondary_supers_table_stub(u1 slot) {

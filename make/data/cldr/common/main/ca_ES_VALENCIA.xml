@@ -19,17 +19,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="as" draft="unconfirmed">assamés</language>
 			<language type="az" draft="unconfirmed">azerbaidjanés</language>
 			<language type="ban" draft="unconfirmed">balinés</language>
+			<language type="bar" draft="unconfirmed">bavarés</language>
 			<language type="ce" draft="unconfirmed">txetxé</language>
 			<language type="cy" draft="unconfirmed">gal·lés</language>
 			<language type="da" draft="unconfirmed">danés</language>
 			<language type="dum" draft="unconfirmed">neerlandés mitjà</language>
 			<language type="en" draft="unconfirmed">anglés</language>
+			<language type="en_AU" draft="unconfirmed">anglés australià</language>
+			<language type="en_CA" draft="unconfirmed">anglés canadenc</language>
+			<language type="en_GB" draft="unconfirmed">anglés britànic</language>
 			<language type="en_GB" alt="short" draft="unconfirmed">anglés (GB)</language>
+			<language type="en_US" draft="unconfirmed">anglés americà</language>
 			<language type="en_US" alt="short" draft="unconfirmed">anglés (EUA)</language>
 			<language type="enm" draft="unconfirmed">anglés mitjà</language>
 			<language type="fi" draft="unconfirmed">finés</language>
 			<language type="fo" draft="unconfirmed">feroés</language>
 			<language type="fr" draft="unconfirmed">francés</language>
+			<language type="fr_CA" draft="unconfirmed">francés canadenc</language>
+			<language type="fr_CH" draft="unconfirmed">francés suís</language>
+			<language type="frc" draft="unconfirmed">francés cajun</language>
 			<language type="frm" draft="unconfirmed">francés mitjà</language>
 			<language type="fro" draft="unconfirmed">francés antic</language>
 			<language type="ga" draft="unconfirmed">irlandés</language>
@@ -52,6 +60,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nl" draft="unconfirmed">neerlandés</language>
 			<language type="pl" draft="unconfirmed">polonés</language>
 			<language type="pt" draft="unconfirmed">portugués</language>
+			<language type="pt_BR" draft="unconfirmed">portugués del Brasil</language>
+			<language type="pt_PT" draft="unconfirmed">portugués de Portugal</language>
 			<language type="ro" draft="unconfirmed">romanés</language>
 			<language type="rup" draft="unconfirmed">aromanés</language>
 			<language type="rw" draft="unconfirmed">ruandés</language>
@@ -66,9 +76,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="to" draft="unconfirmed">tongalés</language>
 			<language type="uk" draft="unconfirmed">ucraïnés</language>
 			<language type="yue" draft="unconfirmed">cantonés</language>
+			<language type="yue" alt="menu" draft="unconfirmed">xinés, cantonés</language>
 			<language type="zh" draft="unconfirmed">xinés</language>
+			<language type="zh" alt="menu" draft="unconfirmed">xinés, mandarí</language>
+			<language type="zh_Hans" draft="unconfirmed">xinés simplificat</language>
+			<language type="zh_Hans" alt="long" draft="unconfirmed">xinés mandarí (simplificat)</language>
+			<language type="zh_Hant" draft="unconfirmed">xinés tradicional</language>
+			<language type="zh_Hant" alt="long" draft="unconfirmed">xinés mandarí (tradicional)</language>
 		</languages>
 		<scripts>
+			<script type="Aghb" draft="unconfirmed">albanés caucàsic</script>
 			<script type="Bali" draft="unconfirmed">balinés</script>
 			<script type="Bugi" draft="unconfirmed">buginés</script>
 			<script type="Hung" draft="unconfirmed">hongarés antic</script>
@@ -86,6 +103,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="gb2312han" draft="unconfirmed">ordre del xinés simplificat - GB2312</type>
 		</types>
 	</localeDisplayNames>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="afternoon2" draft="unconfirmed">vesprada</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="afternoon2" draft="unconfirmed">vesprada</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="afternoon2" draft="unconfirmed">vesprada</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="afternoon2" draft="unconfirmed">vesprada</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="afternoon2" draft="unconfirmed">vesprada</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+			</calendar>
+		</calendars>
+	</dates>
 	<numbers>
 		<currencies>
 			<currency type="AFA">
@@ -108,6 +152,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one" draft="unconfirmed">lek albanés</displayName>
 				<displayName count="other" draft="unconfirmed">lekë albanesos</displayName>
 			</currency>
+			<currency type="AOA">
+				<displayName draft="unconfirmed">kwanza angolés</displayName>
+				<displayName count="one" draft="unconfirmed">kwanza angolés</displayName>
+			</currency>
+			<currency type="AOK">
+				<displayName draft="unconfirmed">kwanza angolés (1977–1991)</displayName>
+				<displayName count="one" draft="unconfirmed">kwanza angolés (1977–1991)</displayName>
+			</currency>
+			<currency type="AON">
+				<displayName draft="unconfirmed">nou kwanza angolés (1990–2000)</displayName>
+				<displayName count="one" draft="unconfirmed">nou kwanza angolés (1990–2000)</displayName>
+			</currency>
+			<currency type="AOR">
+				<displayName draft="unconfirmed">kwanza angolés reajustat (1995–1999)</displayName>
+				<displayName count="one" draft="unconfirmed">kwanza angolés reajustat (1995–1999)</displayName>
+			</currency>
 			<currency type="AZM">
 				<displayName draft="unconfirmed">manat azerbaidjanés (1993–2006)</displayName>
 				<displayName count="one" draft="unconfirmed">manat azerbaidjanés (1993–2006)</displayName>
@@ -118,6 +178,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one" draft="unconfirmed">manat azerbaidjanés</displayName>
 				<displayName count="other" draft="unconfirmed">manats azerbaidjanesos</displayName>
 			</currency>
+			<currency type="CDF">
+				<displayName draft="unconfirmed">franc congolés</displayName>
+				<displayName count="one" draft="unconfirmed">franc congolés</displayName>
+			</currency>
 			<currency type="CLE">
 				<displayName draft="unconfirmed">escut xilé</displayName>
 				<displayName count="one" draft="unconfirmed">escut xilé</displayName>
@@ -127,6 +191,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">peso xilé</displayName>
 				<displayName count="one" draft="unconfirmed">peso xilé</displayName>
 				<displayName count="other" draft="unconfirmed">pesos xilens</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName draft="unconfirmed">iuan xinés extracontinental</displayName>
+				<displayName count="one" draft="unconfirmed">iuan xinés extracontinental</displayName>
 			</currency>
 			<currency type="CNX">
 				<displayName draft="unconfirmed">dòlar del Banc Popular Xinés</displayName>
@@ -147,6 +215,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">franc francés</displayName>
 				<displayName count="one" draft="unconfirmed">franc francés</displayName>
 				<displayName count="other" draft="unconfirmed">francs francesos</displayName>
+			</currency>
+			<currency type="GHC">
+				<displayName draft="unconfirmed">cedi ghanés (1979–2007)</displayName>
+				<displayName count="one" draft="unconfirmed">cedi ghanés (1979–2007)</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName draft="unconfirmed">cedi ghanés</displayName>
+				<displayName count="one" draft="unconfirmed">cedi ghanés</displayName>
 			</currency>
 			<currency type="HUF">
 				<displayName draft="unconfirmed">fòrint hongarés</displayName>
@@ -228,6 +304,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one" draft="unconfirmed">franc rwandés</displayName>
 				<displayName count="other" draft="unconfirmed">francs de Ruanda</displayName>
 			</currency>
+			<currency type="SDD">
+				<displayName draft="unconfirmed">dinar sudanés</displayName>
+				<displayName count="one" draft="unconfirmed">dinar sudanés</displayName>
+			</currency>
 			<currency type="SIT">
 				<displayName draft="unconfirmed">tolar eslové</displayName>
 				<displayName count="one" draft="unconfirmed">tolar eslové</displayName>
@@ -263,6 +343,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one" draft="unconfirmed">franc UIC francés</displayName>
 				<displayName count="other" draft="unconfirmed">francs UIC francesos</displayName>
 			</currency>
+			<currency type="ZRN">
+				<displayName draft="unconfirmed">nou zaire zairés</displayName>
+				<displayName count="one" draft="unconfirmed">nou zaire zairés</displayName>
+			</currency>
+			<currency type="ZRZ">
+				<displayName draft="unconfirmed">zaire zairés</displayName>
+				<displayName count="one" draft="unconfirmed">zaire zairés</displayName>
+			</currency>
 			<currency type="ZWD">
 				<displayName draft="unconfirmed">dòlar zimbabués (1980–2008)</displayName>
 				<displayName count="one" draft="unconfirmed">dòlar zimbabués (1980–2008)</displayName>
@@ -280,4 +368,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 	</numbers>
+	<characterLabels>
+		<characterLabel type="japanese_kana" draft="unconfirmed">kana japonés</characterLabel>
+	</characterLabels>
 </ldml>

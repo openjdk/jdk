@@ -753,8 +753,7 @@ public abstract class Process {
      *
      * {@code Process} objects returned by {@link ProcessBuilder#start()} and
      * {@link Runtime#exec} implement {@code toHandle} as the equivalent of
-     * {@link ProcessHandle#of(long) ProcessHandle.of(pid)} including the
-     * check for a SecurityManager and {@code RuntimePermission("manageProcess")}.
+     * {@link ProcessHandle#of(long) ProcessHandle.of(pid)}.
      *
      * @implSpec
      * This implementation throws an instance of
@@ -766,8 +765,6 @@ public abstract class Process {
      * @return Returns a ProcessHandle for the Process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @since 9
      */
     public ProcessHandle toHandle() {
@@ -811,8 +808,6 @@ public abstract class Process {
      *         direct children of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @since 9
      */
     public Stream<ProcessHandle> children() {
@@ -837,8 +832,6 @@ public abstract class Process {
      *         are descendants of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
-     * @throws SecurityException if a security manager has been installed and
-     *         it denies RuntimePermission("manageProcess")
      * @since 9
      */
     public Stream<ProcessHandle> descendants() {

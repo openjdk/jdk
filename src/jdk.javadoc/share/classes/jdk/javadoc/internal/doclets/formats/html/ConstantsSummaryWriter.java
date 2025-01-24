@@ -414,7 +414,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      */
     private Content getTypeColumn(VariableElement member) {
         Content typeContent = new ContentBuilder();
-        var code = new HtmlTree(HtmlTag.CODE)
+        var code = HtmlTree.CODE()
                 .setId(htmlIds.forMember(currentTypeElement, member));
         for (Modifier mod : member.getModifiers()) {
             code.add(Text.of(mod.toString()))

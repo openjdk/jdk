@@ -111,6 +111,9 @@ private:
 
   bool is_young_gc_safe() const;
 
+  void gc_prologue();
+  void gc_epilogue(bool full);
+
 public:
   // Returns JNI_OK on success
   jint initialize() override;
@@ -226,10 +229,6 @@ public:
     SO_ScavengeCodeCache   = 0x10
   };
 
- protected:
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
-
  public:
   // Apply closures on various roots in Young GC or marking/adjust phases of Full GC.
   void process_roots(ScanningOption so,
@@ -291,7 +290,7 @@ public:
   void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap
-  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 

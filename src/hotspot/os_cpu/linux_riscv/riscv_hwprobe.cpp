@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "riscv_hwprobe.hpp"
 #include "runtime/os.hpp"
@@ -74,7 +73,7 @@
 #define   RISCV_HWPROBE_EXT_ZFHMIN              (1 << 28)
 #define   RISCV_HWPROBE_EXT_ZIHINTNTL           (1 << 29)
 #define   RISCV_HWPROBE_EXT_ZVFH                (1 << 30)
-#define   RISCV_HWPROBE_EXT_ZVFHMIN             (1 << 31)
+#define   RISCV_HWPROBE_EXT_ZVFHMIN             (1ULL << 31)
 #define   RISCV_HWPROBE_EXT_ZFA                 (1ULL << 32)
 #define   RISCV_HWPROBE_EXT_ZTSO                (1ULL << 33)
 #define   RISCV_HWPROBE_EXT_ZACAS               (1ULL << 34)
@@ -177,6 +176,18 @@ void RiscvHwprobe::add_features_from_query_result() {
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
     VM_Version::ext_Zfh.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFHMIN)) {
+    VM_Version::ext_Zfhmin.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
+    VM_Version::ext_Zvbc.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
+    VM_Version::ext_Zvfh.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
+    VM_Version::ext_Zicond.enable_feature();
   }
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(

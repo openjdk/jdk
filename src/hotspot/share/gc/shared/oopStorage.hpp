@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ class outputStream;
 
 class OopStorage : public CHeapObjBase {
 public:
-  static OopStorage* create(const char* name, MEMFLAGS memflags);
+  static OopStorage* create(const char* name, MemTag mem_tag);
   ~OopStorage();
 
   // These count and usage accessors are racy unless at a safepoint.
@@ -89,8 +89,8 @@ public:
   // bookkeeping overhead, including this storage object.
   size_t total_memory_usage() const;
 
-  // The memory type for allocations.
-  MEMFLAGS memflags() const;
+  // The memory tag for allocations.
+  MemTag mem_tag() const;
 
   enum EntryStatus {
     INVALID_ENTRY,
@@ -213,6 +213,7 @@ public:
   // Debugging and logging support.
   const char* name() const;
   void print_on(outputStream* st) const PRODUCT_RETURN;
+  bool print_containing(const oop* addr, outputStream* st);
 
   // Provides access to storage internals, for unit testing.
   // Declare, but not define, the public class OopStorage::TestAccess.
@@ -273,21 +274,21 @@ private:
   // mutable because this gets set even for const iteration.
   mutable int _concurrent_iteration_count;
 
-  // The memory type for allocations.
-  MEMFLAGS _memflags;
+  // The memory tag for allocations.
+  MemTag _mem_tag;
 
   // Flag indicating this storage object is a candidate for empty block deletion.
   volatile bool _needs_cleanup;
 
   // Clients construct via "create" factory function.
-  OopStorage(const char* name, MEMFLAGS memflags);
+  OopStorage(const char* name, MemTag mem_tag);
   NONCOPYABLE(OopStorage);
 
   bool try_add_block();
   Block* block_for_allocation();
   void  log_block_transition(Block* block, const char* new_state) const;
 
-  Block* find_block_or_null(const oop* ptr) const;
+  Block* block_for_ptr(const oop* ptr) const;
   void delete_empty_block(const Block& block);
   bool reduce_deferred_updates();
   void record_needs_cleanup();

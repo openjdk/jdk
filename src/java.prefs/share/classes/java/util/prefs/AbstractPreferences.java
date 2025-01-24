@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package java.util.prefs;
 
 import java.util.*;
 import java.io.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class provides a skeletal implementation of the {@link Preferences}
@@ -1058,14 +1056,8 @@ public abstract class AbstractPreferences extends Preferences {
      *         preference tree, {@code false} if it's in the system
      *         preference tree.
      */
-    @SuppressWarnings("removal")
     public boolean isUserNode() {
-        return AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    return root == Preferences.userRoot();
-            }
-            }).booleanValue();
+        return root == Preferences.userRoot();
     }
 
     public void addPreferenceChangeListener(PreferenceChangeListener pcl) {

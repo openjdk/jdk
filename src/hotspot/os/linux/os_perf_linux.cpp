@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "os_linux.inline.hpp"
@@ -789,7 +788,7 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_path() {
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/exe", _entry->d_name);
   buffer[PATH_MAX - 1] = '\0';
-  return os::Posix::realpath(buffer, _exePath, PATH_MAX);
+  return os::realpath(buffer, _exePath, PATH_MAX);
 }
 
 char* SystemProcessInterface::SystemProcesses::ProcessIterator::allocate_string(const char* str) const {

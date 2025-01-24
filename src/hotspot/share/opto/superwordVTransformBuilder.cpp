@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "opto/superwordVTransformBuilder.hpp"
 #include "opto/vectornode.hpp"
 
@@ -139,9 +138,13 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   VTransformVectorNode* vtn = nullptr;
 
   if (p0->is_Load()) {
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, pack_size);
+    const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Load());
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, pack_size, vector_p);
   } else if (p0->is_Store()) {
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, pack_size);
+    const VPointer& scalar_p = _vloop_analyzer.vpointers().vpointer(p0->as_Store());
+    const VPointer vector_p(scalar_p.make_with_size(scalar_p.size() * pack_size));
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, pack_size, vector_p);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, pack_size, kind);
@@ -228,8 +231,14 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       return shift_count;
     } else {
       // Replicate the scalar same_input to every vector element.
-      const Type* element_type = _vloop_analyzer.types().velt_type(p0);
-      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
+      // In some rare case, p0 is Convert node such as a ConvL2I: all
+      // ConvL2I nodes in the pack only differ in their types.
+      // velt_basic_type(p0) is the output type of the pack. In the
+      // case of a ConvL2I, it can be int or some narrower type such
+      // as short etc. But given we replicate the input of the Convert
+      // node, we have to use the input type instead.
+      BasicType element_type = p0->is_Convert() ? p0->in(1)->bottom_type()->basic_type() : _vloop_analyzer.types().velt_basic_type(p0);
+      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
         VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform);
@@ -305,4 +314,3 @@ void SuperWordVTransformBuilder::add_dependencies_of_node_to_vtnode(Node*n, VTra
     vtn->add_dependency(dependency); // Add every dependency only once per vtn.
   }
 }
-

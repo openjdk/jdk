@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeHeapState.hpp"
@@ -44,6 +43,7 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
+#include "memory/memoryReserver.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.inline.hpp"
@@ -177,10 +177,10 @@ GrowableArray<CodeHeap*>* CodeCache::_allocable_heaps = new(mtCode) GrowableArra
 
 static void check_min_size(const char* codeheap, size_t size, size_t required_size) {
   if (size < required_size) {
-    log_debug(codecache)("Code heap (%s) size " SIZE_FORMAT "K below required minimal size " SIZE_FORMAT "K",
+    log_debug(codecache)("Code heap (%s) size %zuK below required minimal size %zuK",
                          codeheap, size/K, required_size/K);
     err_msg title("Not enough space in %s to run VM", codeheap);
-    err_msg message(SIZE_FORMAT "K < " SIZE_FORMAT "K", size/K, required_size/K);
+    err_msg message("%zuK < %zuK", size/K, required_size/K);
     vm_exit_during_initialization(title, message);
   }
 }
@@ -255,15 +255,15 @@ void CodeCache::initialize_heaps() {
 
   size_t total = non_nmethod.size + profiled.size + non_profiled.size;
   if (total != cache_size && !cache_size_set) {
-    log_info(codecache)("ReservedCodeCache size " SIZE_FORMAT "K changed to total segments size NonNMethod "
-                        SIZE_FORMAT "K NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K = " SIZE_FORMAT "K",
+    log_info(codecache)("ReservedCodeCache size %zuK changed to total segments size NonNMethod "
+                        "%zuK NonProfiled %zuK Profiled %zuK = %zuK",
                         cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K, total/K);
     // Adjust ReservedCodeCacheSize as necessary because it was not set explicitly
     cache_size = total;
   }
 
-  log_debug(codecache)("Initializing code heaps ReservedCodeCache " SIZE_FORMAT "K NonNMethod " SIZE_FORMAT "K"
-                       " NonProfiled " SIZE_FORMAT "K Profiled " SIZE_FORMAT "K",
+  log_debug(codecache)("Initializing code heaps ReservedCodeCache %zuK NonNMethod %zuK"
+                       " NonProfiled %zuK Profiled %zuK",
                        cache_size/K, non_nmethod.size/K, non_profiled.size/K, profiled.size/K);
 
   // Validation
@@ -281,16 +281,16 @@ void CodeCache::initialize_heaps() {
 
   // ReservedCodeCacheSize was set explicitly, so report an error and abort if it doesn't match the segment sizes
   if (total != cache_size && cache_size_set) {
-    err_msg message("NonNMethodCodeHeapSize (" SIZE_FORMAT "K)", non_nmethod.size/K);
+    err_msg message("NonNMethodCodeHeapSize (%zuK)", non_nmethod.size/K);
     if (profiled.enabled) {
-      message.append(" + ProfiledCodeHeapSize (" SIZE_FORMAT "K)", profiled.size/K);
+      message.append(" + ProfiledCodeHeapSize (%zuK)", profiled.size/K);
     }
     if (non_profiled.enabled) {
-      message.append(" + NonProfiledCodeHeapSize (" SIZE_FORMAT "K)", non_profiled.size/K);
+      message.append(" + NonProfiledCodeHeapSize (%zuK)", non_profiled.size/K);
     }
-    message.append(" = " SIZE_FORMAT "K", total/K);
+    message.append(" = %zuK", total/K);
     message.append((total > cache_size) ? " is greater than " : " is less than ");
-    message.append("ReservedCodeCacheSize (" SIZE_FORMAT "K).", cache_size/K);
+    message.append("ReservedCodeCacheSize (%zuK).", cache_size/K);
 
     vm_exit_during_initialization("Invalid code heap sizes", message);
   }
@@ -318,7 +318,7 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled.size);
   FLAG_SET_ERGO(ReservedCodeCacheSize, cache_size);
 
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
+  ReservedSpace rs = reserve_heap_memory(cache_size, ps);
 
   // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
   LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
@@ -348,13 +348,14 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
                    os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
+ReservedSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
+
+  ReservedSpace rs = CodeMemoryReserver::reserve(rs_size, rs_align, rs_ps);
   if (!rs.is_reserved()) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (%zuK)",
                                           rs_size/K));
   }
 
@@ -433,9 +434,9 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_b
 
   // Reserve Space
   size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
-  size_initial = align_up(size_initial, os::vm_page_size());
+  size_initial = align_up(size_initial, rs.page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
-    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
+    vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (%zuK)",
                                           heap->name(), size_initial/K));
   }
 
@@ -563,7 +564,7 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
       } else {
         tty->print("CodeCache");
       }
-      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
+      tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (%zd bytes)",
                     (intptr_t)heap->low_boundary(), (intptr_t)heap->high(),
                     (address)heap->high() - (address)heap->low_boundary());
     }
@@ -1130,7 +1131,7 @@ void CodeCache::initialize() {
     // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
     // users want to use the largest available page.
     const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
+    ReservedSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1489,10 +1490,10 @@ void CodeCache::print_memory_overhead() {
   }
   // Print bytes that are allocated in the freelist
   ttyLocker ttl;
-  tty->print_cr("Number of elements in freelist: " SSIZE_FORMAT,       freelists_length());
-  tty->print_cr("Allocated in freelist:          " SSIZE_FORMAT "kB",  bytes_allocated_in_freelists()/K);
-  tty->print_cr("Unused bytes in CodeBlobs:      " SSIZE_FORMAT "kB",  (wasted_bytes/K));
-  tty->print_cr("Segment map size:               " SSIZE_FORMAT "kB",  allocated_segments()/K); // 1 byte per segment
+  tty->print_cr("Number of elements in freelist: %zd",       freelists_length());
+  tty->print_cr("Allocated in freelist:          %zdkB",  bytes_allocated_in_freelists()/K);
+  tty->print_cr("Unused bytes in CodeBlobs:      %zdkB",  (wasted_bytes/K));
+  tty->print_cr("Segment map size:               %zdkB",  allocated_segments()/K); // 1 byte per segment
 }
 
 //------------------------------------------------------------------------------------------------
@@ -1725,8 +1726,8 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     total_used += used;
     total_max_used += max_used;
     total_free += free;
-    st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
-                 "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
+    st->print_cr(" size=%zuKb used=%zu"
+                 "Kb max_used=%zuKb free=%zuKb",
                  size, used, max_used, free);
 
     if (detailed) {
@@ -1767,9 +1768,13 @@ void CodeCache::print_codelist(outputStream* st) {
     nmethod* nm = iter.method();
     ResourceMark rm;
     char* method_name = nm->method()->name_and_sig_as_C_string();
-    st->print_cr("%d %d %d %s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
+    const char* jvmci_name = nullptr;
+#if INCLUDE_JVMCI
+    jvmci_name = nm->jvmci_name();
+#endif
+    st->print_cr("%d %d %d %s%s%s [" INTPTR_FORMAT ", " INTPTR_FORMAT " - " INTPTR_FORMAT "]",
                  nm->compile_id(), nm->comp_level(), nm->get_state(),
-                 method_name,
+                 method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "",
                  (intptr_t)nm->header_begin(), (intptr_t)nm->code_begin(), (intptr_t)nm->code_end());
   }
 }
@@ -1782,7 +1787,7 @@ void CodeCache::print_layout(outputStream* st) {
 
 void CodeCache::log_state(outputStream* st) {
   st->print(" total_blobs='" UINT32_FORMAT "' nmethods='" UINT32_FORMAT "'"
-            " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
+            " adapters='" UINT32_FORMAT "' free_code_cache='%zu'",
             blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }
@@ -1811,12 +1816,20 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   while (iter.next()) {
     CodeBlob *cb = iter.method();
     ResourceMark rm;
-    const char* method_name =
-      cb->is_nmethod() ? cb->as_nmethod()->method()->external_name()
-                       : cb->name();
-    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s",
+    const char* method_name = nullptr;
+    const char* jvmci_name = nullptr;
+    if (cb->is_nmethod()) {
+      nmethod* nm = cb->as_nmethod();
+      method_name = nm->method()->external_name();
+#if INCLUDE_JVMCI
+      jvmci_name = nm->jvmci_name();
+#endif
+    } else {
+      method_name = cb->name();
+    }
+    fs.print_cr(INTPTR_FORMAT " " INTPTR_FORMAT " %s%s%s",
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
-                method_name);
+                method_name, jvmci_name ? " jvmci_name=" : "", jvmci_name ? jvmci_name : "");
   }
 }
 #endif // LINUX

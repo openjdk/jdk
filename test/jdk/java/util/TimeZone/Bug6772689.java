@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,18 @@
 
 /*
  * @test
- * @bug 6772689
+ * @bug 6772689 8347841
  * @summary Test for standard-to-daylight transitions at midnight:
  * date stays on the given day.
  */
 
+import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 import static java.util.GregorianCalendar.*;
 
 public class Bug6772689 {
@@ -43,7 +46,9 @@ public class Bug6772689 {
         int errors = 0;
 
         Calendar cal = new GregorianCalendar(BEGIN_YEAR, MARCH, 1);
-        String[] tzids = TimeZone.getAvailableIDs();
+        String[] tzids = Arrays.stream(TimeZone.getAvailableIDs())
+                .filter(Predicate.not(ZoneId.SHORT_IDS::containsKey))
+                .toArray(String[]::new);
         try {
             for (String id : tzids) {
                 TimeZone tz = TimeZone.getTimeZone(id);

@@ -25,7 +25,7 @@
  * @test id=default
  * @bug 8312498
  * @summary Basic test for JVMTI GetThreadState with virtual threads
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
  * @run junit/othervm/native --enable-native-access=ALL-UNNAMED GetThreadStateTest
  */
@@ -33,7 +33,7 @@
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
  * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations --enable-native-access=ALL-UNNAMED GetThreadStateTest
  */
@@ -42,7 +42,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

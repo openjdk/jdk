@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,15 +233,6 @@ class IdealKit: public StackObj {
               MemNode::MemOrd mo,
               bool require_atomic_access = false,
               bool mismatched = false);
-
-  // Store a card mark ordered after store_oop
-  Node* storeCM(Node* ctl,
-                Node* adr,
-                Node* val,
-                Node* oop_store,
-                int oop_adr_idx,
-                BasicType bt,
-                int adr_idx);
 
   // Trivial call
   Node* make_leaf_call(const TypeFunc *slow_call_type,

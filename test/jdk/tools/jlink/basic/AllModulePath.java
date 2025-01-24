@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,45 +21,52 @@
  * questions.
  */
 
-/*
- * @test
- * @summary jlink test of --add-module ALL-MODULE-PATH
- * @library /test/lib
- * @modules jdk.compiler
- * @build jdk.test.lib.process.ProcessTools
- *        jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.compiler.CompilerUtils
- * @run testng AllModulePath
- */
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.spi.ToolProvider;
-
-import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.process.ProcessTools;
+import java.util.stream.Collectors;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
 
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.process.ProcessTools;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
+import tests.Helper;
+import tests.Result;
+
+/*
+ * @test
+ * @bug 8345259
+ * @summary jlink test of --add-module ALL-MODULE-PATH
+ * @library ../../lib /test/lib
+ * @modules jdk.compiler
+ *          java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jimage
+ * @build jdk.test.lib.process.ProcessTools
+ *        jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.compiler.CompilerUtils
+ * @run testng/othervm -Duser.language=en -Duser.country=US AllModulePath
+ */
 public class AllModulePath {
 
-    private final Path JMODS = Paths.get(System.getProperty("test.jdk")).resolve("jmods");
-    private final Path SRC = Paths.get(System.getProperty("test.src")).resolve("src");
-    private final Path MODS = Paths.get("mods");
+    private static final Path JMODS = Paths.get(System.getProperty("test.jdk")).resolve("jmods");
+    private static final Path SRC = Paths.get(System.getProperty("test.src")).resolve("src");
+    private static final Path MODS = Paths.get("mods");
+    private static final boolean LINKABLE_RUNTIME = LinkableRuntimeImage.isLinkableRuntime();
+    private static final boolean JMODS_EXIST = Files.exists(JMODS);
 
     private final static Set<String> MODULES = Set.of("test", "m1");
 
@@ -67,12 +74,22 @@ public class AllModulePath {
         .orElseThrow(() ->
             new RuntimeException("jlink tool not found")
         );
+    private static Helper HELPER;
+
+    private static boolean isExplodedJDKImage() {
+        if (!JMODS_EXIST && !LINKABLE_RUNTIME) {
+            System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+            return true;
+        }
+        return false;
+    }
 
     @BeforeClass
     public void setup() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (isExplodedJDKImage()) {
             return;
         }
+        HELPER = Helper.newHelper(LINKABLE_RUNTIME);
 
         Files.createDirectories(MODS);
 
@@ -84,60 +101,114 @@ public class AllModulePath {
         }
     }
 
+    /*
+     * --add-modules ALL-MODULE-PATH with an existing module-path.
+     */
     @Test
     public void testAllModulePath() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (isExplodedJDKImage()) {
             return;
         }
 
-        // create custom image
-        Path image = Paths.get("image");
-        createImage(image, "--add-modules", "ALL-MODULE-PATH");
+        Path image = HELPER.createNewImageDir("image");
+        List<String> opts = List.of("--module-path", MODS.toString(),
+                                    "--output", image.toString(),
+                                    "--add-modules", "ALL-MODULE-PATH");
+        createImage(image, opts, true /* success */);
 
         Set<String> modules = new HashSet<>();
-        Files.find(JMODS, 1, (Path p, BasicFileAttributes attr) ->
-                                p.toString().endsWith(".jmod"))
-             .map(p -> JMODS.relativize(p).toString())
-             .map(n -> n.substring(0, n.length()-5))
-             .forEach(modules::add);
+        // java.base is a dependency of any external module
+        modules.add("java.base");
         modules.add("m1");
         modules.add("test");
         checkModules(image, modules);
     }
 
+    /*
+     * --add-modules ALL-MODULE-PATH with --limit-modules is an error
+     */
     @Test
     public void testLimitModules() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (isExplodedJDKImage()) {
             return;
         }
-
-        // create custom image
-        Path image = Paths.get("image1");
-        createImage(image,
-                    "--add-modules", "ALL-MODULE-PATH",
-                    "--limit-modules", "m1");
-
-        checkModules(image, Set.of("m1", "java.base"));
+        Path targetPath = HELPER.createNewImageDir("all-mods-limit-mods");
+        String moduleName = "com.baz.runtime";
+        Result result = HELPER.generateDefaultJModule(moduleName, "jdk.jfr");
+        Path customModulePath = result.getFile().getParent();
+        List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
+                                       "--limit-modules", "jdk.jfr",
+                                       "--module-path", customModulePath.toString(),
+                                       "--output", targetPath.toString());
+        JlinkOutput allOut = createImage(targetPath, allArgs, false /* success */);
+        String actual = allOut.stdout.trim();
+        String expected = "Error: --limit-modules not allowed with --add-modules ALL-MODULE-PATH";
+        assertEquals(actual, expected);
     }
 
+
+    /*
+     * --add-modules *includes* ALL-MODULE-PATH with an existing module path
+     */
     @Test
     public void testAddModules() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (isExplodedJDKImage()) {
             return;
         }
 
         // create custom image
-        Path image = Paths.get("image2");
-        createImage(image,
-                    "--add-modules", "m1,test",
-                    "--add-modules", "ALL-MODULE-PATH",
-                    "--limit-modules", "java.base");
+        Path image = HELPER.createNewImageDir("image2");
+        List<String> opts = List.of("--module-path", MODS.toString(),
+                                    "--output", image.toString(),
+                                    "--add-modules", "m1",
+                                    "--add-modules", "ALL-MODULE-PATH");
+        createImage(image, opts, true /* success */);
 
         checkModules(image, Set.of("m1", "test", "java.base"));
     }
 
     /*
-     * check the modules linked in the image
+     * No --module-path with --add-modules ALL-MODULE-PATH is an error.
+     */
+    @Test
+    public void noModulePath() throws IOException {
+        if (isExplodedJDKImage()) {
+            return;
+        }
+        Path targetPath = HELPER.createNewImageDir("all-mod-path-no-mod-path");
+        List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
+                                       "--output", targetPath.toString());
+        JlinkOutput allOut = createImage(targetPath, allArgs, false /* expect failure */);
+        String expected = "Error: --module-path option must be specified with --add-modules ALL-MODULE-PATH";
+        assertEquals(allOut.stdout.trim(), expected);
+    }
+
+    /*
+     * --module-path not-exist and --add-modules ALL-MODULE-PATH is an error.
+     */
+    @Test
+    public void modulePathEmpty() throws IOException {
+        if (isExplodedJDKImage()) {
+            return;
+        }
+        Path targetPath = HELPER.createNewImageDir("all-mod-path-not-existing");
+        String strNotExists = "not-exist";
+        Path notExists = Path.of(strNotExists);
+        if (Files.exists(notExists)) {
+            throw new AssertionError("Test setup error, path must not exist!");
+        }
+        List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
+                                       "--module-path", notExists.toString(),
+                                       "--output", targetPath.toString());
+
+        JlinkOutput allOut = createImage(targetPath, allArgs, false /* expect failure */);
+        String actual = allOut.stdout.trim();
+        assertTrue(actual.startsWith("Error: No module found in module path"));
+        assertTrue(actual.contains(strNotExists));
+    }
+
+    /*
+     * check the modules linked in the image using m1/p.ListModules
      */
     private void checkModules(Path image, Set<String> modules) throws Throwable {
         Path cmd = findTool(image, "java");
@@ -164,16 +235,19 @@ public class AllModulePath {
         return cmd;
     }
 
-    private void createImage(Path image, String... options) throws IOException {
-        String modulepath = JMODS.toString() + File.pathSeparator + MODS.toString();
-        List<String> opts = List.of("--module-path", modulepath,
-                                    "--output", image.toString());
-        String[] args = Stream.concat(opts.stream(), Arrays.stream(options))
-                              .toArray(String[]::new);
+    private JlinkOutput createImage(Path image, List<String> args, boolean success) throws IOException {
+        System.out.println("jlink " + args.stream().collect(Collectors.joining(" ")));
 
-        System.out.println("jlink " + Arrays.stream(args).collect(Collectors.joining(" ")));
-        PrintWriter pw = new PrintWriter(System.out);
-        int rc = JLINK_TOOL.run(pw, pw, args);
-        assertTrue(rc == 0);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintWriter out = new PrintWriter(baos);
+        ByteArrayOutputStream berrOs = new ByteArrayOutputStream();
+        PrintWriter err = new PrintWriter(berrOs);
+        int rc = JLINK_TOOL.run(out, err, args.toArray(String[]::new));
+        String stdOut = new String(baos.toByteArray());
+        String stdErr = new String(berrOs.toByteArray());
+        assertEquals(rc == 0, success, String.format("Output was: %nstdout: %s%nstderr: %s%n", stdOut, stdErr));
+        return new JlinkOutput(stdErr, stdOut);
     }
+
+    private static record JlinkOutput(String stderr, String stdout) {};
 }

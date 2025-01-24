@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ class G1Predictions;
 // Container for TruncatedSeqs that need separate predictors by GC phase.
 class G1PhaseDependentSeq {
   TruncatedSeq _young_only_seq;
+  double _initial_value;
   TruncatedSeq _mixed_seq;
 
   NONCOPYABLE(G1PhaseDependentSeq);

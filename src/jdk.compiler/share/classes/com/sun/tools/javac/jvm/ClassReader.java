@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,11 @@ import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -119,10 +119,6 @@ public class ClassReader {
      */
     boolean allowRecords;
 
-   /** Lint option: warn about classfile issues
-     */
-    boolean lintClassfile;
-
     /** Switch: warn (instead of error) on illegal UTF-8
      */
     boolean warnOnIllegalUtf8;
@@ -142,6 +138,9 @@ public class ClassReader {
 
     /** The symbol table. */
     Symtab syms;
+
+    /** The root Lint config. */
+    Lint lint;
 
     Types types;
 
@@ -199,6 +198,9 @@ public class ClassReader {
     /** The minor version number of the class file being read. */
     int minorVersion;
 
+    /** true if the class file being read is a preview class file. */
+    boolean previewClassFile;
+
     /** UTF-8 validation level */
     Convert.Validation utf8validation;
 
@@ -217,6 +219,12 @@ public class ClassReader {
      * A table to hold the access flags of the method parameters.
      */
     int[] parameterAccessFlags;
+
+    /**
+     * A table to hold the access flags of the method parameters,
+     * for all parameters including synthetic and mandated ones.
+     */
+    int[] allParameterAccessFlags;
 
     /**
      * A table to hold annotations for method parameters.
@@ -295,7 +303,7 @@ public class ClassReader {
 
         typevars = WriteableScope.create(syms.noSymbol);
 
-        lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
+        lint = Lint.instance(context);
 
         initAttributeReaders();
     }
@@ -843,11 +851,11 @@ public class ClassReader {
                 if (majorVersion > version.major || (majorVersion == version.major && minorVersion >= version.minor))
                     return true;
 
-                if (lintClassfile && !warnedAttrs.contains(name)) {
+                if (!warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
-                                    Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
+                        lint.logIfEnabled(log,
+                                    LintWarnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
                     }
@@ -1146,12 +1154,15 @@ public class ClassReader {
                     int newbp = bp + attrlen;
                     if (saveParameterNames) {
                         int numEntries = nextByte();
+                        allParameterAccessFlags = new int[numEntries];
                         parameterNameIndicesMp = new int[numEntries];
                         parameterAccessFlags = new int[numEntries];
+                        int allParamIndex = 0;
                         int index = 0;
                         for (int i = 0; i < numEntries; i++) {
                             int nameIndex = nextChar();
                             int flags = nextChar();
+                            allParameterAccessFlags[allParamIndex++] = flags;
                             if ((flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0) {
                                 continue;
                             }
@@ -1191,7 +1202,9 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE)) {
+                                if (flags.contains(RequiresFlag.TRANSITIVE) &&
+                                    (majorVersion != Version.MAX().major || !previewClassFile) &&
+                                    !preview.participatesInPreview(syms, msym)) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
                                 }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {
@@ -1593,7 +1606,14 @@ public class ClassReader {
         if (parameterAnnotations == null) {
             parameterAnnotations = new ParameterAnnotations[numParameters];
         } else if (parameterAnnotations.length != numParameters) {
-            throw badClassFile("bad.runtime.invisible.param.annotations", meth);
+            //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
+            //provide annotations for a different number of parameters, ignore:
+            lint.logIfEnabled(log, LintWarnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
+            for (int pnum = 0; pnum < numParameters; pnum++) {
+                readAnnotations();
+            }
+            parameterAnnotations = null;
+            return ;
         }
         for (int pnum = 0; pnum < numParameters; pnum++) {
             if (parameterAnnotations[pnum] == null) {
@@ -2053,14 +2073,12 @@ public class ClassReader {
             // The method wasn't found: emit a warning and recover
             JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
             try {
-                if (lintClassfile) {
-                    if (failure == null) {
-                        log.warning(Warnings.AnnotationMethodNotFound(container, name));
-                    } else {
-                        log.warning(Warnings.AnnotationMethodNotFoundReason(container,
+                if (failure == null) {
+                    lint.logIfEnabled(log, LintWarnings.AnnotationMethodNotFound(container, name));
+                } else {
+                    lint.logIfEnabled(log, LintWarnings.AnnotationMethodNotFoundReason(container,
                                                                             name,
                                                                             failure.getDetailValue()));//diagnostic, if present
-                    }
                 }
             } finally {
                 log.useSource(prevSource);
@@ -2174,7 +2192,7 @@ public class ClassReader {
 
         Type resolvePossibleProxyType(Type t) {
             if (t instanceof ProxyType proxyType) {
-                Assert.check(requestingOwner.owner.kind == MDL);
+                Assert.check(requestingOwner.owner instanceof ModuleSymbol);
                 ModuleSymbol prevCurrentModule = currentModule;
                 currentModule = (ModuleSymbol) requestingOwner.owner;
                 try {
@@ -2334,6 +2352,12 @@ public class ClassReader {
             this.attributes = attributes;
         }
 
+        /**
+         * A supertype_index value of 65535 specifies that the annotation appears on the superclass
+         * in an extends clause of a class declaration, see JVMS 4.7.20.1
+         */
+        public static final int SUPERCLASS_INDEX = 65535;
+
         @Override
         public Void visitClassSymbol(Symbol.ClassSymbol s, Void unused) {
             ClassType t = (ClassType) s.type;
@@ -2343,7 +2367,7 @@ public class ClassReader {
                 interfaces.add(addTypeAnnotations(itf, classExtends(i++)));
             }
             t.interfaces_field = interfaces.toList();
-            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(65535));
+            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(SUPERCLASS_INDEX));
             if (t.typarams_field != null) {
                 t.typarams_field =
                         rewriteTypeParameters(
@@ -2623,7 +2647,8 @@ public class ClassReader {
         char rawFlags = nextChar();
         long flags = adjustMethodFlags(rawFlags);
         Name name = poolReader.getName(nextChar());
-        Type type = poolReader.getType(nextChar());
+        Type descriptorType = poolReader.getType(nextChar());
+        Type type = descriptorType;
         if (currentOwner.isInterface() &&
                 (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
             if (majorVersion > Version.V52.major ||
@@ -2640,6 +2665,7 @@ public class ClassReader {
             }
         }
         validateMethodType(name, type);
+        boolean forceLocal = false;
         if (name == names.init && currentOwner.hasOuterInstance()) {
             // Sometimes anonymous classes don't have an outer
             // instance, however, there is no reliable way to tell so
@@ -2647,7 +2673,8 @@ public class ClassReader {
             // ditto for local classes. Local classes that have an enclosing method set
             // won't pass the "hasOuterInstance" check above, but those that don't have an
             // enclosing method (i.e. from initializers) will pass that check.
-            boolean local = !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
+            boolean local = forceLocal =
+                    !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
             if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
                                       type.getReturnType(),
@@ -2668,6 +2695,7 @@ public class ClassReader {
             currentOwner = prevOwner;
         }
         validateMethodType(name, m.type);
+        adjustParameterAnnotations(m, descriptorType, forceLocal);
         setParameters(m, type);
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
@@ -2795,17 +2823,139 @@ public class ClassReader {
             nameIndexMp++;
             annotationIndex++;
         }
-        if (parameterAnnotations != null && parameterAnnotations.length != annotationIndex) {
-            throw badClassFile("bad.runtime.invisible.param.annotations", sym);
-        }
+        Assert.check(parameterAnnotations == null ||
+                     parameterAnnotations.length == annotationIndex);
         Assert.checkNull(sym.params);
         sym.params = params.toList();
         parameterAnnotations = null;
         parameterNameIndicesLvt = null;
         parameterNameIndicesMp = null;
+        allParameterAccessFlags = null;
         parameterAccessFlags = null;
     }
 
+    void adjustParameterAnnotations(MethodSymbol sym, Type methodDescriptor,
+                                    boolean forceLocal) {
+        if (parameterAnnotations == null) {
+            return ;
+        }
+
+        //the specification for Runtime(In)VisibleParameterAnnotations does not
+        //enforce any mapping between the method parameters and the recorded
+        //parameter annotation. Attempt a number of heuristics to adjust the
+        //adjust parameterAnnotations to the percieved number of parameters:
+
+        int methodParameterCount = sym.type.getParameterTypes().size();
+
+        if (methodParameterCount == parameterAnnotations.length) {
+            //we've got exactly as many parameter annotations as are parameters
+            //of the method (after considering a possible Signature attribute),
+            //no need to do anything. the parameter creation code will use
+            //the 1-1 mapping to restore the annotations:
+            return ;
+        }
+
+        if (allParameterAccessFlags != null) {
+            //MethodParameters attribute present, use it:
+
+            //count the number of non-synthetic and non-mandatory parameters:
+            int realParameters = 0;
+
+            for (int i = 0; i < allParameterAccessFlags.length; i++) {
+                if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                    realParameters++;
+                }
+            }
+
+            int methodDescriptorParameterCount = methodDescriptor.getParameterTypes().size();
+
+            if (realParameters == parameterAnnotations.length &&
+                allParameterAccessFlags.length == methodDescriptorParameterCount) {
+                //if we have parameter annotations for each non-synthetic/mandatory parameter,
+                //and if Signature was not present, expand the parameterAnnotations to cover
+                //all the method descriptor's parameters:
+                if (sym.type == methodDescriptor) {
+                    ParameterAnnotations[] newParameterAnnotations =
+                            new ParameterAnnotations[methodParameterCount];
+                    int srcIndex = 0;
+
+                    for (int i = 0; i < methodParameterCount; i++) {
+                        if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                            newParameterAnnotations[i] = parameterAnnotations[srcIndex++];
+                        }
+                    }
+
+                    parameterAnnotations = newParameterAnnotations;
+                } else {
+                    dropParameterAnnotations();
+                }
+            } else if (realParameters == methodParameterCount &&
+                       methodDescriptorParameterCount == parameterAnnotations.length &&
+                       allParameterAccessFlags.length == methodDescriptorParameterCount) {
+                //if there are as many parameter annotations as parameters in
+                //the method descriptor, and as many real parameters as parameters
+                //in the method's type (after accounting for Signature), shrink
+                //the parameterAnnotations to only cover the parameters from
+                //the method's type:
+                ParameterAnnotations[] newParameterAnnotations =
+                        new ParameterAnnotations[methodParameterCount];
+                int targetIndex = 0;
+
+                for (int i = 0; i < parameterAnnotations.length; i++) {
+                    if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                        newParameterAnnotations[targetIndex++] = parameterAnnotations[i];
+                    }
+                }
+
+                parameterAnnotations = newParameterAnnotations;
+            } else {
+                dropParameterAnnotations();
+            }
+            return ;
+        }
+
+        if (!sym.isConstructor()) {
+            //if the number of parameter annotations and the number of parameters
+            //don't match, we don't have any heuristics to map one to the other
+            //unless the method is a constructor:
+            dropParameterAnnotations();
+            return ;
+        }
+
+        if (sym.owner.isEnum()) {
+            if (methodParameterCount == parameterAnnotations.length + 2 &&
+                sym.type == methodDescriptor) {
+                //handle constructors of enum types without the Signature attribute -
+                //there are the two synthetic parameters (name and ordinal) in the
+                //constructor, but there may be only parameter annotations for the
+                //real non-synthetic parameters:
+                ParameterAnnotations[] newParameterAnnotations = new ParameterAnnotations[parameterAnnotations.length + 2];
+                System.arraycopy(parameterAnnotations, 0, newParameterAnnotations, 2, parameterAnnotations.length);
+                parameterAnnotations = newParameterAnnotations;
+                return ;
+            }
+        } else if (sym.owner.isDirectlyOrIndirectlyLocal() || forceLocal) {
+            //local class may capture the enclosing instance (as the first parameter),
+            //and local variables (as trailing parameters)
+            //if there are less parameter annotations than parameters, put the existing
+            //ones starting with offset:
+            if (methodParameterCount > parameterAnnotations.length &&
+                sym.type == methodDescriptor) {
+                ParameterAnnotations[] newParameterAnnotations = new ParameterAnnotations[methodParameterCount];
+                System.arraycopy(parameterAnnotations, 0, newParameterAnnotations, 1, parameterAnnotations.length);
+                parameterAnnotations = newParameterAnnotations;
+                return ;
+            }
+        }
+
+        //no heuristics worked, drop the annotations:
+        dropParameterAnnotations();
+    }
+
+    private void dropParameterAnnotations() {
+        parameterAnnotations = null;
+        lint.logIfEnabled(log, LintWarnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
+    }
     /**
      * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.
      * Flags are optionally read from the MethodParameters attribute.
@@ -3033,7 +3183,7 @@ public class ClassReader {
         majorVersion = nextChar();
         int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
-        boolean previewClassFile =
+        previewClassFile =
                 minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <

@@ -127,7 +127,6 @@ public class DivINodeIdealizationTests {
                   IRNode.DIV, "1",
                   IRNode.DIV_BY_ZERO_TRAP, "1"
                  })
-    // Hotspot should keep the division because it may cause a division by zero trap
     public int retainDenominator(int x, int y) {
         return (x * y) / y;
     }

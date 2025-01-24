@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "c1/c1_ValueType.hpp"
 #include "oops/method.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 class BlockBegin;
 class BlockList;
@@ -938,6 +939,11 @@ enum LIR_Code {
       , lir_alloc_object
       , lir_monaddr
       , lir_roundfp
+      , lir_sqrt
+      , lir_abs
+      , lir_neg
+      , lir_f2hf
+      , lir_hf2f
       , lir_safepoint
       , lir_unwind
       , lir_load_klass
@@ -954,13 +960,6 @@ enum LIR_Code {
       , lir_mul
       , lir_div
       , lir_rem
-      , lir_sqrt
-      , lir_abs
-      , lir_neg
-      , lir_tan
-      , lir_f2hf
-      , lir_hf2f
-      , lir_log10
       , lir_logic_and
       , lir_logic_or
       , lir_logic_xor
@@ -1017,7 +1016,7 @@ enum LIR_Code {
   , begin_opAssert
     , lir_assert
   , end_opAssert
-#ifdef INCLUDE_ZGC
+#if INCLUDE_ZGC
   , begin_opXLoadBarrierTest
     , lir_xloadbarrier_test
   , end_opXLoadBarrierTest
@@ -1122,7 +1121,7 @@ class LIR_Op: public CompilationResourceObj {
   }
 #endif
 
-  virtual const char * name() const PRODUCT_RETURN0;
+  virtual const char * name() const PRODUCT_RETURN_NULL;
   virtual void visit(LIR_OpVisitState* state);
 
   int id()             const                  { return _id;     }
@@ -1356,6 +1355,7 @@ class LIR_Op1: public LIR_Op {
 
  protected:
   LIR_Opr         _opr;   // input operand
+  LIR_Opr         _tmp;
   BasicType       _type;  // Operand types
   LIR_PatchCode   _patch; // only required with patchin (NEEDS_CLEANUP: do we want a special instruction for patching?)
 
@@ -1370,12 +1370,21 @@ class LIR_Op1: public LIR_Op {
   LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result = LIR_OprFact::illegalOpr, BasicType type = T_ILLEGAL, LIR_PatchCode patch = lir_patch_none, CodeEmitInfo* info = nullptr)
     : LIR_Op(code, result, info)
     , _opr(opr)
+    , _tmp(LIR_OprFact::illegalOpr)
+    , _type(type)
+    , _patch(patch)                    { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
+
+  LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result, LIR_Opr tmp, BasicType type = T_ILLEGAL, LIR_PatchCode patch = lir_patch_none, CodeEmitInfo* info = nullptr)
+    : LIR_Op(code, result, info)
+    , _opr(opr)
+    , _tmp(tmp)
     , _type(type)
     , _patch(patch)                    { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
 
   LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result, BasicType type, LIR_PatchCode patch, CodeEmitInfo* info, LIR_MoveKind kind)
     : LIR_Op(code, result, info)
     , _opr(opr)
+    , _tmp(LIR_OprFact::illegalOpr)
     , _type(type)
     , _patch(patch)                    {
     assert(code == lir_move, "must be");
@@ -1385,10 +1394,12 @@ class LIR_Op1: public LIR_Op {
   LIR_Op1(LIR_Code code, LIR_Opr opr, CodeEmitInfo* info)
     : LIR_Op(code, LIR_OprFact::illegalOpr, info)
     , _opr(opr)
+    , _tmp(LIR_OprFact::illegalOpr)
     , _type(T_ILLEGAL)
     , _patch(lir_patch_none)           { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
 
   LIR_Opr in_opr()           const               { return _opr;   }
+  LIR_Opr tmp_opr()          const               { return _tmp;   }
   LIR_PatchCode patch_code() const               { return _patch; }
   BasicType type()           const               { return _type;  }
 
@@ -1400,7 +1411,7 @@ class LIR_Op1: public LIR_Op {
   virtual bool is_patching() { return _patch != lir_patch_none; }
   virtual void emit_code(LIR_Assembler* masm);
   virtual LIR_Op1* as_Op1() { return this; }
-  virtual const char * name() const PRODUCT_RETURN0;
+  virtual const char * name() const PRODUCT_RETURN_NULL;
 
   void set_in_opr(LIR_Opr opr) { _opr = opr; }
 
@@ -1588,8 +1599,6 @@ public:
 class LIR_Op2: public LIR_Op {
  friend class LIR_OpVisitState;
 
-  int  _fpu_stack_size; // for sin/cos implementation on Intel
-
  protected:
   LIR_Opr   _opr1;
   LIR_Opr   _opr2;
@@ -1606,7 +1615,6 @@ class LIR_Op2: public LIR_Op {
  public:
   LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, CodeEmitInfo* info = nullptr, BasicType type = T_ILLEGAL)
     : LIR_Op(code, LIR_OprFact::illegalOpr, info)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(LIR_OprFact::illegalOpr)
@@ -1621,7 +1629,6 @@ class LIR_Op2: public LIR_Op {
 
   LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type)
     : LIR_Op(code, result, nullptr)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(LIR_OprFact::illegalOpr)
@@ -1638,7 +1645,6 @@ class LIR_Op2: public LIR_Op {
   LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result = LIR_OprFact::illegalOpr,
           CodeEmitInfo* info = nullptr, BasicType type = T_ILLEGAL)
     : LIR_Op(code, result, info)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(LIR_OprFact::illegalOpr)
@@ -1654,7 +1660,6 @@ class LIR_Op2: public LIR_Op {
   LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp1, LIR_Opr tmp2 = LIR_OprFact::illegalOpr,
           LIR_Opr tmp3 = LIR_OprFact::illegalOpr, LIR_Opr tmp4 = LIR_OprFact::illegalOpr, LIR_Opr tmp5 = LIR_OprFact::illegalOpr)
     : LIR_Op(code, result, nullptr)
-    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _tmp1(tmp1)
@@ -1681,9 +1686,6 @@ class LIR_Op2: public LIR_Op {
   void set_condition(LIR_Condition condition) {
     assert(code() == lir_cmp || code() == lir_branch || code() == lir_cond_float_branch, "only valid for branch"); _condition = condition;
   }
-
-  void set_fpu_stack_size(int size)              { _fpu_stack_size = size; }
-  int  fpu_stack_size() const                    { return _fpu_stack_size; }
 
   void set_in_opr1(LIR_Opr opr)                  { _opr1 = opr; }
   void set_in_opr2(LIR_Opr opr)                  { _opr2 = opr; }
@@ -2033,8 +2035,9 @@ class LIR_OpProfileCall : public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
   bool should_profile_receiver_type() const {
     bool callee_is_static = _profiled_callee->is_loaded() && _profiled_callee->is_static();
+    bool callee_is_private = _profiled_callee->is_loaded() && _profiled_callee->is_private();
     Bytecodes::Code bc = _profiled_method->java_code_at_bci(_profiled_bci);
-    bool call_is_virtual = (bc == Bytecodes::_invokevirtual && !_profiled_callee->can_be_statically_bound()) || bc == Bytecodes::_invokeinterface;
+    bool call_is_virtual = (bc == Bytecodes::_invokevirtual && !callee_is_private) || bc == Bytecodes::_invokeinterface;
     return C1ProfileVirtualCalls && call_is_virtual && !callee_is_static;
   }
 };
@@ -2270,15 +2273,13 @@ class LIR_List: public CompilationResourceObj {
   void cas_int(LIR_Opr addr, LIR_Opr cmp_value, LIR_Opr new_value,
                LIR_Opr t1, LIR_Opr t2, LIR_Opr result = LIR_OprFact::illegalOpr);
 
-  void abs (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_abs , from, tmp, to)); }
-  void negate(LIR_Opr from, LIR_Opr to, LIR_Opr tmp = LIR_OprFact::illegalOpr)              { append(new LIR_Op2(lir_neg, from, tmp, to)); }
-  void sqrt(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_sqrt, from, tmp, to)); }
+  void abs (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_abs , from, to, tmp)); }
+  void negate(LIR_Opr from, LIR_Opr to, LIR_Opr tmp = LIR_OprFact::illegalOpr) { append(new LIR_Op1(lir_neg, from, to, tmp)); }
+  void sqrt(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_sqrt, from, to, tmp)); }
   void fmad(LIR_Opr from, LIR_Opr from1, LIR_Opr from2, LIR_Opr to) { append(new LIR_Op3(lir_fmad, from, from1, from2, to)); }
   void fmaf(LIR_Opr from, LIR_Opr from1, LIR_Opr from2, LIR_Opr to) { append(new LIR_Op3(lir_fmaf, from, from1, from2, to)); }
-  void log10 (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)              { append(new LIR_Op2(lir_log10, from, LIR_OprFact::illegalOpr, to, tmp)); }
-  void tan (LIR_Opr from, LIR_Opr to, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_Op2(lir_tan , from, tmp1, to, tmp2)); }
-  void f2hf(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_f2hf, from, tmp, to)); }
-  void hf2f(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_hf2f, from, tmp, to)); }
+  void f2hf(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_f2hf, from, to, tmp)); }
+  void hf2f(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op1(lir_hf2f, from, to, tmp)); }
 
   void add (LIR_Opr left, LIR_Opr right, LIR_Opr res)      { append(new LIR_Op2(lir_add, left, right, res)); }
   void sub (LIR_Opr left, LIR_Opr right, LIR_Opr res, CodeEmitInfo* info = nullptr) { append(new LIR_Op2(lir_sub, left, right, res, info)); }

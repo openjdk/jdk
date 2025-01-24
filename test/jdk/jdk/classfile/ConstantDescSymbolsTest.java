@@ -23,11 +23,14 @@
 
 /*
  * @test
- * @bug 8304031 8338406
+ * @bug 8304031 8338406 8338546
  * @summary Testing handling of various constant descriptors in ClassFile API.
+ * @modules java.base/jdk.internal.constant
+ *          java.base/jdk.internal.classfile.impl
  * @run junit ConstantDescSymbolsTest
  */
 
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodHandleDesc;
@@ -36,8 +39,14 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.function.Supplier;
 import java.lang.classfile.ClassFile;
+import java.util.stream.Stream;
+
+import jdk.internal.classfile.impl.AbstractPoolEntry;
+import jdk.internal.constant.ConstantUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.constant.ConstantDescs.*;
@@ -101,5 +110,59 @@ final class ConstantDescSymbolsTest {
         assertSame(a, cb.lookup.lookupClass());
         assertEquals(DEFAULT_NAME, cb.name);
         assertEquals(CondyBoot.class, cb.type);
+    }
+
+    static Stream<ClassDesc> classOrInterfaceEntries() {
+        return Stream.of(
+                CD_Object, CD_Float, CD_Long, CD_String, ClassDesc.of("Ape"),
+                CD_String.nested("Whatever"), CD_MethodHandles_Lookup, ClassDesc.ofInternalName("one/Two"),
+                ClassDesc.ofDescriptor("La/b/C;"), ConstantDescSymbolsTest.class.describeConstable().orElseThrow(),
+                CD_Boolean, CD_ConstantBootstraps, CD_MethodHandles
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("classOrInterfaceEntries")
+    void testConstantPoolBuilderClassOrInterfaceEntry(ClassDesc cd) {
+        assertTrue(cd.isClassOrInterface());
+        ConstantPoolBuilder cp = ConstantPoolBuilder.of();
+        var internal = ConstantUtils.dropFirstAndLastChar(cd.descriptorString());
+
+        // 1. ClassDesc
+        var ce = cp.classEntry(cd);
+        assertSame(cd, ce.asSymbol(), "Symbol propagation on create");
+
+        // 1.1. Bare addition
+        assertTrue(ce.name().equalsString(internal), "Adding to bare pool");
+
+        // 1.2. Lookup existing
+        assertSame(ce, cp.classEntry(cd), "Finding by identical CD");
+
+        // 1.3. Lookup existing - equal but different ClassDesc
+        var cd1 = ClassDesc.ofDescriptor(cd.descriptorString());
+        assertSame(ce, cp.classEntry(cd1), "Finding by another equal CD");
+
+        // 1.3.1. Lookup existing - equal but different ClassDesc, equal but different string
+        var cd2 = ClassDesc.ofDescriptor("" + cd.descriptorString());
+        assertSame(ce, cp.classEntry(cd2), "Finding by another equal CD");
+
+        // 1.4. Lookup existing - with utf8 internal name
+        var utf8 = cp.utf8Entry(internal);
+        assertSame(ce, cp.classEntry(utf8), "Finding CD by UTF8");
+
+        // 2. ClassEntry exists, no ClassDesc
+        cp = ConstantPoolBuilder.of();
+        utf8 = cp.utf8Entry(internal);
+        ce = cp.classEntry(utf8);
+        var found = cp.classEntry(cd);
+        assertSame(ce, found, "Finding non-CD CEs with CD");
+        assertEquals(cd, ce.asSymbol(), "Symbol propagation on find");
+
+        // 3. Utf8Entry exists, no ClassEntry
+        cp = ConstantPoolBuilder.of();
+        utf8 = cp.utf8Entry(internal);
+        ce = cp.classEntry(cd);
+        assertSame(utf8, ce.name(), "Reusing existing utf8 entry");
+        assertEquals(cd, ce.asSymbol(), "Symbol propagation on create with utf8");
     }
 }

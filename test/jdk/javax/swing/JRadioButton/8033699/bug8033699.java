@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary  Incorrect radio button behavior when pressing tab key
  * @run main bug8033699
  */
+
 import java.awt.KeyboardFocusManager;
 import java.awt.Robot;
 import java.awt.event.ActionListener;
@@ -57,42 +58,50 @@ public class bug8033699 {
 
     public static void main(String[] args) throws Throwable {
         SwingUtilities.invokeAndWait(() -> {
-                changeLAF();
-                createAndShowGUI();
+            changeLAF();
+            createAndShowGUI();
         });
 
         robot = new Robot();
-        Thread.sleep(100);
-        robot.waitForIdle();
-
         robot.setAutoDelay(100);
+        robot.waitForIdle();
+        robot.delay(1000);
 
         // tab key test grouped radio button
         runTest1();
+        robot.delay(100);
 
         // tab key test non-grouped radio button
         runTest2();
+        robot.delay(100);
 
         // shift tab key test grouped and non-grouped radio button
         runTest3();
+        robot.delay(100);
 
         // left/up key test in grouped radio button
         runTest4();
+        robot.delay(100);
 
         // down/right key test in grouped radio button
         runTest5();
+        robot.delay(100);
 
         // tab from radio button in group to next component in the middle of button group layout
         runTest6();
+        robot.delay(100);
 
         // tab to radio button in group from component in the middle of button group layout
         runTest7();
+        robot.delay(100);
 
         // down key circle back to first button in grouped radio button
         runTest8();
+        robot.delay(100);
 
         // Verify that ActionListener is called when a RadioButton is selected using arrow key.
         runTest9();
+        robot.delay(100);
 
         SwingUtilities.invokeAndWait(() -> mainFrame.dispose());
     }

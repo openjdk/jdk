@@ -224,7 +224,7 @@ public class IndexWriter extends HtmlDocletWriter {
             default -> throw new Error();
         }
         target.add(dt);
-        var dd = new HtmlTree(HtmlTag.DD);
+        var dd = HtmlTree.DD();
         if (element.getKind() == ElementKind.MODULE || element.getKind() == ElementKind.PACKAGE) {
             addSummaryComment(element, dd);
         } else {
@@ -261,7 +261,7 @@ public class IndexWriter extends HtmlDocletWriter {
         dt.add(" - ");
         dt.add(contents.getContent("doclet.Search_tag_in", item.getHolder()));
         target.add(dt);
-        var dd = new HtmlTree(HtmlTag.DD);
+        var dd = HtmlTree.DD();
         if (item.getDescription().isEmpty()) {
             dd.add(Entity.NO_BREAK_SPACE);
         } else {
@@ -348,7 +348,7 @@ public class IndexWriter extends HtmlDocletWriter {
             content.add(Entity.NO_BREAK_SPACE);
         }
 
-        content.add(new HtmlTree(HtmlTag.BR));
+        content.add(HtmlTree.BR());
         var pageLinks = Stream.of(IndexItem.Category.values())
                 .flatMap(c -> mainIndex.getItems(c).stream())
                 .filter(i -> !(i.isElementItem() || i.isTagItem()))

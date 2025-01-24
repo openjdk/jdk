@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciCallProfile.hpp"
 #include "ci/ciExceptionHandler.hpp"
 #include "ci/ciInstanceKlass.hpp"
@@ -742,6 +741,13 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   if (target() == nullptr) {
     return nullptr;
   }
+
+  // Redefinition support.
+  if (this->is_old() || root_m->is_old() || target->is_old()) {
+    guarantee(CURRENT_THREAD_ENV->jvmti_state_changed(), "old method not detected");
+    return nullptr;
+  }
+
   if (target() == root_m->get_Method()) {
     return root_m;
   }
@@ -819,6 +825,12 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
 
   ciMethod* result = this;
   if (m != get_Method()) {
+    // Redefinition support.
+    if (this->is_old() || m->is_old()) {
+      guarantee(CURRENT_THREAD_ENV->jvmti_state_changed(), "old method not detected");
+      return nullptr;
+    }
+
     result = CURRENT_THREAD_ENV->get_method(m);
   }
 
@@ -1233,7 +1245,6 @@ bool ciMethod::has_jsrs       () const {         FETCH_FLAG_FROM_VM(has_jsrs);  
 bool ciMethod::is_getter      () const {         FETCH_FLAG_FROM_VM(is_getter); }
 bool ciMethod::is_setter      () const {         FETCH_FLAG_FROM_VM(is_setter); }
 bool ciMethod::is_accessor    () const {         FETCH_FLAG_FROM_VM(is_accessor); }
-bool ciMethod::is_initializer () const {         FETCH_FLAG_FROM_VM(is_initializer); }
 bool ciMethod::is_empty       () const {         FETCH_FLAG_FROM_VM(is_empty_method); }
 
 bool ciMethod::is_boxing_method() const {
@@ -1480,3 +1491,10 @@ bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_
 }
 
 // ------------------------------------------------------------------
+// ciMethod::is_old
+//
+// Return true for redefined methods
+bool ciMethod::is_old() const {
+  ASSERT_IN_VM;
+  return get_Method()->is_old();
+}

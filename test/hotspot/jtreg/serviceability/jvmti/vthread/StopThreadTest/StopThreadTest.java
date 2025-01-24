@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,29 @@
  * @test id=default
  * @summary Verifies JVMTI StopThread support for virtual threads.
  * @requires vm.continuations
+ * @library /test/lib
  * @run main/othervm/native -agentlib:StopThreadTest StopThreadTest
  */
 
 /*
  * @test id=no-vmcontinuations
  * @summary Verifies JVMTI StopThread support for bound virtual threads.
- * @run main/othervm/native -agentlib:StopThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StopThreadTest
+ * @library /test/lib
+ * @run main/othervm/native -agentlib:StopThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations -DboundVThread=true StopThreadTest
  */
 
 /*
  * @test id=platform
  * @summary Verifies JVMTI StopThread support for platform threads.
+ * @library /test/lib
  * @run main/othervm/native -agentlib:StopThreadTest StopThreadTest platform
  */
 
+import jdk.test.lib.Platform;
 import java.lang.AssertionError;
+
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 
 /*
  *     The test exercises the JVMTI function: StopThread(jthread).
@@ -53,7 +60,9 @@ import java.lang.AssertionError;
  */
 public class StopThreadTest {
     private static final String agentLib = "StopThreadTest";
+    static final boolean isBoundVThread = Boolean.getBoolean("boundVThread");
     static final int JVMTI_ERROR_NONE = 0;
+    static final int JVMTI_ERROR_OPAQUE_FRAME = 32;
     static final int THREAD_NOT_SUSPENDED = 13;
     static final int PASSED = 0;
     static final int FAILED = 2;
@@ -104,7 +113,7 @@ public class StopThreadTest {
             } else {
                 testTaskThread = Thread.ofPlatform().name("TestTaskThread").start(testTask);
             }
-            TestTask.ensureAtPointA();
+            TestTask.ensureBlockedAfterPointA(testTaskThread);
 
             if (is_virtual) { // this check is for virtual target thread only
                 log("\nMain #A.1: unsuspended");
@@ -119,10 +128,12 @@ public class StopThreadTest {
             log("\nMain #A.2: suspended");
             suspendThread(testTaskThread);
             retCode = stopThread(testTaskThread);
-            if (retCode != JVMTI_ERROR_NONE) {
-                throwFailed("Main #A.2: expected JVMTI_ERROR_NONE instead of: " + retCode);
+            int expectedRetCode = preemptableVirtualThread() ? JVMTI_ERROR_OPAQUE_FRAME : JVMTI_ERROR_NONE;
+            String expectedRetCodeName = preemptableVirtualThread() ? "JVMTI_ERROR_OPAQUE_FRAME" : "JVMTI_ERROR_NONE";
+            if (retCode != expectedRetCode) {
+                throwFailed("Main #A.2: expected " + expectedRetCodeName + " instead of: " + retCode);
             } else {
-                log("Main #A.2: got expected JVMTI_ERROR_NONE");
+                log("Main #A.2: got expected " + expectedRetCodeName);
             }
             resumeThread(testTaskThread);
         }
@@ -168,7 +179,7 @@ public class StopThreadTest {
         static Object lock = new Object();
         static void log(String str) { System.out.println(str); }
 
-        static volatile boolean atPointA = false;
+        static volatile boolean reachedPointA = false;
         static volatile boolean finished = false;
 
         static void sleep(long millis) {
@@ -179,8 +190,9 @@ public class StopThreadTest {
             }
         }
 
-        static void ensureAtPointA() {
-            while (!atPointA) {
+        static void ensureBlockedAfterPointA(Thread vt) {
+            // wait while the thread state is not the expected one
+            while (!reachedPointA || vt.getState() != Thread.State.BLOCKED) {
                 sleep(1);
             }
         }
@@ -203,7 +215,7 @@ public class StopThreadTest {
                 seenExceptionFromA = true;
             }
             Thread.interrupted();
-            if (!seenExceptionFromA) {
+            if (!seenExceptionFromA && !preemptableVirtualThread()) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method A()");
             }
             sleep(1); // to cause yield
@@ -241,7 +253,7 @@ public class StopThreadTest {
         //  - when suspended: JVMTI_ERROR_NONE is expected
         static void A() {
             log("TestTask.A: started");
-            atPointA = true;
+            reachedPointA = true;
             synchronized (lock) {
             }
             log("TestTask.A: finished");
@@ -262,5 +274,11 @@ public class StopThreadTest {
             StopThreadTest.stopThread(Thread.currentThread());
             log("TestTask.C: finished");
         }
+    }
+
+    static boolean preemptableVirtualThread() {
+        boolean legacyLockingMode = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                                        .getVMOption("LockingMode").getValue().equals("1");
+        return is_virtual && !isBoundVThread && !legacyLockingMode;
     }
 }
