@@ -63,7 +63,8 @@ static bool large_pages_requested() {
 static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
   if (large_pages_requested()) {
     // Compressed oops logging.
-    log_debug(gc, heap, coops)("Reserve regular memory without large pages");
+    log_debug(os, map)("Reserve regular memory without large pages "
+                       RANGEFMT, RANGEFMTARGS(req_addr, bytes));
     // JVM style warning that we did not succeed in using large pages.
     char msg[128];
     jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory using large pages. "

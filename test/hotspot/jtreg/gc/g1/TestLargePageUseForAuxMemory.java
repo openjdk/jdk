@@ -64,11 +64,15 @@ public class TestLargePageUseForAuxMemory {
         // Check if there is a large page failure associated with the data  structure
         // being checked. In case of a large page allocation failure the output will
         // include logs like this for the affected data structure:
-        // [0.048s][debug][gc,heap,coops] Reserve regular memory without large pages
-        // [0.048s][info ][pagesize     ] Mark Bitmap: ... page_size=4K ...
+        // [0.044s][debug][os,map  ] Reserve regular memory without large pages [0x0000000000000000 - 0x0000000001000000), (16777216 bytes)
+        // [0.044s][debug][os,map  ] Reserved [0x00007f771de00000 - 0x00007f771ee00000), (16777216 bytes)
+        // [0.044s][info ][pagesize] Mark Bitmap: req_size=16M req_page_size=2M base=0x00007f771de00000 size=16M page_size=4K
         //
         // The pattern passed in should match the second line.
-        String failureMatch = output.firstMatch("Reserve regular memory without large pages\\n.*" + pattern, 1);
+        String failureMatch = output.firstMatch("Reserve regular memory without large pages[^\n]*\n" // First line
+                                                + "[^\n]*\n" // Second line
+                                                + "[^\n]*" + pattern, // Third line
+                                                1);
         if (failureMatch != null) {
             return true;
         }
@@ -112,7 +116,7 @@ public class TestLargePageUseForAuxMemory {
         return List.of("-XX:+UseG1GC",
                        "-XX:G1HeapRegionSize=" + HEAP_REGION_SIZE,
                        "-Xmx" + heapsize,
-                       "-Xlog:pagesize,gc+init,gc+heap+coops=debug",
+                       "-Xlog:pagesize,gc+init,os+map=debug",
                        "-XX:" + (largePageEnabled ? "+" : "-") + "UseLargePages",
                        "-version");
     }

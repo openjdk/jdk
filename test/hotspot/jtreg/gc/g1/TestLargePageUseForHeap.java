@@ -68,12 +68,15 @@ public class TestLargePageUseForHeap {
             return false;
         }
         // This message is printed when tried to reserve a memory with large page but it failed.
-        String errorStr = "Reserve regular memory without large pages";
-        String heapPattern = ".*Heap: ";
-        // If errorStr is printed just before heap page log, reservation for Java Heap is failed.
-        String result = output.firstMatch(errorStr + "\n" +
-                                          "(?:.*Heap address: .*\n)?" // Heap address: 0x00000000f8000000, size: 128 MB, Compressed Oops mode: 32-bit
-                                          + heapPattern);
+        //
+        // [0.045s][debug][os,map  ] Reserve regular memory without large pages [0x00000000f8000000 - 0x0000000100000000), (134217728 bytes)
+        // [0.045s][debug][os,map  ] Reserved [0x00000000f8000000 - 0x0000000100000000), (134217728 bytes)
+        // [0.045s][info ][pagesize] Heap:  min=8M max=128M base=0x00000000f8000000 size=128M page_size=4K
+        //
+        // If error is printed just before heap page log, reservation for Java Heap is failed.
+        String result = output.firstMatch("Reserve regular memory without large pages[^\n]*\n"
+                                          + "[^\n]*Reserved[^\n]*\n"
+                                          + "[^\n]*Heap: ");
         if (result != null) {
             return false;
         }
@@ -89,7 +92,7 @@ public class TestLargePageUseForHeap {
         OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
                                                                     "-XX:G1HeapRegionSize=" + regionSize,
                                                                     "-Xmx128m",
-                                                                    "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
+                                                                    "-Xlog:gc+init,pagesize,os+map=debug",
                                                                     "-XX:+UseLargePages",
                                                                     "-version");
 
