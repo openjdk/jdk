@@ -379,9 +379,9 @@ static void next_line(FILE *f) {
 }
 
 void os::Linux::kernel_version(long* major, long* minor, long* patch) {
-  *major = -1;
-  *minor = -1;
-  *patch = -1;
+  *major = 0;
+  *minor = 0;
+  *patch = 0;
 
   struct utsname buffer;
   int ret = uname(&buffer);
