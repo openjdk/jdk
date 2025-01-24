@@ -444,8 +444,9 @@ public final class Currency implements Serializable {
     public static Set<Currency> getAvailableCurrencies() {
         synchronized(Currency.class) {
             if (available == null) {
+                // reuse same time for all special case cut-over date checks
+                var sysTime = System.currentTimeMillis();
                 available = new HashSet<>(256);
-
                 // Add simple currencies first
                 for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
                     for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
@@ -467,7 +468,7 @@ public final class Currency implements Serializable {
                             SpecialCaseEntry scEntry = specialCasesList.get(index);
 
                             if (scEntry.cutOverTime == Long.MAX_VALUE
-                                    || System.currentTimeMillis() < scEntry.cutOverTime) {
+                                    || sysTime < scEntry.cutOverTime) {
                                 available.add(getInstance(scEntry.oldCurrency,
                                         scEntry.oldCurrencyFraction,
                                         scEntry.oldCurrencyNumericCode));
