@@ -25,36 +25,21 @@
  * @test
  * @bug 8347997
  * @summary Test that Cintinuation.pin() and unpin() intrinsics work with EA.
- * @run main/othervm --add-opens=java.base/jdk.internal.vm=ALL-UNNAMED
- *      TestContinuationPinningAndEA
+ * @modules java.base/jdk.internal.vm
+ * @run main TestContinuationPinningAndEA
  */
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
+import jdk.internal.vm.Continuation;
 
 public class TestContinuationPinningAndEA {
-  public static final MethodHandle pin;
-  public static final MethodHandle unpin;
-
-  static {
-    try {
-      MethodHandles.Lookup lookup = MethodHandles.lookup();
-      Class<?> Continuation = lookup.findClass("jdk.internal.vm.Continuation");
-      pin = lookup.findStatic(Continuation, "pin", MethodType.methodType(void.class));
-      unpin = lookup.findStatic(Continuation, "unpin", MethodType.methodType(void.class));
-    } catch (Throwable e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   static class FailsEA {
     final Object o;
 
     public FailsEA() throws Throwable {
       o = new Object();
-      pin.invokeExact();
-      unpin.invokeExact();
+      Continuation.pin();
+      Continuation.unpin();
     }
   }
 
@@ -62,8 +47,8 @@ public class TestContinuationPinningAndEA {
     final Object o;
 
     public Crashes() throws Throwable {
-      pin.invokeExact();
-      unpin.invokeExact();
+      Continuation.pin();
+      Continuation.unpin();
       o = new Object();
     }
   }
